@@ -106,12 +106,14 @@ walk, which is what the owner approved; a true four-beat wolf walk needs its own
 A target may list `coats`: the looks one creature of its kind may wear, each picked by weight. A coat is
 `{ "id", "name", "weight", "map": { "<ramp>": { "to": "<ramp>", "shift": n } }, "body": "<target>" }`. The map is
 pure step to step: a pixel at step i of a mapped ramp becomes step clamp(i + shift, 0, 5) of ramp `to` (shift
-optional, whole, -5 to 5), only opaque pixels, never the ink, so every colour written is a palette colour and the
-frames of a sheet do not swim. A ramp left out keeps its colours; an empty map is the sheet as drawn. A pattern a
+optional, whole, -5 to 5), or, with `{ "steps": ["wood:1", ..., null] }` in place of `to` and `shift`, the step
+each of the six names ("ramp:step", null keeping it: a white or black coat that keeps its shading, or a coat that
+mixes two ramps). Only opaque pixels change, never from or to the ink, so every colour written is a palette colour,
+no body pixel melts into the outline, and the frames of a sheet do not swim. A ramp left out keeps its colours; an empty map is the sheet as drawn. A pattern a
 map cannot make (white patches) comes from `body`: another target whose model carries the pattern on its colour map
 (the hare's `hare-pied`, painted by `game/tools/blender/hare_pass.py --pied`), whose sheets the coat recolours.
-`clipProblems` refuses unknown ramps, a ramp the body does not draw in, a weight that is not positive, a repeated id
-and a body that is not another target. The client picks and draws a coat with `game/src/coat.ts` (a fixed hash of
+`clipProblems` refuses unknown ramps, a ramp the body does not draw in, a weight that is not positive, a repeated id,
+a step list that does not name six steps, a step that lands on the ink and a body that is not another target. The client picks and draws a coat with `game/src/coat.ts` (a fixed hash of
 the creature's id and a world number, never a roll); a coat is look only. DECISIONS 2026-10-30 holds the coats and
 their weights.
 

@@ -5,6 +5,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { INK_HEX } from '../kit/ink.js';
 import { coreRamp } from '../kit/palette.js';
 import { REPO_ROOT } from '../load.js';
 
@@ -65,14 +66,15 @@ export interface Target {
 
 /**
  * One coat of a kind: a pure step to step recolour of the sheets (a pixel at step i of a mapped ramp becomes step
- * clamp(i + shift, 0, 5) of ramp `to`), so every colour it writes is a palette colour; `body` names another target
- * whose sheets it is drawn on, for a pattern a recolour cannot make.
+ * clamp(i + shift, 0, 5) of ramp `to`, or the "ramp:step" its `steps` list names, null keeping it), so every colour
+ * it writes is a palette colour; `body` names another target whose sheets it is drawn on, for a pattern a recolour
+ * cannot make.
  */
 export interface CoatSpec {
   id: string;
   name: string;
   weight: number;
-  map: Record<string, { to: string; shift?: number }>;
+  map: Record<string, { to: string; shift?: number } | { steps: (string | null)[] }>;
   body?: string;
 }
 
@@ -161,8 +163,9 @@ const isInt = (v: unknown): v is number => Number.isInteger(v);
 
 /**
  * The problems of a target's coats, in plain words; empty when they can be drawn: ids unique, a name, a positive
- * weight, each mapped ramp a shared ramp that the target (or the coat's body) draws in, each `to` a shared ramp, a
- * whole shift from -5 to 5, a body that is another target of anim.json.
+ * weight, each mapped ramp a shared ramp that the target (or the coat's body) draws in, each `to` a shared ramp and
+ * a whole shift from -5 to 5 (or six `steps`, each "ramp:step" of a shared ramp or null), no step that lands on the
+ * ink (a body pixel in the outline's colour melts into the outline), a body that is another target of anim.json.
  */
 export function coatProblems(id: string, settings: Settings): string[] {
   const out: string[] = [];
@@ -192,10 +195,32 @@ export function coatProblems(id: string, settings: Settings): string[] {
       continue;
     }
     for (const [from, step] of Object.entries(c.map)) {
-      if (coreRamp(from) === undefined) say(`${name}: ramp "${from}" is not a shared ramp`);
+      const src = coreRamp(from);
+      if (src === undefined) say(`${name}: ramp "${from}" is not a shared ramp`);
       else if (!ramps.includes(from)) say(`${name}: ramp "${from}" is not one the body draws in (${ramps.join(', ')})`);
-      if (typeof step?.to !== 'string' || coreRamp(step.to) === undefined) say(`${name}: ${from} goes to "${String(step?.to)}", not a shared ramp`);
-      if (step?.shift !== undefined && (!isInt(step.shift) || Math.abs(step.shift) > 5)) say(`${name}: ${from} shift is a whole number from -5 to 5`);
+      const dest: (string | undefined)[] = [];
+      if (step !== null && typeof step === 'object' && 'steps' in step) {
+        if (!Array.isArray(step.steps) || step.steps.length !== 6) {
+          say(`${name}: ${from} steps names all six steps, each "ramp:step" or null`);
+          continue;
+        }
+        step.steps.forEach((entry, i) => {
+          if (entry === null) return dest.push(undefined);
+          const m = typeof entry === 'string' ? /^([a-z_]+):([0-5])$/.exec(entry) : null;
+          const to = m === null ? undefined : coreRamp(m[1]!);
+          if (m === null || to === undefined) say(`${name}: ${from} step ${i} goes to "${String(entry)}", not "ramp:step" of a shared ramp`);
+          dest.push(to?.steps[Number(m?.[2])]);
+        });
+      } else {
+        const to = typeof step?.to === 'string' ? coreRamp(step.to) : undefined;
+        if (to === undefined) say(`${name}: ${from} goes to "${String(step?.to)}", not a shared ramp`);
+        const shift = step?.shift ?? 0;
+        if (!isInt(shift) || Math.abs(shift) > 5) say(`${name}: ${from} shift is a whole number from -5 to 5`);
+        else for (let i = 0; i < 6; i += 1) dest.push(to?.steps[Math.min(5, Math.max(0, i + shift))]);
+      }
+      dest.forEach((hex, i) => {
+        if (src !== undefined && hex !== undefined && src.steps[i] !== INK_HEX && hex.toLowerCase() === INK_HEX.toLowerCase()) say(`${name}: ${from} step ${i} lands on the ink`);
+      });
     }
   }
   return out;

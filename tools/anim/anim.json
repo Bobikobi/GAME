@@ -135,13 +135,13 @@
       "leaf": "green",
       "coats": [
         {"id": "agouti", "name": "agouti brown", "weight": 40, "map": {}},
-        {"id": "grey-brown", "name": "grey brown", "weight": 14, "map": {"skin": {"to": "stone", "shift": 1}, "wood": {"to": "bark", "shift": 1}}},
+        {"id": "grey-brown", "name": "grey brown", "weight": 14, "map": {"skin": {"steps": ["wood:1", "wood:2", "wood:3", "wood:3", "stone:4", "stone:5"]}, "wood": {"to": "wood"}}},
         {"id": "dark-brown", "name": "dark brown", "weight": 14, "map": {"skin": {"to": "bark"}, "wood": {"to": "bark", "shift": -1}}},
         {"id": "ash-grey", "name": "ash grey", "weight": 9, "map": {"skin": {"to": "grey", "shift": 2}, "wood": {"to": "grey", "shift": 2}}},
-        {"id": "black", "name": "black", "weight": 6, "map": {"skin": {"to": "stone", "shift": -1}, "wood": {"to": "stone", "shift": -1}}},
-        {"id": "white", "name": "white", "weight": 3, "map": {"skin": {"to": "grey", "shift": 4}, "wood": {"to": "grey", "shift": 4}}},
+        {"id": "black", "name": "black", "weight": 6, "map": {"skin": {"steps": ["stone:0", "stone:1", "stone:1", "stone:2", "stone:2", "stone:3"]}, "wood": {"steps": ["stone:0", "stone:0", "stone:1", "stone:1", "stone:2", "stone:2"]}}},
+        {"id": "white", "name": "white", "weight": 3, "map": {"skin": {"steps": ["grey:3", "grey:4", "grey:4", "grey:5", "grey:5", "grey:5"]}, "wood": {"steps": ["grey:1", "grey:2", "grey:3", "grey:4", "grey:5", "grey:5"]}}},
         {"id": "brown-pied", "name": "brown pied", "weight": 9, "map": {}, "body": "hare-pied"},
-        {"id": "black-pied", "name": "black pied", "weight": 5, "map": {"skin": {"to": "stone", "shift": -1}, "wood": {"to": "stone", "shift": -1}}, "body": "hare-pied"}
+        {"id": "black-pied", "name": "black pied", "weight": 5, "map": {"skin": {"steps": ["stone:0", "stone:1", "stone:1", "stone:2", "stone:2", "stone:3"]}, "wood": {"steps": ["stone:0", "stone:0", "stone:1", "stone:1", "stone:2", "stone:2"]}}, "body": "hare-pied"}
       ],
       "credit": "Rabbit by CDmir (with TinyWorlds), OpenGameArt, CC0, https://opengameart.org/content/rabbit-0; modified: the fur-shell mesh, the lights, the camera and the ground plane removed; the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, warmed and lightened toward a sandy hare; scaled to 0.35 m at the ears with the scale baked into the bones, and a tip bone under each paw (the renderer reads a foot from its bone's tail); Guarding renamed Idle; Walk and Run made from Running in Blender (game/tools/blender/hare_pass.py: Walk 1.6x slower with the swings and the bob at 0.3 of the bound's around their means and the paws' lift at 0.55 of it, Run at the bound's tempo with them at 0.5 and the lift at 0.7, the planted paws kept on the ground); Alert, Graze and Lie keyed in Blender on the rig's own controls (the same script: Guarding's sit-up with the ears pricked and the head turning, its crouch with the nose on the floor, and Dying's last frame only, rolled onto its side with the legs drawn in); the other actions dropped; posed with its own actions and rendered to pixels by tools/anim"
     },
@@ -173,9 +173,9 @@
       "leaf": "green",
       "coats": [
         {"id": "black", "name": "black", "weight": 70, "map": {}},
-        {"id": "sooty", "name": "sooty brown-black", "weight": 15, "map": {"stone": {"to": "bark"}, "grey": {"to": "bark"}}},
-        {"id": "grey-washed", "name": "grey-washed", "weight": 12, "map": {"stone": {"to": "stone", "shift": 2}, "grey": {"to": "grey", "shift": 1}}},
-        {"id": "leucistic", "name": "pale leucistic", "weight": 3, "map": {"stone": {"to": "grey", "shift": 4}, "grey": {"to": "grey", "shift": 3}}}
+        {"id": "sooty", "name": "sooty brown-black", "weight": 15, "map": {"stone": {"steps": ["wood:0", "wood:1", "wood:2", null, null, null]}}},
+        {"id": "grey-washed", "name": "grey-washed", "weight": 12, "map": {"stone": {"to": "stone", "shift": 2}}},
+        {"id": "leucistic", "name": "pale leucistic", "weight": 3, "map": {"stone": {"steps": ["grey:4", "grey:5", "grey:5", "grey:3", "grey:3", "grey:3"]}}}
       ],
       "credit": "Raven by Teh_Bucket, OpenGameArt, CC0, https://opengameart.org/content/raven-0; modified: the mirror and edge-split modifiers applied (one whole mesh); the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, lightened; turned to face -Y and scaled to 0.3 m standing, both baked into the bones, and a tip bone under each foot (the renderer reads a foot from its bone's tail); the tail held up so the bird stands on its feet; Idle, Hop, Lift, Alert, Peck and Lie made in Blender from the file's standing pose and its flight (game/tools/blender/crow_pass.py), the flight kept as Fly; posed with its own actions and rendered to pixels by tools/anim"
     }

@@ -111,6 +111,34 @@ describe('coat recolour', () => {
     expect([...data.subarray(4, 7)]).toEqual(rgb(RAMPS.bark![3]!));
   });
 
+  test('a step list sends each step where it names, and null keeps a step', () => {
+    const n = (hex: string) => Number.parseInt(hex.slice(1), 16);
+    const table = coatTable({ stone: { steps: ['wood:0', 'wood:1', 'grey:5', null, null, null] } }, RAMPS);
+    expect(table.get(n(RAMPS.stone![0]!))).toBe(n(RAMPS.wood![0]!));
+    expect(table.get(n(RAMPS.stone![2]!))).toBe(n(RAMPS.grey![5]!));
+    expect(table.has(n(RAMPS.stone![4]!))).toBe(false);
+    expect(() => coatTable({ stone: { steps: ['wood:0'] } }, RAMPS)).toThrow(/six steps/);
+    expect(() => coatTable({ stone: { steps: ['wood:9', null, null, null, null, null] } }, RAMPS)).toThrow(/ramp:step/);
+  });
+
+  test('refuses a step that lands on the ink, by shift or by name', () => {
+    expect(() => coatTable({ skin: { to: 'grey', shift: -1 } }, RAMPS)).toThrow(/skin step 0 lands on the ink/);
+    expect(() => coatTable({ wood: { to: 'grey' } }, RAMPS)).toThrow(/wood step 0 lands on the ink/);
+    expect(() => coatTable({ skin: { steps: [null, 'grey:0', null, null, null, null] } }, RAMPS)).toThrow(/skin step 1 lands on the ink/);
+  });
+
+  test('every coat keeps the shading: its body ramp\'s six steps land on three colours or more', () => {
+    const body: Record<string, string> = { hare: 'skin', crow: 'stone' };
+    for (const kind of KINDS) {
+      for (const coat of coatsOf(kind)) {
+        const table = coatTable(coat.map, RAMPS);
+        const steps = RAMPS[body[kind]!]!.map((hex) => Number.parseInt(hex.slice(1), 16));
+        const out = new Set(steps.map((c) => table.get(c) ?? c));
+        expect(out.size, `${kind} ${coat.id}`).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
   test('refuses a ramp it does not know', () => {
     expect(() => coatTable({ velvet: { to: 'grey' } }, RAMPS)).toThrow(/velvet/);
     expect(() => coatTable({ grey: { to: 'velvet' } }, RAMPS)).toThrow(/velvet/);

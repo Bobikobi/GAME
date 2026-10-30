@@ -86,7 +86,7 @@ describe('clip configs', () => {
     expect((hare.coats ?? []).filter((c) => c.body === 'hare-pied').length).toBeGreaterThan(0);
   });
 
-  it('refuses a coat with an unknown ramp, a ramp the body does not draw, a weight of zero, a repeated id, a shift past 5 and a missing body', () => {
+  it('refuses a coat with an unknown ramp, a ramp the body does not draw, a weight of zero, a repeated id, a shift past 5, a missing body, a step on the ink and a bad step list', () => {
     const hare = settings.targets.hare!;
     const bad: Settings = {
       ...settings,
@@ -98,6 +98,9 @@ describe('clip configs', () => {
             { id: 'a', name: 'a', weight: 0, map: { velvet: { to: 'grey' } } },
             { id: 'a', name: 'b', weight: 1, map: { stone: { to: 'grey' }, skin: { to: 'nowhere', shift: 9 } } },
             { id: 'c', name: 'c', weight: 1, map: {}, body: 'nobody' },
+            { id: 'd', name: 'd', weight: 1, map: { skin: { to: 'grey', shift: -1 }, wood: { steps: [null, 'grey:0', null, null, null, null] } } },
+            { id: 'e', name: 'e', weight: 1, map: { skin: { steps: ['wood:1', 'velvet:2'] } } },
+            { id: 'f', name: 'f', weight: 1, map: { skin: { steps: ['wood:1', 'velvet:2', null, null, null, null] } } },
           ],
         },
       },
@@ -110,6 +113,10 @@ describe('clip configs', () => {
     expect(problems).toMatch(/"nowhere", not a shared ramp/);
     expect(problems).toMatch(/shift is a whole number from -5 to 5/);
     expect(problems).toMatch(/body "nobody"/);
+    expect(problems).toMatch(/d: skin step 0 lands on the ink/);
+    expect(problems).toMatch(/d: wood step 1 lands on the ink/);
+    expect(problems).toMatch(/e: skin steps names all six steps/);
+    expect(problems).toMatch(/f: skin step 1 goes to "velvet:2"/);
     expect(clipProblems('hare_idle', readClip('hare_idle'), libs, bad).join(' ')).toMatch(/hare coats/);
   });
 

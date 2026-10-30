@@ -11,16 +11,18 @@
  * (kernel publicState), so it is not that seed.
  *
  * The recolour is a pure step to step map, like richground's remapTone: a pixel at step i of ramp A becomes step
- * clamp(i + shift) of ramp B, only opaque pixels change, only colours of the mapped ramps, never the ink outline,
- * so every colour written is a palette colour and the frames of a sheet cannot swim. A pattern a map cannot make
+ * clamp(i + shift) of ramp B, or the step its own list names (a coat that keeps the shading of a white or a black
+ * coat, or mixes two ramps, names each step), only opaque pixels change, only colours of the mapped ramps, never
+ * from or to the ink outline, so every colour written is a palette colour, no body pixel melts into the outline,
+ * and the frames of a sheet cannot swim. A pattern a map cannot make
  * (the white patches of a pied coat) comes from a second body ("body": another target), rendered with the
  * pattern painted on its colour map.
  */
-/** One ramp's place in a coat: its pixels move to ramp `to`, `shift` steps lighter (+) or darker (-). */
-export interface CoatStep {
-  to: string;
-  shift?: number;
-}
+/**
+ * One ramp's place in a coat: either its pixels move to ramp `to`, `shift` steps lighter (+) or darker (-), or
+ * `steps` names where each of its six steps goes, dark to light, as "ramp:step" (`"wood:2"`), null keeping it.
+ */
+export type CoatStep = { to: string; shift?: number } | { steps: readonly (string | null)[] };
 
 export interface Coat {
   id: string;
@@ -86,23 +88,42 @@ export function coatOf(coats: readonly Coat[], creatureId: string | number, worl
 
 const rgbOf = (hex: string): number => Number.parseInt(hex.slice(1), 16) >>> 0;
 
+const rampOf = (ramps: Ramps, id: string): readonly string[] => {
+  const ramp = ramps[id];
+  if (ramp === undefined || ramp.length !== STEPS) throw new Error(`coat: "${id}" is not a shared ramp`);
+  return ramp;
+};
+
+/** Where step i of a mapped ramp goes, as a colour; undefined when the step keeps its colour. */
+function stepColour(step: CoatStep, i: number, ramps: Ramps): string | undefined {
+  if ('steps' in step) {
+    if (!Array.isArray(step.steps) || step.steps.length !== STEPS) throw new Error('coat: "steps" names all six steps');
+    const name = step.steps[i];
+    if (name === null || name === undefined) return undefined;
+    const m = /^([a-z_]+):([0-5])$/.exec(name);
+    if (m === null) throw new Error(`coat: "${name}" is not "ramp:step"`);
+    return rampOf(ramps, m[1]!)[Number(m[2])];
+  }
+  return rampOf(ramps, step.to)[Math.min(STEPS - 1, Math.max(0, i + (step.shift ?? 0)))];
+}
+
 /**
- * The colour table of a coat's map: each mapped ramp's six colours to their new colours. The ink is never in it.
- * Throws on a ramp the table does not know, and on a colour two mapped ramps share (it could go two ways).
+ * The colour table of a coat's map: each mapped ramp's colours to their new colours. The ink is never in it, on
+ * either side. Throws on a ramp the table does not know, on a colour two mapped ramps share (it could go two ways)
+ * and on a step that lands on the ink (a body pixel drawn in the outline's colour melts into the outline).
  */
 export function coatTable(map: Readonly<Record<string, CoatStep>>, ramps: Ramps): Map<number, number> {
   const table = new Map<number, number>();
   for (const [from, step] of Object.entries(map)) {
-    const src = ramps[from];
-    const dst = ramps[step.to];
-    if (src === undefined || src.length !== STEPS) throw new Error(`coat: "${from}" is not a shared ramp`);
-    if (dst === undefined || dst.length !== STEPS) throw new Error(`coat: "${step.to}" is not a shared ramp`);
-    const shift = step.shift ?? 0;
+    const src = rampOf(ramps, from);
     for (let i = 0; i < STEPS; i += 1) {
       const a = rgbOf(src[i]!);
       if (a === COAT_INK) continue;
       if (table.has(a)) throw new Error(`coat: ${src[i]} is in two mapped ramps`);
-      table.set(a, rgbOf(dst[Math.min(STEPS - 1, Math.max(0, i + shift))]!));
+      const to = stepColour(step, i, ramps);
+      if (to === undefined) continue;
+      if (rgbOf(to) === COAT_INK) throw new Error(`coat: ${from} step ${i} lands on the ink`);
+      table.set(a, rgbOf(to));
     }
   }
   return table;
