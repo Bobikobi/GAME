@@ -1,5 +1,5 @@
 {
-  "about": "The roe deer's walk: four poses of the body's own Walk (a four-beat walk keyed on the leg targets: hind left, fore left, hind right, fore right), side-on, down and up, at a WANDER pace of 900 ms a tile (a placeholder; the hunting rules set the real pace). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop (DECISIONS 2026-10-29).",
+  "about": "The roe deer's walk: four poses of the body's own Walk (a four-beat walk keyed on the leg targets: hind left, fore left, hind right, fore right), side-on, down and up, judged at the kernel's walk of 190 ms a tile (`walk_step_ms`; WANDER walks at it, HUNTING.md section 2). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop (DECISIONS 2026-10-29).",
   "target": "deer",
   "base": {
     "library": "self:deer",
@@ -20,7 +20,7 @@
   },
   "locomotion": {
     "playback": "distance",
-    "pace_ms": 900,
+    "pace_ms": 190,
     "gait": "four-beat"
   },
   "views": [

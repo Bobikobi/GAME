@@ -5,27 +5,32 @@ Run:  blender -b --factory-startup -P deer_pass.py -- <doe.blend> <out.glb> [--l
 
 One body, two looks:
 - roe (default): the doe as she comes, a warm red-brown roe deer, 0.75 m at the withers.
-- hart: the same body and the same actions, the colour maps washed to a silver white (written into the images, as
-  glTF carries no node chain), a pair of dark branched antlers modelled here and skinned to the head, 1.1 m at the
+- hart: the same body and the same actions, the colour maps washed to an even silver white (written into the
+  images, as glTF carries no node chain), the ears made smaller and the neck thicker (the bind-pose mesh moved
+  along its own bone weights), a pair of dark branched antlers modelled here and skinned to the head, 1.1 m at the
   withers (the default --height for this look).
 
-What it does, in the manner of hare_pass.py (the hare, from the same artist's rig):
+What it does, in the manner of quad_pass.py (the wolf):
 - keeps the armature and joins the body, head and eye meshes into one skinned mesh (the clip renderer draws one
   mesh, the one with the most vertices); drops the camera, the lamps and the ground plane,
 - rebuilds the three Blender Internal materials as Principled BSDFs on the packed colour maps (body, head) and a
-  dark eye,
+  plain dark eye, and gives the tip of the muzzle the eye's dark material (a nose, so the face seen from the front
+  reads as a face),
 - centres the body over the origin, scales it to --height metres at the withers (bind pose; it already faces -Y)
   and bakes the scale into the bones; adds a tip bone under each hoof (the renderer reads a foot from its bone's
   tail, and glTF loses a leaf bone's length),
-- makes six actions, every bone keyed on every frame so a stray channel of the file does not travel:
+- makes six actions, every bone keyed on every frame so a stray channel of the file does not travel, the ears
+  carried spread outward in all of them (seen from the front they stand out past the neck, so the head reads):
   Idle from the file's Idle.
   Walk keyed on the leg IK targets: four beats (hind left, fore left, hind right, fore right, a quarter of the
-  cycle apart), each hoof three quarters of the cycle on the ground moving back at one speed and held flat, so a
-  planted hoof keeps its spot; the swing leaves and meets the ground at that speed.
-  Run keyed the same way, a gallop (hind left, hind right, fore left, fore right), the body carried lower, pitching
-  and flexing. The file's own Run swings the legs nearly in place (about 3 px of ground a cycle at the tile), so no
-  pace could lock its feet.
-  Alert from the file's LookAround with the head carried high and the ears up (a still body, a slow head turn).
+  cycle apart), each hoof on the ground for WALK_DUTY of the cycle moving back at one speed and held flat, so a
+  planted hoof keeps its spot; the swing leaves and meets the ground at that speed. The stride is as long as the
+  legs reach, so four poses keep the feet planted at the kernel's walk (HUNTING.md section 2).
+  Run keyed the same way, a four-beat gallop (hind left, hind right, fore left, fore right, a quarter of the cycle
+  apart), the body carried lower, pitching and flexing, the stride long enough for the run at half the walk's step. The file's own Run swings the legs
+  nearly in place (about 3 px of ground a cycle at the tile), so no pace could lock its feet.
+  Alert from the standing pose: the head carried high and a little forward, the ears up and spread, a still body
+  and a slow look that loops (ahead, to one side, ahead, to the other side).
   Graze from the file's Eat held at its lowest head, with a small chew and an ear flick.
   Lie from the last pose of a Die of the file (--lie-from, the second by default: seen side-on its legs rest on the
   ground, where the first's stand up in the air), the legs drawn in, moved back to where the body stood and held still: no fall
@@ -53,31 +58,59 @@ LOOK = opt("--look", "roe")
 assert LOOK in ("roe", "hart"), LOOK
 HEIGHT = opt("--height", 1.1 if LOOK == "hart" else 0.75, float)
 TEX = opt("--tex", 1024, int)
+HART_COAT = (0.72, 0.28)   # the hart's coat value: this floor plus this share of the doe's own light
 FPS = 24
 
 # the walk, in the file's units (the withers stand about 3.5 units high)
 WALK_FRAMES = 32       # one cycle; four poses of it sit at frames 0, 8, 16, 24
-WALK_STANCE = 2.4      # how far a planted hoof travels back under the body in one stance
+WALK_STANCE = 3.2      # how far a planted hoof travels back under the body in one stance
 WALK_LIFT = 0.6        # how high a swinging hoof rises
-WALK_DUTY = 0.75       # the share of the cycle a hoof is on the ground
+WALK_DUTY = 0.6        # the share of the cycle a hoof is on the ground (over half: still a walk)
+WALK_CROUCH = 0.12     # the body carried a little lower than standing, so each leg reaches its whole stance
 WALK_BOB = 0.07        # the body's rise and fall, twice a cycle
 WALK_NOD = 0.12        # the head's nod, twice a cycle
 WALK_FLICK = 35        # degrees the hoof folds at the top of its swing
-# the run, keyed the same way: a gallop (hind left, hind right, fore left, fore right), each hoof a little over a
-# third of the cycle on the ground, a moment with all four off it, the body pitching and the back flexing
+# the run, keyed the same way: a four-beat gallop (hind left, hind right, fore left, fore right, a quarter of the
+# cycle apart), each hoof under a third of the cycle on the ground, the body pitching and the back flexing. The even
+# beat keeps the outline seen from the front steady over the four poses: with the hooves landing in pairs, two poses
+# show both fore legs reaching toward the camera below the chest and two show them folded out of sight
 RUN_FRAMES = 12
-RUN_STANCE = 2.2
-RUN_LIFT = 0.85
-RUN_FORE_LIFT = 0.65   # the fore hooves rise less: seen from the front a high fore hoof hangs below the chest and swells the outline
-RUN_DUTY = 0.36
+RUN_STANCE = 3.1       # long enough that four poses hold the feet at the run of HUNTING.md section 2 (95 ms a tile)
+RUN_LIFT = 0.35        # how high a swinging hind hoof rises: higher, a hind leg folded under the belly shows only its hoof, a stray lump
+RUN_FORE_LIFT = 0.9    # the fore hooves rise less: seen from the front a high fore hoof hangs below the chest and swells the outline
+RUN_DUTY = 0.3
 RUN_BOB = 0.12
 RUN_PITCH = 0.12       # the hips and the withers rise and fall against each other
 RUN_FLEX = 0.06        # the back gathers and stretches
-RUN_FLICK = 50
-RUN_CROUCH = 0.22      # the body carried lower and flatter than standing, so each leg reaches its whole stance
+RUN_FLICK = 20         # degrees a fore hoof folds at the top of its swing: folded further, it points back under the chest as a stub
+RUN_LIFT_SHAPE = 0.6   # the swing's height as sin ** this: under 1 the hoof clears the ground at once, so the frames
+                       # beside a plant (slower than the stance, where the swing eases in and out) are not read as planted
+RUN_HIND_FLICK = 25    # a hind hoof folds less: folded far behind the rump it reads as a leg bent the wrong way
+RUN_CROUCH = 0.4       # the body carried lower and flatter than standing, so each leg reaches its whole stance
 RUN_BACK = {"IK-Backleg_L": 0.0, "IK-Backleg_R": 0.0, "IK-Frontleg_L": -0.1, "IK-Frontleg_R": -0.1}   # as STANCE_BACK: a galloping fore leg reaches forward
 # the touchdown of each foot as a share of the cycle
-RUN_DOWN = {"IK-Backleg_L": 0.0, "IK-Backleg_R": 0.1, "IK-Frontleg_L": 0.38, "IK-Frontleg_R": 0.48}
+RUN_DOWN = {"IK-Backleg_L": 0.0, "IK-Backleg_R": 0.25, "IK-Frontleg_L": 0.5, "IK-Frontleg_R": 0.75}
+# where the cycle starts: one frame after the hind left lands, so the four even poses (frames 0, 3, 6, 9) do not
+# fall on a touchdown, where a hoof is still easing onto the ground and reads as sliding
+RUN_PHASE = 1 / RUN_FRAMES
+# the swing's speed where it leaves and meets the ground, at most this many stances per unit of swing: a short duty
+# asks for a fast swing, and a Hermite curve that leaves at that speed overshoots far behind the rump; the hind hoof
+# is held closer still (a hind leg flung far back reads as bent the wrong way)
+SWING_TANGENT_MAX = 1.0
+RUN_HIND_TANGENT_MAX = 0.7
+# the ears: in every action each ear leans out from the head by EAR_SPREAD degrees from upright and a little back,
+# and turns its inner face to the camera of the down view, so seen from the front the two stand out past the neck
+# (the doe's ears face out and down at rest and show only their edge from above); in Alert they stand straighter
+# and lean forward, toward what the deer looks at
+EAR_SPREAD = 62
+EAR_BACK = 10
+ALERT_EAR_SPREAD = 60
+ALERT_EAR_BACK = -5
+DOWN_CAMERA = (0.0, -math.cos(math.radians(50)), math.sin(math.radians(50)))   # from the deer toward the down view's camera
+# Alert: the head carried higher and a little forward, and a slow look to each side (degrees of turn)
+ALERT_RAISE = (0.0, -0.05, 0.8)
+ALERT_LOOK = 35
+ALERT_FRAMES = 96
 # the four feet: (IK target, hoof bone, the phase at the middle of its swing); poses fall at 0, 1/4, 1/2, 3/4, so
 # each pose shows one hoof at the top of its swing, in the order of a walk: hind left, fore left, hind right, fore right
 FEET = [("IK-Backleg_L", "Backleg_L.002", 0.0), ("IK-Frontleg_L", "Frontleg_L.002", 0.25),
@@ -162,15 +195,15 @@ def textured(name, image_name):
     nt.links.new(uvn.outputs["UV"], tex.inputs["Vector"])
     col = tex.outputs["Color"]
     if LOOK == "hart":
-        # a silver white, written into the map itself (glTF carries the image, not a node chain): most of the
-        # colour taken out, the value lifted, then mixed toward a cool white
+        # an even silver white, written into the map itself (glTF carries the image, not a node chain): the colour
+        # taken out and the coat's light and dark pressed into a narrow band near white, so the snap draws it in the
+        # lightest steps instead of a mottle of the middle ones; a neutral white, not a cool one
         px = np.empty(img.size[0] * img.size[1] * 4, dtype=np.float32)
         img.pixels.foreach_get(px)
         px = px.reshape(-1, 4)
         lum = px[:, :3] @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
-        rgb = lum[:, None] + (px[:, :3] - lum[:, None]) * 0.18
-        rgb = np.clip(rgb * 1.9, 0, 1)
-        rgb = rgb * 0.55 + np.array([0.86, 0.87, 0.9], dtype=np.float32) * 0.45
+        val = np.clip(HART_COAT[0] + lum * HART_COAT[1], 0, 1)
+        rgb = val[:, None] * np.array([1.0, 0.995, 0.98], dtype=np.float32)
         px[:, :3] = rgb
         pale = bpy.data.images.new(img.name + "-hart", img.size[0], img.size[1], alpha=False)
         pale.pixels.foreach_set(px.reshape(-1))
@@ -210,6 +243,75 @@ def world_verts():
     co = (co.reshape(-1, 3) @ np.array(ev.matrix_world)[:3, :3].T) + np.array(ev.matrix_world)[:3, 3]
     ev.to_mesh_clear()
     return co
+
+
+# the nose: the faces at the tip of the muzzle take the eye's dark material, so the face seen from the front reads as
+# a face with a nose at its bottom, not as a pale patch (a roe deer's white rump looks just like one)
+NOSE_DEPTH = 0.22      # file units back from the tip of the muzzle
+MW = np.array(mesh.matrix_world)
+rest_co = np.empty(len(mesh.data.vertices) * 3)
+mesh.data.vertices.foreach_get("co", rest_co)
+rest_co = rest_co.reshape(-1, 3) @ MW[:3, :3].T + MW[:3, 3]
+head_slot = next(i for i, m in enumerate(mesh.data.materials) if m is new_mats["head"])
+eye_slot = next(i for i, m in enumerate(mesh.data.materials) if m is eye)
+head_faces = [pl for pl in mesh.data.polygons if pl.material_index == head_slot]
+tip_y = min(float(rest_co[v, 1]) for pl in head_faces for v in pl.vertices)
+nose = [pl for pl in head_faces if max(float(rest_co[v, 1]) for v in pl.vertices) < tip_y + NOSE_DEPTH]
+for pl in nose:
+    pl.material_index = eye_slot
+diag("nose:", len(nose), "faces of the muzzle tip take the dark eye material")
+
+# how each ear lies at rest: its long axis (upward) and the normal of its flat inner face (outward), from the
+# vertices it carries
+EAR_FRAME = {}
+_groups = {g.name: g.index for g in mesh.vertex_groups}
+for _ear, _sx in (("Head_L.001", 1), ("Head_R.001", -1)):
+    _gi = _groups[_ear]
+    _pts = np.array([rest_co[v.index] for v in mesh.data.vertices if any(g.group == _gi and g.weight > 0.5 for g in v.groups)])
+    _u, _s, _vt = np.linalg.svd(_pts - _pts.mean(axis=0))
+    _a = Vector(_vt[0] if _vt[0][2] > 0 else -_vt[0]).normalized()
+    _n = Vector(_vt[2] if _vt[2][0] * _sx > 0 else -_vt[2])
+    _n = (_n - _a * _n.dot(_a)).normalized()
+    EAR_FRAME[_ear] = (_a, _n)
+    diag("ear", _ear, "rest axis", tuple(round(v, 3) for v in _a), "inner face", tuple(round(v, 3) for v in _n), "from", len(_pts), "vertices")
+
+if LOOK == "hart":
+    # a stag's head on the doe's body: the ears made smaller and the neck thicker, each vertex moved by its own weight
+    # to the bone (the bind pose, so every action carries the change)
+    EAR_SCALE = 0.8
+    NECK_SCALE = 1.3
+    groups = {g.name: g.index for g in mesh.vertex_groups}
+    for need in ("Head_L.001", "Head_R.001", "Backbone.002"):
+        if need not in groups:
+            raise SystemExit(f"no vertex group {need}: the hart's head cannot be reshaped")
+    AW = arm.matrix_world
+
+    def weight(v, name):
+        gi = groups[name]
+        return next((g.weight for g in v.groups if g.group == gi), 0.0)
+
+    ears = [(n, np.array(AW @ arm.data.bones[n].head_local)) for n in ("Head_L.001", "Head_R.001")]
+    n0 = np.array(AW @ arm.data.bones["Backbone.002"].head_local)
+    n1 = np.array(AW @ arm.data.bones["Backbone.002"].tail_local)
+    axis = (n1 - n0) / np.linalg.norm(n1 - n0)
+    moved = rest_co.copy()
+    for v in mesh.data.vertices:
+        c = rest_co[v.index]
+        d = np.zeros(3)
+        for name, h in ears:
+            w = weight(v, name)
+            if w:
+                d += ((h + (c - h) * EAR_SCALE) - c) * w
+        w = weight(v, "Backbone.002")
+        if w:
+            along = float(np.clip(np.dot(c - n0, axis), 0.0, np.linalg.norm(n1 - n0)))
+            r = c - (n0 + axis * along)
+            d += r * (NECK_SCALE - 1.0) * w
+        moved[v.index] = c + d
+    local = (moved - MW[:3, 3]) @ np.linalg.inv(MW[:3, :3]).T
+    mesh.data.vertices.foreach_set("co", local.reshape(-1))
+    mesh.data.update()
+    diag("hart: ears scaled by", EAR_SCALE, "and the neck by", NECK_SCALE, "along their bone weights")
 
 
 co = world_verts()
@@ -366,10 +468,38 @@ def new_action(name):
     return act
 
 
-def write_action(name, poses):
-    """Key a list of poses (frame 0..n-1), every bone each frame."""
+def ear_turn(ear, sx, spread, back):
+    """The armature-space turn that takes an ear from its rest lie (EAR_FRAME) to leaning out by spread degrees and
+    back by back degrees, its inner face toward the down view's camera; sx is +1 for the left ear, -1 for the right."""
+    a0, n0 = EAR_FRAME[ear]
+    a1 = Vector((sx * math.sin(math.radians(spread)), math.sin(math.radians(back)), math.cos(math.radians(spread)))).normalized()
+    c = Vector(DOWN_CAMERA)
+    n1 = (c - a1 * c.dot(a1)).normalized()
+    A = Matrix((a0, n0, a0.cross(n0))).transposed()
+    B = Matrix((a1, n1, a1.cross(n1))).transposed()
+    return B @ A.transposed()
+
+
+def turn(q, bone, R):
+    """Turn a bone's basis by an armature-space rotation R about the bone (applied in its rest frame)."""
+    rest = arm.data.bones[bone].matrix_local.to_3x3()
+    return (rest.inverted() @ R @ rest).to_quaternion() @ q
+
+
+def carry_ears(pose, spread=None, back=None):
+    """The ears set to their carriage: EAR_SPREAD and EAR_BACK unless given."""
+    for ear, sx in (("Head_L.001", 1), ("Head_R.001", -1)):
+        eq, el, es = pose[ear]
+        pose[ear] = (turn(eq, ear, ear_turn(ear, sx, EAR_SPREAD if spread is None else spread, EAR_BACK if back is None else back)), el, es)
+
+
+def write_action(name, poses, ears=True):
+    """Key a list of poses (frame 0..n-1), every bone each frame, the ears carried spread unless ears is False."""
     act = new_action(name)
     for i, pose in enumerate(poses):
+        pose = dict(pose)
+        if ears:
+            carry_ears(pose)
         for b, (q, loc, sc) in pose.items():
             pb = arm.pose.bones[b]
             pb.rotation_quaternion = q
@@ -429,10 +559,11 @@ actions.append(write_action("Idle", resample(src["Idle.000"])))
 stand = pose_at(src["Stand"], 0)
 
 
-def swing_y(s, stance, duty):
+def swing_y(s, stance, duty, tangent_max=SWING_TANGENT_MAX):
     """A swinging hoof from behind (+stance/2) to in front (-stance/2): a cubic Hermite that leaves and meets the
-    ground at the stance's own speed, so the hoof neither stops nor jumps where it lifts and lands."""
-    m = stance * (1 - duty) / duty
+    ground at the stance's own speed (up to tangent_max stances per unit of swing), so the hoof neither stops nor
+    jumps where it lifts and lands."""
+    m = min(stance * (1 - duty) / duty, tangent_max * stance)
     h00, h10, h01, h11 = 2 * s ** 3 - 3 * s ** 2 + 1, s ** 3 - 2 * s ** 2 + s, -2 * s ** 3 + 3 * s ** 2, s ** 3 - s ** 2
     return h00 * stance / 2 + h10 * m + h01 * (-stance / 2) + h11 * m
 
@@ -462,9 +593,9 @@ for i in range(WALK_FRAMES + 1):
     bob = -WALK_BOB * math.cos(4 * math.pi * t)
     for b in ("IK-Hip", "IK-Backbone"):
         q, loc, sc = p[b]
-        p[b] = (q, loc + local_delta(b, (0, 0, bob)), sc)
+        p[b] = (q, loc + local_delta(b, (0, 0, bob - WALK_CROUCH)), sc)
     q, loc, sc = p["IK-Head"]
-    p["IK-Head"] = (q, loc + local_delta("IK-Head", (0, -0.5 * WALK_NOD * math.sin(4 * math.pi * t), bob + WALK_NOD * math.sin(4 * math.pi * t + 0.6))), sc)
+    p["IK-Head"] = (q, loc + local_delta("IK-Head", (0, -0.5 * WALK_NOD * math.sin(4 * math.pi * t), bob - WALK_CROUCH + WALK_NOD * math.sin(4 * math.pi * t + 0.6))), sc)
     orient_hooves(p, flicks)
     walk.append(p)
 actions.append(write_action("Walk", walk))
@@ -476,7 +607,7 @@ for i in range(RUN_FRAMES + 1):
     p = {b: (v[0].copy(), v[1].copy(), v[2].copy()) for b, v in stand.items()}
     flicks = {}
     for ik, hoof, _ in FEET:
-        ph = (t - RUN_DOWN[ik]) % 1.0           # from the touchdown
+        ph = (t - RUN_DOWN[ik] - RUN_PHASE) % 1.0   # from the touchdown
         if ph < RUN_DUTY:                       # stance: in front to behind at one speed
             s = ph / RUN_DUTY
             y = RUN_STANCE * (s - 0.5)
@@ -484,17 +615,17 @@ for i in range(RUN_FRAMES + 1):
             flick = 0.0
         else:                                   # swing: behind to in front, lifted and folded
             s = (ph - RUN_DUTY) / (1 - RUN_DUTY)
-            y = swing_y(s, RUN_STANCE, RUN_DUTY)
-            z = RUN_LIFT * (RUN_FORE_LIFT if "Front" in ik else 1.0) * math.sin(math.pi * s)
-            flick = math.sin(math.pi * s) * math.radians(RUN_FLICK)
+            y = swing_y(s, RUN_STANCE, RUN_DUTY, SWING_TANGENT_MAX if "Front" in ik else RUN_HIND_TANGENT_MAX)
+            z = RUN_LIFT * (RUN_FORE_LIFT if "Front" in ik else 1.0) * math.sin(math.pi * s) ** RUN_LIFT_SHAPE
+            flick = math.sin(math.pi * s) * math.radians(RUN_FLICK if "Front" in ik else RUN_HIND_FLICK)
         q, loc, sc = p[ik]
         p[ik] = (q, loc + local_delta(ik, (0, y + RUN_BACK[ik], z)), sc)
         flicks[hoof] = flick
     # the body is lowest in the middle of the fore feet's stance (0.6) and highest in the moment of suspension; the
     # withers dip while the fore feet carry it and the hips while the hind feet do, so a planted leg keeps the ground
-    bob = -RUN_BOB * math.cos(2 * math.pi * (t - 0.6))
-    pitch = RUN_PITCH * math.sin(2 * math.pi * (t - 0.35))
-    flex = RUN_FLEX * math.cos(2 * math.pi * (t - 0.35))
+    bob = -RUN_BOB * math.cos(2 * math.pi * (t - 0.6 - RUN_PHASE))
+    pitch = RUN_PITCH * math.sin(2 * math.pi * (t - 0.35 - RUN_PHASE))
+    flex = RUN_FLEX * math.cos(2 * math.pi * (t - 0.35 - RUN_PHASE))
     for b, sp, sf in (("IK-Hip", 1, 1), ("IK-Backbone", -1, -1)):
         q, loc, sc = p[b]
         p[b] = (q, loc + local_delta(b, (0, sf * flex, bob + sp * pitch - RUN_CROUCH)), sc)
@@ -506,16 +637,22 @@ for i in range(RUN_FRAMES + 1):
     run.append(p)
 actions.append(write_action("Run", run))
 
-# Alert: the file's LookAround with the head carried high and back, the ears turned up
-ALERT_RAISE = (0.0, 0.5, 0.85)
-alert = resample(src["LookAround.000"], frames=96)
-for p in alert:
+# Alert: from the standing pose, the head carried high and a little forward, the ears up; a slow look that turns the
+# head about the base of the neck, ahead, to the deer's left, ahead, to its right, so the loop closes on itself
+neck_base = arm.data.bones["Backbone.002"].head_local
+head_rest = arm.data.bones["IK-Head"].head_local
+alert = []
+for i in range(ALERT_FRAMES + 1):
+    t = i / ALERT_FRAMES
+    a = math.radians(ALERT_LOOK) * math.sin(2 * math.pi * t)
+    p = {b: (v[0].copy(), v[1].copy(), v[2].copy()) for b, v in stand.items()}
+    raised = head_rest + Vector(ALERT_RAISE)
+    turned = neck_base + Matrix.Rotation(a, 3, "Z") @ (raised - neck_base)
     q, loc, sc = p["IK-Head"]
-    p["IK-Head"] = (q, loc + local_delta("IK-Head", ALERT_RAISE), sc)
-    for ear, sx in (("Head_L.001", 1), ("Head_R.001", -1)):
-        eq, el, es = p[ear]
-        p[ear] = (spin(eq, ear, (1, 0, 0), math.radians(-18)), el, es)
-actions.append(write_action("Alert", alert))
+    p["IK-Head"] = (spin(q, "IK-Head", (0, 0, 1), a), loc + local_delta("IK-Head", turned - head_rest), sc)
+    carry_ears(p, ALERT_EAR_SPREAD, ALERT_EAR_BACK)
+    alert.append(p)
+actions.append(write_action("Alert", alert, ears=False))
 
 # Graze: the file's Eat at its lowest head, with a small chew and an ear flick
 eat = src["Eat.001"]
@@ -541,7 +678,7 @@ for i in range(GRAZE_FRAMES + 1):
     graze.append(p)
 actions.append(write_action("Graze", graze))
 
-# Lie: the last pose of the first Die, held still
+# Lie: the last pose of a Die (--lie-from, the second by default), held still
 die = src[LIE_FROM]
 lie_pose = pose_at(die, die.frame_range[1])
 # the legs drawn in, knees bent, as a deer lies at rest: each hoof target moved part of the way to its leg's root
@@ -608,7 +745,7 @@ for act in actions:
          round(float(np.mean(sp)) * (act.frame_range[1] - act.frame_range[0]) / FPS, 3) if sp else None, "m")
 
 
-# ------------------------------------------------------------------ bake the object transforms into the data (as hare_pass.py)
+# ------------------------------------------------------------------ bake the object transforms into the data
 def bake_object_transforms(arm_, mesh_):
     if bpy.context.mode != "OBJECT":
         bpy.ops.object.mode_set(mode="OBJECT")
