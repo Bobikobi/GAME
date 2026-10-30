@@ -29,7 +29,7 @@ describe('spriteSizeProblem', () => {
     for (const [name, w, h] of [
       ['tiles/grass', 64, 64],
       ['items/axe', 64, 64],
-      ['chars/pell', 64, 96],
+      ['chars/pell', 128, 128],
       ['chars/pell_work_down', 128, 128],
       ['props/oak', 128, 192],
       ['props/six_tiles', 384, 384],
@@ -50,7 +50,7 @@ describe('spriteSizeProblem', () => {
     const problem = spriteSizeProblem('tiles/grass', { w: 32, h: 32, density: 4 });
     expect(problem).toContain('tiles are 64x64 at density 4');
     expect(problem).not.toContain('set "density"');
-    expect(spriteSizeProblem('chars/pell', { w: 16, h: 16 })).toContain('character frames are 16x24 at density 1 (64x96 at density 4)');
+    expect(spriteSizeProblem('chars/pell', { w: 16, h: 16 })).toContain('character frames are 16x24 at density 1 (128x128 at density 4)');
   });
 });
 
