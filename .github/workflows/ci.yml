@@ -174,12 +174,15 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # what the scripts serve: the bundle, game/dist and the optional 3D door in game/dist-3d
+      # what the scripts serve: the bundle and game/dist
       - name: Build the game
         run: |
           pnpm bundle
           pnpm --filter game build
-          pnpm exec tsx tools/src/site/build-3d.ts
+      # the optional 3D door, game/dist-3d: only the groups whose scripts serve it (build3d in game/e2e/run.ts)
+      - name: Build the 3D door
+        if: matrix.build3d
+        run: pnpm exec tsx tools/src/site/build-3d.ts
       - name: Play ${{ matrix.group }}
         run: pnpm e2e:group "${{ matrix.group }}" e2e-shots --retry
       - name: Keep the screenshots of a failed first attempt
