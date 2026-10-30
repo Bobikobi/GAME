@@ -34,7 +34,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; source?: { spec: string; manifest: string } }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -174,6 +174,13 @@ export function flattenParams(p: ParamsBody): Params {
       noise_walk: p.gait.noise_walk.value,
       noise_run: p.gait.noise_run.value,
     },
+    hunt: {
+      dress_step_ms: p.hunt.dress_step_ms.value,
+      meat_spoil_d: p.hunt.meat_spoil_d.value,
+      hide_spoil_d: p.hunt.hide_spoil_d.value,
+      grade2_bp: p.hunt.grade2_bp.value,
+      grade3_bp: p.hunt.grade3_bp.value,
+    },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
       might: p.per_point.might.value,
@@ -199,6 +206,7 @@ export function flattenParams(p: ParamsBody): Params {
     light: p.light
       ? {
           keys: p.light.keys.map((k) => ({ at: k.at, tint: k.tint, pct: k.pct })),
+          ...(p.light.read ? { read: { floor: p.light.read.floor, fog: p.light.read.fog } } : {}),
           ...(p.light.sun
             ? {
                 sun: {
@@ -318,6 +326,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               frames: s.frames ?? 1,
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
+              ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -338,7 +347,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const sprites: Record<string, SpriteInfo> = {};
   for (const [kitId, kit] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
-      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density };
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density, ...(s.stride ? { stride: s.stride } : {}) };
     }
   }
 
@@ -367,7 +376,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const content = { params, items, classes, ...r, map, sprites, verbs, stations, credits };
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
-  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes, reactions: r.reactions });
+  // the map goes in for the hunted kinds, the fifth source (docs/design/HUNTING.md section 9)
+  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes, reactions: r.reactions, map });
   const bundle: Bundle = { format: 1, tag, ...content, instances, values, made, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
@@ -410,7 +420,13 @@ function expandTemplates(
       if (!('class' in input)) return [input.item];
       const fit = ids.filter((id) => {
         const it = items[id]!;
-        return classFits(classes, it.class, input.class) && (input.family === undefined || it.family === input.family) && (it.tier ?? 1) >= input.min_tier;
+        return (
+          classFits(classes, it.class, input.class) &&
+          (input.family === undefined || it.family === input.family) &&
+          (it.tier ?? 1) >= input.min_tier &&
+          // a grade asked for takes that grade or finer (HUNTING section 5); a plain good is grade 1
+          (it.grade?.step ?? 1) >= (input.min_grade ?? 1)
+        );
       });
       if (fit.length === 0) {
         const family = input.family === undefined ? '' : ` and family "${input.family}"`;

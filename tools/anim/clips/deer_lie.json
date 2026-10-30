@@ -1,0 +1,29 @@
+{
+  "about": "The roe deer lying still on its side: one held pose of the body's own Lie, no fall played and no twitch. A take is the client's fade of this pose and a drop of goods (HUNTING.md section 10: no blood, no suffering).",
+  "target": "deer",
+  "base": {
+    "library": "self:deer",
+    "action": "Lie"
+  },
+  "frames": [
+    0
+  ],
+  "ms": [
+    1000
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

@@ -1,7 +1,9 @@
 /** The pieces every module reaches for, wired together once in main.ts. */
 import type { Bundle, Grade } from '@game/kernel';
+import type * as Phaser from 'phaser';
 import type { Heard, SoundApi } from './audio';
 import type { Controls } from './input';
+import type { Perf } from './perf';
 import { RemoteSession, WireRefusal, fetchWire } from './remote';
 import type { SignInfo } from './scenes/world';
 import type { GameSession } from './session-surface';
@@ -35,6 +37,10 @@ export interface App {
   controls: Controls;
   ui: UI;
   sound?: SoundApi;
+  /** the settings in force and the device they resolve on (perf.ts), for the Settings window */
+  perf?: Perf;
+  /** the running Phaser game, for the frame cap */
+  game?: Pick<Phaser.Game, 'loop'>;
   world?: WorldView;
   session?: GameSession;
 }

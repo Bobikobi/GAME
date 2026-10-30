@@ -247,6 +247,19 @@ export const ItemDef = Type.Object(
       Type.Object({ unlocks: Id }, { additionalProperties: false, description: 'A found scrap that teaches a recipe.' }),
     ),
     wear: Type.Optional(Wear),
+    grade: Type.Optional(
+      Type.Object(
+        {
+          of: Id,
+          step: Int(2, 3, '2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).'),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item\'s class, kind, tier and value, and a recipe asks for it with "min_grade".',
+        },
+      ),
+    ),
     premium_later: Type.Optional(
       Type.Boolean({
         description:
@@ -449,6 +462,7 @@ export const ClassInput = Type.Object(
     class: ItemClass,
     family: Type.Optional(Word('Only items of this family.')),
     min_tier: Int(1, 20, 'The lowest tier that fits.'),
+    min_grade: Type.Optional(Int(2, 3, 'Only a good of this grade or finer (HUNTING section 5). Left out, any grade fits.')),
     qty: Int(1, 999),
   },
   {
@@ -1247,8 +1261,17 @@ export const LightParams = Type.Object(
       minItems: 2,
       maxItems: 12,
       description:
-        'The hours the valley is washed in a colour (ART_SYSTEM section 2). Today\'s curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.',
+        'The hours the valley is washed in a colour (ART_SYSTEM section 2, LIGHTING.md section 5): one shade that the scene multiplies in, the dusk and the night alike. Its strength steps evenly between keys, in whole percent; its colour is the next key\'s, so every minute is a palette colour. The owner\'s pick of 30.10: 16:30 #eda83a 12%, 17:30 28%, 19:00 #e2533f 40%, the night #172a52 at STYLE 5\'s 92%.',
     }),
+    read: Type.Optional(
+      Type.Object(
+        {
+          floor: Int(0, 100, 'The night kept readable (the owner, 30.10): inside a light\'s pool and in the ring of three tiles around the player, the meadow\'s middle green keeps at least this luma, in whole percent.'),
+          fog: Int(0, 100, 'The most a fog bank may cover at full night, in whole percent, so fog cannot stack on the night\'s shade past the floor.'),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     sun: Type.Optional(
       Type.Object(
         {
@@ -1315,7 +1338,7 @@ const BalanceParams = Type.Object(
     band_size: { ...Bounded, description: 'Levels in one band (PROGRESSION 3.3).' },
     catalogue_hours_min: { ...Bounded, description: 'The fewest active hours that master every school of the catalogue (PROGRESSION 3.2: 800).' },
     mentor_bonus_pct: { ...Bounded, description: 'The one experience source beside the work itself: the mentor\'s bonus, in percent (PROGRESSION 3.7, red line B).' },
-    group_share_max_permille: { ...Bounded, description: 'The most a group member earns from another\'s work, in permille of the member\'s own (PROGRESSION 3.7, Q7).' },
+    group_share_max_permille: { ...Bounded, description: 'The most a newcomer takes from the experience the other members already earned, in permille of the newcomer\'s own: a split, never new experience (PROGRESSION 3.7, Q7).' },
     loop_profit_max_mg: { ...Bounded, description: 'The most gold any buy, craft and sell cycle at a vendor may make, in milligold (red line A: 0).' },
     ceilings: Type.Object(
       {
@@ -1323,7 +1346,7 @@ const BalanceParams = Type.Object(
         move: Band5(0, 100, 'Time off a step, a crossing or an oar stroke, in percent.'),
         carry: Band5(0, 100, 'The weight limit above might\'s and the bag\'s, in percent.'),
         health: Band5(0, 200, 'The health cap above the attributes\' cap, in percent.'),
-        sustain: Band5(0, 100, 'Health back a game hour while a place drains, regen and food together, in percent of the cap.'),
+        sustain: Band5(0, 100, 'Health back a game hour while a place drains, regen and food together, in points of the base cap of 100 (the drain\'s unit).'),
         find: Band5(0, 100, 'Rare-find points.'),
         sense: Band5(0, 20, 'Tiles of sight in the dark or of a trail.'),
         place: Band5(0, 4, 'Answer steps on one condition: garment, master step and dish together.'),
@@ -1363,7 +1386,7 @@ const BalanceParams = Type.Object(
     grade_drain_pct: Type.Array(Type.Integer({ minimum: 0, maximum: 100 }), {
       minItems: 5,
       maxItems: 5,
-      description: 'The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).',
+      description: 'The drain of a remaining grade 0 to 4, in points of the base cap of 100 a game hour, the same for every cap (BODY_CLOCKS 5.2).',
     }),
   },
   { additionalProperties: false, description: 'The balance model (PROGRESSION 4.7): two red lines, rising ceilings, walls proven both ways. Read by tools only, until the kernel reads it.' },
@@ -1528,6 +1551,20 @@ export const ParamsBody = Type.Object(
           'The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.',
       },
     ),
+    hunt: Type.Object(
+      {
+        dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
+        meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
+        hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },
+        grade2_bp: { ...Bounded, description: 'Basis points of animals that appear fine (grade 2).' },
+        grade3_bp: { ...Bounded, description: 'Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain.' },
+      },
+      {
+        additionalProperties: false,
+        description:
+          'Dressing a taken animal (docs/design/HUNTING.md sections 5-6): the time a step takes, how long a carcass keeps, and how often an animal is finer than plain. Nothing here prices a hunt: the hunt verb takes the effort weight of its tier like every verb (R6).',
+      },
+    ),
     starting_gold_mg: Bounded,
     per_point: Type.Object(
       { might: Bounded, senses: Bounded, agility_pct: Bounded, luck_permille: Bounded, stamina: Bounded, spirit: Bounded },
@@ -1634,6 +1671,25 @@ export const KitBody = Type.Object(
                 'Art pixels per tile side: 1 means 16 per tile (the 16x16 grid, the default), 4 means 64 per tile (the 64x64 grid, the standard for new art). The size rules of w and h follow it.',
             }),
           ),
+          stride: Type.Optional(
+            Type.Object(
+              {
+                travel_mpx: Int(1000, 128000, 'Thousandths of an art pixel (64 per tile) the body walks for one pose of the cycle: the pose shown is the nearest to art pixels walked / (travel_mpx / 1000), so a planted foot is where the ground is.'),
+                anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
+                bob: Type.Optional(
+                  Type.Boolean({
+                    description:
+                      'false when the sheet carries its own head travel and the feel layer\'s code bob is dropped for it (DECISIONS 2026-10-29: the bob is dropped for a clip that carries its own); left out, the bob plays on top of the poses.',
+                  }),
+                ),
+              },
+              {
+                additionalProperties: false,
+                description:
+                  'A walk cycle that follows the distance walked (tools/anim). Its frames are the poses of the cycle in order and, last, the standing pose; `frames` is the poses plus one. Left out for a sheet whose frames are time-based.',
+              },
+            ),
+          ),
           scale: Type.Optional(
             Type.Number({
               minimum: 0.1,
@@ -1682,8 +1738,58 @@ const Slot = Type.Object(
 
 export const CREATURE_LOOKS = ['bird', 'fish', 'rabbit', 'deer'] as const;
 export const CREATURE_PERCHES = ['ground', 'tree', 'water'] as const;
+/** How much of an animal there is to dress (docs/design/HUNTING.md section 6): 6, 12 or 24 steps, in parts of six, one action a part. */
+export const CREATURE_SIZES = ['small', 'medium', 'large'] as const;
+/** The ways an animal is taken, the client's hunting styles. The kernel reads none of them yet (G35). */
+export const HUNT_WAYS = ['stalk', 'snare', 'lure', 'fish', 'fight'] as const;
+/** The five goods of the hunt (HUNTING section 6), one class each, declared once in content/core/items/goods.json as `core/<good>`. */
+export const GOODS = ['meat', 'hide', 'bone', 'sinew', 'feather'] as const;
 
-/** One kind of ambient creature: how it looks, where it sits, how close the player may come, when it is out. */
+/**
+ * What a creature gives when it is dressed, and how it is taken (HUNTING sections 5-9). Optional on a kind: without it
+ * the kind is ambient only. Nothing here spawns an animal or lets a player strike one; that waits for the combat rules
+ * (G35). The fields say what a carcass of this kind yields, how long a fair hunt and the dressing take (the time the
+ * value table prices), and the spawn cap the balance check holds.
+ */
+const Hunt = Type.Object(
+  {
+    size: Type.Union(CREATURE_SIZES.map((k) => Type.Literal(k)), { description: 'Small dresses in 6 steps, medium in 12, large in 24: parts of six, one action a part, the goods with the last.' }),
+    tier: Int(1, 20, 'How far up the ladder it is. Every good it drops sits at this tier or below.'),
+    danger: Type.Union([Type.Literal(0), Type.Literal(1), Type.Literal(2)], {
+      description: 'What it does when the player comes close (HUNTING section 8): 0 flees, 1 stands and defends, 2 hunts the player. A danger 2 kind is medium or large.',
+    }),
+    take_s: Int(5, 600, 'Real seconds a fair hunt of it takes, from first sight to the carcass: the active time the value table prices, before the dressing.'),
+    drops: Type.Array(
+      Type.Object(
+        {
+          item: Id,
+          qty: Int(1, 20, 'Units a carcass gives. A finer animal gives the same count of the finer grade.'),
+          share_pct: Int(1, 100, 'Part of the hunt its value carries. Shares of one kind sum to 100.'),
+        },
+        { additionalProperties: false },
+      ),
+      { minItems: 1, maxItems: 5, description: 'What dressing it gives: plain goods of the five goods classes, each class once.' },
+    ),
+    ways: Type.Optional(
+      Type.Array(Type.Union(HUNT_WAYS.map((k) => Type.Literal(k))), {
+        minItems: 1,
+        maxItems: 3,
+        uniqueItems: true,
+        description: 'How it can be taken, for the client to show. Absent: the client decides.',
+      }),
+    ),
+    spawn: Type.Object(
+      {
+        cap_per_1000: Int(1, 20, 'The most of this kind alive per 1000 tiles of its habitat (HUNTING section 8: at most 12 at danger 0, 8 at 1, 5 at 2). The kind\'s danger stands for its region\'s band until a spot carries a region.'),
+        refill_d: Int(1, 30, 'Game days before a taken animal is replaced at its spot: the respawn the value table counts.'),
+      },
+      { additionalProperties: false },
+    ),
+  },
+  { additionalProperties: false },
+);
+
+/** One kind of creature: how it looks, where it sits, how close the player may come, when it is out; with `hunt`, what it gives when taken. */
 const CreatureKind = Type.Object(
   {
     look: Type.Union(CREATURE_LOOKS.map((k) => Type.Literal(k)), {
@@ -1698,6 +1804,10 @@ const CreatureKind = Type.Object(
       Type.Tuple([Int(0, 23), Int(1, 24)], {
         description: 'The game hours it is out, from (inclusive) to (exclusive). Absent: all day, never at night.',
       }),
+    ),
+    hunt: Type.Optional(Hunt),
+    protected: Type.Optional(
+      Type.Boolean({ description: 'A pet, a young animal or a person (HUNTING section 10): seen, never taken, never dressed. A protected kind carries no "hunt".' }),
     ),
   },
   { additionalProperties: false },
@@ -1886,7 +1996,7 @@ export const MapBody = Type.Object(
         },
         {
           additionalProperties: false,
-          description: 'Cosmetic ambient life (the client draws it behind ?rich= motion; the kernel never sees it): kinds, and the spots where each sits until the player comes close.',
+          description: 'Ambient life the client draws behind ?rich= motion: kinds, and the spots where each sits until the player comes close. A kind with "hunt" is the kernel\'s too: it dresses its carcasses and the value table prices its goods, with its spots as the source\'s capacity (HUNTING sections 5-9).',
         },
       ),
     ),
@@ -2157,6 +2267,8 @@ export type Kit = Static<typeof KitBody>;
 export type Ramp = Static<typeof RampBody>;
 export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
+export type CreatureKindDef = Static<typeof CreatureKind>;
+export type HuntDef = Static<typeof Hunt>;
 export type ChunkFile = Static<typeof ChunkFile>;
 export type Chunk = Static<typeof ChunkBody>;
 export type Stamp = Static<typeof Stamp>;

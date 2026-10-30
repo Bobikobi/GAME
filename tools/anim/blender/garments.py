@@ -9,7 +9,7 @@ plays on), by moving and scaling the bones, never by fitting a garment to the hu
   make_garment / make_pouch        a cloak, robe or pouch made of own geometry (a loft of ellipse rings), skinned to the same
                                    rig by height and by thigh, one flat material each
 
-The elf of the 27.10 pick (a tall, thin build with a pastel sky-blue hooded cloak open at the front) is these four calls with
+The elf of the 27.10 pick (a tall, thin build with a pastel hooded cloak open at the front, sky blue at the pick and green since 30.10) is these four calls with
 the numbers in tools/anim/races/elf.json. Own work, no outside licence. Written for Blender 5.x headless; nothing here
 imports from the repository.
 """

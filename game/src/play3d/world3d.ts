@@ -591,8 +591,9 @@ export class World3D implements WorldView {
 
   private async loadHero(session: GameSession): Promise<void> {
     const p = session.state.player;
-    // a race wears today's model of the sheet its sprite names (human -> explorer, elf -> forager, skeleton -> digger) until its own art
-    const short = (this.b.races[p.race]?.sprite ?? '').split('/').pop()?.replace(/_down$/, '') ?? '';
+    // a race wears today's model until its own 3D art: the 2D sheets are named for the race, the models for the old starters
+    const stem = (this.b.races[p.race]?.sprite ?? '').split('/').pop()?.replace(/_down$/, '') ?? '';
+    const short = ({ human: 'explorer', elf: 'forager', skeleton: 'digger' } as Record<string, string>)[stem] ?? stem;
     const wanted = `character-${short}-${p.look === 1 ? 'f' : 'm'}`;
     const fallback = p.look === 1 ? 'character-female-a' : 'character-male-a';
     if (this.heroKey === wanted && this.hero) return;
