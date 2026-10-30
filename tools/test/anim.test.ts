@@ -66,7 +66,8 @@ describe('clip configs', () => {
     const natives = Object.entries(settings.targets).filter(([, t]) => t.map === 'native');
     expect(natives.length).toBeGreaterThan(0);
     for (const [id, t] of natives) {
-      const played = glbAnimations(join(REPO_ROOT, t.model));
+      expect(t.model, id).toBeDefined();
+      const played = glbAnimations(join(REPO_ROOT, t.model ?? ''));
       for (const [action, frames] of Object.entries(t.actions ?? {})) {
         expect(played.has(action), `${id} ${action}`).toBe(true);
         expect((played.get(action) ?? 0) * (t.fps ?? 24), `${id} ${action}`).toBeCloseTo(frames, 1);
