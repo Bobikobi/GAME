@@ -85,6 +85,13 @@ describe('cutting a wave', () => {
     expect(cut.skipped.get('drafted, and held by an open owner call (one round of stills only)')).toEqual(['sent_back_blocked']);
   });
 
+  test('--unheld leaves out the entries an owner call holds, even ones never drawn', () => {
+    const dir = fixture();
+    const cut = cutWave('props', readPool('props', dir), loadEvidence(dir), 12, new Set(), true);
+    expect(cut.candidates.map((c) => c.entry.name)).toEqual(['missing_b', 'square', 'late_one', 'sent_back']);
+    expect(cut.skipped.get('held by an open owner call (--unheld)')).toEqual(['missing_a', 'sent_back_blocked']);
+  });
+
   test('a wave is at most N, and entries already in the queue are not cut twice', () => {
     const dir = fixture();
     expect(names(dir, 2)).toEqual(['missing_a', 'missing_b']);
