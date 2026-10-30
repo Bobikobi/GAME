@@ -24,6 +24,7 @@ What players notice
 - You can run and sneak: hold the thumb on the stick (Shift on a keyboard) to run at twice the pace, or tap Sneak beside A and B to creep at half. The wolf hears you by your gait: a run is noticed at 8 tiles, a walk at 5 and a sneak at 3.
 - Every window wears a new frame: black lacquer with antique gold, a gold plaque for the name, and the Cinzel face for titles. Choices in a dialogue are a list.
 - The home page on a phone gets its pass: it opens on the key art as a portrait still with the navbar as a night band above it, the headline "Write the valley back", and Play free and Build a place stacked low where a thumb reaches. A phone still downloads no video.
+- Rocks, signs, trees, houses and people sit on their tiles: a cast shadow laid one row too low made them look lifted off the ground, and it now falls up-screen behind them.
 - The game picks its quality and its frame rate from the device (low, medium or high; 30, 60, 120 or the screen's own). There is no settings screen yet; `?stats=1` on the address shows the frame times.
 
 What creators notice
