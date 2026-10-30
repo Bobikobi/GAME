@@ -25,6 +25,11 @@
  *           reference's shape and a denoise of its own for characters. A kernel takes minutes to start, so `kit:gen` sends the whole wave in one run
  *           (`drawWaveWithKaggle`): push, poll, fetch the output.
  *
+ *   gemini-web  Gemini's image tool in the owner's logged-in invisible Chrome (`~/browser-agent/gemini_image.py`, CDP
+ *           127.0.0.1:9222), on the owner's subscription: no key, no billing. Reference images attach in the composer; the
+ *           full-size picture is downloaded from the result card. One Chrome, so one call at a time. The script path is
+ *           `GEMINI_WEB_SCRIPT`. Seconds to a minute per image (30.10 probe: 1408x768, a bush on magenta).
+ *
  * `--drawer <id>` picks the route, else `KIT_DRAWER`, else codex. A text route (a grid tile, a scatter
  * motif) stays with Codex: those are letters, not pictures. Adding a route is one `Drawer` here and
  * one line in `docs/art/DRAWERS.md`; the key is read from the environment and never written to a log.
@@ -36,7 +41,7 @@ import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const DRAWERS = ['codex', 'gemini', 'local', 'kaggle'] as const;
+export const DRAWERS = ['codex', 'gemini', 'local', 'kaggle', 'gemini-web'] as const;
 export type DrawerId = (typeof DRAWERS)[number];
 
 export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash-image';
@@ -174,6 +179,27 @@ export function drawWithGemini(call: DrawCall): Drawn {
   const saved = join(call.out, 'work', call.expect);
   writeFileSync(saved, answer.png);
   return done(0, log, existsSync(saved) ? saved : null, 'Gemini saved no image', answer.tokens);
+}
+
+/** One Gemini web call: the browser rig's script saves the full-size picture, reference images attached. */
+export function drawWithGeminiWeb(call: DrawCall): Drawn {
+  const env = call.env ?? process.env;
+  const script = env['GEMINI_WEB_SCRIPT'] ?? join(env['HOME'] ?? '', 'browser-agent', 'gemini_image.py');
+  const logPath = join(call.out, 'log', `${call.name}-${call.stamp}.txt`);
+  const saved = join(call.out, 'work', call.expect);
+  const since = Date.now();
+  const done = (exit: number | null, log: string, got: string | null, error: string): Drawn => {
+    writeFileSync(logPath, log);
+    return { version: 'gemini-web', exit, seconds: Math.round((Date.now() - since) / 1000), tokens: null, log: logPath.replace(`${call.out}/`, ''), saved: got, error };
+  };
+  if (!existsSync(script)) return done(null, `no script at ${script}`, null, `the Gemini web script is not at ${script} (GEMINI_WEB_SCRIPT)`);
+  const args = [call.prompt, '--out', saved, '--timeout', String(Math.max(60, call.timeoutSeconds)), ...call.images.flatMap((p) => ['--image', p])];
+  const run = spawnSync(script, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: (call.timeoutSeconds + 60) * 1000, maxBuffer: 16 * 1024 * 1024 });
+  const log = [`script ${script}`, run.stdout ?? '', run.stderr ?? ''].filter((l) => l !== '').join('\n');
+  if (run.error !== undefined) return done(run.status, log, null, `the Gemini web script did not run: ${run.error.message}`);
+  if (run.status !== 0) return done(run.status, log, null, `the Gemini web script exited ${run.status}: ${(run.stderr ?? '').trim().slice(-200)}`);
+  if (/saved a screenshot of the card/.test(run.stderr ?? '')) return done(run.status, log, null, 'the script fell back to a screenshot of the card, not the full image');
+  return done(0, log, existsSync(saved) ? saved : null, 'the Gemini web script saved no image');
 }
 
 /* ---------------------------------------------------------------- the local route */
