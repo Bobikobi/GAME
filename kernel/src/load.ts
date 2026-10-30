@@ -51,6 +51,26 @@ export function walkStepMs(bundle: Bundle, state: PublicState): number {
   return band === 'light' ? load.light_step_ms : band === 'heavy' ? load.heavy_step_ms : walk_step_ms;
 }
 
+/** The three gaits: a walk is the pace the load allows, a run takes less time a tile and a sneak more. */
+export const GAITS = ['walk', 'run', 'sneak'] as const;
+export type Gait = (typeof GAITS)[number];
+
+/**
+ * Milliseconds a tile at a gait: the pace the load allows (`walkStepMs`) divided by `gait.run_div` for a run, times
+ * `gait.sneak_mul` for a sneak. `pnpm check` holds every pace to a whole division, so the run is an exact integer.
+ */
+export function gaitStepMs(bundle: Bundle, state: PublicState, gait: Gait): number {
+  const ms = walkStepMs(bundle, state);
+  const { run_div, sneak_mul } = bundle.params.gait;
+  return gait === 'run' ? idiv(ms, run_div) : gait === 'sneak' ? ms * sneak_mul : ms;
+}
+
+/** Tiles within which a creature that listens turns its head at the player: the shared noise table, by gait or standing still. */
+export function noiseRadius(bundle: Bundle, gait: Gait | 'still'): number {
+  const g = bundle.params.gait;
+  return gait === 'still' ? g.noise_still : gait === 'sneak' ? g.noise_sneak : gait === 'run' ? g.noise_run : g.noise_walk;
+}
+
 /** The most the player carries: beyond `load.max_permille` of the limit nothing more is picked up. */
 export function loadMax(bundle: Bundle, state: PublicState): number {
   return mulDiv(loadLimit(bundle, state), bundle.params.load.max_permille, 1000);

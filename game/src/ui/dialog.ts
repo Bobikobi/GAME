@@ -30,7 +30,7 @@ export function say(ui: UI, speaker: string | null, pages: string[], options: Op
     const textEl = h('p', { class: opts.page ? 'dialog-text page' : 'dialog-text' });
     const arrow = h('span', { class: 'dialog-arrow', hidden: true }, '▼');
     const optionsEl = h('div', { class: 'dialog-options', hidden: true });
-    const box = h('div', { class: 'dialog', role: 'dialog' }, nameEl, textEl, arrow, optionsEl);
+    const box = h('div', { class: 'dialog ui-window', role: 'dialog' }, nameEl, textEl, arrow, optionsEl);
     const el = h('div', { class: 'layer dialog-layer' }, box);
     let index = 0;
     let shown = 0;

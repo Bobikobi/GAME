@@ -330,6 +330,44 @@
         "step": 50
       }
     },
+    "gait": {
+      "run_div": {
+        "value": 2,
+        "min": 1,
+        "max": 2,
+        "step": 1
+      },
+      "sneak_mul": {
+        "value": 2,
+        "min": 1,
+        "max": 3,
+        "step": 1
+      },
+      "noise_still": {
+        "value": 2,
+        "min": 0,
+        "max": 4,
+        "step": 1
+      },
+      "noise_sneak": {
+        "value": 3,
+        "min": 1,
+        "max": 6,
+        "step": 1
+      },
+      "noise_walk": {
+        "value": 5,
+        "min": 2,
+        "max": 9,
+        "step": 1
+      },
+      "noise_run": {
+        "value": 8,
+        "min": 4,
+        "max": 12,
+        "step": 1
+      }
+    },
     "starting_gold_mg": {
       "value": 0,
       "min": 0,
@@ -678,7 +716,7 @@
         "step": 1
       },
       "top_over_median_max_permille": {
-        "value": 1600,
+        "value": 2000,
         "min": 1000,
         "max": 5000,
         "step": 100
@@ -706,7 +744,7 @@
         ],
         [
           750,
-          1000
+          900
         ],
         [
           1000,
@@ -747,7 +785,7 @@
       ],
       "grade_drain_pct": [
         0,
-        20,
+        10,
         35,
         60,
         100

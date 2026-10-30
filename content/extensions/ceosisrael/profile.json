@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schema/json/creator.schema.json",
+  "format": 1,
+  "type": "creator",
+  "id": "ceosisrael/profile",
+  "title": "CEO's",
+  "creator": "ceosisrael",
+  "profile": {
+    "name": "CEO's",
+    "role": "World builder",
+    "signature": { "text": "CEO's", "style": "carved", "glyph": "leaf" }
+  }
+}

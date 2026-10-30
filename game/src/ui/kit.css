@@ -13,43 +13,6 @@
   max-width: 560px;
   height: 100%;
   overflow: hidden;
-  background: var(--kit-wood);
-  border: 3px solid var(--kit-edge);
-  box-shadow:
-    inset 0 0 0 3px var(--kit-wood-dark),
-    inset 0 0 0 5px var(--kit-wood-light);
-}
-
-.panel.bag header {
-  padding: 10px 10px 8px;
-  background: transparent;
-  border-bottom: 0;
-}
-
-.panel.bag header h2 {
-  padding: 4px 12px;
-  background: var(--kit-plate);
-  color: var(--kit-brass);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
-  font: 400 var(--kit-text-l) / 1 var(--font);
-  letter-spacing: 0.02em;
-}
-
-.panel.bag header .btn.close {
-  min-height: 40px;
-  padding: 4px 14px;
-  background: var(--kit-plate);
-  color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
-  font: 400 var(--kit-text) / 1 var(--font);
-}
-
-.panel.bag header .btn.close:hover,
-.panel.bag header .btn.close:focus-visible {
-  background: var(--kit-brass);
-  color: var(--kit-ink);
 }
 
 .panel.bag .panel-body {
@@ -57,54 +20,32 @@
   flex: 1;
   min-height: 0;
   background: transparent;
-  padding: 0 8px 8px;
+  padding: 0 14px 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-/* the tabs stand on the inset: the page that is open shares its canvas */
+/* the pages' tabs: the gold words on one line, the open one underlined */
 .panel.bag .kit-tabs {
-  margin: 0;
-  gap: 4px;
+  margin: 0 0 6px;
+  gap: 0;
   flex-wrap: nowrap;
 }
 
 .panel.bag .kit-tabs .btn.tab {
   flex: 1 1 0;
   min-width: 0;
-  min-height: 40px;
-  padding: 2px 4px;
-  font: 400 var(--kit-text) / 1 var(--font);
-  background: var(--kit-plate);
-  color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-edge);
-  border-bottom: 0;
-  box-shadow: inset 0 2px 0 var(--kit-wood-light);
+  padding: 0 4px;
 }
 
-.panel.bag .kit-tabs .btn.tab:hover,
-.panel.bag .kit-tabs .btn.tab:focus-visible {
-  background: var(--kit-wood);
-}
-
-.panel.bag .kit-tabs .btn.tab.on {
-  background: var(--kit-canvas);
-  color: var(--kit-ink);
-  box-shadow: inset 0 2px 0 var(--kit-paper);
-}
-
-/* the inset: the page under the tabs */
+/* the page under the tabs: a line that says what it is, then the page on the window's own black */
 .kit-caption {
   margin: 0;
-  padding: 8px 10px 2px;
-  background: var(--kit-canvas);
-  border: 2px solid var(--kit-edge);
-  border-top: 0;
-  border-bottom: 0;
+  padding: 2px 0 6px;
   font: 400 var(--kit-text) / 1.15 var(--font);
-  color: var(--kit-ink);
+  color: var(--kit-ink-soft);
 }
 
 .kit-body,
@@ -112,10 +53,8 @@
 .panel.bag .shop {
   flex: 1;
   min-height: 0;
-  padding: 6px 10px 10px;
-  background: var(--kit-canvas);
-  border: 2px solid var(--kit-edge);
-  border-top: 0;
+  padding: 4px 0 0;
+  background: transparent;
 }
 
 .kit-body {
@@ -149,8 +88,7 @@
   display: grid;
   place-items: center;
   background: var(--kit-socket);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-socket-line);
+  border: 1px solid var(--kit-socket-line);
 }
 
 .kit-slot .sprite {
@@ -170,8 +108,7 @@
 }
 
 .kit-slot.empty {
-  background: var(--kit-canvas);
-  box-shadow: inset 0 0 0 2px var(--kit-canvas-line);
+  background: var(--kit-socket);
 }
 
 .kit-slot.empty::after {
@@ -200,12 +137,13 @@
   margin: 2px auto 0;
   align-self: center;
   display: flex;
-  background: var(--kit-plate);
-  border: 2px solid var(--kit-edge);
+  background: var(--kit-socket);
+  border: 1px solid var(--kit-brass-dark);
 }
 
 .kit-toggle button {
-  min-height: 36px;
+  min-height: 44px;
+  min-width: 64px;
   font: 400 var(--kit-text) / 1 var(--font);
   padding: 4px 12px;
   border: 0;
@@ -215,7 +153,7 @@
 
 .kit-toggle button.on {
   background: var(--kit-brass);
-  color: var(--kit-ink);
+  color: var(--kit-on-gold);
 }
 
 .kit-effects {
@@ -223,7 +161,7 @@
   flex-wrap: wrap;
   gap: 4px 12px;
   padding-bottom: 6px;
-  border-bottom: 2px solid var(--kit-paper-line);
+  border-bottom: 1px solid var(--kit-paper-line);
   font: 400 var(--kit-text) / 1.2 var(--font);
   color: var(--kit-ink-soft);
 }
@@ -261,20 +199,20 @@
   gap: 6px;
 }
 
+/* a filter: a chip in the thin line; the one on fills with gold */
 .kit-filter {
-  min-height: 36px;
+  min-height: 44px;
+  min-width: 44px;
   font: 400 var(--kit-text) / 1 var(--font);
-  padding: 4px 10px;
-  border: 2px solid var(--kit-edge);
-  background: var(--kit-paper);
+  padding: 4px 12px;
+  border: 1px solid var(--kit-brass-dark);
+  background: transparent;
   color: var(--kit-ink);
-  box-shadow: inset 0 -2px 0 var(--kit-paper-line);
 }
 
 .kit-filter.on {
   background: var(--kit-brass);
-  color: var(--kit-ink);
-  box-shadow: inset 0 -2px 0 var(--kit-brass-dark);
+  color: var(--kit-on-gold);
 }
 
 .kit-cap {
@@ -323,8 +261,7 @@
   display: grid;
   place-items: center;
   background: var(--kit-socket);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-socket-line);
+  border: 1px solid var(--kit-socket-line);
 }
 
 .kit-cell .sprite {
@@ -338,7 +275,6 @@
   padding: 0 3px;
   background: var(--kit-paper);
   color: var(--kit-ink);
-  border: 2px solid var(--kit-edge);
   font: 400 var(--kit-text-s) / 1 var(--font);
 }
 
@@ -350,26 +286,25 @@
 
 .kit-cell.on {
   border-color: var(--kit-brass);
-  box-shadow:
-    inset 0 0 0 2px var(--kit-brass-dark),
-    0 0 0 2px var(--kit-brass);
+  box-shadow: inset 0 0 0 1px var(--kit-brass);
 }
 
 .kit-cell.empty {
   background: var(--kit-socket);
-  box-shadow: inset 0 0 0 2px var(--kit-wood);
+  border-color: var(--kit-wood-light);
 }
 
+/* a rare thing's socket is ringed in its rarity's colour, as its name is written in it */
 .kit-cell.r-uncommon {
-  border-color: var(--green2);
+  border-color: var(--ui-rarity-uncommon);
 }
 
 .kit-cell.r-rare {
-  border-color: var(--blue2);
+  border-color: var(--ui-rarity-rare);
 }
 
 .kit-cell.r-legendary {
-  border-color: var(--purple2);
+  border-color: var(--ui-rarity-legendary);
 }
 
 .kit-foot {
@@ -384,13 +319,13 @@
   flex: 1;
   height: 8px;
   background: var(--kit-socket);
-  border: 2px solid var(--kit-edge);
+  border: 1px solid var(--kit-edge);
 }
 
 .kit-bar i {
   display: block;
   height: 100%;
-  background: var(--green2);
+  background: var(--kit-brass-dark);
 }
 
 /* ------------------------------------------------------------ the card */
@@ -415,8 +350,7 @@
   padding: 10px 12px;
   background: var(--kit-paper);
   color: var(--kit-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+  border: 1px solid var(--kit-paper-line);
 }
 
 .panel.bag .detail .detail-head b {
@@ -426,7 +360,7 @@
 .panel.bag .detail .detail-head .sprite {
   flex: none;
   background-color: var(--kit-socket);
-  border: 2px solid var(--kit-edge);
+  border: 1px solid var(--kit-edge);
 }
 
 .panel.bag .detail .detail-head .muted {
@@ -438,9 +372,12 @@
   font: 400 var(--kit-text) / 1.2 var(--font);
 }
 
-.panel.bag .detail .muted,
 .panel.bag .detail .kit-desc {
   color: var(--kit-ink);
+}
+
+.panel.bag .detail .muted {
+  color: var(--kit-ink-soft);
 }
 
 .panel.bag .detail .credit {
@@ -459,18 +396,23 @@
 }
 
 .panel.bag .btn:not(.tab):not(.close) {
-  min-height: 40px;
+  min-height: 44px;
   font: 400 var(--kit-text) / 1 var(--font);
-  background: var(--kit-plate);
+  background: transparent;
   color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
+  border: 1px solid var(--kit-brass-dark);
+  box-shadow: none;
 }
 
 .panel.bag .btn:not(.tab):not(.close):hover:not(:disabled),
 .panel.bag .btn:not(.tab):not(.close):focus-visible {
   background: var(--kit-brass);
-  color: var(--kit-ink);
+  color: var(--kit-on-gold);
+}
+
+.panel.bag .btn:not(.tab):not(.close):disabled {
+  color: var(--kit-ink-soft);
+  border-color: var(--kit-edge);
 }
 
 .kit-hint {
@@ -492,8 +434,7 @@
   padding: 10px 12px;
   background: var(--kit-paper);
   color: var(--kit-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+  border: 1px solid var(--kit-paper-line);
   font: 400 var(--kit-text) / 1.2 var(--font);
 }
 
@@ -516,6 +457,7 @@
   margin-top: 6px;
   background: var(--kit-canvas);
   color: var(--kit-ink);
+  border: 1px solid var(--kit-edge);
 }
 
 /* ------------------------------------------------------------ the worn page */
@@ -530,17 +472,18 @@
   overflow-y: auto;
 }
 
+/* the stage keeps its own height in the scrolling column: shrunk, the five slots of a side ran over the row below */
 .worn-stage {
   position: relative;
+  flex: none;
   min-height: 320px;
   padding: 10px 10px 48px;
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr) 64px;
   align-items: center;
   justify-items: center;
-  background: var(--kit-canvas);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-wood-light);
+  background: var(--kit-socket);
+  border: 1px solid var(--kit-edge);
 }
 
 .worn-stage .worn-slots {
@@ -566,10 +509,9 @@
 
 .worn-side {
   padding: 10px 12px;
-  background: var(--kit-paper);
+  background: transparent;
   color: var(--kit-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+  border: 1px solid var(--kit-edge);
 }
 
 .worn-list {
@@ -579,14 +521,15 @@
 }
 
 .worn-row {
-  min-height: 36px;
+  min-height: 44px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  border: 2px solid var(--kit-paper-line);
-  background: var(--kit-paper);
+  border: 0;
+  border-bottom: 1px solid var(--kit-paper-line);
+  background: transparent;
   font: 400 var(--kit-text) / 1.1 var(--font);
   color: var(--kit-ink);
   text-align: left;
@@ -627,20 +570,13 @@
   min-height: 0;
   overflow-y: auto;
   padding: 8px 10px;
-  background: var(--kit-paper);
+  background: transparent;
   color: var(--kit-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+  border: 1px solid var(--kit-edge);
 }
 
-.shop h3 {
-  display: inline-block;
+.panel .shop h3 {
   margin: 0 0 6px;
-  padding: 2px 8px;
-  background: var(--kit-plate);
-  color: var(--kit-plate-ink);
-  font: 400 var(--kit-text) / 1.1 var(--font);
-  letter-spacing: 0.04em;
 }
 
 .shop-item {
@@ -651,7 +587,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 2px solid var(--kit-paper-line);
+  border: 1px solid var(--kit-paper-line);
   background: var(--kit-paper);
   color: var(--kit-ink);
   font: 400 var(--kit-text) / 1.1 var(--font);
@@ -667,7 +603,7 @@
 
 .shop-item.on {
   border-color: var(--kit-brass);
-  box-shadow: inset 0 0 0 2px var(--kit-brass);
+  box-shadow: inset 0 0 0 1px var(--kit-brass);
 }
 
 .shop-name {
@@ -694,9 +630,9 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border: 2px dashed var(--kit-canvas-line);
-  background: var(--kit-canvas);
-  color: var(--kit-ink);
+  border: 1px dashed var(--kit-brass-dark);
+  background: var(--kit-socket);
+  color: var(--kit-ink-soft);
   font: 400 var(--kit-text) / 1.15 var(--font);
   text-align: center;
 }
@@ -708,9 +644,9 @@
 
 .shop-slot.filled {
   border-style: solid;
-  border-color: var(--kit-edge);
-  background: var(--kit-canvas);
-  box-shadow: inset 0 0 0 2px var(--green2);
+  border-color: var(--kit-brass);
+  background: var(--kit-socket);
+  color: var(--kit-ink);
 }
 
 .shop-slot.pricing {
@@ -746,10 +682,9 @@
 .shop-price {
   width: min(100%, 360px);
   padding: 12px 14px;
-  background: var(--kit-paper);
+  background: var(--kit-canvas);
   color: var(--kit-ink);
-  border: 3px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+  border: 1px solid var(--kit-brass-dark);
 }
 
 .shop-price b {
@@ -772,10 +707,10 @@
 
 .shop-price input {
   width: 84px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 3px 6px;
-  border: 2px solid var(--kit-edge);
-  background: var(--kit-canvas);
+  border: 1px solid var(--kit-brass-dark);
+  background: var(--kit-socket);
   color: var(--kit-ink);
   font: 400 var(--kit-text) / 1 var(--font);
 }
@@ -820,7 +755,7 @@
 
   .panel.bag {
     width: 100%;
-    max-width: 1100px;
+    max-width: 960px;
     max-height: 780px;
   }
 
@@ -912,15 +847,16 @@
 .panel .panel-head {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
 }
 
 .panel .panel-sub {
   margin: 0;
-  font: 600 11px/1.3 var(--font-body);
-  color: var(--cream);
-  opacity: 0.8;
+  font: 400 var(--ui-group) / 1.2 var(--font);
+  color: var(--ui-paper-soft);
+  text-align: center;
 }
 
 .panel.map {
@@ -928,58 +864,38 @@
   max-width: 980px;
   height: 100%;
   overflow: hidden;
-  background: var(--wood);
-  border: 3px solid var(--ink);
-  box-shadow: inset 0 0 0 3px var(--wood2);
-}
-
-.panel.map header {
-  background: var(--wood2);
-  border-bottom: 3px solid var(--ink);
-}
-
-.panel.map header h2 {
-  color: var(--cream);
-  font-size: 21px;
-  letter-spacing: 0.08em;
-}
-
-.panel.map header .btn.close {
-  background: var(--paper);
-  color: var(--ink);
 }
 
 .panel.map .panel-body {
   flex: 1;
   min-height: 0;
-  padding: 6px;
+  padding: 0 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: var(--wood);
+  gap: 8px;
 }
 
 .map-strip {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  padding: 5px 9px;
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  color: var(--ink);
-  font: 600 11px/1.3 var(--font-body);
+  padding: 6px 10px;
+  border: var(--ui-hair);
+  color: var(--ui-paper);
+  font: 400 var(--ui-group) / 1.2 var(--font);
 }
 
 .map-strip b {
-  color: var(--wood);
+  font-weight: 400;
+  color: var(--ui-gold-6);
 }
 
+/* the chart is a picture of the world, framed by the thin line */
 .map-chart {
   flex: none;
   aspect-ratio: 48 / 49;
-  border: 3px solid var(--ink);
-  background: var(--cream);
-  box-shadow: inset 0 0 0 2px var(--gold);
+  border: var(--ui-line);
+  background: var(--ui-well);
   overflow: hidden;
 }
 
@@ -992,33 +908,33 @@
 .map-key {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px 10px;
+  gap: 4px 12px;
   padding: 0 2px;
-  color: var(--cream);
-  font: 600 10px/1.3 var(--font-body);
+  color: var(--ui-paper-soft);
+  font: 400 var(--ui-group) / 1.2 var(--font);
 }
 
 .map-key span {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .map-key i {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   display: inline-block;
-  border: 2px solid var(--ink);
+  border: 1px solid var(--ui-gold-2);
 }
 
 .map-key-you {
-  background: var(--red);
+  background: #e2533f;
   border-radius: 50% 50% 50% 0;
   rotate: -45deg;
 }
 
 .map-key-stall {
-  background: var(--gold);
+  background: #eda83a;
 }
 
 .map-key-walked {
@@ -1026,102 +942,95 @@
 }
 
 .map-key-blank {
-  background: var(--cream);
+  background: #ebd3a2;
 }
 
 .map-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  background: var(--paper);
-  border: 2px solid var(--ink);
+  border-top: var(--ui-hair);
 }
 
 .map-row {
   width: 100%;
-  min-height: 46px;
-  padding: 5px 8px;
+  min-height: 48px;
+  padding: 6px 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   border: 0;
-  border-bottom: 1px solid var(--cream);
+  border-bottom: var(--ui-hair);
   background: transparent;
-  color: var(--ink);
-  font-family: var(--font-body);
+  color: var(--ui-paper);
+  font-family: var(--font);
   text-align: left;
   cursor: pointer;
 }
 
-.map-row:last-child {
-  border-bottom: 0;
-}
-
 .map-row.on {
-  background: var(--cream);
-  box-shadow: inset 4px 0 0 var(--red);
+  background: var(--ui-well);
+  box-shadow: inset 2px 0 0 var(--ui-gold-4);
 }
 
 .map-ico {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   flex: none;
   display: grid;
   place-items: center;
-  border: 2px solid var(--ink);
-  background: var(--gold);
-  color: var(--ink);
-  font: 800 13px/1 var(--font-body);
+  border: 1px solid var(--ui-gold-2);
+  background: #eda83a;
+  color: var(--ui-black);
+  font: 400 var(--ui-group) / 1 var(--font);
 }
 
 .map-ico.kind-ruin {
-  background: #5d6177;
+  background: #8f94a8;
 }
 
 .map-ico.kind-npc {
-  background: #5d6177;
+  background: #8f94a8;
 }
 
 .map-ico.kind-restore {
-  background: #3f8fd1;
+  background: #7cc4ec;
 }
 
 .map-ico.kind-camp {
-  background: #4c9a3f;
+  background: #84c450;
 }
 
 .map-ico.kind-resource {
-  background: #84c450;
+  background: #c8e88a;
 }
 
 .map-txt {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
 .map-nm {
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.2;
+  font-size: var(--ui-text);
+  line-height: 1.15;
 }
 
 .map-sub {
-  font-size: 10px;
-  line-height: 1.3;
-  color: var(--wood);
+  font-size: var(--ui-group);
+  line-height: 1.2;
+  color: var(--ui-paper-soft);
 }
 
 .map-empty {
   flex: 1;
   margin: 0;
   padding: 12px;
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--wood);
+  border: var(--ui-hair);
+  font-size: var(--ui-group);
+  line-height: 1.35;
+  color: var(--ui-paper-soft);
 }
 
 .map-foot {
@@ -1133,21 +1042,13 @@
 .map-status {
   flex: 1;
   margin: 0;
-  font-size: 10.5px;
-  line-height: 1.35;
-  color: var(--cream);
+  font-size: var(--ui-group);
+  line-height: 1.25;
+  color: var(--ui-paper-soft);
 }
 
 .map-foot .btn {
   flex: none;
-}
-
-.map-foot .btn.gold {
-  background: var(--gold);
-}
-
-.map-foot .btn:disabled {
-  opacity: 0.55;
 }
 
 /* a pocket chart on a desktop, where there is room beside the world */
@@ -1240,7 +1141,6 @@
   .map-key {
     grid-column: 2;
     grid-row: 2;
-    color: var(--cream);
   }
 
   .map-list {
@@ -1255,12 +1155,12 @@
   }
 
   .map-foot .btn {
-    min-height: 38px;
+    min-height: 44px;
   }
 }
 
 .map-row.stall .map-ico {
-  background: var(--gold);
+  background: #eda83a;
 }
 
 @media (min-width: 900px) {
@@ -1275,6 +1175,6 @@
 }
 
 .map-row.corner .map-ico {
-  background: var(--gold);
+  background: #eda83a;
 }
 
