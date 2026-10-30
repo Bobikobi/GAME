@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { PNG } from 'pngjs';
 
-import { CORE_PALETTE, hexToRgb } from './palette.js';
+import { CORE_PALETTE, coreRamp, hexToRgb } from './palette.js';
 
 type Grid = readonly string[];
 type Category = 'tiles' | 'items' | 'props' | 'chars';
@@ -25,7 +25,12 @@ export const PALETTE_LEGEND: Readonly<Record<string, number>> = {
   A: 21, B: 22, C: 23, D: 24,
   E: 25, F: 26, I: 27,
   K: 28, L: 29, M: 30, N: 31,
+  // the six steps of the shared moss ramp, dark to light: an olive the core greens lack (ground motifs only)
+  '0': 32, '1': 33, '2': 34, '3': 35, '4': 36, '5': 37,
 };
+
+/** The colour of each letter's index: the 32 core colours, then the moss ramp's steps. */
+export const LETTER_PALETTE: readonly string[] = [...CORE_PALETTE, ...(coreRamp('moss')?.steps ?? [])];
 
 const grass: Grid = [
   'cccccccccccccccc',
