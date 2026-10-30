@@ -121,13 +121,9 @@ body {
 
 /* ------------------------------------------------------------ frames */
 
-/* the HUD's paper frames; a window wears frame D (theme.css .ui-window) */
+/* the paper frames left; a window wears frame D (theme.css .ui-window) and so does the HUD (its rules below) */
 .frame,
-.toast,
-.prompt,
-.tracker,
-.meter,
-.chip {
+.prompt {
   background: var(--paper);
   border: 3px solid var(--ink);
   border-radius: 0;
@@ -452,8 +448,10 @@ textarea {
   display: inline-block;
   width: 96px;
   height: 10px;
-  border: 2px solid var(--ink);
-  background: var(--paper2);
+  border: 2px solid var(--ui-well);
+  outline: var(--ui-hair);
+  outline-offset: -1px;
+  background: var(--ui-well);
 }
 
 .meter-bar.wide {
@@ -472,7 +470,11 @@ textarea {
 }
 
 .meter.empty {
-  background: #ffe2d8;
+  outline-color: var(--ui-warn);
+}
+
+.meter.empty .meter-label {
+  color: var(--ui-warn);
 }
 
 .meter-num {
@@ -492,6 +494,7 @@ textarea {
 
 .chip.glow {
   background: var(--yellow);
+  color: var(--ui-black);
 }
 
 /* the countdown to dark (G31): plain while there is time, warm in the last minute */
@@ -501,10 +504,11 @@ textarea {
 
 .chip.dark.soon {
   background: var(--gold);
+  color: var(--ui-black);
 }
 
 .chip.demo {
-  background: var(--sky);
+  color: var(--ui-rarity-rare);
   cursor: pointer;
 }
 
@@ -537,20 +541,24 @@ textarea {
 }
 
 .tracker-title {
+  font-family: var(--ui-display);
   font-weight: 600;
+  color: var(--ui-gold-5);
 }
 
 .tracker .more {
-  color: var(--grey);
+  font-family: var(--font);
+  line-height: 1;
+  color: var(--ui-paper-soft);
 }
 
 .tracker-step {
-  color: var(--ink2);
+  color: var(--ui-paper);
 }
 
 .tracker-step::before {
   content: '> ';
-  color: var(--green2);
+  color: var(--ui-good);
 }
 
 /* on a desktop they stand under the tracker, at the left: the camera keeps the player in the middle of the
@@ -581,11 +589,11 @@ textarea {
 }
 
 .toast.good {
-  background: #f1fbe3;
+  outline-color: var(--ui-good);
 }
 
 .toast.bad {
-  background: #fde7e1;
+  outline-color: var(--ui-warn);
 }
 
 .toast.out {
@@ -598,6 +606,88 @@ textarea {
     transform: scale(0.85);
     opacity: 0;
   }
+}
+
+/* ------------------------------------------------------------ frame D: the HUD */
+
+/* (DECISIONS 2026-10-30, "The HUD wears frame D too") the meter, the chips, the tracker, the toasts and the HUD's
+   buttons are the lacquer black under the grain with one thin antique-gold line for an edge and paper words. The
+   line is an outline drawn on the box's outer pixel over a clear 3 px border, so every piece keeps the paper
+   frame's size to the pixel and nothing in the HUD moves. A meaning colour (the health fill, the dark's "soon",
+   a toast's good or bad, the gold) stays the one it was. */
+.toast,
+.tracker,
+.meter,
+.chip,
+.hud .btn {
+  color: var(--ui-paper);
+  background: var(--ui-black) var(--ui-grain) repeat;
+  border: 3px solid transparent;
+  outline: var(--ui-line);
+  outline-offset: -1px;
+  box-shadow: none;
+  /* the grain's pixels stay its three blacks at 2x and 3x, as the world's do */
+  image-rendering: pixelated;
+}
+
+.hud .btn {
+  position: relative;
+  color: var(--ui-gold-6);
+}
+
+/* picked or pointed at, a HUD button fills with gold and its word turns black, as a window's does */
+.hud .btn:hover:not(:disabled),
+.hud .btn:focus-visible {
+  color: var(--ui-black);
+  background: var(--ui-gold-5);
+  outline: var(--ui-line);
+}
+
+.hud .btn:active:not(:disabled) {
+  box-shadow: none;
+}
+
+/* a thumb's reach: a HUD button, the Demo chip or the tracker takes a tap 44 px tall, though it may be drawn
+   smaller. A top-row button reaches up into the screen's edge and down to the gap, so it never covers a chip; the
+   Demo chip reaches down over the gap and the tracker's top edge, which stays 44 px or more, so the HUD stands
+   over it; a tracker of one line reaches down past its edge. */
+.hud {
+  position: relative;
+  z-index: 1;
+}
+
+.hud .btn::after,
+.chip.demo::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* placed from inside the 3 px border: 8 px over the box into the screen's edge, 4 px under it to the gap */
+  top: -11px;
+  bottom: -7px;
+}
+
+.chip.demo {
+  position: relative;
+}
+
+.chip.demo::after {
+  top: -3px;
+  bottom: auto;
+  height: 44px;
+}
+
+.tracker {
+  position: relative;
+}
+
+.tracker::after {
+  content: '';
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: -3px;
+  height: max(100% + 6px, 44px);
 }
 
 /* how high the action prompt stands over the bottom edge: the touch controls lift it, and a phone's toasts sit on it */
@@ -1434,11 +1524,12 @@ body {
 }
 
 .meter-label {
-  color: var(--ink2);
+  color: var(--ui-paper-soft);
 }
 
 .chip.gold {
   font-variant-numeric: tabular-nums;
+  color: var(--ui-gold-5);
 }
 
 /* "Look" and two tabs on one line */

@@ -1060,12 +1060,13 @@
   flex-direction: column;
   width: 176px;
   padding: 0;
-  background: var(--wood);
-  border: 3px solid var(--ink);
-  box-shadow:
-    inset 0 0 0 2px var(--wood2),
-    0 5px 0 rgba(27, 26, 46, 0.4);
-  color: var(--cream);
+  background: var(--ui-black) var(--ui-grain) repeat;
+  border: 3px solid transparent;
+  outline: var(--ui-line);
+  outline-offset: -1px;
+  box-shadow: none;
+  image-rendering: pixelated;
+  color: var(--ui-paper);
   font-family: var(--font-body);
   text-align: left;
   cursor: pointer;
@@ -1087,7 +1088,9 @@
   display: block;
   height: 148px;
   margin: 4px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--ui-well);
+  outline: var(--ui-hair);
+  outline-offset: -1px;
   background: var(--paper);
   overflow: hidden;
 }
@@ -1106,7 +1109,18 @@
 }
 
 .hud-map-note b {
-  color: var(--gold);
+  color: var(--ui-gold-5);
+}
+
+/* frame D (DECISIONS 2026-10-30): the head is the gold word over a gold hairline, the note a paper word, on the black */
+.hud-map-head {
+  background: transparent;
+  border-bottom-color: var(--ui-gold-2);
+  color: var(--ui-gold-5);
+}
+
+.hud-map-note {
+  color: var(--ui-paper-soft);
 }
 
 @media (min-width: 900px) {

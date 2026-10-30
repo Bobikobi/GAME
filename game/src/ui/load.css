@@ -30,22 +30,30 @@
   color: var(--paper);
 }
 
-/* in a window the word sits on the frame's black: a bright plate with the black for its letters */
-.ui-window .load-word {
+/* in a window and on the HUD's bag button the word sits on frame D's black: a bright plate with the black for its letters */
+:is(.ui-window, .hud) .load-word {
   border: 1px solid var(--ui-gold-2);
   color: var(--ui-black);
 }
 
-.ui-window .load-chip[data-band='light'] .load-word {
+/* the HUD's word keeps the paper frame's 2 px edge, so the bag button keeps its size */
+.hud .load-word {
+  border-width: 2px;
+}
+
+:is(.ui-window, .hud) .load-chip[data-band='light'] .load-word {
   background: var(--ui-good);
+  color: var(--ui-black);
 }
 
-.ui-window .load-chip[data-band='steady'] .load-word {
+:is(.ui-window, .hud) .load-chip[data-band='steady'] .load-word {
   background: var(--ui-gold-5);
+  color: var(--ui-black);
 }
 
-.ui-window .load-chip[data-band='heavy'] .load-word {
+:is(.ui-window, .hud) .load-chip[data-band='heavy'] .load-word {
   background: var(--ui-warn);
+  color: var(--ui-black);
 }
 
 .btn .load-chip {

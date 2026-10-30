@@ -132,6 +132,29 @@ describe('the kit theme', () => {
     expect(new Set(RARITIES.map((r) => t[`--ui-rarity-${r}`])).size, 'four different colours').toBe(RARITIES.length);
   });
 
+  it('dresses the HUD in frame D: the grain, the one gold line, the paper words, its colours named through the tokens', () => {
+    // DECISIONS 2026-10-30 "The HUD wears frame D too": the HUD's rules in style.css, from its heading to the touch controls'
+    const hud = style.split('/* ------------------------------------------------------------ HUD */')[1]?.split('/* ------------------------------------------------------------ touch */')[0] ?? '';
+    expect(hud.length).toBeGreaterThan(1000);
+    expect(hud, 'the HUD names its colours through the theme').not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|gradient\(/);
+    // one rule dresses the meter, the chips, the tracker, the toasts and the HUD buttons
+    const frame = /\n\.toast,\s*\.tracker,\s*\.meter,\s*\.chip,\s*\.hud \.btn \{([^}]*)\}/.exec(hud);
+    expect(frame?.[1]).toMatch(/background:\s*var\(--ui-black\) var\(--ui-grain\) repeat;/);
+    expect(frame?.[1]).toMatch(/outline:\s*var\(--ui-line\);/);
+    expect(frame?.[1]).toMatch(/color:\s*var\(--ui-paper\);/);
+    expect(hud).toMatch(/\.tracker-title \{\s*font-family:\s*var\(--ui-display\);/);
+    // the pocket chart on a desktop wears the same ground and line
+    const map = /\n\.hud-map \{([^}]*)\}/.exec(kit)?.[1] ?? '';
+    expect(map).toMatch(/background:\s*var\(--ui-black\) var\(--ui-grain\) repeat;/);
+    expect(map).toMatch(/outline:\s*var\(--ui-line\);/);
+    // the HUD's meaning colours on the lacquer: the health fill, the dark's "soon", a toast's good and bad, the gold
+    const t = tokens();
+    for (const hex of ['#4c9a3f', '#eda83a', t['--ui-good']!, t['--ui-warn']!, t['--ui-gold-5']!, t['--ui-rarity-rare']!]) {
+      expect(contrast(hex, t['--ui-black']!), `${hex} on the black`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(hex, t['--ui-raised']!), `${hex} on the grain's lightest fleck`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it('tiles the grain the generator draws, in the palette', () => {
     const png = PNG.sync.read(readFileSync(GRAIN_PATH));
     expect([png.width, png.height]).toEqual([GRAIN_SIZE, GRAIN_SIZE]);
@@ -155,7 +178,7 @@ describe('the kit theme', () => {
       expect(t, name).toMatch(new RegExp(`${name}:\\s*${px}px;`));
     }
     const fieldKit = kit.split('/* ------------------------------------------------------------ the map */')[0]!;
-    // the windows' words; the HUD's (.hud, .tracker) are not a window's and stay as they were
+    // the windows' words; the HUD's (.hud, .tracker) keep their own sizes, so its band does not grow (DECISIONS 2026-10-30)
     for (const css of [theme, fieldKit, tree]) {
       for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
         if (/^\s*\.(hud|tracker)\b/.test(rule[1]!.replace(/\/\*[\s\S]*?\*\//g, ''))) continue;
