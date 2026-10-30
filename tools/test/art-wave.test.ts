@@ -108,6 +108,18 @@ describe('cutting a wave', () => {
 describe('the jobs of a wave', () => {
   const cand = (dir: string): ReturnType<typeof cutWave>['candidates'] => cutWave('props', readPool('props', dir), loadEvidence(dir), 12, new Set()).candidates;
 
+  test('a creature entry gets its own kernels with the creature negative prompt, and the rest keep the default', () => {
+    const dir = fixture();
+    const first = cand(dir).filter((c) => c.round === 1);
+    const marked = first.map((c, i) => (i === 0 ? { ...c, entry: { ...c.entry, creature: true } } : c));
+    const jobs = planJobs('props-x', 'props', marked, '2026-10-28T20:00:00.000Z');
+    expect(jobs).toHaveLength(6);
+    const creature = jobs.filter((j) => j.env['KAGGLE_NEGATIVE_KIND'] === 'creature');
+    expect(creature.map((j) => j.entries)).toEqual([[first[0]?.entry.name], [first[0]?.entry.name], [first[0]?.entry.name]]);
+    for (const j of jobs.filter((x) => x.env['KAGGLE_NEGATIVE_KIND'] === undefined)) expect(j.entries).not.toContain(first[0]?.entry.name);
+    expect(new Set(jobs.map((j) => j.id)).size).toBe(6);
+  });
+
   test('qwen on one seed and flux on two, each spelling its recipe and seed in the environment and refusing picks', () => {
     const dir = fixture();
     const first = cand(dir).filter((c) => c.round === 1);
