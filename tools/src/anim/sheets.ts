@@ -142,6 +142,31 @@ export function sheetWidth(path: string, w: number): number {
   return cycleWidth(strip, strip.width / w, w);
 }
 
+/**
+ * The head travel of a walk sheet: how far the top of the figure (its first opaque row) rises and falls across the
+ * cycle's poses, the standing frame left out, in art px. The side view is the honest one (seen from the front, a lean
+ * toward the camera also moves the head down the frame). The feel layer's bob is dropped for a sheet whose clip
+ * carries more than the human jog it was judged on (DECISIONS 2026-10-29, 2026-10-30).
+ */
+export function headTravel(path: string, w: number): number {
+  const strip = readPng(path);
+  const poses = strip.width / w - 1;
+  const tops: number[] = [];
+  for (let f = 0; f < poses; f += 1) {
+    let top = strip.height;
+    for (let y = 0; y < strip.height && top === strip.height; y += 1) {
+      for (let x = f * w; x < (f + 1) * w; x += 1) {
+        if (strip.data[(y * strip.width + x) * 4 + 3]! > 0) {
+          top = y;
+          break;
+        }
+      }
+    }
+    tops.push(top);
+  }
+  return Math.max(...tops) - Math.min(...tops);
+}
+
 /** The clothed-width rule over the cycle widths: each pair's first sheet at most `max_pct` of the second's. */
 export function widthProblems(widths: Record<string, number>, rule: Settings['clothed_width']): string[] {
   const out: string[] = [];
@@ -215,7 +240,7 @@ export function buildSheets(settings: Settings, write = true): SheetsResult {
         frames: v.frames,
         density: 4,
         ramps: named,
-        stride: { travel_mpx: Math.round(v.travel * 1000), anchor: [...settings.frame.anchor] },
+        stride: { travel_mpx: Math.round(v.travel * 1000), anchor: [...settings.frame.anchor], ...(target.ships.bob === false ? { bob: false } : {}) },
       };
       feet.sheets[sheet]![view] = { poses: info.poses, travel: v.travel, slope: v.slope, plants: v.plants };
       result.widths[name] = cycleWidth(v.strip, v.frames, fw);

@@ -102,6 +102,25 @@ describe('the opening handover (NEXT 18 d)', () => {
     },
   );
 
+  test('the account\'s name is the character\'s: an opening that carved another name is not kept (finding 11)', async () => {
+    const { phone, upload } = await captured();
+    expect(phone.state.player.name).toBe('Tess');
+    // the same name keeps it, under any account that holds that name; no account name asks nothing
+    expect(kept(takeOpening(bundle, upload, SECRET_SEED, NOW, undefined, 'Tess')).record.state.player.name).toBe('Tess');
+    expect(kept(takeOpening(bundle, upload, SECRET_SEED, NOW)).record.state.player.name).toBe('Tess');
+    // another name, or the same in another case (the stored name is the one the world shows), starts the account fresh
+    expectFresh(takeOpening(bundle, upload, SECRET_SEED, NOW, undefined, 'Wren'), /^the opening carved the name "Tess", the account is "Wren"$/);
+    expectFresh(takeOpening(bundle, upload, SECRET_SEED, NOW, undefined, 'tess'), /^the opening carved the name/);
+  });
+
+  test('an opening that carved an empty name yet is kept under any account name: the stone\'s line is cut over the wire, held to the account\'s name', async () => {
+    const phone = new LocalPhone(bundle, PHONE_SEED);
+    await phone.act({ t: 'start', starter: STARTS[0].starter, name: '' }, 0);
+    expect(phone.state.player.name).toBe('');
+    const handover = kept(takeOpening(bundle, phone.upload(), SECRET_SEED, NOW, undefined, 'Wren'));
+    expect(handover.record.state.player.name).toBe('');
+  });
+
   test('a log with one illegal action is refused whole', async () => {
     const { upload } = await captured();
     const at = upload.log.findIndex((entry) => entry.a.t === 'restore');
@@ -222,7 +241,9 @@ describe('the opening handover (NEXT 18 d)', () => {
 
   test('a kept account proves itself: its log, opening first, replays to the stored state after it plays on over the wire', async () => {
     const { upload } = await captured(STARTS[2]);
-    const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW));
+    // the account is "Tess", the name the opening carved: the books replay to the stored state, name and all
+    const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW, undefined, 'Tess'));
+    expect(handover.record.state.player.name).toBe('Tess');
 
     const clock = { now: NOW };
     const store = new MemoryStore(bundle, newState(bundle, SECRET_SEED), NOW);

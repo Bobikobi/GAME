@@ -1434,10 +1434,18 @@
         "solid": true
       },
       {
-        "sprite": "core/base-kit:props/market_stall",
+        "sprite": "core/base-kit:props/house_small",
+        "x": 34,
+        "y": 9,
+        "w": 3,
+        "h": 2,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/shop_sign_food",
         "x": 34,
         "y": 10,
-        "w": 2,
+        "w": 1,
         "h": 1,
         "solid": true
       },
@@ -3398,9 +3406,9 @@
       {
         "id": "core/trader-stall",
         "kind": "npc",
-        "x": 34,
-        "y": 11,
-        "w": 3,
+        "x": 35,
+        "y": 10,
+        "w": 1,
         "h": 1,
         "tag": "town"
       },
@@ -3513,11 +3521,11 @@
       {
         "id": "core/bank-herbs",
         "kind": "resource",
-        "x": 4,
-        "y": 19,
-        "w": 2,
-        "h": 2,
-        "tag": "meadow"
+        "x": 10,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "tag": "riverbank"
       },
       {
         "id": "core/slid-bank",

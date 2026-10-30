@@ -68,6 +68,7 @@ import { DEFAULT_PICKS, type PickContext, type PickLine, type PickPlan, describe
 import {
   type Motif, type ScatterEntry, motifPrompt, motifWarnings, parseMotif, renderMotif, scatterProblem, scatterTile, tileWarnings, variantsOf,
 } from './scatter.js';
+import { noteDraft } from '../art/drafts.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -143,6 +144,8 @@ export interface ManifestLine {
   motifs?: string[];
   /** The shared ramps the sprite was imported in, for its kit entry's `ramps`. */
   ramps?: string[];
+  /** The kaggle route's recipe and seed that drew it, so a gallery of a wave tells its draws apart. */
+  kaggle?: { recipe: KaggleRecipe; seed: number };
 }
 
 export function parseSpec(text: string): GenEntry[] {
@@ -580,6 +583,7 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       ? askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file)
       : { codex: { version: drawn.version, exit: drawn.exit, seconds: drawn.seconds, tokens: drawn.tokens, log: drawn.log }, saved: drawn.saved, error: drawn.error };
     line.drawer = route;
+    if (route === 'kaggle') line.kaggle = { recipe, seed: plan?.seed ?? kaggleSettings(kaggleEnv).seed };
     line.codex = asked.codex;
     const saved = asked.saved;
     if (saved === null) {
@@ -739,13 +743,14 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * The latest image of each name beside its reference. CSS pixels are device pixels on a desktop
+ * Every draw of the run beside its reference, a name's draws together (a wave draws an entry on more than one recipe
+ * and seed, and a run folder keeps its rounds). CSS pixels are device pixels on a desktop
  * screen, so the reference at 6 per art pixel and the result at 3 are both their size on a 3x phone.
  */
 export function galleryHtml(lines: readonly ManifestLine[]): string {
-  const latest = new Map<string, ManifestLine>();
-  for (const line of lines) latest.set(line.name, line);
-  const rows = [...latest.values()].map((line) => {
+  const byName = new Map<string, ManifestLine[]>();
+  for (const line of lines) byName.set(line.name, [...(byName.get(line.name) ?? []), line]);
+  const rows = [...byName.values()].flatMap((draws) => draws.map((line, at) => ({ line, at, of: draws.length }))).map(({ line, at, of }) => {
     const refImg = `<img src="ref/${line.name}-1x.png" alt="" style="width:${line.refSize[0] * 6}px">`;
     const result = line.out === null
       ? `<p class="bad">${escapeHtml(line.error ?? 'not generated yet')}</p>`
@@ -758,10 +763,12 @@ export function galleryHtml(lines: readonly ManifestLine[]): string {
       line.grid === null ? null : `grid ${line.grid}`,
       line.colors === null ? null : `${line.colors} colours`,
       line.codex === null ? null : `${line.drawer ?? 'codex'} ${line.codex.seconds} s, ${line.codex.tokens ?? '?'} tokens`,
+      line.kaggle === undefined ? null : `${line.kaggle.recipe} seed ${line.kaggle.seed}`,
     ].filter((fact) => fact !== null).join(' · ');
     const warnings = line.warnings.map((w) => `<p class="warn">${escapeHtml(w)}</p>`).join('');
     const raw = line.raw === null ? '' : line.raw.endsWith('.txt') ? `<a href="${line.raw}">letters</a>` : `<a href="${line.raw}"><img class="raw" src="${line.raw}" alt="raw"></a>`;
-    return `<section><h2>${escapeHtml(line.name)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
+    const title = of === 1 ? line.name : `${line.name} (${at + 1} of ${of}, ${line.at})`;
+    return `<section><h2>${escapeHtml(title)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
   });
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>kit:gen gallery</title>
@@ -851,7 +858,10 @@ function runCli(args: readonly string[]): void {
   let failed = 0;
   for (const entry of entries) {
     for (const line of entry.route === 'scatter' ? generateScatter(entry, options, version, earlier) : [generateOne(entry, options, version, earlier)]) {
-      if (!options.dry) appendFileSync(manifestPath, `${JSON.stringify(line)}\n`);
+      if (!options.dry) {
+        appendFileSync(manifestPath, `${JSON.stringify(line)}\n`);
+        noteDraft(options.out, line);
+      }
       if (line.error !== null) failed += 1;
       const said = options.dry ? line.prompt : line.error ?? [line.out, ...line.warnings].join(' - ');
       process.stdout.write(`${line.name}: ${said}\n`);

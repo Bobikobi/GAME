@@ -714,6 +714,10 @@
                       "additionalItems": false,
                       "minItems": 2,
                       "maxItems": 2
+                    },
+                    "bob": {
+                      "description": "false when the sheet carries its own head travel and the feel layer's code bob is dropped for it (DECISIONS 2026-10-29: the bob is dropped for a clip that carries its own); left out, the bob plays on top of the poses.",
+                      "type": "boolean"
                     }
                   }
                 },

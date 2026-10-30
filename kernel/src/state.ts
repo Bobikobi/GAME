@@ -3,13 +3,13 @@
  * integers, strings, arrays and plain objects only, so its canonical text is
  * stable and a save is just that text.
  */
-import type { NodeSizeName, SchoolNodeDef } from '@game/schema';
+import type { SchoolNodeDef } from '@game/schema';
 import type { BodyEffectName, Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.20.0';
+export const KERNEL_VERSION = '0.21.1';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -552,9 +552,15 @@ export function treeNode(bundle: Bundle, key: string): { school: SchoolDef; node
   return school && node ? { school, node } : undefined;
 }
 
-/** The skill points a node of this size costs; a tree with no growth params costs nothing it can sell. */
-export function nodeCost(bundle: Bundle, size: NodeSizeName): number {
-  return bundle.params.growth?.cost[size] ?? 0;
+/** The skill points a node costs: its own price, or its size's; a tree with no growth params costs nothing it can sell. */
+export function nodeCost(bundle: Bundle, node: Pick<SchoolNodeDef, 'size' | 'cost'>): number {
+  if (!bundle.params.growth) return 0;
+  return node.cost ?? bundle.params.growth.cost[node.size] ?? 0;
+}
+
+/** The key of a node a need names: a node of the same school by its id, or of another by "<school id>/<node id>". */
+export function needKey(school: string, need: string): string {
+  return need.includes('/') ? need : nodeKey(school, need);
 }
 
 /** How many active slots the build has open at the player's character level. */
@@ -579,16 +585,16 @@ export function nodeRefusal(bundle: Bundle, state: PublicState, key: string): st
   const p = state.player;
   if ((p.nodes ?? []).includes(key)) return 'You know this already.';
   if (!nodeIsOurs(state, node)) return 'That belongs to another race.';
-  const missing = (node.needs ?? []).filter((n) => !(p.nodes ?? []).includes(nodeKey(school.id, n)));
+  const missing = (node.needs ?? []).map((n) => needKey(school.id, n)).filter((k) => !(p.nodes ?? []).includes(k));
   if (missing.length > 0) {
-    const names = missing.map((n) => school.nodes.find((m) => m.id === n)?.name ?? n);
+    const names = missing.map((k) => treeNode(bundle, k)?.node.name ?? k);
     return `Learn ${names.join(' and ')} first.`;
   }
   for (const attr of ATTRIBUTES) {
     const want = node.key?.[attr];
     if (want !== undefined && (p.attrs[attr] ?? 0) < want) return `Needs ${attr} ${want} - you have ${p.attrs[attr] ?? 0}.`;
   }
-  const cost = nodeCost(bundle, node.size);
+  const cost = nodeCost(bundle, node);
   if (skillPoints(bundle, state) < cost) return cost === 1 ? 'Needs a skill point.' : `Needs ${cost} skill points.`;
   return undefined;
 }

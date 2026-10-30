@@ -83,7 +83,7 @@ export function showTitle(ui: UI): Promise<void> {
       el.replaceChildren(
         h(
           'div',
-          { class: 'title-box' },
+          { class: 'title-box ui-window' },
           h('h1', { class: 'logo' }, GAME_TITLE),
           h('p', { class: 'tagline' }, 'A valley the players rebuild together'),
           h(
@@ -165,7 +165,7 @@ export function showTitle(ui: UI): Promise<void> {
       el.replaceChildren(
         h(
           'div',
-          { class: 'title-box' },
+          { class: 'title-box ui-window' },
           h('p', null, 'A new game replaces the one saved in this browser.'),
           h('div', { class: 'title-actions' }, button('Start a new game', () => choose(), 'danger'), button('Back', () => home())),
         ),
@@ -267,7 +267,7 @@ export function showTitle(ui: UI): Promise<void> {
       el.replaceChildren(
         h(
           'div',
-          { class: 'title-box wide' },
+          { class: 'title-box wide ui-window' },
           h('h2', null, 'Who wakes up by the river?'),
           lookToggle,
           cards,

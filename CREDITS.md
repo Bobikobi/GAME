@@ -30,7 +30,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - A whole one (quest) - `content/core/quests/a-whole-one.json`
 - The slid bank (quest) - `content/core/quests/buried-axe.json`
 - A fire across the river (quest) - `content/core/quests/first-fire.json`
-- First pickings (quest) - `content/core/quests/first-pickings.json`
+- What holds the keystone (quest) - `content/core/quests/first-pickings.json`
 - Mend the bridge (quest) - `content/core/quests/fix-the-bridge.json`
 - A glint by the bridge (quest) - `content/core/quests/glint-by-the-bridge.json`
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
@@ -108,15 +108,6 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Base kit (kit) - `content/kit/core/kit.json`
 
 AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex image generation via kit:gen; Codex: text-grid sprites in tools/src/kit/sketches.ts; FLUX.1 schnell and Qwen-Image 2512 via kit:gen; Nano Banana (gemini-3.1-flash-image) via Antigravity; Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen.
-
-## Characters
-
-The bodies of the three races, posed and drawn to pixels by `tools/anim` (`pnpm anim sheets`); each line is the credit of the model it starts from.
-
-- Elf: Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim.
-- Human: Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/ (game/public3d/models/README.md); modified: posed with library motion and rendered to pixels by tools/anim.
-- Human: Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.56 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 88,512 to 50,000 triangles and the maps cut from 2048 to 1024 px; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md).
-- Skeleton: Skeleton by Alexander Brodin (https://poly.pizza/m/frU5VxsCGZJ), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/); modified: cut into bone pieces, each fitted to a bone of the Quaternius Universal Base Characters skeleton, posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim.
 
 ## Libraries and fonts
 

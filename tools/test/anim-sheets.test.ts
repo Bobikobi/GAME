@@ -9,7 +9,7 @@ import { describe, expect, test } from 'vitest';
 
 import { readSettings } from '../src/anim/clip';
 import { plantSlide, widestRow } from '../src/anim/measure';
-import { characterCredits, SHEET_DIR, sheetWidth, widthProblems } from '../src/anim/sheets';
+import { characterCredits, headTravel, KIT_FILE, SHEET_DIR, sheetWidth, widthProblems } from '../src/anim/sheets';
 import { strideProblem } from '../src/check';
 
 const settings = readSettings();
@@ -80,5 +80,28 @@ describe('the credits of the characters', () => {
     expect(lines.filter((l) => l.startsWith('- Skeleton')).length).toBe(1);
     expect(lines.filter((l) => l.startsWith('- Human')).length).toBe(2);
     expect(lines.filter((l) => l.startsWith('- Elf')).length).toBe(1);
+  });
+});
+
+describe('the bob on top of the poses', () => {
+  const kit = JSON.parse(readFileSync(KIT_FILE, 'utf8')) as { kit: { sprites: Record<string, { stride?: { bob?: boolean } }> } };
+  const travel = Object.fromEntries(sheets.map((sheet) => [sheet, headTravel(join(SHEET_DIR, `${sheet}_left.png`), settings.frame.size[0])]));
+
+  test('the kit drops the code bob exactly where anim.json says the clip carries its own', () => {
+    for (const target of Object.values(settings.targets)) {
+      if (!target.ships) continue;
+      for (const view of ['down', 'up', 'left']) {
+        expect(kit.kit.sprites[`chars/${target.ships.sheet}_${view}`]?.stride?.bob, `${target.ships.sheet}_${view}`).toBe(target.ships.bob === false ? false : undefined);
+      }
+    }
+  });
+
+  test('a sheet that drops the bob carries more head travel than the human jog the bob was judged on', () => {
+    console.info(`head travel, side view, art px: ${JSON.stringify(travel)}`);
+    const human = travel.human as number;
+    expect(human).toBeGreaterThan(0);
+    for (const target of Object.values(settings.targets)) {
+      if (target.ships?.bob === false) expect(travel[target.ships.sheet], target.ships.sheet).toBeGreaterThan(human);
+    }
   });
 });

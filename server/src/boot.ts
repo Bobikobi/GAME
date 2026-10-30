@@ -1,6 +1,6 @@
 import type { IncomingMessage } from 'node:http';
 
-import { MAILERS, type MailerName } from './auth/mailer';
+import { MAILERS, type MailerName, type ResendConfig } from './auth/mailer';
 
 /** The identity modes this build knows: a signed-in session (NEXT 18 e), and the staging header. */
 const MODES = ['session', 'dev-header'] as const;
@@ -11,6 +11,10 @@ const STAGING_ONLY = 'staging-only';
 /** hosts a browser treats as secure over plain http, so a laptop can run the session mode */
 const LOOPBACK = ['localhost', '127.0.0.1', '[::1]'];
 
+function isLoopback(origin: string): boolean {
+  return LOOPBACK.includes(new URL(origin).hostname);
+}
+
 /** A refusal to start: main.ts prints it and exits non-zero, before the API listens or opens a database. */
 export class BootError extends Error {}
 
@@ -18,13 +22,21 @@ export class BootError extends Error {}
 export interface SessionConfig {
   /** the origin this API answers on (the OAuth redirect and the email link are built on it) */
   publicOrigin: string;
-  /** the origin the game is served from */
+  /**
+   * the origin the game is served from: the public origin itself, since the game's build sits beside the API
+   * behind one nginx name (finding 4 of the 27.10 review). It differs only on a laptop, where the dev client
+   * and the API are two loopback ports.
+   */
   appOrigin: string;
   /** absent when neither variable is set: Google then answers "not open yet" */
   google?: { clientId: string; clientSecret: string };
   mailer: MailerName;
-  /** the header our nginx sets to the visitor's country (lower case); absent, every sign-up is held to the highest age */
+  /** present only with MAILER=resend: its key and the sender address */
+  resend?: ResendConfig;
+  /** the header our nginx sets to the visitor's country (lower case), an override of the file below; absent, it is not read */
   countryHeader?: string;
+  /** the country database file (COUNTRY_DB) the client's address is looked up in; absent, with no header either, every sign-up is held to the highest age */
+  countryDb?: string;
   /** the header our nginx sets to the client's address (lower case); the sign-in limits count by it. Absent only on a loopback origin */
   addressHeader?: string;
 }
@@ -74,12 +86,29 @@ function origin(env: NodeJS.ProcessEnv, name: string): string {
   return value;
 }
 
+/** MAILER=resend takes its key and a sender: `Name <address>` or a bare address, on the domain Resend verified. */
+function resendFromEnv(env: NodeJS.ProcessEnv): ResendConfig {
+  const apiKey = env.RESEND_API_KEY ?? '';
+  if (apiKey === '') throw new BootError('MAILER=resend needs RESEND_API_KEY.');
+  const from = env.MAIL_FROM ?? '';
+  if (!/^(?:[^<>@\r\n]+ <[^<>@\s]+@[^<>@\s]+\.[^<>@\s]+>|[^<>@\s]+@[^<>@\s]+\.[^<>@\s]+)$/.test(from)) {
+    throw new BootError(`MAIL_FROM=${JSON.stringify(from)} is not a sender: write \`Loomvale <play@your-domain>\` on the domain verified in Resend.`);
+  }
+  return { apiKey, from };
+}
+
 function sessionMode(env: NodeJS.ProcessEnv): Auth {
   if (env.ALLOW_DEV_HEADER) {
     throw new BootError('ALLOW_DEV_HEADER is set with AUTH_MODE=session: the header mode and sign-in never run together. Remove it.');
   }
   const publicOrigin = origin(env, 'PUBLIC_ORIGIN');
-  const appOrigin = origin(env, 'APP_ORIGIN');
+  // The game is served beside the API, on the same origin: the session cookie is __Host- and same-site, the
+  // API sends no CORS headers, and the client fetches with credentials: 'same-origin'. So APP_ORIGIN is the
+  // public origin, and may be left unset. A second origin is a laptop's dev client only: two loopback ports.
+  const appOrigin = env.APP_ORIGIN ? origin(env, 'APP_ORIGIN') : publicOrigin;
+  if (appOrigin !== publicOrigin && !(isLoopback(publicOrigin) && isLoopback(appOrigin))) {
+    throw new BootError(`APP_ORIGIN=${appOrigin} is not PUBLIC_ORIGIN=${publicOrigin}: the game is served beside the API on one origin (the session cookie never crosses origins and the API sends no CORS headers). Leave APP_ORIGIN unset; only a loopback pair, a laptop's dev client beside its API, may differ.`);
+  }
   const clientId = env.GOOGLE_CLIENT_ID ?? '';
   const clientSecret = env.GOOGLE_CLIENT_SECRET ?? '';
   if ((clientId === '') !== (clientSecret === '')) {
@@ -93,16 +122,21 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
   if (mailer === 'log' && env.ALLOW_LOG_MAILER !== STAGING_ONLY) {
     throw new BootError(`MAILER=log writes each sign-in link to the log, so anyone who reads the log can sign in as anyone; it starts only with ALLOW_LOG_MAILER=${STAGING_ONLY}, on a box no real player reaches.`);
   }
+  const resend = mailer === 'resend' ? resendFromEnv(env) : undefined;
   const google = clientId === '' ? undefined : { clientId, clientSecret };
   const countryHeader = headerName(env, 'COUNTRY_HEADER', 'X-Country');
+  const countryDb = env.COUNTRY_DB ? env.COUNTRY_DB : undefined;
+  if (countryDb !== undefined && !countryDb.startsWith('/')) {
+    throw new BootError(`COUNTRY_DB=${JSON.stringify(countryDb)} is not an absolute path to a country database file, such as /app/country.mmdb.`);
+  }
   const addressHeader = headerName(env, 'CLIENT_ADDRESS_HEADER', 'X-Real-IP');
-  if (addressHeader === undefined && !LOOPBACK.includes(new URL(publicOrigin).hostname)) {
+  if (addressHeader === undefined && !isLoopback(publicOrigin)) {
     throw new BootError('CLIENT_ADDRESS_HEADER is not set: behind nginx every request comes from nginx, so the sign-in limits would count all players as one. Set it to the header nginx fills, X-Real-IP.');
   }
   return {
     mode: 'session',
-    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, the game at ${appOrigin}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}; limits by ${addressHeader ?? 'the socket address'}.`,
-    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, countryHeader, addressHeader },
+    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, ${appOrigin === publicOrigin ? 'the game beside it' : `the game at ${appOrigin}`}; the age limit ${countryHeader || countryDb ? `by the country in ${[countryHeader, countryDb && `the file ${countryDb}`].filter(Boolean).join(', else in ')}` : 'is the highest (no COUNTRY_HEADER, no COUNTRY_DB)'}; limits by ${addressHeader ?? 'the socket address'}.`,
+    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, ...(resend && { resend }), countryHeader, ...(countryDb && { countryDb }), addressHeader },
   };
 }
 

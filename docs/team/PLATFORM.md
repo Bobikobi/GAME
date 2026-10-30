@@ -448,8 +448,15 @@ and the browser tests run beside it as jobs of their own, one per group in
 a failed, skipped or cancelled job fails it. A run lasts as long as its
 longest group, the phone opening. A script that fails is played once more
 alone, and the screenshots of its first attempt are kept as an artifact.
-Every pull request runs it, docs-only included: a path-filtered workflow would
-leave the required check "Expected" and block the merge.
+Every pull request starts the workflow, docs-only included: a path-filtered
+workflow would leave the required check "Expected" and block the merge. A
+docs-only pull request skips the browser jobs from the inside instead: the job
+"The browser test groups" lists the changed files (`tools/src/docs-only.ts`: all
+of them under `docs/`, Markdown outside `game/`, `DECISIONS.md`,
+`.github/prompts/` or `tools/kit-gen/*.json`) and the groups are skipped; the
+checks job still runs, and the gate accepts exactly that skip and no other, so
+"Check, test, build and play" still reports on every pull request. A diff that
+cannot be read counts as code.
 
 `pnpm verify` gains `pnpm --filter web build` and the `web/` tests once the
 package exists (GRUNT item 4).

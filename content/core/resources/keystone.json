@@ -27,7 +27,16 @@
     "sprite": "core/base-kit:props/rock_small",
     "level": 1,
     "game": "strike",
-    "opens_after": "core/glint-by-the-bridge",
+    "opens_after": [
+      {
+        "quest": "core/glint-by-the-bridge",
+        "line": "Something else catches the light first."
+      },
+      {
+        "quest": "core/first-pickings",
+        "line": "Herbs grow thick around the stone. Clear them first."
+      }
+    ],
     "place": {
       "slot": "core/keystone"
     }

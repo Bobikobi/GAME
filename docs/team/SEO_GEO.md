@@ -16,7 +16,7 @@ Two things are meant by the two names. **Search** is a person typing a query and
 | Card image | none |
 | Structured data | none |
 | Repository | description and homepage set, no topics |
-| Site address | `theopenfold.vercel.app`; the config knows it only when Vercel builds |
+| Site address | `loomvale.vercel.app`; the config knows it only when Vercel builds |
 
 ## 2. Who is searching, and for what
 
@@ -67,7 +67,7 @@ A title is read in a result list before anything else; a description is what an 
 | Page | Before | After |
 |---|---|---|
 | `/hub/` | Developer area - Loomvale | Build with Loomvale: add game content as JSON, with or without AI - Loomvale |
-| `/docs/` | Add a fruit in 10 minutes - Loomvale | unchanged (the guide's own heading; the description carries the query words) |
+| `/docs/` | Add a townsperson in 15 minutes - Loomvale | unchanged (the guide's own heading; the description carries the query words) |
 | `/api/` | API - Loomvale | Schemas and data for Loomvale content: JSON Schema per record type - Loomvale |
 | `/hub/boards/` | Boards - Loomvale | unchanged |
 | `/` | unchanged | unchanged (the owner approved the home page's wording on 10.10) |

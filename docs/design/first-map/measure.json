@@ -1,0 +1,212 @@
+{
+ "A": {
+  "legs": {
+   "N": 39,
+   "W": 17,
+   "S": 30
+  },
+  "pairs": {
+   "NW": 32,
+   "NS": 57,
+   "SW": 25
+  },
+  "manhattan": {
+   "NW": 32,
+   "NS": 57,
+   "SW": 25
+  },
+  "nearest_pair": 25,
+  "bridge_view_shows_start_area": {
+   "N": false,
+   "W": false,
+   "S": false
+  },
+  "d_town_max": 169,
+  "d_levels": {
+   "0": 4541,
+   "1": 6142,
+   "2": 994,
+   "3": 0
+  },
+  "unreachable_walkable": 0,
+  "g62_worst_steps": 69,
+  "g62_limit": 241,
+  "straight_run_max": {
+   "east-road": 6,
+   "east-pass": 7,
+   "elf-trail-W": 6,
+   "elf-trail-C": 5,
+   "elf-trail-E": 7,
+   "elf-dead-1": 6,
+   "elf-dead-2": 6,
+   "elf-dead-3": 5,
+   "north-pass": 6,
+   "shore-pass": 7,
+   "descent-south": 7,
+   "bank-road-N": 7,
+   "bank-road-W": 7,
+   "bank-road-S": 7,
+   "north-track": 7,
+   "shore-way-in": 6,
+   "tangle-brook": 5,
+   "town-east-road": 6,
+   "west-foot": 7
+  },
+  "pass_reach": {
+   "N": 84,
+   "E": 55,
+   "SW": 74,
+   "boathouse": 72,
+   "tarn": 88,
+   "dock": 139,
+   "hall": 106,
+   "stall1": 134,
+   "stall3": 144
+  },
+  "floor_walkable": 6688
+ },
+ "B": {
+  "legs": {
+   "N": 39,
+   "W": 17,
+   "S": 30
+  },
+  "pairs": {
+   "NW": 32,
+   "NS": 57,
+   "SW": 25
+  },
+  "manhattan": {
+   "NW": 32,
+   "NS": 57,
+   "SW": 25
+  },
+  "nearest_pair": 25,
+  "bridge_view_shows_start_area": {
+   "N": false,
+   "W": false,
+   "S": false
+  },
+  "d_town_max": 169,
+  "d_levels": {
+   "0": 3769,
+   "1": 4323,
+   "2": 1242,
+   "3": 0
+  },
+  "unreachable_walkable": 0,
+  "g62_worst_steps": 58,
+  "g62_limit": 241,
+  "straight_run_max": {
+   "east-road": 6,
+   "east-pass": 7,
+   "elf-trail-W": 6,
+   "elf-trail-C": 5,
+   "elf-trail-E": 7,
+   "elf-dead-1": 6,
+   "elf-dead-2": 6,
+   "elf-dead-3": 5,
+   "north-pass": 6,
+   "shore-pass": 7,
+   "descent-south": 7,
+   "bank-road-N": 7,
+   "bank-road-W": 7,
+   "bank-road-S": 7,
+   "north-track": 7,
+   "shore-way-in": 6,
+   "tangle-brook": 5,
+   "town-east-road": 6,
+   "west-foot": 7
+  },
+  "pass_reach": {
+   "N": 84,
+   "E": 55,
+   "SW": 74,
+   "boathouse": 72,
+   "tarn": 88,
+   "dock": 139,
+   "hall": 112,
+   "stall1": 134,
+   "stall3": 144
+  },
+  "floor_walkable": 4345,
+  "pixels_differing_from_A": 63301,
+  "diff_bbox": [
+   3,
+   136,
+   386,
+   815
+  ]
+ },
+ "C": {
+  "legs": {
+   "N": 39,
+   "W": 17,
+   "S": 30
+  },
+  "pairs": {
+   "NW": 32,
+   "NS": 57,
+   "SW": 25
+  },
+  "manhattan": {
+   "NW": 32,
+   "NS": 57,
+   "SW": 25
+  },
+  "nearest_pair": 25,
+  "bridge_view_shows_start_area": {
+   "N": false,
+   "W": false,
+   "S": false
+  },
+  "d_town_max": 189,
+  "d_levels": {
+   "0": 4541,
+   "1": 5619,
+   "2": 1400,
+   "3": 0
+  },
+  "unreachable_walkable": 0,
+  "g62_worst_steps": 69,
+  "g62_limit": 241,
+  "straight_run_max": {
+   "east-road": 6,
+   "east-pass": 7,
+   "elf-trail-W": 6,
+   "elf-trail-C": 5,
+   "elf-trail-E": 7,
+   "elf-dead-1": 6,
+   "elf-dead-2": 6,
+   "elf-dead-3": 5,
+   "north-pass": 6,
+   "descent-south": 7,
+   "bank-road-N": 7,
+   "bank-road-W": 7,
+   "bank-road-S": 7,
+   "north-track": 7,
+   "shore-way-in": 6,
+   "tangle-brook": 5,
+   "town-east-road": 6,
+   "west-foot": 7
+  },
+  "pass_reach": {
+   "N": 84,
+   "E": 55,
+   "boathouse": 72,
+   "tarn": 88,
+   "dock": 159,
+   "hall": 106,
+   "stall1": 134,
+   "stall3": 144
+  },
+  "floor_walkable": 6688,
+  "pixels_differing_from_A": 790,
+  "diff_bbox": [
+   120,
+   324,
+   190,
+   823
+  ]
+ }
+}

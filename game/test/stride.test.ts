@@ -1,7 +1,8 @@
 /**
  * The races' walk (tools/anim): a sheet's frames are the poses of a cycle and, last, the standing pose; the pose shown
  * follows the distance the body has walked. The slide of a planted foot is measured here in the game's own walker, with
- * the game's own pose rule, against the feet the render measured (tools/anim/feet.json), at the three paces.
+ * the game's own pose rule, against the feet the render measured (tools/anim/feet.json), at the three paces by weight
+ * (#297) and at the two other gaits of the move (#424): a run at half the step, a sneak at twice it.
  *
  * Two numbers per sheet, view and pace:
  *  - at the pose instants (the body exactly at a pose), the foot is within `foot_slide_px` (1 px) of the ground: the
@@ -14,7 +15,7 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import { Walker } from '../src/walking';
-import { poseFrame, standingFrame } from '../src/work';
+import { POSES_PER_S_MAX, poseEvery, poseFrame, standingFrame } from '../src/work';
 import { plantSlide } from '../../tools/src/anim/measure';
 import { ANIM_DIR } from '../../tools/src/anim/clip';
 import { loadBundle } from '../../tools/test/helpers/world';
@@ -23,19 +24,48 @@ const b = loadBundle();
 const feet = JSON.parse(readFileSync(join(ANIM_DIR, 'feet.json'), 'utf8')) as {
   sheets: Record<string, Record<string, { poses: number; travel: number; slope: number; plants: { foot: string; poses: number[]; ys: number[]; icpt: number }[] }>>;
 };
-const settings = JSON.parse(readFileSync(join(ANIM_DIR, 'anim.json'), 'utf8')) as { limits: { foot_slide_px: number }; frame: { size: [number, number]; anchor: [number, number] } };
+const settings = JSON.parse(readFileSync(join(ANIM_DIR, 'anim.json'), 'utf8')) as {
+  limits: { foot_slide_px: number; poses_per_s_max: number };
+  frame: { size: [number, number]; anchor: [number, number] };
+};
 
 const FRAME_MS = 1000 / 60;
-const PACES = { light: b.params.load.light_step_ms, steady: b.params.walk_step_ms, heavy: b.params.load.heavy_step_ms } as const;
+const { run_div, sneak_mul } = b.params.gait;
+// the kernel's step time for each gait and load (gaitStepMs): the walk at the three loads, the run and the sneak at the
+// fastest and the slowest of them
+const PACES = {
+  light: b.params.load.light_step_ms,
+  steady: b.params.walk_step_ms,
+  heavy: b.params.load.heavy_step_ms,
+  'light run': Math.floor(b.params.load.light_step_ms / run_div),
+  'heavy run': Math.floor(b.params.load.heavy_step_ms / run_div),
+  'light sneak': b.params.load.light_step_ms * sneak_mul,
+  'heavy sneak': b.params.load.heavy_step_ms * sneak_mul,
+} as const;
 const HELD: Record<string, [number, number]> = { down: [0, 1], up: [0, -1], left: [-1, 0] };
 
 describe('the pose rule', () => {
+  test('the game and the anim tool hold one ceiling of poses a second', () => {
+    expect(POSES_PER_S_MAX).toBe(settings.limits.poses_per_s_max);
+  });
+
   test('a pose is the nearest to the distance walked, round the cycle', () => {
     expect(poseFrame(0, 10, 16)).toBe(0);
     expect(poseFrame(4.9, 10, 16)).toBe(0);
     expect(poseFrame(5.1, 10, 16)).toBe(1);
     expect(poseFrame(10 * 15, 10, 16)).toBe(0);
     expect(poseFrame(10 * 15 + 30, 10, 16)).toBe(3);
+  });
+
+  test('at a pace too fast for every pose, every other pose is shown, still the nearest to the distance walked', () => {
+    // 64000 / 95 = 674 px a second over 14 px a pose is 48 poses a second: past 30, so every second pose
+    expect(poseEvery(14, 95)).toBe(2);
+    expect(poseEvery(14, 190)).toBe(1);
+    expect(poseEvery(14, undefined)).toBe(1);
+    expect(poseFrame(14 * 2.9, 14, 16, 95)).toBe(2);
+    expect(poseFrame(14 * 3.1, 14, 16, 95)).toBe(4);
+    // an odd count of poses still lands each shown pose on its own distance
+    expect(poseFrame(14 * 16, 14, 16, 95)).toBe(1);
   });
 
   test('a sheet with no pose or no stride shows its first pose, and a stride sheet rests on its last frame', () => {
@@ -104,19 +134,27 @@ describe('a planted foot against the ground, in the game walker', () => {
           w.place([40, 40]);
           let swing = 0;
           let shown = 0;
+          let changes = 0;
+          let last = -1;
           const speed = (64 * FRAME_MS) / stepMs;
           for (let t = 0; t < 6000; t += FRAME_MS) {
             w.frame(HELD[view]!, FRAME_MS, stepMs, () => true);
-            const pose = poseFrame(w.walked, travel, frames);
+            const pose = poseFrame(w.walked, travel, frames, stepMs);
+            if (pose !== last) changes++;
+            last = pose;
             const slide = plantSlide(f.plants, f.slope, f.poses, pose, w.walked / travel);
             if (slide === undefined) continue;
             shown++;
             swing = Math.max(swing, Math.abs(slide));
           }
           expect(shown).toBeGreaterThan(0);
-          report.push(`${sheet} ${view} ${pace}: ${Math.round(instants * 100) / 100} / ${Math.round(swing * 10) / 10} (pose ${travel} px, ${Math.round(speed * 10) / 10} px a frame)`);
-          // half a pose, plus a pixel of drawing
-          expect(swing).toBeLessThanOrEqual(travel / 2 + settings.limits.foot_slide_px);
+          const every = poseEvery(travel, stepMs);
+          const perS = changes / 6;
+          report.push(`${sheet} ${view} ${pace}: ${Math.round(instants * 100) / 100} / ${Math.round(swing * 10) / 10} (pose ${travel} px, ${Math.round(speed * 10) / 10} px a frame, every ${every} pose, ${Math.round(perS)} poses a second)`);
+          // the poses follow the kernel's pace and never pass the ceiling (a frame or two of rounding over the 6 s)
+          expect(perS).toBeLessThanOrEqual(settings.limits.poses_per_s_max + 1);
+          // half a shown pose, plus a pixel of drawing
+          expect(swing).toBeLessThanOrEqual((every * travel) / 2 + settings.limits.foot_slide_px);
         });
       }
     }

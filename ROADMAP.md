@@ -1,6 +1,6 @@
 # Roadmap
 
-Loomvale is a free pixel-art browser game that its players build together. You can play it today at [theopenfold.vercel.app](https://theopenfold.vercel.app). Much of the valley (bushes, recipes, quests, treasures) lives in small data files, and anyone can propose an addition.
+Loomvale is a free pixel-art browser game that its players build together. You can play it today at [loomvale.vercel.app](https://loomvale.vercel.app). Much of the valley (bushes, recipes, quests, treasures) lives in small data files, and anyone can propose an addition.
 
 This page says where the game stands, what comes next, and where help is most welcome. The full rules of play live in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md), and every design choice is logged in [DECISIONS.md](DECISIONS.md).
 
@@ -17,7 +17,7 @@ What works today:
 - **The first maze:** the tangle south of the ruins.
 - **Crafting.** A workshop that climbs three tiers and tools that wear out or last. A craft can miss, and luck tilts it; a recipe above your level can be tried at a lower chance. The bag is sorted into categories.
 - **Sound** with a mute control, plus walk and work animations.
-- **A 3D door**, marked as a trial: the same valley and the same save in 3D, at [/play3d/](https://theopenfold.vercel.app/play3d/).
+- **A 3D door**, marked as a trial: the same valley and the same save in 3D, at [/play3d/](https://loomvale.vercel.app/play3d/).
 - **For creators:** the template, `pnpm check` with readable errors, a playable preview for every pull request, a creators board with points, and a read-only MCP server so an AI tool can read the rules and check content from a clone.
 
 ## The stages
@@ -44,7 +44,7 @@ A 3D client of the same valley is in progress. It uses the same simulation, cont
 
 ## Where help is most welcome
 
-- **Content:** a fruit, a herb, a recipe, a quest, a treasure or a place to restore. Start with [Add a fruit in 10 minutes](docs/creators/README.md).
+- **Content:** a townsperson, a quest, a fruit, a herb, a recipe, a treasure or a place to restore. Start with [Add a townsperson in 15 minutes](docs/creators/README.md).
 - **Pixel art:** 128x128 character frames and 128x128 work poses at 64 pixels per tile, in the kit's palette (the guide covers it).
 - **Reviewing:** every extension proposal needs three approvals once five creators have had an extension merged (until then, one approval, the owner's), and an approval earns points when that proposal is merged.
 - **3D:** models and scenes for the 3D door.
@@ -57,7 +57,7 @@ To ask for something, open a "Request for the valley" issue. A request with enou
 - **Your name in the game.** A creator profile with a signature on the signs of what you added, and a place in the Creators menu.
 - **Points on the public board:** for accepted content, for commits and for reviews that counted. The weights are in [.github/points.json](.github/points.json), so changing one is a visible pull request.
 - **Credit** in [CREDITS.md](CREDITS.md).
-- **Possible rewards later.** Stage 4 plans in-game gold for creators by how often their accepted content is used. A creator fund of 40% of net income is planned, but there is no income and no distribution formula yet, and points carry no promised money value. See the [rules page](https://theopenfold.vercel.app/hub/rules/).
+- **Possible rewards later.** Stage 4 plans in-game gold for creators by how often their accepted content is used. A creator fund of 40% of net income is planned, but there is no income and no distribution formula yet, and points carry no promised money value. See the [rules page](https://loomvale.vercel.app/hub/rules/).
 
 ## Licences
 

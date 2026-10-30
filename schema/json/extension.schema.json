@@ -610,10 +610,31 @@
               "type": "boolean"
             },
             "opens_after": {
-              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
-              "maxLength": 80,
-              "description": "A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.",
-              "type": "string"
+              "minItems": 1,
+              "maxItems": 4,
+              "description": "Quests the node waits for, each with the line its refusal says. The node cannot be struck by a character who was offered one of them and has not finished it; a character who was offered none strikes the node as usual. Two entries may not both be offered to one wake pocket. The refusal costs nothing.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "quest"
+                ],
+                "properties": {
+                  "quest": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "line": {
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "description": "The one short line the refusal says. Left out: \"It is not ready yet.\"",
+                    "type": "string"
+                  }
+                }
+              }
             },
             "tool": {
               "anyOf": [
@@ -10487,6 +10508,11 @@
             "buys": {
               "description": "Whether the shop buys anything that has a value.",
               "type": "boolean"
+            },
+            "interior": {
+              "description": "The room its keeper trades in (DECISIONS.md, 2026-10-11, the shop interior). With it, the keeper stands inside: their place is the door, the player walks in, and the trade opens by talking across the counter. `food`: worn planks, a runner to the counter, a lit stove in a brick chimney. Left out, the keeper trades in the open.",
+              "const": "food",
+              "type": "string"
             }
           }
         }
@@ -11747,6 +11773,7 @@
             "bag_base",
             "place_stack",
             "load",
+            "gait",
             "starting_gold_mg",
             "per_point"
           ],
@@ -13218,6 +13245,183 @@
                 }
               }
             },
+            "gait": {
+              "additionalProperties": false,
+              "description": "The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.",
+              "type": "object",
+              "required": [
+                "run_div",
+                "sneak_mul",
+                "noise_still",
+                "noise_sneak",
+                "noise_walk",
+                "noise_run"
+              ],
+              "properties": {
+                "run_div": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A run takes the pace the load allows divided by this: 2 is half the time a tile. Every pace divides evenly."
+                },
+                "sneak_mul": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A sneak takes the pace the load allows times this: 2 is twice the time a tile."
+                },
+                "noise_still": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles within which a creature that listens turns its head at a player standing still."
+                },
+                "noise_sneak": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a sneak."
+                },
+                "noise_walk": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a walk."
+                },
+                "noise_run": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a run."
+                }
+              }
+            },
             "starting_gold_mg": {
               "additionalProperties": false,
               "type": "object",
@@ -13421,17 +13625,19 @@
               "type": "object",
               "required": [
                 "cost",
+                "nodes_max",
                 "slot_levels"
               ],
               "properties": {
                 "cost": {
                   "additionalProperties": false,
-                  "description": "Skill points a node costs, by its size (GROWTH section 3.6).",
+                  "description": "Skill points a node costs, by its size (GROWTH section 3.6): the value is the price, and a node that names its own `cost` stays between min and max.",
                   "type": "object",
                   "required": [
                     "small",
                     "major",
-                    "corner"
+                    "corner",
+                    "keystone"
                   ],
                   "properties": {
                     "small": {
@@ -13511,8 +13717,40 @@
                           "type": "integer"
                         }
                       }
+                    },
+                    "keystone": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
                     }
                   }
+                },
+                "nodes_max": {
+                  "minimum": 1,
+                  "maximum": 400,
+                  "description": "At most this many nodes a player of one race sees in one school: its paths and that race's corner.",
+                  "type": "integer"
                 },
                 "slot_levels": {
                   "minItems": 1,
@@ -15139,6 +15377,10 @@
                           "additionalItems": false,
                           "minItems": 2,
                           "maxItems": 2
+                        },
+                        "bob": {
+                          "description": "false when the sheet carries its own head travel and the feel layer's code bob is dropped for it (DECISIONS 2026-10-29: the bob is dropped for a clip that carries its own); left out, the bob plays on top of the poses.",
+                          "type": "boolean"
                         }
                       }
                     },
@@ -17869,8 +18111,8 @@
             },
             "nodes": {
               "minItems": 1,
-              "maxItems": 24,
-              "description": "The path and the corners. At most 12 nodes for each race (the path and that race's corner).",
+              "maxItems": 400,
+              "description": "The paths and the corners. At most `growth.nodes_max` nodes for each race (the paths and that race's corner).",
               "type": "array",
               "items": {
                 "additionalProperties": false,
@@ -17915,20 +18157,30 @@
                       {
                         "const": "corner",
                         "type": "string"
+                      },
+                      {
+                        "const": "keystone",
+                        "type": "string"
                       }
                     ]
                   },
                   "needs": {
                     "maxItems": 3,
                     "uniqueItems": true,
-                    "description": "The nodes of the same school learned before this one: its place on the path.",
+                    "description": "The nodes learned before this one, all of them: its place on the path. Most are of the same school; a node of another school joins the two wings.",
                     "type": "array",
                     "items": {
-                      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-                      "maxLength": 40,
-                      "description": "The node's name inside its school, for example \"steady\". A learned node is kept as \"<school id>/<node id>\".",
+                      "pattern": "^([a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*/)?[a-z0-9]+(-[a-z0-9]+)*$",
+                      "maxLength": 120,
+                      "description": "A node of the same school by its id (\"steady\"), or of another school by \"<school id>/<node id>\" (\"core/digging-school/steady\").",
                       "type": "string"
                     }
+                  },
+                  "cost": {
+                    "minimum": 1,
+                    "maximum": 20,
+                    "description": "Its price in skill points, inside the band of its size (params growth.cost, min to max). Left out: the size's price.",
+                    "type": "integer"
                   },
                   "key": {
                     "additionalProperties": false,
@@ -18028,6 +18280,102 @@
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                     "maxLength": 80,
                     "description": "An item whose sprite pictures the node on the tree.",
+                    "type": "string"
+                  },
+                  "cluster": {
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "maxLength": 40,
+                    "description": "The cluster of its school it belongs to (the school's `clusters`): nodes that stand together.",
+                    "type": "string"
+                  },
+                  "pos": {
+                    "additionalProperties": false,
+                    "description": "Where it stands on the tree, in steps from the trunk (x to the right, y down). A school gives every node a place or none; with none, the screen lays the school out from its paths.",
+                    "type": "object",
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "properties": {
+                      "x": {
+                        "minimum": -400,
+                        "maximum": 400,
+                        "type": "integer"
+                      },
+                      "y": {
+                        "minimum": -400,
+                        "maximum": 400,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "tint": {
+              "description": "The colour family of the core palette the wing is drawn in. Left out: wood.",
+              "anyOf": [
+                {
+                  "const": "green",
+                  "type": "string"
+                },
+                {
+                  "const": "wood",
+                  "type": "string"
+                },
+                {
+                  "const": "skin",
+                  "type": "string"
+                },
+                {
+                  "const": "red",
+                  "type": "string"
+                },
+                {
+                  "const": "water",
+                  "type": "string"
+                },
+                {
+                  "const": "plum",
+                  "type": "string"
+                },
+                {
+                  "const": "fire",
+                  "type": "string"
+                },
+                {
+                  "const": "grey",
+                  "type": "string"
+                }
+              ]
+            },
+            "angle": {
+              "minimum": 0,
+              "maximum": 359,
+              "description": "The direction the wing grows from the trunk, in degrees clockwise from the right. Left out: the wings share the circle in the order of their ids.",
+              "type": "integer"
+            },
+            "clusters": {
+              "maxItems": 40,
+              "description": "Named groups of the school's nodes, for example \"the trowel\". A node names its cluster.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "maxLength": 40,
+                    "description": "The node's name inside its school, for example \"steady\". A learned node is kept as \"<school id>/<node id>\".",
+                    "type": "string"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "maxLength": 40,
                     "type": "string"
                   }
                 }

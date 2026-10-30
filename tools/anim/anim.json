@@ -121,7 +121,7 @@
       "ramps": ["wood", "moss", "skin"],
       "metal": "grey",
       "leaf": "water",
-      "ships": { "sheet": "elf" },
+      "ships": { "sheet": "elf", "bob": false },
       "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
     "elf-f": {
@@ -134,7 +134,7 @@
       "ramps": ["wood", "moss", "skin"],
       "metal": "grey",
       "leaf": "water",
-      "ships": { "sheet": "elf_w" },
+      "ships": { "sheet": "elf_w", "bob": false },
       "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
     "skeleton": {
@@ -146,8 +146,22 @@
       "ramps": ["grey", "stone", "bark"],
       "metal": "grey",
       "leaf": "green",
-      "ships": { "sheet": "skeleton", "clip": "jog_short" },
+      "ships": { "sheet": "skeleton", "clip": "jog_short", "bob": false },
       "credit": "Skeleton by Alexander Brodin (https://poly.pizza/m/frU5VxsCGZJ), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/); modified: cut into bone pieces, each fitted to a bone of the Quaternius Universal Base Characters skeleton, posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
+    },
+    "wolf": {
+      "about": "The wolf, dark grey (character-wolf-grim.glb): a four-legged body that carries its own Idle, Walk and Run, so nothing is retargeted ('native'). The feet are the tails of the last bone of each leg. The camera is the forager's; the scale makes the wolf about 0.9 m at the ears.",
+      "model": "game/public3d/models/character-wolf-grim.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 144, "Walk": 24, "Run": 13.6 },
+      "contacts": { "LB": "backleg2", "RB": "R_backleg2", "LF": "frontleg2", "RF": "R_frontleg2" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["stone", "bark"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Wolf, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: the emission input removed (it repeated the colour map) and the colour map cut from 2048 to 1024 px; scaled to 0.9 m at the ears; Meshy's walk renamed Walk; Run made from the walk and Idle made from the standing pose in Blender (game/tools/blender/quad_pass.py); posed with its own actions and rendered to pixels by tools/anim"
     }
   }
 }

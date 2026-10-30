@@ -5,6 +5,7 @@
  * into swings. Pure, so the rhythm can be tested without a scene.
  */
 import type { Bundle } from '@game/kernel';
+import { ART_PX } from './walking';
 
 export type AutoKind = 'fell' | 'dig' | 'mine';
 
@@ -84,19 +85,35 @@ export function strideFrame(k: number, step: number, frames: number): number {
 /** The part of a sprite entry the pose rule reads: a stride sheet names the art pixels one pose is walked for. */
 export interface StrideInfo {
   frames: number;
-  stride?: { travel_mpx: number; anchor: [number, number] };
+  stride?: { travel_mpx: number; anchor: [number, number]; bob?: boolean };
+}
+
+/** The most poses a second a walk shows: each pose stays two 60 Hz frames (tools/anim/anim.json `poses_per_s_max`). */
+export const POSES_PER_S_MAX = 30;
+
+/**
+ * Every how many poses a walk shows one at the pace of `stepMs` a tile (the kernel's step time for the gait and the
+ * load, `gaitStepMs`): 1 while the cycle's poses come at most `POSES_PER_S_MAX` a second, 2 at a run on a walk sheet.
+ * A shown pose is still the one for the distance walked; only the poses between are skipped.
+ */
+export function poseEvery(travel: number, stepMs: number | undefined): number {
+  if (!(travel > 0) || !(stepMs !== undefined && stepMs > 0)) return 1;
+  const speed = (ART_PX * 1000) / stepMs;
+  return Math.max(1, Math.ceil(speed / (travel * POSES_PER_S_MAX)));
 }
 
 /**
  * The pose of a distance-locked walk (tools/anim): the sheet's frames are its poses in order and, last, the standing
  * pose, and the pose shown is the nearest to the distance walked, `round(walked / travel)` round the cycle (a pose is
  * exact when the body is at it and out by half a pose at most before the next one: the foot is never more than
- * half a pose from the ground). `walked` is the art pixels the feet have gone (Walker.walked).
+ * half a pose from the ground). `walked` is the art pixels the feet have gone (Walker.walked). At a pace too fast for
+ * every pose (`stepMs`, a run) the nearest of every `poseEvery` poses is shown, so the foot is out by up to that many halves.
  */
-export function poseFrame(walked: number, travel: number, frames: number): number {
+export function poseFrame(walked: number, travel: number, frames: number, stepMs?: number): number {
   const poses = frames - 1;
   if (poses < 1 || !(travel > 0)) return 0;
-  return Math.floor(Math.max(0, walked) / travel + 0.5) % poses;
+  const every = poseEvery(travel, stepMs);
+  return (Math.floor(Math.max(0, walked) / (travel * every) + 0.5) * every) % poses;
 }
 
 /** The frame of a body at rest: the last of a stride sheet, `fallback` for a time-based one. */

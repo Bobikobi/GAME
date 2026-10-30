@@ -58,12 +58,19 @@ export interface Target {
   /** a repo path, or `$NAME` for a path from the environment; a race (`map: ual`) is built from tools/anim/races/<race>.json and has none */
   model?: string;
   basket?: string;
-  map: 'mixamo' | 'rig19' | 'ual';
+  /** `ual`: a race on the libraries' own skeleton; `native`: a body that carries its own actions (the four-legged wolf): played as they are, nothing retargeted */
+  map: 'mixamo' | 'rig19' | 'ual' | 'native';
   /** map `ual`: the race file (tools/anim/races/<race>.json) and the body in it (`m`, `f`; a race with one body has `common` only) */
   race?: string;
   body?: string;
   /** the sheet this body is shipped as in content/kit (`chars/<sheet>_down|left|up`), once picked */
-  ships?: { sheet: string; /** the walk clip the sheet is made of; `jog` when left out */ clip?: string };
+  ships?: { sheet: string; /** the walk clip the sheet is made of; `jog` when left out */ clip?: string; /** false: the clip carries its own head travel and the game drops the code bob for this sheet */ bob?: boolean };
+  /** native only: the body's own actions and their lengths in frames at `fps` */
+  actions?: Record<string, number>;
+  /** native only: the frames a second of those actions */
+  fps?: number;
+  /** native only: the four feet, `<side><end>` (LB, RB, LF, RF), to the bone whose tail is the sole */
+  contacts?: Record<string, string>;
   elev: number;
   pxm: number;
   kz?: number;
@@ -102,6 +109,22 @@ export interface Settings {
   targets: Record<string, Target>;
 }
 
+/** The id of the pseudo-library that holds a native target's own actions. */
+export const selfLibrary = (target: string): string => `self:${target}`;
+
+/**
+ * The libraries of libraries.json plus, for each native target, its own actions as `self:<target>`: a clip on
+ * that body names it as its base, and the sampling code below needs nothing else to know about native bodies.
+ */
+export function withNative(libs: Record<string, Library>, settings: Settings): Record<string, Library> {
+  const out = { ...libs };
+  for (const [id, t] of Object.entries(settings.targets)) {
+    if (t.map !== 'native') continue;
+    out[selfLibrary(id)] = { title: `${id} (its own actions)`, page: '', upload: '', bytes: 0, sha256: '', licence: '', glb: '', licence_file: '', fps: t.fps ?? settings.fps, actions: t.actions ?? {} };
+  }
+  return out;
+}
+
 export interface Source {
   library: string;
   action: string;
@@ -133,7 +156,13 @@ export interface Clip {
   views: View[];
   /** time per pose; left out, each pose lasts until the next sampled frame at the library's fps */
   ms?: number[];
-  locomotion?: { playback: 'distance' | 'time' };
+  /** `gait: four-beat`: a quadruped's walk, whose four feet land one after another, evenly, hind and fore in turn */
+  locomotion?: {
+    playback: 'distance' | 'time';
+    gait?: 'four-beat';
+    /** the body's own pace, milliseconds a tile, in place of the player's three (a creature on its round or a chase) */
+    pace_ms?: number;
+  };
   ramps?: string[];
   limits?: Partial<Limits>;
 }
@@ -166,6 +195,17 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
     return len;
   };
   const baseLen = length(clip.base, 'base');
+  const native = target?.map === 'native';
+  if (native) {
+    if (clip.base.library !== selfLibrary(clip.target)) say(`a clip on the native target ${clip.target} takes its own actions: base library "${selfLibrary(clip.target)}"`);
+    for (const part of ['layer', 'ik', 'prop', 'set', 'worn', 'basket'] as const) if (clip[part] !== undefined) say(`a native body has no ${part} (the actions are played as they are)`);
+    const feet = Object.keys(target.contacts ?? {});
+    if (feet.length !== 4 || !feet.every((f) => /^[LR][BF]$/.test(f)) || new Set(feet).size !== 4) say('a native target names its four feet LB, RB, LF, RF in "contacts"');
+    if (target.actions === undefined || Object.keys(target.actions).length === 0) say('a native target lists its "actions" with their lengths in frames');
+  } else if (clip.base.library.startsWith('self:')) {
+    say(`the library "${clip.base.library}" belongs to a native target; ${clip.target} is not one`);
+  }
+  if (clip.locomotion?.gait !== undefined && (clip.locomotion.gait !== 'four-beat' || !native)) say('locomotion.gait is four-beat, and only a native (four-legged) target has one');
   let count = 0;
   if (Array.isArray(clip.frames)) {
     count = clip.frames.length;
@@ -223,6 +263,7 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
   for (const r of clip.ramps ?? []) if (coreRamp(r) === undefined) say(`ramp "${r}" is not a shared ramp`);
   if (clip.locomotion !== undefined) {
     if (clip.locomotion.playback !== 'distance' && clip.locomotion.playback !== 'time') say('locomotion.playback is distance or time');
+    if (clip.locomotion.pace_ms !== undefined && (!isInt(clip.locomotion.pace_ms) || clip.locomotion.pace_ms <= 0)) say('locomotion.pace_ms is a whole number of milliseconds a tile');
     if (Array.isArray(clip.frames)) say('a locomotion clip spreads its poses evenly ({ "even": n }), so the cycle has one step per pose');
   }
   for (const key of Object.keys(clip.limits ?? {})) if (!(key in settings.limits)) say(`limit "${key}" is not one of ${Object.keys(settings.limits).join(', ')}`);
@@ -330,6 +371,7 @@ export function job(name: string, clip: Clip, libs: Record<string, Library>, set
     fps: settings.fps,
   };
   if (target.colours !== undefined) out.rig_colours = target.colours;
+  if (target.map === 'native') out.contacts = target.contacts;
   if (clip.layer !== undefined) out.layer = { action: clip.layer.action, mask: clip.layer.mask, frame: clip.layer.frame === 'follow' ? 0 : clip.layer.frame };
   if (clip.ik !== undefined) out.ik = { side: clip.ik.side, anchor: clip.ik.anchor, pole: clip.ik.pole, points: clip.ik.points, ...(clip.ik.floor !== undefined ? { floor: clip.ik.floor } : {}) };
   if (clip.prop !== undefined) {
@@ -378,6 +420,14 @@ export function clipNames(): string[] {
 
 export function readClip(name: string): Clip {
   return readJson<Clip>(join(CLIPS_DIR, `${name}.json`));
+}
+
+/** The paces a clip is judged at: the player's three, or its own single pace (`locomotion.pace_ms`) for all three. */
+export function clipPaces(clip: Clip, settings: Settings, players: Record<Pace, number>): Record<Pace, number> {
+  const ms = clip.locomotion?.pace_ms;
+  if (ms === undefined) return players;
+  const own = (settings.tile_px * 1000) / ms;
+  return { light: own, steady: own, heavy: own };
 }
 
 /** The game's paces in px a second at the tile size: one tile per step (content/core/params.json). */
