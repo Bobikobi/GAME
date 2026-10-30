@@ -61,7 +61,8 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
-import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
+import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
+import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
 import type { GameSession } from '../session-surface';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
@@ -544,7 +545,8 @@ export class WorldScene extends Phaser.Scene {
     cam.setBounds(0, 0, this.b.map.width * T, this.b.map.height * T);
     cam.setRoundPixels(true);
     // the sway goes on before the camera's grade, so it reads the palette's own colours
-    if (RICH.motion && this.motionReady()) {
+    // the sway goes where WebGL has a graphics chip (richground.ts swayOn): in software its pass costs a third of a frame
+    if (RICH.motion && swayOn(gpuName(), window.location.search) && this.motionReady()) {
       this.gust = new Sway(cam);
       cam.filters.internal.add(this.gust);
       for (const f of this.fires.values()) this.lickFlame(f);

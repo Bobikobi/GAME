@@ -103,6 +103,8 @@ So A and B together cost about one pass, the price of one more fog bank. C is ch
 
 What the walk costs shows in the phone opening played with the CPU at 4x (`E2E_CPU_SLOWDOWN=4 pnpm e2e:group opening-phone`, the way CI's runners are slow): `develop` cooks the stew at 18:00 and reaches the arch at 20:00 in 529 s; the ladder before the cut cooked it at 19:00 and missed the evening's dig (CI failed there twice); after the cut it cooks at 18:00 and passes in 538 s.
 
+**The sway where WebGL is drawn in software.** After `develop` merged in, CI's phone opening ran two hours late again. On a meadow at noon (no shade, no pool) `develop` draws a frame in 250 to 267 ms and the ladder in 367 to 383: the sway's pass over the camera is a third of a frame when WebGL is SwiftShader. So the sway, and the flame shader with it, runs where WebGL has a graphics chip, phones of every tier included as the owner asked, and not in software WebGL (SwiftShader, llvmpipe: a machine without a graphics chip, or a test runner); `?sway=on` and `?sway=off` decide for a still, a clip or a measurement (`richground.ts` `swayOn`, pinned by a test; the still and clip scripts ask for it on). With the CPU at 4x the phone opening then cooks the stew at 18:00 and passes in 535 s, against `develop`'s 533 s.
+
 The largest steps are the two full-view textures of the pool layer and the sway's pass over the camera, as section 4 estimated: one and about one more full-screen pass. The game's page grew from 1,868.90 kB to 1,885.37 kB minified (+16.5 kB, 503.40 to 509.38 kB gzipped); Vite's chunk warning at 1,600 kB was already passed before this build and its limit is unchanged.
 
 ## 5. The owner's three questions, with a recommendation each

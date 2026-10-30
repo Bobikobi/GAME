@@ -1,3 +1,5 @@
+import { SOFTWARE_GPU } from './device';
+
 /**
  * The ground's rich detail, worked out without Phaser so it can be tested: the
  * tile hash, smooth value noise over tile coordinates, the tone field that groups
@@ -200,4 +202,17 @@ export function leanAt(x: number, y: number, time: number): 0 | 1 | 2 {
   let lean = g > 0.85 ? 2 : g > 0.55 ? 1 : 0;
   if (Math.floor(y / 6) % 2 === 1) lean = Math.max(0, lean - 1);
   return lean as 0 | 1 | 2;
+}
+
+/**
+ * Whether the sway runs on this browser: everywhere WebGL has a graphics chip, phones of every tier included (the owner,
+ * 30.10: not gated on the weak phone); not where WebGL is drawn in software (SwiftShader, llvmpipe: a machine without
+ * a graphics chip, or a test runner), where its full-screen pass cost a third of a frame. `?sway=on` or `?sway=off`
+ * in the address decides for a still, a clip or a measurement.
+ */
+export function swayOn(gpu: string, query: string): boolean {
+  const asked = new URLSearchParams(query).get('sway');
+  if (asked === 'on') return true;
+  if (asked === 'off') return false;
+  return !SOFTWARE_GPU.test(gpu);
 }
