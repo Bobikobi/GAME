@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { INK_HEX } from '../kit/ink.js';
 import { coreRamp } from '../kit/palette.js';
 import { REPO_ROOT } from '../load.js';
+import { rampSteps } from './snap.js';
 
 export const ANIM_DIR = join(REPO_ROOT, 'tools', 'anim');
 export const CLIPS_DIR = join(ANIM_DIR, 'clips');
@@ -195,9 +196,10 @@ const isInt = (v: unknown): v is number => Number.isInteger(v);
 
 /**
  * The problems of a target's coats, in plain words; empty when they can be drawn: ids unique, a name, a positive
- * weight, each mapped ramp a shared ramp that the target (or the coat's body) draws in, each `to` a shared ramp and
- * a whole shift from -5 to 5 (or six `steps`, each "ramp:step" of a shared ramp or null), no step that lands on the
- * ink (a body pixel in the outline's colour melts into the outline), a body that is another target of anim.json.
+ * weight, each mapped ramp a shared ramp that the target (or the coat's body) draws in, whole or as a span of it, each
+ * `to` a shared ramp and a whole shift from -5 to 5 (or six `steps`, each "ramp:step" of a shared ramp or null), no
+ * step that lands on the ink (a body pixel in the outline's colour melts into the outline), a body that is another
+ * target of anim.json.
  */
 export function coatProblems(id: string, settings: Settings): string[] {
   const out: string[] = [];
@@ -229,7 +231,7 @@ export function coatProblems(id: string, settings: Settings): string[] {
     for (const [from, step] of Object.entries(c.map)) {
       const src = coreRamp(from);
       if (src === undefined) say(`${name}: ramp "${from}" is not a shared ramp`);
-      else if (!ramps.includes(from)) say(`${name}: ramp "${from}" is not one the body draws in (${ramps.join(', ')})`);
+      else if (!ramps.some((r) => rampSteps(r)?.id === from)) say(`${name}: ramp "${from}" is not one the body draws in (${ramps.join(', ')})`);
       const dest: (string | undefined)[] = [];
       if (step !== null && typeof step === 'object' && 'steps' in step) {
         if (!Array.isArray(step.steps) || step.steps.length !== 6) {
@@ -343,7 +345,7 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
   else if (!isNum(ax) || !isNum(ay) || ax < 0 || ay < 0 || ax > w || ay > h) say('frame.anchor (the feet) lies inside the frame');
   if (!Array.isArray(clip.views) || clip.views.length === 0 || !clip.views.every((v) => VIEWS.includes(v))) say(`views are some of ${VIEWS.join(', ')} (right is left mirrored)`);
   if (clip.ms !== undefined && (!Array.isArray(clip.ms) || clip.ms.length !== count || !clip.ms.every((m) => isInt(m) && m > 0))) say(`ms is ${count} whole positive numbers, one per pose`);
-  for (const r of clip.ramps ?? []) if (coreRamp(r) === undefined) say(`ramp "${r}" is not a shared ramp`);
+  for (const r of clip.ramps ?? []) if (rampSteps(r) === undefined) say(`ramp "${r}" is not a shared ramp or a span of one (<id>:<a>-<b>)`);
   if (clip.locomotion !== undefined) {
     if (clip.locomotion.playback !== 'distance' && clip.locomotion.playback !== 'time') say('locomotion.playback is distance or time');
     if (clip.locomotion.pace_ms !== undefined && (!isInt(clip.locomotion.pace_ms) || clip.locomotion.pace_ms <= 0)) say('locomotion.pace_ms is a whole number of milliseconds a tile');

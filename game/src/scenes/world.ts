@@ -873,7 +873,8 @@ export class WorldScene extends Phaser.Scene {
   /**
    * Edge strips over a tile, one per side, read from the four neighbours: a bank
    * where water meets land, a fringe of grass over a path, cobble, sand or ruin floor
-   * tile that touches meadow or grove, and a shore line where sand meets water. Each
+   * tile that touches meadow or grove, worn earth reaching into a meadow tile that touches a path,
+   * and a shore line where sand meets water. Each
    * strip is a kit sprite named after the side it sits on; a missing one is simply not drawn.
    */
   private drawEdges(
@@ -890,7 +891,7 @@ export class WorldScene extends Phaser.Scene {
     const m = this.b.map;
     const kit = kitOf(sprite);
     const floor = tag === 'ruin' && baseName(sprite) === 'ruin_floor';
-    const kind = tag === 'water' ? 'bank' : tag === 'path' || tag === 'town' || tag === 'riverbank' || floor ? 'fringe' : undefined;
+    const kind = tag === 'water' ? 'bank' : tag === 'path' || tag === 'town' || tag === 'riverbank' || floor ? 'fringe' : tag === 'meadow' ? 'worn' : undefined;
     if (!kind) return false;
     let animated = false;
     for (const [side, dx, dy] of SIDES) {
@@ -899,6 +900,7 @@ export class WorldScene extends Phaser.Scene {
       let ref: string | undefined;
       if (kind === 'bank' && near.tag !== 'water') ref = `${kit}tiles/bank_${side}`;
       else if (kind === 'fringe' && (near.tag === 'meadow' || near.tag === 'grove')) ref = `${kit}tiles/fringe_${side}`;
+      else if (kind === 'worn' && near.tag === 'path') ref = `${kit}tiles/worn_${side}`;
       else if (tag === 'riverbank' && near.tag === 'water') ref = `${kit}tiles/shore_${side}`;
       if (!ref || !this.has(ref)) continue;
       const frames = this.b.sprites[ref]?.frames ?? 1;
