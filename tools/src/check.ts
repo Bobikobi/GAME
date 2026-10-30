@@ -571,12 +571,29 @@ function checkDrift(b: Bundle): Issue[] {
 /** The two grids a sprite may be drawn on: art pixels per tile side, 16 (density 1) or 64 (density 4). */
 const DENSITY_SCALE: Record<number, number> = { 1: 1, 4: 4 };
 
+/** The anim tool's one frame, read when first asked (the checks that never meet a density 4 character do not read it). */
+let animFrameCache: [number, number] | undefined;
+function animFrame(): [number, number] {
+  if (!animFrameCache) {
+    const file = join(REPO_ROOT, 'tools', 'anim', 'anim.json');
+    animFrameCache = (JSON.parse(readFileSync(file, 'utf8')) as { frame: { size: [number, number] } }).frame.size;
+  }
+  return animFrameCache;
+}
+
 /** What a sprite of this group should measure at a density: an exact size, or a ceiling for a prop. */
 function sizeRule(name: string, m: number): { w: number; h: number; exact: boolean; what: string } {
   const group = name.split('/')[0];
   if (group === 'tiles' || group === 'items') return { w: 16 * m, h: 16 * m, exact: true, what: `${group} are` };
-  // a work pose is twice a walk frame so a raised tool fits; its feet stay on the same spot as the walk frames
-  if (group === 'chars' && /_work_(down|left|up|right)$/.test(name)) return { w: 32 * m, h: 32 * m, exact: true, what: 'work poses are' };
+  const work = group === 'chars' && /_work_(down|left|up|right)$/.test(name);
+  // at density 4 every character frame, a walk or a work pose, is the anim tool's one frame (tools/anim/anim.json
+  // `frame`), the size its clips are drawn at: one size definition for the kit and the tool
+  if (group === 'chars' && m === 4) {
+    const [w, h] = animFrame();
+    return { w, h, exact: true, what: work ? 'work poses are' : 'character frames are' };
+  }
+  // on the old 16 grid a work pose is twice a walk frame so a raised tool fits; its feet stay on the same spot as the walk frames
+  if (work) return { w: 32 * m, h: 32 * m, exact: true, what: 'work poses are' };
   if (group === 'chars') return { w: 16 * m, h: 24 * m, exact: true, what: 'character frames are' };
   // a prop reaches six tiles a side at density 4 (STYLE.md section 1b), four at density 1
   const top = m === 4 ? 384 : 64;
@@ -605,6 +622,19 @@ export function spriteSizeProblem(name: string, s: { w: number; h: number; densi
     ? `; this size is a density ${other} size, so set "density": ${other} or draw it on the ${density === 1 ? '16' : '64'} px grid`
     : '';
   return `${here.what} ${said(here)} at density ${density} (${said(there)} at density ${other}), this one is ${s.w}x${s.h}${hint}`;
+}
+
+/**
+ * A distance-locked walk sheet (`stride`) is the poses of a cycle and, last, one standing pose: at least two poses,
+ * and its ground point is inside the frame, at the middle of the frame's width (the sprite stands on its centre).
+ */
+export function strideProblem(s: { w: number; h: number; frames: number; stride?: { travel_mpx: number; anchor: number[] } }): string | undefined {
+  if (!s.stride) return undefined;
+  if (s.frames < 3) return `a stride sheet is at least two poses and the standing frame (3 frames), this one has ${s.frames}`;
+  const [ax, ay] = s.stride.anchor as [number, number];
+  if (ax * 2 !== s.w) return `the stride anchor x is ${ax}, the middle of a ${s.w} px frame is ${s.w / 2}`;
+  if (ay < 1 || ay > s.h) return `the stride anchor y is ${ay}, it is a row of the ${s.h} px frame (1 to ${s.h})`;
+  return undefined;
 }
 
 /**
@@ -639,6 +669,8 @@ function checkKits(a: Assembled): Issue[] {
       const where = `kit.sprites.${name}`;
       const problem = spriteSizeProblem(name, s);
       if (problem) issues.push({ file: kitFile, where, message: problem, level: 'error' });
+      const strideIssue = strideProblem(s);
+      if (strideIssue) issues.push({ file: kitFile, where, message: strideIssue, level: 'error' });
       const rich = richProblem(kitId, name, s);
       if (rich) issues.push({ file: kitFile, where, message: rich, level: 'error' });
       // A declared height in characters is held to its kind's floor (NATURE section 1, STYLE 1b).

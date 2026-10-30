@@ -81,17 +81,18 @@ describe('red line A: no loop', () => {
     expect(status(proveOnly(broken), 'effect_graph_acyclic')).toBe('fail');
   });
 
-  it('at the vendor: the content buys two berries, makes a mash and sells it at a profit', () => {
-    const top = vendorLoops(bundle)[0]!;
+  it('at the vendor: a raw berry at 5,000 mg buys two, makes a mash and sells it at a profit (the loop the content once had)', () => {
+    const shops = Object.fromEntries(Object.entries(bundle.shops).map(([id, s]) => [id, { ...s, sells: s.sells.map((o) => (o.item === 'core/berry' ? { ...o, price_mg: 5_000 } : o)) }]));
+    const cheap: Bundle = { ...bundle, shops };
+    const top = vendorLoops(cheap)[0]!;
     expect(top.what).toContain('core/berry-mash');
     expect([top.costMg, top.payMg, top.profitMg]).toEqual([10_000, 31_500, 21_500]);
-    expect(status(prove(rules, realCatalogue(bundle, rules), bundle, { top: false }), 'loop_profit_max')).toBe('fail');
+    expect(status(prove(rules, realCatalogue(cheap, rules), cheap, { top: false }), 'loop_profit_max')).toBe('fail');
   });
 
-  it('the stall without raw berries has no loop', () => {
-    const shops = Object.fromEntries(Object.entries(bundle.shops).map(([id, s]) => [id, { ...s, sells: s.sells.filter((o) => o.item !== 'core/berry') }]));
-    const fixed: Bundle = { ...bundle, shops };
-    expect(vendorLoops(fixed).filter((l) => l.profitMg > rules.loopProfitMaxMg)).toEqual([]);
+  it('the content as shipped has no loop: a raw berry costs half the mash it makes', () => {
+    expect(vendorLoops(bundle).filter((l) => l.profitMg > rules.loopProfitMaxMg)).toEqual([]);
+    expect(status(prove(rules, realCatalogue(bundle, rules), bundle, { top: false }), 'loop_profit_max')).toBe('pass');
   });
 });
 
@@ -134,10 +135,16 @@ describe('walls (BODY_CLOCKS 5-7)', () => {
     }
   });
 
-  it("the worked example: band 3 loses 121% at the north pass, band 4 loses 83%", () => {
+  it('the worked example (4.7): band 3 loses 11% at the north pass and runs out of its clock, band 4 loses nothing', () => {
     const north = cat.walls.find((w) => w.id === 'north-pass')!;
-    expect(proveOnly({ ...cat, walls: [north] }).walls[0]!.cheese.endPermille).toBe(-214);
-    expect(proveOnly({ ...cat, walls: [north] }, { ...rules, wallCheeseGap: 1 }).walls[0]!.cheese.endPermille).toBe(172);
+    expect(proveOnly({ ...cat, walls: [north] }).walls[0]!.cheese.endPermille).toBe(890);
+    expect(proveOnly({ ...cat, walls: [north] }, { ...rules, wallCheeseGap: 1 }).walls[0]!.cheese.endPermille).toBe(1000);
+  });
+
+  it('a wall of drain alone is cheesable from band 3 once grade 1 drains 10: it needs a clock or a requirement', () => {
+    const north = cat.walls.find((w) => w.id === 'north-pass')!;
+    const bare: Wall = { id: 'drain-only', band: north.band, conditions: north.conditions, grade: north.grade, lengthMin: north.lengthMin, by: north.by, ...(north.witness ? { witness: north.witness } : {}) };
+    expect(status(proveOnly({ ...cat, walls: [bare] }), 'wall_not_cheesable:drain-only')).toBe('fail');
   });
 
   it('a short, mild wall at band 5 is cheesable from band 3 and red', () => {
@@ -171,7 +178,7 @@ describe('tables and the strongest builds', () => {
     const top = timeToZero(rules).find((t) => t.grade === grade && t.answer === 0)!;
     expect(top.bareMs).toBe(rules.gameHourMs);
     const snow = calmSnow(rules, cat);
-    expect(snow[0]!.bareMs).toBe(5 * rules.gameHourMs);
+    expect(snow[0]!.bareMs).toBe(10 * rules.gameHourMs);
     expect(snow.at(-1)!.remaining).toBe(0);
     expect(snow.at(-1)!.bareMs).toBeNull();
   });

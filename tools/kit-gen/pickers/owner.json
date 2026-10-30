@@ -1,0 +1,4 @@
+{
+  "note": "Who may pick a draft (docs/art/PRODUCTION_LINE.md section 4): the owner only. A name is added here by the owner, never by a builder or an agent; art:pick refuses a picked_by that is not listed.",
+  "pickers": ["elad"]
+}

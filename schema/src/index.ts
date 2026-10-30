@@ -1324,7 +1324,7 @@ const BalanceParams = Type.Object(
     band_size: { ...Bounded, description: 'Levels in one band (PROGRESSION 3.3).' },
     catalogue_hours_min: { ...Bounded, description: 'The fewest active hours that master every school of the catalogue (PROGRESSION 3.2: 800).' },
     mentor_bonus_pct: { ...Bounded, description: 'The one experience source beside the work itself: the mentor\'s bonus, in percent (PROGRESSION 3.7, red line B).' },
-    group_share_max_permille: { ...Bounded, description: 'The most a group member earns from another\'s work, in permille of the member\'s own (PROGRESSION 3.7, Q7).' },
+    group_share_max_permille: { ...Bounded, description: 'The most a newcomer takes from the experience the other members already earned, in permille of the newcomer\'s own: a split, never new experience (PROGRESSION 3.7, Q7).' },
     loop_profit_max_mg: { ...Bounded, description: 'The most gold any buy, craft and sell cycle at a vendor may make, in milligold (red line A: 0).' },
     ceilings: Type.Object(
       {
@@ -1332,7 +1332,7 @@ const BalanceParams = Type.Object(
         move: Band5(0, 100, 'Time off a step, a crossing or an oar stroke, in percent.'),
         carry: Band5(0, 100, 'The weight limit above might\'s and the bag\'s, in percent.'),
         health: Band5(0, 200, 'The health cap above the attributes\' cap, in percent.'),
-        sustain: Band5(0, 100, 'Health back a game hour while a place drains, regen and food together, in percent of the cap.'),
+        sustain: Band5(0, 100, 'Health back a game hour while a place drains, regen and food together, in points of the base cap of 100 (the drain\'s unit).'),
         find: Band5(0, 100, 'Rare-find points.'),
         sense: Band5(0, 20, 'Tiles of sight in the dark or of a trail.'),
         place: Band5(0, 4, 'Answer steps on one condition: garment, master step and dish together.'),
@@ -1372,7 +1372,7 @@ const BalanceParams = Type.Object(
     grade_drain_pct: Type.Array(Type.Integer({ minimum: 0, maximum: 100 }), {
       minItems: 5,
       maxItems: 5,
-      description: 'The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).',
+      description: 'The drain of a remaining grade 0 to 4, in points of the base cap of 100 a game hour, the same for every cap (BODY_CLOCKS 5.2).',
     }),
   },
   { additionalProperties: false, description: 'The balance model (PROGRESSION 4.7): two red lines, rising ceilings, walls proven both ways. Read by tools only, until the kernel reads it.' },
@@ -1642,6 +1642,25 @@ export const KitBody = Type.Object(
               description:
                 'Art pixels per tile side: 1 means 16 per tile (the 16x16 grid, the default), 4 means 64 per tile (the 64x64 grid, the standard for new art). The size rules of w and h follow it.',
             }),
+          ),
+          stride: Type.Optional(
+            Type.Object(
+              {
+                travel_mpx: Int(1000, 128000, 'Thousandths of an art pixel (64 per tile) the body walks for one pose of the cycle: the pose shown is the nearest to art pixels walked / (travel_mpx / 1000), so a planted foot is where the ground is.'),
+                anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
+                bob: Type.Optional(
+                  Type.Boolean({
+                    description:
+                      'false when the sheet carries its own head travel and the feel layer\'s code bob is dropped for it (DECISIONS 2026-10-29: the bob is dropped for a clip that carries its own); left out, the bob plays on top of the poses.',
+                  }),
+                ),
+              },
+              {
+                additionalProperties: false,
+                description:
+                  'A walk cycle that follows the distance walked (tools/anim). Its frames are the poses of the cycle in order and, last, the standing pose; `frames` is the poses plus one. Left out for a sheet whose frames are time-based.',
+              },
+            ),
           ),
           scale: Type.Optional(
             Type.Number({
