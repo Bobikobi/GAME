@@ -120,6 +120,34 @@
       "metal": "grey",
       "leaf": "green",
       "credit": "Wolf, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: the emission input removed (it repeated the colour map) and the colour map cut from 2048 to 1024 px; scaled to 0.9 m at the ears; Meshy's walk renamed Walk; Run made from the walk and Idle made from the standing pose in Blender (game/tools/blender/quad_pass.py); posed with its own actions and rendered to pixels by tools/anim"
+    },
+    "hare": {
+      "about": "The hare (animal-hare.glb): a four-legged body that carries its own Idle, Walk and Run, so nothing is retargeted ('native'). The feet are the tails of the paw bones. The camera is the forager's; the scale makes the hare about 0.35 m at the ears, sitting.",
+      "model": "game/public3d/models/animal-hare.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 400, "Walk": 26, "Run": 16 },
+      "contacts": { "LB": "BackPaw_L", "RB": "BackPaw_R", "LF": "FrontPaw_L", "RF": "FrontPaw_R" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["wood", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Rabbit by CDmir (with TinyWorlds), OpenGameArt, CC0, https://opengameart.org/content/rabbit-0; modified: the fur-shell mesh, the lights, the camera and the ground plane removed; the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, warmed and lightened toward a sandy hare; scaled to 0.35 m at the ears with the scale baked into the bones, and a tip bone under each paw (the renderer reads a foot from its bone's tail); Guarding renamed Idle; Walk and Run made from Running in Blender (game/tools/blender/hare_pass.py: Walk 1.6x slower with the swings and the bob at 0.3 of the bound's around their means and the paws' lift at 0.55 of it, Run at the bound's tempo with them at 0.5 and the lift at 0.7, the planted paws kept on the ground); the other actions dropped; posed with its own actions and rendered to pixels by tools/anim"
+    },
+    "crow": {
+      "about": "The crow (animal-crow.glb): a two-legged body that carries its own Idle, Hop and Lift (and the file's Fly), so nothing is retargeted ('native'). A bird has two feet, so the four contacts name its two toe bones twice. The camera is the forager's; the scale makes the crow about 0.3 m standing.",
+      "model": "game/public3d/models/animal-crow.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 144, "Hop": 12, "Lift": 36, "Fly": 34 },
+      "contacts": { "LB": "toe.L", "RB": "toe.R", "LF": "toe.L", "RF": "toe.R" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["grey", "stone"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Raven by Teh_Bucket, OpenGameArt, CC0, https://opengameart.org/content/raven-0; modified: the mirror and edge-split modifiers applied (one whole mesh); the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, lightened; turned to face -Y and scaled to 0.3 m standing, both baked into the bones, and a tip bone under each foot (the renderer reads a foot from its bone's tail); the tail held up so the bird stands on its feet; Idle, Hop and Lift made in Blender from the file's standing pose and its flight (game/tools/blender/crow_pass.py), the flight kept as Fly; posed with its own actions and rendered to pixels by tools/anim"
     }
   }
 }

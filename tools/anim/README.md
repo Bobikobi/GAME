@@ -87,6 +87,12 @@ four, over four feet instead of two.
   the order and the gaps. Left off the Meshy `Walk` and `Run` on purpose: they are not four-beat, see below.
 - Four poses a loop is the owner's pick for a quadruped (DECISIONS 2026-10-29), so a planted foot slides up to about
   2 px between two poses; the wolf clips carry `limits: { "foot_slide_px": 2 }` for that.
+- A native glb ships with identity object transforms: its scale and turn are baked into the bones and the mesh
+  before export. The importer that poses the body guesses a bone's length from its child's distance in the
+  skeleton's own units, so a scaled armature object comes back with its contact-bone tails 1/scale too long and
+  the feet land off the body (the hare and crow Blender passes bake it for that reason). The wolf predates this
+  line: `quad_pass.py` does not bake yet, and at its object scale of 0.76 the error stays inside the 2 px slide
+  limit, so its glb and its clips are left as they are.
 
 The Meshy `Walk` measured (24 source frames, the feet as projected): the left feet lift together (the hind and the fore
 left swing at about 0.1 to 0.13 of the cycle) and the right feet together (about 0.54 to 0.62): a pacing walk, two beats,
