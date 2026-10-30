@@ -162,6 +162,11 @@ export interface Clip {
     gait?: 'four-beat';
     /** the body's own pace, milliseconds a tile, in place of the player's three (a creature on its round or a chase) */
     pace_ms?: number;
+    /**
+     * the gait has time in the air (a hare's lope and bound): the body is set on the ground once for the whole cycle,
+     * at its lowest point over it, instead of at every pose, so a pose with every foot up is drawn off the ground
+     */
+    airborne?: boolean;
   };
   ramps?: string[];
   limits?: Partial<Limits>;
@@ -264,6 +269,7 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
   if (clip.locomotion !== undefined) {
     if (clip.locomotion.playback !== 'distance' && clip.locomotion.playback !== 'time') say('locomotion.playback is distance or time');
     if (clip.locomotion.pace_ms !== undefined && (!isInt(clip.locomotion.pace_ms) || clip.locomotion.pace_ms <= 0)) say('locomotion.pace_ms is a whole number of milliseconds a tile');
+    if (clip.locomotion.airborne !== undefined && typeof clip.locomotion.airborne !== 'boolean') say('locomotion.airborne is true or false');
     if (Array.isArray(clip.frames)) say('a locomotion clip spreads its poses evenly ({ "even": n }), so the cycle has one step per pose');
   }
   for (const key of Object.keys(clip.limits ?? {})) if (!(key in settings.limits)) say(`limit "${key}" is not one of ${Object.keys(settings.limits).join(', ')}`);
@@ -389,6 +395,7 @@ export function job(name: string, clip: Clip, libs: Record<string, Library>, set
   }
   if (clip.locomotion !== undefined) {
     out.dense = { length: libs[clip.base.library]?.actions[clip.base.action] ?? 0, step: 1 };
+    if (clip.locomotion.airborne === true) out.ground = 'cycle';
   }
   return out;
 }

@@ -1,0 +1,32 @@
+{
+  "about": "The ground fowl bursting up (FLEE; BESTIARY: it runs, then flutters up): four poses of the body's own Lift (stand, crouch, spring with the wings opening, the wings at the top of the stroke with the legs stretched below), played once by time. The renderer grounds every pose, so the rise is in the pose, not in the height.",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Lift"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    375,
+    375,
+    375,
+    375
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
