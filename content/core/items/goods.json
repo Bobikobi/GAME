@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/goods",
+  "title": "Goods of the hunt",
+  "creator": "core",
+  "description": "The five classes an animal gives when it is dressed (docs/design/HUNTING.md section 6), each under the animal base class. Their items come with the first hunted kinds and their drawings; a finer grade of a good is an item of its own.",
+  "classes": [
+    {
+      "id": "core/meat",
+      "name": "Meat",
+      "base": "animal",
+      "description": "Raw and cooked flesh. Raw, it is food that heals a little and spoils with the carcass."
+    },
+    {
+      "id": "core/hide",
+      "name": "Hide",
+      "base": "animal",
+      "description": "Skins and pelts, scraped and tanned into leather."
+    },
+    {
+      "id": "core/bone",
+      "name": "Bone",
+      "base": "animal",
+      "description": "Bones, antlers, teeth and claws: needles, handles and charms."
+    },
+    {
+      "id": "core/sinew",
+      "name": "Sinew",
+      "base": "animal",
+      "description": "Tendon: the cord and the bowstring."
+    },
+    {
+      "id": "core/feather",
+      "name": "Feather",
+      "base": "animal",
+      "description": "Plumes and down: fletching and finery."
+    }
+  ]
+}

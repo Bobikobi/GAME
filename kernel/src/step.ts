@@ -23,6 +23,7 @@ import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOp
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
 import { GAITS, type Gait, foodFillPermille, gaitStepMs, itemWeight, loadMax, loadWeight, weightRoom } from './load';
+import { DRESS_PARTS, carcassGone, carcassGoods, dressPartMs, huntGoods, huntOf } from './hunt';
 import { drawBasisPoints, type Seed } from './rng';
 import {
   ATTRIBUTES,
@@ -112,6 +113,8 @@ export type Action =
   | { t: 'drop'; item: string; qty: number; at: Tile }
   /** pick a dropped thing up again from the tile the player stands on */
   | { t: 'pickup'; item: string; at: Tile }
+  /** dress one part of a taken animal lying at `at` (docs/design/HUNTING.md section 6): a small animal is one part, a medium two, a large four; with the last part its goods at its grade come into the bag, and what does not fit lies on the player's tile */
+  | { t: 'dress'; carcass: number; at: Tile }
   /** `gait` is how the step was taken (default walk: an old save or client without it reads walk) */
   | { t: 'move'; at: Tile; gait?: Gait };
 
@@ -120,6 +123,8 @@ export type GameEvent =
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
   | { e: 'drop'; item: string; qty: number; at: Tile }
+  /** a part of a taken animal was dressed: its kind, its grade (1 plain, 2 fine, 3 true), the parts still to do, and with the last part (left 0) what it gave, in the bag or on the player's tile */
+  | { e: 'dress'; kind: string; grade: number; goods: { item: string; qty: number }[]; left: number }
   | { e: 'gold'; delta: number }
   /** the bound starting gold moved (milli-gold); the purse's own movements are `gold` */
   | { e: 'bound'; delta: number }
@@ -502,6 +507,8 @@ function act(ctx: Ctx, a: Action): void {
       return drop(ctx, a.item, a.qty);
     case 'pickup':
       return pickUp(ctx, a.item);
+    case 'dress':
+      return dress(ctx, a.carcass, a.at);
     default:
       refuse('Unknown action.');
   }
@@ -969,6 +976,8 @@ function sell(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): v
   const shop = shopOf(ctx, npcId, at);
   if (!shop.buys) refuse('This trader does not buy anything.');
   if ((s.player.bag[itemId] ?? 0) < qty) refuse('You do not have that many.');
+  // no good of the hunt carries a price (HUNTING section 9): it is made into something, never sold raw
+  if (huntGoods(b).has(itemId)) refuse('Nobody buys that raw: make something of it.');
   const total = salePrice(b, s, itemId, qty);
   // a tool with no value (one the shop sells) is never bought back
   if (total === undefined) refuse('The trader does not want that.');
@@ -989,6 +998,9 @@ function sell(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): v
 export function salePrice(bundle: Bundle, state: PublicState, itemId: string, qty: number): number | undefined {
   const value = bundle.values[itemId];
   if (value === undefined || !bundle.items[itemId]) return undefined;
+  // no good of the hunt carries a price (HUNTING section 9): the sale refuses it with its own line, and every list,
+  // board and worth that reads this price agrees that nobody buys it raw
+  if (huntGoods(bundle).has(itemId)) return undefined;
   const each = payFor(bundle.params, value, bundle.made.includes(itemId));
   const uses = bundle.items[itemId]!.tool?.uses;
   const spent = state.player.wear[itemId] ?? 0;
@@ -1786,8 +1798,53 @@ function pickUp(ctx: Ctx, itemId: string): void {
   if (Object.keys(pile).length === 0) delete p.ground![key];
 }
 
+/**
+ * Dress a taken animal (docs/design/HUNTING.md section 6): stand by it and spend its size in steps, six steps a part and
+ * one action a part so each stays inside the action cap (G43): a small animal is one part, a medium two, a large four.
+ * With the last part its goods come at its grade; what the bag has no room for lies where the player stands, like a
+ * dropped thing (a carcass may lie where nobody walks). A carcass that has lain too long gives less (its meat first) and
+ * then nothing. No tool, no level and no experience yet: the hunting profession waits for the combat rules (G35); the
+ * value table pays the goods.
+ */
+function dress(ctx: Ctx, carcassId: number, at: Tile): void {
+  const { b, s } = ctx;
+  const p = s.player;
+  const list = p.carcasses ?? [];
+  const c = list.find((x) => x.id === carcassId);
+  if (!c) refuse('There is nothing to dress here.');
+  checkAt(ctx, at, { x: c.at[0], y: c.at[1], w: 1, h: 1 });
+  const hunt = huntOf(b, c.kind);
+  const goods = hunt && !carcassGone(b, c, ctx.tick) ? carcassGoods(b, c, ctx.tick) : [];
+  if (!hunt || goods.length === 0) refuse('Nothing is left of it.');
+  if (goods.every((g) => placeRoom(b, s, g.item) < 1)) refuse('Your bag is full.');
+  if (loadWeight(b, s) >= loadMax(b, s)) refuse(TOO_HEAVY);
+  const ms = duration(ctx, dressPartMs(b.params), speedPermille(ctx, 0));
+  const done = (c.dressed ?? 0) + 1;
+  const left = DRESS_PARTS[hunt.size] - done;
+  if (left > 0) {
+    c.dressed = done;
+    busy(ctx, 'dress', ms);
+    ctx.events.push({ e: 'dress', kind: c.kind, grade: c.grade, goods: [], left });
+    return;
+  }
+  const tile: Tile = [at[0], at[1]];
+  for (const g of goods) {
+    // quiet: the drop event below says where the rest went
+    const kept = take(ctx, g.item, g.qty, true);
+    const surplus = g.qty - kept;
+    if (surplus > 0) {
+      const pile = ((p.ground ??= {})[groundKey(tile)] ??= {});
+      pile[g.item] = (pile[g.item] ?? 0) + surplus;
+      ctx.events.push({ e: 'drop', item: g.item, qty: surplus, at: tile });
+    }
+  }
+  p.carcasses = list.filter((x) => x.id !== carcassId);
+  busy(ctx, 'dress', ms);
+  ctx.events.push({ e: 'dress', kind: c.kind, grade: c.grade, goods, left: 0 });
+}
+
 /** Put something into the bag; returns how many fit. */
-function addItem(ctx: Ctx, itemId: string, qty: number): number {
+function addItem(ctx: Ctx, itemId: string, qty: number, quiet = false): number {
   const { b, s } = ctx;
   const room = Math.min(placeRoom(b, s, itemId), weightRoom(b, s, itemId));
   const kept = Math.min(qty, room);
@@ -1799,15 +1856,17 @@ function addItem(ctx: Ctx, itemId: string, qty: number): number {
       ctx.events.push({ e: 'discover', item: itemId });
     }
   }
-  if (kept < qty) ctx.events.push({ e: 'bag_full', item: itemId, qty: qty - kept });
+  // quiet: the caller says itself where the rest went
+  if (kept < qty && !quiet) ctx.events.push({ e: 'bag_full', item: itemId, qty: qty - kept });
   return kept;
 }
 
-/** What the world gives (gathering, digging): into the bag, and onto the outing's account when the player is out (G33). */
-function take(ctx: Ctx, itemId: string, qty: number): void {
-  const kept = addItem(ctx, itemId, qty);
+/** What the world gives (gathering, digging, dressing): into the bag, and onto the outing's account when the player is out (G33). Returns how many fit. */
+function take(ctx: Ctx, itemId: string, qty: number, quiet = false): number {
+  const kept = addItem(ctx, itemId, qty, quiet);
   const outing = ctx.s.player.outing;
   if (outing && kept > 0) outing.gained[itemId] = (outing.gained[itemId] ?? 0) + kept;
+  return kept;
 }
 
 function removeItem(ctx: Ctx, itemId: string, qty: number, quiet = false): void {
