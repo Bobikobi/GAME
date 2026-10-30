@@ -53,6 +53,28 @@ describe('clip configs', () => {
     }
   });
 
+  it('a native target declares each action at the length its glb plays it', () => {
+    /** The animations of a glb by name, each with its length in seconds (the largest time of its keyframe inputs). */
+    const glbAnimations = (path: string): Map<string, number> => {
+      const bin = readFileSync(path);
+      const json = JSON.parse(bin.subarray(20, 20 + bin.readUInt32LE(12)).toString('utf8')) as {
+        animations?: { name?: string; samplers: { input: number }[] }[];
+        accessors: { max?: number[] }[];
+      };
+      return new Map((json.animations ?? []).map((a) => [a.name ?? '', Math.max(...a.samplers.map((sm) => json.accessors[sm.input]?.max?.[0] ?? 0))]));
+    };
+    const natives = Object.entries(settings.targets).filter(([, t]) => t.map === 'native');
+    expect(natives.length).toBeGreaterThan(0);
+    for (const [id, t] of natives) {
+      expect(t.model, id).toBeDefined();
+      const played = glbAnimations(join(REPO_ROOT, t.model ?? ''));
+      for (const [action, frames] of Object.entries(t.actions ?? {})) {
+        expect(played.has(action), `${id} ${action}`).toBe(true);
+        expect((played.get(action) ?? 0) * (t.fps ?? 24), `${id} ${action}`).toBeCloseTo(frames, 1);
+      }
+    }
+  });
+
   it('a clip moved onto another target keeps its motion, takes that body and writes to its own folder', () => {
     const chop = readClip('chop');
     const moved = onTarget(chop, 'digger-f');

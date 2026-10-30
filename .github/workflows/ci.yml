@@ -15,14 +15,17 @@ permissions:
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # a new push to a pull request replaces its older run; a push to develop or main never cancels the run before it,
+  # so the branches' own verdicts are not lost to the next landing
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # schemas, content, lint, types, unit tests, the build and the database: about 2.5 minutes green
   checks:
     name: Check, test and build
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    # about 3x its green time (170-205 s): a slow evening on the runners must not read as red
+    timeout-minutes: 15
     # the base the checks against develop compare with (tools/src/decisions/base.ts): on a pull request
     # the checkout is the merge commit, so HEAD^1 is the tip of the base branch; a push has no base
     env:
@@ -123,7 +126,7 @@ jobs:
   e2e-groups:
     name: The browser test groups
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
+    timeout-minutes: 5
     outputs:
       groups: ${{ steps.list.outputs.groups }}
       docs_only: ${{ steps.kind.outputs.docs_only }}
@@ -174,12 +177,15 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # what the scripts serve: the bundle, game/dist and the optional 3D door in game/dist-3d
+      # what the scripts serve: the bundle and game/dist
       - name: Build the game
         run: |
           pnpm bundle
           pnpm --filter game build
-          pnpm exec tsx tools/src/site/build-3d.ts
+      # the optional 3D door, game/dist-3d: only the groups whose scripts serve it (build3d in game/e2e/run.ts)
+      - name: Build the 3D door
+        if: matrix.build3d
+        run: pnpm exec tsx tools/src/site/build-3d.ts
       - name: Play ${{ matrix.group }}
         run: pnpm e2e:group "${{ matrix.group }}" e2e-shots --retry
       - name: Keep the screenshots of a failed first attempt
@@ -207,7 +213,7 @@ jobs:
     needs: [checks, e2e-groups, e2e]
     if: always()
     runs-on: ubuntu-24.04
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
       - name: Every job passed
         env:

@@ -32,10 +32,10 @@ describe('the home page', () => {
     expect(html).toMatch(/<a class="btn primary stretch" href="\/play\/">Play<\/a>/);
   });
 
-  it('shows the 3D door exactly when its loop ships, and always when a 3D build ships', () => {
+  it('hides the 3D door while 3D is paused, unless a screenshot forces it, and ships its loop only with the door', () => {
     const door = html.includes('href="/play3d/"');
+    expect(door).toBe(process.env['SITE_3D_DOOR'] === 'force');
     expect(door).toBe(existsSync(join(DIST, 'media/camp-loop.mp4')));
-    if (existsSync(join(DIST, 'play3d/index.html'))) expect(door).toBe(true);
   });
 
   it('puts the builder with the most points first on the board', () => {

@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../../schema/json/reaction.schema.json",
+  "format": 1,
+  "type": "reaction",
+  "id": "ceosisrael/sunleaf-in-fog",
+  "title": "Sunleaf is slow to open in the fog",
+  "creator": "ceosisrael",
+  "ai_tools": ["Claude (Anthropic)"],
+  "reaction": {
+    "on": { "resource": "core/sun-herbs" },
+    "when": { "weather": "fog" },
+    "then": { "wait": 1500 }
+  }
+}
