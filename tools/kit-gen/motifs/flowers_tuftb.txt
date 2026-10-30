@@ -1,0 +1,11 @@
+....y....
+...yx.x..
+..yx.xw..
+..x.xw.w.
+.xx.ww.wv
+.x.ww.wv.
+.wxwvwvv.
+..wvwvv..
+..vvwvv..
+...vvv...
+....v....

@@ -1,0 +1,4 @@
+..HG.
+.GHGg
+GGgg.
+.gd..

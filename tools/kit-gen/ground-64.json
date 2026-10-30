@@ -4,9 +4,7 @@
     {
       "names": [
         "grass",
-        "grass_1",
-        "grass_2",
-        "grass_3"
+        "grass_1"
       ],
       "name": "meadow",
       "ref": "tiles/grass",
@@ -14,27 +12,387 @@
       "route": "scatter",
       "width": 64,
       "height": 64,
-      "what": "meadow grass ground",
-      "base": "c",
-      "variants": 4,
+      "what": "meadow ground, olive grass with dry earth",
+      "base": "3",
+      "variants": 2,
       "cell": 16,
       "chance": 0.95,
       "speckles": [
         {
-          "letter": "b",
-          "per_tile": 34
+          "letter": "2",
+          "per_tile": 40
+        },
+        {
+          "letter": "4",
+          "per_tile": 24
+        },
+        {
+          "letter": "c",
+          "per_tile": 6
         },
         {
           "letter": "e",
+          "per_tile": 2
+        },
+        {
+          "letter": "x",
+          "per_tile": 3
+        },
+        {
+          "letter": "w",
+          "per_tile": 2
+        },
+        {
+          "letter": "1",
+          "per_tile": 8
+        }
+      ],
+      "motifs": [
+        {
+          "name": "shade",
+          "weight": 2.5,
+          "width": 16,
+          "height": 9,
+          "what": "a dark patch"
+        },
+        {
+          "name": "shade2",
+          "weight": 2,
+          "width": 14,
+          "height": 8,
+          "what": "a light patch"
+        },
+        {
+          "name": "tuft",
+          "weight": 3,
+          "width": 9,
+          "height": 11,
+          "what": "a tuft of grass"
+        },
+        {
+          "name": "tuft2",
+          "weight": 3,
+          "width": 7,
+          "height": 9,
+          "what": "a small tuft"
+        },
+        {
+          "name": "tuft3",
+          "weight": 2,
+          "width": 11,
+          "height": 7,
+          "what": "a wide low tuft"
+        },
+        {
+          "name": "tuftd",
+          "weight": 2,
+          "width": 9,
+          "height": 11,
+          "what": "a dry olive tuft"
+        },
+        {
+          "name": "tuftb",
+          "weight": 2,
+          "width": 9,
+          "height": 11,
+          "what": "a brown dry tuft"
+        },
+        {
+          "name": "tuftb2",
+          "weight": 2,
+          "width": 7,
+          "height": 8,
+          "what": "a small brown tuft"
+        },
+        {
+          "name": "seed",
+          "weight": 1.5,
+          "width": 5,
+          "height": 9,
+          "what": "a seed head"
+        },
+        {
+          "name": "seed2",
+          "weight": 1.5,
+          "width": 3,
+          "height": 7,
+          "what": "a small seed head"
+        },
+        {
+          "name": "dry",
+          "weight": 2,
+          "width": 16,
+          "height": 10,
+          "what": "a dry patch"
+        },
+        {
+          "name": "dry2",
+          "weight": 1.5,
+          "width": 12,
+          "height": 7,
+          "what": "a small dry patch"
+        },
+        {
+          "name": "soil",
+          "weight": 1.5,
+          "width": 14,
+          "height": 9,
+          "what": "bare soil"
+        },
+        {
+          "name": "soil2",
+          "weight": 1.5,
+          "width": 10,
+          "height": 6,
+          "what": "a small patch of bare soil"
+        },
+        {
+          "name": "stone",
+          "weight": 1,
+          "width": 5,
+          "height": 4,
+          "what": "a stone"
+        },
+        {
+          "name": "stone2",
+          "weight": 1,
+          "width": 5,
+          "height": 4,
+          "what": "a small stone"
+        },
+        {
+          "name": "stones",
+          "weight": 0.8,
+          "width": 8,
+          "height": 4,
+          "what": "two stones"
+        },
+        {
+          "name": "twig",
+          "weight": 0.8,
+          "width": 9,
+          "height": 3,
+          "what": "a twig"
+        },
+        {
+          "name": "leaf",
+          "weight": 0.8,
+          "width": 6,
+          "height": 5,
+          "what": "a fallen leaf"
+        },
+        {
+          "name": "clover",
+          "weight": 1,
+          "width": 7,
+          "height": 6,
+          "what": "a clover"
+        },
+        {
+          "name": "flower",
+          "weight": 0.5,
+          "width": 7,
+          "height": 6,
+          "what": "a white wildflower"
+        },
+        {
+          "name": "daisy",
+          "weight": 0.4,
+          "width": 5,
+          "height": 5,
+          "what": "a small daisy"
+        }
+      ]
+    },
+    {
+      "names": [
+        "grass_2"
+      ],
+      "name": "meadow_dry",
+      "ref": "tiles/grass_2",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "dry meadow, more earth than grass",
+      "base": "3",
+      "variants": 1,
+      "cell": 16,
+      "chance": 0.95,
+      "speckles": [
+        {
+          "letter": "2",
+          "per_tile": 28
+        },
+        {
+          "letter": "4",
+          "per_tile": 20
+        },
+        {
+          "letter": "x",
+          "per_tile": 12
+        },
+        {
+          "letter": "w",
+          "per_tile": 6
+        },
+        {
+          "letter": "y",
+          "per_tile": 6
+        },
+        {
+          "letter": "1",
+          "per_tile": 6
+        }
+      ],
+      "motifs": [
+        {
+          "name": "dry",
+          "weight": 3,
+          "width": 16,
+          "height": 10,
+          "what": "a dry patch"
+        },
+        {
+          "name": "dry2",
+          "weight": 3,
+          "width": 12,
+          "height": 7,
+          "what": "a small dry patch"
+        },
+        {
+          "name": "soil",
+          "weight": 2.5,
+          "width": 14,
+          "height": 9,
+          "what": "bare soil"
+        },
+        {
+          "name": "soil2",
+          "weight": 2.5,
+          "width": 10,
+          "height": 6,
+          "what": "a small patch of bare soil"
+        },
+        {
+          "name": "tuftb",
+          "weight": 3,
+          "width": 9,
+          "height": 11,
+          "what": "a brown dry tuft"
+        },
+        {
+          "name": "tuftb2",
+          "weight": 3,
+          "width": 7,
+          "height": 8,
+          "what": "a small brown tuft"
+        },
+        {
+          "name": "tuftd",
+          "weight": 2,
+          "width": 9,
+          "height": 11,
+          "what": "a dry olive tuft"
+        },
+        {
+          "name": "seed",
+          "weight": 2,
+          "width": 5,
+          "height": 9,
+          "what": "a seed head"
+        },
+        {
+          "name": "seed2",
+          "weight": 2,
+          "width": 3,
+          "height": 7,
+          "what": "a small seed head"
+        },
+        {
+          "name": "tuft2",
+          "weight": 1.5,
+          "width": 7,
+          "height": 9,
+          "what": "a small tuft"
+        },
+        {
+          "name": "stone",
+          "weight": 1.5,
+          "width": 5,
+          "height": 4,
+          "what": "a stone"
+        },
+        {
+          "name": "stone2",
+          "weight": 1.5,
+          "width": 5,
+          "height": 4,
+          "what": "a small stone"
+        },
+        {
+          "name": "stones",
+          "weight": 1,
+          "width": 8,
+          "height": 4,
+          "what": "two stones"
+        },
+        {
+          "name": "twig",
+          "weight": 1,
+          "width": 9,
+          "height": 3,
+          "what": "a twig"
+        },
+        {
+          "name": "shade",
+          "weight": 1,
+          "width": 16,
+          "height": 9,
+          "what": "a dark patch"
+        }
+      ],
+      "motifs_from": "meadow"
+    },
+    {
+      "names": [
+        "grass_3"
+      ],
+      "name": "meadow_lush",
+      "ref": "tiles/grass_3",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "lush meadow, deeper olive",
+      "base": "3",
+      "variants": 1,
+      "cell": 16,
+      "chance": 0.95,
+      "speckles": [
+        {
+          "letter": "2",
+          "per_tile": 44
+        },
+        {
+          "letter": "1",
           "per_tile": 16
         },
         {
-          "letter": "f",
-          "per_tile": 4
+          "letter": "4",
+          "per_tile": 14
         },
         {
-          "letter": "a",
-          "per_tile": 6
+          "letter": "c",
+          "per_tile": 8
+        },
+        {
+          "letter": "e",
+          "per_tile": 2
+        },
+        {
+          "letter": "x",
+          "per_tile": 2
         }
       ],
       "motifs": [
@@ -49,12 +407,12 @@
           "name": "shade2",
           "weight": 2,
           "width": 14,
-          "height": 7,
+          "height": 8,
           "what": "a light patch"
         },
         {
           "name": "tuft",
-          "weight": 5,
+          "weight": 4,
           "width": 9,
           "height": 11,
           "what": "a tuft of grass"
@@ -64,14 +422,21 @@
           "weight": 4,
           "width": 7,
           "height": 9,
-          "what": "a small tuft of grass"
+          "what": "a small tuft"
         },
         {
           "name": "tuft3",
           "weight": 3,
           "width": 11,
           "height": 7,
-          "what": "a wide low tuft of grass"
+          "what": "a wide low tuft"
+        },
+        {
+          "name": "tuftd",
+          "weight": 3,
+          "width": 9,
+          "height": 11,
+          "what": "a dry olive tuft"
         },
         {
           "name": "clover",
@@ -88,27 +453,35 @@
           "what": "a fallen leaf"
         },
         {
-          "name": "flower",
-          "weight": 1,
-          "width": 7,
-          "height": 7,
-          "what": "a white wildflower"
-        },
-        {
-          "name": "daisy",
-          "weight": 0.8,
-          "width": 7,
-          "height": 5,
-          "what": "a small daisy"
-        },
-        {
-          "name": "pebble",
-          "weight": 0.5,
+          "name": "stone",
+          "weight": 0.6,
           "width": 5,
           "height": 4,
-          "what": "a pebble"
+          "what": "a stone"
+        },
+        {
+          "name": "soil2",
+          "weight": 0.8,
+          "width": 10,
+          "height": 6,
+          "what": "a small patch of bare soil"
+        },
+        {
+          "name": "seed",
+          "weight": 1,
+          "width": 5,
+          "height": 9,
+          "what": "a seed head"
+        },
+        {
+          "name": "flower",
+          "weight": 0.5,
+          "width": 7,
+          "height": 6,
+          "what": "a white wildflower"
         }
-      ]
+      ],
+      "motifs_from": "meadow"
     },
     {
       "names": [
@@ -121,65 +494,91 @@
       "route": "scatter",
       "width": 64,
       "height": 64,
-      "what": "meadow grass ground with wildflowers",
-      "base": "c",
+      "what": "meadow with a few wildflowers",
+      "base": "3",
       "variants": 2,
       "cell": 16,
       "chance": 0.95,
       "speckles": [
         {
-          "letter": "b",
-          "per_tile": 30
+          "letter": "2",
+          "per_tile": 38
         },
         {
-          "letter": "e",
-          "per_tile": 14
+          "letter": "4",
+          "per_tile": 22
         },
         {
-          "letter": "f",
-          "per_tile": 4
+          "letter": "c",
+          "per_tile": 6
+        },
+        {
+          "letter": "x",
+          "per_tile": 3
+        },
+        {
+          "letter": "w",
+          "per_tile": 2
+        },
+        {
+          "letter": "1",
+          "per_tile": 8
         }
       ],
       "motifs": [
         {
           "name": "tuft",
-          "weight": 3,
+          "weight": 5,
           "width": 9,
           "height": 11,
           "what": "a tuft of grass"
         },
         {
           "name": "tuft2",
-          "weight": 3,
+          "weight": 5,
           "width": 7,
           "height": 9,
-          "what": "a small tuft of grass"
+          "what": "a small tuft"
+        },
+        {
+          "name": "tuftb",
+          "weight": 2,
+          "width": 9,
+          "height": 11,
+          "what": "a brown dry tuft"
+        },
+        {
+          "name": "shade",
+          "weight": 2,
+          "width": 16,
+          "height": 9,
+          "what": "a dark patch"
         },
         {
           "name": "white",
-          "weight": 2.5,
+          "weight": 1.1,
           "width": 7,
-          "height": 7,
+          "height": 6,
           "what": "a white wildflower"
         },
         {
           "name": "yellow",
-          "weight": 2.5,
-          "width": 7,
+          "weight": 1.1,
+          "width": 5,
           "height": 6,
           "what": "a yellow wildflower"
         },
         {
           "name": "purple",
-          "weight": 2,
+          "weight": 0.8,
           "width": 7,
-          "height": 7,
+          "height": 6,
           "what": "a purple wildflower"
         },
         {
           "name": "red",
-          "weight": 1.2,
-          "width": 7,
+          "weight": 0.4,
+          "width": 5,
           "height": 6,
           "what": "a red wildflower"
         }
@@ -312,15 +711,15 @@
       "route": "scatter",
       "width": 64,
       "height": 64,
-      "what": "dirt path ground",
-      "base": "w",
+      "what": "dirt path ground, worn and uneven",
+      "base": "v",
       "variants": 3,
       "cell": 16,
-      "chance": 0.8,
+      "chance": 0.85,
       "speckles": [
         {
-          "letter": "v",
-          "per_tile": 34
+          "letter": "w",
+          "per_tile": 120
         },
         {
           "letter": "x",
@@ -328,13 +727,21 @@
         },
         {
           "letter": "u",
-          "per_tile": 10
+          "per_tile": 14
+        },
+        {
+          "letter": "g",
+          "per_tile": 4
+        },
+        {
+          "letter": "y",
+          "per_tile": 4
         }
       ],
       "motifs": [
         {
           "name": "shade",
-          "weight": 4,
+          "weight": 3,
           "width": 16,
           "height": 9,
           "what": "a patch"
@@ -354,8 +761,22 @@
           "what": "a dark patch"
         },
         {
+          "name": "dry",
+          "weight": 2.5,
+          "width": 14,
+          "height": 8,
+          "what": "a pale dry patch"
+        },
+        {
+          "name": "dark",
+          "weight": 1.5,
+          "width": 14,
+          "height": 8,
+          "what": "a dark damp patch"
+        },
+        {
           "name": "rut",
-          "weight": 2,
+          "weight": 1.5,
           "width": 12,
           "height": 3,
           "what": "a wheel rut"
@@ -383,10 +804,17 @@
         },
         {
           "name": "sprig",
-          "weight": 0.5,
+          "weight": 1.2,
           "width": 5,
           "height": 5,
           "what": "a grass sprig"
+        },
+        {
+          "name": "tuft",
+          "weight": 0.8,
+          "width": 7,
+          "height": 5,
+          "what": "a small olive tuft"
         },
         {
           "name": "crack",
