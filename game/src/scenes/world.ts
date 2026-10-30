@@ -50,11 +50,12 @@ import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
-import { HOLE, LIGHT_POOL, dappleAt, frameAt, nightAt, shadeAt, tableOf, washAt } from '../light';
+import { HOLE, LIGHT_POOL, READ, bankAt, cloudAt, dappleAt, frameAt, nightAt, shadeAt, tableOf } from '../light';
+import { LightLayer, litWindow, type Light } from '../light-layer';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
-import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_NIGHT_LIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
+import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
@@ -167,6 +168,8 @@ interface Fire {
   /** the warm pool the fire puts over the night's shade, so its ring is lit, not only haloed */
   nightLight: Phaser.GameObjects.Image;
   glow: Glow | undefined;
+  /** its pool in the light layer (LIGHTING.md): from 16:30, dimming with its last wood */
+  light?: Light;
   /** how much wood is left, by quarters of the fire's own log (NEXT 21b) */
   stage: FireStage;
   /** the tile's own depth, where the fire sits by day */
@@ -306,8 +309,10 @@ export class WorldScene extends Phaser.Scene {
   /** the decided cast shadows, every caster's own alpha sheared away from the sun */
   private cast: CastLayer | undefined;
   private readonly noCast = new Set<Phaser.GameObjects.GameObject>();
+  /** the plain valley's night: one blue veil (the light layer draws the hour's shade when the light group is on) */
   private shade!: Phaser.GameObjects.Rectangle;
-  private dusk: Phaser.GameObjects.Rectangle | undefined;
+  /** the hour's shade with every light's pool cut out of it, the pools added over it (LIGHTING.md, C) */
+  private light: LightLayer | undefined;
   private bar!: Phaser.GameObjects.Graphics;
   private marker!: Phaser.GameObjects.Image;
   /** B2's mist: the whole map as one image of dots, redrawn only when the places it leaves clear change */
@@ -480,6 +485,8 @@ export class WorldScene extends Phaser.Scene {
     app.ui.root.prepend(this.labels);
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
+    const read = this.b.params.light?.read;
+    if (RICH.light) this.light = new LightLayer(this, this.lightTable, { floor: (read?.floor ?? READ.floor) / 100 }, { shade: DEPTH.shade, pools: DEPTH.shade + 0.2 });
     this.buildGround();
     this.buildProps();
     this.buildNodes();
@@ -501,10 +508,6 @@ export class WorldScene extends Phaser.Scene {
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.bang = this.add.image(0, 0, 'fx-bang').setOrigin(0.5, 1).setDepth(DEPTH.fx).setVisible(false);
-    if (RICH.light) {
-      // a warm wash under the blue shade: multiplied in, so it tints what is there instead of covering it
-      this.dusk = this.add.rectangle(0, 0, 10, 10, PALETTE.gold, 0).setOrigin(0).setScrollFactor(0).setDepth(DEPTH.shade - 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
-    }
     this.shade = this.add.rectangle(0, 0, 10, 10, 0x172a52, 0).setOrigin(0).setScrollFactor(0).setDepth(DEPTH.shade);
     // the night outside the lantern's light: the hole is the light, the dark reaches past any screen
     const far = 2048;
@@ -948,8 +951,10 @@ export class WorldScene extends Phaser.Scene {
       } else {
         const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
         img.setDepth(p.solid ? bottom : DEPTH.flat);
-        // the lamp head is the top 8 px of the post
-        if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - unit.h + 4, true));
+        // the lamp's pool lies at its foot; its head glows in the top 8 px of the post
+        if (name === 'lantern_post') this.light?.add({ kind: 'lamp', x: cx, y: bottom, head: { x: cx, y: bottom - unit.h + 4 } });
+        // the buildings the player uses light their windows (STYLE 5): a house with a shop's sign at its wall
+        if (this.light && name === 'house_small' && this.shopAt(p)) this.lightWindow(img, bottom);
         if (name === 'house_small') this.chimneys.push({ x: cx - unit.w / 2 + CHIMNEY.x, y: bottom - unit.h + CHIMNEY.y });
         if (RICH.motion && name === 'house_small') this.smoke(cx - unit.w / 2 + CHIMNEY.x, bottom - unit.h + CHIMNEY.y, bottom + 1);
       }
@@ -965,6 +970,22 @@ export class WorldScene extends Phaser.Scene {
         }
       }
     }
+  }
+
+  /** Whether a prop is a building the player uses: a shop's sign stands on its footprint or against its wall. */
+  private shopAt(p: { x: number; y: number; w: number; h: number }): boolean {
+    return this.b.map.props.some(
+      (q) => baseName(q.sprite).startsWith('shop_sign') && q.x >= p.x - 1 && q.x <= p.x + p.w && q.y >= p.y - 1 && q.y <= p.y + p.h,
+    );
+  }
+
+  /** A building's lit window (STYLE 5), drawn in code over its own sprite, and its pool on the ground in front of the wall. */
+  private lightWindow(img: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite, bottom: number): void {
+    const win = litWindow(this, img.texture.key, img.frame.name);
+    if (!win) return;
+    const glass = this.add.image(img.x, img.y, win.key).setOrigin(img.originX, img.originY).setScale(img.scaleX, img.scaleY).setDepth(img.depth + 0.001).setVisible(false);
+    const left = img.x - img.displayWidth * img.originX;
+    this.light?.add({ kind: 'window', x: left + (win.box.x + win.box.w / 2) * img.scaleX, y: bottom + 4, glass });
   }
 
   /**
@@ -999,8 +1020,9 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(DEPTH.shade + 0.5)
       .setAlpha(0);
     let glow: Glow | undefined;
-    if (RICH.light) {
-      // the light pools on the ground around the fire, not over the flame
+    // the light pools on the ground around the fire, not over the flame: in the light layer, or as a glow in a valley without it
+    const light = this.light?.add({ kind: 'fire', x: spr.x, y: spr.y - 4, on: false });
+    if (RICH.light && !light) {
       glow = this.glow(spr.x, spr.y - 4, false, 'fx-firelight', ring * 0.72);
       this.glows.push(glow);
     }
@@ -1038,6 +1060,7 @@ export class WorldScene extends Phaser.Scene {
       flame,
       nightLight,
       glow,
+      light,
       stage: 'out',
       baseDepth: depth,
       baseX: 0,
@@ -1074,6 +1097,10 @@ export class WorldScene extends Phaser.Scene {
     f.flame.setPosition(at.x, at.flameY).setDepth(at.flameDepth);
     f.nightLight.setPosition(at.x, at.lightY);
     f.glow?.img.setPosition(at.x, at.lightY);
+    if (f.light) {
+      f.light.x = at.x;
+      f.light.y = at.lightY;
+    }
     f.sparks?.setPosition(at.x, at.sparksY).setDepth(at.sparksDepth);
     f.smoke?.setPosition(at.x, at.smokeY).setDepth(at.smokeDepth);
     return f;
@@ -1122,6 +1149,10 @@ export class WorldScene extends Phaser.Scene {
       if (f.glow) {
         f.glow.lit = stage !== 'out';
         f.glow.strength = l.glow;
+      }
+      if (f.light) {
+        f.light.on = stage !== 'out';
+        f.light.strength = l.glow / STAGE_LOOK.full.glow;
       }
       if (f.sparks) {
         f.sparks.emitting = stage !== 'out' && stage !== 'embers';
@@ -2022,6 +2053,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.walk(s, real);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
+    this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
     const playerCaster = this.cast?.of(this.player);
     if (playerCaster) playerCaster.enabled = !this.falling;
     this.dimInCover(s);
@@ -2451,14 +2483,10 @@ export class WorldScene extends Phaser.Scene {
   private shadeFor(s: GameSession): void {
     const minute = minuteOfDay(this.b, s.tick);
     this.night = nightAt(minute);
-    this.shade.setFillStyle(0x172a52, shadeAt(this.night));
+    // with the light layer on, the hour's shade is the layer's (params light.keys); the plain valley keeps its veil
+    this.shade.setFillStyle(0x172a52, this.light ? 0 : shadeAt(this.night));
     this.frameLook = frameAt(this.night, RICH.light);
     this.drawFrame();
-    if (this.dusk) {
-      // the hour's wash from params: cool before sunrise, none at noon, warm by 16:30, dusk at 19:00
-      const wash = washAt(this.lightTable, minute);
-      this.dusk.setFillStyle(wash.tint, wash.alpha);
-    }
     for (const d of this.dapples) d.setAlpha(dappleAt(this.night));
     // the cloud shade goes with the sun; the banks gather before dawn and after dusk (sky.ts)
     const fog = fogStrength(minute);
@@ -2469,12 +2497,13 @@ export class WorldScene extends Phaser.Scene {
       this.cloudDay = k;
       for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
     }
-    const clear = k === 0 ? 0 : 1 - this.night;
+    // the night kept readable (the owner, 30.10): the cloud shade is gone by 20:00, so it never stacks on the night
+    const clear = k === 0 ? 0 : cloudAt(this.night);
     for (const c of this.clouds) c.setAlpha(clear);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
-    this.banks.forEach((b, i) =>
-      b.img.setAlpha(Math.min(BANK_NIGHT_LIFT.cap, fog * (BANK_WEIGHT[i] ?? 0.9) * (1 + BANK_NIGHT_LIFT.gain * this.night))),
-    );
+    // and a bank cannot stack on it past the fog's cap at night (light.read)
+    const fogCap = (this.b.params.light?.read?.fog ?? READ.fog) / 100;
+    this.banks.forEach((b, i) => b.img.setAlpha(bankAt(fog, BANK_WEIGHT[i] ?? 0.9, this.night, fogCap)));
     this.showHazards(s);
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
@@ -3371,7 +3400,6 @@ export class WorldScene extends Phaser.Scene {
     // a hold on the stone keeps its own zoom through a resize
     this.cameras.main.setZoom(this.stoneHeld ? this.heldZoom() : zoom);
     this.shade.setSize(w, h);
-    this.dusk?.setSize(w, h);
     this.frameKey = '';
     this.drawFrame();
   }

@@ -36,7 +36,7 @@ const url = `http://127.0.0.1:${(server.address() as { port: number }).port}/`;
 const browser = await Browser.launch();
 try {
   const page = await browser.newPage({ width: 390, height: 844, mobile: true, scale: 3 });
-  await page.goto(`${url}?debug&cloud=0${seedQuery('core/west-bank')}`);
+  await page.goto(`${url}?debug&cloud=${process.env.CLOUD ?? 0}${seedQuery('core/west-bank')}`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'title', 30_000);
   await page.tap('.title-screen button', 'New game');
   const choice = await page.waitFor<string>(`document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`, 'cards');
