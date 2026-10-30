@@ -15,7 +15,8 @@
 import type { Page } from './cdp';
 
 export async function solveMinigame(page: Page, touch: boolean, what = 'the minigame'): Promise<string[]> {
-  await page.waitFor('!!document.querySelector(".minigame[data-game]")', `${what} to open`, 5000);
+  // the clock runs at the real pace around a minigame (cdp.ts, WARP): its press is timed in real ms
+  await page.waitFor('!!document.querySelector(".minigame[data-game]")', `${what} to open`, 5000, false);
   await page.eval(`(() => {
     const game = document.querySelector('.minigame[data-game]');
     if (!game || game.__solving) return;
@@ -43,6 +44,6 @@ export async function solveMinigame(page: Page, touch: boolean, what = 'the mini
     };
     requestAnimationFrame(tick);
   })()`);
-  await page.waitFor('!document.querySelector(".minigame-layer")', `${what} to close`, 30_000);
+  await page.waitFor('!document.querySelector(".minigame-layer")', `${what} to close`, 30_000, false);
   return page.eval<string[]>('window.__minigameShown ?? []');
 }
