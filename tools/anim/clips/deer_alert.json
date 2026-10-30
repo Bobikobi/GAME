@@ -1,0 +1,32 @@
+{
+  "about": "The roe deer on ALERT (HUNTING.md section 2): four poses of the body's own Alert, the head carried high, the ears up, the body still, a slow head turn; played by time. The tell a player reads.",
+  "target": "deer",
+  "base": {
+    "library": "self:deer",
+    "action": "Alert"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    600,
+    600,
+    600,
+    600
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

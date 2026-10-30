@@ -1,0 +1,33 @@
+{
+  "about": "The white hart's run: four poses of the body's own Run (the file's gallop), judged at a FLEE pace of 250 ms a tile (a placeholder inside the pose-rate cap; the hunting rules set the real pace). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop.",
+  "target": "hart",
+  "base": {
+    "library": "self:hart",
+    "action": "Run"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      176,
+      176
+    ],
+    "anchor": [
+      88,
+      124
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 250
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "foot_slide_px": 2
+  }
+}
