@@ -89,7 +89,7 @@ The hunted bodies are judged at the kernel's paces: an animal wanders at the wal
 | quadruped | idle 4, walk 4, run 4, hurt 2, death 4 (attack 4 when it bites) | 18 to 22 | 54 (66 with the bite), inside the cap of 69 |
 | bird | flap 4, idle 2, hurt 1, death 2 | 9 | 27 |
 | fish | swim 5, idle 2, flop 2 | 9 | 9 to 18 |
-| hunted animal, living (**proposed**, DECISIONS 2026-10-30) | its kind's sheet, plus fidgets for the time it stands in IDLE or GRAZE (an ear flick, a look, a call, grooming), up to 12 poses | the sheet's + up to 12 | the sheet's + up to 36 |
+| hunted animal, living (**proposed**, DECISIONS 2026-10-30) | its kind's sheet, plus fidgets while its idle loop runs (IDLE, and GRAZE's head-up beat; never feeding, never over the head-down poses: an ear flick, a look, a call, grooming), up to 12 poses | the sheet's + up to 12 | the sheet's + up to 36 |
 
 Four facings, three of them drawn or rendered (down, up, left) and right mirrored. A hero or a body with asymmetric gear is checked before it is mirrored.
 

@@ -1,5 +1,5 @@
 {
-  "about": "The hare sits up tall, a fidget and the hare's sign of suspicion (HUNT_FAMILIES 7): halfway up from the idle's crouch, then Alert's top (up on the haunches, the ears pricked), held. Two poses of the body's own SitUp, played up, held, and back down through the first pose; the top is the same pose as hare_alert's first, so a packed sheet may keep it once.",
+  "about": "The hare sits up, a fidget and the hare's sign of suspicion (HUNT_FAMILIES 7): part way up from the idle's crouch, then three quarters of the way to Alert's top with the ears up but tipped back, held. It stops short of ALERT's full height and pricked ears, which stay the tell a player reads (HUNTING 2). Two poses of the body's own SitUp, played up and held; when it ends the idle starts again at its crouch.",
   "target": "hare",
   "base": {
     "library": "self:hare",

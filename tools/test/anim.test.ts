@@ -75,6 +75,19 @@ describe('clip configs', () => {
     }
   });
 
+  it('a hunted animal\'s credit is its attribution in game/public3d/models/README.md, word for word (both describe what its pass script makes)', () => {
+    const readme = readFileSync(join(REPO_ROOT, 'game', 'public3d', 'models', 'README.md'), 'utf8').split('\n');
+    const animals = Object.entries(settings.targets).filter(([, t]) => /\/animal-[a-z-]+\.glb$/.test(t.model ?? ''));
+    expect(animals.map(([id]) => id).sort()).toEqual(['boar', 'crow', 'deer', 'fowl', 'hare', 'hare-pied', 'hart']);
+    for (const [id, t] of animals) {
+      const glb = (t.model ?? '').split('/').pop()!;
+      const line = readme.find((l) => l.startsWith(`- \`${glb}\``));
+      const attribution = line === undefined ? undefined : /attribution: "(.*?)"\.( |$)/.exec(line)?.[1];
+      expect(attribution, `${glb} in the README`).toBeDefined();
+      expect(t.credit, id).toBe(attribution);
+    }
+  });
+
   it('a clip moved onto another target keeps its motion, takes that body and writes to its own folder', () => {
     const chop = readClip('chop');
     const moved = onTarget(chop, 'digger-f');
@@ -153,12 +166,22 @@ describe('clip configs', () => {
     expect(clipProblems('hare_idle', readClip('hare_idle'), libs, bad).join(' ')).toMatch(/hare coats/);
   });
 
-  it('every fidget table can be scheduled: clips of its own body played by time, known kinds, whole weights and cooldowns, a look, an alarm', () => {
+  it('every fidget table can be scheduled: the idle as its base, clips of its own body played by time, known kinds, whole weights and cooldowns, a look, an alarm', () => {
     const clips = readClips();
     const withFidgets = Object.keys(settings.targets).filter((id) => settings.targets[id]?.fidgets !== undefined);
     expect(withFidgets.sort()).toEqual(['crow', 'hare']);
     for (const id of Object.keys(settings.targets)) expect(fidgetProblems(id, settings, clips), id).toEqual([]);
-    for (const id of withFidgets) for (const e of settings.targets[id]!.fidgets!.entries) expect(settings.targets[id]!.actions?.[clips[e.clip]!.base.action], e.clip).toBeDefined();
+    for (const id of withFidgets) {
+      const spec = settings.targets[id]!.fidgets!;
+      expect(spec.base, id).toBe(`${id}_idle`);
+      for (const e of spec.entries) expect(settings.targets[id]!.actions?.[clips[e.clip]!.base.action], e.clip).toBeDefined();
+    }
+  });
+
+  it('only the pied hare\'s body is one-sided, and a coat body\'s one_sided must be true or false', () => {
+    expect(Object.keys(settings.targets).filter((id) => settings.targets[id]?.one_sided === true)).toEqual(['hare-pied']);
+    const bad: Settings = { ...settings, targets: { ...settings.targets, 'hare-pied': { ...settings.targets['hare-pied']!, one_sided: 'yes' as unknown as boolean } } };
+    expect(coatProblems('hare', bad).join(' ')).toMatch(/brown-pied: body "hare-pied" has one_sided that is not true or false/);
   });
 
   it('refuses a fidget table with an unknown clip, a clip of another body, a locomotion clip, a bad kind, weight, cooldown or repeats, no look, a repeated clip, a bad alarm and an unknown class', () => {
@@ -172,6 +195,7 @@ describe('clip configs', () => {
           ...hare,
           fidgets: {
             class: 'rock',
+            base: 'hare_run',
             alarm: 'hare_wash',
             entries: [
               { clip: 'hare_nope', kind: 'ear', weight: 1, cooldown_ms: 0 },
@@ -180,6 +204,7 @@ describe('clip configs', () => {
               { clip: 'hare_wash', kind: 'groom', weight: 0, cooldown_ms: -1, repeats: [3, 2] },
               { clip: 'hare_ear', kind: 'dance' as 'ear', weight: 1.5, cooldown_ms: 0 },
               { clip: 'hare_ear', kind: 'ear', weight: 1, cooldown_ms: 0 },
+              { clip: 'hare_graze', kind: 'feed' as 'ear', weight: 1, cooldown_ms: 0 },
             ],
           },
         },
@@ -189,7 +214,9 @@ describe('clip configs', () => {
     expect(problems).toMatch(/class "rock" has no delay range/);
     expect(problems).toMatch(/hare_nope: not a clip/);
     expect(problems).toMatch(/crow_caw: a clip of crow, not of hare/);
-    expect(problems).toMatch(/hare_walk: a locomotion clip is not a fidget/);
+    expect(problems).toMatch(/hare_walk: a locomotion clip, not one played by time/);
+    expect(problems).toMatch(/base hare_run: a locomotion clip, not one played by time/);
+    expect(problems).toMatch(/hare_graze: kind "feed" is not one of/);
     expect(problems).toMatch(/hare_wash: weight is a positive whole number/);
     expect(problems).toMatch(/hare_wash: cooldown_ms is a whole number of 0 or more/);
     expect(problems).toMatch(/hare_wash: repeats is \[least, most\]/);
@@ -198,8 +225,31 @@ describe('clip configs', () => {
     expect(problems).toMatch(/hare_ear: each clip once/);
     expect(problems).toMatch(/a look among the entries/);
     expect(problems).toMatch(/alarm "hare_wash" is groom/);
-    const one: Settings = { ...settings, targets: { ...settings.targets, hare: { ...hare, fidgets: { class: 'prey', entries: [{ clip: 'hare_look', kind: 'look', weight: 1, cooldown_ms: 0 }] } } } };
+    const one: Settings = { ...settings, targets: { ...settings.targets, hare: { ...hare, fidgets: { class: 'prey', base: 'hare_idle', entries: [{ clip: 'hare_look', kind: 'look', weight: 1, cooldown_ms: 0 }] } } } };
     expect(fidgetProblems('hare', one, clips).join(' ')).toMatch(/two fidgets or more/);
+    // a look and a groom: under suspicion the look could play once and then nothing ever again
+    const pair: Settings = {
+      ...settings,
+      targets: {
+        ...settings.targets,
+        hare: {
+          ...hare,
+          fidgets: {
+            class: 'prey',
+            base: 'crow_idle',
+            entries: [
+              { clip: 'hare_look', kind: 'look', weight: 1, cooldown_ms: 0 },
+              { clip: 'hare_wash', kind: 'groom', weight: 1, cooldown_ms: 0 },
+            ],
+          },
+        },
+      },
+    };
+    const pairProblems = fidgetProblems('hare', pair, clips).join('\n');
+    expect(pairProblems).toMatch(/two entries or more that suspicion leaves on/);
+    expect(pairProblems).toMatch(/base crow_idle: a clip of crow, not of hare/);
+    const noBase = { ...pair, targets: { ...pair.targets, hare: { ...hare, fidgets: { ...hare.fidgets!, base: '' } } } };
+    expect(fidgetProblems('hare', noBase, clips).join(' ')).toMatch(/"base" names the idle clip/);
   });
 
   it('refuses an action the library lacks, a frame past its end, a short IK curve and a locomotion clip with picked frames', () => {
@@ -255,13 +305,12 @@ describe('clip configs', () => {
     expect(clipProblems('j', { ...human, base: { library: 'self:wolf', action: 'Walk' } }, libs, settings).join(' ')).toMatch(/belongs to a native target/);
     expect(clipProblems('j', { ...human, locomotion: { playback: 'distance', gait: 'four-beat' } }, libs, settings).join(' ')).toMatch(/only a native/);
     expect(clipProblems('w', { ...walk, locomotion: { playback: 'distance', pace_ms: 0 } }, libs, settings).join(' ')).toMatch(/pace_ms/);
-    expect(clipProblems('w', { ...walk, locomotion: { playback: 'distance', airborne: 1 as unknown as boolean } }, libs, settings).join(' ')).toMatch(/airborne/);
   });
 
-  it('an airborne gait asks the renderer for one floor a cycle; a grounded one does not', () => {
+  it('the hare\'s walk and run and the crow\'s hop are drawn airborne (one floor a cycle); their standing clips are not', () => {
     const paths = { out: '/o', libs: [], model: '/m.glb', threads: 1 };
-    expect(job('hare_run', readClip('hare_run'), libs, settings, paths).ground).toBe('cycle');
-    expect(job('wolf_walk', readClip('wolf_walk'), libs, settings, paths).ground).toBeUndefined();
+    for (const name of ['hare_walk', 'hare_run', 'crow_hop']) expect(job(name, readClip(name), libs, settings, paths).ground, name).toBe('cycle');
+    for (const name of ['hare_idle', 'crow_idle', 'wolf_walk']) expect(job(name, readClip(name), libs, settings, paths).ground, name).toBeUndefined();
   });
 
   it('a clip with its own pace is judged at that pace in place of the player\'s three', () => {

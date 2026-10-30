@@ -14,17 +14,18 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
   swings and bob at 0.2 and 0.3 of the file's around their means, and each paw target keyed on its own track at its
   phase in the file's bound (planted for 0.15 and 0.1 of the cycle, carried back 0.17 and 0.22 m, then swung forward
   and lifted), so a planted paw covers about 1.1 and 2.2 m of ground a cycle: enough for four poses to keep it
-  planted at the kernel's walk of 190 ms a tile and run of 95 ms (ANIMATION 5.4); drops the rest,
+  planted at the kernel's walk of 190 ms a tile and run of 95 ms (ANIMATION 5.1); drops the rest,
 - keys three held poses for the hunt's states on the rig's own controls: Alert (Guarding's sit-up, the ears pricked,
   the head turning: four poses), Graze (Guarding's crouch with the forequarters lowered, the head reaching forward
   and down and turned a little to the hare's left, one ear laid flat out sideways and the other upright, the nose
   solved onto the floor, nibbling: four poses) and
   Lie (Dying's last frame only, rolled onto its side with the legs drawn in: one pose, held),
 - keys four fidgets for life between the states (HUNT_FAMILIES 7, game/src/fidget.ts), short and played over the
-  base loop: Ear (one ear flicked out while the other pricks, then both out: two poses), Look (the head turned to the
-  hare's right and up a little: one pose, mirrored by the client for the other side), SitUp (halfway, then Alert's
-  top: two poses) and Wash (sitting up with both fore paws at the face, the head bowing and turning: three poses);
-  the graze serves as the drink,
+  idle loop: Ear (both ears laid back along the shoulders, then both out sideways: two poses), Look (the head turned
+  to the hare's right and up a little: one pose, mirrored by the client for the other side), SitUp (part way up, then
+  three quarters of the way to Alert's top with the ears tipped back, short of ALERT's tell: two poses) and Wash
+  (sitting up with both fore paws at the face, the head bowing and turning: three poses); the graze serves as the
+  drink,
 - caps every map at --tex pixels and exports one GLB with the ten clips on NLA tracks,
 - with --pied, exports a second GLB of the same body and clips whose colour map carries white patches (a pied coat:
   patches on the back, the flanks and the face from seeded 3D noise over the body, the belly white), painted in
@@ -398,7 +399,7 @@ def gait_copy(name, R, swing, stride, duty, lift):
 
 # Walk and Run are judged at the rules' paces (HUNTING 2: the kernel's walk of 190 ms a tile, the run of 95 ms): a
 # planted paw must cover at least 45 px (walk) and 90 px (run) of ground a cycle in every view, or four poses would
-# need more than 30 poses a second to keep it planted (ANIMATION 5.4). The down view sees the ground at sin 50, so a
+# need more than 30 poses a second to keep it planted (ANIMATION 5.1). The down view sees the ground at sin 50, so a
 # cycle needs stride / duty of at least 0.89 m at the walk and 1.78 m at the run (66 px a metre): a hare's lope and
 # its bound, carried by the paws' tracks, with short plants and the rest of the cycle in the air.
 walk = gait_copy("Walk", WALK_FRAMES, WALK_SWING, WALK_STRIDE, WALK_DUTY, WALK_PAW_LIFT)
@@ -616,10 +617,12 @@ diag("Lie 24 frames, one pose: Dying's rest, held, the paws drawn", LIE_FOLD, "o
 
 
 # ------------------------------------------------------------------ fidgets: short one-shots between the states
-# Life between IDLE and GRAZE (HUNT_FAMILIES 7): after a random delay the idle plays one of these and returns to it.
-# Each starts from Guarding's crouch (the idle's first pose), so it leaves and rejoins the loop without a jump, and
-# changes what reads at the tile: the ears, the head's direction, the height of the head, the paws at the face.
-# Drinking is the graze at the water's edge (no poses of its own).
+# Life between the states (HUNT_FAMILIES 7): after a random delay the idle plays one of these and returns to it. Each
+# is keyed from Guarding's crouch (the idle's first pose). The scheduler (game/src/fidget.ts) starts a fidget on one of
+# the idle's pose boundaries and the client restarts the idle at its first pose when it ends, so a fidget rejoins the
+# loop on the crouch without a jump, and leaves it with no bigger step than the loop's own from its fourth pose back
+# to its first. Each changes what reads at the tile: the ears, the head's direction, the height of the head, the paws
+# at the face. Drinking is the graze at the water's edge (no poses of its own).
 def blend_pose(a, b, w):
     """two read poses mixed: locations and scales lerped, rotations slerped (the shorter way)"""
     out = {}
@@ -648,14 +651,18 @@ def ear_to(side, out_deg, up_deg, yaw=0.0):
     move_world("IK_Ear_" + side, root + d.normalized() * ln - tgt)
 
 
-EAR_TWITCH = ((90.0, 10.0), (80.0, 25.0))   # degrees (out, up): pose 1 the left ear swung straight out sideways; pose 2 both
-                                           # ears out sideways, a spike on each side
-EAR_PRICKED = (15.0, 75.0)                  # degrees (out, up): pose 1's right ear, pricked nearly upright, so one ear is up
-                                           # and one out in every view
+EAR_POSES = (((20.0, -5.0), (20.0, -5.0)),   # degrees (out, up) of the (left, right) ear per pose: pose 1 both ears laid
+             ((80.0, 25.0), (80.0, 25.0)))   # back along the shoulders (the side view loses its upright ear: an ear swung
+                                             # out to the far side projects upright in the oblique camera, so a sideways
+                                             # flick alone never changes the profile); pose 2 both out sideways, a spike
+                                             # on each side (the down and up views)
 LOOK_TURN = 45.0      # degrees: the head alone turned toward the hare's right (toward the side view's camera, so that
                       # view shows the face and both ears instead of the profile); the down and up views mirror it
 LOOK_LIFT = -10.0     # degrees: the nose a little up as it looks
-SITUP_MID = 0.5       # the sit-up's first pose: halfway from the crouch to Alert's top
+SITUP = (0.4, 0.75)   # the sit-up's two poses: this share of the way from the crouch to Alert's top. The calm sit-up
+                      # stops short of the top, so ALERT's full height with the ears pricked stays the tell a player
+                      # reads (HUNTING 2)
+SITUP_EARS = (0.3, -0.5)   # the sit-up's ears (out, forward; ears_up): up but tipped back, not ALERT's pricked ears
 WASH_UP = 0.8         # the wash: this share of the way from the crouch to the sit-up, so the front paws come free
 WASH_PAW = ((0.012, -0.020, -0.020), (0.014, -0.012, 0.020), (0.016, -0.018, -0.015))   # metres from the head control
                       # (out, back, up) to each front paw, per pose: at the muzzle, up over the face, at the muzzle again
@@ -676,12 +683,8 @@ bpy.context.view_layer.update()
 def ear_twitch(i):
     def f():
         fidget_base()
-        if i == 0:
-            ear_to("L", *EAR_TWITCH[0])
-            ear_to("R", *EAR_PRICKED)
-        else:
-            ear_to("L", *EAR_TWITCH[1])
-            ear_to("R", *EAR_TWITCH[1])
+        for side, (out_deg, up_deg) in zip(("L", "R"), EAR_POSES[i]):
+            ear_to(side, out_deg, up_deg)
     return f
 
 
@@ -693,11 +696,8 @@ def look_pose():
 
 def situp_pose(w):
     def f():
-        if w >= 1.0:
-            alert_pose()()
-            return
         put_pose(blend_pose(SRC_LOW, SRC_UP, w))
-        ears_up()
+        ears_up(*SITUP_EARS)
     return f
 
 
@@ -717,10 +717,11 @@ def wash_pose(i):
 
 ear = hunt_action("Ear", 24, [ear_twitch(0), ear_twitch(1)])
 look = hunt_action("Look", 24, [look_pose])
-situp = hunt_action("SitUp", 48, [situp_pose(SITUP_MID), situp_pose(1.0)])
+situp = hunt_action("SitUp", 48, [situp_pose(SITUP[0]), situp_pose(SITUP[1])])
 wash = hunt_action("Wash", 72, [wash_pose(0), wash_pose(1), wash_pose(2)])
-diag("fidgets: Ear 24 frames (left ear out and the right pricked, then both out)", EAR_TWITCH, EAR_PRICKED, "; Look 24 frames, one pose, the head", LOOK_TURN, "deg to the right, nose up",
-     -LOOK_LIFT, "; SitUp 48 frames (halfway, then Alert's top); Wash 72 frames, three poses, paws", WASH_PAW, "pitch", WASH_PITCH, "turn", WASH_TURN)
+diag("fidgets: Ear 24 frames (both ears laid back, then both out)", EAR_POSES, "; Look 24 frames, one pose, the head", LOOK_TURN, "deg to the right, nose up",
+     -LOOK_LIFT, "; SitUp 48 frames, two poses", SITUP, "of the way to Alert's top, ears", SITUP_EARS, "; Wash 72 frames, three poses, paws", WASH_PAW, "pitch", WASH_PITCH,
+     "turn", WASH_TURN)
 
 # ------------------------------------------------------------------ bake the object transforms into the data
 # The clip renderer imports the glb with Blender's glTF importer, which guesses every bone's length from its child's

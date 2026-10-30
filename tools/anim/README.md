@@ -142,17 +142,23 @@ it. DECISIONS 2026-10-30 holds the coats and their weights.
 
 ## Fidgets
 
-A target may list `fidgets`: the short clips one of its kind plays while it stands in IDLE or GRAZE, between two runs
-of the base loop. The table is `{ "class": "prey" | "hunter" | "bird", "alarm": "<clip>", "entries": [ { "clip",
+A target may list `fidgets`: the short clips one of its kind plays while its idle loop runs (in IDLE, and in GRAZE's
+head-up beat, which the client draws as the idle; never over the head-down graze, where HUNTING 2 shortens the sight).
+The table is `{ "class": "prey" | "hunter" | "bird", "base": "<idle clip>", "alarm": "<clip>", "entries": [ { "clip",
 "kind", "weight", "cooldown_ms", "repeats": [least, most], "mirror" } ] }`; the class's delay between two fidgets is
-`fidget_delay_ms` at the top of `anim.json` ([least, most] ms). A kind is one of look, ear, call, sit, shake, groom
-and feed: suspicion turns groom and feed off and makes look, ear and the alarm clip three times as likely, and the
-first fidget after a flight is a look. `fidgetProblems` (run by `pnpm anim list` and `pnpm anim check`) refuses a
-class with no delay range, fewer than two entries, a clip that is not this target's or is locomotion or has no whole
-`ms`, an unknown kind, a weight that is not a positive integer, a negative or fractional cooldown, bad repeats, a
-clip listed twice, a table with no look, and an alarm that is not an entry or is a groom or a feed. The client picks
-them with `game/src/fidget.ts` (the coat hash of the creature's id and the episode's start: integer milliseconds,
-never a roll). The hare's and the crow's tables are DECISIONS 2026-10-30.
+`fidget_delay_ms` at the top of `anim.json` ([least, most] ms), and a fidget waits for the next pose boundary of the
+base clip, which the client restarts at its first pose (the crouch or the stand every fidget is keyed from) when the
+fidget ends. A kind is one of look, ear, call, sit, shake and groom; feeding is not a fidget, since the graze and the
+peck are GRAZE's own clips. Suspicion turns groom off and makes look, ear and the alarm clip three times as likely,
+and the first fidget after a flight is a look. A target with `"one_sided": true` (the pied hare's body, whose patches
+differ left from right) never has a fidget mirrored on it. `fidgetProblems` (run by `pnpm anim list` and
+`pnpm anim check`) refuses a class with no delay range, a base that is not a clip of this target played by time,
+fewer than two entries, a clip that is not this target's or is locomotion or has no whole `ms`, an unknown kind, a
+weight that is not a positive integer, a negative or fractional cooldown, bad repeats, a clip listed twice, a table
+with no look, fewer than two entries that suspicion leaves on (one alone could never follow itself), and an alarm
+that is not an entry or is a groom. The client picks them with `game/src/fidget.ts` (the coat hash of the creature's
+id and the episode's start on the shared world clock: integer milliseconds, never a roll; a scene keeps a
+`fidgetCursor` per animal). The hare's and the crow's tables are DECISIONS 2026-10-30.
 
 ## The four measures, and what fails
 
@@ -204,11 +210,11 @@ on its border fails the check as clipped).
 - The forager and the rest of the cast (`game/public3d/models/character-*.glb` but the two Kenney minis): made with
   Meshy, **CC BY 4.0**. A sprite rendered from one is a derivative and carries that model's credit line from
   `game/public3d/models/README.md` (each target's `credit` in `anim.json`, written into every `<clip>.json`).
-- The animals (`game/public3d/models/animal-*.glb`): from OpenGameArt, **CC0 1.0** (the roe deer and the white hart
-  from "Deer Female" by CDmir, collaborator TinyWorlds; the wild boar from "Boar" by Teh_Bucket; the ground fowl
-  from "Chicken (animated)" by CDmir, collaborator TinyWorlds, its colour map derived from photos by Rick
-  Hoppmann). CC0 asks for no attribution; each target still carries its credit line from
-  `game/public3d/models/README.md`.
+- The animals (`game/public3d/models/animal-*.glb`): from OpenGameArt, **CC0 1.0** (the hare and its pied body from
+  "Rabbit" by CDmir, with TinyWorlds; the crow from "Raven" by Teh_Bucket; the roe deer and the white hart from
+  "Deer Female" by CDmir, collaborator TinyWorlds; the wild boar from "Boar" by Teh_Bucket; the ground fowl from
+  "Chicken (animated)" by CDmir, collaborator TinyWorlds, its colour map derived from photos by Rick Hoppmann).
+  CC0 asks for no attribution; each target still carries its credit line from `game/public3d/models/README.md`.
 - A target's body ramps: the two shared ramps, plus `skin`, whose steps leave the smallest mean CIELAB error over the
   model's colour map (for the forager this gives the hand-picked `wood`, `red`, `skin`).
 - Blender is a tool (GPL); its output is ours. The props are built in `blender/render.py`.
