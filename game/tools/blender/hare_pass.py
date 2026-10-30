@@ -12,7 +12,8 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
   bob at 0.3 of the bound's around their means, the paws' lift at 0.55 of it; the planted paws keep the ground) and
   Run from Running at its own tempo (swings and bob at 0.5, lift at 0.7); drops the rest,
 - keys three held poses for the hunt's states on the rig's own controls: Alert (Guarding's sit-up, the ears pricked,
-  the head turning: four poses), Graze (Guarding's crouch, the nose solved onto the floor, nibbling: four poses) and
+  the head turning: four poses), Graze (Guarding's crouch, the forequarters and the head turned to one side with
+  the ears back apart, the nose solved onto the floor, nibbling: four poses) and
   Lie (Dying's last frame only, rolled onto its side with the legs drawn in: one pose, held),
 - caps every map at --tex pixels and exports one GLB with the six clips on NLA tracks.
 Prints one DIAG line per fact.
@@ -38,6 +39,16 @@ ALERT_FRAME = 220   # Guarding's sit-up: the hare upright on its haunches, the b
 ALERT_TURN = 28.0   # degrees, Alert's head turn to each side
 GRAZE_CLEAR = 0.002  # metres between the nose and the floor in Graze (the renderer grounds the lowest point)
 GRAZE_LIFT = 0.035  # metres, the nibble: the head comes up this much between bites
+GRAZE_FORE_TURN = 18.0  # degrees, Graze: the forequarters swing to the cropping side, about the middle of the back
+GRAZE_HEAD_TURN = 24.0  # degrees, Graze: the head swings this much further, about the base of the neck
+GRAZE_REACH = 12.0      # degrees, Graze: the second bite is taken this much further round
+GRAZE_SIDE = -1.0       # Graze turns to the hare's right: away from the side view's camera, so that view keeps the
+                        # head in profile (a head turned toward it hides in front of the body); the right view is the
+                        # left mirrored, so it turns away too
+GRAZE_EAR_SPLAY = 50.0  # degrees, Graze: each ear out from the head's line, laid back (a V seen from above)
+GRAZE_EAR_RISE = 68.0   # degrees, Graze: the ears raised off the horizontal
+GRAZE_EAR_NEAR = -28.0  # degrees, Graze: the ear on the side of the turn this much lower (it clears the outline
+                        # already), the far ear higher so its tip shows over the shoulder
 LIE_FOLD = 0.6      # Lie: each paw drawn this share of the way in toward its leg's root
 LIE_ROLL = 25.0     # Lie: degrees the rest is rolled about the body's long axis
 
@@ -362,6 +373,17 @@ def turn_world(name, axis, deg):
     bpy.context.view_layer.update()
 
 
+def turn_about(names, axis, deg, pivot):
+    """turn controls together about one world pivot, the axis in world space"""
+    a = (AWI.to_3x3() @ Vector(axis)).normalized()
+    c = AWI @ Vector(pivot)
+    m = Matrix.Translation(c) @ Quaternion(a, np.radians(deg)).to_matrix().to_4x4() @ Matrix.Translation(-c)
+    for n in names:
+        pb = arm.pose.bones[n]
+        pb.matrix = m @ pb.matrix
+        bpy.context.view_layer.update()
+
+
 def wpos(name, end="head"):
     return AW @ getattr(arm.pose.bones[name], end)
 
@@ -426,12 +448,34 @@ diag("Alert 96 frames, four poses: ahead, head turned", ALERT_TURN, "deg, nose u
 
 
 # Graze: the crouch with the head down, the nose solved onto the floor (never below it: the renderer grounds the
-# lowest point, so a nose under the paws would lift the feet), then lifted a little between bites.
-def graze_pose(lift=0.0, turn=0.0):
+# lowest point, so a nose under the paws would lift the feet), then lifted a little between bites. Seen from above
+# a head straight down hides in front of the body and the crouch reads as a ball, so the forequarters and the head
+# swing to one side as the hare crops (the front paws stay planted: their IK targets do not move), the ears lie back
+# apart in a V, and the second bite is taken a little further round.
+def ears_apart(side, yaw_deg):
+    """the ears laid back along the turned head and apart in a V, raised off the back so both break the outline seen
+    from above: the ear on the side of the turn clears it on the outside, the other stands higher to show over the
+    shoulder"""
+    yaw = np.radians(side * yaw_deg)
+    rot = Quaternion((0, 0, 1), yaw)
+    for s, sx in (("L", 1.0), ("R", -1.0)):
+        root = wpos("Ear_" + s)
+        tgt = wpos("IK_Ear_" + s)
+        ln = (tgt - root).length
+        v = np.radians(GRAZE_EAR_SPLAY)
+        e = np.radians(GRAZE_EAR_RISE + (GRAZE_EAR_NEAR if sx * side > 0 else 0.0))
+        d = rot @ Vector((sx * np.sin(v) * np.cos(e), np.cos(v) * np.cos(e), np.sin(e)))
+        move_world("IK_Ear_" + s, root + d.normalized() * ln - tgt)
+
+
+def graze_pose(lift=0.0, reach=0.0, side=GRAZE_SIDE):
     def f():
         put_pose(SRC_LOW)
         turn_world("IK_Head", (1, 0, 0), 35.0)
         move_world("IK_Head", (0, -0.02, 0))
+        turn_about(["IK_Spine.001", "IK_Head"], (0, 0, 1), side * GRAZE_FORE_TURN, wpos("Spine"))
+        turn_about(["IK_Head"], (0, 0, 1), side * (GRAZE_HEAD_TURN + reach), wpos("Neck"))
+        ears_apart(side, GRAZE_FORE_TURN + GRAZE_HEAD_TURN + reach)
         # the head goes down on the neck, and the shoulders follow when the neck runs out of reach
         for _ in range(12):
             hz, fz = mesh_z()
@@ -442,30 +486,19 @@ def graze_pose(lift=0.0, turn=0.0):
             move_world("IK_Head", (0, 0, -err))
             if mesh_z()[0] > before - 0.5 * err:
                 move_world("IK_Spine.001", (0, 0, -0.5 * err))
-        if turn:
-            turn_world("IK_Head", (0, 0, 1), turn)
     return f
 
 
-graze = hunt_action("Graze", 96, [graze_pose(), graze_pose(GRAZE_LIFT), graze_pose(0.0, 8.0), graze_pose(GRAZE_LIFT)])
+graze = hunt_action("Graze", 96, [graze_pose(), graze_pose(GRAZE_LIFT), graze_pose(0.0, GRAZE_REACH), graze_pose(GRAZE_LIFT, GRAZE_REACH)])
 graze_pose()()
 hz, fz = mesh_z()
-diag("Graze 96 frames, four poses: nose to the floor, lifted", GRAZE_LIFT, "m, to the floor turned 8 deg, lifted; nose", round(hz - fz, 4), "m above the paws' floor")
+diag("Graze 96 frames, four poses: nose to the floor, lifted", GRAZE_LIFT, "m, to the floor", GRAZE_REACH, "deg further round, lifted; forequarters turned",
+     GRAZE_FORE_TURN, "deg to the hare's", "right" if GRAZE_SIDE < 0 else "left", "and the head", GRAZE_HEAD_TURN, "deg more; ears back apart; nose",
+     round(hz - fz, 4), "m above the paws' floor")
 
 
 # Lie: Dying's last frame held, nothing moves (HUNTING 10: no throes, no twitch). The clip draws one pose; the
 # client fades it out for the take.
-def turn_about(names, axis, deg, pivot):
-    """turn controls together about one world pivot, the axis in world space"""
-    a = (AWI.to_3x3() @ Vector(axis)).normalized()
-    c = AWI @ Vector(pivot)
-    m = Matrix.Translation(c) @ Quaternion(a, np.radians(deg)).to_matrix().to_4x4() @ Matrix.Translation(-c)
-    for n in names:
-        pb = arm.pose.bones[n]
-        pb.matrix = m @ pb.matrix
-        bpy.context.view_layer.update()
-
-
 def lie_pose():
     """Dying's rest rolled onto its side, the legs drawn in toward the body: lying still, not legs out stiff"""
     put_pose(SRC_REST)
