@@ -87,16 +87,16 @@ Notice per gait = noise (still 2, sneak 3, walk 5, run 8) + ear, the ear as each
 
 | Kind | Danger | Sight | Ear | Notice still/sneak/walk/run | Lowest tool (grade shift) | At grade 0 | take_s | Cap per 1000 / refill d | Standing (valley) | Daily yield | Rarity rank | Group S/P/Sm/L |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| hare | 0 | 6 | +2 | 4/5/7/10 | T0 thrown stone (0) | T0 thrown stone | 40 | 12 / 1 | 12 | 12 | 0 | 100/0/0/0 |
+| hare | 0 | 6 | +2 | 4/5/7/10 | T0 thrown stone (0) | T0 thrown stone | 40 | 12 / 1 | 11 | 11 | 0 | 100/0/0/0 |
 | carrion crow | 0 | 7 | 0 | 2/3/5/8 | T1 snare (0) | T1 snare | 30 | 12 / 1 | 11 | 11 | 0 | 10/50/40/0 |
-| roe deer | 0 | 8 | +2 | 4/5/7/10 | T1 snare (-1) | T3 spear | 90 | 12 / 1 | 12 | 12 | 0 | 0/40/60/0 |
-| wolf | 2 | 8 | +2 | 4/5/7/10 | none until the fight; then T5 pit trap (0) | - | 150 | 5 / 3 | 5 | 1.67 | 3 | 30/60/10/0 |
+| roe deer | 0 | 8 | +2 | 4/5/7/10 | T1 snare (-1) | T3 spear | 90 | 12 / 1 | 11 | 11 | 0 | 0/40/60/0 |
+| wolf | 2 | 8 | +2 | 4/5/7/10 | none until the fight; then T5 pit trap (0) | - | 150 | 5 / 3 | 4 | 1.33 | 3 | 30/60/10/0 |
 | white hart | 0 | 9 | +2 | 4/5/7/10 | T1 snare (-1) | T4 bow, broad arrow | 150 | 12 / 2 | (no valley tile count) | 6 per 1000 a day | 1 | 0/40/60/0 |
 | highland goat | 0 | 8 | 0 | 2/3/5/8 | T1 snare (-1) | T4 bow | 90 | 12 / 1 | (no valley tile count) | 12 per 1000 a day | 0 | 0/0/20/80 |
-| wild boar | 1 | 4 | 0 | 2/3/5/8 | T5 pit trap (0) | T5 pit trap | 120 | 8 / 2 | 8 | 4 | 2 | 20/30/50/0 |
+| wild boar | 1 | 4 | 0 | 2/3/5/8 | T5 pit trap (0) | T5 pit trap | 120 | 8 / 2 | 7 | 3.50 | 2 | 20/30/50/0 |
 | wildcat | 1 | 7 | +2 | 4/5/7/10 | T1 snare (0) | T1 snare | 120 | 8 / 3 | 7 | 2.33 | 2 | 100/0/0/0 |
 | white bear | 2 | 5 | 0 | 2/3/5/8 | T5 pit trap (0) | T5 pit trap | 240 | 5 / 3 | (no valley tile count) | 1.67 per 1000 a day | 3 | 100/0/0/0 |
-| ground fowl | 0 | 5 | +1 | 3/4/6/9 | T1 snare (0) | T1 snare | 30 | 12 / 1 | 12 | 12 | 0 | 0/0/20/80 |
+| ground fowl | 0 | 5 | +1 | 3/4/6/9 | T1 snare (0) | T1 snare | 30 | 12 / 1 | 11 | 11 | 0 | 0/0/20/80 |
 | grey heron | 0 | 8 | +1 | 3/4/6/9 | T0 thrown stone (0) | T0 thrown stone | 45 | 12 / 1 | (no valley tile count) | 12 per 1000 a day | 0 | 100/0/0/0 |
 | great eagle | 1 | 10 | +1 | 3/4/6/9 | none until the fight; then T5 pit trap (0) | - | 180 | 8 / 3 | (no valley tile count) | 2.67 per 1000 a day | 2 | 100/0/0/0 |
 | river otter | 0 | 5 | +1 | 3/4/6/9 | T1 snare (0) | T1 snare | 60 | 12 / 1 | (no valley tile count) | 12 per 1000 a day | 0 | 100/0/0/0 |
