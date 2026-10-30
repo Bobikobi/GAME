@@ -127,6 +127,12 @@ export function canopyGroups(width: number, height: number, isForest: (x: number
 /** The grass ramp, dark to light: the five palette greens the tones step between. */
 export const GREENS: readonly number[] = [0x1f3d2b, 0x2e6b3b, 0x4c9a3f, 0x84c450, 0xc8e88a];
 
+/** 0..1, stable per pixel place, and twice as likely to come low on the even diagonals: a hatch rather than snow. */
+function hatch(x: number, y: number): number {
+  const r = hash(x, y) / 4294967296;
+  return (x + y) % 2 === 0 ? r * 0.7 : r * 1.3;
+}
+
 /**
  * Remaps the pixels of a grass tile in place for one tone. Shade: the grass base steps
  * down to the mid green on a stable stipple of about a third of its pixels, and the
@@ -149,11 +155,13 @@ export function remapTone(data: Uint8ClampedArray, width: number, tone: Tone, fr
     const py = Math.floor(p / width);
     let out: number | undefined;
     if (tone === 1) {
-      if (rgb === light) out = base;
-      else if (hash(px + 101, py + 211) % 3 === 0) out = GREENS[1];
+      if (rgb === light) {
+        // a field of the light green (wave 3's flat meadow) shades as a hatch, not a block: a checker-biased seventh steps down; the base steps as a hatch too
+        if (hatch(px + 101, py + 211) < 0.14) out = base;
+      } else if (hatch(px + 101, py + 211) < 0.12) out = GREENS[1];
     } else if (rgb === light) {
-      out = GREENS[4];
-    } else if (hash(px + 307, py + 401) % 4 === 0) {
+      if (hatch(px + 307, py + 401) < 0.09) out = GREENS[4];
+    } else if (hatch(px + 307, py + 401) < 0.12) {
       out = light;
     }
     if (out === undefined) continue;
