@@ -15,9 +15,9 @@ The rig download holds the mesh, a 27-joint skin and one clip (the walk). This p
 - keys the hunt's three states from the bind pose (HUNTING.md section 2), every pose by forward
   kinematics: the rig has no IK, no jaw, no weight on the ears and one head bone on the chest bone, so a
   leg is set by turning its four bones, the two upper ones solved so the paw stays where the bind pose
-  put it on the ground. "Alert" (the head and chest raised through the chest and head bones, the
-  forelegs straight, the weight forward, the tail lifted; a slow look ahead, to one side, ahead with the
-  nose up, to the other side: four poses), "Graze" (the head down to the ground in front of the
+  put it on the ground. "Alert" (the head and chest raised through the chest bone, the head keeping its
+  standing angle, the forelegs straight, the tail lifted a little above level; a slow look ahead, to one
+  side, ahead with the nose up, to the other side: four poses), "Graze" (the head down to the ground in front of the
   forepaws, the forelegs splayed; a bite, a pull back, a second bite and a chew done with the head bone:
   four poses, of which the first two are a loop on their own) and "Lie" (the body down, the legs folded,
   the head low on the forepaws, the tail wrapped round: one pose, held),
@@ -156,13 +156,17 @@ HUNT_TAIL = ("tailstart", "tail1", "tail2", "tail3")
 ALERT_SECONDS = 4     # four poses a second apart; the clip plays them by time (600 ms each)
 ALERT_PAWS = 0.03     # share of the height, each forepaw set forward under its shoulder, so the foreleg stands
                       # straight and upright and takes the weight
-ALERT_RISE = 3.0      # degrees at most, the body's front raised about the hips (less when the straight forelegs
-                      # cannot reach the ground under it: solved)
+ALERT_RISE = 3.0      # degrees, the most the front may turn up about the hips; the solve takes the largest turn at
+                      # which the straight forelegs still stand on the floor, which on both wolves is about 3 degrees
+                      # down (the front tipped forward), so the head's height comes from the chest bone
 ALERT_CHEST = 32.0    # degrees, the chest bone (the neck) raised
-ALERT_HEAD = 14.0     # degrees, the head bone turned back down, so the muzzle points ahead and not at the sky
+ALERT_HEAD = 32.0     # degrees, the head bone turned back down by the chest bone's raise, so the head keeps its
+                      # standing angle: the muzzle points ahead, and the ears stand up where a view from behind
+                      # sees them
 ALERT_LOOK = 30.0     # degrees, the look to each side, shared by the chest bone and the head bone
 ALERT_SNIFF = 8.0     # degrees, the third pose lifts the nose (a scent on the air)
-ALERT_TAIL = (40.0, 12.0, 6.0, 0.0)  # degrees, the tail lifted from its hang toward level, bone by bone
+ALERT_TAIL = (80.0, 12.0, 6.0, 0.0)  # degrees, the tail lifted from its hang to a little above level, bone by bone;
+                                     # seen from behind it leaves the gap between the hind legs open
 GRAZE_SECONDS = 2     # four poses half a second apart; the clip plays them by time (400 ms each)
 GRAZE_CROUCH = 0.035  # share of the height, the whole body lowered (every leg bends under it)
 GRAZE_CHEST = 30.0    # degrees, the chest bone (the neck) lowered
@@ -184,7 +188,7 @@ LIE_ELBOW = 0.03      # metres, each elbow above the floor, just behind its shou
 LIE_FORE_OUT = 0.01   # share of the height, each forepaw moved outward
 LIE_PASTERN = -80.0   # degrees, the forepaw's two bones turned forward to lie flat (negative: the end swings forward)
 LIE_HOCK = (0.05, 0.08)  # share of the height, each hock outward and back of its hip, on the floor
-LIE_HOCK_Z = 0.035    # metres, the hock above the floor
+LIE_HOCK_Z = 0.035    # metres, the hock above the floor (lowered per body where the folded leg would stay clear of it)
 LIE_SHANK = -70.0     # degrees, the hind shank turned forward to lie along the floor (the hind paw keeps flat)
 LIE_CHIN = 0.045      # metres between the head and the floor: the chin on the forepaws (the chest bone is solved
                       # to it)
@@ -351,8 +355,9 @@ def hunt_states():
                 hi_ = mid
         return lo_
 
-    # Alert: the head and chest up through the chest bone (the neck) and the head bone, the forelegs straight under the
-    # shoulders, the tail lifted toward level; a slow look ahead, to one side, ahead with the nose up, to the other.
+    # Alert: the head and chest up through the chest bone (the neck), the head bone keeping its standing angle, the
+    # forelegs straight under the shoulders, the tail lifted a little above level; a slow look ahead, to one side, ahead
+    # with the nose up, to the other.
     def alert_body(rise, look, sniff, record=False):
         rest_pose(arm)
         turn("Hips", rot_x(-rise))
@@ -418,7 +423,8 @@ def hunt_states():
     # Lie: the body down on its belly and set back, each foreleg's elbow on the floor just behind its shoulder and the
     # forearm along the floor ahead of it, the hind legs folded with the shank flat and the hock out to the side, the
     # head low over the forepaws and the tail curled round the right flank. A leg whose skin would pass under the floor
-    # is lifted until it rests on it, and the chest bone tips down until the chin is low or the chest meets the floor.
+    # is lifted until it rests on it, a folded hind leg that stays clear of it is lowered until it rests on it (both per
+    # body), and the chest bone tips down until the chin is low or the chest meets the floor.
     def lie_legs(lift_fore, lift_hind):
         worst = 0.0
         for leg in ("LF", "RF"):
@@ -453,6 +459,10 @@ def hunt_states():
                 break
             lift_fore += max(0.0, 1e-3 - g["fore"])
             lift_hind += max(0.0, 1e-3 - g["hind"])
+        if g["hind"] > 2e-3:  # a folded hind leg clear of the floor (the bright wolf's): the hock lowered to rest it
+            drop = bisect(lambda d: (lie_legs(lift_fore, lift_hind - d), gaps()["hind"])[1] >= 1e-3,
+                          0.0, LIE_HOCK_Z + lift_hind)
+            worst = lie_legs(lift_fore, lift_hind - drop)
         return worst
 
     def lie():

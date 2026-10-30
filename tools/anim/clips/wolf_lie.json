@@ -1,5 +1,5 @@
 {
-  "about": "The wolf lying (SLEEP in docs/design/HUNTING.md section 2): one held pose of the body's own Lie, on its belly, each forearm along the floor, the hind legs folded, the head low over the forepaws and the tail curled round the right flank. A take is not a clip: the client fades this pose out (section 10).",
+  "about": "The wolf lying (SLEEP in docs/design/HUNTING.md section 2): one held pose of the body's own Lie, on its belly, each forearm along the floor, the hind legs folded, the head low over the forepaws and the tail curled round the right flank. SLEEP only. A take is a fade and a drop of goods (HUNTING section 10, which names no pose); this clip is not used for it (DECISIONS 2026-10-30, the owner's question 6). One held pose is an exception to the owner's four poses a loop, asked as question 5.",
   "target": "wolf",
   "base": {
     "library": "self:wolf",
