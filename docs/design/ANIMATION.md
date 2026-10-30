@@ -100,6 +100,8 @@ A body that carries its own actions (the Meshy wolves in `game/public3d/models`,
 
 Measured on the Meshy wolf, left view at 64 px: the walk cycle is 39.1 px of ground and the run cycle 56.9 px. At the wolf's round (`pace_ms` 600, 107 px/s) an 8-pose walk needs 22 poses a second, inside the cap of 30. The run cycle travels 7.1 px a pose, so the cap of 30 poses a second is reached at 213 px/s; a chase faster than that is time-driven (a fixed cycle rate with the foot slide measured), not distance-locked.
 
+Measured from the four-pose wolf clips (PR #412): the walk holds its feet to the ground up to 293 px/s and the run up to 427 px/s, the speeds at which four poses reach the cap of 30 poses a second. The pose count of a sheet follows from the kernel's step time: a body at a gait moves `64000 / step_ms` px/s (tile of 64 art px), with the human step of 190 ms a walk is 337 px/s, a run (`run_div` 2, 95 ms) 674 px/s and a sneak (`sneak_mul` 2, 380 ms) 168 px/s, and a clip of `n` poses over a cycle of `c` px needs `n * speed / c` poses a second, so the most poses a distance-locked sheet may carry at a gait is `30 * c * step_ms / 64000`. A sneak fits the walk sheet with room to spare; a run does not fit it, and takes the run sheet or a time-driven cycle with the slide measured.
+
 The wolf's frame budget is section 5.2's, on the owner's pick of 29.10: four poses a looping verb at least (idle, walk, run), hurt 2, death 4 and, if it bites, attack 4; at three views that is 54 frames or 66 with the bite, inside the cap of 69. The render may sample more than four poses to choose from; the sheet keeps four. The tail and the ears are separate bones, so the tail chain of section 4 can be a swap frame set instead of a rotation.
 
 ## 6. The direction gate (Step 0)
