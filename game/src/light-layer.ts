@@ -33,6 +33,13 @@ import {
   type LightKind,
 } from './light';
 
+/** How often a flame's pool takes a new breath, ms: the flicker reads on this beat, so the layers redraw no faster. */
+const FLICKER_MS = 250;
+/**
+ * The layers' corner steps by this many world units and they reach one step past the view (as the cast layer's do):
+ * the camera scrolls inside them, so a walk does not redraw them while nothing else changed.
+ */
+const SNAP = 32;
 /** Art pixels a world unit: the layers are drawn on the art grid. */
 const ART = 4;
 /** World units a tile. */
@@ -64,6 +71,8 @@ export class LightLayer {
   private readonly lights: Light[] = [];
   private w = 0;
   private h = 0;
+  /** what the two textures hold now: a frame that would draw the same leaves them as they are */
+  private drawn = '';
   /** the shade's colour and alpha now, for a still and a test */
   wash = { tint: 0, alpha: 0 };
 
@@ -93,10 +102,10 @@ export class LightLayer {
    */
   update(minute: number, view: Phaser.Geom.Rectangle, player: { x: number; y: number } | undefined, time: number, flicker: boolean): void {
     this.wash = washAt(this.table, minute);
-    const ox = Math.floor(view.x);
-    const oy = Math.floor(view.y);
-    const w = (Math.ceil(view.right) - ox + 1) * ART;
-    const h = (Math.ceil(view.bottom) - oy + 1) * ART;
+    const ox = Math.floor(view.x / SNAP) * SNAP;
+    const oy = Math.floor(view.y / SNAP) * SNAP;
+    const w = (Math.ceil(view.width / SNAP) + 1) * SNAP * ART;
+    const h = (Math.ceil(view.height / SNAP) + 1) * SNAP * ART;
     if (w !== this.w || h !== this.h) {
       this.w = w;
       this.h = h;
@@ -105,22 +114,33 @@ export class LightLayer {
     }
     const lit: { l: Light; gate: number; flick: number }[] = [];
     for (const l of this.lights) {
-      const gate = l.on ? poolAt(minute, l.kind) * l.strength : 0;
+      // in fiftieths, so the hour's slow rise redraws the layers a few times an hour, not every minute
+      const gate = l.on ? Math.round(50 * poolAt(minute, l.kind) * l.strength) / 50 : 0;
       // a lit window's glass shows with its pool, at the hour's strength
       if (l.glass) l.glass.setVisible(gate > 0).setAlpha(gate);
       if (gate <= 0) continue;
       const [rx, ry] = POOL_RADIUS[l.kind];
       const reach = Math.max(rx, ry) * TILE + 16;
       if (l.x + reach < view.x || l.x - reach > view.right || l.y + reach < view.y || l.y - reach > view.bottom + 32) continue;
-      // a flame's pool breathes a little (LIGHTING C: the shape a flicker gives the light); a lamp is steadier
-      const amp = l.kind === 'fire' ? 0.04 : l.kind === 'lamp' ? 0.02 : 0;
-      const flick = flicker && amp > 0 ? 1 + amp * Math.sin(time / 173 + l.phase) * Math.sin(time / 419 + l.phase * 1.7) : 1;
+      // a flame's pool breathes a little (LIGHTING C: the shape a flicker gives the light); a lamp's glass holds it still
+      const amp = l.kind === 'fire' ? 0.04 : 0;
+      // read on a beat of FLICKER_MS, not every frame, so a still view redraws its layers a few times a second at most
+      const beat = Math.floor(time / FLICKER_MS) * FLICKER_MS;
+      const flick = flicker && amp > 0 ? Math.round(100 * (1 + amp * Math.sin(beat / 173 + l.phase) * Math.sin(beat / 419 + l.phase * 1.7))) / 100 : 1;
       lit.push({ l, gate, flick });
     }
     const at = (x: number, y: number) => ({ x: Math.round((x - ox) * ART), y: Math.round((y - oy) * ART) });
     // the shade: the hour's colour over the view, the pools cut out of it
     const shading = this.wash.alpha > 0;
     this.shade.setVisible(shading).setPosition(ox, oy);
+    this.pools.setVisible(lit.length > 0).setPosition(ox, oy);
+    // the ring is drawn only while the hour's shade is darker than the floor allows (the night): only then does it move the layer
+    const keep = this.ringAlpha(this.wash.alpha, this.wash.tint);
+    const ring = player && shading && keep < this.wash.alpha ? at(player.x, player.y) : undefined;
+    const key = `${ox},${oy},${w},${h}|${this.wash.tint}:${this.wash.alpha}|${ring ? `${ring.x},${ring.y}` : ''}|${lit.map(({ l, gate, flick }) => `${l.x},${l.y},${gate.toFixed(3)},${flick}`).join(';')}`;
+    // nothing moved since the last draw: the textures already hold this frame
+    if (key === this.drawn) return;
+    this.drawn = key;
     if (shading) {
       this.shade.clear();
       // opaque, at the multiply's own factor (1 - a + a x colour a channel): the layer then multiplies the valley by it
@@ -128,11 +148,7 @@ export class LightLayer {
       this.shade.fill(shadeFactor(this.wash.tint, this.wash.alpha), 1);
       // the ring around the player keeps the ground at the floor: the readable shade there, never darker; drawn first,
       // so a pool inside the ring still cuts it
-      const keep = this.ringAlpha(this.wash.alpha, this.wash.tint);
-      if (player && keep < this.wash.alpha) {
-        const p = at(player.x, player.y);
-        this.shade.stamp('light-ring', undefined, p.x, p.y, { tint: shadeFactor(this.wash.tint, keep) });
-      }
+      if (ring) this.shade.stamp('light-ring', undefined, ring.x, ring.y, { tint: shadeFactor(this.wash.tint, keep) });
       for (const { l, gate, flick } of lit) {
         const p = at(l.x, l.y);
         this.shade.stamp(`light-cut-${l.kind}`, undefined, p.x, p.y, { alpha: gate, scale: flick, blendMode: Phaser.BlendModes.ERASE });
@@ -140,7 +156,6 @@ export class LightLayer {
       this.shade.render();
     }
     // the pools: every light's outermost step first, the innermost last, so the brightest step that reaches a pixel wins
-    this.pools.setVisible(lit.length > 0).setPosition(ox, oy);
     if (lit.length === 0) return;
     this.pools.clear();
     for (let i = POOL_STEPS.length - 1; i >= 0; i -= 1) {
@@ -181,6 +196,7 @@ export class LightLayer {
 
   /** Hides both layers, for the plain valley or a scene that is leaving. */
   hide(): void {
+    this.drawn = '';
     this.shade.setVisible(false);
     this.pools.setVisible(false);
   }

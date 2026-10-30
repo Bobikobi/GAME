@@ -99,6 +99,9 @@ So A and B together cost about one pass, the price of one more fog bank. C is ch
 | The sun shaft and its dust | 533, 567 | +150 to +180 (no shaft at 19:30, sun down: run noise) |
 | Body light and the night's own shadows | 533, 517 | +130 to +150 |
 | Motion: the sway on the camera, the flame on the tongues | 617, 600 | +220 to +230 |
+| The redraw cut (after CI's phone opening ran an hour late): the two textures redrawn only when what they show moves, on a 32-unit grid; a fire's flicker on a 250 ms beat; the ring only at night; the sway off where no meadow, grove or water is in view | 633, 617 (a still frame, which never redrew) | the same standing; the walk is where it saves |
+
+What the walk costs shows in the phone opening played with the CPU at 4x (`E2E_CPU_SLOWDOWN=4 pnpm e2e:group opening-phone`, the way CI's runners are slow): `develop` cooks the stew at 18:00 and reaches the arch at 20:00 in 529 s; the ladder before the cut cooked it at 19:00 and missed the evening's dig (CI failed there twice); after the cut it cooks at 18:00 and passes in 538 s.
 
 The largest steps are the two full-view textures of the pool layer and the sway's pass over the camera, as section 4 estimated: one and about one more full-screen pass. The game's page grew from 1,868.90 kB to 1,885.37 kB minified (+16.5 kB, 503.40 to 509.38 kB gzipped); Vite's chunk warning at 1,600 kB was already passed before this build and its limit is unchanged.
 

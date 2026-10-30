@@ -113,6 +113,9 @@ const PALETTE = {
   grey: 0x5d6177,
   grey2: 0x8f94a8,
 };
+/** The ground tags whose tiles, props or canopies draw the colours the sway moves (richground.ts `MOVES`). */
+const SWAYS = new Set(['meadow', 'grove', 'water', 'riverbank']);
+
 /** Props that lie on the ground and cast no shadow, by sprite name. */
 const FLAT = new Set([
   'flowers', 'flowers_white', 'flowers_blue', 'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
@@ -1782,6 +1785,20 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** Whether the view holds a tile where the moving colours live: meadow, grove (and its canopies), water or its bank. */
+  private swaysInView(): boolean {
+    const m = this.b.map;
+    const v = this.cameras.main.worldView;
+    for (let y = Math.max(0, Math.floor(v.y / T)); y <= Math.min(m.height - 1, Math.floor(v.bottom / T)); y++) {
+      const row = m.ground[y] ?? '';
+      for (let x = Math.max(0, Math.floor(v.x / T)); x <= Math.min(m.width - 1, Math.floor(v.right / T)); x++) {
+        const tile = m.legend[row[x] ?? ''];
+        if (tile && SWAYS.has(tile.tag)) return true;
+      }
+    }
+    return false;
+  }
+
   /** The flame shader on a fire's drawn tongue. */
   private lickFlame(f: Fire): void {
     if (f.lick || !this.gust) return;
@@ -2610,6 +2627,8 @@ export class WorldScene extends Phaser.Scene {
     // and a bank cannot stack on it past the fog's cap at night (light.read)
     const fogCap = (this.b.params.light?.read?.fog ?? READ.fog) / 100;
     this.banks.forEach((b, i) => b.img.setAlpha(bankAt(fog, BANK_WEIGHT[i] ?? 0.9, this.night, fogCap)));
+    // the sway's pass costs a full screen: it runs only while the view holds ground whose colours move (motion.ts)
+    if (this.gust) this.gust.setActive(this.swaysInView());
     this.showHazards(s);
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
