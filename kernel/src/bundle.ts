@@ -67,6 +67,8 @@ export interface Params {
   /** The hours the valley is washed in a colour and the sun's shear (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
   light?: {
     keys: { at: string; tint: string; pct: number }[];
+    /** the night kept readable: the floor's luma and the fog's cap at night, whole percent */
+    read?: { floor: number; fog: number };
     sun?: { alpha: number; cap: number; keys: { at: string; right: number; down: number }[] };
   };
   k_permille: number;

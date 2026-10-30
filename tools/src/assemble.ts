@@ -199,6 +199,7 @@ export function flattenParams(p: ParamsBody): Params {
     light: p.light
       ? {
           keys: p.light.keys.map((k) => ({ at: k.at, tint: k.tint, pct: k.pct })),
+          ...(p.light.read ? { read: { floor: p.light.read.floor, fog: p.light.read.fog } } : {}),
           ...(p.light.sun
             ? {
                 sun: {
