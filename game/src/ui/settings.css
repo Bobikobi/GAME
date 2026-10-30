@@ -1,0 +1,120 @@
+/* The Settings window in frame D (DECISIONS 2026-10-20), tokens only: sections under a gold group name,
+   each row a label over one full-width control, so the thumb reaches every row at 390 px. Every control is
+   44 px or more, every word is --kit-text-s (16) or larger, and the window scrolls inside its frame. */
+
+.panel.settings {
+  width: min(100%, 520px);
+}
+
+.panel.settings .panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.set-row {
+  display: grid;
+  gap: 6px;
+  padding: 8px 0;
+  border-bottom: var(--ui-hair);
+}
+
+.set-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  font: 400 var(--kit-text) / 1.15 var(--font);
+  color: var(--kit-ink);
+}
+
+.set-label b {
+  font-weight: 400;
+}
+
+.set-note {
+  font: 400 var(--kit-text-s) / 1.15 var(--font);
+  color: var(--kit-ink-soft);
+}
+
+.set-seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+}
+
+.panel.settings .btn.set-opt,
+.panel.settings .btn.set-switch,
+.panel.settings .btn.set-reset,
+.panel.settings .btn.set-done {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 6px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  color: var(--kit-plate-ink);
+  background: transparent;
+  border: 1px solid var(--kit-brass-dark);
+  box-shadow: none;
+}
+
+.panel.settings .btn.set-opt + .btn.set-opt {
+  margin-left: -1px;
+}
+
+.panel.settings .btn.set-opt.on,
+.panel.settings .btn.set-switch.on {
+  background: var(--kit-brass);
+  color: var(--kit-on-gold);
+}
+
+.panel.settings .btn.set-opt:hover:not(.on),
+.panel.settings .btn.set-switch:hover:not(.on),
+.panel.settings .btn.set-opt:focus-visible,
+.panel.settings .btn.set-switch:focus-visible,
+.panel.settings .btn.set-reset:focus-visible {
+  background: var(--ui-gold-2);
+  color: var(--kit-plate-ink);
+}
+
+.panel.settings .btn.set-switch {
+  justify-self: stretch;
+}
+
+.set-foot {
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+/* Text size: 16 is the kit as drawn and the floor (G29); 18 and 20 scale every size of the windows with the smallest word */
+:root[data-text-size='18'] {
+  --ui-title: calc(22px * 18 / 16);
+  --ui-text: calc(18px * 18 / 16);
+  --ui-group: 18px;
+  --ui-big: calc(27px * 18 / 16);
+  --kit-text: calc(18px * 18 / 16);
+  --kit-text-s: 18px;
+  --kit-text-l: calc(27px * 18 / 16);
+}
+
+:root[data-text-size='20'] {
+  --ui-title: calc(22px * 20 / 16);
+  --ui-text: calc(18px * 20 / 16);
+  --ui-group: 20px;
+  --ui-big: calc(27px * 20 / 16);
+  --kit-text: calc(18px * 20 / 16);
+  --kit-text-s: 20px;
+  --kit-text-l: calc(27px * 20 / 16);
+}
+
+/* Reduced motion set by the player (or asked by the phone) stills the windows as the phone's own setting does */
+:root[data-motion='reduced'] .panel,
+:root[data-motion='reduced'] .title-box,
+:root[data-motion='reduced'] .toast,
+:root[data-motion='reduced'] .dialog-arrow,
+:root[data-motion='reduced'] .banner {
+  animation: none;
+}
