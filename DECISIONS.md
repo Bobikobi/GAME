@@ -3470,6 +3470,12 @@ The owner asked for the logo on every official page ("official places, the game'
 **Why:** A is the one that reads at 40 px and matches frame D's Cinzel and gold, which every window now wears (#415).
 **Retry when:** the game gets a wordmark of its own in the menu or the site, or A turns out too close to another game's mark; then B's valley is the next still to show. Model: Opus 5.5 (stills), the pick by the owner.
 
+## 2026-10-29 ✅ The gaits: walk, run on hold, sneak as a toggle; the wolf hears by the gait
+
+The kernel's `move` action carries `gait` (`walk` default, so an old save, an old log and an old client read walk): a run takes `walk_step_ms` divided by `gait.run_div` (190 ms to 95), a sneak times `gait.sneak_mul` (to 380), exact integers from `gaitStepMs`, and the reach a move may cover in the time that passed follows the gait's step. The wolf's cone reads the gait: its length is the wolf's eyes (5) moved by the noise table (still 2, sneak 3, walk 5, run 8), so a run is seen at 8 tiles, a walk at 5, a sneak at 3, cover still hides and an adjacent tile is always seen (`hearingOf`, called by `sees`). `KERNEL_VERSION` 0.21.0 to 0.21.1.
+The client: the thumb held on the stick past 400 ms runs (one thumb on a phone, no double tap; Shift on a keyboard), and a "Sneak" toggle beside A and B in frame D (16 px, 44 px at the least) sneaks; the body's tween speed is the gait's step time.
+**Breath:** no bar exists in the player's state (breath is only a refill rate in a fight), so a run costs nothing yet and `gait.run_breath_cost` waits for the fight kernel. **Open:** the server's move report carries no gait, so online a run is still checked at the walk's pace; the still radius (2) is in the table but a standing player is still watched at the walk's cone; the hop is the owner's.
+**Retry when:** the fight kernel brings the breath bar (price the run then), or a phone loop shows the 400 ms hold firing by accident.
 ## 2026-10-29 ✅ Animals, then the foundations of combat and hunting, then the movement set, beside the first map
 
 The owner, 28.10: "more agents on research and building the foundations of combat and hunting; research where my knowledge is missing; advance the whole development plan smartly". Tried: the frame of 20.10 (COMBAT.md) set against the two research memos (`docs/research/research-combat.md`, `research-hunting.md`), number by number, into one table, and a hunting page from the second memo.
