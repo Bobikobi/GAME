@@ -14,7 +14,8 @@
       "rarity": "common",
       "class": "stone",
       "tier": 1,
-      "sprite": "core/base-kit:items/stone"
+      "sprite": "core/base-kit:items/stone",
+      "weight": 1
     }
   ],
   "recipe": {

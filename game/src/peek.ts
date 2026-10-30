@@ -7,7 +7,7 @@
  * landmarks lit a moment, 3 the shape alone, 4 no peek. Pure, so the tests
  * read it without a browser; scenes/peek.ts shows it.
  */
-import { findSlot, inRect, type Bundle } from '@game/kernel';
+import { findSlot, inRect, stepRuleFor, type Bundle } from '@game/kernel';
 
 /** How long the peek holds the screen, from the step in to the player again. */
 export const PEEK_MS = 3000;
@@ -45,7 +45,8 @@ const STEPS: readonly Tile[] = [
 /**
  * The peek a step from `from` to `to` opens: it crosses into a maze's frame
  * from outside, the maze's quest is not done and its tier gives a peek.
- * `walk` is the player's own walkable test, so the route goes where they can.
+ * `walk` is the player's own walkable test, so the route goes where they can, and each of its steps
+ * is asked of the kernel's height rule (G68), so the line never runs over a rock face.
  */
 export function peekOnStep(
   b: Bundle,
@@ -68,7 +69,7 @@ export function peekOnStep(
       quest: q.id,
       tier: m.tier,
       frame: { x: frame.x, y: frame.y, w: frame.w, h: frame.h },
-      route: m.tier === 1 ? route(frame, walk, to, hearts) : [],
+      route: m.tier === 1 ? route(frame, walk, to, hearts, stepRuleFor(b)) : [],
       landmarks,
       glowMs: m.tier === 1 ? PEEK_MS : m.tier === 2 ? MOMENT_MS : 0,
     };
@@ -76,8 +77,18 @@ export function peekOnStep(
   return undefined;
 }
 
-/** The shortest walk inside the frame from a tile to any tile of a heart, four ways; empty when there is none. */
-export function route(frame: Rect, walk: (x: number, y: number) => boolean, from: Tile, hearts: readonly Rect[]): Tile[] {
+/**
+ * The shortest walk inside the frame from a tile to any tile of a heart, four ways; empty when there is none.
+ * `stepOpen` says whether one step between two four-adjacent tiles is open (the kernel's height rule, G68);
+ * with none given every step is.
+ */
+export function route(
+  frame: Rect,
+  walk: (x: number, y: number) => boolean,
+  from: Tile,
+  hearts: readonly Rect[],
+  stepOpen: (x1: number, y1: number, x2: number, y2: number) => boolean = () => true,
+): Tile[] {
   const key = (x: number, y: number) => `${x},${y}`;
   const prev = new Map<string, Tile | null>([[key(from[0], from[1]), null]]);
   const queue: Tile[] = [from];
@@ -91,7 +102,7 @@ export function route(frame: Rect, walk: (x: number, y: number) => boolean, from
     for (const [dx, dy] of STEPS) {
       const nx = at[0] + dx;
       const ny = at[1] + dy;
-      if (!inRect(nx, ny, frame) || !walk(nx, ny) || prev.has(key(nx, ny))) continue;
+      if (!inRect(nx, ny, frame) || !walk(nx, ny) || !stepOpen(at[0], at[1], nx, ny) || prev.has(key(nx, ny))) continue;
       prev.set(key(nx, ny), at);
       queue.push([nx, ny]);
     }

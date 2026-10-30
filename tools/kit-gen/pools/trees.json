@@ -1,0 +1,21 @@
+{
+  "note": "The trees pool: oaks (three variants), the young tree, the dead tree and the three canopies, at the sizes of docs/design/STYLE.md section 1b. The look of a tree is still a direction: its stills go to the owner first. Fields as in ground.json.",
+  "entries": [
+    { "name":"canopy_1","ref":"props/canopy_1","kit_id":"props/canopy_1","rank":7,"blocked_by":"#328 open 4","kind":"sprite","width":192,"height":192,"ramps":["green","moss"],
+      "what":"dense leafy tree canopy seen from above","detail":"big leaf clusters in four greens, lit tops, deep shadows between clusters" },
+    { "name":"canopy_2","ref":"props/canopy_2","kit_id":"props/canopy_2","rank":7,"blocked_by":"#328 open 4","kind":"sprite","width":192,"height":192,"ramps":["green","moss"],
+      "what":"dense leafy tree canopy seen from above","detail":"rounded leaf masses in four greens, a dark shaded edge on the right" },
+    { "name":"canopy_3","ref":"props/canopy_3","kit_id":"props/canopy_3","rank":7,"blocked_by":"#328 open 4","kind":"sprite","width":192,"height":192,"ramps":["green","moss"],
+      "what":"dense leafy tree canopy seen from above","detail":"two layers of leaf clusters in four greens with a dark gap between them" },
+    { "name":"tree_oak","ref":"props/tree_oak","kit_id":"props/tree_oak","rank":11,"blocked_by":"#328 open 4","kind":"sprite","width":192,"height":320,"ramps":["green","bark","moss"],
+      "what":"round leafy oak tree with its trunk","detail":"clusters of leaves in three greens lit from the upper left, bark lines, roots" },
+    { "name":"tree_oak_2","ref":"props/tree_oak","kit_id":"props/tree_oak_2","rank":11,"blocked_by":"#328 open 4","new":true,"kind":"sprite","width":192,"height":320,"ramps":["green","bark","moss"],
+      "what":"round leafy oak tree with its trunk, a second variant","detail":"clusters of leaves in three greens lit from the upper left, bark lines, roots, the clusters and branches in other places" },
+    { "name":"tree_oak_3","ref":"props/tree_oak","kit_id":"props/tree_oak_3","rank":11,"blocked_by":"#328 open 4","new":true,"kind":"sprite","width":192,"height":320,"ramps":["green","bark","moss"],
+      "what":"round leafy oak tree with its trunk, a third variant","detail":"clusters of leaves in three greens lit from the upper left, bark lines, roots, the clusters and branches in other places" },
+    { "name":"young_tree","ref":"props/young_tree","kit_id":"props/young_tree","rank":11,"blocked_by":"#328 open 4","kind":"sprite","width":128,"height":192,"ramps":["green","bark","moss"],
+      "what":"young round tree","detail":"a round crown in three greens lit from the upper left, a thin brown trunk" },
+    { "name":"dead_tree","ref":"props/dead_tree","kit_id":"props/dead_tree","rank":11,"blocked_by":"#328 open 4","kind":"sprite","width":192,"height":256,"ramps":["bark","plum","grey"],
+      "what":"dead leafless twisted tree","detail":"gnarled dark branches, bark cracks, a pale lit edge on the trunk" }
+  ]
+}

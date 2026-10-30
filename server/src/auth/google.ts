@@ -12,12 +12,16 @@ const SCOPE = 'openid email profile';
 const KEYS_TTL_MS = 60 * 60 * 1000;
 /** the clock skew tolerated on `exp` and `iat` */
 const SKEW_MS = 60 * 1000;
+/** how long Google gets to answer one call, well inside nginx's 30 s; past it the player goes back to the game */
+const TIMEOUT_MS = 10 * 1000;
 
 export interface GoogleOptions {
   clientId: string;
   clientSecret: string;
   /** injected so the tests answer for Google; the server passes the global fetch */
   fetch?: typeof fetch;
+  /** how long one call to Google may take; a test shortens it */
+  timeoutMs?: number;
 }
 
 interface Jwk extends JsonWebKey {
@@ -43,16 +47,40 @@ function decodePart(part: string): Record<string, unknown> {
  */
 export function googleProvider(options: GoogleOptions): OAuthProvider {
   const send = options.fetch ?? fetch;
+  const timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
   let keys: { at: number; list: Jwk[] } | undefined;
+
+  /**
+   * One call to Google and its JSON (finding 8 of the 27.10 review). A call that fails, hangs past the
+   * timeout, or answers with something that is not a JSON object is a refusal like any other, so the
+   * player goes back to the game instead of a 500 or nginx's 504.
+   */
+  async function ask(url: string, init: RequestInit, refused: string): Promise<Record<string, unknown>> {
+    let response: Response;
+    try {
+      response = await send(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+    } catch {
+      throw new SignInRefusal('Google could not be reached to finish the sign-in. Try again.', 'provider');
+    }
+    if (!response.ok) throw new SignInRefusal(refused, 'provider');
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new SignInRefusal('Google sent an answer this server cannot read. Try again.', 'provider');
+    }
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+      throw new SignInRefusal('Google sent an answer this server cannot read. Try again.', 'provider');
+    }
+    return body as Record<string, unknown>;
+  }
 
   async function signingKey(kid: string, now: number): Promise<Jwk> {
     const cached = keys && now - keys.at < KEYS_TTL_MS ? keys.list.find((key) => key.kid === kid) : undefined;
     if (cached) return cached;
     // an unknown kid refreshes the keys once: Google rotates them, and a new one appears before it signs
-    const response = await send(KEYS_URL, { headers: { accept: 'application/json' } });
-    if (!response.ok) throw new SignInRefusal('Google could not be reached to check the sign-in.', 'provider');
-    const body = (await response.json()) as { keys?: Jwk[] };
-    keys = { at: now, list: Array.isArray(body.keys) ? body.keys : [] };
+    const body = await ask(KEYS_URL, { headers: { accept: 'application/json' } }, 'Google could not be reached to check the sign-in.');
+    keys = { at: now, list: Array.isArray(body.keys) ? (body.keys as Jwk[]) : [] };
     const key = keys.list.find((candidate) => candidate.kid === kid);
     if (!key) throw new SignInRefusal('Google signed the sign-in with a key it does not publish.', 'provider');
     return key;
@@ -115,7 +143,7 @@ export function googleProvider(options: GoogleOptions): OAuthProvider {
     },
 
     async identify({ code, verifier, nonce, redirectUri, now }) {
-      const response = await send(TOKEN_URL, {
+      const body = await ask(TOKEN_URL, {
         method: 'POST',
         headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -126,9 +154,7 @@ export function googleProvider(options: GoogleOptions): OAuthProvider {
           grant_type: 'authorization_code',
           code_verifier: verifier,
         }).toString(),
-      });
-      if (!response.ok) throw new SignInRefusal('Google did not accept the sign-in. Try again.', 'provider');
-      const body = (await response.json()) as { id_token?: unknown };
+      }, 'Google did not accept the sign-in. Try again.');
       if (typeof body.id_token !== 'string') throw new SignInRefusal('Google sent no sign-in to check.', 'provider');
       return checkIdToken(body.id_token, nonce, now);
     },

@@ -1,13 +1,27 @@
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import type { Credit } from '@game/kernel';
-import { computeBoard, readPoints, type Commit, type PointsConfig } from '../src/board';
+import { boardIsCurrent, boardText, computeBoard, creatorsOf, readCommits, readPoints, squashedCommits, type Commit, type PointsConfig } from '../src/board';
 import { REPO_ROOT } from '../src/load';
 
+/** A scratch repository: `git(cwd, ...args)`, and `commit(cwd, message, ...files)` writes each file and commits it. */
+function git(cwd: string, ...args: string[]): string {
+  return execFileSync('git', ['-c', 'commit.gpgsign=false', '-c', 'user.name=test', '-c', 'user.email=test@example.com', ...args], { cwd, encoding: 'utf8' });
+}
+function commit(cwd: string, message: string, ...files: string[]): void {
+  for (const f of files) {
+    mkdirSync(dirname(join(cwd, f)), { recursive: true });
+    writeFileSync(join(cwd, f), `${message}\n`);
+  }
+  git(cwd, 'add', '-A');
+  git(cwd, 'commit', '-q', '-m', message);
+}
+
 describe('board and points', () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'openfold-points-test-'));
+  const tempDir = mkdtempSync(join(tmpdir(), 'loomvale-points-test-'));
   afterAll(() => rmSync(tempDir, { recursive: true, force: true }));
 
   it('reads points from .github/points.json correctly', () => {
@@ -94,5 +108,50 @@ describe('board and points', () => {
       records: 0,
       commits: 3,
     });
+  });
+
+  it('a board file is current only when it is byte for byte what the board writes', () => {
+    const file = join(tempDir, 'current', 'board.json');
+    mkdirSync(dirname(file), { recursive: true });
+    const board = { core: { points: 7, records: 0, commits: 7 } };
+    expect(boardIsCurrent(board, file)).toBe(false);
+    writeFileSync(file, boardText(board));
+    expect(boardIsCurrent(board, file)).toBe(true);
+    // the hand edit the check exists for: one number
+    writeFileSync(file, boardText(board).replace('"points": 7', '"points": 700'));
+    expect(boardIsCurrent(board, file)).toBe(false);
+  });
+
+  it('a branch counts as the one commit develop gets from its squash, a board-only branch as none', () => {
+    const repo = join(tempDir, 'squash');
+    mkdirSync(repo, { recursive: true });
+    git(repo, 'init', '-q', '-b', 'main');
+    commit(repo, 'core', 'content/core/a.json');
+    commit(repo, 'alice', 'content/extensions/alice/plum.json');
+    expect(readCommits(repo)).toHaveLength(2);
+
+    // two commits by bob on a branch, one of them also rewriting the board
+    git(repo, 'checkout', '-q', '-b', 'feat/bob');
+    commit(repo, 'bob 1', 'content/extensions/bob/quest.json');
+    commit(repo, 'bob 2', 'content/extensions/bob/quest.json', 'content/board.json');
+    expect(readCommits(repo)).toHaveLength(4);
+    const squashed = squashedCommits('main', repo);
+    expect(squashed).toHaveLength(3);
+    expect(squashed[2]!.files.sort()).toEqual(['content/board.json', 'content/extensions/bob/quest.json']);
+    expect([...creatorsOf(squashed[2]!)].sort()).toEqual(['bob', 'core']);
+    expect(squashed[2]!.at).toBeGreaterThan(squashed[1]!.at);
+
+    // a branch that only rewrote the board adds nothing, like such a commit in the history
+    git(repo, 'checkout', '-q', '-b', 'chore/board', 'main');
+    commit(repo, 'board only', 'content/board.json');
+    expect(readCommits(repo)).toHaveLength(2);
+    expect(squashedCommits('main', repo)).toHaveLength(2);
+
+    // work not committed yet counts the same: a new file, not even added, is the branch's one commit
+    mkdirSync(join(repo, 'content/extensions/cara'), { recursive: true });
+    writeFileSync(join(repo, 'content/extensions/cara/herb.json'), '{}\n');
+    const pending = squashedCommits('main', repo);
+    expect(pending).toHaveLength(3);
+    expect([...creatorsOf(pending[2]!)].sort()).toEqual(['cara', 'core']);
   });
 });

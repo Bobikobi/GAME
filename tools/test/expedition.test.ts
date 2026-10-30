@@ -364,7 +364,7 @@ describe('an expedition is never the only road (G37)', () => {
 });
 
 describe('what an expedition gives, in the content check', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-expedition-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-expedition-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
@@ -374,6 +374,14 @@ describe('what an expedition gives, in the content check', () => {
   const mapPath = join(root, 'core', 'map.json');
   const map = JSON.parse(readFileSync(mapPath, 'utf8')) as { map: { ground: string[]; slots: object[]; props: object[] } };
   map.map.ground = openDoorstep(map.map.ground);
+  // the rocks seal the room off the place's one door (the arch, DECISIONS 2026-10-16): in this copy the west wall comes
+  // down, and so does the hall's north wall (row 27), so the rest of the walled ruins keeps a road out and the wolf's
+  // chase still ends (G34)
+  map.map.props = map.map.props.filter((p) => {
+    const q = p as { sprite: string; x: number; y: number };
+    if (q.sprite.endsWith('/ruin_wall') && q.y === 27 && q.x >= 35) return false;
+    return !(q.sprite.endsWith('/ruin_pillar') && q.x === 32 && q.y >= 21 && q.y <= 30);
+  });
   map.map.slots.push({ id: 'core/test-hall', kind: 'area', x: 35, y: 21, w: 4, h: 5 }, { id: 'core/test-altar', kind: 'ruin', x: 37, y: 24, w: 1, h: 1 });
   map.map.props.push(...walls(runCheck().assembled.bundle!), {
     id: 'core/test-hall-stone',
@@ -401,6 +409,7 @@ describe('what an expedition gives, in the content check', () => {
     class: 'garment',
     tier: 1,
     sprite: 'core/base-kit:items/herb',
+    weight: 1,
     wear: { slot: 'head', look: true },
     premium_later: true,
   });
@@ -408,7 +417,7 @@ describe('what an expedition gives, in the content check', () => {
   write('items', 'items', {
     ...envelope('items', 'items'),
     items: [
-      { id: 'tester/bell-shard', name: 'bell shard', kind: 'material', rarity: 'common', class: 'relic', tier: 1, sprite: 'core/base-kit:items/herb' },
+      { id: 'tester/bell-shard', name: 'bell shard', kind: 'material', rarity: 'common', class: 'relic', tier: 1, sprite: 'core/base-kit:items/herb', weight: 1 },
       // given in place of a trowel to a start whose kit holds one: only the expedition gives it
       look('bell-veil'),
       // given by nothing at all

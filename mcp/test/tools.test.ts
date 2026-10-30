@@ -14,7 +14,7 @@ import { MCP_VERSION, TOOLS, TOOL_LIST, type ToolOutput } from '../src/tools';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const hub = JSON.parse(readFileSync(join(here, '..', '..', 'schema', 'test', 'fixtures', 'hub-data.json'), 'utf8')) as HubData;
-const meta = { format: FORMAT_VERSION, mcp: MCP_VERSION, content_tag: hub.source.content_tag, root: '/home/creator/GAME' } as const;
+const meta = { format: FORMAT_VERSION, mcp: MCP_VERSION, content_tag: hub.source.content_tag, root: '/work/creator/GAME' } as const;
 
 describe('mcp tools', () => {
   it('version follows the content format', () => {

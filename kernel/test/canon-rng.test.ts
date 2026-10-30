@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
-import { KernelError, canonical, draw, drawBasisPoints, hashText } from '@game/kernel';
+import { KernelError, canonical, draw, drawBasisPoints, hashText, type Seed } from '@game/kernel';
+
+const KEY: Seed = [42, 0x01234567, 0x89abcdef, 0xfedcba98];
 
 describe('canonical data', () => {
   test('does not depend on object insertion order', () => {
@@ -26,19 +28,19 @@ describe('canonical data', () => {
 });
 
 describe('deterministic random draws', () => {
-  test('is a pure function of seed, entity, and counter', () => {
-    const expected = draw(42, 'core/ruins-gate#0', 7);
+  test('is a pure function of key, entity, and counter', () => {
+    const expected = draw(KEY, 'core/ruins-gate#0', 7);
 
-    expect(draw(42, 'core/ruins-gate#0', 7)).toBe(expected);
-    expect(draw(43, 'core/ruins-gate#0', 7)).not.toBe(expected);
-    expect(draw(42, 'core/ruins-gate#1', 7)).not.toBe(expected);
-    expect(draw(42, 'core/ruins-gate#0', 8)).not.toBe(expected);
+    expect(draw(KEY, 'core/ruins-gate#0', 7)).toBe(expected);
+    expect(draw([43, KEY[1], KEY[2], KEY[3]], 'core/ruins-gate#0', 7)).not.toBe(expected);
+    expect(draw(KEY, 'core/ruins-gate#1', 7)).not.toBe(expected);
+    expect(draw(KEY, 'core/ruins-gate#0', 8)).not.toBe(expected);
   });
 
   test('produces bounded, roughly uniform basis points', () => {
     const deciles = Array.from({ length: 10 }, () => 0);
     for (let counter = 0; counter < 20_000; counter += 1) {
-      const value = drawBasisPoints(0x12345678, 'uniformity', counter);
+      const value = drawBasisPoints(KEY, 'uniformity', counter);
       expect(Number.isInteger(value)).toBe(true);
       expect(value).toBeGreaterThanOrEqual(0);
       expect(value).toBeLessThan(10_000);

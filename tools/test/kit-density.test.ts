@@ -55,7 +55,7 @@ describe('spriteSizeProblem', () => {
 });
 
 describe('density in a kit', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-density-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-density-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
@@ -71,7 +71,7 @@ describe('density in a kit', () => {
 
   const kitPath = join(root, 'kit', 'core', 'kit.json');
   const kit = JSON.parse(readFileSync(kitPath, 'utf8')) as { kit: { sprites: Record<string, unknown> } };
-  kit.kit.sprites['tiles/dense_ok'] = { file: 'tiles/dense_ok.png', w: 64, h: 64, density: 4 };
+  kit.kit.sprites['tiles/dense_ok'] = { file: 'tiles/dense_ok.png', w: 64, h: 64, density: 4, ramps: ['green'] };
   kit.kit.sprites['tiles/dense_forgot'] = { file: 'tiles/dense_forgot.png', w: 64, h: 64 };
   kit.kit.sprites['tiles/dense_small'] = { file: 'tiles/dense_item_wrong.png', w: 16, h: 16, density: 4 };
   writeFileSync(kitPath, JSON.stringify(kit, null, 2));

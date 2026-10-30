@@ -47,7 +47,7 @@ its own first, so the others merge it once instead of discovering it in a confli
 | File | What to do |
 |---|---|
 | `schema/src/index.ts` | Add an optional field; do not reshape one. A reshaping is cross-cutting (below). |
-| `schema/json/*`, `content/values.lock.json`, `CREDITS.md`, `content/board.json` | Generated. Never merged by hand: take `develop`'s and rerun `pnpm schemas`, `pnpm values`, `pnpm credits`, `pnpm board`. |
+| `schema/json/*`, `content/values.lock.json`, `CREDITS.md`, `content/board.json` | Generated. Never merged by hand: take `develop`'s and rerun `pnpm schemas`, `pnpm values`. `CREDITS.md` and `content/board.json` are left as `develop` has them: the release's prep pull request regenerates both (`pnpm credits`, `pnpm board --base origin/develop`), and CI refuses a board changed to anything but what the merged history gives. |
 | `kernel/src/step.ts`, `kernel/src/state.ts` | A new verb or field comes with its test in a pull request that does only that. |
 | `tools/src/assemble.ts` | Same: the check or the bundle step first, content that needs it after. |
 | `DECISIONS.md` | Append at the end only. `.gitattributes` merges both sides (see below). |
@@ -59,7 +59,7 @@ once. Mark its stream `"cross_cutting": true` in `streams.json` so the order put
 
 ## Merge order
 
-The owner presses merge; `pnpm streams` only proposes. The proposal follows four rules:
+`pnpm streams` only proposes. The session that made a pull request merges it into `develop` once the owner has approved it (the owner's rule of 23.10). A release to the public, `develop` into `main`, stays the owner's alone. The proposal follows four rules:
 
 1. A cross-cutting stream first.
 2. A branch that others are built on goes before them: it frees their pull requests.
@@ -92,8 +92,8 @@ no work of its own yet; the picture says so, and the work goes on in the branch 
 git fetch origin && git merge origin/develop
 # generated files only, and only those in conflict: develop's version, then regenerate
 git checkout --theirs schema/json content/values.lock.json
-pnpm schemas && pnpm values && pnpm credits && pnpm board
-git add schema/json content/values.lock.json CREDITS.md content/board.json
+pnpm schemas && pnpm values
+git add schema/json content/values.lock.json
 # everything else: resolve by hand, then
 pnpm verify
 ```
@@ -121,8 +121,8 @@ reached through the repository, so for them the owner pastes the instruction, an
 on this page are what they read first.
 
 It never edits, merges, rebases, pushes or deletes in another session's branch or worktree. It
-proposes; the owner presses merge. If the owner wants merges into `develop` delegated, that
-goes into `DECISIONS.md` the same day, with its limits.
+proposes the order; the session that made each pull request merges it, after the owner's
+approval, and never a pull request that is another session's. The integrator merges nothing.
 
 A session that started before this page landed has the old `AGENTS.md` and no `pnpm streams`:
 once the pull request is merged, it merges `origin/develop` and is told once to

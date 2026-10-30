@@ -63,7 +63,8 @@
           "name",
           "kind",
           "rarity",
-          "sprite"
+          "sprite",
+          "weight"
         ],
         "properties": {
           "id": {
@@ -220,6 +221,12 @@
             "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
             "type": "string"
           },
+          "weight": {
+            "minimum": 0,
+            "maximum": 20,
+            "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+            "type": "integer"
+          },
           "food": {
             "additionalProperties": false,
             "type": "object",
@@ -274,6 +281,10 @@
                   {
                     "const": "pick",
                     "type": "string"
+                  },
+                  {
+                    "const": "rod",
+                    "type": "string"
                   }
                 ]
               },
@@ -309,14 +320,14 @@
           },
           "wear": {
             "additionalProperties": false,
-            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
             "type": "object",
             "required": [
               "slot"
             ],
             "properties": {
               "slot": {
-                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                 "anyOf": [
                   {
                     "const": "head",
@@ -344,6 +355,10 @@
                   },
                   {
                     "const": "hand",
+                    "type": "string"
+                  },
+                  {
+                    "const": "back",
                     "type": "string"
                   }
                 ]
@@ -404,6 +419,18 @@
                 "maxLength": 80,
                 "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                 "type": "string"
+              },
+              "places": {
+                "minimum": 1,
+                "maximum": 99,
+                "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                "type": "integer"
+              },
+              "load_bonus": {
+                "minimum": 1,
+                "maximum": 100,
+                "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                "type": "integer"
               }
             }
           },
@@ -581,10 +608,31 @@
           "type": "boolean"
         },
         "opens_after": {
-          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
-          "maxLength": 80,
-          "description": "A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.",
-          "type": "string"
+          "minItems": 1,
+          "maxItems": 4,
+          "description": "Quests the node waits for, each with the line its refusal says. The node cannot be struck by a character who was offered one of them and has not finished it; a character who was offered none strikes the node as usual. Two entries may not both be offered to one wake pocket. The refusal costs nothing.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "quest"
+            ],
+            "properties": {
+              "quest": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "line": {
+                "minLength": 1,
+                "maxLength": 80,
+                "description": "The one short line the refusal says. Left out: \"It is not ready yet.\"",
+                "type": "string"
+              }
+            }
+          }
         },
         "tool": {
           "anyOf": [
@@ -611,17 +659,26 @@
             {
               "const": "pick",
               "type": "string"
+            },
+            {
+              "const": "rod",
+              "type": "string"
             }
           ]
+        },
+        "work": {
+          "description": "How the node is worked when it needs no tool. \"mine\": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.",
+          "const": "mine",
+          "type": "string"
         },
         "level": {
           "minimum": 1,
           "maximum": 20,
-          "description": "Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.",
+          "description": "Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.",
           "type": "integer"
         },
         "game": {
-          "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants) or \"snap\" (press fast, for wood).",
+          "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants), \"snap\" (press fast, for wood) or \"fish\" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).",
           "anyOf": [
             {
               "const": "timing",
@@ -637,6 +694,10 @@
             },
             {
               "const": "snap",
+              "type": "string"
+            },
+            {
+              "const": "fish",
               "type": "string"
             }
           ]
@@ -685,6 +746,11 @@
                 "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
                 "type": "string"
               }
+            },
+            "water": {
+              "description": "The nodes lie on the water tiles of the slot that touch the land, and are worked from the bank: fishing spots. Left out, they lie on the land tiles of the slot.",
+              "const": true,
+              "type": "boolean"
             }
           }
         }

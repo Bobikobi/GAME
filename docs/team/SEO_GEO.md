@@ -8,7 +8,7 @@ Two things are meant by the two names. **Search** is a person typing a query and
 
 | Item | State |
 |---|---|
-| Title and description per page | yes, on every page; the developer pages' titles are generic ("Developer area - Openfold") |
+| Title and description per page | yes, on every page; the developer pages' titles are generic ("Developer area - Loomvale") |
 | `llms.txt` | yes, 40 lines, well formed; no `llms-full.txt` |
 | `robots.txt` | none (404) |
 | Sitemap | none (404) |
@@ -16,7 +16,7 @@ Two things are meant by the two names. **Search** is a person typing a query and
 | Card image | none |
 | Structured data | none |
 | Repository | description and homepage set, no topics |
-| Site address | `theopenfold.vercel.app`; the config knows it only when Vercel builds |
+| Site address | `loomvale.vercel.app`; the config knows it only when Vercel builds |
 
 ## 2. Who is searching, and for what
 
@@ -66,10 +66,10 @@ A title is read in a result list before anything else; a description is what an 
 
 | Page | Before | After |
 |---|---|---|
-| `/hub/` | Developer area - Openfold | Build with Openfold: add game content as JSON, with or without AI - Openfold |
-| `/docs/` | Add a fruit in 10 minutes - Openfold | unchanged (the guide's own heading; the description carries the query words) |
-| `/api/` | API - Openfold | Schemas and data for Openfold content: JSON Schema per record type - Openfold |
-| `/hub/boards/` | Boards - Openfold | unchanged |
+| `/hub/` | Developer area - Loomvale | Build with Loomvale: add game content as JSON, with or without AI - Loomvale |
+| `/docs/` | Add a townsperson in 15 minutes - Loomvale | unchanged (the guide's own heading; the description carries the query words) |
+| `/api/` | API - Loomvale | Schemas and data for Loomvale content: JSON Schema per record type - Loomvale |
+| `/hub/boards/` | Boards - Loomvale | unchanged |
 | `/` | unchanged | unchanged (the owner approved the home page's wording on 10.10) |
 
 ## 4. The head of every page
@@ -84,7 +84,7 @@ Added to the shared layout, from the page's own title and description, so no pag
 ## 5. Structured data (JSON-LD)
 
 - Every page: `WebSite` (name, url, description, in language `en`).
-- Home: `VideoGame` - name Openfold, a free browser game, `applicationCategory` Game, `operatingSystem` "Any (web browser)", `isAccessibleForFree`, `offers` price 0, `playMode` SinglePlayer (it is a stage-1 demo, saved per browser; the multiplayer stage is a plan, not a claim), `license` the content licence, `codeRepository` the repository.
+- Home: `VideoGame` - name Loomvale, a free browser game, `applicationCategory` Game, `operatingSystem` "Any (web browser)", `isAccessibleForFree`, `offers` price 0, `playMode` SinglePlayer (it is a stage-1 demo, saved per browser; the multiplayer stage is a plan, not a claim), `license` the content licence, `codeRepository` the repository.
 - Developer area and docs: `SoftwareSourceCode` - name, `codeRepository`, `programmingLanguage` TypeScript, `license` AGPL-3.0, `runtimePlatform` Node.js.
 Nothing is claimed that the site does not hold today: no ratings, no reviews, no organisation or founder block, no price other than free.
 The home page's "no script" test is about executable script; a JSON-LD block is data, and the test now allows exactly that type.
@@ -108,9 +108,9 @@ The home page's "no script" test is about executable script; a JSON-LD block is 
 None of these is done. Each changes something public or registers the project with a third party.
 
 1. **Repository topics** (GitHub settings): `pixel-art`, `browser-game`, `phaser`, `typescript`, `open-source-game`, `game-development`, `community-driven`, `json-schema`, `mcp-server`, `ai-friendly`. Topics are how GitHub search and many lists find a repository; today there are none.
-2. **Repository description**, now "Openfold: a free pixel-art browser game that its players build together". Proposed: add what a developer searches for - "... Add quests, items and places as JSON; AGPL code, CC BY-SA content."
+2. **Repository description**, now "Loomvale: a free pixel-art browser game that its players build together". Proposed: add what a developer searches for - "... Add quests, items and places as JSON; AGPL code, CC BY-SA content."
 3. **Social preview image** on the repository (GitHub settings): the card of the pending still.
-4. **Show HN** post ("Show HN: Openfold, a pixel-art browser game whose content is JSON anyone can add").
+4. **Show HN** post ("Show HN: Loomvale, a pixel-art browser game whose content is JSON anyone can add").
 5. **Reddit**, one post each, per each subreddit's rules: r/gamedev, r/IndieDev, r/WebGames, r/pixelart (the art-contribution angle only).
 6. **itch.io** page for the browser demo, linking back.
 7. **Awesome lists**, by pull request, each only if the list's rules fit: lists of open-source games, of web games, of game-development resources.

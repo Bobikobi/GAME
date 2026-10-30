@@ -110,8 +110,8 @@ export async function playOpening(bundle: Bundle, player: Player, start: Start):
     else await player.dig(spot[0]);
   };
 
-  // the explorer's senses answer first: the keystone waits for the glint's axe
-  if (start.starter === 'core/explorer') await ownTask();
+  // the keystone waits for the start's own first task: the explorer's glint, the forager's herbs over the stone
+  if (start.starter !== 'core/digger') await ownTask();
 
   // the taught strike: one keystone in the shallows mends the bridge
   const [keystone] = instancesOf(bundle, 'core/keystone');
@@ -120,7 +120,7 @@ export async function playOpening(bundle: Bundle, player: Player, start: Start):
     throw new Error('The keystone was gathered but not discovered.');
   }
 
-  if (start.starter !== 'core/explorer') await ownTask();
+  if (start.starter === 'core/digger') await ownTask();
 
   await player.actNear(player.slot('core/old-bridge'), (tile) => ({ t: 'restore', restore: 'core/old-bridge', at: tile }));
 
@@ -170,10 +170,22 @@ export async function playOpening(bundle: Bundle, player: Player, start: Start):
  * This is the first expedition `develop` has content for: `bundle.expeditions` is empty, since the night
  * ruins of NEXT 14b are not built. The outing is its own step so the real one joins here.
  */
+/** The places the outing wants free before it sets out: one per dig it means to make. */
+const OUTING_ROOM = 4;
+
 export async function playFirstOuting(bundle: Bundle, player: Player): Promise<{ digs: number }> {
   const elder = at(one(npcTile(bundle, 'core/elder'), 'The elder has no tile.'));
+  const trader = at(one(npcTile(bundle, 'core/trader'), 'The trader has no tile.'));
   // the ruins' night is the toll of the pit and the wolf's round: this outing is walked by day
   player.waitForHour(6);
+
+  // a bag of 12 places has little room left after the opening (DECISIONS.md, 2026-10-23): a player
+  // empties it at Pell's stall before the ruins, one unit at a time, until the finds have room
+  while (player.freePlaces() < OUTING_ROOM) {
+    const spare = player.sellable();
+    if (spare === undefined) break;
+    await player.actNear(trader, (tile) => ({ t: 'sell', npc: 'core/trader', item: spare, qty: 1, at: tile }));
+  }
 
   await player.actNear(elder, (tile) => ({ t: 'accept', quest: 'core/the-tangle', at: tile }));
 

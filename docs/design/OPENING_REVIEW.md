@@ -2,19 +2,19 @@
 
 A review of the opening as it stands on `develop` (aa903eb, 2026-10-17), from the first frame to the entrance of the night ruins, and a proposal for its renewal. Docs only: nothing here is built, no rung of [GAME_RULES.md](GAME_RULES.md) section 2 moves (G59), and every look that changes goes to the owner as stills first (the direction rule). Asked by the owner on 17.10 as step 1 of "the order from here" ([DECISIONS.md](../../DECISIONS.md), 2026-10-17).
 
-## תקציר (עברית)
+## Summary
 
-1. הקרס שאושר ב-10.10 (ערפל שנסוג, אבן החוזרים, שורת התעוררות) עדיין לא נבנה. לשחקן אין סיבה משלו להיות כאן, והפתיחה נפתחת ב-3 תיבות טקסט, בעוד שהסולם מרשה תיבה אחת.
-2. בריצת רובוט של הכפרי יש 254 שניות של שעון משחק בין המטלה האחרונה לחושך בלי שום תגמול במסלול הראשי (עמוד 1 מתיר 90). אדם איטי יותר ויחכה פחות; זה עוד לא נמדד על אדם.
-3. "עשן מעל העיירה" שולחת לעקוב אחרי עשן שאי אפשר לראות מהמחנה, והכפרי מקבל שתי משימות "מיומנות" ברצף (עמוד 3). הפעמון שעל האבן המסומנת לא נשמע לפני כן אף פעם.
-4. ההצעה: לבנות את הקרס כפי שאושר, B2 קודם; בתיקון הגשר הערפל נסוג לפחות 13 משבצות (7 שאושרו לא מחברים את שלוש הכיסים), פעמון רחוק נשמע, ועשן העיירה מופיע בקצה המסך. האבן הופכת למקום הראשון שבו יעמדו שמות של אחרים: עכשיו שמות כתובים, אחרי חשבונות שמות אמיתיים מאחורי מסנן.
-5. שום שלב בסולם לא זז. שלוש שאלות לבעלים בסעיף 6: ניסוח שורות ההתעוררות; איך מוצאים מטרה ל-250 השניות לפני החושך; האם לשתול עשן רחוק מעבר לעמק עוד לפני שהקרקע שלו קיימת.
+1. The hook approved on 10.10 (the receding mist, the returners' stone, the waking line) is not built yet. The player has no reason of their own to be here, and the opening starts with 3 text boxes while the ladder allows one.
+2. In a robot run of the forager there are 254 seconds of game clock between the last task and dark with no reward on the main path (pillar 1 allows 90). A slower person will wait less; this has not been measured on a person yet.
+3. "Smoke over the town" sends the player to follow smoke that cannot be seen from the camp, and the forager gets two "skill" tasks in a row (pillar 3). The bell on the marked stone has never been heard before.
+4. The proposal: build the hook as approved, B2 first. When the bridge is mended the mist draws back at least 13 tiles (the 7 that were approved do not join the three pockets), a distant bell is heard, and the town's smoke appears at the edge of the screen. The stone becomes the first place where the names of others will stand: written names for now, real names behind a filter once accounts exist.
+5. No rung of the ladder moves. Three questions for the owner in section 6: the wording of the waking lines; how to find a goal for the 250 seconds before dark; whether to plant distant smoke beyond the valley before its ground exists.
 
 ## 1. How it was timed
 
 - **The run.** A copy of the opening e2e ([game/e2e/opening.ts](../../game/e2e/opening.ts)) in headless Chrome, with a recorder in the page that polls the player every 80 ms and logs each bag change, quest change, mended place, gold change, recipe, dialogue box, toast, minigame and level window with the session tick. The copy is a throwaway under `.scratch/` and is not committed.
 - **Clock.** Times below are the play clock: one game hour is 50 s, the game starts at noon, dusk (19:00) is at 350 s, dark (20:00) at 400 s, and the clock stops while a box is open. A robot is a floor: it reads instantly and never doubts, so a human is slower in every row. Wall-clock seconds are not used, because the machine ran at a load of 10 to 14 (12 logical cores) while the runs went, which stretches the wall time and not the play clock.
-- **What was measured.** The forager, on a phone-sized screen, from the first frame to the threshold of the night ruins (finished, 473 s of wall time, 412 s of play clock at the threshold). The digger (phone, to the bridge, 36 s of wall time, CPU load about 1) and the explorer (desktop, Pell first, up to the ruin sign at 59.5 s, where the e2e stopped on an unrelated step; CPU load 10 to 17) were timed the same way in a second pass through `~/.claude/tools/heavy.sh`. The digger's run stops at the mended bridge by design; the explorer's stops at the ruin sign, so Pell's help (the herbs) and everything after it is measured for the forager only.
+- **What was measured.** The forager, on a phone-sized screen, from the first frame to the threshold of the night ruins (finished, 473 s of wall time, 412 s of play clock at the threshold). The digger (phone, to the bridge, 36 s of wall time, CPU load about 1) and the explorer (desktop, Pell first, up to the ruin sign at 59.5 s, where the e2e stopped on an unrelated step; CPU load 10 to 17) were timed the same way in a second pass. The digger's run stops at the mended bridge by design; the explorer's stops at the ruin sign, so Pell's help (the herbs) and everything after it is measured for the forager only.
 - **Not measured at all:** a human. The recording test of pillar 1 ("time the gaps in a recording") still wants a person playing the opening three times.
 
 ## 2. The map

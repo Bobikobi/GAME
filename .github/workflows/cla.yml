@@ -1,0 +1,59 @@
+# The contributor agreement (CLA.md), signed once per person by a comment on their first pull request.
+# The action (CLA Assistant Lite, upstream archived) was read at this exact commit: its dist/ rebuilds
+# byte for byte from src/, it calls only api.github.com with the run's own token, and it runs no
+# commands. Audit notes: DECISIONS.md, "The moat: the shared world, the pace, the rights".
+#
+# Two events, two places a workflow file is read from:
+#  - pull_request_target reads this file from the PULL REQUEST'S BASE branch (develop);
+#  - issue_comment reads it from the DEFAULT branch (main).
+# So a signature by comment is first seen when this file is on main (the next release); until then a
+# new push to the pull request makes the pull_request_target run find the comment. Nothing here checks
+# out or runs the pull request's code: the action only reads its commits and comments through the API.
+#
+# Signatures live on the branch `cla-signatures` (unprotected, as the action needs), in
+# signatures/v1/cla.json. A new version of CLA.md gets a new path, v2, so everyone signs again.
+# The "CLA" check is not a required status check; making it required is a repository setting.
+name: CLA
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+# contents: write puts a signature on the signatures branch; pull-requests: write is the bot's comment;
+# actions: write lets it re-run a failed run once everyone has signed
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+# one run at a time per pull request, so two comments do not write the signature file together
+concurrency:
+  group: cla-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  cla:
+    name: CLA signed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # a comment counts only on a pull request, and only the signing words or "recheck"
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event.issue.pull_request &&
+        (github.event.comment.body == 'recheck' ||
+         github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA'))
+    steps:
+      - uses: contributor-assistant/github-action@ca4a40a7d1004f18d9960b404b97e5f30a505a08 # v2.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path-to-signatures: signatures/v1/cla.json
+          path-to-document: https://github.com/Bobikobi/GAME/blob/develop/CLA.md
+          branch: cla-signatures
+          # the owner and the secondary account, whose commits are the owner's own agents' work, and every
+          # bot (the community loop, the dependency updates). The action reads each commit's GitHub login.
+          allowlist: Bobikobi,JustArandomGuyFromTheInternet,*[bot]
+          # locking a merged pull request would also lock the owner's own; the signatures are in the file
+          lock-pullrequest-aftermerge: 'false'

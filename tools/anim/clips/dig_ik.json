@@ -1,0 +1,96 @@
+{
+  "about": "A dig by IK overlay: the library's kneeling fix for the body, the right wrist scooping a trowel through five control points, held above the ground.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Fixing_Kneeling"
+  },
+  "frames": [
+    40,
+    45,
+    50,
+    55,
+    60,
+    65,
+    70,
+    75
+  ],
+  "ik": {
+    "side": "R",
+    "anchor": "wrist",
+    "pole": [
+      0.6,
+      0.0,
+      -0.8
+    ],
+    "floor": 0.05,
+    "points": [
+      [
+        0,
+        0.0,
+        0.14
+      ],
+      [
+        0,
+        0.18,
+        -0.04
+      ],
+      [
+        0,
+        0.06,
+        -0.09
+      ],
+      [
+        0,
+        -0.1,
+        0.02
+      ],
+      [
+        0,
+        0.0,
+        0.14
+      ]
+    ],
+    "t": [
+      0,
+      0.1429,
+      0.2857,
+      0.4286,
+      0.5714,
+      0.7143,
+      0.8571,
+      1.0
+    ]
+  },
+  "prop": {
+    "kind": "trowel",
+    "hand": "R",
+    "from": "ik",
+    "haft": "fore"
+  },
+  "ms": [
+    110,
+    110,
+    110,
+    110,
+    110,
+    110,
+    110,
+    110
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      82
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

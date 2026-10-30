@@ -4,26 +4,30 @@
  * the current tick and remembers the result.
  *
  * The tick is game time in ms. It runs while the world is on screen and
- * stops while a menu or a dialogue is open, so reading never costs satiety.
+ * stops while a menu or a dialogue is open, so reading never costs game time.
  */
 import {
+  type Gait,
   type Action,
   type Bundle,
   type GameEvent,
   KERNEL_VERSION,
   OPENING_LOG_MAX,
   type OpeningUpload,
+  type Seed,
   type State,
   appearSlots,
   appears,
   fitWorn,
   groundSpots,
   hourOf,
+  isSeed,
   makeWalkable,
   migrateState,
   newState,
   inRect,
   placedAt,
+  relocationOf,
   serialize,
   step,
 } from '@game/kernel';
@@ -99,8 +103,8 @@ interface SaveFile {
   stall?: string;
   /** the stall the kit is arranging, one entry per place; absent in old saves and while it is empty */
   stallDraft?: (StallDraft | null)[];
-  /** the opening log of NEXT 18 d: the seed the game began under, and every step played since; absent in older saves */
-  opening?: { seed: number; log: { a: Action; tick: number }[]; full?: boolean };
+  /** the opening log of NEXT 18 d: the key the game began under, and every step played since; absent in older saves */
+  opening?: { seed: Seed; log: { a: Action; tick: number }[]; full?: boolean };
 }
 
 type Listener = (payload: never) => void;
@@ -129,7 +133,7 @@ export class Session implements GameSession {
    * to the server, which plays it again. The tail above is for bug reports and stays at 40; this one runs to
    * `OPENING_LOG_MAX`, and past that the opening is too long to hand over and the account starts fresh.
    */
-  private opening: { seed: number; log: { a: Action; tick: number }[]; full: boolean } | undefined;
+  private opening: { seed: Seed; log: { a: Action; tick: number }[]; full: boolean } | undefined;
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
   private pauses = 0;
@@ -151,12 +155,14 @@ export class Session implements GameSession {
     this.pos = [state.player.at[0], state.player.at[1]];
   }
 
-  /** A new world. The seed is random; a test may fix it (`?debug&seed=N`, see debugSeed), and the seed draws the wake pocket. */
+  /**
+   * A new world. The key is 128 random bits; a test may fix a 32-bit seed instead (`?debug&seed=N`, see
+   * debugSeed), which widens as an old save's does. The key draws the wake pocket.
+   */
   static fresh(bundle: Bundle, fixed?: number): Session {
-    const seed = new Uint32Array(1);
-    if (fixed !== undefined) seed[0] = fixed;
-    else crypto.getRandomValues(seed);
-    return new Session(bundle, newState(bundle, seed[0] ?? 1));
+    if (fixed !== undefined) return new Session(bundle, newState(bundle, fixed));
+    const words = crypto.getRandomValues(new Uint32Array(4));
+    return new Session(bundle, newState(bundle, [words[0]!, words[1]!, words[2]!, words[3]!]));
   }
 
   /**
@@ -190,7 +196,7 @@ export class Session implements GameSession {
   }
 
   /** Keep one played step in the opening log; the log begins at the start and stops growing at its cap. */
-  private keep(action: Action, tick: number, seed: number): void {
+  private keep(action: Action, tick: number, seed: Seed): void {
     if (action.t === 'start') this.opening = { seed, log: [], full: false };
     const opening = this.opening;
     if (!opening || opening.full) return;
@@ -287,6 +293,8 @@ export class Session implements GameSession {
     // a save from before kernel 0.9 holds no record of bites
     const bites = state.player as Partial<Pick<State['player'], 'bitten'>>;
     bites.bitten ??= [];
+    // a save from before kernel 0.17 has searched nothing (migrateState also fills it)
+    (state as Partial<Pick<State, 'searched'>>).searched ??= {};
     // a save from before the races (state format 2, kernel 0.14): carry is read as might, spirit starts at 0,
     // and the starter becomes its race and its wake pocket; the pocket's tools it carried stay in the bag,
     // so the spots that lay them by the wake are spent
@@ -297,6 +305,7 @@ export class Session implements GameSession {
     }
     const session = new Session(bundle, state);
     stampDemo();
+    const stoodAt = state.player.at.join();
     if (state.content !== bundle.tag) {
       // a new version of the world was published: keep what still exists
       if (!adapt(bundle, state)) return undefined;
@@ -312,12 +321,14 @@ export class Session implements GameSession {
     }
     session.tail = file.tail.slice(-TAIL);
     const kept = file.opening;
-    if (kept && Number.isSafeInteger(kept.seed) && Array.isArray(kept.log) && state.content === file.content) {
+    // an opening kept before kernel 0.20 holds a 32-bit seed and was played under the old draw: no replay can
+    // land on it now, so it is let go and the sign-up starts the account fresh, as it would have anyway
+    if (kept && isSeed(kept.seed) && Array.isArray(kept.log) && state.content === file.content) {
       session.opening = { seed: kept.seed, log: kept.log, full: kept.full === true };
     }
     const walkable = makeWalkable(bundle);
     const [x, y] = file.pos;
-    session.pos = walkable(x, y, state.player) ? [x, y] : [state.player.at[0], state.player.at[1]];
+    session.pos = walkable(x, y, state.player) && state.player.at.join() === stoodAt ? [x, y] : [state.player.at[0], state.player.at[1]];
     if (!walkable(session.pos[0], session.pos[1], state.player)) session.pos = [bundle.map.spawn.x, bundle.map.spawn.y];
     // the map: what an older save remembers of places, plus what it has walked since; the
     // slots it visited are places it has stood in, so they are named too
@@ -463,15 +474,17 @@ export class Session implements GameSession {
    * once a burn has run out (`tellOuts`); a refusal is dropped and walking goes
    * on. What it brings (a hurt, a fall, a fire out) is shown like any other event.
    */
-  report(at: readonly [number, number], again = false): void {
+  report(at: readonly [number, number], again = false, gait: Gait = 'walk'): void {
     // a step that was under way when a menu opened still lands: the kernel hears of every tile
     if (!this.started) return;
     const p = this.state.player;
     if (!again && p.at[0] === at[0] && p.at[1] === at[1]) return;
-    const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
+    // a walk is the default and stays out of the log, so an old log and a walked one read alike
+    const action: Action = gait === 'walk' ? { t: 'move', at: [at[0], at[1]] } : { t: 'move', at: [at[0], at[1]], gait };
+    const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return;
     this.state = r.state;
-    this.keep({ t: 'move', at: [at[0], at[1]] }, this.tick, r.state.seed);
+    this.keep(action, this.tick, r.state.seed);
     // a hunt heard during work changes the world under it: that work can no longer be taken back
     this.undo = null;
     if (r.events.length === 0) return;
@@ -673,6 +686,13 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  // what a searchable holds goes with it, and a row whose item left the content is dropped
+  state.searched = Object.fromEntries(
+    Object.entries(keepKeys(state.searched ?? {}, bundle.searchables)).map(([id, held]) => [id, { ...held, rows: held.rows.filter((item) => item in bundle.items) }]),
+  );
+  // a height layer may have walled the old tile off from every wake (G68): stand on the nearest tile a foot can reach, never a fall
+  const stand = relocationOf(bundle, state);
+  if (stand) p.at = stand;
   // a world that changed may have moved the hazards and the safe ground: nothing carries over
   p.outing = null;
   p.chase = null;

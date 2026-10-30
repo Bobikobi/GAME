@@ -3,9 +3,11 @@ import {
   type Rect,
   type WorldView,
   hourOf,
+  makeStepRule,
   makeWalkable,
   near,
   wakePocket,
+  widenSeed,
 } from '@game/kernel';
 
 import { runCheck } from '../../src/check.js';
@@ -13,6 +15,7 @@ import { runCheck } from '../../src/check.js';
 export type Tile = [number, number];
 
 const walkableCache = new WeakMap<Bundle, ReturnType<typeof makeWalkable>>();
+const stepRuleCache = new WeakMap<Bundle, ReturnType<typeof makeStepRule>>();
 
 export function loadBundle(): Bundle {
   const bundle = runCheck().assembled.bundle;
@@ -42,6 +45,12 @@ export function bfs(
     walkable = makeWalkable(bundle);
     walkableCache.set(bundle, walkable);
   }
+  // a route a player can walk: the kernel's height rule (G68) as well as the walkable tiles
+  let stepOpen = stepRuleCache.get(bundle);
+  if (!stepOpen) {
+    stepOpen = makeStepRule(bundle);
+    stepRuleCache.set(bundle, stepOpen);
+  }
   const queue: Tile[] = [[start[0], start[1]]];
   const previous = new Map<string, string | undefined>([[key(start[0], start[1]), undefined]]);
   for (let index = 0; index < queue.length; index += 1) {
@@ -57,7 +66,7 @@ export function bfs(
     ];
     for (const next of neighbours) {
       const nextKey = key(next[0], next[1]);
-      if (previous.has(nextKey) || !walkable(next[0], next[1], view)) continue;
+      if (previous.has(nextKey) || !walkable(next[0], next[1], view) || !stepOpen(tile[0], tile[1], next[0], next[1])) continue;
       previous.set(nextKey, key(tile[0], tile[1]));
       queue.push(next);
     }
@@ -130,6 +139,6 @@ function buildPath(previous: Map<string, string | undefined>, end: Tile): Tile[]
 
 /** The first world seed from `from` whose wake draw lands in a pocket (kernel wakePocket): a test wakes where it means to. */
 export function seedFor(bundle: Bundle, pocket: string, from = 1): number {
-  for (let seed = from; seed < from + 10_000; seed++) if (wakePocket(bundle, seed) === pocket) return seed;
+  for (let seed = from; seed < from + 10_000; seed++) if (wakePocket(bundle, widenSeed(seed)) === pocket) return seed;
   throw new Error(`No seed draws ${pocket}.`);
 }

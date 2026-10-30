@@ -121,6 +121,22 @@ function majorityMask(source: readonly Pixel[], sourceWidth: number, sourceHeigh
   return result;
 }
 
+/** The cells of `originalSprite` the tests below paint over: a 4x4 square in the middle of its fill. */
+const CENTRE = new Set(Array.from({ length: 16 }, (_, i) => (4 + Math.floor(i / 4)) * 12 + 4 + (i % 4)));
+
+/** `originalSprite` with its centre painted `centre` (null leaves it open, the background showing through). */
+function spriteWithCentre(centre: Pixel): Pixel[] {
+  return originalSprite().map((pixel, index) => (CENTRE.has(index) ? centre : pixel));
+}
+
+/** The drawing came back cell for cell: every cell of `expected` in its colour, and each centre cell opaque. */
+function expectDrawingWithSolidCentre(image: PNG, expected: readonly Pixel[]): void {
+  const pixels = decodedPixels(image);
+  expect([image.width, image.height]).toEqual([12, 12]);
+  expect(pixels.filter((_, index) => !CENTRE.has(index))).toEqual(expected.filter((_, index) => !CENTRE.has(index)));
+  expect(pixels.filter((pixel, index) => CENTRE.has(index) && pixel === null)).toEqual([]);
+}
+
 function stripFrame(variant: number): Pixel[] {
   const outline = hexToRgb(CORE_PALETTE[0] ?? '#000000');
   const fill = hexToRgb(CORE_PALETTE[7 + variant] ?? '#000000');
@@ -193,6 +209,44 @@ describe('importSprite', () => {
     expect([image.width, image.height]).toEqual([12, 12]);
     expect(decodedPixels(image)).toEqual(expected);
     expect(result.grid).toBe(16);
+  });
+
+  // Background is what lies near the border's colour and reaches the picture's edge through such pixels
+  // (DECISIONS.md, 2026-10-23: the rich sprites' holes). The pictures are on magenta, as kit:gen draws them.
+  test('keeps a patch inside the drawing at distance 40 from the background', () => {
+    const patch = [255, 40, 255] as const;
+    const source = noisyUpscale([spriteWithCentre(patch)], 12, 12, 16, 400, 400, [[83, 97]], true);
+    const result = importSprite(source, { width: 12, height: 12, palette: CORE_PALETTE });
+
+    expectDrawingWithSolidCentre(decode(result.png), originalSprite());
+    expect(result.grid).toBe(16);
+  });
+
+  test('clears an opening the drawing encloses where the background itself shows through', () => {
+    const expected = spriteWithCentre(null);
+    const source = noisyUpscale([expected], 12, 12, 16, 400, 400, [[83, 97]], true);
+    const result = importSprite(source, { width: 12, height: 12, palette: CORE_PALETTE });
+
+    expect(decodedPixels(decode(result.png))).toEqual(expected);
+  });
+
+  test('keeps a drawing that touches the picture\'s edge, its pale centre too', () => {
+    const source = noisyUpscale([spriteWithCentre([255, 40, 255])], 12, 12, 16, 400, 400, [[0, 0]], true);
+    const result = importSprite(source, { width: 12, height: 12, palette: CORE_PALETTE });
+
+    expectDrawingWithSolidCentre(decode(result.png), originalSprite());
+    expect(result.grid).toBe(16);
+  });
+
+  test('clears the background around the drawing as before, its near colours and magenta fringe too', () => {
+    const expected = originalSprite();
+    // the empty cells of the drawing's square, which reach the picture's edge, painted near the magenta
+    // (distance 53, inside the threshold) and in its fringe (distance 98, outside it)
+    const haloed = expected.map((pixel, index): Pixel => pixel ?? (index % 2 === 0 ? [230, 40, 230] : [200, 60, 200]));
+    const source = noisyUpscale([haloed], 12, 12, 16, 400, 400, [[83, 97]], true);
+    const result = importSprite(source, { width: 12, height: 12, palette: CORE_PALETTE });
+
+    expect(decodedPixels(decode(result.png))).toEqual(expected);
   });
 
   test('area-downscales a sprite while preserving its alpha shape', () => {
@@ -269,5 +323,69 @@ describe('importSprite', () => {
     mkdirSync(outputDirectory, { recursive: true });
     writeFileSync(join(outputDirectory, `${name}.png`), result.png);
     writeFileSync(join(outputDirectory, `${name}@8x.png`), nearestPreview(image, 8));
+  });
+});
+
+describe('the background key and the glows the model paints on it', () => {
+  const SIZE = 400;
+  const GRID = 20;
+  const AT: readonly [number, number] = [130, 110];
+  const options = { width: 64, height: 64, palette: CORE_PALETTE, anchor: 'bottom' as const };
+
+  /** A wedge of warm light on the background, a smooth gradient that touches the sprite's outline. */
+  function withWedge(png: Buffer): Buffer {
+    const image = decode(png);
+    for (let y = 60; y < 170; y += 1) {
+      for (let x = 60; x < 230; x += 1) {
+        const o = (y * SIZE + x) * 4;
+        const background = image.data[o] === 255 && image.data[o + 1] === 0 && image.data[o + 2] === 255;
+        if (!background || x + y < 300) continue;
+        image.data[o] = 232 - Math.floor(x / 12);
+        image.data[o + 1] = 146 - Math.floor(y / 10);
+        image.data[o + 2] = 96;
+      }
+    }
+    return PNG.sync.write(image);
+  }
+
+  /** The 12x12 diamond with an orange upper half and a dark lower half, and an optional gap in its outline. */
+  function orangeSprite(gap: boolean): Pixel[] {
+    const outline = hexToRgb(CORE_PALETTE[0] ?? '#000000');
+    const orange: Pixel = [230, 120, 50];
+    return originalSprite().map((pixel, index) => {
+      if (pixel === null) return null;
+      const y = Math.floor(index / 12);
+      if (gap && index === 12 + 5) return null;
+      const isOutline = pixel[0] === outline[0] && pixel[1] === outline[1] && pixel[2] === outline[2];
+      return isOutline || y >= 6 ? outline : orange;
+    });
+  }
+
+  const upscale = (sprite: Pixel[]): Buffer => noisyUpscale([sprite], 12, 12, GRID, SIZE, SIZE, [AT], false);
+
+  test('a glow that touches the background is dropped: the drawing imports as if it were not there', () => {
+    const clean = upscale(originalSprite());
+    const plain = importSprite(clean, options);
+    const glowed = importSprite(withWedge(clean), options);
+    expect(glowed.png.equals(plain.png)).toBe(true);
+    expect(glowed.logical).toEqual(plain.logical);
+  });
+
+  test('a sprite with no glow is untouched by the key', () => {
+    const noisy = noisyUpscale([originalSprite()], 12, 12, GRID, SIZE, SIZE, [AT], true);
+    expect(importSprite(upscale(originalSprite()), options).logical).toEqual([12, 12]);
+    expect(importSprite(noisy, options).logical).toEqual([12, 12]);
+  });
+
+  test('a smooth body behind a gap in the outline is not mistaken for a glow', () => {
+    const whole = importSprite(upscale(orangeSprite(false)), options);
+    const gapped = importSprite(upscale(orangeSprite(true)), options);
+    const count = (png: Buffer): number => {
+      const image = decode(png);
+      let opaque = 0;
+      for (let i = 0; i < image.width * image.height; i += 1) if (image.data[i * 4 + 3] === 255) opaque += 1;
+      return opaque;
+    };
+    expect(count(gapped.png)).toBeGreaterThan(count(whole.png) * 0.9);
   });
 });

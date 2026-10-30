@@ -95,11 +95,11 @@ export function layoutInstances(
   const solid = staticSolid(map);
   const used = new Set<number>();
   const instances: Record<string, Instance> = {};
-  const sources: { id: string; kind: Instance['kind']; slot: string; count: number; scattered?: boolean }[] = [
+  const sources: { id: string; kind: Instance['kind']; slot: string; count: number; scattered?: boolean; water?: boolean }[] = [
     ...Object.keys(resources)
       .sort()
       .flatMap((id) => [
-        { id, kind: 'resource' as const, slot: resources[id]!.place.slot, count: resources[id]!.count },
+        { id, kind: 'resource' as const, slot: resources[id]!.place.slot, count: resources[id]!.count, water: resources[id]!.place.water === true },
         ...(resources[id]!.place.scatter ?? []).map((slot) => ({ id, kind: 'resource' as const, slot, count: 1, scattered: true })),
       ]),
     ...Object.keys(treasures)
@@ -114,7 +114,11 @@ export function layoutInstances(
     for (let y = slot.y; y < slot.y + slot.h; y++) {
       for (let x = slot.x; x < slot.x + slot.w; x++) {
         const i = y * map.width + x;
-        if ((source.scattered || (x + y) % 2 === 0) && !solid[i] && !used.has(i) && tagAt(map, x, y) !== 'path') candidates.push([x, y]);
+        if (used.has(i)) continue;
+        // a fishing spot lies on the water, beside land the player can stand on (DECISIONS.md, 2026-10-25: fishing)
+        if (source.water) {
+          if (tagAt(map, x, y) === 'water' && besideLand(map, solid, x, y)) candidates.push([x, y]);
+        } else if ((source.scattered || (x + y) % 2 === 0) && !solid[i] && tagAt(map, x, y) !== 'path') candidates.push([x, y]);
       }
     }
     const [cx, cy] = [slot.x * 2 + slot.w - 1, slot.y * 2 + slot.h - 1]; // doubled center, stays integral
@@ -142,6 +146,14 @@ export function layoutInstances(
     }
   }
   return instances;
+}
+
+/** Whether a tile has a land tile beside it, side by side, that is not solid. */
+function besideLand(map: MapDef, solid: Uint8Array, x: number, y: number): boolean {
+  return ([[0, -1], [1, 0], [0, 1], [-1, 0]] as const).some(([dx, dy]) => {
+    const [nx, ny] = [x + dx, y + dy];
+    return nx >= 0 && ny >= 0 && nx < map.width && ny < map.height && !solid[ny * map.width + nx] && tagAt(map, nx, ny) !== 'water';
+  });
 }
 
 /** Tile an NPC stands on. */
@@ -201,5 +213,55 @@ export function makeWalkable(bundle: Bundle): (x: number, y: number, view: World
       return passable.some((r) => view.restored.includes(r.id) && inRect(x, y, r.slot));
     }
     return true;
+  };
+}
+
+// ------------------------------------------------------------------ height (G68)
+
+/** The most levels one step may climb or drop, crossing or not: more than this is a mountain band, never walked (STYLE section 6, G68). */
+export const MAX_LEVEL_STEP = 3;
+
+/** The level of tile (x, y): the digit of `map.levels` there, and 0 where the map has no height layer or no digit (STYLE section 6). */
+export function levelAt(map: MapDef, x: number, y: number): number {
+  const digit = map.levels?.[y]?.charCodeAt(x) ?? NaN;
+  return digit >= 48 && digit <= 57 ? digit - 48 : 0;
+}
+
+/** Whether the map has a height layer at all. A map without one is flat and every step rule below is open. */
+export function hasHeight(map: MapDef): boolean {
+  return map.levels !== undefined;
+}
+
+/**
+ * The one rule for a step between two four-adjacent tiles (G68), read by `step`, by `walkDistance` (the BFS of
+ * G56) and by every tool that walks the map, so that reach, the difficulty reckoning and walking cannot disagree.
+ * It judges height only; whether a tile can be stood on is `makeWalkable`'s.
+ *
+ * A step between tiles of the same level is open. A rock face blocks both ways: a step between levels is
+ * refused unless one of its two ends is a crossing (a prop with `crossing: true`: stairs, a ramp, a lift). The
+ * schema puts the crossing on the lower tile, facing the face, so walking up the crossing is the tile left and
+ * walking down it is the tile entered: either end counts, or one direction would be shut. A change of more than
+ * `MAX_LEVEL_STEP` levels is a mountain band and is never walked, crossing or not. A map with no height layer
+ * answers true for every pair.
+ */
+export function makeStepRule(bundle: Bundle): (x1: number, y1: number, x2: number, y2: number) => boolean {
+  const map = bundle.map;
+  if (!hasHeight(map)) return () => true;
+  const { width, height } = map;
+  const crossing = new Uint8Array(width * height);
+  for (const prop of map.props) {
+    if (prop.crossing !== true) continue;
+    for (let y = prop.y; y < prop.y + prop.h; y++) {
+      for (let x = prop.x; x < prop.x + prop.w; x++) {
+        if (x >= 0 && y >= 0 && x < width && y < height) crossing[y * width + x] = 1;
+      }
+    }
+  }
+  return (x1, y1, x2, y2) => {
+    if (x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0 || x1 >= width || x2 >= width || y1 >= height || y2 >= height) return true;
+    const drop = Math.abs(levelAt(map, x1, y1) - levelAt(map, x2, y2));
+    if (drop === 0) return true;
+    if (drop > MAX_LEVEL_STEP) return false;
+    return crossing[y1 * width + x1] === 1 || crossing[y2 * width + x2] === 1;
   };
 }

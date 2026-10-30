@@ -11,7 +11,8 @@
     "Codex: text-grid sprites in tools/src/kit/sketches.ts",
     "Claude Code: text-grid sprites and frames via a PIL script",
     "Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen",
-    "Codex image generation via kit:gen"
+    "Codex image generation via kit:gen",
+    "FLUX.1 schnell and Qwen-Image 2512 via kit:gen"
   ],
   "kit": {
     "palette": [
@@ -683,8 +684,17 @@
       },
       "props/pebbles": {
         "file": "props/pebbles.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:37"
+        }
       },
       "props/reeds": {
         "file": "props/reeds.png",
@@ -708,8 +718,17 @@
       },
       "props/rock_small": {
         "file": "props/rock_small.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:36"
+        }
       },
       "props/rock_stones": {
         "file": "props/rock_stones.png",
@@ -1355,6 +1374,191 @@
         "w": 32,
         "h": 32,
         "frames": 2
+      },
+      "tiles/planks": {
+        "file": "tiles/planks.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ]
+      },
+      "tiles/planks_1": {
+        "file": "tiles/planks_1.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ]
+      },
+      "tiles/planks_2": {
+        "file": "tiles/planks_2.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ]
+      },
+      "props/hearth": {
+        "file": "props/hearth.png",
+        "w": 256,
+        "h": 172,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "fire",
+          "red"
+        ],
+        "frames": 3
+      },
+      "props/shop_window": {
+        "file": "props/shop_window.png",
+        "w": 88,
+        "h": 80,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "water"
+        ],
+        "frames": 2
+      },
+      "props/jar_shelf": {
+        "file": "props/jar_shelf.png",
+        "w": 88,
+        "h": 104,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "plum",
+          "fire"
+        ]
+      },
+      "props/counter": {
+        "file": "props/counter.png",
+        "w": 320,
+        "h": 72,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ]
+      },
+      "props/scale": {
+        "file": "props/scale.png",
+        "w": 44,
+        "h": 40,
+        "density": 4,
+        "ramps": [
+          "fire",
+          "grey"
+        ]
+      },
+      "props/shop_cat": {
+        "file": "props/shop_cat.png",
+        "w": 56,
+        "h": 36,
+        "density": 4,
+        "ramps": [
+          "fire",
+          "wood"
+        ],
+        "frames": 3
+      },
+      "props/runner": {
+        "file": "props/runner.png",
+        "w": 96,
+        "h": 256,
+        "density": 4,
+        "ramps": [
+          "red",
+          "water"
+        ]
+      },
+      "props/door_mat": {
+        "file": "props/door_mat.png",
+        "w": 64,
+        "h": 32,
+        "density": 4,
+        "ramps": [
+          "red",
+          "fire"
+        ]
+      },
+      "props/pear_barrel": {
+        "file": "props/pear_barrel.png",
+        "w": 56,
+        "h": 68,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "green"
+        ]
+      },
+      "props/mushroom_crate": {
+        "file": "props/mushroom_crate.png",
+        "w": 72,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ]
+      },
+      "props/flour_sack": {
+        "file": "props/flour_sack.png",
+        "w": 52,
+        "h": 60,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ]
+      },
+      "props/potted_herb": {
+        "file": "props/potted_herb.png",
+        "w": 48,
+        "h": 52,
+        "density": 4,
+        "ramps": [
+          "green",
+          "red"
+        ]
+      },
+      "props/shop_sign_food": {
+        "file": "props/shop_sign_food.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red"
+        ]
+      },
+      "props/room_wall_left": {
+        "file": "props/room_wall_left.png",
+        "w": 224,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ]
+      },
+      "props/room_wall_right": {
+        "file": "props/room_wall_right.png",
+        "w": 224,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ]
       }
     }
   }

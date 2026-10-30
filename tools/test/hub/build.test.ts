@@ -216,7 +216,7 @@ class FakeGitHub implements LoopClient {
     }
     if (path === `${r}/issues/3/comments?per_page=100`) return [] as T[];
     if (path === `${r}/issues/900/comments?per_page=100`) {
-      const option = (id: number, key: string, title: string): Comment => ({ id, body: `<!-- loop:option:${key} -->\n## ${title}\n\nReact.` });
+      const option = (id: number, key: string, title: string): Comment => ({ id, body: `<!-- loop:option:${key} -->\n## ${title}\n\nReact.`, user: this.vote.user });
       return [option(11, '2', 'Plum bushes'), option(12, '3', 'Pear trees')] as T[];
     }
     const reactions = path.match(/\/issues\/comments\/(\d+)\/reactions/);

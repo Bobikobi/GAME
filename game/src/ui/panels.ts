@@ -8,10 +8,12 @@ import {
   WEAR_SLOTS,
   bagCapacity,
   bagUsed,
+  placeRoom,
   attrAt,
   characterLevel,
   minuteOfDay,
   professionLevel,
+  rareFindPermille,
   recipeTier,
   salePrice,
   setComplete,
@@ -21,6 +23,7 @@ import {
   type WearSlot,
 } from '@game/kernel';
 import { app } from '../app';
+import { loadChipFor } from './load';
 import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL, REVIEW_KEY } from '../config';
 import {
@@ -37,11 +40,13 @@ import type { StoneView } from '../stone';
 import { Session, STALL_SLOTS, stallDraftOf, type StallDraft } from '../session';
 import type { GameSession } from '../session-surface';
 import type { ActResult } from '../session-surface';
-import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
+import { SEARCH_EMPTY, SEARCH_LUCK_LINE, searchRows, ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
+import { shopGroups } from '../shopstock';
 import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
+import { treeScreen, type TreeMemo } from './tree';
 import { mapSvg, placeKind } from './map';
 import type { Layer, UI } from './ui';
 
@@ -53,9 +58,9 @@ interface Panel {
 
 function panel(ui: UI, title: string, cls = '', subtitle?: string): Panel {
   const body = h('div', { class: 'panel-body' });
-  const titleEl = h('div', { class: 'panel-head' }, h('h2', null, title), subtitle ? h('p', { class: 'panel-sub' }, subtitle) : null);
+  const titleEl = h('div', { class: 'panel-head' }, h('h2', { class: 'ui-plaque' }, title), subtitle ? h('p', { class: 'panel-sub' }, subtitle) : null);
   const closeBtn = button('Close', () => ui.pop(layer), 'close small');
-  const box = h('div', { class: `panel ${cls}`.trim(), role: 'dialog', 'aria-label': title }, h('header', null, titleEl, closeBtn), body);
+  const box = h('div', { class: `panel ui-window ${cls}`.trim(), role: 'dialog', 'aria-label': title }, h('header', null, titleEl, closeBtn), body);
   const el = h('div', { class: 'layer panel-layer' }, box);
   el.addEventListener('click', (e) => {
     if (e.target === el) ui.pop(layer);
@@ -72,6 +77,11 @@ function tabs(names: string[], active: string, onPick: (name: string) => void): 
     { class: 'tabs' },
     names.map((n) => button(n[0]!.toUpperCase() + n.slice(1), () => onPick(n), n === active ? 'tab on' : 'tab')),
   );
+}
+
+/** An item's name in its rarity's colour (theme.css), so a rare thing reads as rare wherever it is named. */
+function itemTitle(rarity: string | undefined, text: string): HTMLElement {
+  return h('b', { class: `item-name rarity-${rarity ?? 'common'}` }, text);
 }
 
 function need(have: number, qty: number): HTMLElement {
@@ -98,6 +108,7 @@ const SLOT_LABEL: Record<WearSlot, string> = {
   jewelry1: 'Jewel 1',
   jewelry2: 'Jewel 2',
   hand: 'Hand',
+  back: 'Back',
 };
 
 /** A set id is its creator's path and a name; the card reads the name alone. */
@@ -189,6 +200,8 @@ export function openBag(ui: UI): void {
   let look = false;
   let shopPick: string | undefined;
   let priceFor: { item: string; slot: number } | undefined;
+  // the skill tree keeps where it looks and the node chosen while the kit stays open
+  const treeMemo: TreeMemo = {};
   // the draft is kept in the save; a session that keeps none (the server door) keeps it in this panel
   const stall: (StallDraft | null)[] = stallDraftOf(s) ?? Array.from({ length: STALL_SLOTS }, () => null);
 
@@ -257,7 +270,7 @@ export function openBag(ui: UI): void {
         h('span', { class: 'count' }, String(n)),
       );
     });
-    const used = bagUsed(s.state);
+    const used = bagUsed(b, s.state);
     return h(
       'section',
       { class: 'kit-bag' },
@@ -271,7 +284,7 @@ export function openBag(ui: UI): void {
             h('button', { class: `kit-filter ${filter === label ? 'on' : ''}`.trim(), type: 'button', onclick: () => ((filter = label), render()) }, label),
           ),
         ),
-        h('span', { class: 'kit-cap' }, `${used} / ${cap}`),
+        h('span', { class: 'kit-cap' }, loadChipFor(b, s.state)),
       ),
       ids.length === 0
         ? h('p', { class: 'kit-hint' }, 'Your bag is empty. Gather something!')
@@ -475,7 +488,7 @@ export function openBag(ui: UI): void {
   const TABS: readonly [KitTab, string, string][] = [
     ['bag', 'Bag', 'What you carry. Pick an item to read it.'],
     ['outfit', 'Outfit', 'What you wear. Work clothes on one layer, a look on the other.'],
-    ['skills', 'Skills', 'What you can do. Spend a point here or in the journal.'],
+    ['skills', 'Skills', 'Your tree: the trunk is your race, each wing a school. Learn at a fire, a camp or in town.'],
     ['shop', 'Shop', 'Your stall. Drag an item to a slot, or tap an item then a slot.'],
   ];
 
@@ -498,6 +511,8 @@ export function openBag(ui: UI): void {
   const caption = (): HTMLElement => h('p', { class: 'kit-caption' }, TABS.find(([name]) => name === tab)?.[2] ?? '');
 
   const render = () => {
+    // the tree takes the wide screen; the other pages keep the kit's size
+    p.body.parentElement?.classList.toggle('tree-open', tab === 'skills');
     const ids = Object.keys(s.state.player.bag).sort((x, y) => itemName(b, x).localeCompare(itemName(b, y)));
     if (selected && !ids.includes(selected)) selected = undefined;
     selected ??= ids[0];
@@ -506,7 +521,7 @@ export function openBag(ui: UI): void {
       return;
     }
     if (tab === 'skills') {
-      p.body.replaceChildren(tabBar(), caption(), h('div', { class: 'kit-body skills-only' }, h('section', { class: 'kit-skills' }, skillsBody(ui, render))));
+      p.body.replaceChildren(tabBar(), caption(), h('div', { class: 'kit-body tree-only' }, treeScreen(ui, treeMemo, render)));
       return;
     }
     if (tab === 'shop') {
@@ -566,6 +581,16 @@ export function openBag(ui: UI): void {
       // the tier is in the head with the class; the check keeps a tool's tier the tier of its "tool"
       facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}${speedBonus}. ${left}`);
     }
+    // put one down where the player stands; it stays on that tile (DECISIONS.md, 2026-10-23)
+    if (s.check({ t: 'drop', item: id, qty: 1, at: s.pos }) === undefined) {
+      const put = button('Put down', async () => {
+        const r = await s.act({ t: 'drop', item: id, qty: 1, at: s.pos });
+        if (!r.ok) ui.toast(r.error, 'bad');
+        after();
+      });
+      put.dataset.drop = id;
+      actions.push(put);
+    }
     if (price !== undefined) facts.push(`A trader pays ${gold(price)} gold.`);
     const set = item.wear?.set
       ? (() => {
@@ -589,7 +614,7 @@ export function openBag(ui: UI): void {
           'div',
           { class: 'detail-head' },
           sprite(b, item.sprite, 3),
-          h('div', null, h('b', null, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity), h('div', { class: 'muted' }, classLine(b, id))),
+          h('div', null, itemTitle(item.rarity, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity), h('div', { class: 'muted' }, classLine(b, id))),
         ),
         h('p', { class: 'kit-desc' }, item.description),
         facts.map((f) => h('p', { class: 'muted' }, f)),
@@ -648,7 +673,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
     const entry = (id: string) => {
       const it = b.items[id]!;
       return known.has(id)
-        ? h('div', { class: 'entry' }, sprite(b, it.sprite, 2), h('div', null, h('b', null, it.name), h('div', { class: 'credit' }, it.creator === 'core' ? 'core team' : it.creator)))
+        ? h('div', { class: 'entry' }, sprite(b, it.sprite, 2), h('div', null, itemTitle(it.rarity, it.name), h('div', { class: 'credit' }, it.creator === 'core' ? 'core team' : it.creator)))
         : h('div', { class: 'entry unknown' }, h('span', { class: 'sprite qmark' }, '?'), h('div', null, h('b', null, '???')));
     };
     // by class, and inside a class a row per family (C12)
@@ -704,7 +729,8 @@ export function openShop(ui: UI, npcId: string): void {
   const npc = b.npcs[npcId];
   const shop = npc?.shop ? b.shops[npc.shop] : undefined;
   if (!s || !npc || !shop) return;
-  const p = panel(ui, `${npc.name}'s stall`, 'shop');
+  // the shop file names its counter ("Pell's stall", "The inn"), so a keeper added later needs no code
+  const p = panel(ui, shop.title || `${npc.name}'s stall`, 'shop');
   let current: 'buy' | 'sell' = 'buy';
 
   const deal = async (action: () => ActResult | Promise<ActResult>) => {
@@ -715,43 +741,61 @@ export function openShop(ui: UI, npcId: string): void {
 
   const render = () => {
     const st = s.state;
-    const room = bagCapacity(b, st) - bagUsed(st);
-    const rows =
+    const room = bagCapacity(b, st) - bagUsed(b, st);
+    const buyRow = (o: { item: string; price_mg: number }): HTMLElement => {
+      const it = b.items[o.item];
+      const opens = it?.tool ? toolOpens(b, st, it.tool.kind) : [];
+      // a recipe the player already knows is not sold twice
+      const known = !!it?.fragment && st.player.recipes.includes(it.fragment.unlocks);
+      return h(
+        'div',
+        { class: 'row', 'data-item': o.item },
+        sprite(b, it?.sprite, 2),
+        h(
+          'div',
+          { class: 'grow' },
+          itemTitle(it?.rarity, it?.name ?? o.item),
+          h('div', { class: 'muted' }, itemBenefit(b, o.item)),
+          opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
+          known ? h('div', { class: 'muted', 'data-known': '' }, 'You know this recipe.') : null,
+        ),
+        h('span', { class: 'price' }, gold(o.price_mg)),
+        button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', known || st.player.gold + st.player.boundGold < o.price_mg || placeRoom(b, st, o.item) < 1),
+      );
+    };
+    const sellRow = ({ item: id, each }: { item: string; each: number }): HTMLElement => {
+      // the kernel's price: a worn tool that is the last unit sells for the uses it has left
+      const count = st.player.bag[id] ?? 0;
+      return h(
+        'div',
+        { class: 'row', 'data-item': id },
+        sprite(b, b.items[id]?.sprite, 2),
+        h('div', { class: 'grow' }, itemTitle(b.items[id]?.rarity, `${itemName(b, id)} x${count}`), h('div', { class: 'muted' }, `${gold(each)} gold each`)),
+        button('Sell 1', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: 1, at: s.pos })), 'small'),
+        count > 1 ? button('All', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: Math.min(99, count), at: s.pos })), 'small') : null,
+      );
+    };
+    // the counter in named groups (decision 51): a strip of the group names jumps to each one
+    const groups =
       current === 'buy'
-        ? shop.sells.map((o) => {
-            const it = b.items[o.item];
-            const opens = it?.tool ? toolOpens(b, st, it.tool.kind) : [];
-            return h(
-              'div',
-              { class: 'row' },
-              sprite(b, it?.sprite, 2),
-              h(
-                'div',
-                { class: 'grow' },
-                h('b', null, it?.name ?? o.item),
-                h('div', { class: 'muted' }, itemBenefit(b, o.item)),
-                opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
-              ),
-              h('span', { class: 'price' }, gold(o.price_mg)),
-              button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || room < 1),
-            );
-          })
-        : sellable(b, st).map(({ item: id, each }) => {
-            // the kernel's price: a worn tool that is the last unit sells for the uses it has left
-            const count = st.player.bag[id] ?? 0;
-            return h(
-              'div',
-              { class: 'row' },
-              sprite(b, b.items[id]?.sprite, 2),
-              h('div', { class: 'grow' }, h('b', null, `${itemName(b, id)} x${count}`), h('div', { class: 'muted' }, `${gold(each)} gold each`)),
-              button('Sell 1', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: 1, at: s.pos })), 'small'),
-              count > 1 ? button('All', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: Math.min(99, count), at: s.pos })), 'small') : null,
-            );
-          });
+        ? shopGroups(b, shop.sells, (o) => o.item).map((g) => ({ ...g, rows: g.entries.map(buyRow) }))
+        : shopGroups(b, sellable(b, st), (o) => o.item).map((g) => ({ ...g, rows: g.entries.map(sellRow) }));
+    const sections = groups.map((g) =>
+      h('section', { class: 'shop-group', 'data-group': g.key, 'aria-label': g.label }, h('h3', { class: 'shop-group-name' }, g.label), g.rows),
+    );
+    const jump =
+      groups.length > 1
+        ? h(
+            'nav',
+            { class: 'shop-jump', 'aria-label': 'Groups' },
+            groups.map((g, i) => button(`${g.label} ${g.rows.length}`, () => sections[i]?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 'tab')),
+          )
+        : null;
     p.body.replaceChildren(
       tabs(shop.buys ? ['buy', 'sell'] : ['buy'], current, (n) => ((current = n as 'buy' | 'sell'), render())),
-      h('div', { class: 'wallet' }, h('i', { class: 'coin' }), `${gold(st.player.gold)} gold`, h('span', { class: 'muted' }, ` - ${room} free places in your bag`)),
-      ...(rows.length ? rows : [h('p', { class: 'muted' }, current === 'sell' ? 'Nothing to sell.' : 'Sold out.')]),
+      h('div', { class: 'wallet' }, h('i', { class: 'coin' }), `${gold(st.player.gold)} gold`, st.player.boundGold > 0 ? h('span', null, ` + ${gold(st.player.boundGold)} starter gold`) : null, h('span', { class: 'muted' }, ` - ${room} free places in your bag`)),
+      ...(jump ? [jump] : []),
+      ...(sections.length ? sections : [h('p', { class: 'muted' }, current === 'sell' ? 'Nothing to sell.' : 'Sold out.')]),
     );
   };
   render();
@@ -872,6 +916,48 @@ export function confirmRestore(ui: UI, restoreId: string): void {
     const res = await s.act({ t: 'restore', restore: restoreId, at: s.pos });
     if (!res.ok) ui.toast(res.error, 'bad');
   });
+}
+
+// ------------------------------------------------------------------ search
+
+/**
+ * A searchable's window (docs/design/SEARCH.md): what it holds today, a tap on a row takes it, "Take all" takes the
+ * lot, and an empty one says "Nothing here." in one line. It reads the state each time, so it never shows what the
+ * kernel has not kept; what does not fit the bag stays inside and the kernel's words come up as a toast.
+ */
+export function openSearch(ui: UI, spotId: string): void {
+  const s = app.session;
+  const b = app.bundle;
+  const def = b.searchables[spotId];
+  if (!s || !def) return;
+  const p = panel(ui, def.title, 'search');
+  const take = async (row?: number) => {
+    const r = await s.act(row === undefined ? { t: 'take', spot: spotId, at: s.pos } : { t: 'take', spot: spotId, row, at: s.pos });
+    if (!r.ok) ui.toast(r.error, 'bad');
+    render();
+  };
+  const render = () => {
+    const rows = searchRows(b, s.state, s.tick, spotId);
+    const lucky = rareFindPermille(b, s.state) > 1000;
+    p.body.replaceChildren(
+      ...(rows.length === 0
+        ? [h('p', { class: 'search-empty' }, SEARCH_EMPTY)]
+        : [
+            ...rows.map((row) =>
+              h(
+                'button',
+                { class: `search-row r-${b.items[row.item]?.rarity ?? 'common'}`, type: 'button', 'aria-label': `Take ${row.name}`, onclick: () => void take(row.index) },
+                sprite(b, row.sprite, 3),
+                h('span', { class: 'grow' }, row.name),
+                h('span', { class: 'search-take' }, 'Take'),
+              ),
+            ),
+            button('Take all', () => void take(), 'search-all'),
+          ]),
+      ...(lucky ? [h('p', { class: 'search-luck muted' }, SEARCH_LUCK_LINE)] : []),
+    );
+  };
+  render();
 }
 
 // ------------------------------------------------------------------ menu and help
@@ -1246,7 +1332,18 @@ function openCredits(ui: UI): void {
         tools.length ? h('div', { class: 'muted' }, `Made with: ${tools.join(', ')}`) : null,
       );
     }),
-    h('div', { class: 'card' }, h('b', null, 'Also'), h('div', { class: 'muted' }, 'Engine: Phaser (MIT). Font: Pixelify Sans by Stefie Justprince (SIL Open Font License).')),
+    h(
+      'div',
+      { class: 'card' },
+      h('b', null, 'Also'),
+      h(
+        'div',
+        { class: 'muted' },
+        'Engine: Phaser (MIT). Font: Pixelify Sans by Stefie Justprince (SIL Open Font License). The age limit of an account uses the country file ',
+        h('a', { href: 'https://db-ip.com', target: '_blank', rel: 'noopener' }, 'IP Geolocation by DB-IP'),
+        ' (CC BY 4.0).',
+      ),
+    ),
   );
 }
 

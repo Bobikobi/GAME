@@ -1,8 +1,8 @@
 /** Runs the full loop against an in-memory GitHub repository and checks every write. */
 import { describe, expect, it } from 'vitest';
 import type { LoopClient } from '../../src/loop/github';
-import { runAll } from '../../src/loop/run';
-import type { Comment, Issue, PullRequest } from '../../src/loop/types';
+import { readVote, runAll } from '../../src/loop/run';
+import type { Comment, Issue, PullRequest, Reaction } from '../../src/loop/types';
 import { config } from './helpers';
 
 describe('loop orchestration', () => {
@@ -41,8 +41,32 @@ describe('loop orchestration', () => {
     expect(client.writes[10]!.body).toEqual(expect.objectContaining({
       title: 'Vote: core/west-glade',
       labels: ['vote'],
-      body: expect.stringContaining('<!-- loop:vote {"closes":"2026-10-14T12:00:00.000Z","group":"slot-core/west-glade","kind":"proposals"} -->'),
+      body: expect.stringContaining('<!-- loop:vote {"closes":"2026-10-14T12:00:00.000Z","group":"slot-core/west-glade","kind":"proposals","options":["2","3"]} -->'),
     }));
+  });
+
+  it('an option is a comment the loop posted when the vote opened; a comment anyone else writes with the marker is a reply', async () => {
+    const client = new FakeClient();
+    const opened = { client, repository: 'mist/vale', config, now: new Date('2026-10-07T12:00:00Z') };
+    await runAll(opened);
+    // a stranger writes the marker for a proposal that is not in the vote, and #3's key a second time
+    const own = client.comment(900, '<!-- loop:option:7 -->\n## A proposal of my own', 'mallory');
+    const again = client.comment(900, '<!-- loop:option:3 -->\n## Pear trees, again', 'mallory');
+    client.react(client.option(900, '2'), ['hana', 'ivo', 'jon', 'kai', 'lea']);
+    client.react(own, ['mia', 'noa', 'oli', 'pia', 'quin', 'rae']);
+    client.react(again, ['sol']);
+
+    const read = await readVote(opened, client.vote(900), new Map());
+    expect(read.options.map((option) => [option.key, option.votes])).toEqual([['2', 5], ['3', 0]]);
+
+    client.writes.length = 0;
+    await runAll({ ...opened, now: new Date('2026-10-15T12:00:00Z') });
+    const verdicts = client.writes.filter((write) => write.path.endsWith('/labels') && (write.body.labels as string[]).some((name) => name.startsWith('vote ')));
+    expect(verdicts.map(compactWrite)).toEqual([
+      ['POST', '/repos/mist/vale/issues/2/labels', ['vote won']],
+      ['POST', '/repos/mist/vale/issues/3/labels', ['vote lost']],
+    ]);
+    expect(client.writes.some((write) => write.path.includes('/issues/7/'))).toBe(false);
   });
 
   it('writes nothing on a rerun when nothing changed', async () => {
@@ -64,9 +88,37 @@ interface Write {
 class FakeClient implements LoopClient {
   readonly writes: Write[] = [];
   private readonly comments = new Map<number, Comment[]>();
+  private readonly reactions = new Map<number, Reaction[]>();
   private readonly statuses = new Map<string, { context: string; state: string; description: string }[]>();
   private readonly voteIssues: Issue[] = [];
   private nextComment = 100;
+  /** the identity the loop writes as: the vote issue and its option comments carry it */
+  private readonly loop = { login: 'loop-bot', type: 'Bot' };
+
+  /** A comment somebody else writes on an issue; it is not one of the loop's writes. */
+  comment(issue: number, body: string, login: string): number {
+    const comment: Comment = { id: this.nextComment++, body, created_at: '2026-10-08T00:00:00Z', user: { login } };
+    this.comments.set(issue, [...(this.comments.get(issue) ?? []), comment]);
+    return comment.id;
+  }
+
+  /** 👍 reactions on a comment, one per login, all on the same day. */
+  react(comment: number, logins: string[]): void {
+    this.reactions.set(comment, logins.map((login) => ({ user: { login }, created_at: '2026-10-08T00:00:00Z' })));
+  }
+
+  /** The loop's own option comment for a key on a vote issue. */
+  option(issue: number, key: string): number {
+    const found = (this.comments.get(issue) ?? []).find((comment) => comment.user?.login === this.loop.login && comment.body.includes(`<!-- loop:option:${key} -->`));
+    if (!found) throw new Error(`No option ${key} on #${issue}`);
+    return found.id;
+  }
+
+  vote(number: number): Issue {
+    const found = this.voteIssues.find((issue) => issue.number === number);
+    if (!found) throw new Error(`No vote #${number}`);
+    return found;
+  }
   private readonly request: Issue = {
     number: 1,
     title: 'A night fruit',
@@ -116,7 +168,8 @@ class FakeClient implements LoopClient {
     if (path.endsWith('/issues?state=open&labels=vote&per_page=100')) return this.voteIssues as T[];
     const issueComments = path.match(/\/issues\/(\d+)\/comments/);
     if (issueComments) return (this.comments.get(Number(issueComments[1])) ?? []) as T[];
-    if (path.includes('/reactions?')) return [];
+    const reactions = path.match(/\/issues\/comments\/(\d+)\/reactions\?/);
+    if (reactions) return (this.reactions.get(Number(reactions[1])) ?? []) as T[];
     throw new Error(`Unexpected LIST ${path}`);
   }
 
@@ -137,7 +190,7 @@ class FakeClient implements LoopClient {
         html_url: 'https://github.test/issues/900',
         created_at: '2026-10-07T12:00:00Z',
         labels: (object.labels as string[]).map((name) => ({ name })),
-        user: { login: 'loop-bot', type: 'Bot' },
+        user: this.loop,
       };
       this.voteIssues.push(issue);
       return issue as T;
@@ -145,7 +198,7 @@ class FakeClient implements LoopClient {
     const commentPath = path.match(/\/issues\/(\d+)\/comments$/);
     if (method === 'POST' && commentPath) {
       const number = Number(commentPath[1]);
-      const comment = { id: this.nextComment++, body: String(object.body), created_at: '2026-10-07T12:00:00Z' };
+      const comment: Comment = { id: this.nextComment++, body: String(object.body), created_at: '2026-10-07T12:00:00Z', user: this.loop };
       this.comments.set(number, [...(this.comments.get(number) ?? []), comment]);
       return comment as T;
     }

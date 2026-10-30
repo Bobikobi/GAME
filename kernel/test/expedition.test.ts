@@ -14,7 +14,7 @@ import {
   newState,
   replay,
   riddleKey,
-  satietyCap,
+  hpCap,
   serialize,
   step,
   visitNight,
@@ -116,7 +116,6 @@ function placed(s: State, at: [number, number], tick: number): State {
   const out = structuredClone(s);
   out.player.at = [...at];
   out.player.movedAt = tick;
-  out.player.satietyAt = tick;
   out.player.busyUntil = Math.min(out.player.busyUntil, tick);
   out.tick = tick;
   return out;
@@ -379,7 +378,7 @@ describe('a report after the last bell is read as the world stood at that bell',
   function hunted(b: Bundle, entered: number, report: number, at: [number, number] = INSIDE): State {
     let state = move(b, placed(begin(b), at, entered), entered, at).state;
     if (report !== entered) state = move(b, state, report, at).state;
-    state.player.satiety = harmOf(b, satietyCap(b, state), 'predator');
+    state.player.hp = harmOf(b, hpCap(b, state), 'predator');
     state.player.bag[REWARD_ITEM] = 3;
     state.player.outing = { gained: { [REWARD_ITEM]: 3 }, solved: [], visited: [] };
     return state;
@@ -388,9 +387,9 @@ describe('a report after the last bell is read as the world stood at that bell',
   test('a hunt begun two seconds before the bell has no bite due by it: the walk-out takes the player out whole', () => {
     const b = world();
     const state = hunted(b, LAST - 3000, LAST - 2000);
-    const health = state.player.satiety;
+    const health = state.player.hp;
     // health is one bite (25% of the cap): a bite counted past the bell would be a fall
-    expect(health * 4).toBe(satietyCap(b, state));
+    expect(health * 4).toBe(hpCap(b, state));
     state.player.chase = { hazard: WOLF, since: LAST - 2000, bites: 0 };
     const out = move(b, state, LAST + 1000);
     const exit = b.map.slots.find((slot) => slot.id === EXIT)!;
@@ -400,7 +399,7 @@ describe('a report after the last bell is read as the world stood at that bell',
     // the mist ended the hunt, not the run: it is not told safe, and the exit gives no health back
     expect(events(out.events, 'safe')).toEqual([]);
     expect(out.state.player.at).toEqual([exit.x, exit.y]);
-    expect(out.state.player.satiety).toBe(health);
+    expect(out.state.player.hp).toBe(health);
     expect(out.state.player.bag[REWARD_ITEM]).toBe(3);
     expect(out.state.player.chase).toBeNull();
     expect(out.state.player.outing).toBeNull();
@@ -423,8 +422,8 @@ describe('a report after the last bell is read as the world stood at that bell',
     const pit: Prop = { id: 'test/pit', sprite: 'core/base-kit:props/standing_stone', x: PIT[0], y: PIT[1], w: 1, h: 1, solid: false, hazard: { kind: 'pit', window: ['night'] } };
     b.map.props = [...b.map.props, pit];
     const inside = move(b, placed(begin(b), INSIDE, LAST - 1000), LAST - 1000).state;
-    const cap = satietyCap(b, inside);
-    expect(inside.player.satiety).toBe(cap);
+    const cap = hpCap(b, inside);
+    expect(inside.player.hp).toBe(cap);
 
     // before the bell the pit is awake under the player's feet
     const early = move(b, inside, LAST - 500, PIT);
@@ -434,14 +433,14 @@ describe('a report after the last bell is read as the world stood at that bell',
     const late = move(b, inside, LAST + 1000, PIT);
     expect(events(late.events, 'hurt')).toEqual([]);
     expect(events(late.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
-    expect(late.state.player.satiety).toBe(cap);
+    expect(late.state.player.hp).toBe(cap);
   });
 
   test('a report from the first tile beyond the place is a walk-out too: no bite past the bell, the bag whole', () => {
     const b = world();
     // on the edge when the last bell rang; the next report is one step out of the place
     const state = hunted(b, LAST - 3000, LAST - 2000, EDGE);
-    const health = state.player.satiety;
+    const health = state.player.hp;
     state.player.chase = { hazard: WOLF, since: LAST - 2000, bites: 0 };
     const out = move(b, state, LAST + 1000, BEYOND);
     const exit = b.map.slots.find((slot) => slot.id === EXIT)!;
@@ -450,7 +449,7 @@ describe('a report after the last bell is read as the world stood at that bell',
     expect(events(out.events, 'bell')).toEqual([{ e: 'bell', expedition: EXPEDITION, n: 4 }]);
     expect(events(out.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
     expect(out.state.player.at).toEqual([exit.x, exit.y]);
-    expect(out.state.player.satiety).toBe(health);
+    expect(out.state.player.hp).toBe(health);
     expect(out.state.player.bag[REWARD_ITEM]).toBe(3);
     expect(out.state.player.chase).toBeNull();
     expect(out.state.player.outing).toBeNull();
@@ -462,8 +461,8 @@ describe('a report after the last bell is read as the world stood at that bell',
     // safe ground one step beyond the place: the player stood inside at the bell, so they never reached it
     b.map.slots = [...b.map.slots, { id: 'test/ledge', kind: 'area', x: BEYOND[0], y: BEYOND[1], w: 1, h: 1, safe: true }];
     const state = hunted(b, LAST - 3000, LAST - 3000, EDGE);
-    const bite = harmOf(b, satietyCap(b, state), 'predator');
-    state.player.satiety = 2 * bite;
+    const bite = harmOf(b, hpCap(b, state), 'predator');
+    state.player.hp = 2 * bite;
     // one bite falls due before the bell
     state.player.chase = { hazard: WOLF, since: LAST - 3000, bites: 0 };
     const open = Object.keys(state.player.quests).filter((id) => state.player.quests[id] === 'active').sort();
@@ -471,7 +470,7 @@ describe('a report after the last bell is read as the world stood at that bell',
     expect(events(out.events, 'hurt')).toEqual([{ e: 'hurt', by: 'predator', id: WOLF, hp: bite }]);
     expect(events(out.events, 'safe')).toEqual([]);
     expect(events(out.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
-    expect(out.state.player.satiety).toBe(bite);
+    expect(out.state.player.hp).toBe(bite);
     expect(out.state.player.chase).toBeNull();
     expect(out.state.player.outing).toBeNull();
     // the walk-out brings the outing home, and the bite with it
@@ -483,7 +482,7 @@ describe('a report after the last bell is read as the world stood at that bell',
     const pit: Prop = { id: 'test/edge-pit', sprite: 'core/base-kit:props/standing_stone', x: BEYOND[0], y: BEYOND[1], w: 1, h: 1, solid: false, hazard: { kind: 'pit', window: ['night'] } };
     b.map.props = [...b.map.props, pit];
     const state = move(b, placed(begin(b), EDGE, LAST - 1000), LAST - 1000, EDGE).state;
-    const cap = satietyCap(b, state);
+    const cap = hpCap(b, state);
     state.player.bag[REWARD_ITEM] = 3;
     state.player.outing = { gained: { [REWARD_ITEM]: 3 }, solved: [], visited: [] };
     const out = move(b, state, LAST + 1000, BEYOND);
@@ -491,7 +490,7 @@ describe('a report after the last bell is read as the world stood at that bell',
     expect(events(out.events, 'hurt')).toEqual([]);
     expect(events(out.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
     expect(out.state.player.at).toEqual([exit.x, exit.y]);
-    expect(out.state.player.satiety).toBe(cap);
+    expect(out.state.player.hp).toBe(cap);
     expect(out.state.player.bag[REWARD_ITEM]).toBe(3);
     expect(out.state.player.outing).toBeNull();
   });
@@ -503,7 +502,7 @@ describe('a report after the last bell is read as the world stood at that bell',
     // a food that only hurts: eaten at one bite of health, it would be a fall
     b.items[BERRY] = { ...structuredClone(food), id: BERRY, name: 'bad berry', food: { ...food.food!, satiety: 0, hurt: 40 } };
     const state = hunted(b, LAST - 3000, LAST - 2000);
-    const health = state.player.satiety;
+    const health = state.player.hp;
     state.player.bag[BERRY] = 1;
 
     // before the bell the berry is eaten, and it fells the player
@@ -518,7 +517,7 @@ describe('a report after the last bell is read as the world stood at that bell',
     expect(events(late.events, 'fall')).toEqual([]);
     expect(events(late.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
     expect(late.state.player.at).toEqual([exit.x, exit.y]);
-    expect(late.state.player.satiety).toBe(health);
+    expect(late.state.player.hp).toBe(health);
     expect(late.state.player.bag[BERRY]).toBe(1);
     expect(late.state.player.bag[REWARD_ITEM]).toBe(3);
     expect(late.state.player.outing).toBeNull();

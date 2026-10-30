@@ -3,13 +3,17 @@
   "format": 1,
   "type": "shop",
   "id": "core/trader-shop",
-  "title": "Pell's stall",
+  "title": "Pell's shop",
   "creator": "core",
   "shop": {
     "sells": [
       {
         "item": "core/basket",
         "price_mg": 30000
+      },
+      {
+        "item": "core/satchel",
+        "price_mg": 290000
       },
       {
         "item": "core/trowel",
@@ -40,6 +44,7 @@
         "price_mg": 60000
       }
     ],
-    "buys": true
+    "buys": true,
+    "interior": "food"
   }
 }

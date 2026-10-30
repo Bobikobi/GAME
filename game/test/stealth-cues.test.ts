@@ -26,7 +26,7 @@ import {
   nightFalls,
   npcTile,
   predatorAt,
-  satietyCap,
+  hpCap,
   sees,
   step,
 } from '@game/kernel';
@@ -93,7 +93,6 @@ function reachWolf(): Prop {
 function reachWorld(): Bundle {
   const b = structuredClone(base);
   b.map.props = [...b.map.props.filter((p) => !p.hazard), reachWolf()];
-  b.params.satiety_drain_per_min = 0;
   return b;
 }
 
@@ -108,7 +107,6 @@ function place(s: State, at: Tile, tick: number): State {
   const out = structuredClone(s);
   out.player.at = [...at];
   out.player.movedAt = tick;
-  out.player.satietyAt = tick;
   out.player.busyUntil = Math.min(out.player.busyUntil, tick);
   out.tick = tick;
   return out;
@@ -128,7 +126,7 @@ const only = (events: GameEvent[], ...kinds: GameEvent['e'][]): GameEvent[] => e
 /** Seen by the reach wolf on OUT at NIGHT, with health at `pct` percent of the cap. */
 function hunted(b: Bundle, pct = 100): State {
   const s = move(b, place(begin(b), OUT, NIGHT), OUT, NIGHT).state;
-  s.player.satiety = mulDiv(satietyCap(b, s), pct, 100);
+  s.player.hp = mulDiv(hpCap(b, s), pct, 100);
   return s;
 }
 

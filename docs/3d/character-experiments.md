@@ -4,7 +4,7 @@ Date: 2026-10-09
 
 ## Goal
 
-Find a way to give Mistvale a realistic adult hero: 7.5-8 heads tall, a detailed believable face,
+Find a way to give Loomvale a realistic adult hero: 7.5-8 heads tall, a detailed believable face,
 and hair and clothing in a classic high-fantasy online-RPG style (ornate layered armour or
 embroidered robes, idealised heroic faces), delivered as a GLB with a skeleton and Idle, Walk and
 Run clips that the Three.js game can load. Every candidate below was made or fetched on free tiers

@@ -10,7 +10,7 @@
     "yield": 2,
     "active_ms": 3000,
     "respawn_ms": 60000,
-    "count": 2,
+    "count": 1,
     "sprite": "core/base-kit:props/herb_plant",
     "tool": "basket",
     "level": 1,

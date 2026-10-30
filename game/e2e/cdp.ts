@@ -24,6 +24,19 @@ function findChrome(): string {
 
 export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** An in-page expression for `Page.tapWhere`: the first shown element matching the selector whose text holds `text`, enabled unless `disabledToo`. */
+export function byText(selector: string, text = '', disabledToo = false): string {
+  return `(() => {
+    for (const el of document.querySelectorAll(${JSON.stringify(selector)})) {
+      if (!el.textContent.includes(${JSON.stringify(text)})) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0${disabledToo ? '' : ' || el.disabled'}) continue;
+      return el;
+    }
+    return null;
+  })()`;
+}
+
 export interface Viewport {
   width: number;
   height: number;
@@ -41,7 +54,7 @@ export class Browser {
   ) {}
 
   static async launch(): Promise<Browser> {
-    const profile = mkdtempSync(join(tmpdir(), 'mistvale-e2e-'));
+    const profile = mkdtempSync(join(tmpdir(), 'loomvale-e2e-'));
     const args = [
       '--headless=new',
       '--remote-debugging-port=0',
@@ -252,19 +265,29 @@ export class Page {
 
   /** Taps the first visible element matching the selector whose text contains `text`. */
   async tap(selector: string, text = ''): Promise<void> {
+    await this.tapWhere(byText(selector, text), `${selector} "${text}"`);
+  }
+
+  /**
+   * Taps the element `find` (an in-page expression giving an element or null) once it holds still: scrolled into
+   * view, its centre is measured over two frames, and one that moved between them (a smooth scroll, a panel
+   * sliding in) is measured again. A tap never lands where a button was: on a slow runner the shop's strip
+   * scrolled the Buy button 17 px on between the measure and the tap (CI run 40278768589).
+   */
+  async tapWhere(find: string, what: string, timeoutMs = 15_000): Promise<void> {
     const at = await this.waitFor<{ x: number; y: number }>(
-      `(() => {
-        for (const el of document.querySelectorAll(${JSON.stringify(selector)})) {
-          if (!el.textContent.includes(${JSON.stringify(text)})) continue;
-          const r = el.getBoundingClientRect();
-          if (r.width === 0 || r.height === 0 || el.disabled) continue;
-          el.scrollIntoView({ block: 'nearest' });
-          const q = el.getBoundingClientRect();
-          return { x: q.left + q.width / 2, y: q.top + q.height / 2 };
-        }
-        return null;
+      `(async () => {
+        const el = ${find};
+        if (!el) return null;
+        el.scrollIntoView({ block: 'nearest' });
+        const centre = () => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, shown: r.width > 0 && r.height > 0 }; };
+        const a = centre();
+        await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+        const b = centre();
+        return b.shown && Math.abs(b.x - a.x) < 1 && Math.abs(b.y - a.y) < 1 ? b : null;
       })()`,
-      `${selector} "${text}"`,
+      what,
+      timeoutMs,
     );
     await this.tapAt(at.x, at.y);
   }

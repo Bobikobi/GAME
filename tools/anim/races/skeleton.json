@@ -1,0 +1,302 @@
+{
+ "about": "The skeleton of the 26.10 pick (round-2 B): the Brodin anatomical skeleton ('Skeleton' by Alexander Brodin, CC BY 3.0, https://poly.pizza/m/frU5VxsCGZJ, credit required), cut into bone pieces and fitted piece by piece onto the Quaternius Universal Base Characters rig (`pieces`, g = girth factor per role), so it walks with the library clips. $CACHE is tools/.cache/anim. The body mesh of the base character is dropped (`drop`). `fit_px` 52 puts it at 81 percent of the human's height.",
+ "job": {
+  "models": [
+   "$CACHE/step2/src/ubc/Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Male_FullBody.gltf"
+  ],
+  "drop": [
+   "SuperHero",
+   "Superhero",
+   "Eyes",
+   "Eyebrows"
+  ],
+  "pose": {
+   "glb": "$CACHE/lib/ual1/UAL1_Standard.glb",
+   "action": "Walk_Loop",
+   "frame": 0
+  },
+  "pieces": {
+   "glb": "$CACHE/step2/src/round2/brodin_skeleton.glb",
+   "parts": [
+    {
+     "role": "skull",
+     "objs": [
+      "group1668580957",
+      "group1875346923"
+     ],
+     "axis": "z",
+     "ends": [
+      "min",
+      "max"
+     ],
+     "P": [
+      "abs",
+      0,
+      0.02,
+      1.575
+     ],
+     "D": [
+      "abs",
+      0,
+      0.02,
+      1.855
+     ],
+     "bone": "Head"
+    },
+    {
+     "role": "ribs",
+     "objs": [
+      "group2088735744"
+     ],
+     "axis": "z",
+     "ends": [
+      "min",
+      "max"
+     ],
+     "P": [
+      "abs",
+      0,
+      0.0,
+      1.04
+     ],
+     "D": [
+      "abs",
+      0,
+      0.015,
+      1.6
+     ],
+     "bone": "spine_02"
+    },
+    {
+     "role": "pelvis",
+     "objs": [
+      "group1218717540"
+     ],
+     "axis": "z",
+     "ends": [
+      "min",
+      "max"
+     ],
+     "P": [
+      "abs",
+      0,
+      0.04,
+      0.86
+     ],
+     "D": [
+      "abs",
+      0,
+      0.04,
+      1.06
+     ],
+     "bone": "pelvis"
+    },
+    {
+     "role": "leg",
+     "objs": [
+      "group1645614797",
+      "group1105484553"
+     ],
+     "sided": true,
+     "axis": "z",
+     "ends": [
+      "max",
+      "min"
+     ],
+     "P": [
+      "thigh_{s}",
+      "h"
+     ],
+     "D": [
+      "thigh_{s}",
+      "t"
+     ],
+     "bone": "thigh_{s}"
+    },
+    {
+     "role": "shin",
+     "objs": [
+      "group913068288",
+      "group1887765320"
+     ],
+     "sided": true,
+     "axis": "z",
+     "ends": [
+      "max",
+      "min"
+     ],
+     "P": [
+      "calf_{s}",
+      "h"
+     ],
+     "D": [
+      "calf_{s}",
+      "t"
+     ],
+     "bone": "calf_{s}"
+    },
+    {
+     "role": "foot",
+     "objs": [
+      "group189578404",
+      "group2106471627"
+     ],
+     "sided": true,
+     "axis": "y",
+     "ends": [
+      "max",
+      "min"
+     ],
+     "P": [
+      "foot_{s}",
+      "h"
+     ],
+     "D": [
+      "foot_{s}",
+      "t",
+      0,
+      -0.05,
+      0
+     ],
+     "bone": "foot_{s}"
+    },
+    {
+     "role": "arm",
+     "objs": [
+      "group1569903466",
+      "group593132608"
+     ],
+     "sided": true,
+     "axis": "x",
+     "ends": [
+      "min",
+      "max"
+     ],
+     "P": [
+      "upperarm_{s}",
+      "h"
+     ],
+     "D": [
+      "lowerarm_{s}",
+      "t"
+     ],
+     "bone": "upperarm_{s}",
+     "split": [
+      {
+       "P": [
+        "upperarm_{s}",
+        "h",
+        -0.05,
+        0,
+        0
+       ],
+       "D": [
+        "upperarm_{s}",
+        "t"
+       ],
+       "bone": "upperarm_{s}"
+      },
+      {
+       "P": [
+        "lowerarm_{s}",
+        "h"
+       ],
+       "D": [
+        "lowerarm_{s}",
+        "t"
+       ],
+       "bone": "lowerarm_{s}"
+      }
+     ]
+    },
+    {
+     "role": "hand",
+     "objs": [
+      "group1650133731",
+      "group1177970829",
+      "group964701134",
+      "group1417456128"
+     ],
+     "sided": true,
+     "axis": "x",
+     "ends": [
+      "min",
+      "max"
+     ],
+     "P": [
+      "hand_{s}",
+      "h"
+     ],
+     "D": [
+      "hand_{s}",
+      "h",
+      0.13,
+      0,
+      0
+     ],
+     "bone": "hand_{s}"
+    }
+   ],
+   "g": {
+    "skull": 1.4,
+    "ribs": 1.15,
+    "pelvis": 1.1,
+    "leg": 1.55,
+    "shin": 1.55,
+    "foot": 1.3,
+    "arm": 1.5,
+    "hand": 1.4
+   }
+  },
+  "measure": {
+   "head": [
+    "Head"
+   ],
+   "extra": {
+    "ribcage": {
+     "groups": [
+      "spine_02"
+     ],
+     "mode": "extent"
+    },
+    "arm_l": {
+     "groups": [
+      "upperarm_l"
+     ],
+     "mode": "thick",
+     "bone": "upperarm_l"
+    },
+    "arm_r": {
+     "groups": [
+      "upperarm_r"
+     ],
+     "mode": "thick",
+     "bone": "upperarm_r"
+    },
+    "leg_l": {
+     "groups": [
+      "thigh_l"
+     ],
+     "mode": "thick",
+     "bone": "thigh_l"
+    },
+    "leg_r": {
+     "groups": [
+      "thigh_r"
+     ],
+     "mode": "thick",
+     "bone": "thigh_r"
+    }
+   }
+  },
+  "fit_px": 52,
+  "frame": [
+   128,
+   128
+  ],
+  "anchor": [
+   64,
+   100
+  ]
+ }
+}

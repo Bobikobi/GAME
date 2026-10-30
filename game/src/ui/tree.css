@@ -1,0 +1,461 @@
+/* The skill tree page of the kit (game/src/ui/tree.ts; DECISIONS 2026-10-23 "The skill tree
+   screen"): the map of the tree on the canvas inset, the schools' buttons above it, the build at
+   its foot, the chosen node's card and the keys beside it on a computer and under it on a phone.
+   Colours come from the theme's tokens only (tools/test/ui-theme.test.ts): a school's colour is
+   --kit-tree-<tint>, its name on dark wood --kit-tree-<tint>-ink. */
+
+.tint-green { --tint: var(--kit-tree-green); --tint-ink: var(--kit-tree-green-ink); }
+.tint-wood { --tint: var(--kit-tree-wood); --tint-ink: var(--kit-tree-wood-ink); }
+.tint-skin { --tint: var(--kit-tree-skin); --tint-ink: var(--kit-tree-skin-ink); }
+.tint-red { --tint: var(--kit-tree-red); --tint-ink: var(--kit-tree-red-ink); }
+.tint-water { --tint: var(--kit-tree-water); --tint-ink: var(--kit-tree-water-ink); }
+.tint-plum { --tint: var(--kit-tree-plum); --tint-ink: var(--kit-tree-plum-ink); }
+.tint-fire { --tint: var(--kit-tree-fire); --tint-ink: var(--kit-tree-fire-ink); }
+.tint-grey { --tint: var(--kit-tree-grey); --tint-ink: var(--kit-tree-grey-ink); }
+
+.kit-body.tree-only {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.tree-page {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink);
+}
+
+.tree-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+/* in the phone's scrolling column nothing gives way: the school row, the map, the build and the card keep their size */
+.tree-page > *,
+.tree-main > *,
+.tree-side > * {
+  flex-shrink: 0;
+}
+
+.tree-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tree-who {
+  color: var(--kit-ink);
+}
+
+.tree-points {
+  padding: 2px 8px;
+  background: var(--kit-plate);
+  color: var(--kit-plate-ink);
+  border: 1px solid var(--kit-edge);
+  white-space: nowrap;
+}
+
+.tree-points.some {
+  background: var(--kit-brass);
+  color: var(--kit-on-gold);
+}
+
+.tree-schools {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.panel.bag .tree-schools .btn {
+  flex: none;
+  min-height: 44px;
+  padding: 4px 10px;
+}
+
+.panel.bag .tree-schools .tree-school {
+  color: var(--tint-ink);
+}
+
+.panel.bag .tree-schools .tree-school:hover,
+.panel.bag .tree-schools .tree-school:focus-visible {
+  color: var(--kit-ink);
+}
+
+/* ------------------------------------------------------------ the map */
+
+.tree-frame {
+  position: relative;
+  flex: none;
+  height: 360px;
+}
+
+.tree-view {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--kit-paper);
+  border: 1px solid var(--kit-brass-dark);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+  outline: none;
+}
+
+.tree-view:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--kit-brass);
+}
+
+.tree-view.dragging {
+  cursor: grabbing;
+}
+
+.tree-lines,
+.tree-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.tree-layer {
+  pointer-events: none;
+}
+
+.tree-trunk,
+.tree-label,
+.tree-node,
+.tree-hover {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* the trunk: the race, in plum with a gold ring; the window's paper on plum reads at 8.8:1 */
+.tree-trunk {
+  display: grid;
+  place-items: center;
+  background: var(--kit-tree-trunk);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-brass);
+  box-shadow: 0 0 0 2px var(--kit-edge);
+  text-align: center;
+  overflow: hidden;
+}
+
+/* a school's name past the tip of its wing, on a dark plate in its own colour */
+.tree-label {
+  color: var(--tint-ink);
+  white-space: nowrap;
+}
+
+/* a node: a square socket on the canvas; learned, it fills with its school's colour */
+.tree-node {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* on a phone the tap reaches past a small node to 44 px, never into the next one (tree.ts sets --tap) */
+.tree-node::before {
+  content: '';
+  position: absolute;
+  inset: calc(-2px - var(--tap, 0px));
+}
+
+.tree-node.learned {
+  background: var(--tint);
+}
+
+.tree-node.size-major {
+  border-width: 3px;
+}
+
+.tree-node.size-keystone {
+  border-width: 4px;
+  box-shadow:
+    inset 0 0 0 2px var(--kit-ink),
+    inset 0 0 0 4px var(--kit-edge);
+}
+
+.tree-node.size-corner {
+  border-width: 3px;
+  border-style: double;
+  border-color: var(--kit-tree-trunk);
+}
+
+.tree-node.size-corner.open {
+  border-color: var(--kit-brass);
+}
+
+.tree-node.in-build {
+  outline: 3px solid var(--kit-ink);
+  outline-offset: 2px;
+}
+
+.tree-node.touched {
+  outline: 3px solid var(--kit-brass);
+  outline-offset: 3px;
+}
+
+.tree-node:focus-visible {
+  outline: 3px solid var(--kit-ink);
+  outline-offset: 3px;
+}
+
+.tree-tools {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.panel.bag .tree-tools .btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: var(--kit-text-l);
+}
+
+/* the card that follows the pointer on a computer */
+.tree-hover {
+  z-index: 2;
+  padding: 8px 10px;
+  pointer-events: none;
+}
+
+.tree-hover b,
+.tree-card-head b {
+  display: block;
+  font-size: var(--kit-text-l);
+  line-height: 1;
+  font-weight: 400;
+}
+
+.tree-hover p,
+.tree-card p {
+  margin: 6px 0 0;
+}
+
+.tree-size,
+.tree-where {
+  color: var(--kit-ink-soft);
+}
+
+.tree-why {
+  color: var(--kit-warn);
+}
+
+.tree-ok {
+  color: var(--kit-ink);
+}
+
+.tree-number {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--kit-plate);
+  color: var(--kit-brass);
+}
+
+/* ------------------------------------------------------------ the build at the foot */
+
+.tree-build {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px 8px;
+  background: var(--kit-wood-dark);
+  color: var(--kit-plate-ink);
+  border: 1px solid var(--kit-edge);
+}
+
+.tree-build-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tree-build-note {
+  color: var(--kit-brass);
+  font-size: var(--kit-text-s);
+}
+
+.tree-slots {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.tree-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 48px;
+  padding: 2px 4px;
+  font: 400 var(--kit-text-s) / 1 var(--font);
+  text-align: center;
+  overflow: hidden;
+}
+
+.tree-slot.empty,
+.tree-slot.filled {
+  background: var(--kit-socket);
+  color: var(--kit-plate-ink);
+  border: 1px solid var(--kit-brass-dark);
+}
+
+.tree-slot.filled {
+  cursor: pointer;
+  border-color: var(--kit-brass);
+}
+
+.tree-slot.filled span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-slot.closed {
+  background: var(--kit-wood);
+  color: var(--kit-plate-ink);
+  border: 1px dashed var(--kit-wood-light);
+}
+
+/* ------------------------------------------------------------ the card and the keys */
+
+.tree-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tree-card {
+  padding: 10px 12px;
+}
+
+.tree-card.empty p {
+  margin: 0;
+  color: var(--kit-ink-soft);
+}
+
+.tree-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tree-card .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tree-keys {
+  padding: 8px 12px;
+}
+
+.tree-keys summary {
+  cursor: pointer;
+  min-height: 44px;
+  line-height: 44px;
+}
+
+.tree-key-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tree-key {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.tree-key-name {
+  width: 76px;
+}
+
+.tree-pips {
+  display: flex;
+  gap: 2px;
+}
+
+.tree-pips i {
+  width: 8px;
+  height: 14px;
+  background: var(--kit-paper);
+  border: 1px solid var(--kit-paper-line);
+}
+
+.tree-pips i.on {
+  background: var(--kit-ink);
+  border-color: var(--kit-ink);
+}
+
+.panel.bag .tree-key .tree-plus {
+  min-width: 44px;
+  margin-left: auto;
+  padding: 0;
+}
+
+/* ------------------------------------------------------------ a computer: the wide screen */
+
+@media (min-width: 900px) {
+  .layer.panel-layer:has(.panel.bag.tree-open) {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .panel.bag.tree-open {
+    max-width: min(1680px, calc(100vw - 32px));
+    max-height: none;
+  }
+
+  .tree-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .tree-main {
+    height: 100%;
+  }
+
+  .tree-frame {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
+
+  .tree-side {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .tree-node:hover {
+    outline: 3px solid var(--kit-ink-soft);
+    outline-offset: 2px;
+  }
+
+  .tree-node.touched:hover {
+    outline-color: var(--kit-brass);
+  }
+}
