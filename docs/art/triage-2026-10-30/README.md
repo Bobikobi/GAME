@@ -31,4 +31,6 @@ Files found in the four folders: 2983 images, 1570 with different bytes. Of thos
 5. **Parts.** `reuse-parts` names the part in its reason (a flame, a cracked head, loose leaves, an earth path source).
 6. **Walk renders.** 310 raw 3D frames are one item (`walk-forager-render`), kept as the source of the pixel walk; the forager race is retired.
 
+6. **Size against the entry.** The measure ran at each picture's own canvas, not at the pool entry's size. A `keep` here is not proof that the picture fits an entry: the pool drafts of `lantern_post` (64x128 against 64x192), `broken_statue` (64x128 against 64x160), `market_stall` (128x128 against 128x192) and `house_small` (192x192 against 192x320) are good looks on a short canvas, and `art:measure` would refuse them for the entry.
+
 Sheets are read by eye at 800 px; an agent's read of a 64 px sprite is rough, so the yellow and orange are the ones to check first.
