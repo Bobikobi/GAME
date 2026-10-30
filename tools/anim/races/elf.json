@@ -1,5 +1,5 @@
 {
- "about": "The elf of the 27.10 pick (round 4, E4-A version 3): the Quaternius Universal Base Characters body thinned at the bones and lengthened on the shared rig, in the CC0 ranger outfit (hood off), with a pastel sky-blue hooded cloak open at the front made by garments.py. Numbers as shown to the owner; ears are pulled on the head (0.18). The robe is round 4's unused B variant, kept as a spare.",
+ "about": "The elf of the 27.10 pick (round 4, E4-A version 3): the Quaternius Universal Base Characters body thinned at the bones and lengthened on the shared rig, in the CC0 ranger outfit (hood off), with a pastel green hooded cloak open at the front made by garments.py (sky blue at the 27.10 pick; green on the owner's word of 30.10). Numbers as shown to the owner; ears are pulled on the head (0.18). The robe is round 4's unused B variant, kept as a spare.",
  "sources": {
   "body": "Quaternius Universal Base Characters [Standard], CC0",
   "outfit": "Quaternius Modular Character Outfits - Fantasy [Standard], CC0",
@@ -127,9 +127,9 @@
    "garments": {
     "Cloak": {
      "rgb": [
-      0.33,
-      0.75,
-      1.0
+      0.45,
+      0.85,
+      0.2
      ],
      "rings": [
       [
@@ -268,9 +268,9 @@
    "garments": {
     "Cloak": {
      "rgb": [
-      0.33,
-      0.75,
-      1.0
+      0.45,
+      0.85,
+      0.2
      ],
      "rings": [
       [
