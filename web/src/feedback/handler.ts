@@ -119,8 +119,24 @@ export function issueFrom(p: Parsed): { title: string; body: string; labels: str
   return { title, body: `${quoted}\n\n${table}\n\n_Sent from inside the game._`, labels: ['feedback'] };
 }
 
+/**
+ * Whether the POST came from a page of this site. A browser always sends Origin on a POST, so a missing one,
+ * `null` (a sandboxed or no-referrer page) or another site's is refused: another page must not make a
+ * visitor's browser file issues (finding 13 of the 27.10 review).
+ */
+function fromThisSite(request: Request): boolean {
+  const origin = request.headers.get('origin');
+  if (origin === null || origin === 'null') return false;
+  try {
+    return new URL(origin).origin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
+}
+
 export async function handle(request: Request, env: Record<string, string | undefined>, doFetch: typeof fetch = fetch, now = Date.now()): Promise<Response> {
   if (request.method !== 'POST') return json(405, { error: 'method' });
+  if (!fromThisSite(request)) return json(403, { error: 'origin' });
   const token = env['FEEDBACK_GITHUB_TOKEN'] || env['HUB_GITHUB_TOKEN'];
   if (!token) return json(503, { error: 'unavailable' });
   const ip = (request.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0]!.trim();
@@ -144,7 +160,7 @@ export async function handle(request: Request, env: Record<string, string | unde
         authorization: `Bearer ${token}`,
         accept: 'application/vnd.github+json',
         'content-type': 'application/json',
-        'user-agent': 'openfold-feedback',
+        'user-agent': 'loomvale-feedback',
         'x-github-api-version': '2022-11-28',
       },
       body: JSON.stringify(issueFrom(parsed)),

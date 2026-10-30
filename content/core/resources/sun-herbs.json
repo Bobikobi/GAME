@@ -15,7 +15,8 @@
       "class": "plant",
       "family": "herb",
       "tier": 1,
-      "sprite": "core/base-kit:items/herb"
+      "sprite": "core/base-kit:items/herb",
+      "weight": 0
     }
   ],
   "node": {

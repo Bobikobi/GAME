@@ -53,7 +53,7 @@ Every adjustable number is visible in `.github/loop.json`:
 
 ## Voting
 
-Each option is a comment. A voter reacts 👍 to one option. If the same account reacts to several options, only its earliest reaction counts, so that choice is final. Bots and accounts younger than the configured age at opening are ignored. Account lookups are cached for each run.
+Each option is a comment the loop posted when it opened the vote, and the vote's marker lists their keys. A comment anyone else writes, with or without the option marker, is a reply: it adds no option, its reactions count for nothing, and it labels no proposal. A voter reacts 👍 to one option. If the same account reacts to several options, only its earliest reaction counts, so that choice is final. Bots and accounts younger than the configured age at opening are ignored. Account lookups are cached for each run.
 
 Before the display threshold, results use relative bars without numbers. At and above it, they show exact percentages. The display never states how many people voted. After the closing date, too little participation or a tie postpones the choice and closes the vote as not planned. Otherwise the first-place option wins. A proposal vote labels all options; a discovery vote announces the winning document.
 

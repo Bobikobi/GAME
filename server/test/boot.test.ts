@@ -1,4 +1,7 @@
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { authFromEnv, BootError } from '../src/boot';
@@ -44,14 +47,62 @@ describe('the identity gate at boot', () => {
 });
 
 describe('the session mode at boot (NEXT 18 e)', () => {
-  const ready = { AUTH_MODE: 'session', PUBLIC_ORIGIN: 'https://api.example.org', APP_ORIGIN: 'https://play.example.org' };
+  const ready = {
+    AUTH_MODE: 'session',
+    PUBLIC_ORIGIN: 'https://play.example.org',
+    ALLOW_LOG_MAILER: 'staging-only',
+    CLIENT_ADDRESS_HEADER: 'X-Real-IP',
+  };
 
-  test('starts with the two origins, the log mailer by default, and Google closed without its pair', () => {
+  test('starts with one origin for the game and the API, the log mailer by default, and Google closed without its pair', () => {
     const auth = authFromEnv(ready);
     if (auth.mode !== 'session') throw new Error('expected the session mode');
-    expect(auth.session).toEqual({ publicOrigin: 'https://api.example.org', appOrigin: 'https://play.example.org', google: undefined, mailer: 'log' });
+    expect(auth.session).toEqual({ publicOrigin: 'https://play.example.org', appOrigin: 'https://play.example.org', google: undefined, mailer: 'log', addressHeader: 'x-real-ip' });
     expect(auth.notice).toMatch(/session cookie/);
+    expect(auth.notice).toContain('the game beside it');
+    expect(auth.notice).toContain('staging only');
     expect(auth.notice).not.toContain('Google');
+  });
+
+  test('the game is served beside the API: APP_ORIGIN is the public origin, and a second one is a loopback pair only (finding 4)', () => {
+    // set to the same origin, or left empty as compose passes it: both are the one origin
+    for (const same of [{ ...ready, APP_ORIGIN: ready.PUBLIC_ORIGIN }, { ...ready, APP_ORIGIN: '' }]) {
+      const auth = authFromEnv(same);
+      if (auth.mode !== 'session') throw new Error('expected the session mode');
+      expect(auth.session.appOrigin).toBe('https://play.example.org');
+    }
+    // the deployment the review found: the API on its own name, the game on another. The cookie never crosses.
+    expect(() => authFromEnv({ ...ready, APP_ORIGIN: 'https://api.example.org' })).toThrow(/APP_ORIGIN=https:\/\/api\.example\.org is not PUBLIC_ORIGIN/);
+    expect(() => authFromEnv({ ...ready, APP_ORIGIN: 'https://play.example.org:8443' })).toThrow(/APP_ORIGIN/);
+    // the laptop: the dev client on one loopback port, the API on another
+    const laptop = authFromEnv({ ...ready, PUBLIC_ORIGIN: 'http://localhost:8080', APP_ORIGIN: 'http://127.0.0.1:5173' });
+    if (laptop.mode !== 'session') throw new Error('expected the session mode');
+    expect(laptop.session.appOrigin).toBe('http://127.0.0.1:5173');
+    expect(laptop.notice).toContain('the game at http://127.0.0.1:5173');
+    // a loopback on one side only is not a pair
+    expect(() => authFromEnv({ ...ready, APP_ORIGIN: 'http://localhost:5173' })).toThrow(/APP_ORIGIN/);
+    expect(() => authFromEnv({ ...ready, PUBLIC_ORIGIN: 'http://localhost:8080', APP_ORIGIN: 'https://play.example.org' })).toThrow(/APP_ORIGIN/);
+  });
+
+  test('the log mailer starts only beside ALLOW_LOG_MAILER=staging-only: it writes live links to the log (finding 5)', () => {
+    const { ALLOW_LOG_MAILER: _allowed, ...unflagged } = ready;
+    expect(() => authFromEnv(unflagged)).toThrow(/ALLOW_LOG_MAILER/);
+    expect(() => authFromEnv({ ...unflagged, MAILER: 'log' })).toThrow(/ALLOW_LOG_MAILER/);
+    for (const value of ['', '1', 'true', 'staging', 'Staging-Only']) {
+      expect(() => authFromEnv({ ...unflagged, ALLOW_LOG_MAILER: value }), value).toThrow(BootError);
+    }
+  });
+
+  test('names the address header off a loopback origin, since behind nginx every request comes from nginx (finding 6)', () => {
+    const { CLIENT_ADDRESS_HEADER: _header, ...unnamed } = ready;
+    expect(() => authFromEnv(unnamed)).toThrow(/CLIENT_ADDRESS_HEADER/);
+    const laptop = authFromEnv({ ...unnamed, PUBLIC_ORIGIN: 'http://localhost:8080', APP_ORIGIN: 'http://localhost:5173' });
+    if (laptop.mode !== 'session') throw new Error('expected the session mode');
+    expect(laptop.session.addressHeader).toBeUndefined();
+    expect(laptop.notice).toContain('the socket address');
+    for (const bad of ['X Real IP', 'x-real-ip:', 'x_real_ip']) {
+      expect(() => authFromEnv({ ...ready, CLIENT_ADDRESS_HEADER: bad }), bad).toThrow(/CLIENT_ADDRESS_HEADER/);
+    }
   });
 
   test('takes Google only as a pair, and the notice never carries the secret', () => {
@@ -65,10 +116,10 @@ describe('the session mode at boot (NEXT 18 e)', () => {
   });
 
   test('refuses a missing origin, a path, a trailing slash, and plain http off a loopback host', () => {
-    expect(() => authFromEnv({ AUTH_MODE: 'session', APP_ORIGIN: ready.APP_ORIGIN })).toThrow(/PUBLIC_ORIGIN/);
-    expect(() => authFromEnv({ AUTH_MODE: 'session', PUBLIC_ORIGIN: ready.PUBLIC_ORIGIN })).toThrow(/APP_ORIGIN/);
-    for (const bad of ['https://api.example.org/', 'https://api.example.org/auth', 'http://api.example.org', 'api.example.org', 'ftp://api.example.org']) {
+    expect(() => authFromEnv({ AUTH_MODE: 'session', APP_ORIGIN: ready.PUBLIC_ORIGIN })).toThrow(/PUBLIC_ORIGIN/);
+    for (const bad of ['https://play.example.org/', 'https://play.example.org/auth', 'http://play.example.org', 'play.example.org', 'ftp://play.example.org']) {
       expect(() => authFromEnv({ ...ready, PUBLIC_ORIGIN: bad }), bad).toThrow(BootError);
+      expect(() => authFromEnv({ ...ready, APP_ORIGIN: bad }), bad).toThrow(BootError);
     }
     for (const local of ['http://localhost:8080', 'http://127.0.0.1:8080']) {
       expect(authFromEnv({ ...ready, PUBLIC_ORIGIN: local }).mode, local).toBe('session');
@@ -80,17 +131,61 @@ describe('the session mode at boot (NEXT 18 e)', () => {
     expect(() => authFromEnv({ ...ready, MAILER: 'smtp' })).toThrow(/MAILER/);
   });
 
+  test('MAILER=resend takes its key and a sender, needs no staging flag, and the notice never carries the key', () => {
+    const { ALLOW_LOG_MAILER: _allowed, ...live } = ready;
+    const resend = { ...live, MAILER: 'resend', RESEND_API_KEY: 're_not_for_the_log', MAIL_FROM: 'Loomvale <play@example.org>' };
+    const auth = authFromEnv(resend);
+    if (auth.mode !== 'session') throw new Error('expected the session mode');
+    expect(auth.session.mailer).toBe('resend');
+    expect(auth.session.resend).toEqual({ apiKey: 're_not_for_the_log', from: 'Loomvale <play@example.org>' });
+    expect(auth.notice).toContain('resend mailer');
+    expect(auth.notice).not.toContain('re_not_for_the_log');
+    expect(authFromEnv({ ...resend, MAIL_FROM: 'play@example.org' }).mode).toBe('session');
+    expect(() => authFromEnv({ ...resend, RESEND_API_KEY: '' })).toThrow(/RESEND_API_KEY/);
+    for (const bad of ['', 'Loomvale', 'Loomvale <play>', 'a@b', 'Loomvale <play@example.org>\nBcc: x@y.z']) {
+      expect(() => authFromEnv({ ...resend, MAIL_FROM: bad }), bad).toThrow(/MAIL_FROM/);
+    }
+  });
+
   test('reads a country header only when COUNTRY_HEADER names one, and says so in the notice', () => {
     const unset = authFromEnv(ready);
     if (unset.mode !== 'session') throw new Error('expected the session mode');
     expect(unset.session.countryHeader).toBeUndefined();
-    expect(unset.notice).toMatch(/highest \(no COUNTRY_HEADER\)/);
+    expect(unset.notice).toMatch(/highest \(no COUNTRY_HEADER, no COUNTRY_DB\)/);
     const set = authFromEnv({ ...ready, COUNTRY_HEADER: 'X-Country' });
     if (set.mode !== 'session') throw new Error('expected the session mode');
     expect(set.session.countryHeader).toBe('x-country');
     expect(set.notice).toContain('x-country');
     for (const bad of ['X Country', 'x-country:', 'x_country']) {
       expect(() => authFromEnv({ ...ready, COUNTRY_HEADER: bad }), bad).toThrow(/COUNTRY_HEADER/);
+    }
+  });
+});
+
+/** a session-mode environment that starts, for the tests below */
+const SESSION_ENV = {
+  AUTH_MODE: 'session',
+  PUBLIC_ORIGIN: 'https://play.example.org',
+  ALLOW_LOG_MAILER: 'staging-only',
+  CLIENT_ADDRESS_HEADER: 'X-Real-IP',
+};
+
+describe('the country database (COUNTRY_DB)', () => {
+  const ready = SESSION_ENV;
+  test('is read when set, named in the notice beside the header, and refused unless it is an absolute path', () => {
+    const none = authFromEnv(ready);
+    if (none.mode !== 'session') throw new Error('expected the session mode');
+    expect(none.session.countryDb).toBeUndefined();
+    expect(none.notice).toMatch(/highest \(no COUNTRY_HEADER, no COUNTRY_DB\)/);
+    const file = authFromEnv({ ...ready, COUNTRY_DB: '/app/country.mmdb' });
+    if (file.mode !== 'session') throw new Error('expected the session mode');
+    expect(file.session.countryDb).toBe('/app/country.mmdb');
+    expect(file.notice).toContain('the file /app/country.mmdb');
+    expect(file.notice).not.toMatch(/highest/);
+    const both = authFromEnv({ ...ready, COUNTRY_DB: '/app/country.mmdb', COUNTRY_HEADER: 'X-Country' });
+    expect(both.notice).toContain('x-country, else in the file /app/country.mmdb');
+    for (const bad of ['country.mmdb', './country.mmdb', '../x']) {
+      expect(() => authFromEnv({ ...ready, COUNTRY_DB: bad }), bad).toThrow(/COUNTRY_DB/);
     }
   });
 });
@@ -112,5 +207,60 @@ describe('the process itself', () => {
       expect(run.stdout).not.toContain('openfold api on');
       expect(run.stderr).toMatch(/AUTH_MODE|ALLOW_DEV_HEADER/);
     }
+  });
+
+  test('exits non-zero before a database is needed when COUNTRY_DB is a file that is not a country database', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'country-boot-'));
+    try {
+      writeFileSync(join(dir, 'broken.mmdb'), 'not a database');
+      for (const path of [join(dir, 'broken.mmdb'), join(dir, 'missing.mmdb')]) {
+        const run = boot({ ...SESSION_ENV, COUNTRY_DB: path });
+        expect(run.status, path).toBe(1);
+        expect(run.stdout).not.toContain('openfold api on');
+        expect(run.stderr).toMatch(/COUNTRY_DB=.*does not open as a country database/);
+      }
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+});
+
+describe('the nginx site file (the 27.10 review)', () => {
+  const conf = readFileSync(new URL('../../deploy/nginx-openfold.conf', import.meta.url), 'utf8');
+  const auth = /location \/auth\/ \{([^}]*)\}/.exec(conf)?.[1] ?? '';
+
+  test('sign-in has a request limit and a log line without the query string (findings 5, 6)', () => {
+    expect(conf).toMatch(/^limit_req_zone \$binary_remote_addr zone=openfold_auth:\S+ rate=\d+r\/m;$/m);
+    expect(auth).toMatch(/limit_req zone=openfold_auth /);
+    expect(auth).toMatch(/access_log \S+ openfold_auth;/);
+    const format = /^log_format openfold_auth (.*);$/m.exec(conf)?.[1] ?? '';
+    expect(format).toContain('$uri');
+    for (const leaks of ['$request ', '$request"', '$request_uri', '$args', '$query_string', '$http_referer']) expect(format).not.toContain(leaks);
+  });
+
+  test('the client address the API counts by is set by nginx, never passed through', () => {
+    expect(conf).toContain('proxy_set_header X-Real-IP $remote_addr;');
+    // the headers sit on the server, so no location may set its own and drop them
+    for (const location of conf.matchAll(/location [^{]*\{([^}]*)\}/g)) expect(location[1]).not.toContain('proxy_set_header');
+  });
+
+  test('one name serves the game as files and the API by its exact paths, so the session cookie never crosses an origin (finding 4)', () => {
+    const blocks = new Map([...conf.matchAll(/location (=? ?\S+) \{([^}]*)\}/g)].map((hit) => [(hit[1] ?? '').replace(/\s+/g, ' '), hit[2] ?? '']));
+    // the game's build is the root: index.html at /, the hashed files under /assets/
+    expect(conf).toMatch(/^\s+root \S+;/m);
+    expect(conf).toMatch(/^\s+index index\.html;/m);
+    const game = blocks.get('/') ?? '';
+    expect(game).toMatch(/try_files \$uri /);
+    expect(game).not.toContain('proxy_pass');
+    expect(game).toMatch(/add_header Cache-Control "no-cache"/);
+    expect(blocks.get('/assets/') ?? '').toMatch(/add_header Cache-Control "public, max-age=\d+, immutable"/);
+    // the API answers these five and nothing else (api.ts): each is an exact location, so /state.html is a file, not the API
+    for (const path of ['/session', '/state', '/action', '/moves']) {
+      expect(blocks.get(`= ${path}`), path).toMatch(/^\s*proxy_pass http:\/\/127\.0\.0\.1:\d+;\s*$/);
+    }
+    expect(auth).toMatch(/proxy_pass http:\/\/127\.0\.0\.1:\d+;/);
+    expect(blocks.get('= /health')).toMatch(/return 404;/);
+    // the proxied paths are the API's own: nothing of the game's static build is under them
+    expect(conf).not.toMatch(/location \/ \{[^}]*proxy_pass/);
   });
 });

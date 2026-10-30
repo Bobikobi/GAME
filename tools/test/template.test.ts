@@ -1,6 +1,6 @@
 /**
- * The creator template must pass the check as it is, so "add a fruit in 10
- * minutes" starts from something that works.
+ * The creator template must pass the check as it is, so "add a townsperson in
+ * 15 minutes" starts from something that works.
  */
 import { cpSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,7 +11,7 @@ import { runCheck } from '../src/check';
 import { CONTENT_DIR, REPO_ROOT } from '../src/load';
 
 describe('templates/extension', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-template-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-template-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
@@ -24,6 +24,18 @@ describe('templates/extension', () => {
 
   it('passes the check unchanged', () => {
     expect(result.issues.filter((i) => i.level === 'error')).toEqual([]);
+  });
+
+  it('stands a townsperson at the trainers\' stall, with a line at every standing and a quest she gives', () => {
+    const b = result.assembled.bundle!;
+    const wren = b.npcs['your-handle/wren']!;
+    expect(wren.creator).toBe('your-handle');
+    expect(wren.place.slot).toBe('core/trainers-stall');
+    expect(wren.shop).toBeUndefined();
+    for (const tier of ['first', 'stranger', 'acquaintance', 'friend'] as const) expect(wren.dialogue[tier]?.length).toBeGreaterThan(0);
+    expect(b.quests['your-handle/a-coin-for-the-road']?.giver).toBe('your-handle/wren');
+    expect(b.quests['your-handle/a-coin-for-the-road']?.reward.items?.[0]?.item).toBe('your-handle/mended-cup');
+    expect(b.items['your-handle/mended-cup']?.creator).toBe('your-handle');
   });
 
   it('grows its fruit in the empty glade, credited to the creator', () => {

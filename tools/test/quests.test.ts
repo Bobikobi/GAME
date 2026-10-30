@@ -104,7 +104,7 @@ describe('the hand', () => {
           herbs: { type: 'investigation', giver: 'pell', requires: ['mend'], steps: [{ kind: 'visit', slot: 'bank' }] },
         },
         {
-          resources: { key: { output: 'keystone', opens_after: 'glint' } },
+          resources: { key: { output: 'keystone', opens_after: [{ quest: 'glint' }] } },
           restores: { bridge: { inputs: [{ item: 'keystone', qty: 1 }] } },
           shops,
         },
@@ -121,7 +121,7 @@ describe('the hand', () => {
         glint: { type: 'investigation', pocket: 'a', steps: [{ kind: 'find', item: 'axe', clue: '.' }] },
         mend: { type: 'investigation', giver: 'pell', steps: [{ kind: 'restore', restore: 'bridge' }] },
       },
-      { resources: { key: { output: 'keystone', opens_after: 'glint' } }, restores: { bridge: { inputs: [{ item: 'keystone', qty: 1 }] } } },
+      { resources: { key: { output: 'keystone', opens_after: [{ quest: 'glint' }] } }, restores: { bridge: { inputs: [{ item: 'keystone', qty: 1 }] } } },
     );
     expect(handOf(w, 'a').same).toEqual([{ type: 'investigation', first: 'glint', then: 'mend', how: 'needs' }]);
     // both can be open at once: the mend is offered before the glint is done

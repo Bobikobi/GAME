@@ -40,12 +40,16 @@ import {
   riddleSlots,
   sees,
   spotOpen,
+  gaitStepMs,
   windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
+import { Piles, pileAt } from './piles';
 import { sound, type SfxId, type SongId } from '../audio';
-import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
+import { sunTableOf } from '../cast';
+import { CastLayer } from '../cast-layer';
 import { HOLE, LIGHT_POOL, dappleAt, frameAt, nightAt, shadeAt, tableOf, washAt } from '../light';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
@@ -67,13 +71,18 @@ import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
 import { peekOnStep, type Tile } from '../peek';
 import { MazePeek } from './peek';
-import { hintDistance, lanternNight, nodeAction } from '../text';
+import { FishingView } from './fishing-view';
+import type { FishPhase } from '../ui/games/shared';
+import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import type { WorkKind } from '../ui/ui';
-import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
-import { StandingReports, canEnter, landStep } from '../walking';
+import { STRIDE, type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
+import { blinking, breath, walkBob } from '../feel';
+import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
+import { ChunkStream, WORLD_CHUNK } from '../stream';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
-import { cameraK, cameraZoom, pixelRatio, worldToPage } from '../view';
+import { cameraZoom, pixelRatio, worldToPage } from '../view';
+import { ROOM, doorsOf, type RoomScene } from './room';
 
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
 const SMOKE_INSET = 30;
@@ -102,8 +111,6 @@ const PALETTE = {
   grey: 0x5d6177,
   grey2: 0x8f94a8,
 };
-/** How dark the ground shadows are. */
-const SHADOW_ALPHA = 0.22;
 /** Props that lie on the ground and cast no shadow, by sprite name. */
 const FLAT = new Set([
   'flowers', 'flowers_white', 'flowers_blue', 'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
@@ -120,12 +127,6 @@ export interface Target {
   /** the tile the marker points at, and how tall the thing standing there is */
   tile: [number, number];
   top: number;
-}
-
-interface Move {
-  from: [number, number];
-  to: [number, number];
-  t: number;
 }
 
 /** Work that runs by itself after one press: a tree being felled, a spot being dug (game/src/work.ts). */
@@ -226,8 +227,16 @@ interface Cycle {
 /** A character that closes its eyes now and then (frame 1 of its blink sheet). */
 interface Blink {
   spr: Phaser.GameObjects.Sprite;
-  next: number;
-  until: number;
+  id: string;
+  closed: boolean;
+}
+
+/** A standing figure's chest (feel.ts): its images (the fire's cut-out copy too), its id, its height in art px and the lift now showing. */
+interface Breather {
+  imgs: Standing[];
+  id: string;
+  height: number;
+  dh: number;
 }
 
 /** A soft light that comes up with the night and flickers. */
@@ -289,10 +298,14 @@ export class WorldScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.Image;
   /** the ground in chunks, once any ground sprite is at density 4 (groundchunks.ts); `ground` is then unused */
   private chunks: GroundChunks | undefined;
+  /** the 3 by 3 world chunks around the player (stream.ts); the valley is one chunk, so it holds that one */
+  private stream: ChunkStream<true> | undefined;
   private groundFrames = 2;
   private waterFrame = 0;
   private player!: Phaser.GameObjects.Sprite;
-  private playerShadow: Phaser.GameObjects.Image | undefined;
+  /** the decided cast shadows, every caster's own alpha sheared away from the sun */
+  private cast: CastLayer | undefined;
+  private readonly noCast = new Set<Phaser.GameObjects.GameObject>();
   private shade!: Phaser.GameObjects.Rectangle;
   private dusk: Phaser.GameObjects.Rectangle | undefined;
   private bar!: Phaser.GameObjects.Graphics;
@@ -330,7 +343,6 @@ export class WorldScene extends Phaser.Scene {
   private baseZoom = 2;
   private stoneHeld = false;
   private nodes = new Map<string, Phaser.GameObjects.Sprite>();
-  private nodeShadows = new Map<string, Phaser.GameObjects.Image>();
   private digs = new Map<string, Phaser.GameObjects.Image>();
   private restoreArt = new Map<string, Phaser.GameObjects.Image[]>();
   private campArt = new Map<string, Phaser.GameObjects.Sprite>();
@@ -351,6 +363,7 @@ export class WorldScene extends Phaser.Scene {
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
   private blinks: Blink[] = [];
+  private breathers: Breather[] = [];
   private glows: Glow[] = [];
   private locals: Local[] = [];
   /** sparks over the targets of the first open step of the main task; rebuilt by refresh() */
@@ -360,6 +373,8 @@ export class WorldScene extends Phaser.Scene {
   private meadowZone: TileZone | undefined;
   private groveZone: TileZone | undefined;
   private signs = new Map<string, string>();
+  /** the tiles of a prop that can be searched, to the searchable's id (docs/design/SEARCH.md) */
+  private searches = new Map<string, string>();
   private signSpots: SignSpot[] = [];
   private notes = new Map<string, { text: string; name: string; top: number }>();
   /** tended fires by prop id, the fire on each of their tiles, and the fire each fire-lit tile reads by */
@@ -370,6 +385,12 @@ export class WorldScene extends Phaser.Scene {
   private litBy = new Map<string, string>();
   private tops = new Map<string, number>();
   private npcAt = new Map<string, string>();
+  /** the keepers who trade inside, by the door tile that leads to them */
+  private doors = new Map<string, string>();
+  /** the shop the player is inside, while they are */
+  room: RoomScene | undefined;
+  /** a door was pushed and the room is opening: nothing walks meanwhile */
+  entering = false;
   private nodeAt = new Map<string, string>();
   /** nodes a reaction makes appear (docs/design/REACTIONS.md): hidden until their condition holds */
   private appearing = new Set<string>();
@@ -378,17 +399,25 @@ export class WorldScene extends Phaser.Scene {
   private eyes = new Set<Phaser.GameObjects.Image>();
   private labels!: HTMLElement;
   private pinned = new Set<Pinned>();
-  private move: Move | null = null;
-  private steps = 0;
+  /** the body walking freely between tiles (walking.ts); the session keeps the tile under its feet */
+  readonly body = new Walker();
+  /** what the body is drawn facing: one of eight, leaning on the four-way facing the faced tile is read from */
+  private look: Facing8 = 'down';
   private busyFrom = 0;
   private busyMs = 0;
   private work: { node: string; kind: WorkKind } | null = null;
+  /** the line, float and fish shapes of fishing, drawn in code */
+  private fishing?: FishingView;
+  /** the fishing spots, found once */
+  private fishSpots?: string[];
   private swingUntil = 0;
   private auto: Auto | null = null;
   /** nodes whose look the work keeps: a tree stays a tree until it falls */
   private held = new Set<string>();
   private nextSwing = 0;
   private refreshIn = 0;
+  /** what the player put down, drawn on its tiles */
+  private piles?: Piles;
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
@@ -461,13 +490,14 @@ export class WorldScene extends Phaser.Scene {
     this.buildSigns();
     this.buildAtmosphere();
     if (RICH.light) this.buildDapple();
-    if (RICH.detail) this.playerShadow = this.shadow(0, 0, 1).setVisible(false);
     this.player = kitSprite(this, 0, 0, this.playerFrame('down').key, 1).setOrigin(0.5, 1).setVisible(false);
+    if (RICH.detail) this.buildCasters();
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
     this.veil = this.add.container(0, 0, [this.mist, ...this.banks.map((b) => b.img), ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
+    this.fishing = new FishingView(this, { under: DEPTH.flat + 0.1, over: DEPTH.fx - 1 }, { ink: PALETTE.ink, paper: PALETTE.paper, red: PALETTE.red2, wood: PALETTE.wood });
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.bang = this.add.image(0, 0, 'fx-bang').setOrigin(0.5, 1).setDepth(DEPTH.fx).setVisible(false);
@@ -526,6 +556,8 @@ export class WorldScene extends Phaser.Scene {
     make('fx-leaf', 2, 2, () => px(PALETTE.green3, 0, 0, 2, 2));
     make('fx-chip', 2, 1, () => px(PALETTE.wood2, 0, 0, 2));
     make('fx-dirt', 2, 2, () => px(PALETTE.wood, 0, 0, 2, 2));
+    // a drop of water thrown up by a fish on the line
+    make('fx-drop', 1, 2, () => px(PALETTE.paper, 0, 0, 1, 2));
     make('fx-spark', 1, 1, () => px(PALETTE.yellow, 0, 0));
     // the flame of a tended fire, drawn so its four stages read by size (NEXT 21b): a red rim, gold body, yellow heart
     make('fx-flame', 7, 15, () => {
@@ -644,16 +676,6 @@ export class WorldScene extends Phaser.Scene {
       px(PALETTE.ink, 4, 3);
       px(PALETTE.ink, 3, 4);
     });
-    if (RICH.detail) {
-      // a whole-pixel ellipse, 12x5: the ground shadow under anything that stands
-      make('fx-shadow', 12, 5, () => {
-        px(PALETTE.ink, 3, 0, 6);
-        px(PALETTE.ink, 1, 1, 10);
-        px(PALETTE.ink, 0, 2, 12);
-        px(PALETTE.ink, 1, 3, 10);
-        px(PALETTE.ink, 3, 4, 6);
-      });
-    }
     make('fx-smoke-mark', 1, 1, () => px(PALETTE.paper, 0, 0, 1, 1));
     if (RICH.motion) {
       make('fx-puff', 2, 2, () => px(PALETTE.cream, 0, 0, 2, 2));
@@ -799,7 +821,9 @@ export class WorldScene extends Phaser.Scene {
       this.ground = this.add.image(0, 0, 'ground-0').setOrigin(0).setDepth(DEPTH.ground);
     } else {
       // built as the camera moves (update), so nothing is held for the map's far corners
-      this.chunks = new GroundChunks(this, m.width, m.height, gd, T, this.groundFrames, DEPTH.ground, paint);
+      const stream = new ChunkStream<true>((cx, cy) => (cx >= 0 && cy >= 0 && cx * WORLD_CHUNK < m.width && cy * WORLD_CHUNK < m.height ? true : undefined));
+      this.stream = stream;
+      this.chunks = new GroundChunks(this, m.width, m.height, gd, T, this.groundFrames, DEPTH.ground, paint, (tx, ty) => stream.holds(tx, ty));
     }
     if (RICH.motion) {
       this.meadowZone = new TileZone(meadow);
@@ -914,6 +938,8 @@ export class WorldScene extends Phaser.Scene {
             marks.push(this.add.image(x, y, 'fx-paw').setDepth(DEPTH.flat + 0.2).setAlpha(0.7).setAngle(hx === 0 ? (hy > 0 ? 180 : 0) : hx > 0 ? 90 : -90));
           }
         }
+        // a pit and a trap lie in the ground; only the wolf stands and casts
+        if (p.hazard.kind !== 'predator') this.noCast.add(spr);
         this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare, marks });
         continue;
       }
@@ -922,7 +948,6 @@ export class WorldScene extends Phaser.Scene {
       } else {
         const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
         img.setDepth(p.solid ? bottom : DEPTH.flat);
-        if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
         // the lamp head is the top 8 px of the post
         if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - unit.h + 4, true));
         if (name === 'house_small') this.chimneys.push({ x: cx - unit.w / 2 + CHIMNEY.x, y: bottom - unit.h + CHIMNEY.y });
@@ -932,6 +957,8 @@ export class WorldScene extends Phaser.Scene {
         for (let x = p.x; x < p.x + p.w; x++) {
           if (p.sign) this.signs.set(key(x, y), p.sign);
           if (p.note) this.notes.set(key(x, y), { text: p.note, name: spriteName(p.sprite), top: unit.h });
+          const searchable = p.id === undefined ? undefined : searchableOn(this.b, p.id);
+          if (searchable) this.searches.set(key(x, y), searchable);
           if (p.lit_by) this.litBy.set(key(x, y), p.lit_by);
           if (p.fire === true && p.id !== undefined) this.fireAt.set(key(x, y), p.id);
           this.tops.set(key(x, y), unit.h);
@@ -947,7 +974,6 @@ export class WorldScene extends Phaser.Scene {
   private buildFire(id: string, p: { w: number; solid: boolean; sprite: string }, cx: number, bottom: number): void {
     const depth = p.solid ? bottom : DEPTH.flat;
     const spr = kitSprite(this, cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(depth);
-    if (RICH.detail && !FLAT.has(baseName(p.sprite))) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
     this.fires.set(id, this.fireAtTile(spr, p.sprite, depth));
   }
 
@@ -1159,9 +1185,35 @@ export class WorldScene extends Phaser.Scene {
     return { spr, min: period, max: period, next: this.time.now + (seed % period), frame: 0, active: true };
   }
 
-  /** The ground shadow under something standing at (cx, bottom), as wide as its footprint in tiles. */
-  private shadow(cx: number, bottom: number, tiles: number, depth = DEPTH.shadow): Phaser.GameObjects.Image {
-    return this.add.image(cx, bottom + 2, 'fx-shadow').setOrigin(0.5, 1).setAlpha(SHADOW_ALPHA).setDepth(depth).setScale(Math.max(1, Math.round(tiles)), 1);
+  /**
+   * Registers every thing the scene drew as a caster of the decided shadow (STYLE 4), from its
+   * own alpha, so a kind of thing added later casts without a second list. The ground, the flat
+   * props, the digs and the overlays are not casters; a thing that lies in the ground is in
+   * `noCast`.
+   */
+  private buildCasters(): void {
+    // a density-4 prop casts at the size it is drawn: the layer reads each texture's density
+    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, densityOf);
+    // nothing that changes every frame is painted into a layer (cast-layer.ts): a thing that walks casts
+    // through its own image, a thing on a beat (a sway, a flame, a blink) from its first frame
+    const walks = new Set<Phaser.GameObjects.GameObject>(this.hazards.map((h) => h.spr));
+    const beats = new Set<Phaser.GameObjects.GameObject>([...this.cycles.map((c) => c.spr), ...this.blinks.map((b) => b.spr)]);
+    for (const obj of this.children.list) {
+      if (!(obj instanceof Phaser.GameObjects.Image) && !(obj instanceof Phaser.GameObjects.Sprite)) continue;
+      if (obj === this.player || obj === this.cutout) continue;
+      if (obj instanceof Phaser.GameObjects.RenderTexture) continue;
+      if (!obj.visible || this.noCast.has(obj)) continue;
+      const key = obj.texture.key;
+      if (!key || key.startsWith('fx-') || key.startsWith('senses-') || key.startsWith('cast-') || key.startsWith('cast:')) continue;
+      if (key === '__DEFAULT' || key === '__WHITE' || key.startsWith('ground-')) continue;
+      if (FLAT.has(baseName(key))) continue;
+      const depth = obj.depth;
+      if (depth < DEPTH.flat || depth > 1000) continue;
+      // a dig spot and a puff lie at 3 and 3.5; the props and the people stand at their own feet
+      if (depth > DEPTH.flat && depth <= DEPTH.puff) continue;
+      this.cast.add(obj, depth === DEPTH.flat ? 'under' : 'standing', walks.has(obj) ? 'moving' : beats.has(obj) ? 'rest' : 'drawn');
+    }
+    this.cast.add(this.player, 'standing', 'moving');
   }
 
   private glow(x: number, y: number, lit: boolean, key = 'fx-glow', scale = 1): Glow {
@@ -1203,9 +1255,6 @@ export class WorldScene extends Phaser.Scene {
         this.nodes.set(id, spr);
         const animated = [r.sprite, r.sprite_empty].some((ref) => ref && (this.b.sprites[ref]?.frames ?? 1) > 1);
         if (RICH.motion && animated) this.cycles.push(this.sway(spr, hash(inst.x, inst.y)));
-        if (RICH.detail && !FLAT.has(baseName(r.sprite))) {
-          this.nodeShadows.set(id, this.shadow(cx, bottom, Math.round((unitOf(r.sprite)?.w ?? T) / T)));
-        }
       } else {
         const t = this.b.treasures[inst.source];
         // a find picked up by hand lies half-buried, and the senses lead to it
@@ -1227,9 +1276,15 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildNpcs(): void {
+    this.doors = doorsOf(this.b, (id) => npcTile(this.b, id));
     for (const [id, npc] of Object.entries(this.b.npcs)) {
       const t = npcTile(this.b, id);
       if (!t) continue;
+      // a keeper with a shop to walk into stands inside it; their place on the map is the door
+      if (this.doors.get(key(t[0], t[1])) === id) {
+        this.tops.set(key(t[0], t[1]), T * 2);
+        continue;
+      }
       const bottom = (t[1] + 1) * T;
       const cx = t[0] * T + T / 2;
       // a blink sheet (frame 0 = the plain sprite, frame 1 = eyes closed) replaces the image when it exists
@@ -1237,7 +1292,7 @@ export class WorldScene extends Phaser.Scene {
       let img: Standing;
       if (RICH.motion && this.has(blinkRef) && (this.b.sprites[blinkRef]?.frames ?? 1) > 1) {
         const spr = kitSprite(this, cx, bottom, blinkRef, 0);
-        this.blinks.push({ spr, next: this.time.now + 3000 + Math.random() * 3000, until: 0 });
+        this.blinks.push({ spr, id, closed: false });
         img = spr;
       } else {
         img = kitImage(this, cx, bottom, npc.sprite);
@@ -1246,9 +1301,9 @@ export class WorldScene extends Phaser.Scene {
       const fire = this.b.map.props.find((p) => p.fire === true && p.id !== undefined && Math.max(Math.abs(p.x - t[0]), Math.abs(p.y - t[1])) <= 2);
       const cut = fire?.id === undefined ? undefined : adopt(new Phaser.GameObjects.Image(this, cx, bottom, img.texture.key, img.frame.name)).setOrigin(0.5, 1).setVisible(false);
       if (cut && fire?.id !== undefined) this.fireSide.push({ img, cut, fire: fire.id });
-      // a slow breath so people read as alive
-      this.tweens.add({ targets: cut ? [img, cut] : img, scaleY: rel(img, 1, 1.04).y, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      if (RICH.detail) this.shadow(cx, bottom, 1);
+      // a breath so people read as alive: the chest lifts one art px for half a period (feel.ts), and not at all under reduced motion
+      const height = (unitOf(npc.sprite)?.h ?? 24) * (ART_PX / T);
+      if (RICH.motion) this.breathers.push({ imgs: cut ? [img, cut] : [img], id, height, dh: 0 });
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), unitOf(npc.sprite)?.h ?? 24);
     }
@@ -1412,7 +1467,6 @@ export class WorldScene extends Phaser.Scene {
       const cx = at[0] * T + T / 2;
       const bottom = (at[1] + 1) * T;
       kitImage(this, cx, bottom, SIGN_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.flat);
-      if (RICH.detail) this.shadow(cx, bottom, 1, DEPTH.flat - 0.5);
       this.signs.set(key(at[0], at[1]), slot.id);
       this.tops.set(key(at[0], at[1]), T);
       this.signSpots.push({ slot: slot.id, x: at[0] + 0.5, y: at[1], label: this.signatureEl(slot.id) });
@@ -1645,7 +1699,7 @@ export class WorldScene extends Phaser.Scene {
     const c = this.cutout;
     if (!c) return;
     const p = this.player;
-    c.setVisible(p.visible).setTexture(p.texture.key, p.frame.name).setPosition(p.x, p.y).setFlipX(p.flipX).setAngle(p.angle).setScale(p.scaleX, p.scaleY);
+    c.setVisible(p.visible).setTexture(p.texture.key, p.frame.name).setOrigin(p.originX, p.originY).setPosition(p.x, p.y).setFlipX(p.flipX).setAngle(p.angle).setScale(p.scaleX, p.scaleY);
   }
 
   /**
@@ -1692,11 +1746,15 @@ export class WorldScene extends Phaser.Scene {
   /** Show this session's world. Called for a new game and for a loaded one. */
   bind(session: GameSession): void {
     for (const off of this.unbind) off();
+    if (this.room) {
+      this.scene.stop(ROOM);
+      this.outside();
+    }
     this.session = session;
-    this.move = null;
     this.work = null;
     this.auto = null;
     this.held.clear();
+    this.look = session.facing;
     this.falling = false;
     this.stoneHeld = false;
     this.stillReports.reset();
@@ -1721,7 +1779,6 @@ export class WorldScene extends Phaser.Scene {
       session.on('change', () => this.refresh()),
     ];
     this.player.setVisible(true);
-    this.playerShadow?.setVisible(true);
     this.placePlayer(session.pos[0], session.pos[1]);
     this.faceFrame();
     this.idleSince = this.time.now;
@@ -1734,13 +1791,26 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private placePlayer(x: number, y: number): void {
-    this.player.setPosition(x * T + T / 2, (y + 1) * T);
-    this.player.setDepth((y + 1) * T + 1);
-    this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
+    this.body.place([x, y]);
+    this.drawBody();
+  }
+
+  /** The sprite where the body stands, on the art's pixel grid: standing in a tile's middle, it stands on the tile's foot as before. */
+  private drawBody(): void {
+    const unit = T / ART_PX;
+    const x = Math.round(this.body.x) * unit;
+    const y = Math.round(this.body.y) * unit + T / 2;
+    this.player.setPosition(x, y);
+    this.player.setDepth(Math.round(y) + 1);
+    // the bob of a step (feel.ts) lifts the drawing, not the body: the camera, the light and the shadow keep the ground's y.
+    // It peaks as the foot lands, which is where the walk sheet puts the feet together (STRIDE of the way through a tile)
+    const bob = walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE);
+    this.player.setOrigin(0.5, 1 - (bob * unit) / (this.player.displayHeight || 1));
+    // the cast layer draws the player's shadow (buildCasters); light-cast has no fx-shadow ellipse
   }
 
   /** The race's sprite for a direction, in the look the player picked (races wear today's sheets until their own art). */
-  private playerFrame(dir: Dir, pose = 'walk'): { key: string; flip: boolean } {
+  playerFrame(dir: Dir, pose = 'walk', look?: Facing8): { key: string; flip: boolean } {
     const p = this.session?.state.player;
     const race = p ? this.b.races[p.race] : undefined;
     const first = Object.values(this.b.races)[0];
@@ -1750,6 +1820,9 @@ export class WorldScene extends Phaser.Scene {
     const has = (k: string) => k in this.b.sprites;
     const none = { key: '', flip: false };
     if (pose !== 'walk' && !has(stem)) return none;
+    // the rig's diagonals (23.10) for the walk and the blink; work poses stay four-way
+    const diagonal = look && (pose === 'walk' || pose === 'idle') ? diagonalSheet(stem, look, dir, has) : undefined;
+    if (diagonal) return diagonal;
     if (dir === 'down') return { key: stem, flip: false };
     if (dir === 'right' && !has(of('right'))) {
       if (has(of('left'))) return { key: of('left'), flip: true };
@@ -1759,10 +1832,15 @@ export class WorldScene extends Phaser.Scene {
     return pose !== 'walk' ? none : { key: stem, flip: false };
   }
 
+  /** The drawn facing, or the four-way one when something else turned the player (a load, a turn in place). */
+  private lookOf(s: GameSession): Facing8 {
+    return agrees(this.look, s.facing) ? this.look : s.facing;
+  }
+
   private faceFrame(frame?: number): void {
     const s = this.session;
     if (!s) return;
-    const { key: k, flip } = this.playerFrame(s.facing);
+    const { key: k, flip } = this.playerFrame(s.facing, 'walk', this.lookOf(s));
     const frames = this.b.sprites[k]?.frames ?? 1;
     if (frames === 1) retex(this.player, k);
     else retex(this.player, k, Math.min(frames - 1, frame ?? (frames >= 3 ? 1 : 0)));
@@ -1820,6 +1898,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.refreshNodes();
     this.refreshFires(s);
+    (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -1887,7 +1966,8 @@ export class WorldScene extends Phaser.Scene {
       if (img.texture.key !== look.sprite) retex(img, look.sprite);
       if (look.flat) img.setAlpha(look.alpha).setDepth(DEPTH.flat);
       else img.setAlpha(ready && !inHours ? 0.55 : look.alpha).setDepth(img.y);
-      this.nodeShadows.get(id)?.setAlpha(ready ? SHADOW_ALPHA : 0);
+      const caster = this.cast?.of(img);
+      if (caster) caster.enabled = ready;
     }
     const reach = hintDistance(this.b, s.state);
     for (const [id, img] of this.digs) {
@@ -1912,7 +1992,9 @@ export class WorldScene extends Phaser.Scene {
       if (seen) fog.x = home + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3);
     });
     this.animate(time, delta);
-    this.chunks?.update(this.cameras.main.worldView);
+    if (this.stream) this.stream.update(this.player ? Math.floor(this.player.x / T) : 0, this.player ? Math.floor(this.player.y / T) : 0);
+    const at = this.stream?.centre;
+    this.chunks?.update(this.cameras.main.worldView, at ? `${at.cx},${at.cy}` : '');
     this.placePinned();
     const s = this.session;
     if (!s || !s.started) {
@@ -1939,12 +2021,16 @@ export class WorldScene extends Phaser.Scene {
       this.hearPlace(s);
     }
     this.walk(s, real);
+    this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
+    const playerCaster = this.cast?.of(this.player);
+    if (playerCaster) playerCaster.enabled = !this.falling;
     this.dimInCover(s);
-    this.stillReports.frame(this.b, s, this.hazards, !this.move && !this.falling, app.ui.blocking);
+    this.stillReports.frame(this.b, s, this.hazards, !this.body.moving && !this.falling, app.ui.blocking);
     this.playSong(s);
     this.placeLantern(s);
     if (RICH.motion) this.idle(s, time);
     this.workTick(s);
+    this.drawFishing(s, time);
     this.drawBusy(s, time);
     this.updatePrompt(s);
     this.haunt(s, time);
@@ -1966,16 +2052,17 @@ export class WorldScene extends Phaser.Scene {
       c.spr.setFrame(c.frame);
     }
     for (const b of this.blinks) {
-      if (b.until > 0) {
-        if (time >= b.until) {
-          b.until = 0;
-          b.spr.setFrame(0);
-        }
-      } else if (time >= b.next) {
-        b.until = time + 120;
-        b.next = time + 3000 + Math.random() * 3000;
-        b.spr.setFrame(1);
+      const closed = blinking(RICH.motion, b.id, time);
+      if (closed !== b.closed) {
+        b.closed = closed;
+        b.spr.setFrame(closed ? 1 : 0);
       }
+    }
+    for (const b of this.breathers) {
+      const dh = breath(RICH.motion, b.id, time);
+      if (dh === b.dh) continue;
+      b.dh = dh;
+      for (const img of b.imgs) setRel(img, 1, 1 + dh / b.height);
     }
     // a burning flame breathes: a small sway and a flicker in its size, never a count of anything.
     // the valley's wind leans it, the same slow gust on every fire, while the burn itself is untouched (G48)
@@ -2133,7 +2220,7 @@ export class WorldScene extends Phaser.Scene {
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: GameSession, time: number): void {
     if (this.falling) return;
-    const still = !this.move && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
+    const still = !this.body.moving && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
@@ -2148,7 +2235,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (time - this.idleSince < 3000 || time < this.nextBlink) return;
     this.nextBlink = time + 3000 + Math.random() * 2000;
-    const { key: k, flip } = this.playerFrame(s.facing, 'idle');
+    const { key: k, flip } = this.playerFrame(s.facing, 'idle', this.lookOf(s));
     if (!k || (this.b.sprites[k]?.frames ?? 1) < 2) return;
     retex(this.player, k, 1);
     this.player.setFlipX(flip);
@@ -2165,49 +2252,44 @@ export class WorldScene extends Phaser.Scene {
 
   private canControl(s: GameSession): boolean {
     // while an action waits for the server the player has no control: nothing is sent twice
-    return !s.paused && !s.busy && !s.waiting && !app.ui.blocking && !this.peek.active;
+    return !this.entering && !this.room && !s.paused && !s.busy && !s.waiting && !app.ui.blocking && !this.peek.active;
   }
 
+  /**
+   * The free walk (NEXT 22 a): the body moves with the held input and slides along what it meets, and each tile
+   * its feet enter is the player's, told to the kernel in order. The facing follows the motion's leading axis.
+   */
   private walk(s: GameSession, delta: number): void {
     if (this.falling) return;
-    if (this.move) {
-      this.move.t += delta;
-      const k = Math.min(1, this.move.t / STEP_MS);
-      const [fx, fy] = this.move.from;
-      const [tx, ty] = this.move.to;
-      this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
-      this.player.setDepth(Math.round((Math.max(fy, ty) + 1) * T + 1));
-      this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
-      this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
-      if (k < 1) return;
-      const carry = this.move.t - STEP_MS;
-      this.move = null;
+    // the session may have put the player elsewhere: a load, a fall, the server's tile taken back
+    const moved = this.body.follow(s.pos);
+    const was = this.body.moving;
+    const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
+    const gait = app.controls.gait(performance.now());
+    const facing = facingFor(input, s.facing);
+    const look = facing8For(input, this.lookOf(s));
+    const turned = facing !== s.facing || look !== this.look;
+    s.facing = facing;
+    this.look = agrees(look, facing) ? look : facing;
+    for (const tile of this.body.frame(input, delta, gaitStepMs(this.b, s.state, gait), (x, y, from) => this.canWalk(s, x, y, from))) {
+      if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      landStep(s, [tx, ty]);
+      landStep(s, tile, gait);
       if (this.falling) return;
       this.arrive(s);
-      if (!this.tryStep(s, carry)) this.faceFrame();
+    }
+    // pushing up into a shop's door from the step in front of it walks in, once the body has stopped against it:
+    // a walk that only passes over the step, or a turn, does not open the door
+    const door = input[1] < 0 && s.facing === 'up' && !this.body.moving ? this.doors.get(key(s.pos[0], s.pos[1] - 1)) : undefined;
+    if (door) {
+      this.enter(door);
       return;
     }
-    if (this.canControl(s)) this.tryStep(s, 0);
-  }
-
-  /** Start walking one tile if a direction is held. Returns true if moving. */
-  private tryStep(s: GameSession, carry: number): boolean {
-    if (!this.canControl(s)) return false;
-    const dir = app.controls.direction();
-    if (!dir) return false;
-    if (s.facing !== dir) {
-      s.facing = dir;
-      this.faceFrame();
-    }
-    const [dx, dy] = DIRS[dir];
-    const to: [number, number] = [s.pos[0] + dx, s.pos[1] + dy];
-    if (!this.canWalk(s, to[0], to[1])) return false;
-    this.steps++;
-    if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
-    this.move = { from: [s.pos[0], s.pos[1]], to, t: carry };
-    return true;
+    if (!this.body.moving && !was && !turned && !moved) return;
+    this.drawBody();
+    const walked = this.body.walked / ART_PX;
+    if (this.body.moving) this.faceFrame(strideFrame(walked % 1, Math.floor(walked), this.b.sprites[this.playerFrame(s.facing, 'walk', this.look).key]?.frames ?? 1));
+    else this.faceFrame();
   }
 
   /** A little dust at the feet as a step starts, in the colour of the ground left behind. */
@@ -2232,9 +2314,9 @@ export class WorldScene extends Phaser.Scene {
     emitter.explode(texture === 'fx-leaf' ? 1 : 2 + Math.floor(Math.random() * 2), this.player.x, this.player.y - 1);
   }
 
-  /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
-  canWalk(s: GameSession, x: number, y: number): boolean {
-    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
+  /** The kernel's rule, a rock face's, and a plant or stone that is ready stands in the way (walking.ts); `from` is the tile left, the player's own when none is given. */
+  canWalk(s: GameSession, x: number, y: number, from?: readonly [number, number]): boolean {
+    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y, from);
   }
 
   private arrive(s: GameSession): void {
@@ -2483,6 +2565,11 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ page elements over the world
 
+  /** How dark the valley is now: 0 by day, 1 at night. */
+  get darkness(): number {
+    return this.night;
+  }
+
   private worldToPage(x: number, y: number): { x: number; y: number } {
     const cam = this.cameras.main;
     // the page is laid out in CSS pixels, the canvas is in the device's
@@ -2534,6 +2621,37 @@ export class WorldScene extends Phaser.Scene {
     this.workFrame(true);
     this.swingUntil = this.time.now + 160;
     this.impact(nodeId, kind, grade);
+  }
+
+  /** A cast moved on: the player faces the water, the arm comes over on the cast, and the view draws the rest. */
+  fishPhase(nodeId: string, phase: FishPhase): void {
+    const s = this.session;
+    if (!s) return;
+    this.faceNode(s, nodeId);
+    if (phase === 'cast' || phase === 'reel') {
+      this.work = { node: nodeId, kind: 'fish' };
+      this.workFrame(true);
+      this.swingUntil = this.time.now + 220;
+    }
+    this.fishing?.phase(nodeId, phase, this.time.now);
+  }
+
+  /** The dark shapes under every fishing spot that has fish, and the line while a cast is on. */
+  private drawFishing(s: GameSession, time: number): void {
+    if (!this.fishing) return;
+    this.fishSpots ??= Object.keys(this.b.instances).filter((id) => this.b.resources[this.b.instances[id]!.source]?.game === 'fish');
+    const view = this.cameras.main.worldView;
+    const spots: { id: string; at: { x: number; y: number } }[] = [];
+    for (const id of this.fishSpots) {
+      const inst = this.b.instances[id]!;
+      const x = inst.x * T + T / 2;
+      const y = inst.y * T + T / 2;
+      if (x < view.x - T || x > view.right + T || y < view.y - T || y > view.bottom + T) continue;
+      if (this.ready(s, id) || this.work?.node === id) spots.push({ id, at: { x, y } });
+    }
+    const node = this.work?.kind === 'fish' ? placedAt(this.b, this.work.node) : undefined;
+    const toward = node && node.x * T + T / 2 < this.player.x ? -1 : 1;
+    this.fishing.draw(time, spots, { x: this.player.x + toward * 3, y: this.player.y - 9 }, toward);
   }
 
   private faceNode(s: GameSession, nodeId: string): void {
@@ -2758,7 +2876,6 @@ export class WorldScene extends Phaser.Scene {
     this.falling = true;
     // work under way is not taken back: it is simply over (the session drops its undo)
     if (this.auto) this.endWork(this.auto);
-    this.move = null;
     this.work = null;
     this.swingUntil = 0;
     // the fall ends any work: nothing may put the standing frame back while the body sinks
@@ -2785,7 +2902,6 @@ export class WorldScene extends Phaser.Scene {
         // the part below the ground line is cut away as the body goes down
         this.player.setY(baseY + sunk).setCrop(0, 0, this.player.width, (height - sunk) * back);
         this.cutout?.setCrop(0, 0, this.player.width, (height - sunk) * back);
-        this.playerShadow?.setAlpha(SHADOW_ALPHA * (1 - k));
         for (const eye of eyes) eye.setY(top + 6 + sunk).setVisible(sunk < 6);
       },
       onComplete: () => {
@@ -2794,7 +2910,6 @@ export class WorldScene extends Phaser.Scene {
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
           this.player.setCrop();
           this.cutout?.setCrop();
-          this.playerShadow?.setAlpha(SHADOW_ALPHA);
           s.facing = 'down';
           this.placePlayer(to[0], to[1]);
           this.faceFrame();
@@ -2889,6 +3004,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshNodes();
     this.faceFrame();
     if (ghost) this.fall(ghost, w.facing, w.node);
+    else if (w.kind === 'mine') this.breakStone(w.node);
     else this.burst(w.kind === 'dig' ? 'fx-dirt' : 'fx-dust', (placedAt(this.b, w.node)!.x + 0.5) * T, (placedAt(this.b, w.node)!.y + 0.6) * T, 8);
     w.onDone?.();
   }
@@ -2910,8 +3026,11 @@ export class WorldScene extends Phaser.Scene {
       if (progress > 0.4 && img) this.burst('fx-leaf', x, y - img.displayHeight * 0.6, 2 + Math.round(progress * 4));
     } else if (w.kind === 'mine') {
       sound.sfx('strike', { pan });
+      // the stone starts to give as the wood does: a crack under the blows past the middle, more chips each time
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
       this.burst('fx-dust', x, y, 5);
       this.burst('fx-spark', x, y - 4, 3);
+      this.burst('fx-chip', x, y - 2, 2 + Math.round(progress * 4));
     } else {
       sound.sfx('dig', { pan });
       this.burst('fx-dirt', x, y, 6);
@@ -2924,6 +3043,18 @@ export class WorldScene extends Phaser.Scene {
     const shake = w.kind === 'dig' ? 0 : progress > 0.6 ? 2 : 1;
     const lean = w.kind === 'fell' && (w.facing === 'left' || w.facing === 'right') ? (w.facing === 'left' ? -1 : 1) * progress * 3 : 0;
     this.tweens.add({ targets: img, x: x0 + shake, scaleY: rel(img, 1, w.kind === 'dig' ? 0.92 : 1).y, angle: lean, duration: 50, yoyo: true, repeat: 1, onComplete: () => setRel(img.setX(x0), 1).setAngle(lean) });
+  }
+
+  /** The last blow splits the stone: a sharp crack, chips and dust thrown wide, and a small jolt as a tree's fall has. */
+  private breakStone(id: string): void {
+    const inst = placedAt(this.b, id)!;
+    const x = (inst.x + 0.5) * T;
+    const y = (inst.y + 0.6) * T;
+    sound.sfx('crack', { gain: 0.8 });
+    this.burst('fx-chip', x, y - 2, 10);
+    this.burst('fx-dust', x, y, 10);
+    this.burst('fx-spark', x, y - 4, 4);
+    this.cameras.main.shake(90, 0.002);
   }
 
   /** The tree goes over, away from the one who cut it, and lies there a moment before it fades. */
@@ -3021,7 +3152,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ interaction
 
   private updatePrompt(s: GameSession): void {
-    const t = this.canControl(s) && !this.move ? this.target(s) : undefined;
+    const t = this.canControl(s) ? this.target(s) : undefined;
     const label = t?.label ?? '';
     if (label !== this.prompt) {
       this.prompt = label;
@@ -3034,14 +3165,54 @@ export class WorldScene extends Phaser.Scene {
   /** The A button: act on what the player faces, stands on, or stands next to. */
   interact(): void {
     const s = this.session;
-    if (!s || this.move || !this.canControl(s)) return;
+    if (this.room) return this.room.interact();
+    if (!s || !this.canControl(s)) return;
     this.target(s)?.run();
+  }
+
+  /** Walk in through a shop's door: the room opens over the valley, which waits behind with its clock running. */
+  private enter(npcId: string): void {
+    const s = this.session;
+    if (!s || this.room || this.entering) return;
+    this.prompt = '';
+    app.ui.setPrompt('');
+    this.marker.setVisible(false);
+    sound.sfx('step');
+    this.entering = true;
+    const go = () => {
+      this.entering = false;
+      this.cameras.main.setVisible(false);
+      this.labels.style.visibility = 'hidden';
+      this.scene.launch(ROOM, { npc: npcId, world: this, onLeave: () => this.outside() });
+      this.room = this.scene.get(ROOM) as RoomScene;
+    };
+    if (RICH.light) {
+      this.cameras.main.fadeOut(200, 27, 26, 46);
+      this.cameras.main.once('camerafadeoutcomplete', go);
+    } else go();
+  }
+
+  /** Back on the doorstep, facing out. */
+  private outside(): void {
+    this.room = undefined;
+    const s = this.session;
+    const cam = this.cameras.main;
+    cam.setVisible(true);
+    this.labels.style.visibility = '';
+    if (s) {
+      s.facing = 'down';
+      this.look = 'down';
+      this.placePlayer(s.pos[0], s.pos[1]);
+      this.faceFrame();
+    }
+    if (RICH.light) cam.fadeIn(260, 27, 26, 46);
+    else cam.resetFX();
   }
 
   private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
     const [fx, fy] = DIRS[s.facing];
-    const order: [number, number][] = [[x + fx, y + fy], [x, y]];
+    const order: [number, number][] = [facedTile(s), [x, y]];
     for (const [dx, dy] of NEIGHBOURS) {
       if (dx === fx && dy === fy) continue;
       order.push([x + dx, y + dy]);
@@ -3061,8 +3232,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private kindleTarget(s: GameSession): Target | undefined {
     if (!holdsKindling(this.b, s.state)) return undefined;
-    const [fx, fy] = DIRS[s.facing];
-    const tile: [number, number] = [s.pos[0] + fx, s.pos[1] + fy];
+    const tile = facedTile(s);
     // the kernel tests the fire's tile, not the player's: one tile inside the edge facing out is allowed
     if (isTownTile(this.b, tile)) return undefined;
     return { label: 'Build a fire', run: () => app.ui.kindle(tile), tile, top: T };
@@ -3074,6 +3244,16 @@ export class WorldScene extends Phaser.Scene {
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? T;
+    // a pile the player put down, under their feet
+    const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
+    if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };
+    const door = this.doors.get(k);
+    if (door) {
+      // the door is used from the step in front of it, facing in
+      if (s.pos[0] !== x || s.pos[1] !== y + 1 || s.facing !== 'up') return undefined;
+      const shop = b.shops[b.npcs[door]?.shop ?? ''];
+      return { label: `Enter ${shop?.title ?? 'the shop'}`, run: () => this.enter(door), tile, top };
+    }
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);
@@ -3121,8 +3301,11 @@ export class WorldScene extends Phaser.Scene {
     if (sign) return { label: 'Read the sign', run: () => (lit() ? app.ui.sign(sign) : app.ui.note(TOO_DARK)), tile, top };
     const note = this.notes.get(k);
     if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(lit() ? note.text : TOO_DARK), tile, top: note.top };
+    const searchable = this.searches.get(k);
+    if (searchable) return { label: 'Search', run: () => void app.ui.search(searchable), tile, top };
     const fog = this.empty.find((slot) => inRect(x, y, slot));
-    if (fog && x === s.pos[0] + DIRS[s.facing][0] && y === s.pos[1] + DIRS[s.facing][1]) {
+    const faced = facedTile(s);
+    if (fog && x === faced[0] && y === faced[1]) {
       return { label: `Look at the ${fog.label ?? 'mist'}`, run: () => app.ui.sign(fog.id), tile, top: T };
     }
     return undefined;
@@ -3182,7 +3365,7 @@ export class WorldScene extends Phaser.Scene {
   private fit(): void {
     const w = this.scale.width;
     const h = this.scale.height;
-    // 4k canvas pixels per unit, k whole (view.ts): the short side shows at least 9 tiles of 64 art pixels
+    // 4j canvas pixels per unit, j whole (view.ts): the whole step at or above 1.5 times the screen's own
     const zoom = cameraZoom(Math.min(w, h));
     this.baseZoom = zoom;
     // a hold on the stone keeps its own zoom through a resize
@@ -3234,12 +3417,12 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** The stone's zoom: the screen's own, STONE_STEPS whole camera steps closer, so its art pixels stay whole device pixels. */
+  /** The stone's zoom: the world's own, STONE_STEPS whole camera steps closer, so its art pixels stay whole device pixels. */
   private heldZoom(): number {
-    return 4 * (cameraK(Math.min(this.scale.width, this.scale.height)) + STONE_STEPS);
+    return cameraZoom(Math.min(this.scale.width, this.scale.height)) + 4 * STONE_STEPS;
   }
 
-  /** The hold is over: the zoom comes back to the screen's own and the camera follows the player again. */
+  /** The hold is over: the zoom comes back to the world's own and the camera follows the player again. */
   stoneRelease(): void {
     if (!this.stoneHeld) return;
     this.stoneHeld = false;
@@ -3274,8 +3457,8 @@ export interface SignInfo {
 const SIGN_SPRITE = 'core/base-kit:props/sign';
 const DIRS_4: readonly [number, number][] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
-const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig' };
-const WORK_DUST: Record<WorkKind, string> = { strike: 'fx-dust', pick: 'fx-leaf', snap: 'fx-chip', timing: 'fx-leaf', dig: 'fx-dirt' };
+const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig', fish: 'plop' };
+const WORK_DUST: Record<WorkKind, string> = { strike: 'fx-dust', pick: 'fx-leaf', snap: 'fx-chip', timing: 'fx-leaf', dig: 'fx-dirt', fish: 'fx-drop' };
 
 function key(x: number, y: number): string {
   return `${x},${y}`;

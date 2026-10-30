@@ -1,0 +1,107 @@
+{
+  "$schema": "../../../schema/json/school.schema.json",
+  "format": 1,
+  "type": "school",
+  "id": "core/foraging-school",
+  "title": "Foraging",
+  "creator": "core",
+  "school": {
+    "name": "Foraging",
+    "profession": "core/foraging",
+    "tint": "green",
+    "nodes": [
+      {
+        "id": "quick-fingers",
+        "name": "Quick fingers",
+        "text": "Gathering goes a little faster.",
+        "size": "small",
+        "effect": "gather_speed_pct",
+        "value": 5,
+        "icon": "core/herb"
+      },
+      {
+        "id": "steady-pick",
+        "name": "Steady pick",
+        "text": "The good zone of every timing game is wider.",
+        "size": "major",
+        "needs": [
+          "quick-fingers"
+        ],
+        "effect": "timing_window_pct",
+        "value": 15,
+        "slot": true,
+        "icon": "core/berry"
+      },
+      {
+        "id": "sure-grip",
+        "name": "Sure grip",
+        "text": "The good zone of a timing game is a little wider.",
+        "size": "small",
+        "needs": [
+          "steady-pick"
+        ],
+        "effect": "timing_window_pct",
+        "value": 5,
+        "icon": "core/mushroom"
+      },
+      {
+        "id": "forest-pace",
+        "name": "Forest pace",
+        "text": "Gathering goes much faster.",
+        "size": "major",
+        "needs": [
+          "sure-grip"
+        ],
+        "key": {
+          "senses": 3
+        },
+        "effect": "gather_speed_pct",
+        "value": 15,
+        "slot": true,
+        "icon": "core/basket"
+      },
+      {
+        "id": "road-forager",
+        "name": "Road forager",
+        "text": "A forager of the roads: gathering goes faster.",
+        "size": "corner",
+        "needs": [
+          "steady-pick"
+        ],
+        "effect": "gather_speed_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/human",
+        "icon": "core/reed"
+      },
+      {
+        "id": "forest-born",
+        "name": "Forest born",
+        "text": "Born under the trees: a timing game hardly hurries you.",
+        "size": "corner",
+        "needs": [
+          "steady-pick"
+        ],
+        "effect": "timing_window_pct",
+        "value": 20,
+        "slot": true,
+        "race": "core/elf",
+        "icon": "core/sunleaf"
+      },
+      {
+        "id": "night-picker",
+        "name": "Night picker",
+        "text": "Bones do not tire: gathering goes faster.",
+        "size": "corner",
+        "needs": [
+          "steady-pick"
+        ],
+        "effect": "gather_speed_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/skeleton",
+        "icon": "core/bellberry"
+      }
+    ]
+  }
+}

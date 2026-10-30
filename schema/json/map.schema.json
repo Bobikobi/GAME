@@ -63,7 +63,8 @@
           "name",
           "kind",
           "rarity",
-          "sprite"
+          "sprite",
+          "weight"
         ],
         "properties": {
           "id": {
@@ -220,6 +221,12 @@
             "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
             "type": "string"
           },
+          "weight": {
+            "minimum": 0,
+            "maximum": 20,
+            "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+            "type": "integer"
+          },
           "food": {
             "additionalProperties": false,
             "type": "object",
@@ -274,6 +281,10 @@
                   {
                     "const": "pick",
                     "type": "string"
+                  },
+                  {
+                    "const": "rod",
+                    "type": "string"
                   }
                 ]
               },
@@ -309,14 +320,14 @@
           },
           "wear": {
             "additionalProperties": false,
-            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
             "type": "object",
             "required": [
               "slot"
             ],
             "properties": {
               "slot": {
-                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                 "anyOf": [
                   {
                     "const": "head",
@@ -344,6 +355,10 @@
                   },
                   {
                     "const": "hand",
+                    "type": "string"
+                  },
+                  {
+                    "const": "back",
                     "type": "string"
                   }
                 ]
@@ -404,6 +419,18 @@
                 "maxLength": 80,
                 "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                 "type": "string"
+              },
+              "places": {
+                "minimum": 1,
+                "maximum": 99,
+                "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                "type": "integer"
+              },
+              "load_bonus": {
+                "minimum": 1,
+                "maximum": 100,
+                "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                "type": "integer"
               }
             }
           },
@@ -748,6 +775,365 @@
             "type": "string"
           }
         },
+        "levels": {
+          "minItems": 8,
+          "description": "The height layer beside the ground layer (STYLE section 6): one digit 0 to 9 per tile, integers only. Absent: every tile is level 0.",
+          "type": "array",
+          "items": {
+            "pattern": "^[0-9]+$",
+            "description": "One level digit (0 to 9) per tile, rows like the ground (STYLE section 6).",
+            "type": "string"
+          }
+        },
+        "plan": {
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "regions": {
+              "maxItems": 64,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "purpose",
+                  "cells"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "purpose": {
+                    "anyOf": [
+                      {
+                        "const": "stop",
+                        "type": "string"
+                      },
+                      {
+                        "const": "passage",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "cells": {
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "description": "The rectangles the region covers: x, y, width, height.",
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 1,
+                          "maximum": 1024,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 1,
+                          "maximum": 1024,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 4,
+                      "maxItems": 4
+                    }
+                  },
+                  "height": {
+                    "minimum": 0,
+                    "maximum": 9,
+                    "description": "The level the region stands on, read against `levels`.",
+                    "type": "integer"
+                  },
+                  "tags": {
+                    "maxItems": 8,
+                    "uniqueItems": true,
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9:_-]+$",
+                      "maxLength": 40,
+                      "type": "string"
+                    }
+                  },
+                  "cover": {
+                    "description": "The scatter line: per mille of the walkable tiles each small prop covers.",
+                    "type": "object",
+                    "patternProperties": {
+                      "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$": {
+                        "minimum": 0,
+                        "maximum": 300,
+                        "type": "integer"
+                      }
+                    }
+                  },
+                  "opens_by": {
+                    "description": "\"wake\": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error. Left out: ground nobody walks (water, the woods, a mountain band).",
+                    "anyOf": [
+                      {
+                        "const": "wake",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "paths": {
+              "maxItems": 64,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "width",
+                  "via"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "width": {
+                    "minimum": 1,
+                    "maximum": 2,
+                    "description": "1 for feet, 2 for a barrow or a cart.",
+                    "type": "integer"
+                  },
+                  "via": {
+                    "minItems": 2,
+                    "maxItems": 32,
+                    "description": "The corners of the path, each pair on one row or one column; every tile between is a path tile or a mended crossing (G69).",
+                    "type": "array",
+                    "items": {
+                      "description": "A tile: x, then y.",
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  }
+                }
+              }
+            },
+            "routes": {
+              "maxItems": 32,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "who",
+                  "hours",
+                  "via"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "who": {
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "type": "string"
+                  },
+                  "hours": {
+                    "description": "From (inclusive) to (exclusive), game hours; a later from than to runs over midnight.",
+                    "type": "array",
+                    "items": [
+                      {
+                        "minimum": 0,
+                        "maximum": 23,
+                        "type": "integer"
+                      },
+                      {
+                        "minimum": 1,
+                        "maximum": 24,
+                        "type": "integer"
+                      }
+                    ],
+                    "additionalItems": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "via": {
+                    "minItems": 1,
+                    "maxItems": 48,
+                    "description": "Points a person walks through, each a tile a foot can stand on.",
+                    "type": "array",
+                    "items": {
+                      "description": "A tile: x, then y.",
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  }
+                }
+              }
+            },
+            "rests": {
+              "maxItems": 32,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "description": "The top-left tile of a plain 3x3 the scatter leaves empty.",
+                "type": "object",
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  },
+                  "y": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "wakes": {
+              "maxItems": 16,
+              "description": "The spawn pool: every wake the seed may draw, with its first task.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "pocket",
+                  "quest"
+                ],
+                "properties": {
+                  "pocket": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A wake pocket of the pool (content/core/pockets): its file holds the wake tile and the tools on the ground.",
+                    "type": "string"
+                  },
+                  "quest": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "The first task of that pocket: a quest whose `pocket` names it.",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "exits": {
+              "maxItems": 16,
+              "description": "The ways out of the first region: the first night is held by the length of the road beyond each one, never by the gate (DECISIONS.md, 2026-10-23).",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "to",
+                  "min_road_steps"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "slot": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "The gate: the slot a region quest opens (decision 25). Give this or `at`.",
+                    "type": "string"
+                  },
+                  "at": {
+                    "description": "A way out with no gate slot (the jetty where the boat waits): the last tile a foot stands on.",
+                    "type": "array",
+                    "items": [
+                      {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      }
+                    ],
+                    "additionalItems": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "to": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "The plan region the way leads into.",
+                    "type": "string"
+                  },
+                  "min_road_steps": {
+                    "minimum": 1,
+                    "maximum": 100000,
+                    "description": "G71: the fewest steps the road beyond this exit must run before the next region's ground, so that no wake reaches that ground before the first dusk with every gate open. The daylight in steps at the fastest wake, less its steps to this exit, plus a margin; the check refuses a smaller number and any stitched map whose road beyond is shorter.",
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
         "props": {
           "type": "array",
           "items": {
@@ -806,6 +1192,11 @@
               },
               "fire": {
                 "description": "A fire the player may feed by hand. It needs an id.",
+                "const": true,
+                "type": "boolean"
+              },
+              "crossing": {
+                "description": "Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.",
                 "const": true,
                 "type": "boolean"
               },

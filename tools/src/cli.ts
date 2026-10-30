@@ -1,7 +1,7 @@
 /**
  * pnpm check | values | bundle
  *
- *   check    validate every content file (schema, references, economy, sprites)
+ *   check    validate every content file (schema, references, economy, sprites), NEXT.md's Status lines and the shrink-only lists
  *   values   re-anchor content/values.lock.json (core maintainers only) and print gold per hour of making
  *   bundle   build game/src/generated/bundle.json and copy the kits for the client
  *   credits  write CREDITS.md from the content (--verify: fail when it is stale)
@@ -10,8 +10,8 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { canonical } from '@game/kernel';
-import { computeBoard, readCommits, readPoints, writeBoard } from './board';
-import { formatIssues, runCheck } from './check';
+import { boardIsCurrent, computeBoard, readCommits, readPoints, squashedCommits, writeBoard } from './board';
+import { formatIssues, runCheck, runRepoCheck } from './check';
 import { LOCK_FILE, REPO_ROOT } from './load';
 import { formatMaking, makingReport } from './making';
 
@@ -19,7 +19,7 @@ const [command, ...args] = process.argv.slice(2);
 const json = args.includes('--json');
 
 function check(): ReturnType<typeof runCheck> {
-  const result = runCheck();
+  const result = runRepoCheck();
   if (json) console.log(JSON.stringify({ files: result.files, issues: result.issues }, null, 2));
   else console.log(formatIssues(result));
   return result;
@@ -72,8 +72,28 @@ switch (command) {
       console.error('The content does not assemble; run "pnpm check" first.');
       process.exit(1);
     }
+    // --base <ref>: the board develop gets once this branch lands on <ref> as one commit (CI passes HEAD^1,
+    // the pull request's base); --verify: compare with the committed file instead of writing it
+    const baseAt = args.indexOf('--base');
+    const base = baseAt >= 0 ? args[baseAt + 1] : undefined;
+    if (baseAt >= 0 && (!base || base.startsWith('--'))) {
+      console.error('usage: tsx tools/src/cli.ts board [--base <ref>] [--verify]');
+      process.exit(2);
+    }
     const points = readPoints();
-    const board = computeBoard(readCommits(), b.credits, points);
+    const board = computeBoard(base ? squashedCommits(base) : readCommits(), b.credits, points);
+    if (args.includes('--verify')) {
+      if (!boardIsCurrent(board)) {
+        console.error(
+          base
+            ? 'content/board.json is not the board the merged history gives (stale, or edited by hand): git fetch origin && pnpm board --base origin/develop, then commit it.'
+            : 'content/board.json is out of date: run "pnpm board" and commit it.',
+        );
+        process.exit(1);
+      }
+      console.log('content/board.json is current');
+      break;
+    }
     writeBoard(board);
     for (const [who, e] of Object.entries(board)) console.log(`${who}: ${e.points} points, ${e.records} records, ${e.commits} commits`);
     break;
@@ -99,7 +119,7 @@ switch (command) {
     break;
   }
   default:
-    console.error('usage: tsx tools/src/cli.ts check [--json] | values | bundle | credits [--verify]');
+    console.error('usage: tsx tools/src/cli.ts check [--json] | values | bundle | board [--base <ref>] [--verify] | credits [--verify]');
     process.exit(2);
 }
 
@@ -125,6 +145,7 @@ function creditsText(credits: { title: string; type: string; creator: string; fi
     '- [Phaser](https://phaser.io) game framework - MIT license.',
     '- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) by Stefie Justprince - SIL Open Font License 1.1 (`game/public/fonts/OFL.txt`).',
     '- [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next) by the Braille Institute of America - SIL Open Font License 1.1 (`game/public/fonts/atkinson-hyperlegible-next/OFL.txt`).',
+    '- [Jersey 15](https://github.com/scfried/soft-type-jersey) by The Soft Type Project Authors - SIL Open Font License 1.1 (`game/public/fonts/jersey-15/OFL.txt`).',
     '',
   );
   return lines.join('\n');

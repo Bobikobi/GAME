@@ -18,7 +18,7 @@
  * one row `{ kind: 'opening', seed, log }`. The replay plays it from `newState(bundle, seed)` under the
  * phone's seed, then gives the state the account's own seed, as the sign-up did, and goes on from there.
  */
-import { newState, serialize, step, type Action, type Bundle, type GameEvent, type State } from '@game/kernel';
+import { isSeed, newState, serialize, step, type Action, type Bundle, type GameEvent, type Seed, type State } from '@game/kernel';
 
 /** One row of `action_log`: the action as the client sent it (a `moves` batch included) and its tick. */
 export interface LoggedAction {
@@ -31,14 +31,16 @@ export interface LoggedAction {
 /** One row of `gold_ledger`: milli-gold, and the action and tick it was booked with. */
 export interface LedgerRow {
   deltaMg: number;
+  /** 'bound' for the starting gold's own book (a bound balance beside the purse); absent for the purse */
+  fund?: 'bound';
   action: unknown;
   tick: number;
 }
 
 /** The books of one account, as the database holds them. */
 export interface AccountBooks {
-  /** the state's secret seed: the server's alone, and the key the replay's luck is drawn from */
-  seed: number;
+  /** the state's secret key: the server's alone, and the key the replay's luck is drawn from */
+  seed: Seed;
   log: readonly LoggedAction[];
   state: State;
   ledger: readonly LedgerRow[];
@@ -79,10 +81,20 @@ export interface BookedStep {
  * the state's own ledger, so the server books it here from the same number, or the purse would stand in
  * the state with nothing behind it in the book.
  */
-export function bookedGoldMg(bundle: Bundle, action: unknown, events: readonly GameEvent[]): number[] {
-  const rows = events.flatMap((event) => (event.e === 'gold' && event.delta !== 0 ? [event.delta] : []));
-  if (isStart(action) && bundle.params.starting_gold_mg !== 0) rows.unshift(bundle.params.starting_gold_mg);
+export function bookedGoldMg(bundle: Bundle, action: unknown, events: readonly GameEvent[]): BookedMg[] {
+  const rows: BookedMg[] = events.flatMap((event): BookedMg[] => {
+    if (event.e === 'gold' && event.delta !== 0) return [{ deltaMg: event.delta }];
+    if (event.e === 'bound' && event.delta !== 0) return [{ deltaMg: event.delta, fund: 'bound' }];
+    return [];
+  });
+  if (isStart(action) && bundle.params.starting_gold_mg !== 0) rows.unshift({ deltaMg: bundle.params.starting_gold_mg, fund: 'bound' });
   return rows;
+}
+
+/** One booked movement before it is tied to an action: its milli-gold and the fund it moves. */
+export interface BookedMg {
+  deltaMg: number;
+  fund?: 'bound';
 }
 
 /**
@@ -93,13 +105,18 @@ export function bookedGoldMg(bundle: Bundle, action: unknown, events: readonly G
  */
 export function goldRowsOf(bundle: Bundle, steps: readonly BookedStep[]): LedgerRow[] {
   return steps.flatMap((one) =>
-    bookedGoldMg(bundle, one.action, one.events).map((deltaMg) => ({ deltaMg, action: one.action, tick: one.tick })),
+    bookedGoldMg(bundle, one.action, one.events).map((row) => ({ ...row, action: one.action, tick: one.tick })),
   );
 }
 
-/** The gold a book holds, in milli-gold: the state's purse is this number, exactly. */
+/** The gold a book holds, in milli-gold: the state's purse is this number, exactly. The bound balance is its own book (`boundSumMg`). */
 export function ledgerSumMg(ledger: readonly LedgerRow[]): number {
-  return ledger.reduce((total, row) => total + row.deltaMg, 0);
+  return ledger.reduce((total, row) => total + (row.fund === 'bound' ? 0 : row.deltaMg), 0);
+}
+
+/** The bound starting gold a book holds, in milli-gold: the state's bound balance is this number, exactly. */
+export function boundSumMg(ledger: readonly LedgerRow[]): number {
+  return ledger.reduce((total, row) => total + (row.fund === 'bound' ? row.deltaMg : 0), 0);
 }
 
 /**
@@ -124,9 +141,12 @@ function stepsOf(action: unknown, tick: number): { action: Action; tick: number 
 }
 
 /** The opening a log row hands over (NEXT 18 d): the phone's seed and its steps, or undefined for any other row. */
-function openingOf(action: unknown): { seed: number; steps: { action: Action; tick: number }[] } | string | undefined {
+function openingOf(action: unknown): { seed: Seed | number; steps: { action: Action; tick: number }[] } | string | undefined {
   if (!isRecord(action) || action.kind !== 'opening') return undefined;
-  if (!Number.isSafeInteger(action.seed) || !Array.isArray(action.log)) return 'the opening row holds no seed or log';
+  // a row written before kernel 0.20 holds the phone's 32-bit seed, which `newState` widens as a save is
+  const seed = action.seed;
+  const old = typeof seed === 'number' && Number.isSafeInteger(seed) && seed >= 0 && seed <= 0xffff_ffff;
+  if ((!old && !isSeed(seed)) || !Array.isArray(action.log)) return 'the opening row holds no seed or log';
   const steps: { action: Action; tick: number }[] = [];
   for (const entry of action.log) {
     if (!isRecord(entry) || !isRecord(entry.a) || typeof entry.a.t !== 'string' || !Number.isSafeInteger(entry.tick)) {
@@ -134,7 +154,7 @@ function openingOf(action: unknown): { seed: number; steps: { action: Action; ti
     }
     steps.push({ action: entry.a as unknown as Action, tick: entry.tick as number });
   }
-  return { seed: action.seed as number, steps };
+  return { seed: seed as Seed | number, steps };
 }
 
 /**
@@ -142,7 +162,7 @@ function openingOf(action: unknown): { seed: number; steps: { action: Action; ti
  * ledger the log implies. The first refusal is the answer: an action the server accepted must play
  * again, so a log that stops replaying at row N is a finding about either the log or the rules.
  */
-export function replayAccount(bundle: Bundle, seed: number, log: readonly LoggedAction[]): ReplayResult {
+export function replayAccount(bundle: Bundle, seed: Seed, log: readonly LoggedAction[]): ReplayResult {
   let state = newState(bundle, seed);
   const ledger: LedgerRow[] = [];
   for (const [index, row] of log.entries()) {
@@ -158,7 +178,7 @@ export function replayAccount(bundle: Bundle, seed: number, log: readonly Logged
         ledger.push(...goldRowsOf(bundle, [{ action: one.action, tick: one.tick, events: result.events }]));
         state = result.state;
       }
-      state = { ...state, seed: seed >>> 0 };
+      state = { ...state, seed };
       continue;
     }
     const steps = stepsOf(row.action, row.tick);
@@ -185,7 +205,7 @@ function firstDifference(one: string, other: string): string {
 
 /** Multiset of the rows: the same grant twice is two rows, and a row nobody made is a row too many. */
 function ledgerKey(row: LedgerRow): string {
-  return `${JSON.stringify(row.action)}|${row.tick}|${row.deltaMg}`;
+  return `${JSON.stringify(row.action)}|${row.tick}|${row.deltaMg}|${row.fund ?? 'purse'}`;
 }
 
 function ledgerProblems(expected: readonly LedgerRow[], actual: readonly LedgerRow[]): string[] {
@@ -232,9 +252,14 @@ export function checkAccount(bundle: Bundle, books: AccountBooks): string[] {
   if (sum !== books.state.player.gold) {
     problems.push(`the ledger sums to ${sum} mg and the state's purse holds ${books.state.player.gold} mg`);
   }
+  const bound = boundSumMg(books.ledger);
+  if (bound !== books.state.player.boundGold) {
+    problems.push(`the bound book sums to ${bound} mg and the state's bound balance holds ${books.state.player.boundGold} mg`);
+  }
   const minted = books.state.ledger.minted - books.state.ledger.burned;
-  if (minted !== books.state.player.gold) {
-    problems.push(`the state's own book mints ${minted} mg and its purse holds ${books.state.player.gold} mg`);
+  const held = books.state.player.gold + books.state.player.boundGold;
+  if (minted !== held) {
+    problems.push(`the state's own book mints ${minted} mg and its purse and bound balance hold ${held} mg`);
   }
   return problems;
 }

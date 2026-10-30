@@ -1,0 +1,107 @@
+{
+  "$schema": "../../../schema/json/school.schema.json",
+  "format": 1,
+  "type": "school",
+  "id": "core/handcraft-school",
+  "title": "Handcraft",
+  "creator": "core",
+  "school": {
+    "name": "Handcraft",
+    "profession": "core/handcraft",
+    "tint": "water",
+    "nodes": [
+      {
+        "id": "sure-hands",
+        "name": "Sure hands",
+        "text": "Handcraft goes a little faster.",
+        "size": "small",
+        "effect": "craft_speed_pct",
+        "value": 5,
+        "icon": "core/reed-cord"
+      },
+      {
+        "id": "careful-work",
+        "name": "Careful work",
+        "text": "A piece of handcraft fails less often.",
+        "size": "major",
+        "needs": [
+          "sure-hands"
+        ],
+        "effect": "craft_chance_pct",
+        "value": 10,
+        "slot": true,
+        "icon": "core/reed-basket"
+      },
+      {
+        "id": "quick-knots",
+        "name": "Quick knots",
+        "text": "Knots and weaves come quicker.",
+        "size": "small",
+        "needs": [
+          "careful-work"
+        ],
+        "effect": "craft_speed_pct",
+        "value": 5,
+        "icon": "core/dyed-cord"
+      },
+      {
+        "id": "masters-eye",
+        "name": "Master's eye",
+        "text": "Handcraft hardly ever fails.",
+        "size": "major",
+        "needs": [
+          "quick-knots"
+        ],
+        "key": {
+          "agility": 2
+        },
+        "effect": "craft_chance_pct",
+        "value": 15,
+        "slot": true,
+        "icon": "core/fine-basket"
+      },
+      {
+        "id": "tinker",
+        "name": "Tinker",
+        "text": "Good with made things: handcraft fails less often.",
+        "size": "corner",
+        "needs": [
+          "careful-work"
+        ],
+        "effect": "craft_chance_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/human",
+        "icon": "core/work-hammer"
+      },
+      {
+        "id": "fine-fingers",
+        "name": "Fine fingers",
+        "text": "Light fingers: handcraft goes faster.",
+        "size": "corner",
+        "needs": [
+          "careful-work"
+        ],
+        "effect": "craft_speed_pct",
+        "value": 15,
+        "slot": true,
+        "race": "core/elf",
+        "icon": "core/reed-hat"
+      },
+      {
+        "id": "patient-work",
+        "name": "Patient work",
+        "text": "Endless patience: handcraft fails less often.",
+        "size": "corner",
+        "needs": [
+          "careful-work"
+        ],
+        "effect": "craft_chance_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/skeleton",
+        "icon": "core/woven-mat"
+      }
+    ]
+  }
+}

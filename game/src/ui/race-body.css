@@ -1,0 +1,14 @@
+/* The race's body fact on its title card (DECISIONS.md, 2026-10-23). */
+.card.race p.race-body {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--ui-gold-2);
+  max-width: 220px;
+  font-size: var(--ui-group);
+  line-height: 1.35;
+  color: var(--ui-paper-soft);
+}
+
+.card.race p.race-body b {
+  color: var(--ui-paper);
+}

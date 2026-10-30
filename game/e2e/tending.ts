@@ -11,7 +11,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
-import { TAKE_GROUND, seedQuery } from './wakes';
+import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -105,7 +105,6 @@ window.__tend = (() => {
     setTick(t) {
       const s = g().session;
       s.tick = t;
-      s.state.player.satietyAt = Math.max(s.state.player.satietyAt, s.state.tick);
     },
     hour() {
       const s = g().session, day = g().bundle.params.day_length_ms;
@@ -117,8 +116,7 @@ window.__tend = (() => {
       for (const id of Object.keys(p.quests)) if (p.quests[id] === 'active') p.quests[id] = 'done';
       for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru', 'core/herbs-for-pell', 'core/a-whole-one', 'core/something-warm']) p.quests[id] = 'done';
       if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
-      p.satiety = 100000;
-      p.satietyAt = g().session.tick;
+      p.hp = 100000;
       p.bag[LOG] = logs;
       g().session.met.add('core/elder');
     },
@@ -160,7 +158,7 @@ window.__tend = (() => {
         const [cx, cy] = queue[i];
         for (const [dx, dy] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) {
           const nx = cx + dx, ny = cy + dy;
-          if (prev.has(key(nx, ny)) || !w.canWalk(s, nx, ny)) continue;
+          if (prev.has(key(nx, ny)) || !w.canWalk(s, nx, ny, [cx, cy])) continue;
           prev.set(key(nx, ny), [cx, cy]);
           if (nx === x && ny === y) { found = true; break; }
           queue.push([nx, ny]);
@@ -424,10 +422,10 @@ async function start(page: Page, name: string): Promise<void> {
   );
   if (choice === 'ask') await page.tap('.title-screen button', 'Start a new game');
   await page.tap('.card.race', 'Elf');
-  await page.tap('input.name');
-  await page.type(name);
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+  // the name is cut at the bridge's stone, and this script is not about the stone: it is cut here
+  await page.eval(carveIn(name));
   // the west bank's basket and axe lie on the ground by the wake: this script tests what comes later, so they are handed over
   await page.eval(TAKE_GROUND);
 }

@@ -1,84 +1,67 @@
 /* The kit: one window with five pages, in the Field Kit's materials
-   (DECISIONS 2026-10-20). Bag carries what you carry, Outfit what you wear,
-   Skills what you can do, Shop the stall's draft, and Journal opens the
-   ledger. The character belongs to Outfit alone. The mobile layout is one
-   column; from 900px the bag and the card stand side by side. */
+   (DECISIONS 2026-10-20), worn in the theme "B, canvas" (DECISIONS 2026-10-23,
+   game/src/ui/theme.css): the oiled-wood frame, a canvas inset, dark plates
+   for the tabs and the buttons, a paper card. Bag carries what you carry,
+   Outfit what you wear, Skills what you can do, Shop the stall's draft, and
+   Journal opens the ledger. The character belongs to Outfit alone. The mobile
+   layout is one column; from 900px the bag and the card stand side by side.
+   The Field Kit's rules here use the theme's tokens only, no colour of their
+   own (tools/test/ui-theme.test.ts). */
 
 .panel.bag {
   width: 100%;
   max-width: 560px;
   height: 100%;
   overflow: hidden;
-  background: var(--wood);
-  border: 3px solid var(--ink);
-  box-shadow: inset 0 0 0 3px var(--wood2);
-}
-
-.panel.bag header {
-  background: var(--wood2);
-  border-bottom: 3px solid var(--ink);
-}
-
-.panel.bag header h2 {
-  color: var(--cream);
-  font-size: 21px;
-  letter-spacing: 0.08em;
-}
-
-.panel.bag header .btn.close {
-  background: var(--paper);
-  color: var(--ink);
 }
 
 .panel.bag .panel-body {
   position: relative;
   flex: 1;
   min-height: 0;
-  background: var(--wood);
-  padding: 6px;
+  background: transparent;
+  padding: 0 14px 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
+/* the pages' tabs: the gold words on one line, the open one underlined */
 .panel.bag .kit-tabs {
-  margin: 0;
+  margin: 0 0 6px;
+  gap: 0;
   flex-wrap: nowrap;
 }
 
 .panel.bag .kit-tabs .btn.tab {
   flex: 1 1 0;
   min-width: 0;
-  min-height: 34px;
-  padding: 2px 4px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  background: var(--wood2);
-  color: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: none;
+  padding: 0 4px;
 }
 
-.panel.bag .kit-tabs .btn.tab.on {
-  background: var(--gold);
-  color: var(--ink);
-}
-
+/* the page under the tabs: a line that says what it is, then the page on the window's own black */
 .kit-caption {
   margin: 0;
-  padding: 1px 2px 0;
-  font-size: 12px;
-  color: var(--cream);
+  padding: 2px 0 6px;
+  font: 400 var(--kit-text) / 1.15 var(--font);
+  color: var(--kit-ink-soft);
+}
+
+.kit-body,
+.panel.bag .kit-worn,
+.panel.bag .shop {
+  flex: 1;
+  min-height: 0;
+  padding: 4px 0 0;
+  background: transparent;
 }
 
 .kit-body {
-  flex: 1;
-  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 200px minmax(0, 1fr) auto;
-  gap: 6px;
+  gap: 8px;
 }
 
 .kit-body.bag-only {
@@ -94,19 +77,18 @@
 .worn-slots {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .kit-slot {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   display: grid;
   place-items: center;
-  background: var(--wood2);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  background: var(--kit-socket);
+  border: 1px solid var(--kit-socket-line);
 }
 
 .kit-slot .sprite {
@@ -115,23 +97,30 @@
 
 .kit-slot .lab {
   position: absolute;
-  left: 1px;
-  bottom: -1px;
-  font-family: var(--font-body);
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--cream);
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  padding: 0 3px;
+  background: var(--kit-plate);
+  font: 400 var(--kit-text-s) / 1 var(--font);
+  color: var(--kit-plate-ink);
+  white-space: nowrap;
 }
 
 .kit-slot.empty {
-  background: #b9814a;
+  background: var(--kit-socket);
 }
 
 .kit-slot.empty::after {
   content: '+';
-  color: var(--wood);
-  font: 700 14px/1 var(--font-body);
+  color: var(--kit-ink-soft);
+  font: 400 var(--kit-text) / 1 var(--font);
+}
+
+.kit-slot:hover:not(.empty),
+.kit-slot:focus-visible {
+  border-color: var(--kit-brass);
+  outline: none;
 }
 
 .kit-slot.big {
@@ -148,87 +137,87 @@
   margin: 2px auto 0;
   align-self: center;
   display: flex;
-  background: var(--paper);
-  border: 2px solid var(--ink);
+  background: var(--kit-socket);
+  border: 1px solid var(--kit-brass-dark);
 }
 
 .kit-toggle button {
-  font: 700 9px/1 var(--font-body);
-  letter-spacing: 0.04em;
-  padding: 4px 8px;
+  min-height: 44px;
+  min-width: 64px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  padding: 4px 12px;
   border: 0;
   background: transparent;
-  color: var(--ink);
+  color: var(--kit-plate-ink);
 }
 
 .kit-toggle button.on {
-  background: var(--gold);
+  background: var(--kit-brass);
+  color: var(--kit-on-gold);
 }
 
 .kit-effects {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding-top: 2px;
-  border-top: 1px solid #c9a86c;
-  font-size: 10px;
-  color: var(--wood);
+  gap: 4px 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--kit-paper-line);
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink-soft);
 }
 
 .kit-effects b {
-  font-family: var(--font);
   font-weight: 400;
-  color: var(--ink);
+  color: var(--kit-ink);
 }
 
 .kit-set {
-  font-size: 10px;
-  color: var(--wood);
+  margin-top: 4px;
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-warn);
 }
-
-
 
 /* ------------------------------------------------------------ the pockets */
 
 .kit-bag {
   min-height: 0;
-  padding: 5px 7px;
   display: flex;
   flex-direction: column;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  gap: 6px;
 }
 
 .kit-bag-head {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .kit-filters {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 6px;
 }
 
+/* a filter: a chip in the thin line; the one on fills with gold */
 .kit-filter {
-  font: 700 10px/1 var(--font-body);
-  padding: 3px 5px;
-  border: 1px solid var(--wood2);
-  background: #e5c58c;
-  color: var(--wood);
+  min-height: 44px;
+  min-width: 44px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  padding: 4px 12px;
+  border: 1px solid var(--kit-brass-dark);
+  background: transparent;
+  color: var(--kit-ink);
 }
 
 .kit-filter.on {
-  background: var(--wood2);
-  color: var(--cream);
+  background: var(--kit-brass);
+  color: var(--kit-on-gold);
 }
 
 .kit-cap {
-  font: 400 11px/1 var(--font);
-  color: var(--wood);
+  font: 400 var(--kit-text) / 1 var(--font);
+  color: var(--kit-ink);
   white-space: nowrap;
 }
 
@@ -237,7 +226,7 @@
 .kit-skills,
 .kit-worn {
   scrollbar-width: thin;
-  scrollbar-color: var(--wood2) transparent;
+  scrollbar-color: var(--kit-wood-light) transparent;
 }
 
 .kit-grid::-webkit-scrollbar,
@@ -251,7 +240,7 @@
 .kit-card-body::-webkit-scrollbar-thumb,
 .kit-skills::-webkit-scrollbar-thumb,
 .kit-worn::-webkit-scrollbar-thumb {
-  background: var(--wood2);
+  background: var(--kit-wood-light);
 }
 
 .kit-grid {
@@ -259,21 +248,20 @@
   min-height: 0;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
   align-content: start;
-  padding: 5px 0;
+  padding: 2px 0;
 }
 
 .kit-cell {
   position: relative;
-  height: 54px;
+  height: 56px;
   padding: 0;
   display: grid;
   place-items: center;
-  background: #d9b67a;
-  border: 2px solid var(--wood2);
-  box-shadow: inset 0 0 0 2px #ebd3a2;
+  background: var(--kit-socket);
+  border: 1px solid var(--kit-socket-line);
 }
 
 .kit-cell .sprite {
@@ -283,65 +271,61 @@
 .kit-cell .count {
   position: absolute;
   right: 2px;
-  bottom: 0;
-  padding: 0 2px;
-  background: var(--paper);
-  border: 1px solid var(--wood2);
-  font: 400 10px/1.1 var(--font);
+  bottom: 2px;
+  padding: 0 3px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  font: 400 var(--kit-text-s) / 1 var(--font);
+}
+
+.kit-cell:hover,
+.kit-cell:focus-visible {
+  border-color: var(--kit-brass-dark);
+  outline: none;
 }
 
 .kit-cell.on {
-  border-color: var(--gold);
-  background: #efd59a;
-  box-shadow: inset 0 0 0 2px var(--gold);
+  border-color: var(--kit-brass);
+  box-shadow: inset 0 0 0 1px var(--kit-brass);
 }
 
 .kit-cell.empty {
-  background: #d2ac70;
-  box-shadow: inset 0 0 0 2px #e5c58c;
+  background: var(--kit-socket);
+  border-color: var(--kit-wood-light);
 }
 
-.kit-cell.empty::after {
-  content: '';
-  width: 12px;
-  height: 2px;
-  background: #b9814a;
-  box-shadow:
-    0 -4px 0 #b9814a,
-    0 4px 0 #b9814a;
-}
-
+/* a rare thing's socket is ringed in its rarity's colour, as its name is written in it */
 .kit-cell.r-uncommon {
-  border-color: var(--green2);
+  border-color: var(--ui-rarity-uncommon);
 }
 
 .kit-cell.r-rare {
-  border-color: var(--blue2);
+  border-color: var(--ui-rarity-rare);
 }
 
 .kit-cell.r-legendary {
-  border-color: var(--purple2);
+  border-color: var(--ui-rarity-legendary);
 }
 
 .kit-foot {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  color: var(--wood);
+  gap: 8px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  color: var(--kit-ink);
 }
 
 .kit-bar {
   flex: 1;
-  height: 4px;
-  background: #d2ac70;
-  border: 1px solid var(--wood2);
+  height: 8px;
+  background: var(--kit-socket);
+  border: 1px solid var(--kit-edge);
 }
 
 .kit-bar i {
   display: block;
   height: 100%;
-  background: var(--green2);
+  background: var(--kit-brass-dark);
 }
 
 /* ------------------------------------------------------------ the card */
@@ -358,34 +342,51 @@
 }
 
 .panel.bag .detail.kit-card {
-  height: 210px;
-  max-height: 210px;
+  height: 230px;
+  max-height: 230px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 7px 8px;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  padding: 10px 12px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 1px solid var(--kit-paper-line);
+}
+
+.panel.bag .detail .detail-head b {
+  font: 400 var(--kit-text-l) / 1 var(--font);
 }
 
 .panel.bag .detail .detail-head .sprite {
   flex: none;
+  background-color: var(--kit-socket);
+  border: 1px solid var(--kit-edge);
+}
+
+.panel.bag .detail .detail-head .muted {
+  color: var(--kit-ink-soft);
 }
 
 .panel.bag .detail p {
-  margin: 3px 0;
-  font-family: var(--font-body);
-  font-size: 14px;
+  margin: 4px 0;
+  font: 400 var(--kit-text) / 1.2 var(--font);
 }
 
 .panel.bag .detail .kit-desc {
-  color: var(--ink2);
+  color: var(--kit-ink);
+}
+
+.panel.bag .detail .muted {
+  color: var(--kit-ink-soft);
+}
+
+.panel.bag .detail .credit {
+  color: var(--kit-ink-soft);
 }
 
 .panel.bag .detail .actions {
   flex: none;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .kit-card-body {
@@ -394,23 +395,35 @@
   overflow-y: auto;
 }
 
-.panel.bag .detail .actions .btn {
-  min-height: 36px;
-  font-family: var(--font-body);
-  font-size: 14px;
+.panel.bag .btn:not(.tab):not(.close) {
+  min-height: 44px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  background: transparent;
+  color: var(--kit-plate-ink);
+  border: 1px solid var(--kit-brass-dark);
+  box-shadow: none;
+}
+
+.panel.bag .btn:not(.tab):not(.close):hover:not(:disabled),
+.panel.bag .btn:not(.tab):not(.close):focus-visible {
+  background: var(--kit-brass);
+  color: var(--kit-on-gold);
+}
+
+.panel.bag .btn:not(.tab):not(.close):disabled {
+  color: var(--kit-ink-soft);
+  border-color: var(--kit-edge);
 }
 
 .kit-hint {
   margin: 0;
   padding: 8px;
-  font-size: 13px;
-  color: var(--grey);
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink-soft);
 }
 
 .kit-set-line {
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--wood);
+  color: var(--kit-warn);
 }
 
 /* ------------------------------------------------------------ the skills page */
@@ -418,22 +431,21 @@
 .kit-skills {
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 10px;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  padding: 10px 12px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 1px solid var(--kit-paper-line);
+  font: 400 var(--kit-text) / 1.2 var(--font);
 }
 
-.kit-skills .attr {
-  font-size: 14px;
-}
-
-.kit-skills .attr-name {
-  font-size: 14px;
-}
-
+.kit-skills .attr,
+.kit-skills .attr-name,
 .kit-skills .attr > .muted {
-  font-size: 13px;
+  font-size: var(--kit-text);
+}
+
+.kit-skills .muted {
+  color: var(--kit-ink-soft);
 }
 
 .kit-skills .pips i {
@@ -443,12 +455,9 @@
 
 .kit-skills .card {
   margin-top: 6px;
-}
-
-.kit-skills .btn.plus {
-  min-height: 30px;
-  font-family: var(--font-body);
-  font-size: 18px;
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
+  border: 1px solid var(--kit-edge);
 }
 
 /* ------------------------------------------------------------ the worn page */
@@ -459,21 +468,26 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   overflow-y: auto;
 }
 
+/* the stage keeps its own height in the scrolling column: shrunk, the five slots of a side ran over the row below */
 .worn-stage {
   position: relative;
-  min-height: 300px;
-  padding: 8px 8px 34px;
+  flex: none;
+  min-height: 320px;
+  padding: 10px 10px 48px;
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr) 64px;
   align-items: center;
   justify-items: center;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  background: var(--kit-socket);
+  border: 1px solid var(--kit-edge);
+}
+
+.worn-stage .worn-slots {
+  gap: 20px;
 }
 
 .worn-stage .kit-toggle {
@@ -494,43 +508,50 @@
 }
 
 .worn-side {
-  padding: 8px 10px;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--kit-ink);
+  border: 1px solid var(--kit-edge);
 }
 
 .worn-list {
   display: grid;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .worn-row {
+  min-height: 44px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  padding: 5px 6px;
-  border: 1px solid var(--wood2);
-  background: #e5c58c;
-  font: 400 13px/1.2 var(--font-body);
-  color: var(--ink);
+  padding: 4px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--kit-paper-line);
+  background: transparent;
+  font: 400 var(--kit-text) / 1.1 var(--font);
+  color: var(--kit-ink);
   text-align: left;
 }
 
+.worn-row:hover:not(:disabled),
+.worn-row:focus-visible {
+  border-color: var(--kit-brass-dark);
+  outline: none;
+}
+
 .worn-row:disabled {
-  opacity: 0.55;
+  color: var(--kit-ink-soft);
 }
 
 .worn-slot {
-  font-weight: 700;
-  color: var(--wood);
+  color: var(--kit-ink-soft);
 }
 
 .worn-name {
   text-align: right;
 }
-
 
 /* ------------------------------------------------------------ the player's stall */
 
@@ -541,45 +562,48 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 6px;
+  gap: 8px;
 }
 
 .shop-bag,
 .shop-stall {
   min-height: 0;
   overflow-y: auto;
-  padding: 7px 8px;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--kit-ink);
+  border: 1px solid var(--kit-edge);
 }
 
-.shop h3 {
-  margin: 0 0 4px;
-  font: 400 12px/1 var(--font);
-  letter-spacing: 0.08em;
-  color: var(--wood);
+.panel .shop h3 {
+  margin: 0 0 6px;
 }
 
 .shop-item {
   width: 100%;
-  min-height: 42px;
-  margin-bottom: 3px;
-  padding: 3px 5px;
+  min-height: 44px;
+  margin-bottom: 4px;
+  padding: 3px 6px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  border: 1px solid var(--wood2);
-  background: #e5c58c;
-  color: var(--ink);
-  font: 400 13px/1.2 var(--font-body);
+  gap: 8px;
+  border: 1px solid var(--kit-paper-line);
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  font: 400 var(--kit-text) / 1.1 var(--font);
   text-align: left;
   cursor: grab;
 }
 
+.shop-item:hover,
+.shop-item:focus-visible {
+  border-color: var(--kit-brass-dark);
+  outline: none;
+}
+
 .shop-item.on {
-  border-color: var(--gold);
-  box-shadow: inset 0 0 0 2px var(--gold);
+  border-color: var(--kit-brass);
+  box-shadow: inset 0 0 0 1px var(--kit-brass);
 }
 
 .shop-name {
@@ -595,32 +619,38 @@
 .shop-slots {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  gap: 8px;
 }
 
 .shop-slot {
-  min-height: 82px;
+  min-height: 88px;
   padding: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border: 2px dashed var(--wood2);
-  background: #e5c58c;
-  color: var(--wood);
-  font: 400 11px/1.25 var(--font-body);
+  border: 1px dashed var(--kit-brass-dark);
+  background: var(--kit-socket);
+  color: var(--kit-ink-soft);
+  font: 400 var(--kit-text) / 1.15 var(--font);
   text-align: center;
+}
+
+.shop-slot:focus-visible {
+  border-color: var(--kit-brass);
+  outline: none;
 }
 
 .shop-slot.filled {
   border-style: solid;
-  border-color: var(--green2);
-  background: #efd59a;
+  border-color: var(--kit-brass);
+  background: var(--kit-socket);
+  color: var(--kit-ink);
 }
 
 .shop-slot.pricing {
-  border-color: var(--gold);
+  border-color: var(--kit-brass);
 }
 
 .shop-slot img {
@@ -629,16 +659,16 @@
 }
 
 .shop-slot .price {
-  color: var(--ink);
+  color: var(--kit-ink);
 }
 
 .shop-note {
-  margin: 5px 0 0;
-  font-size: 11px;
-  line-height: 1.35;
-  color: var(--wood);
+  margin: 6px 0 0;
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink-soft);
 }
 
+/* the price card stands over the stall on a solid ink ground: no scrim */
 .shop-price-layer {
   position: absolute;
   inset: 0;
@@ -646,45 +676,48 @@
   display: grid;
   place-items: center;
   padding: 8px;
-  background: rgba(27, 26, 46, 0.5);
+  background: var(--kit-wood-dark);
 }
 
 .shop-price {
-  width: min(100%, 330px);
-  padding: 10px 12px;
-  background: var(--paper);
-  border: 3px solid var(--ink);
-  box-shadow: inset 0 0 0 2px var(--paper2);
+  width: min(100%, 360px);
+  padding: 12px 14px;
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
+  border: 1px solid var(--kit-brass-dark);
 }
 
 .shop-price b {
-  font: 400 17px/1.1 var(--font);
+  font: 400 var(--kit-text-l) / 1 var(--font);
 }
 
 .shop-price p {
   margin: 4px 0;
-  font-size: 12px;
-  color: var(--ink2);
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink-soft);
 }
 
 .shop-price label {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  margin-top: 6px;
+  font: 400 var(--kit-text) / 1.1 var(--font);
 }
 
 .shop-price input {
   width: 84px;
-  min-height: 34px;
+  min-height: 44px;
   padding: 3px 6px;
-  border: 2px solid var(--ink);
-  background: var(--cream);
-  font: 400 15px/1 var(--font);
+  border: 1px solid var(--kit-brass-dark);
+  background: var(--kit-socket);
+  color: var(--kit-ink);
+  font: 400 var(--kit-text) / 1 var(--font);
 }
 
 .shop-price .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
 }
@@ -722,7 +755,7 @@
 
   .panel.bag {
     width: 100%;
-    max-width: 1100px;
+    max-width: 960px;
     max-height: 780px;
   }
 
@@ -770,7 +803,7 @@
 
 
   .kit-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .kit-cell {
@@ -814,15 +847,16 @@
 .panel .panel-head {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
 }
 
 .panel .panel-sub {
   margin: 0;
-  font: 600 11px/1.3 var(--font-body);
-  color: var(--cream);
-  opacity: 0.8;
+  font: 400 var(--ui-group) / 1.2 var(--font);
+  color: var(--ui-paper-soft);
+  text-align: center;
 }
 
 .panel.map {
@@ -830,58 +864,38 @@
   max-width: 980px;
   height: 100%;
   overflow: hidden;
-  background: var(--wood);
-  border: 3px solid var(--ink);
-  box-shadow: inset 0 0 0 3px var(--wood2);
-}
-
-.panel.map header {
-  background: var(--wood2);
-  border-bottom: 3px solid var(--ink);
-}
-
-.panel.map header h2 {
-  color: var(--cream);
-  font-size: 21px;
-  letter-spacing: 0.08em;
-}
-
-.panel.map header .btn.close {
-  background: var(--paper);
-  color: var(--ink);
 }
 
 .panel.map .panel-body {
   flex: 1;
   min-height: 0;
-  padding: 6px;
+  padding: 0 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: var(--wood);
+  gap: 8px;
 }
 
 .map-strip {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  padding: 5px 9px;
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  color: var(--ink);
-  font: 600 11px/1.3 var(--font-body);
+  padding: 6px 10px;
+  border: var(--ui-hair);
+  color: var(--ui-paper);
+  font: 400 var(--ui-group) / 1.2 var(--font);
 }
 
 .map-strip b {
-  color: var(--wood);
+  font-weight: 400;
+  color: var(--ui-gold-6);
 }
 
+/* the chart is a picture of the world, framed by the thin line */
 .map-chart {
   flex: none;
   aspect-ratio: 48 / 49;
-  border: 3px solid var(--ink);
-  background: var(--cream);
-  box-shadow: inset 0 0 0 2px var(--gold);
+  border: var(--ui-line);
+  background: var(--ui-well);
   overflow: hidden;
 }
 
@@ -894,33 +908,33 @@
 .map-key {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px 10px;
+  gap: 4px 12px;
   padding: 0 2px;
-  color: var(--cream);
-  font: 600 10px/1.3 var(--font-body);
+  color: var(--ui-paper-soft);
+  font: 400 var(--ui-group) / 1.2 var(--font);
 }
 
 .map-key span {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .map-key i {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   display: inline-block;
-  border: 2px solid var(--ink);
+  border: 1px solid var(--ui-gold-2);
 }
 
 .map-key-you {
-  background: var(--red);
+  background: #e2533f;
   border-radius: 50% 50% 50% 0;
   rotate: -45deg;
 }
 
 .map-key-stall {
-  background: var(--gold);
+  background: #eda83a;
 }
 
 .map-key-walked {
@@ -928,102 +942,95 @@
 }
 
 .map-key-blank {
-  background: var(--cream);
+  background: #ebd3a2;
 }
 
 .map-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  background: var(--paper);
-  border: 2px solid var(--ink);
+  border-top: var(--ui-hair);
 }
 
 .map-row {
   width: 100%;
-  min-height: 46px;
-  padding: 5px 8px;
+  min-height: 48px;
+  padding: 6px 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   border: 0;
-  border-bottom: 1px solid var(--cream);
+  border-bottom: var(--ui-hair);
   background: transparent;
-  color: var(--ink);
-  font-family: var(--font-body);
+  color: var(--ui-paper);
+  font-family: var(--font);
   text-align: left;
   cursor: pointer;
 }
 
-.map-row:last-child {
-  border-bottom: 0;
-}
-
 .map-row.on {
-  background: var(--cream);
-  box-shadow: inset 4px 0 0 var(--red);
+  background: var(--ui-well);
+  box-shadow: inset 2px 0 0 var(--ui-gold-4);
 }
 
 .map-ico {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   flex: none;
   display: grid;
   place-items: center;
-  border: 2px solid var(--ink);
-  background: var(--gold);
-  color: var(--ink);
-  font: 800 13px/1 var(--font-body);
+  border: 1px solid var(--ui-gold-2);
+  background: #eda83a;
+  color: var(--ui-black);
+  font: 400 var(--ui-group) / 1 var(--font);
 }
 
 .map-ico.kind-ruin {
-  background: #5d6177;
+  background: #8f94a8;
 }
 
 .map-ico.kind-npc {
-  background: #5d6177;
+  background: #8f94a8;
 }
 
 .map-ico.kind-restore {
-  background: #3f8fd1;
+  background: #7cc4ec;
 }
 
 .map-ico.kind-camp {
-  background: #4c9a3f;
+  background: #84c450;
 }
 
 .map-ico.kind-resource {
-  background: #84c450;
+  background: #c8e88a;
 }
 
 .map-txt {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
 .map-nm {
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.2;
+  font-size: var(--ui-text);
+  line-height: 1.15;
 }
 
 .map-sub {
-  font-size: 10px;
-  line-height: 1.3;
-  color: var(--wood);
+  font-size: var(--ui-group);
+  line-height: 1.2;
+  color: var(--ui-paper-soft);
 }
 
 .map-empty {
   flex: 1;
   margin: 0;
   padding: 12px;
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--wood);
+  border: var(--ui-hair);
+  font-size: var(--ui-group);
+  line-height: 1.35;
+  color: var(--ui-paper-soft);
 }
 
 .map-foot {
@@ -1035,21 +1042,13 @@
 .map-status {
   flex: 1;
   margin: 0;
-  font-size: 10.5px;
-  line-height: 1.35;
-  color: var(--cream);
+  font-size: var(--ui-group);
+  line-height: 1.25;
+  color: var(--ui-paper-soft);
 }
 
 .map-foot .btn {
   flex: none;
-}
-
-.map-foot .btn.gold {
-  background: var(--gold);
-}
-
-.map-foot .btn:disabled {
-  opacity: 0.55;
 }
 
 /* a pocket chart on a desktop, where there is room beside the world */
@@ -1142,7 +1141,6 @@
   .map-key {
     grid-column: 2;
     grid-row: 2;
-    color: var(--cream);
   }
 
   .map-list {
@@ -1157,12 +1155,12 @@
   }
 
   .map-foot .btn {
-    min-height: 38px;
+    min-height: 44px;
   }
 }
 
 .map-row.stall .map-ico {
-  background: var(--gold);
+  background: #eda83a;
 }
 
 @media (min-width: 900px) {
@@ -1177,6 +1175,6 @@
 }
 
 .map-row.corner .map-ico {
-  background: var(--gold);
+  background: #eda83a;
 }
 

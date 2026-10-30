@@ -12,10 +12,15 @@ import { app } from '../app';
 import { button, h } from './dom';
 import type { Layer, UI } from './ui';
 
-/** The server this build signs in to; absent in the demo build. */
+/**
+ * The server this build signs in to; undefined only in the demo build. An empty value names the game's
+ * own origin (the build is served next to the server), so '' is a server, not an absence: the wire calls
+ * go to the same origin the page came from.
+ */
 export function gameServer(): string | undefined {
   const base = (import.meta.env.VITE_GAME_SERVER as string | undefined)?.trim();
-  return base ? base.replace(/\/+$/, '') : undefined;
+  if (base === undefined) return undefined;
+  return base.replace(/\/+$/, '');
 }
 
 export interface SignupForm {
@@ -64,9 +69,9 @@ async function post(server: string, path: string, json: unknown): Promise<Reply>
 /** Offer the sign-up to a player who has finished the opening: a no-op in the demo build. */
 export function offerSignup(ui: UI): void {
   const server = gameServer();
-  if (!server) return;
+  if (server === undefined) return;
   const layer: Layer = { el: h('div', { class: 'layer panel-layer' }) };
-  const box = h('div', { class: 'panel signup', role: 'dialog', 'aria-label': 'Make an account' });
+  const box = h('div', { class: 'panel signup ui-window', role: 'dialog', 'aria-label': 'Make an account' });
   layer.el.append(box);
   ui.push(layer);
   const close = () => ui.pop(layer);
@@ -76,7 +81,7 @@ export function offerSignup(ui: UI): void {
   const providers = () => {
     const email = h('input', { type: 'email', placeholder: 'Your email', autocomplete: 'email', class: 'name' });
     say(
-      h('h2', null, 'Keep this game with an account'),
+      h('h2', { class: 'ui-plaque' }, 'Keep this game with an account'),
       h('p', null, 'Make an account and your valley comes with you.'),
       button('Continue with Google', () => (window.location.href = `${server}/auth/google/start`), 'big'),
       h('label', { class: 'name-row' }, 'Or by email ', email),
@@ -106,12 +111,12 @@ export function offerSignup(ui: UI): void {
       void post(server, '/auth/signup', body)
         .then((reply) => {
           if (reply.status === 201) {
-            say(h('h2', null, `Welcome, ${reply.body.name ?? ''}`), h('p', { role: 'status' }, reply.body.opening === 'kept' ? KEPT_NOTICE : FRESH_NOTICE), button('Continue', () => window.location.assign('/'), 'big'));
+            say(h('h2', { class: 'ui-plaque' }, `Welcome, ${reply.body.name ?? ''}`), h('p', { role: 'status' }, reply.body.opening === 'kept' ? KEPT_NOTICE : FRESH_NOTICE), button('Continue', () => window.location.assign('/'), 'big'));
             return;
           }
           if (reply.body.reason === 'under-age') {
             // the demo stays open: the one place this box sends a player
-            say(h('p', null, reply.body.error ?? 'You cannot make an Openfold account.'), h('a', { class: 'btn big', href: reply.body.demo ?? '/' }, 'Back to the demo'));
+            say(h('p', null, reply.body.error ?? 'You cannot make an Loomvale account.'), h('a', { class: 'btn big', href: reply.body.demo ?? '/' }, 'Back to the demo'));
             return;
           }
           note.textContent = reply.body.error ?? 'The account could not be made.';
@@ -123,7 +128,7 @@ export function offerSignup(ui: UI): void {
         });
     });
     say(
-      h('h2', null, 'One more step'),
+      h('h2', { class: 'ui-plaque' }, 'One more step'),
       h('label', { class: 'name-row' }, 'Name ', name),
       h('fieldset', null, h('legend', null, 'Date of birth'), day, month, year),
       h('label', null, agree, ' One person, one account in a world.'),

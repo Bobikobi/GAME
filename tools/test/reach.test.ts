@@ -23,10 +23,16 @@ describe('solid nodes and the road', () => {
 
   it('a tree in front of the bridge cuts off the far bank, and the error names it', () => {
     const view = { restored: [] as string[], camp: [] as string[] };
+    // the bridge is two rows wide: one tree before each row
     expect(makeWalkable(bundle)(12, 17, view), 'the tile before the bridge must be open ground').toBe(true);
+    expect(makeWalkable(bundle)(12, 18, view), 'the tile before the bridge must be open ground').toBe(true);
     const walled: Bundle = {
       ...bundle,
-      instances: { ...bundle.instances, 'core/oak-trees#wall': { source: 'core/oak-trees', kind: 'resource', x: 12, y: 17 } },
+      instances: {
+        ...bundle.instances,
+        'core/oak-trees#wall': { source: 'core/oak-trees', kind: 'resource', x: 12, y: 17 },
+        'core/oak-trees#wall2': { source: 'core/oak-trees', kind: 'resource', x: 12, y: 18 },
+      },
     };
     const issues = checkReach(walled, { 'core/oak-trees': 'content/core/resources/oak-trees.json' });
     expect(issues).toHaveLength(1);

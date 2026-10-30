@@ -1,6 +1,6 @@
-# Openfold against Dimraeth and Drakantos: the depth target, the character target, and the distance to each
+# Loomvale against Dimraeth and Drakantos: the depth target, the character target, and the distance to each
 
-Written 2026-10-18 for the owner, and revised on 19.10 after his answers. He set two targets on 18.10: **Dimraeth for depth and complexity, in an open world** (he named its skills, its bag, its monsters, and free movement in place of a fixed feel), and **Drakantos for character design and animation**. He asked how far Openfold is from each in concept, in what is built, and in the tasks ahead.
+Written 2026-10-18 for the owner, and revised on 19.10 after his answers. He set two targets on 18.10: **Dimraeth for depth and complexity, in an open world** (he named its skills, its bag, its monsters, and free movement in place of a fixed feel), and **Drakantos for character design and animation**. He asked how far Loomvale is from each in concept, in what is built, and in the tasks ahead.
 
 His answers on 19.10, which this revision writes in:
 - "G35 holds only for the demo." Combat is "a part no less important, after the general foundation" (section 3).
@@ -8,7 +8,7 @@ His answers on 19.10, which this revision writes in:
 - Look at the details, and watch a video if needed. Dimraeth's skill tree is more interesting than ours. He did not like ours anyway: "it is generic, and it is not clear what the differences are" (section 4).
 - Widening the gap between the characters through races (a goblin, an elf, a human or the like) is a step back, so it waits. It touches the characters' nature and lines of growth, and it may be left to other developers (section 8). Superseded by the owner on 22.10: three races come now (section 8).
 
-Facts about Openfold come from `origin/develop` @ 7e1babf4, plus the stage-3 spec in PR #187 (not merged). Facts about the two games come from:
+Facts about Loomvale come from `origin/develop` @ 7e1babf4, plus the stage-3 spec in PR #187 (not merged). Facts about the two games come from:
 - their Steam pages, the fan wiki dimraeth.org and two written guides to Dimraeth's tree;
 - one hands-on preview, Steam reviews and discussion threads;
 - the transcript of one Dimraeth build guide (18 min);
@@ -27,7 +27,7 @@ Sources are at the end. Neither game was played here, so a feel is quoted from p
 
 Concept: **same** means the direction is already ours, **apart** means we chose a different form, and **opposite** meant one of our rules forbade it on 18.10.
 
-| System | Dimraeth | Openfold today | Concept | Built: the distance | Where it sits in our plan |
+| System | Dimraeth | Loomvale today | Concept | Built: the distance | Where it sits in our plan |
 |---|---|---|---|---|---|
 | **Movement** | Free movement with keyboard, mouse or gamepad. A dodge roll covers "quite a bit of distance" with many i-frames. Stamina pays for swings, dodges and movement. | 4 directions only (`game/src/input.ts` DIRS), steps of one tile in 190 ms (`walk_step_ms`). The phone pad picks one of four sectors (`ui/touch.ts`). This is DECISIONS 2026-10-07 "Grid movement". | Opposite until 18.10; the owner's word turns it (section 5) | The walk, the pad, collision and every e2e that walks by tiles | Its own stream right after the 64 px engine step (#191) and the hook (section 9) |
 | **Combat and monsters** | Real-time. Stamina doubles as a stance for both sides, so a stagger is easy to land and easy to suffer. Concentration pays for spells and refills when a basic attack lands. The third hit of a string is a Final Attack. A swing cannot be cancelled. There is a block (a perfect block is rewarded), a parry and a dodge. Blunt hits fill a stun bar, and status stacks are Burning, Chill, Poison and Bleeding. Foes: slimes, goblins, goblin brutes, wolves. Bosses: Gloop (fire alone hurts it), Monstrous Droop, Corrupted Treant, a wolf boss (three attacks, then tired), the Goblin King. | None, by G35 ("Predators are hazards, not enemies: the answer is to run back to a safe place, never gear"). Three hazards on the map: two wolves (`core/bank-wolf`, `core/ruins-wolf`, one sprite) and a pit. A wolf is a map prop that walks a closed round at one pace (G47), with eyes 5 tiles long, reach 4, a catch in 2.5 s and a bite every 2 s for 25%. On screen: red eyes in the dark. | Opposite until 19.10; now G35 holds only for the demo (section 3) | Everything: enemies as entities, their behaviour, hit and hurt, health on both sides, a weapon, balance | Designed now, built after the foundation (section 3) |
@@ -40,9 +40,9 @@ Concept: **same** means the direction is already ours, **apart** means we chose 
 | **Open world** | Mirkea, handcrafted: the Lost Caverns, Earlwood Village, Wildwood Forest and the Goblin Caves. A reviewer calls it "sizable and interconnected". Weather and seasons; deeds and bounties gate the way into Wildwood. Waypoints are frequent, and the preview says that kills the wish to explore. | One hand-made valley of 48 x 49 tiles. Day and night. "The world has no end" is decided (17.10): generated ground in rings around the valley, danger rising with distance (G64). | Same, and larger in ambition | All of it: the generator, chunks, rings, the content | Stage 3, NEXT 19 in #187 |
 | **Quests and events** | Main missions, side tasks, deeds, bounties, timed area quests and random limited-time events. Players praise the tracker and call the text far too long (3 to 4 pages per step). | 13 quests across the palette of types, one expedition (the night ruins), a maze, a tracker. | Same | Content | The loop and the pool of quests |
 | **Co-op** | 1-8 players, drop-in and drop-out, peer to peer. The hero (level, gear, bag, spells) travels between worlds; story, allies and buildings stay with each world. | Single-player. | Same, in our order | A server, presence, then live play | The order of 17.10: accounts and a server, then presence without chat, then chat |
-| **Writing** | The most-cited complaint. | STORY.md S1-S6 (the narrator never states the past; every claim about it has a speaker), voice sheets. | Ours is the stronger rule | - | Keep. This is where Openfold can beat it |
+| **Writing** | The most-cited complaint. | STORY.md S1-S6 (the narrator never states the past; every claim about it has a speaker), voice sheets. | Ours is the stronger rule | - | Keep. This is where Loomvale can beat it |
 
-**The short answer.** In concept, Openfold points where Dimraeth stands on most rows: the bag, crafting, the stronghold, companions, the open world, quests and co-op. Since 19.10 nothing is opposite any more: combat is the plan after the demo, and the walk becomes free. The far rows are the skill tree (the name is the same, the depth is not), active skills and combat. In what is built, the distance is large on every row but writing. Dimraeth ships about 15-20 hours over four areas, with about ten named kinds of foe and boss and 66 demo recipes. Openfold ships a ten-minute opening on one valley, with three hazards and 17 recipes. Most of that gap is content, which the community loop is built to fill. Movement, combat, the tree and the art pipeline are not content: they are systems, and sections 3 to 7 treat them as systems.
+**The short answer.** In concept, Loomvale points where Dimraeth stands on most rows: the bag, crafting, the stronghold, companions, the open world, quests and co-op. Since 19.10 nothing is opposite any more: combat is the plan after the demo, and the walk becomes free. The far rows are the skill tree (the name is the same, the depth is not), active skills and combat. In what is built, the distance is large on every row but writing. Dimraeth ships about 15-20 hours over four areas, with about ten named kinds of foe and boss and 66 demo recipes. Loomvale ships a ten-minute opening on one valley, with three hazards and 17 recipes. Most of that gap is content, which the community loop is built to fill. Movement, combat, the tree and the art pipeline are not content: they are systems, and sections 3 to 7 treat them as systems.
 
 ## 3. Combat: G35 is the demo's rule
 
@@ -116,7 +116,7 @@ Size: the tree's schema and kernel effects are M; its screen is M; its content i
 
 Today the walk is Pokemon's: four directions, one tile per 190 ms press, and nothing between tiles. Dimraeth and Drakantos move freely, and so does Stardew Valley, the industry's model for a tile world with free movement. The player moves at pixel precision in 8 directions (analog on the phone's stick), while the world, its collisions and every action stay on tiles: a tool works on the tile the player faces.
 
-That model fits Openfold's kernel without bending it:
+That model fits Loomvale's kernel without bending it:
 - **The kernel stays integer and on tiles.** The client already reports the tile it stands on (P-5b, `game/src/walking.ts` `landStep`). With free movement it reports a tile whenever the feet cross into a new one. Predators' eyes, the bites, the danger level, the server's batch check of moves (G56 in #187) and its BFS keep the tile as their unit.
 - **What changes:**
   - the walk in both doors (`walking.ts`, the walk in `scenes/world.ts` and `play3d/world3d.ts`);
@@ -147,9 +147,9 @@ That model fits Openfold's kernel without bending it:
 
 **Why Drakantos has heroes instead of character creation**, in its developer's words: in 2D "we need to draw every frame, from every angle, for every accessory, hair, armor". Heroes allow "custom animations for every attack, each hero have its own stance, combos, victory poses, death animations, emotes". Some players left over the missing character creation. The studio answered with styles and dyes, not with layered gear.
 
-**Openfold against it:**
+**Loomvale against it:**
 
-| | Drakantos | Openfold today | Openfold planned (STYLE.md, NEXT 15) |
+| | Drakantos | Loomvale today | Loomvale planned (STYLE.md, NEXT 15) |
 |---|---|---|---|
 | Frame | about 48 art px tall | 16 x 24 | 64 x 96, the body about 80 px tall |
 | Head against height | about 40% (2.5 heads) | about half (10 of 21 rows on the forager) | head 24-28 px wide on a body about 80 px tall, face about 20 (the frame `density-64`) |
@@ -161,13 +161,13 @@ That model fits Openfold's kernel without bending it:
 | Other characters | full sets | Maru and Pell: one frame and a blink | 2 images each in wave b |
 | Looks | heroes, skins, styles, dyes | three starters, each in two builds (`_w`) | stage 6: "clothes and looks drawn on the character" |
 
-So the distance is not resolution: from wave b on, Openfold's frame holds more pixels than a Drakantos hero. The distance is in four things:
+So the distance is not resolution: from wave b on, Loomvale's frame holds more pixels than a Drakantos hero. The distance is in four things:
 - proportion (the head and hands);
 - colour craft (local-colour outlines and hue-shifted ramps, which the 32 colours and the one outline colour rule out today);
 - the number of poses per action, and secondary motion;
 - the number of animations per character.
 
-Openfold's starters are already heroes in Drakantos's sense. Stage 6's "clothes drawn on the character" is the road Drakantos refused. Taking its road (styles and dyes per starter, with dyes as palette swaps, which a palette-bound kit makes cheap) keeps the animation budget for motion.
+Loomvale's starters are already heroes in Drakantos's sense. Stage 6's "clothes drawn on the character" is the road Drakantos refused. Taking its road (styles and dyes per starter, with dyes as palette swaps, which a palette-bound kit makes cheap) keeps the animation budget for motion.
 
 ## 7. The art as a production system: rules, a format, tools and methods
 
@@ -197,7 +197,7 @@ The owner, 19.10: the work on colour, frames and animation is large, so the answ
 - **One character all the way first** (a vertical slice, as studios do): Pell or one starter with every clip, by the chosen route, in the game. Only then the cast.
 - **Keys first, in-betweens after:** the contact and passing poses of a walk, the wind-up and strike of a swing, approved before the frames between them.
 - **A budget per character, measured on the first one,** then a schedule for the cast and the creatures.
-- **Animators from the community.** With the format and the checks, an animation is content, and the loop's points and credits reward it. Openfold can open that door; Drakantos's studio cannot.
+- **Animators from the community.** With the format and the checks, an animation is content, and the loop's points and credits reward it. Loomvale can open that door; Drakantos's studio cannot.
 
 **First steps, in order, with their measures:**
 1. The three stills A, B and C. The owner picks, and the pick goes into DECISIONS with its frame. Wave b (the cast, 52 images) waits for the pick; wave a (the ground) goes on.

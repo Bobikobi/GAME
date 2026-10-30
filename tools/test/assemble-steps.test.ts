@@ -23,7 +23,7 @@ const file = (id: string, steps: unknown[]) => ({
 });
 
 describe('find and riddle references', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-steps-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-steps-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
@@ -86,7 +86,7 @@ describe('find and riddle references', () => {
 });
 
 describe('place rewards', () => {
-  const root = mkdtempSync(join(tmpdir(), 'mistvale-opens-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-opens-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
@@ -109,7 +109,7 @@ describe('place rewards', () => {
 });
 
 describe('hand-in lines', () => {
-  const root = mkdtempSync(join(tmpdir(), 'mistvale-talk-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-talk-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
@@ -136,7 +136,7 @@ describe('hand-in lines', () => {
 });
 
 describe('a node that opens after a quest', () => {
-  const root = mkdtempSync(join(tmpdir(), 'mistvale-opens-after-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-opens-after-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
@@ -144,8 +144,8 @@ describe('a node that opens after a quest', () => {
   const path = join(root, 'core', 'resources', 'keystone.json');
   const read = () => runCheck(root).issues.filter((i) => i.level === 'error').map((i) => `${i.where}: ${i.message}`);
   const gate = (id: string) => {
-    const f = JSON.parse(readFileSync(path, 'utf8')) as { node: { opens_after?: string } };
-    f.node.opens_after = id;
+    const f = JSON.parse(readFileSync(path, 'utf8')) as { node: { opens_after?: { quest: string }[] } };
+    f.node.opens_after = [{ quest: id }];
     writeFileSync(path, JSON.stringify(f, null, 2));
   };
 
@@ -153,6 +153,6 @@ describe('a node that opens after a quest', () => {
     gate('core/fix-the-bridge');
     expect(read()).toEqual([]);
     gate('core/nowhere');
-    expect(read()).toContainEqual('node.opens_after: no quest "core/nowhere"');
+    expect(read()).toContainEqual('node.opens_after.0.quest: no quest "core/nowhere"');
   });
 });

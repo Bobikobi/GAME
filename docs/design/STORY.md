@@ -1,7 +1,7 @@
 # The story: folds, returners, beliefs
 
 This page is the product owner's, like [GAME_RULES.md](GAME_RULES.md) beside
-it: the story of Openfold is told by what this page allows, and a line, a
+it: the story of Loomvale is told by what this page allows, and a line, a
 quest or an extension that breaks it goes to the owner first (GAME_RULES
 section 6). Every part of it is approved (2026-10-10) and changes only by the
 owner's word, written the same day in [DECISIONS.md](../../DECISIONS.md). The
@@ -84,7 +84,7 @@ the right one.
 | Belief | The mist is | So you should | Held today by | A bone, read its way |
 |---|---|---|---|---|
 | The Menders | A forgetting that takes what nobody looks after. | Mend what is left, one thing at a time. | Maru | The bells ring before the mist comes: a warning. |
-| The Wakers | A sleep over ages greater than ours. | Wake the old things: light the lanterns, open the ruins. | Nobody yet; a traveller or a player. | The lanterns glow by themselves: something down there is still awake. |
+| The Wakers | A sleep over ages greater than ours. | Wake the old things: light the lanterns, open the ruins. | The wandering traveller who carries an ember (DECISIONS 2026-10-22, decision 33). | The lanterns glow by themselves: something down there is still awake. |
 | The Keepers | A mercy that folded away what hurt. | Let sleeping things sleep; take only what you need. | Nobody yet. | Old things lie under the town: someone buried them on purpose. |
 
 Pell holds none of them and repeats all three as rumours, with a price on

@@ -23,6 +23,7 @@ import {
   insertPlayer,
   listen,
   migrate,
+  seedOfColumn,
 } from '../../src/index.js';
 import type { Clock } from './player.js';
 
@@ -120,12 +121,11 @@ export async function startRig(bundle: Bundle): Promise<Rig> {
     const id = randomUUID();
     const state = newState(bundle, seed);
     if (pool) {
-      await pool.query('insert into accounts (id, email, name, birth_band) values ($1, $2, $3, $4)', [
+      await pool.query('insert into accounts (id, email, name) values ($1, $2, $3)', [
         id,
-        `${id}@sim.openfold.test`,
+        `${id}@sim.loomvale.test`,
         // a name is unique since #272, and the boards test opens two players of one starter
         `${name} ${id}`,
-        '18+',
       ]);
       await insertPlayer(pool, id, createPlayerRecord(bundle, state, clock.now));
     } else {
@@ -136,13 +136,13 @@ export async function startRig(bundle: Bundle): Promise<Rig> {
       name,
       async stored(): Promise<State> {
         if (pool) {
-          const { rows } = await pool.query<{ state: State; seed: string }>(
+          const { rows } = await pool.query<{ state: State; seed: Buffer }>(
             'select state, seed from player_state where account_id = $1',
             [id],
           );
           const row = rows[0];
           if (!row) throw new Error(`${name} has no state row.`);
-          return { ...row.state, seed: Number(row.seed) };
+          return { ...row.state, seed: seedOfColumn(row.seed) };
         }
         const record = memory.records.get(id);
         if (!record) throw new Error(`${name} has no state row.`);

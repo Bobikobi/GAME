@@ -1,0 +1,107 @@
+{
+  "$schema": "../../../schema/json/school.schema.json",
+  "format": 1,
+  "type": "school",
+  "id": "core/woodcutting-school",
+  "title": "Woodcutting",
+  "creator": "core",
+  "school": {
+    "name": "Woodcutting",
+    "profession": "core/woodcutting",
+    "tint": "wood",
+    "nodes": [
+      {
+        "id": "sure-swing",
+        "name": "Sure swing",
+        "text": "Your swing finds the good zone more easily.",
+        "size": "small",
+        "effect": "timing_window_pct",
+        "value": 5,
+        "icon": "core/branch"
+      },
+      {
+        "id": "felling-line",
+        "name": "Felling line",
+        "text": "A tree comes down sooner.",
+        "size": "major",
+        "needs": [
+          "sure-swing"
+        ],
+        "effect": "gather_speed_pct",
+        "value": 15,
+        "slot": true,
+        "icon": "core/axe"
+      },
+      {
+        "id": "clean-cut",
+        "name": "Clean cut",
+        "text": "Felling goes a little faster.",
+        "size": "small",
+        "needs": [
+          "felling-line"
+        ],
+        "effect": "gather_speed_pct",
+        "value": 5,
+        "icon": "core/log"
+      },
+      {
+        "id": "heartwood",
+        "name": "Heartwood",
+        "text": "Felling and gathering go much faster.",
+        "size": "major",
+        "needs": [
+          "clean-cut"
+        ],
+        "key": {
+          "might": 2
+        },
+        "effect": "gather_speed_pct",
+        "value": 15,
+        "slot": true,
+        "icon": "core/stone-blade"
+      },
+      {
+        "id": "saw-wise",
+        "name": "Saw wise",
+        "text": "Made tools help you: felling goes faster.",
+        "size": "corner",
+        "needs": [
+          "felling-line"
+        ],
+        "effect": "gather_speed_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/human",
+        "icon": "core/work-hammer"
+      },
+      {
+        "id": "tree-speaker",
+        "name": "Tree speaker",
+        "text": "The tree tells you when to strike.",
+        "size": "corner",
+        "needs": [
+          "felling-line"
+        ],
+        "effect": "timing_window_pct",
+        "value": 15,
+        "slot": true,
+        "race": "core/elf",
+        "icon": "core/branch"
+      },
+      {
+        "id": "tireless-swing",
+        "name": "Tireless swing",
+        "text": "A swing that never tires: felling goes faster.",
+        "size": "corner",
+        "needs": [
+          "felling-line"
+        ],
+        "effect": "gather_speed_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/skeleton",
+        "icon": "core/rust-pick"
+      }
+    ]
+  }
+}

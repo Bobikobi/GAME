@@ -7,7 +7,7 @@ import { builders } from '../data/boards';
 const FIXED = ['/', '/play/', '/hub/', '/hub/boards/', '/hub/rules/', '/api/'];
 
 export const GET: APIRoute = async ({ site }) => {
-  const base = site ?? new URL('https://theopenfold.vercel.app');
+  const base = site ?? new URL('https://loomvale.vercel.app');
   const guide = (await getCollection('creators')).map((p) => (p.id === 'readme' ? '/docs/' : `/docs/${p.id}/`));
   const paths = [...FIXED, ...guide, ...builders.map((b) => `/hub/creators/${b.handle}/`)];
   const urls = [...new Set(paths)].sort().map((p) => `  <url><loc>${new URL(p, base).href}</loc></url>`);

@@ -1,3 +1,4 @@
+import type { Seed } from './rng';
 import type { PublicState, State } from './state';
 import type { Action } from './step';
 
@@ -92,7 +93,8 @@ export const OPENING_LOG_MAX = 2000;
  * it lands on the same text.
  */
 export interface OpeningUpload {
-  seed: number;
+  /** the phone's own key for the opening, four 32-bit words; the account plays on under the server's */
+  seed: Seed;
   log: { a: Action; tick: number }[];
   state: string;
 }

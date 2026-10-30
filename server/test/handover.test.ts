@@ -9,7 +9,7 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import type { IncomingMessage, Server } from 'node:http';
 
-import { LEGACY_STARTERS, OPENING_LOG_MAX, newState, npcTile, publicState, serialize, step, type Action, type Bundle, type OpeningUpload, type State } from '@game/kernel';
+import { LEGACY_STARTERS, OPENING_LOG_MAX, newState, npcTile, publicState, serialize, step, type Action, type Bundle, type OpeningUpload, type Seed, type State, widenSeed } from '@game/kernel';
 
 import {
   OPENING_PAY_MAX_MG,
@@ -23,10 +23,10 @@ import { openingQuests } from '../../tools/src/play.js';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { LocalPhone, MemoryStore, PLAYER, STARTS, Wire, playOpening, type Start } from './support/phone.js';
 
-/** The phone's seed: the demo draws under it, and the account never plays under it again. */
-const PHONE_SEED = 77;
-/** The seed the server gives the account: its own, and nobody else's. */
-const SECRET_SEED = 424242;
+/** The phone's key: the demo draws under it, and the account never plays under it again. */
+const PHONE_SEED: Seed = widenSeed(77);
+/** The key the server gives the account: its own, and nobody else's, all 128 bits of it. */
+const SECRET_SEED: Seed = [424242, 0x9e3779b9, 0x7f4a7c15, 0xf39cc060];
 const NOW = 5_000_000;
 
 let bundle: Bundle;
@@ -102,6 +102,25 @@ describe('the opening handover (NEXT 18 d)', () => {
     },
   );
 
+  test('the account\'s name is the character\'s: an opening that carved another name is not kept (finding 11)', async () => {
+    const { phone, upload } = await captured();
+    expect(phone.state.player.name).toBe('Tess');
+    // the same name keeps it, under any account that holds that name; no account name asks nothing
+    expect(kept(takeOpening(bundle, upload, SECRET_SEED, NOW, undefined, 'Tess')).record.state.player.name).toBe('Tess');
+    expect(kept(takeOpening(bundle, upload, SECRET_SEED, NOW)).record.state.player.name).toBe('Tess');
+    // another name, or the same in another case (the stored name is the one the world shows), starts the account fresh
+    expectFresh(takeOpening(bundle, upload, SECRET_SEED, NOW, undefined, 'Wren'), /^the opening carved the name "Tess", the account is "Wren"$/);
+    expectFresh(takeOpening(bundle, upload, SECRET_SEED, NOW, undefined, 'tess'), /^the opening carved the name/);
+  });
+
+  test('an opening that carved an empty name yet is kept under any account name: the stone\'s line is cut over the wire, held to the account\'s name', async () => {
+    const phone = new LocalPhone(bundle, PHONE_SEED);
+    await phone.act({ t: 'start', starter: STARTS[0].starter, name: '' }, 0);
+    expect(phone.state.player.name).toBe('');
+    const handover = kept(takeOpening(bundle, phone.upload(), SECRET_SEED, NOW, undefined, 'Wren'));
+    expect(handover.record.state.player.name).toBe('');
+  });
+
   test('a log with one illegal action is refused whole', async () => {
     const { upload } = await captured();
     const at = upload.log.findIndex((entry) => entry.a.t === 'restore');
@@ -132,13 +151,21 @@ describe('the opening handover (NEXT 18 d)', () => {
 
   test('a walk faster than the movement time allows is refused, though the phone accepted it', async () => {
     const { upload } = await captured();
-    // every walked tile claimed a few ms after the one before: the kernel takes it, the movement credit does not
-    let shift = 0;
-    const log = upload.log.map((entry, index) => {
-      const previous = upload.log[index - 1];
-      if (entry.a.t === 'move' && previous?.a.t === 'move') shift += bundle.params.walk_step_ms - 5;
-      return { a: entry.a, tick: entry.tick - shift };
-    });
+    // two tiles the phone itself walked stand side by side, and the log walks between them every 5 ms: the
+    // kernel takes each step, and the movement credit (32 tiles, refilled by the time claimed) does not. A
+    // step that closes a diagonal pair costs 1414 for the two (the octile walk, G56), so the claim has to be
+    // less than the walk's own time for a log this short to run dry.
+    const walked = upload.log.filter((entry) => entry.a.t === 'move') as { a: { t: 'move'; at: [number, number] }; tick: number }[];
+    const [first, second] = walked;
+    if (!first || !second) throw new Error('the captured opening does not walk');
+    const [here, there] = [first.a.at, second.a.at];
+    const start = upload.log[0]!;
+    const log: OpeningUpload['log'] = [start];
+    let tick = start.tick;
+    for (let i = 0; i < 60; i++) {
+      tick += 5;
+      log.push({ a: { t: 'move', at: i % 2 === 0 ? there : here }, tick });
+    }
     const state = phonePlays(log);
     expectFresh(takeOpening(bundle, { ...upload, log, state }, SECRET_SEED, NOW), /walks further than the time allows/);
   });
@@ -183,9 +210,40 @@ describe('the opening handover (NEXT 18 d)', () => {
     expectFresh(takeOpening(bundle, 'opening', SECRET_SEED, NOW), /nothing else/);
   });
 
+  test('a phone of kernel 0.19 or before sent a 32-bit seed: its opening was drawn under the old draw and starts the account fresh', async () => {
+    const { upload } = await captured();
+    expectFresh(takeOpening(bundle, { ...upload, seed: 77 }, SECRET_SEED, NOW), /no seed/);
+    expectFresh(takeOpening(bundle, { ...upload, seed: [77, 0, 0] }, SECRET_SEED, NOW), /no seed/);
+    expectFresh(takeOpening(bundle, { ...upload, seed: [77, 0, 0, 2 ** 32] }, SECRET_SEED, NOW), /no seed/);
+    expectFresh(takeOpening(bundle, { ...upload, seed: [77, 0, 0, -1] }, SECRET_SEED, NOW), /no seed/);
+  });
+
+  test('the phone\'s key stays the phone\'s: the account plays under its own, and the books keep only the phone\'s', async () => {
+    const { upload } = await captured();
+    const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW));
+    expect(handover.record.state.seed).toEqual(SECRET_SEED);
+    expect(handover.opening.seed).toEqual(PHONE_SEED);
+    expect(JSON.stringify(handover.opening)).not.toContain(String(SECRET_SEED[1]));
+    expect(publicState(handover.record.state)).not.toHaveProperty('seed');
+  });
+
+  test('books written before kernel 0.20 still replay: an opening row with the phone\'s 32-bit seed widens as a save does', async () => {
+    const { upload } = await captured();
+    const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW));
+    // PHONE_SEED is widenSeed(77): the row the old server wrote held the number itself
+    const oldRow = { ...handover.opening, seed: 77 };
+    const books = { seed: SECRET_SEED, log: [{ seq: 1, action: oldRow, tick: handover.tick }], state: handover.record.state, ledger: handover.gold };
+    expect(checkAccount(bundle, books)).toEqual([]);
+    expect(checkAccount(bundle, { ...books, log: [{ seq: 1, action: { ...oldRow, seed: 2 ** 32 }, tick: handover.tick }] })).toEqual([
+      'seq 1: the opening row holds no seed or log',
+    ]);
+  });
+
   test('a kept account proves itself: its log, opening first, replays to the stored state after it plays on over the wire', async () => {
     const { upload } = await captured(STARTS[2]);
-    const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW));
+    // the account is "Tess", the name the opening carved: the books replay to the stored state, name and all
+    const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW, undefined, 'Tess'));
+    expect(handover.record.state.player.name).toBe('Tess');
 
     const clock = { now: NOW };
     const store = new MemoryStore(bundle, newState(bundle, SECRET_SEED), NOW);

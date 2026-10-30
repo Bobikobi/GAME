@@ -15,6 +15,7 @@ import type { Pool } from 'pg';
 import { type Bundle, type PublicState, type State, professionLevel, salePrice } from '@game/kernel';
 
 import { type AccountBooks, type LedgerRow, type LoggedAction, checkAccount, replayAccount } from './ledger';
+import { seedOfColumn } from './store-pg';
 
 export type BoardName = 'wealth' | 'collection' | 'levels';
 
@@ -32,12 +33,21 @@ export class ForgedLog extends Error {}
 /** The first version a log row can carry: the player row is written at version 1, and every write adds one. */
 const FIRST_SEQ = 2;
 
+/** The one row written with the account rather than after it: a kept opening (NEXT 18 d), `{ kind: 'opening', ... }`. */
+function isOpening(action: unknown): boolean {
+  return typeof action === 'object' && action !== null && (action as { kind?: unknown }).kind === 'opening';
+}
+
 /**
  * The log is the write history: version 1 is the first state row, so a verified log starts at 2 and steps
- * by one. A hole is not a log any more, whatever its rows replay to, and the board refuses it as such.
+ * by one. The one row that may carry version 1 is a kept opening: the sign-up writes it in the same
+ * transaction as the state row it produced (`createAccount`), and the log steps on from it. A hole is not a
+ * log any more, whatever its rows replay to, and the board refuses it as such.
  */
 export function gapIn(log: readonly LoggedAction[]): string | undefined {
-  let expected = FIRST_SEQ;
+  const first = log[0];
+  if (first?.seq === 1 && !isOpening(first.action)) return 'the log starts at version 1, which only a kept opening may carry';
+  let expected = first?.seq === 1 ? 1 : FIRST_SEQ;
   for (const row of log) {
     if (row.seq !== expected) return `the log skips from version ${expected - 1} to ${row.seq}`;
     expected += 1;
@@ -72,7 +82,7 @@ export function weekStart(at: Date): string {
 
 interface StateRow {
   state: PublicState;
-  seed: string;
+  seed: Buffer;
 }
 
 /**
@@ -87,7 +97,7 @@ export async function postScores(pool: Pool, bundle: Bundle, accountId: string, 
   const row = await pool.query<StateRow>('select state, seed from player_state where account_id = $1', [accountId]);
   const stored = row.rows[0];
   if (!stored) throw new Error('No game state exists for this account.');
-  const seed = Number(stored.seed);
+  const seed = seedOfColumn(stored.seed);
   const state: State = { ...stored.state, seed };
 
   const logRows = await pool.query<{ seq: string; action: unknown; tick: string }>(
@@ -102,12 +112,13 @@ export async function postScores(pool: Pool, bundle: Bundle, accountId: string, 
   const gap = gapIn(log);
   if (gap !== undefined) throw new ForgedLog(gap);
 
-  const ledgerRows = await pool.query<{ delta_mg: string; action: unknown; tick: string }>(
-    'select delta_mg, action, tick from gold_ledger where account_id = $1 order by id',
+  const ledgerRows = await pool.query<{ delta_mg: string; fund: string; action: unknown; tick: string }>(
+    'select delta_mg, fund, action, tick from gold_ledger where account_id = $1 order by id',
     [accountId],
   );
   const ledger: LedgerRow[] = ledgerRows.rows.map((entry) => ({
     deltaMg: Number(entry.delta_mg),
+    ...(entry.fund === 'bound' ? { fund: 'bound' as const } : {}),
     action: entry.action,
     tick: Number(entry.tick),
   }));

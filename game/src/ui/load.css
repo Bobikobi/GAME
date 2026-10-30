@@ -1,0 +1,87 @@
+/* The load on the bag button and at the head of the bag (DECISIONS.md, 2026-10-23): a count and one coloured word. */
+.load-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.load-word {
+  padding: 0 6px;
+  font-weight: normal;
+  border: var(--frame);
+  line-height: 1.25;
+}
+
+/* the colour is never the only signal: the word says the pace */
+.load-chip[data-band='light'] .load-word {
+  background: var(--green);
+  color: var(--paper);
+}
+
+.load-chip[data-band='steady'] .load-word {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.load-chip[data-band='heavy'] .load-word {
+  background: var(--red);
+  color: var(--paper);
+}
+
+/* in a window the word sits on the frame's black: a bright plate with the black for its letters */
+.ui-window .load-word {
+  border: 1px solid var(--ui-gold-2);
+  color: var(--ui-black);
+}
+
+.ui-window .load-chip[data-band='light'] .load-word {
+  background: var(--ui-good);
+}
+
+.ui-window .load-chip[data-band='steady'] .load-word {
+  background: var(--ui-gold-5);
+}
+
+.ui-window .load-chip[data-band='heavy'] .load-word {
+  background: var(--ui-warn);
+}
+
+.btn .load-chip {
+  margin-left: 6px;
+}
+
+/* a phone keeps the count and the word; the label gives up its room */
+@media (max-width: 420px) {
+  .btn .load-label {
+    display: none;
+  }
+  .btn .load-chip {
+    margin-left: 0;
+    gap: 4px;
+  }
+  .load-word {
+    padding: 0 4px;
+  }
+}
+
+/* A full bag: a small word by the bag button that blinks over its first seconds (DECISIONS.md, 2026-10-23). */
+.load-full {
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-weight: 700;
+  color: #fff;
+  background: #b4442f;
+  animation: load-full-blink 0.8s steps(2, jump-none) 4;
+}
+
+@keyframes load-full-blink {
+  from { opacity: 1; }
+  to { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load-full { animation: none; }
+}
