@@ -13,13 +13,18 @@ export const SETTINGS_KEY = 'openfold.settings.1';
 export type Quality = 'auto' | 'low' | 'medium' | 'high';
 export type FrameCap = 'auto' | 30 | 60 | 120 | 'max';
 
+/** The smallest word of a window in px: 16 is the floor (G29) and the kit's own size, 18 and 20 scale every window's type up with it. */
+export type TextSize = 16 | 18 | 20;
+
 export interface Settings {
   quality: Quality;
   frameCap: FrameCap;
+  /** on: no motion whatever the phone says; off: the phone's own prefers-reduced-motion decides */
   reducedMotion: boolean;
+  textSize: TextSize;
 }
 
-export const AUTO_SETTINGS: Readonly<Settings> = { quality: 'auto', frameCap: 'auto', reducedMotion: false };
+export const AUTO_SETTINGS: Readonly<Settings> = { quality: 'auto', frameCap: 'auto', reducedMotion: false, textSize: 16 };
 
 export interface Effective {
   quality: 'low' | 'medium' | 'high';
@@ -39,10 +44,12 @@ export const SETTLE_FRAMES = 120;
 export interface SettingsStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 }
 
 const QUALITIES: readonly Quality[] = ['auto', 'low', 'medium', 'high'];
 const CAPS: readonly FrameCap[] = ['auto', 30, 60, 120, 'max'];
+export const TEXT_SIZES: readonly TextSize[] = [16, 18, 20];
 
 /** The stored settings; every field that is missing or wrong falls back to Auto. */
 export function readSettings(storage: SettingsStorage | null | undefined): Settings {
@@ -56,6 +63,7 @@ export function readSettings(storage: SettingsStorage | null | undefined): Setti
       quality: QUALITIES.find((q) => q === o.quality) ?? 'auto',
       frameCap: CAPS.find((c) => c === o.frameCap) ?? 'auto',
       reducedMotion: o.reducedMotion === true,
+      textSize: TEXT_SIZES.find((t) => t === o.textSize) ?? 16,
     };
   } catch {
     return { ...AUTO_SETTINGS };
@@ -67,6 +75,15 @@ export function writeSettings(storage: SettingsStorage | null | undefined, s: Se
     storage?.setItem(SETTINGS_KEY, JSON.stringify(s));
   } catch {
     // The game stays playable when storage is unavailable or full.
+  }
+}
+
+/** Forgets the stored record, so every row is Auto again. */
+export function clearSettings(storage: SettingsStorage | null | undefined): void {
+  try {
+    storage?.removeItem?.(SETTINGS_KEY);
+  } catch {
+    // nothing to clear when storage is unavailable
   }
 }
 
@@ -100,4 +117,25 @@ export function richOf(quality: Effective['quality'], reducedMotion: boolean): R
   const high = quality === 'high';
   const low = quality === 'low';
   return { detail: !low, motion: high && !reducedMotion, light: !low };
+}
+
+/** Whether motion is off: the player's own choice, else what the phone asks for (prefers-reduced-motion). */
+export function motionReduced(s: Settings, phoneAsks: boolean): boolean {
+  return s.reducedMotion || phoneAsks;
+}
+
+/** Whether the phone asks for reduced motion; false where the browser cannot say. */
+export function phoneAsksReducedMotion(): boolean {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/** What Auto came to on this device, for the label beside a row: "Auto - high" and "Auto - 120 Hz cap" (0 is no cap: the screen's own rate). */
+export function autoQualityLabel(e: Effective): string {
+  return `Auto - ${e.quality}`;
+}
+
+export function autoCapLabel(e: Effective, d: Device): string {
+  const hz = e.frameCap === 0 ? d.refreshHz : e.frameCap;
+  return hz > 0 ? `Auto - ${hz} Hz` : 'Auto';
 }
