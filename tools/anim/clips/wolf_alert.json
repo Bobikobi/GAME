@@ -1,0 +1,32 @@
+{
+  "about": "The wolf on alert (ALERT in docs/design/HUNTING.md section 2, the head-up tell a player reads): four poses of the body's own Alert, played by time: ahead, a slow look to one side, ahead with the nose up, a look to the other. The head and chest rise through the chest bone and the head bone, the forelegs stand straight and the tail lifts toward level; the ears carry no weight, so the pose reads by the head's height and the tail.",
+  "target": "wolf",
+  "base": {
+    "library": "self:wolf",
+    "action": "Alert"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    600,
+    600,
+    600,
+    600
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
