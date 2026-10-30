@@ -40,7 +40,7 @@ import {
   riddleSlots,
   sees,
   spotOpen,
-  walkStepMs,
+  gaitStepMs,
   windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
@@ -2265,15 +2265,16 @@ export class WorldScene extends Phaser.Scene {
     const moved = this.body.follow(s.pos);
     const was = this.body.moving;
     const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
+    const gait = app.controls.gait(performance.now());
     const facing = facingFor(input, s.facing);
     const look = facing8For(input, this.lookOf(s));
     const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
     this.look = agrees(look, facing) ? look : facing;
-    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y, from) => this.canWalk(s, x, y, from))) {
+    for (const tile of this.body.frame(input, delta, gaitStepMs(this.b, s.state, gait), (x, y, from) => this.canWalk(s, x, y, from))) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      landStep(s, tile);
+      landStep(s, tile, gait);
       if (this.falling) return;
       this.arrive(s);
     }
