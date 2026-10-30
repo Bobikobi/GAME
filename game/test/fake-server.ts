@@ -6,7 +6,7 @@
  * movement credit, so a client that cheats on distance would not be caught here (that check has its own
  * tests on the server).
  */
-import { type Action, type Bundle, type GameEvent, type State, appearSlots, appears, publicState, statePatch, step } from '@game/kernel';
+import { type Action, type Bundle, type Gait, type GameEvent, type State, appearSlots, appears, publicState, statePatch, step } from '@game/kernel';
 
 import type { ChangeReply, StateReply, Wire } from '../src/remote';
 import { WireGap, WireRefusal } from '../src/remote';
@@ -48,7 +48,7 @@ export class FakeServer implements Wire {
       throw this.refuse('The game state changed; resume before sending another action.', 409, 'stale');
     }
     if (path === '/action') return this.action(request.action as Action, request.tick as number);
-    return this.moves(request.moves as { kind?: unknown; at?: [number, number]; tick?: number }[]);
+    return this.moves(request.moves as { kind?: unknown; at?: [number, number]; tick?: number; gait?: Gait }[]);
   }
 
   async get(path: '/state'): Promise<StateReply> {
@@ -86,7 +86,7 @@ export class FakeServer implements Wire {
     return this.land(result.state, result.events);
   }
 
-  private moves(moves: { kind?: unknown; at?: [number, number]; tick?: number }[]): ChangeReply {
+  private moves(moves: { kind?: unknown; at?: [number, number]; tick?: number; gait?: Gait }[]): ChangeReply {
     if (!Array.isArray(moves) || moves.length === 0 || moves.length > MOVE_LIMIT) {
       throw new WireRefusal(`Send between 1 and ${MOVE_LIMIT} movement reports.`, 400);
     }
@@ -101,7 +101,8 @@ export class FakeServer implements Wire {
     }
     this.checkClock(previous);
     for (const report of moves) {
-      const result = step(this.bundle, state, { t: 'move', at: report.at! }, report.tick as number, { validateTravel: true });
+      const action: Action = report.gait === undefined ? { t: 'move', at: report.at! } : { t: 'move', at: report.at!, gait: report.gait };
+      const result = step(this.bundle, state, action, report.tick as number, { validateTravel: true });
       if (!result.ok) throw this.refuse(result.error, 409, 'refused');
       state = result.state;
       events.push(...result.events);

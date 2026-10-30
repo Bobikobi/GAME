@@ -1,8 +1,8 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, step, walkCharge, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, gaitStepMs, step, walkCharge, type Action, type Bundle, type Gait, type GameEvent, type State, type Tile } from '@game/kernel';
 
-import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
+import { goldRowsOf, isGait, moveOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
 
 const BODY_LIMIT = 64 * 1024;
@@ -99,13 +99,17 @@ interface ChangeBody {
   appears: string[];
 }
 
-/** The kinds of client-played step a batch may carry. An encounter joins this list later (NEXT 18 a), with no new endpoint. */
-const MOVE_REPORT_KEYS = ['kind', 'at', 'tick'] as const;
+/**
+ * The kinds of client-played step a batch may carry. An encounter joins this list later (NEXT 18 a), with no new endpoint.
+ * A move names its gait when it is not a walk (DECISIONS 2026-10-29, the gaits): the kernel hears a sneak and a run by it.
+ */
+const MOVE_REPORT_KEYS = ['kind', 'at', 'tick', 'gait'] as const;
 
 interface MoveReport {
   kind: 'move';
   at: Tile;
   tick: number;
+  gait?: Gait;
 }
 
 class RequestError extends Error {
@@ -133,13 +137,16 @@ function hasOnlyKeys(value: Record<string, unknown>, keys: readonly string[]): b
 function moveReport(value: unknown): MoveReport {
   if (!isRecord(value)) throw new RequestError('Each movement report must be an object.', 400);
   if (!hasOnlyKeys(value, MOVE_REPORT_KEYS)) {
-    throw new RequestError('A movement report holds a kind, a tile and a tick, nothing else.', 400);
+    throw new RequestError('A movement report holds a kind, a tile, a tick and a gait, nothing else.', 400);
   }
   if (value.kind !== 'move') throw new RequestError('Only movement reports are accepted here for now.', 400);
   if (!isTile(value.at) || !validTick(value.tick)) {
     throw new RequestError('Each movement report needs a tile and a valid tick.', 400);
   }
-  return { kind: 'move', at: value.at, tick: value.tick };
+  if (value.gait !== undefined && !isGait(value.gait)) {
+    throw new RequestError('A movement report walks, runs or sneaks.', 400);
+  }
+  return value.gait === undefined ? { kind: 'move', at: value.at, tick: value.tick } : { kind: 'move', at: value.at, tick: value.tick, gait: value.gait };
 }
 
 /** Whether a value is an action the wire accepts: the kernel's shape, and no field besides it. */
@@ -227,7 +234,8 @@ export function isAction(value: unknown): value is Action {
     case 'pickup':
       return hasOnlyKeys(value, ['t', 'item', 'at']) && typeof value.item === 'string' && isTile(value.at);
     case 'move':
-      return hasOnlyKeys(value, ['t', 'at']) && isTile(value.at);
+      // a walk leaves its gait out (an old log reads walk); a run or a sneak names it, as the kernel's action does
+      return hasOnlyKeys(value, ['t', 'at', 'gait']) && isTile(value.at) && (value.gait === undefined || isGait(value.gait));
     default:
       return false;
   }
@@ -296,9 +304,11 @@ function checkClock(tick: number, record: PlayerRecord, now: number): void {
 }
 
 /**
- * The movement-time credit after a walk to `target` at `tick` (NEXT 18 a): a four-way path spends it, the
+ * The movement-time credit after a walk to `target` at `tick` (NEXT 18 a): its octile charge spends it, the
  * game time since it was last refilled refills it, and `move_reach_max` caps it. Undefined when the walk
  * costs more than the credit holds. A target the kernel cannot reach is left to the kernel to refuse.
+ * The tile is paid at the gait's pace (`gaitStepMs`), as the kernel's own reach reads it: a run pays half a
+ * walk's time and a sneak more, so a report cannot claim a sneak's quiet at a walk's speed.
  */
 export function spendWalk(
   bundle: Bundle,
@@ -309,9 +319,10 @@ export function spendWalk(
   movementAt: number,
   movementCreditMs: number,
   leg: Tile | null = null,
+  gait: Gait = 'walk',
 ): { at: number; creditMs: number; leg: Tile | null } | undefined {
-  // the pace the load allows (the 23.10 decision): a heavy player cannot report a light walk
-  const stepMs = walkStepMs(bundle, state);
+  // the pace the load allows (the 23.10 decision) at the gait the step names: a heavy player cannot report a light walk
+  const stepMs = gaitStepMs(bundle, state, gait);
   const maxReach = bundle.params.move_reach_max;
   const elapsedSinceMove = Math.max(0, tick - state.player.movedAt);
   const reach = Math.min(2 + Math.floor(elapsedSinceMove / stepMs), maxReach);
@@ -462,8 +473,10 @@ async function route(request: IncomingMessage, response: ServerResponse, options
         movementAt,
         movementCreditMs,
         leg,
+        report.gait,
       );
-      const result = step(options.bundle, state, { t: 'move', at: report.at }, report.tick, { validateTravel: true });
+      const action = moveOf(report.at, report.gait);
+      const result = step(options.bundle, state, action, report.tick, { validateTravel: true });
       if (!result.ok) refused(result.error);
       state = result.state;
       events.push(...result.events);
@@ -471,7 +484,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       movementCreditMs = nextCredit.creditMs;
       leg = nextCredit.leg;
       // the report is the action that paid, at the report's own tick, and the replay reads the same two
-      played.push({ action: { t: 'move', at: report.at }, tick: report.tick, events: result.events });
+      played.push({ action, tick: report.tick, events: result.events });
     }
     booked = { kind: 'moves', moves: reports };
   }
