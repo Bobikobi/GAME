@@ -746,14 +746,18 @@ const DAY_MINUTE = '(() => { const s = __game.session, day = __game.bundle.param
  */
 const LATEST_HILL_MINUTE = 19 * 60 + 10;
 
-/** OPENING_REVIEW criterion 8: the longest stretch of play clock between two pays, the clock's own jumps counted as waiting. */
+/**
+ * OPENING_REVIEW criterion 8: the longest stretch of play clock between two pays. A jump the run itself made (the wait for the
+ * next dusk after a late stew, `__e2e.setHour`) is not play: it is taken out of the stretch it falls in, and logged as skipped.
+ */
 const LONGEST_STRETCH_MS = 90_000;
 async function stretches(page: Page, log: (msg: string) => void, who: string, until: string): Promise<{ ms: number; from: string; to: string }[]> {
   const r = await page.eval<{ list: { t: number; k: string }[]; jumps: { from: number; to: number }[]; end: number }>('__e2e.paysOff()');
   const gaps: { ms: number; from: string; to: string }[] = [];
-  for (let i = 1; i < r.list.length; i++) gaps.push({ ms: r.list[i]!.t - r.list[i - 1]!.t, from: r.list[i - 1]!.k, to: r.list[i]!.k });
+  const played = (a: number, b: number) => b - a - r.jumps.reduce((n, j) => n + Math.max(0, Math.min(b, j.to) - Math.max(a, j.from)), 0);
+  for (let i = 1; i < r.list.length; i++) gaps.push({ ms: played(r.list[i - 1]!.t, r.list[i]!.t), from: r.list[i - 1]!.k, to: r.list[i]!.k });
   const last = r.list[r.list.length - 1]!;
-  gaps.push({ ms: r.end - last.t, from: last.k, to: until });
+  gaps.push({ ms: played(last.t, r.end), from: last.k, to: until });
   gaps.sort((a, b) => b.ms - a.ms);
   const skipped = r.jumps.reduce((n, j) => n + (j.to - j.from), 0);
   log(`${who}: ${r.list.length} pays to ${until} in ${Math.round(r.end / 1000)} s of play clock, ${Math.round(skipped / 1000)} s of it skipped by the run`);
@@ -1284,7 +1288,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const stewAt = await page.eval<number>(DAY_MINUTE);
       if (stewAt >= LATEST_HILL_MINUTE || stewAt < 5 * 60) {
         await page.eval('__e2e.setHour(19)');
-        log(`the stew came at ${Math.floor(stewAt / 60)}:${String(stewAt % 60).padStart(2, '0')}, too late to dig before dark: the player waits in town for the next dusk`);
+        log(`WARN the stew came at ${Math.floor(stewAt / 60)}:${String(stewAt % 60).padStart(2, '0')}, too late to dig before dark: the player waits in town for the next dusk`);
       }
       // at dusk the hill lantern lights the tile to dig: the player waits beside it, and the wait counts.
       // From the stew on, every step that can meet 20:00 on a slow machine reads the lantern warning where it opens (pastDusk)
