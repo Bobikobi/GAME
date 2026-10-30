@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import {
-  CLIP_TOKENS, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_POST_SCALE, KAGGLE_RECIPES, KAGGLE_RECIPE_NAMES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
+  CLIP_TOKENS, KAGGLE_CREATURE_NEGATIVE, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_POST_SCALE, KAGGLE_RECIPES, KAGGLE_RECIPE_NAMES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
   kaggleCanvas, kaggleCanvasFor, shapeOf, kaggleFileName, kaggleFromPrompt, kaggleSentencePrompt, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
   localHistory, localPrompt, localSettings, localWorkflow, parseDrawer, promptForModel, splitWave,
 } from '../src/kit/drawers.js';
@@ -253,6 +253,17 @@ describe('the kaggle route', () => {
     expect(canvas({ KAGGLE_MODEL: 'qwen' })).toEqual([1024, 1728]);
     expect(canvas({ KAGGLE_MODEL: 'sd15' })).toEqual([512, 512]);
     expect(canvas({ KAGGLE_MODEL: 'sd15', KAGGLE_DENOISE: '1' })).toEqual([512, 832]);
+  });
+
+  test('a creature job drops "animal" from the negative prompt and keeps the rest', () => {
+    expect(kaggleSettings({}).negative).toBe(KAGGLE_NEGATIVE);
+    const s = kaggleSettings({ KAGGLE_NEGATIVE_KIND: 'creature' });
+    expect(s.negative).toBe(KAGGLE_CREATURE_NEGATIVE);
+    expect(s.negative.split(', ')).not.toContain('animal');
+    expect(KAGGLE_CREATURE_NEGATIVE.split(', ')).toHaveLength(KAGGLE_NEGATIVE.split(', ').length - 1);
+    expect(s.negative).toContain('multiple characters');
+    expect((kaggleWave([], s) as { settings: { negative: string } }).settings.negative).toBe(KAGGLE_CREATURE_NEGATIVE);
+    expect(() => kaggleSettings({ KAGGLE_NEGATIVE_KIND: 'cat' })).toThrow(/KAGGLE_NEGATIVE_KIND/);
   });
 
   test('the negative prompt names the light the model paints on the background', () => {
