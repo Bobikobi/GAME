@@ -2,6 +2,14 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.11 - 2026-10-30
+
+What players notice
+
+What creators notice
+
+What changed underneath
+
 ## v0.1.10 - 2026-10-30 - Loomvale
 
 What players notice
