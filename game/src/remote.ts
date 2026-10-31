@@ -20,6 +20,7 @@ import {
   hourOf,
 } from '@game/kernel';
 
+import { SEEN_CONTENT_KEY } from './config';
 import { LONGEST_FRAME_MS } from './session';
 import { type ActResult, type Facing, type GameSession, type LogEntry, type SessionEvents, burnEnded } from './session-surface';
 
@@ -107,6 +108,17 @@ function isStale(refusal: WireRefusal): boolean {
   return refusal.reason === undefined ? refusal.message === STALE : refusal.reason === STALE_REASON;
 }
 
+/** Where the content last shown is kept: the browser's storage, or nothing where it is blocked or absent. */
+export type SeenStore = Pick<Storage, 'getItem' | 'setItem'> | null;
+
+function browserStorage(): SeenStore {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const TAIL = 40;
 /** How many movement reports one batch carries at most: the server's own cap (NEXT 18 a). */
 const MOVE_BATCH = 256;
@@ -123,8 +135,11 @@ export class RemoteSession implements GameSession {
   tail: LogEntry[] = [];
   /** the appear nodes the server says stand now: drawn on the phone, never drawn from a seed here */
   private appearing = new Set<string>();
-  /** The server keeps the state: nothing is ever fitted to this content on the phone. */
-  readonly adapted = false;
+  /**
+   * The server keeps the state and fits it to new content itself (`adaptState`); this says that it did since
+   * this browser last showed the world, so the game can say the valley was updated, as it does for a save.
+   */
+  readonly adapted: boolean;
   /** the state version the next write names: two requests cannot both win on the server */
   version: number;
   /** actions that wait for their reply; more than one when a second act queues behind the first */
@@ -141,10 +156,17 @@ export class RemoteSession implements GameSession {
   private wire: Wire;
   /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
   private hour = -1;
+  private seen: SeenStore;
+  /** the content tag last written to `seen`: a frame writes only when it changes */
+  private noted: string | null;
 
-  private constructor(bundle: Bundle, wire: Wire, state: PublicState, version: number) {
+  private constructor(bundle: Bundle, wire: Wire, state: PublicState, version: number, seen: SeenStore) {
     this.bundle = bundle;
     this.wire = wire;
+    this.seen = seen;
+    this.noted = read(seen);
+    // a browser that never showed this server's world has nothing to compare: a first visit is not an update
+    this.adapted = this.noted !== null && this.noted !== state.content;
     this.state = state;
     this.version = version;
     // the clock starts where the server's state stands: a returning player who sent less would be refused as
@@ -159,9 +181,9 @@ export class RemoteSession implements GameSession {
    * Resume: `POST /session` with nothing in it answers the state the server keeps. The phone sends no state
    * of its own, and the game never runs a tick the player did not ask for.
    */
-  static async join(bundle: Bundle, wire: Wire): Promise<RemoteSession> {
+  static async join(bundle: Bundle, wire: Wire, seen: SeenStore = browserStorage()): Promise<RemoteSession> {
     const reply = await wire.post('/session', {}) as StateReply;
-    return new RemoteSession(bundle, wire, reply.state, reply.version);
+    return new RemoteSession(bundle, wire, reply.state, reply.version, seen);
   }
 
   /** true while an action waits for its reply: input is held, so nothing is sent twice */
@@ -227,6 +249,8 @@ export class RemoteSession implements GameSession {
   /** Called every frame with real elapsed ms, as the local session is. */
   advance(dt: number): void {
     if (!this.started || this.paused) return;
+    // the world is on screen: this browser has now shown this content (the title's probe joins without showing it)
+    if (this.noted !== this.state.content) this.note();
     this.tick += Math.max(0, Math.min(LONGEST_FRAME_MS, Math.round(dt)));
     this.tellOuts();
     if (this.deferred.length > 0 && !this.busy) {
@@ -390,6 +414,7 @@ export class RemoteSession implements GameSession {
   }
 
   private async resync(): Promise<void> {
+    const before = this.state.content;
     let reply: StateReply;
     try {
       reply = await this.wire.get('/state');
@@ -409,7 +434,18 @@ export class RemoteSession implements GameSession {
     // or a dropped line would otherwise never tell it to a player who stands still
     this.outSeen = 0;
     this.open = true;
+    // a state read again under other content: the server was updated while the game was open
+    if (this.state.content !== before) this.emit('updated', undefined);
     this.emit('change', undefined);
+  }
+
+  private note(): void {
+    this.noted = this.state.content;
+    try {
+      this.seen?.setItem(SEEN_CONTENT_KEY, this.noted);
+    } catch {
+      // storage may be full or blocked: the next visit then says nothing, which is never wrong
+    }
   }
 
   /** The line dropped: the game pauses at once and takes no input until a resume answers. */
@@ -446,5 +482,13 @@ export class RemoteSession implements GameSession {
     if (fall?.e !== 'fall') return;
     this.pos = [fall.at[0], fall.at[1]];
     this.deferred = [];
+  }
+}
+
+function read(seen: SeenStore): string | null {
+  try {
+    return seen?.getItem(SEEN_CONTENT_KEY) ?? null;
+  } catch {
+    return null;
   }
 }
