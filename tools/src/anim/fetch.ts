@@ -5,9 +5,9 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
-import { CACHE_DIR, type Library } from './clip.js';
-import { zipFile } from './zip.js';
+import { basename, dirname, join } from 'node:path';
+import { CACHE_DIR, type Library, type ModelPack } from './clip.js';
+import { zipEntries, zipFile, zipRead } from './zip.js';
 
 export const LIB_DIR = join(CACHE_DIR, 'lib');
 
@@ -39,6 +39,53 @@ export function unpack(id: string, lib: Library, archive: Buffer): string {
   writeFileSync(join(dir, 'License.txt'), zipFile(archive, lib.licence_file));
   writeFileSync(join(dir, 'sha256'), `${lib.sha256}\n`);
   return join(dir, basename(lib.glb));
+}
+
+// ------------------------------------------------------------------ model packs (races)
+
+export const MODEL_DIR = join(CACHE_DIR, 'models');
+
+/** Why these bytes are not the pack in libraries.json; empty when they are. */
+export function packProblems(buf: Buffer, pack: ModelPack): string[] {
+  const out: string[] = [];
+  if (buf.length !== pack.bytes) out.push(`${buf.length} bytes, expected ${pack.bytes}`);
+  const sum = sha256(buf);
+  if (sum !== pack.sha256) out.push(`sha256 ${sum}, expected ${pack.sha256}`);
+  return out;
+}
+
+/** Where a pack lands once fetched, and whether it is there and checked. */
+export function modelDir(id: string, pack: ModelPack): { dir: string; ready: boolean } {
+  const dir = join(MODEL_DIR, id);
+  const stamp = join(dir, 'sha256');
+  return { dir, ready: existsSync(stamp) && readFileSync(stamp, 'utf8').trim() === pack.sha256 };
+}
+
+/** Unpack a checked pack: the folders it names (paths kept as in the archive) and the licence, or its one file. */
+export function unpackModel(id: string, pack: ModelPack, buf: Buffer): string {
+  const problems = packProblems(buf, pack);
+  if (problems.length > 0) throw new Error(`${id}: refused, the pack is not the one in libraries.json (${problems.join('; ')})`);
+  const dir = join(MODEL_DIR, id);
+  mkdirSync(dir, { recursive: true });
+  if (pack.file !== undefined) writeFileSync(join(dir, pack.file), buf);
+  else {
+    const wanted = [...(pack.unpack ?? []), ...(pack.licence_file ? [pack.licence_file] : [])];
+    for (const e of zipEntries(buf)) {
+      if (e.name.endsWith('/') || !wanted.some((w) => e.name.startsWith(w))) continue;
+      const to = join(dir, e.name);
+      mkdirSync(dirname(to), { recursive: true });
+      writeFileSync(to, zipRead(buf, e));
+    }
+  }
+  writeFileSync(join(dir, 'sha256'), `${pack.sha256}\n`);
+  return dir;
+}
+
+/** A file by its URL (a poly.pizza model). */
+export async function urlDownload(url: string): Promise<Buffer> {
+  const res = await fetch(url, { headers: { 'user-agent': AGENT } });
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  return Buffer.from(await res.arrayBuffer());
 }
 
 // ------------------------------------------------------------------ itch.io, a free upload

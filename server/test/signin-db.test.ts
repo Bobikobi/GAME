@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { Pool } from 'pg';
 import { newState, step, widenSeed, type Bundle, type Seed, type State } from '@game/kernel';
 
-import { checkAccount, createPgAuthStore, createPgStore, createPlayerRecord, takeOpening, type AuthStore, type NewGame } from '../src';
+import { checkAccount, createPgAuthStore, createPgStore, createPlayerRecord, NEW_ACCOUNT_WINDOW_MS, pgAccountCounts, takeOpening, type AuthStore, type NewGame } from '../src';
 import { CLOSED_ACCOUNT_GRACE_MS } from '../src/auth/store';
 import { migrate } from '../src/migrate';
 import { newToken, tokenHash } from '../src/auth/tokens';
@@ -156,6 +156,30 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     expect(await store.sessionAccount(live, NOW)).toBeUndefined();
   });
 
+  test('a proof of the address drops the weaker ways in and ends the sessions in one go, and only when one went', async () => {
+    const accountId = await account();
+    await store.addIdentity('discord', '80351110224678912', accountId);
+    const before = await pool.query<{ provider: string }>('select provider from sign_in_identities where account_id = $1 order by provider', [accountId]);
+    const kept = before.rows.map((row) => row.provider).filter((provider) => provider !== 'discord');
+    const session = tokenHash(newToken());
+    await store.createSession(session, accountId, NOW, NOW + MINUTE);
+    expect(await store.dropIdentities(accountId, ['discord'], NOW)).toBe(1);
+    expect(await store.sessionAccount(session, NOW)).toBeUndefined();
+    expect(await store.accountForIdentity('discord', '80351110224678912')).toBeUndefined();
+    const after = await pool.query<{ provider: string }>('select provider from sign_in_identities where account_id = $1 order by provider', [accountId]);
+    expect(after.rows.map((row) => row.provider)).toEqual(kept);
+    // a sign-in through the dropped way makes no session; one through a way that still leads in does
+    expect(await store.createSession(tokenHash(newToken()), accountId, NOW, NOW + MINUTE, { provider: 'discord', subject: '80351110224678912' })).toBe(false);
+    // `account()` makes its accounts through Google, as `sub-<name>`
+    const { rows } = await pool.query<{ subject: string }>("select subject from sign_in_identities where account_id = $1 and provider = 'google'", [accountId]);
+    expect(await store.createSession(tokenHash(newToken()), accountId, NOW, NOW + MINUTE, { provider: 'google', subject: rows[0]!.subject })).toBe(true);
+    // nothing weaker left: a later proof ends no session
+    const next = tokenHash(newToken());
+    await store.createSession(next, accountId, NOW, NOW + MINUTE);
+    expect(await store.dropIdentities(accountId, ['discord'], NOW)).toBe(0);
+    expect(await store.sessionAccount(next, NOW)).toBe(accountId);
+  });
+
   /** An account with a played game, a session, a board place and a ledger row, ready to be closed. */
   async function played(name?: string): Promise<string> {
     const record = createPlayerRecord(bundle, started(), NOW);
@@ -262,5 +286,19 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     expect(await store.nameTaken('Juniper')).toBe(true);
     await store.eraseClosed(NOW + CLOSED_ACCOUNT_GRACE_MS, CLOSED_ACCOUNT_GRACE_MS);
     expect(await store.nameTaken('Juniper')).toBe(false);
+  });
+
+  test('the players counter counts the open accounts and the ones opened in the window, and nothing of a closed one', async () => {
+    const counts = pgAccountCounts(pool);
+    // an instant after everything earlier tests made, so their accounts count in the total and not as new
+    const later = Date.UTC(2031, 0, 1);
+    const before = await counts(later);
+    const add = (email: string, name: string, openedAt: number, closedAt: number | null) =>
+      pool.query("insert into accounts (email, name, country, created_at, closed_at) values ($1, $2, 'DE', $3, $4)", [email, name, new Date(openedAt), closedAt === null ? null : new Date(closedAt)]);
+    await add('fresh@example.com', 'Fresh', later - 24 * 60 * MINUTE, null);
+    await add('edge@example.com', 'Edge', later - NEW_ACCOUNT_WINDOW_MS, null);
+    await add('settled@example.com', 'Settled', later - NEW_ACCOUNT_WINDOW_MS - MINUTE, null);
+    await add('gone@example.com', 'Gone', later - MINUTE, later);
+    expect(await counts(later)).toEqual({ accounts: before.accounts + 3, new_7d: before.new_7d + 2 });
   });
 });

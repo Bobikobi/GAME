@@ -49,7 +49,7 @@
         }
       ]
     },
-    "sprite": "core/base-kit:chars/forager_down",
-    "sprite_alt": "core/base-kit:chars/forager_w_down"
+    "sprite": "core/base-kit:chars/elf_down",
+    "sprite_alt": "core/base-kit:chars/elf_w_down"
   }
 }

@@ -1,3 +1,5 @@
+import { SOFTWARE_GPU } from './device';
+
 /**
  * The ground's rich detail, worked out without Phaser so it can be tested: the
  * tile hash, smooth value noise over tile coordinates, the tone field that groups
@@ -125,6 +127,12 @@ export function canopyGroups(width: number, height: number, isForest: (x: number
 /** The grass ramp, dark to light: the five palette greens the tones step between. */
 export const GREENS: readonly number[] = [0x1f3d2b, 0x2e6b3b, 0x4c9a3f, 0x84c450, 0xc8e88a];
 
+/** 0..1, stable per pixel place, and twice as likely to come low on the even diagonals: a hatch rather than snow. */
+function hatch(x: number, y: number): number {
+  const r = hash(x, y) / 4294967296;
+  return (x + y) % 2 === 0 ? r * 0.7 : r * 1.3;
+}
+
 /**
  * Remaps the pixels of a grass tile in place for one tone. Shade: the grass base steps
  * down to the mid green on a stable stipple of about a third of its pixels, and the
@@ -147,11 +155,13 @@ export function remapTone(data: Uint8ClampedArray, width: number, tone: Tone, fr
     const py = Math.floor(p / width);
     let out: number | undefined;
     if (tone === 1) {
-      if (rgb === light) out = base;
-      else if (hash(px + 101, py + 211) % 3 === 0) out = GREENS[1];
+      if (rgb === light) {
+        // a field of the light green (wave 3's flat meadow) shades as a hatch, not a block: a checker-biased seventh steps down; the base steps as a hatch too
+        if (hatch(px + 101, py + 211) < 0.14) out = base;
+      } else if (hatch(px + 101, py + 211) < 0.12) out = GREENS[1];
     } else if (rgb === light) {
-      out = GREENS[4];
-    } else if (hash(px + 307, py + 401) % 4 === 0) {
+      if (hatch(px + 307, py + 401) < 0.09) out = GREENS[4];
+    } else if (hatch(px + 307, py + 401) < 0.12) {
       out = light;
     }
     if (out === undefined) continue;
@@ -159,4 +169,58 @@ export function remapTone(data: Uint8ClampedArray, width: number, tone: Tone, fr
     data[i + 1] = (out >>> 8) & 255;
     data[i + 2] = out & 255;
   }
+}
+
+/**
+ * The pixels that may move (LIGHTING.md section 3 C, the owner's C of 30.10): the meadow's two lightest greens, which
+ * lean with the gust wherever they are drawn (a tile, a tall grass, a canopy's highlights), and the water's two light
+ * dashes, which drift along the stream. Every other colour holds still, so a trunk, a path or a body never moves.
+ */
+export const MOVES = { meadow: [0x84c450, 0xc8e88a], water: [0x7cc4ec, 0xc4ecf8] } as const;
+
+/**
+ * The gust the sway shader reads: how close a screen colour must be to a moving one (a share of a channel, so a
+ * colour the camera's grade nudged still counts), how fast the gust runs, and how wide its bands are a pixel.
+ */
+export const GUST = { tolerance: 0.035, speed: 1.3, scale: 0.035 } as const;
+
+/** 0 still, 1 a meadow green that leans, 2 a water dash that drifts: the mask the sway shader applies by colour. */
+export function movesAs(rgb: number): 0 | 1 | 2 {
+  if ((MOVES.meadow as readonly number[]).includes(rgb)) return 1;
+  if ((MOVES.water as readonly number[]).includes(rgb)) return 2;
+  return 0;
+}
+
+/** The mask of a picture's pixels that may move (RGBA bytes): one entry a pixel, as `movesAs`; clear pixels hold still. */
+export function groundMask(data: Uint8ClampedArray | Uint8Array, width: number, height: number): Uint8Array {
+  const out = new Uint8Array(width * height);
+  for (let p = 0; p < width * height; p++) {
+    if ((data[4 * p + 3] ?? 0) < 128) continue;
+    out[p] = movesAs(((data[4 * p] ?? 0) << 16) | ((data[4 * p + 1] ?? 0) << 8) | (data[4 * p + 2] ?? 0));
+  }
+  return out;
+}
+
+/**
+ * How far the gust leans a meadow pixel at art pixel (x, y) at `time` seconds, in whole art px: 2 at its heart, 1 at
+ * its edge, 0 between gusts, and a row band every 6 px a step less. The shader runs the same sum.
+ */
+export function leanAt(x: number, y: number, time: number): 0 | 1 | 2 {
+  const g = Math.sin(x * GUST.scale + y * GUST.scale * 0.6 - time * GUST.speed);
+  let lean = g > 0.85 ? 2 : g > 0.55 ? 1 : 0;
+  if (Math.floor(y / 6) % 2 === 1) lean = Math.max(0, lean - 1);
+  return lean as 0 | 1 | 2;
+}
+
+/**
+ * Whether the sway runs on this browser: everywhere WebGL has a graphics chip, phones of every tier included (the owner,
+ * 30.10: not gated on the weak phone); not where WebGL is drawn in software (SwiftShader, llvmpipe: a machine without
+ * a graphics chip, or a test runner), where its full-screen pass cost a third of a frame. `?sway=on` or `?sway=off`
+ * in the address decides for a still, a clip or a measurement.
+ */
+export function swayOn(gpu: string, query: string): boolean {
+  const asked = new URLSearchParams(query).get('sway');
+  if (asked === 'on') return true;
+  if (asked === 'off') return false;
+  return !SOFTWARE_GPU.test(gpu);
 }

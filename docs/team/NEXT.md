@@ -402,6 +402,18 @@ After it, not in this pull request: the waves, in this order.
 
 Each wave is a pull request of kit PNGs with `density: 4` and their `source`, with a phone still of the wave. The first wave's still shows the proportions table to the owner once (STYLE.md section 1b); after that a wave is polish inside the agreed direction, with no stills round. The shadows, the night and depth cues 1 to 5 did not land with this step: they come in the engine-ladder session of decision 6 of 22.10 (after the map plan and the Pell pick), with the doubled numbers of STYLE.md.
 
+### The rich waves, as dispatched (30.10, the owner's focus: production fully in the rich 64 px art)
+
+The owner's words of 30.10 that steer every wave: wave 1's first pass was "nice ground, but too green and no feeling of nature; the path is cut off too sharply"; its second pass "the ground join - yes, but the green is too clean; maybe the plants on it will bring the missing volume, and the plants' shadows, and order in nature"; and on picks, "in a big world there is room for all the good ones". A measure (`pnpm art:measure`) is a filter for palette, seam, foot and richness; the owner's like or no is the pick (`art:pick --by elad`, the only picker); every candidate he approves is kept and placed. Hand-written pixel grids reached his bar for the ground (wave 1) and not for props (four redraws refused in one sentence, 30.10): a prop is drawn by an image model.
+
+- **Wave 1, the ground** (#471, `feat/art-rich-wave-1`): the valley floor at 64 px by the scatter route with hand-authored motifs; grass one continuous olive field whose variation is tone and tufts, bare earth only where there is a reason (a path, a clearing, under a rock) as a connected shape with a wandering, dithered fringe; the path darker and worn. Landed as the owner's pick.
+- **Wave 2, the props** (`feat/art-rich-wave-2`, game-8f): the 12 small props. Picked 30.10: flowers C, flowers_white A, reeds B, standing_stone A, well_old A and B (two kit ids, `well_old` and `well_old_b`, the second placed by one map-content line), fence A, fence_post A, glow_mushrooms A. To draw by image model: grass_tall, herb_plant, campfire_lit, bush_berry (B's silhouette as the base), then lantern_post, broken_statue, market_stall, house_small, dead_tree, shop_sign_food. Shadows are the engine's cast (STYLE.md sections 3 and 4): every picked prop is on the caster list with its foot on its lowest solid row, and the pull request carries one still at a sun hour that shows the plants casting. The image model: Codex (`pnpm kit:gen`) while it has credits; else Gemini through the browser rig, `~/browser-agent/gemini_image.py` with a `--image` reference and a full-size download (its two defects of the tools table below), behind `kit:gen --via gemini`, logged as the sprite's `source`. That tools change is its own small pull request, tools only. The art pull request is art only.
+- **Wave 2b, order in nature** (its own pull request right after wave 2): a placement rule per prop with its numbers in content params - flowers in patches of 3 to 7, reeds only by water, bushes at wood edges and along fences, stones in twos and threes, tall grass in drifts along the path fringe; the builder first reports in one line what the map content can carry today (scatter against map props). Measurable: no prop placed by a uniform random scatter; each rule's numbers read from params; `pnpm check` green.
+- **Wave 3, the rest of the ground** (`feat/art-rich-wave-3`, game-2f, right after wave 1 lands): water, shore, bank, bridge, rubble, mountain, snow, marsh and highland at 64 px, by the same route as wave 1, same words of the owner; water and bridge by image where the scatter cannot carry them (the tools table: 4 images). One phone still per terrain family to the manager before the push, the same way as wave 1. Beside it, **the wide opening path**, its own small content pull request, `feat/opening-path-wide`: the bank path (`core/bank-path`, (7,6) to (9,22), one tile wide today in `plan.paths` and `map.ground`) becomes two to three tiles wide with a rounded, uneven outline, as in the owner's three reference stills of 30.10 (a wide soft path is half of their "natural join"); G69's straight-run limit holds; `game/e2e/opening.ts` is not touched, but the walk plan's adjacency changes, so it needs its own opening-phone run; a phone still to the manager before the push, and the owner judges it when he is back. It collides with the A2 map stream: one file, `content/core/map.json`, so it lands as soon as its still is in and its run is green.
+- **Wave 4, the cast at 64 on the rig**: superseded as (b) below says; it is the animation route's, not this chain's.
+
+Pace: two sessions build at once on this chain (the ground and the props), each on its own worktree; a wave's still goes to the manager, who sends it to the owner as a picture in the chat; while the owner is away, the chain does not wait - the next wave starts when the previous one lands, and his verdicts are applied when they come (owner, 30.10: "when the merges finish, continue development until I answer").
+
 ### The waves' tools
 
 Written 2026-10-18 after one measured image per tool (the same 64x64 axe item, `.scratch`, not committed). Elad's word that day: the art at 64 is redrawn anew with every tool we have, and there is a lot of it.
@@ -524,7 +536,7 @@ h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepar
   - A memory cap shows in `docker stats` for both game containers and the other product's containers are untouched (their image ids and uptimes unchanged).
   - With the wire cut for 10 s the client takes no input and, once back, the state equals the server's.
   - The sign-up asks for a name, a full date of birth and the one-account agreement, and refuses a player under 13 or under the country's higher age (DECISIONS 2026-10-21, the age-gate entry).
-  - The sign-in e2e (`game/e2e/signin.ts`, group `map-and-shops`) drives the real `createSignIn` on one origin in headless Chrome (`game/test/signin-box.ts`): the email link page's own POST is accepted, its 303 reaches the game's `#signin=signup`, the game's `GET /state` and `POST /action` carry the session cookie, and the same token posted from another origin is refused with the link unspent (DECISIONS 2026-10-27).
+  - The sign-in e2e (`game/e2e/signin.ts`, group `shop-rooms-and-signin`) drives the real `createSignIn` on one origin in headless Chrome (`game/test/signin-box.ts`): the email link page's own POST is accepted, its 303 reaches the game's `#signin=signup`, the game's `GET /state` and `POST /action` carry the session cookie, and the same token posted from another origin is refused with the link unspent (DECISIONS 2026-10-27).
 - For the owner: the wording of the sign-up and the pause box; whether the pause on a dropped line feels too sharp on a real phone; and the three-line gates, which he answers one by one.
 
 ## 19. The first map by hand, and a generator that sets the difficulty
@@ -628,7 +640,7 @@ What there is today:
 - `game/src/scenes/world.ts` `tryStep`: one tile per `walk_step_ms` (190), `facing`, `strideFrame` by step count, and `landStep` reports the tile. `game/src/play3d/world3d.ts` walks by the same rules.
 - `game/src/walking.ts`: `canEnter` (the kernel's walkable, and a ready plant or stone stands in the way), `landStep`, `StandingReports`.
 - The kernel: `{t:'move', at}` is valid within Chebyshev `2 + floor(elapsed / walk_step_ms)` of the last tile; `validateTravel` (G56) asks four-way reachability inside that square.
-- The server (`server/src/api.ts` `nextMovementCredit`): a report costs its four-way `walkDistance` times `walk_step_ms`, from a pool of `move_reach_max` (32) steps that refills with time. `RemoteSession` (`game/src/remote.ts`) batches the reports with `kind: 'move'`; #254 is open on it.
+- The server (`server/src/api.ts` `nextMovementCredit`): a report costs its octile charge (`walkCharge`) times the gait's pace (`gaitStepMs`: the pace the load allows, divided for a run, multiplied for a sneak), from a pool of `move_reach_max` (32) steps at that pace that refills with time. `RemoteSession` (`game/src/remote.ts`) batches the reports with `kind: 'move'`; #254 is open on it.
 - The e2e (`game/e2e/opening.ts`, `stealth.ts`, `tending.ts`) walk by held arrow keys or the pad, counted in tiles.
 
 One pull request, branch `feat/free-walk`, off `origin/develop`. The pixel game first; the walk's rules move into `walking.ts`, so the 3D door takes them in the same pull request if that is a few lines, and otherwise as a note under section 8 e.
@@ -693,6 +705,18 @@ Measurable:
 2. Phone stills at the closer camera of the opening's wake window and the bridge, with no wake tile, pickup or task prop covered over more than half its area (STYLE 1b's wave measure).
 3. `pnpm check` (the kit's density and size check) and `pnpm verify` exit 0.
 
+## character-pipeline. The characters through the pipeline: the owner's points of 26.10 still open
+
+Status: open
+
+Points e and f wait for their turn and are not built now.
+
+The owner, 26.10, after the contact sheet of the whole cast from `pnpm anim` (#343, DECISIONS 2026-10-25 "Characters are made industrially"): it passes in principle, with seven points. Five live elsewhere: the walk that never skates (`docs/design/ANIMATION.md` sections 5.1 and 5.3), the camera at 50 degrees for everything that moves (DECISIONS 2026-10-26, built in #351), the jump (the hop of ANIMATION section 2, waiting for its own stills), a run that costs more (the gaits of DECISIONS 2026-10-29, its breath cost waiting for the fight kernel) and the 3D illusion with the zoom (DECISIONS 2026-10-26 on the camera's turn). Two stay here.
+
+e) **The controls are a full computer game's keys**, not simple joystick buttons (the owner: that question is behind us). Each new action (the hop, the actions of a fight) gets its own key, as the run already has Shift.
+
+f) **Being hit, and losing** (later: its own ladder of trials, done in order). The character's animation when it takes a blow, effects on the screen itself, and a defeat for each creature that fits it. For example, a skeleton that loses a fight falls apart. First the idea is broken into parts, then each part is tried and shown to the owner. Start from the tag `attempt/2026-10-hit-feel` and ANIMATION sections 2 and 4 (hurt and death are verbs "with fights").
+
 ## townsperson-who-plays. A townsperson who lives the valley the way a player does
 
 Status: paused - the owner's idea of 27.10, waits for v0.1.10, the newcomer guide (docs/creators, a townsperson first) and the owner's pick of the first version below
@@ -716,3 +740,30 @@ Measurable (first version):
 3. `pnpm check` refuses a routine that names a missing slot or takes from a task's resource; `pnpm verify` exit 0.
 
 Not here: ghosts of real players (after the server), chat, combat, houses (paused, DECISIONS 2026-10-10).
+
+## presence. Players who see each other without chat
+
+Status: open
+
+Stage 4 of the order (DECISIONS 2026-10-17, "The order from here": accounts and a server, then players who see each other walk in the world without chat, chat last). It is not built before section 18 closes (the box on the session mode with a real mail sender, and the cutover of 18 h6 live) and the owner says go. Read first: section 18 (the wire this rides on); DECISIONS 2026-10-17 "The order from here", 2026-10-20 "The world's hour is the server's clock", 2026-10-11 "P-5b", 2026-10-10 "The shared world" and "The world and its clocks", 2026-10-23 "Combat, round 1"; `docs/design/COMBAT.md` sections 4.2 to 4.4 (a fight rides the same socket); and `docs/design/PRESENCE.md` on the branch `docs/presence-wire` (pull request #221, closed unmerged, written 19.10).
+
+What is already specified. PRESENCE.md holds the design; this section cites it and does not copy it. A relay beside the API keeps the last position of each connected player in memory only and decides nothing that lasts (its section 2); one socket per account, opened with a short-lived token from the API (3.1); a room per 64 by 64 chunk, and the 3 by 3 chunks around the player as the interest area, the same nine the client streams (3.2); the live reach check at the relay through one kernel function shared with `moveTo`, and the batch check at the API by G56's search (3.3); what is sent about a player and what is never sent (4); the threat model (5); the parameters with their clocks (8); the numbers to measure on the box (9). Its section 0, the clock, is decided (below); the rest is the builder's proposal of 19.10, which the owner had not seen. The first pull request of this section brings it back onto `develop` as `docs/design/PRESENCE.md`, updated to what was built since 19.10: free movement and its octile charge (section 22), one origin for the game and its API (DECISIONS 2026-10-27), the server's movement credit, and a fight on the same socket (combat round 1).
+
+The clock (DECISIONS 2026-10-20, option A, the owner's word): the world's hour is the server's clock, `world.epoch` with tick 0 a noon; the server sets `state.tick` at every accepted action; a return after an absence is one kernel action `resume`, which moves the player to the world's tick and shifts what counts their own elapsed time; `leave` comes after `logout_countdown_s` outside a safe place. No tick travels on the presence wire: the relay stamps each report with the box's clock, which is the world's.
+
+The wire in one paragraph. The client already reports every tile it enters as `{t:'move', at}` (P-5b), and `RemoteSession` batches those reports into `POST /moves` (section 18 a). Presence carries the same report over a socket at `/live` on the game's own name, as `{ k: 'pos', at: [x, y], face, pose }` with the pose one of idle, walk, work, fall or rest. The relay checks it against the reach rule and answers `{ k: 'snap', at }` to a report a walk cannot make; it fans the rest out to the players subscribed to that chunk at most `presence.rate_hz` times a second, and hands each player's accepted reports to the API every `presence.batch_s` seconds and before any action of theirs, where the kernel stays the judge. Between reports the other figures move on the client by the walk rules of `game/src/walking.ts`. After each action the API tells the relay where the kernel put the player. A relay that is down loses only the figures on screen; play goes on through the API.
+
+Not here:
+- Chat of any kind. The `say` kind and the bubble frame stay reserved; chat is the last stage.
+- A name over a head. It is not decided: the order's own retry line says a name shown to other players may need chat-level moderation, so until the owner decides, a figure is drawn by its look and pose alone. PRESENCE section 4 proposes a name; that line waits for him.
+- Trading and the trade window, a group's signals, friends' presence, any list of who is online (there is none, 10.10), combat of any kind (COMBAT.md), copies of the world (W1, on a measurement).
+- The look of other players is a direction: two or three phone-size stills go to the owner before a sprite is drawn (AGENTS.md).
+
+The builds, each its own pull request off `origin/develop`, in PRESENCE section 7's order once the docs pull request above has landed: a) the relay, b) the API side, c) the client, d) ops and the moderation runbook. Every step on the box is a production gate with three lines to the owner (section 18 h). A `presence` stream joins `streams.json` in a small docs pull request when the first build starts.
+
+Measurable at the end:
+1. In CI, two simulated players (section 18 g's simulator, run twice) over the real relay and API in one chunk each receive the other's tile within 2 relay frames (400 ms at `presence.rate_hz` 5) of every report, and a third player outside their 3 by 3 chunks never receives either.
+2. A report beyond the reach rule is not fanned out and its sender gets a snap to the last accepted tile; after every accepted action the relay's tile for the player equals the kernel's (a test).
+3. No frame of that CI run carries a field of PRESENCE section 4's never-sent list, and the relay's route table holds no route that lists players (tests).
+4. On the box, the numbers of PRESENCE section 9 are measured and written into build d's pull request, the load test run with the owner's yes.
+- For the owner: whether a name stands over a head; the look of other players, as stills; each three-line gate on the box.

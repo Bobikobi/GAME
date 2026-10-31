@@ -4,7 +4,7 @@
 import Site from '../../layouts/Site.astro';
 import '../../styles/hub.css';
 import '../../styles/signature.css';
-import { builders, githubRead, reviewers, weights } from '../../data/boards';
+import { accounts, builders, githubRead, reviewers, weights } from '../../data/boards';
 import { repoFile } from '../../data/site';
 ---
 
@@ -112,6 +112,17 @@ import { repoFile } from '../../data/site';
 
     <section class="wrap sect" aria-labelledby="players-h">
       <h2 id="players-h">Players</h2>
+      {
+        accounts ? (
+          <p class="formula" data-accounts>
+            Players with an account: {accounts.open}, {accounts.new_7d} of them new in the last 7 days.
+          </p>
+        ) : (
+          <p class="formula" data-accounts>
+            Players with an account: unknown.
+          </p>
+        )
+      }
       <p class="empty">The players board opens with accounts.</p>
     </section>
   </div>
