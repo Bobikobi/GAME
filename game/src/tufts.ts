@@ -16,7 +16,7 @@ export const TUFT_SEED = 31;
 /** The three looks, kit sprites of four lean frames each (tools/src/kit/tufts.ts). */
 export const LOOKS = ['grass_tuft', 'grass_tuft_b', 'grass_tuft_c'] as const;
 /** How many tufts stand on every hundred meadow tiles. */
-export const PER_100 = 175;
+export const PER_100 = 220;
 /** One lean cycle per look, ms: 1.2 to 1.8 s. */
 export const PERIOD_MS = [1200, 1500, 1800] as const;
 /** The wind wave's length in tiles: tufts this far apart on the (x + y) diagonal lean in step. */

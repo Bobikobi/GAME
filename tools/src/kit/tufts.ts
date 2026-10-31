@@ -69,7 +69,7 @@ function drawFrame(blades: Blade[], lean: number, rgba: Uint8Array, x0: number):
     for (let r = 3; r < b.h; r++) {
       const f = r / Math.max(1, b.h - 1);
       const cx = mid + b.at + Math.round(b.fan * f + lean * f);
-      const step = f >= 0.6 ? 5 : f >= 0.3 ? 4 : 3;
+      const step = f >= 0.7 ? 5 : f >= 0.3 ? 4 : 3;
       put(cx, r, step);
       if (r < b.h - 1) put(cx + 1, r, step);
       if (f < 0.6 && b.at !== lo) put(cx - 1, r, 3);
