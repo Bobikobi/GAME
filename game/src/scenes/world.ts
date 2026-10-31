@@ -815,6 +815,7 @@ export class WorldScene extends Phaser.Scene {
       ['sand', 'water', WATER_EDGE],
       ['meadow', 'water', WATER_EDGE],
       ['grove', 'water', WATER_EDGE],
+      ['path', 'water', WATER_EDGE],
     ] as const).map(([a, b, look]) => ({
       a,
       b,
@@ -990,7 +991,7 @@ export class WorldScene extends Phaser.Scene {
       const near = m.legend[m.ground[y + dy]?.[x + dx] ?? ''];
       if (!near) continue;
       let ref: string | undefined;
-      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path') || (kind === 'bank' && (near.tag === 'meadow' || near.tag === 'riverbank' || near.tag === 'grove')) || (tag === 'riverbank' && near.tag === 'water'))) continue;
+      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path') || (kind === 'bank' && (near.tag === 'meadow' || near.tag === 'riverbank' || near.tag === 'grove' || near.tag === 'path')) || (tag === 'riverbank' && near.tag === 'water'))) continue;
       if (kind === 'bank' && near.tag !== 'water') ref = `${kit}tiles/bank_${side}`;
       else if (kind === 'fringe' && (near.tag === 'meadow' || near.tag === 'grove')) ref = `${kit}tiles/fringe_${side}`;
       else if (kind === 'worn' && near.tag === 'path') ref = `${kit}tiles/worn_${side}`;
