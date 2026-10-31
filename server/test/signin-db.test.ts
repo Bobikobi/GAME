@@ -168,6 +168,11 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     expect(await store.accountForIdentity('discord', '80351110224678912')).toBeUndefined();
     const after = await pool.query<{ provider: string }>('select provider from sign_in_identities where account_id = $1 order by provider', [accountId]);
     expect(after.rows.map((row) => row.provider)).toEqual(kept);
+    // a sign-in through the dropped way makes no session; one through a way that still leads in does
+    expect(await store.createSession(tokenHash(newToken()), accountId, NOW, NOW + MINUTE, { provider: 'discord', subject: '80351110224678912' })).toBe(false);
+    // `account()` makes its accounts through Google, as `sub-<name>`
+    const { rows } = await pool.query<{ subject: string }>("select subject from sign_in_identities where account_id = $1 and provider = 'google'", [accountId]);
+    expect(await store.createSession(tokenHash(newToken()), accountId, NOW, NOW + MINUTE, { provider: 'google', subject: rows[0]!.subject })).toBe(true);
     // nothing weaker left: a later proof ends no session
     const next = tokenHash(newToken());
     await store.createSession(next, accountId, NOW, NOW + MINUTE);

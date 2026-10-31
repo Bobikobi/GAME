@@ -86,8 +86,10 @@ export class MemoryAuthStore implements AuthStore {
     this.games.set(accountId, structuredClone(game));
     return { accountId };
   }
-  async createSession(tokenHash: string, accountId: string, _createdAt: number, expiresAt: number) {
+  async createSession(tokenHash: string, accountId: string, _createdAt: number, expiresAt: number, via?: { provider: ProviderId; subject: string }) {
+    if (via && this.identities.get(`${via.provider}:${via.subject}`) !== accountId) return false;
     this.sessions.set(tokenHash, { accountId, expiresAt });
+    return true;
   }
   async sessionAccount(tokenHash: string, now: number) {
     const session = this.sessions.get(tokenHash);

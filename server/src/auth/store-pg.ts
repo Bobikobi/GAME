@@ -169,11 +169,23 @@ export function createPgAuthStore(pool: Pool): AuthStore {
       }
     },
 
-    async createSession(tokenHash, accountId, createdAt, expiresAt) {
-      await pool.query(
-        'insert into sessions (token_hash, account_id, created_at, expires_at) values ($1, $2, $3, $4)',
-        [tokenHash, accountId, at(createdAt), at(expiresAt)],
+    async createSession(tokenHash, accountId, createdAt, expiresAt, via) {
+      if (!via) {
+        await pool.query(
+          'insert into sessions (token_hash, account_id, created_at, expires_at) values ($1, $2, $3, $4)',
+          [tokenHash, accountId, at(createdAt), at(expiresAt)],
+        );
+        return true;
+      }
+      // FOR SHARE waits for a drop of the row under way and then finds it gone; a drop that comes after waits for this
+      // insert, and its own revoke then sees the session (dropIdentities deletes first, revokes second)
+      const made = await pool.query(
+        `insert into sessions (token_hash, account_id, created_at, expires_at)
+         select $1, $2, $3, $4 where exists (
+           select 1 from sign_in_identities where provider = $5 and subject = $6 and account_id = $2 for share)`,
+        [tokenHash, accountId, at(createdAt), at(expiresAt), via.provider, via.subject],
       );
+      return (made.rowCount ?? 0) > 0;
     },
 
     async sessionAccount(tokenHash, now) {

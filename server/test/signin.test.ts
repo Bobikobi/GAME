@@ -382,6 +382,23 @@ describe('sign-in with Discord (gate 4)', () => {
     expect(w.store.accounts.size).toBe(1);
   });
 
+  test('a Discord sign-in that races the take-back makes no session: the drop lands between its lookup and its session', async () => {
+    const w = await ready();
+    await discordSignIn(w);
+    await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
+    const accountId = [...w.store.accounts.keys()][0]!;
+    const stranger = new Browser(w.base, APP);
+    const create = w.store.createSession.bind(w.store);
+    w.store.createSession = async (...args) => {
+      // the address's owner proves the mailbox at this very moment
+      await w.store.dropIdentities(accountId, ['discord'], w.clock.now);
+      return create(...args);
+    };
+    const raced = await discordSignIn(w, stranger);
+    expect(outcome(raced)).toBe('email-taken');
+    expect(stranger.jar.has('__Host-of_session')).toBe(false);
+  });
+
   test('a proof of the address that joins an account with no weaker way in leaves its sessions alone', async () => {
     const w = await ready();
     await googleSignIn(w);

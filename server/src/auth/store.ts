@@ -82,7 +82,12 @@ export interface AuthStore {
   /** The account, its first identity, its game and the end of the ticket, in one transaction; or why it was not made. */
   createAccount(account: NewAccount, ticket: SignupTicket, game: NewGame): Promise<{ accountId: string } | 'name-taken' | 'email-taken'>;
 
-  createSession(tokenHash: string, accountId: string, createdAt: number, expiresAt: number): Promise<void>;
+  /**
+   * A session for the account. With `via`, only while that identity still leads to it, checked under a lock on
+   * its row: a sign-in that raced a `dropIdentities` of its way in makes no session (false) instead of one that
+   * outlives the drop.
+   */
+  createSession(tokenHash: string, accountId: string, createdAt: number, expiresAt: number, via?: { provider: ProviderId; subject: string }): Promise<boolean>;
   /** The account a session stands for while it is neither revoked nor past its end. */
   sessionAccount(tokenHash: string, now: number): Promise<string | undefined>;
   revokeSession(tokenHash: string, now: number): Promise<void>;

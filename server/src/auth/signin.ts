@@ -9,7 +9,7 @@ import { AGE_COOKIE, clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKI
 import type { CountryLookup } from './country';
 import { inboxOf, RateLimit } from './limits';
 import type { Mailer } from './mailer';
-import { PROVES_ADDRESS, SignInRefusal, WEAKER_WAYS, type OAuthProvider, type ProvenIdentity } from './provider';
+import { PROVES_ADDRESS, SignInRefusal, WEAKER_WAYS, type OAuthProvider, type ProvenIdentity, type ProviderId } from './provider';
 import { CLOSED_ACCOUNT_GRACE_MS, type AuthStore } from './store';
 import { isToken, newToken, pkceChallenge, sameSecret, tokenHash } from './tokens';
 
@@ -211,11 +211,14 @@ export function createSignIn(options: SignInOptions): SignIn {
   }
 
   /** A new session, and the one the browser had revoked: the token changes at every sign-in. */
-  async function startSession(request: IncomingMessage, accountId: string, at: number): Promise<string> {
+  /** A session through `via`, the way in that was just proven: none if a proof of the address took that way away meanwhile. */
+  async function startSession(request: IncomingMessage, accountId: string, at: number, via: { provider: ProviderId; subject: string }): Promise<string> {
     const previous = readCookie(request, SESSION_COOKIE);
     if (isToken(previous)) await store.revokeSession(tokenHash(previous), at);
     const token = newToken();
-    await store.createSession(tokenHash(token), accountId, at, at + SESSION_TTL_MS);
+    if (!(await store.createSession(tokenHash(token), accountId, at, at + SESSION_TTL_MS, via))) {
+      throw new SignInRefusal('That address already has an account. Sign in the way you made it.', 'email-taken', 409);
+    }
     return cookie(SESSION_COOKIE, token, SESSION_TTL_MS / 1000);
   }
 
@@ -242,7 +245,7 @@ export function createSignIn(options: SignInOptions): SignIn {
     if (accountId) {
       // an account closed within its 30 days comes back by signing in; the game is told plainly
       const restored = (await store.isClosed(accountId)) && (await store.reopenAccount(accountId));
-      const session = await startSession(request, accountId, at);
+      const session = await startSession(request, accountId, at, identity);
       backToGame(response, restored ? 'restored' : 'ok', [session, clearCookie(SIGNUP_COOKIE), clearCookie(FLOW_COOKIE)]);
       return;
     }
@@ -450,7 +453,7 @@ export function createSignIn(options: SignInOptions): SignIn {
       await store.dropTicket(ticket.ticketHash);
       throw new SignInRefusal('That address already has an account. Sign in instead.', 'email-taken', 409);
     }
-    const session = await startSession(request, made.accountId, at);
+    const session = await startSession(request, made.accountId, at, ticket);
     sendJson(response, 201, { name, opening: handover.kept ? 'kept' : 'fresh' }, [session, clearCookie(SIGNUP_COOKIE)]);
   }
 
