@@ -25,6 +25,8 @@ export interface SessionEvents {
   events: GameEvent[];
   /** the state changed: redraw what depends on it */
   change: undefined;
+  /** the server brought the state to newer content while the game was open (a session on the server only) */
+  updated: undefined;
 }
 
 export interface GameSession {
