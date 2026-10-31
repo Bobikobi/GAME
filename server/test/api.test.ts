@@ -578,3 +578,65 @@ describe('a 409 says why in a code as well as in words', () => {
     });
   });
 });
+
+describe('a state stored under older content (a new image of the server)', () => {
+  function olderWorld(): State {
+    const state = started();
+    state.content = 'an-older-world';
+    // an item the older content had and today's does not
+    state.player.bag['core/no-longer-made'] = 3;
+    return state;
+  }
+
+  function neighbour(state: State): Tile {
+    const walkable = makeWalkable(bundle);
+    const [x, y] = state.player.at;
+    const found = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).map(([dx, dy]): Tile => [x + dx, y + dy]).find(([tx, ty]) => walkable(tx, ty, state.player));
+    if (!found) throw new Error('The start tile has no walkable neighbour.');
+    return found;
+  }
+
+  test('is adapted on its first read, logged once as its own version, and plays on', async () => {
+    const { base, store, clock } = await api(olderWorld());
+    const read = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
+    expect(read.status).toBe(200);
+    const body = (await read.json()) as { state: State; version: number };
+    expect(body.version).toBe(2);
+    expect(body.state.content).toBe(bundle.tag);
+    expect(body.state.player.bag['core/no-longer-made']).toBeUndefined();
+    expect(store.actionLog).toEqual([{ seq: 2, books: { action: { kind: 'adapt', from: 'an-older-world', to: bundle.tag }, tick: store.record.state.tick, gold: [] } }]);
+    // a second read finds today's content and writes nothing
+    expect((await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } })).status).toBe(200);
+    expect(store.actionLog).toHaveLength(1);
+
+    clock.now += 10_000;
+    const tick = store.record.state.tick + bundle.params.walk_step_ms;
+    const walked = await post(base, '/moves', { version: 2, moves: [move(neighbour(store.record.state), tick)] });
+    expect(walked.status).toBe(200);
+    expect(store.record.version).toBe(3);
+  });
+
+  test('a request that names the version before the adapt is told to read the state again', async () => {
+    const { base, store, clock } = await api(olderWorld());
+    clock.now += 10_000;
+    const tick = store.record.state.tick + bundle.params.walk_step_ms;
+    const stale = await post(base, '/moves', { version: 1, moves: [move(neighbour(store.record.state), tick)] });
+    expect(stale.status).toBe(409);
+    expect(await stale.json()).toMatchObject({ reason: 'stale' });
+    // the adapt was written, once, and the walk was not
+    expect(store.record.version).toBe(2);
+    expect(store.actionLog.map((entry) => entry.books.action)).toEqual([{ kind: 'adapt', from: 'an-older-world', to: bundle.tag }]);
+  });
+
+  test('a character whose race left the content is refused, and its row is left as it was', async () => {
+    const gone = olderWorld();
+    gone.player.race = 'core/a-race-that-left';
+    const { base, store } = await api(gone);
+    const before = serialize(store.record.state);
+    const read = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
+    expect(read.status).toBe(409);
+    expect(await read.json()).toEqual({ error: 'The race of this character is no longer in the game.', reason: 'refused' });
+    expect(serialize(store.record.state)).toBe(before);
+    expect(store.actionLog).toHaveLength(0);
+  });
+});

@@ -1,0 +1,70 @@
+/**
+ * A save from older content, brought to the content of today (DECISIONS.md, 2026-10-07: "A save from older
+ * content is adapted by dropping ids that no longer exist"). The phone runs it on a save it loads, and the
+ * server on a state it stored under a bundle it no longer runs, so a new version of the world never locks a
+ * character out: `step` refuses a state whose `content` is not the bundle's tag.
+ */
+import type { Bundle } from './bundle';
+import { appearSlots } from './reactions';
+import { relocationOf } from './relocate';
+import { KERNEL_VERSION, fitWorn, type State } from './state';
+
+/**
+ * The state as today's content can play it: what still exists is kept, what left the content is dropped,
+ * and the state takes the bundle's tag. Undefined when the character's race left the content: nothing can
+ * stand in for it. Pure: returns a new object and leaves the input as it was.
+ */
+export function adaptState(bundle: Bundle, saved: State): State | undefined {
+  const state = structuredClone(saved);
+  const p = state.player;
+  if (p.race !== '' && !bundle.races[p.race]) return undefined;
+  // a wake pocket that left the content: the mist and the first task fall back to the map's spawn
+  if (p.pocket !== '' && !bundle.pockets[p.pocket]) p.pocket = '';
+  // saves from kernel 0.1 have no look, and a look can be withdrawn with its sprite
+  if (typeof p.look !== 'number' || (p.look === 1 && p.race !== '' && !bundle.races[p.race]?.sprite_alt)) p.look = 0;
+  const keepKeys = <T>(record: Record<string, T>, known: Record<string, unknown>): Record<string, T> =>
+    Object.fromEntries(Object.entries(record).filter(([k]) => k in known));
+  p.bag = keepKeys(p.bag, bundle.items);
+  p.wear = keepKeys(p.wear, bundle.items);
+  p.made = keepKeys(p.made, bundle.recipes);
+  p.quests = keepKeys(p.quests, bundle.quests);
+  p.rep = keepKeys(p.rep, bundle.npcs);
+  p.xp = keepKeys(p.xp, bundle.professions);
+  p.journal = p.journal.filter((id) => id in bundle.items);
+  p.recipes = p.recipes.filter((id) => id in bundle.recipes);
+  // a recipe everyone starts with that came with this version is known at once
+  if (p.race !== '') {
+    const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
+    if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
+  }
+  // a race whose outfit came with this version: a save that holds none of an outfit piece gets it once
+  // (the pocket's tools are never granted here: they lie on the ground by the wake)
+  if (p.race !== '') {
+    for (const stack of bundle.races[p.race]!.outfit ?? []) {
+      if ((p.bag[stack.item] ?? 0) > 0) continue;
+      p.bag[stack.item] = stack.qty;
+      if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();
+    }
+  }
+  p.tries = keepKeys(p.tries, bundle.recipes);
+  p.restored = p.restored.filter((id) => id in bundle.restores);
+  p.camp = p.camp.filter((id) => id in bundle.camps);
+  p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  // what a searchable holds goes with it, and a row whose item left the content is dropped
+  state.searched = Object.fromEntries(
+    Object.entries(keepKeys(state.searched ?? {}, bundle.searchables)).map(([id, held]) => [id, { ...held, rows: held.rows.filter((item) => item in bundle.items) }]),
+  );
+  // a height layer may have walled the old tile off from every wake (G68): stand on the nearest tile a foot can reach, never a fall
+  const stand = relocationOf(bundle, state);
+  if (stand) p.at = stand;
+  // a world that changed may have moved the hazards and the safe ground: nothing carries over
+  p.outing = null;
+  p.chase = null;
+  // a node a reaction makes appear keeps its state under its own id, as long as the reaction stays
+  state.nodes = keepKeys(state.nodes, { ...bundle.instances, ...Object.fromEntries(appearSlots(bundle)) });
+  // a worn item that is gone, or no longer fits its place, comes off
+  fitWorn(bundle, state);
+  state.content = bundle.tag;
+  state.kernel = KERNEL_VERSION;
+  return state;
+}

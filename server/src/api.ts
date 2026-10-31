@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, step, walkCharge, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, adaptState, appearSlots, appears, step, walkCharge, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
@@ -356,6 +356,24 @@ async function requireAccountName(nameOf: NonNullable<ApiOptions['nameOf']>, pla
   if (named !== account) refused(`Your name in this world is ${account}.`);
 }
 
+/**
+ * A state stored under content this server no longer runs, brought to today's content as the phone brings a
+ * save (`adaptState`), and written back before anything reads it: `step` refuses a state whose content is not
+ * the bundle's, so without this every new version of the world would lock every account out. The write is a
+ * version of its own and one `action_log` row, `{ kind: 'adapt', from, to }`, so the log has no gap and the
+ * replay plays it as it happened (`replayAccount`); it moves no gold. A request that named the version before
+ * it is stale and reads the state again, as after any other write.
+ */
+async function adaptRecord(options: ApiOptions, playerId: string, record: PlayerRecord): Promise<PlayerRecord> {
+  const state = adaptState(options.bundle, record.state);
+  if (!state) refused('The race of this character is no longer in the game.');
+  const next: PlayerRecord = { ...record, state, version: record.version + 1 };
+  const books: Books = { action: { kind: 'adapt', from: record.state.content, to: state.content }, tick: state.tick, gold: [] };
+  if (await options.store.compareAndSet(playerId, record.version, next, books)) return next;
+  // another request adapted it first: what it wrote is the state now
+  return requirePlayer(await options.store.load(playerId));
+}
+
 async function playerIdFor(request: IncomingMessage, resolve: ApiOptions['resolvePlayerId']): Promise<string> {
   const playerId = await resolve(request);
   if (!playerId) throw new RequestError('Sign in to continue.', 401);
@@ -387,7 +405,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   }
 
   const playerId = await playerIdFor(request, options.resolvePlayerId);
-  const record = requirePlayer(await options.store.load(playerId));
+  let record = requirePlayer(await options.store.load(playerId));
+  if (record.state.content !== options.bundle.tag) record = await adaptRecord(options, playerId, record);
 
   if (url.pathname === '/state' || url.pathname === '/session') {
     if (url.pathname === '/session') {
