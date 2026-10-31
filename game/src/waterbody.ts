@@ -36,20 +36,6 @@ function decode(d: WaterLayerData): Raster {
   return { rgb, lum };
 }
 
-/** A wrapped box blur of a luminance layer, so the body reads as broad patches and not as the layer's fine net. */
-function soften(lum: Float32Array, radius: number): Float32Array {
-  const out = new Float32Array(lum.length);
-  const w = (v: number): number => ((v % SIZE) + SIZE) % SIZE;
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      let sum = 0;
-      for (let dy = -radius; dy <= radius; dy++) for (let dx = -radius; dx <= radius; dx++) sum += lum[w(y + dy) * SIZE + w(x + dx)]!;
-      out[y * SIZE + x] = sum / (2 * radius + 1) ** 2;
-    }
-  }
-  return out;
-}
-
 interface Layers {
   bed: Raster;
   body: Raster;
