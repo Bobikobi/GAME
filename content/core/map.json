@@ -3150,25 +3150,158 @@
           "look": "bird",
           "perch": "ground",
           "alert_tiles": 3,
-          "return_s": 40
+          "return_s": 40,
+          "hours": [
+            5,
+            20
+          ]
         },
         "core/crow": {
           "look": "bird",
           "perch": "tree",
           "alert_tiles": 3,
-          "return_s": 60
+          "return_s": 60,
+          "hours": [
+            5,
+            20
+          ],
+          "behaviour": {
+            "sight": 7,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 40,
+              "graze": 20,
+              "wander": 40
+            },
+            "roam": 10,
+            "flight": "fly",
+            "sleeps": "tree",
+            "alarm": 5,
+            "looks_back": true,
+            "drinks": false,
+            "carrion": true,
+            "fire": "ignores",
+            "water": "crosses",
+            "weather": "roosts",
+            "town": "town_kind",
+            "habitat": [
+              "grove",
+              "town"
+            ],
+            "group": {
+              "class": "flock",
+              "bands": [
+                10,
+                50,
+                40,
+                0
+              ],
+              "season": {
+                "winter": [
+                  0,
+                  20,
+                  40,
+                  40
+                ]
+              }
+            },
+            "family": "perching-birds"
+          }
         },
         "core/trout": {
           "look": "fish",
           "perch": "water",
           "alert_tiles": 2,
-          "return_s": 20
+          "return_s": 20,
+          "hours": [
+            5,
+            22
+          ]
         },
         "core/hare": {
           "look": "rabbit",
           "perch": "ground",
           "alert_tiles": 4,
-          "return_s": 45
+          "return_s": 45,
+          "hours": [
+            5,
+            20
+          ],
+          "behaviour": {
+            "sight": 6,
+            "ear": 2,
+            "smell": 0,
+            "weights": {
+              "idle": 30,
+              "graze": 50,
+              "wander": 20
+            },
+            "roam": 8,
+            "flight": "burrow",
+            "sleeps": "den",
+            "alarm": 0,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "keeps_away",
+            "water": "wall",
+            "weather": "cover",
+            "town": "avoids",
+            "habitat": [
+              "meadow"
+            ],
+            "group": {
+              "class": "solitary",
+              "bands": [
+                100,
+                0,
+                0,
+                0
+              ],
+              "season": {
+                "spring": [
+                  70,
+                  30,
+                  0,
+                  0
+                ]
+              }
+            },
+            "family": "burrowers",
+            "flush": true
+          },
+          "hunt": {
+            "size": "small",
+            "tier": 1,
+            "danger": 0,
+            "take_s": 40,
+            "drops": [
+              {
+                "item": "core/hare-meat",
+                "qty": 1,
+                "share_pct": 50
+              },
+              {
+                "item": "core/hare-hide",
+                "qty": 1,
+                "share_pct": 40
+              },
+              {
+                "item": "core/hare-bone",
+                "qty": 1,
+                "share_pct": 10
+              }
+            ],
+            "ways": [
+              "stalk",
+              "snare"
+            ],
+            "spawn": {
+              "cap_per_1000": 12,
+              "refill_d": 1
+            }
+          }
         },
         "core/roe": {
           "look": "deer",
@@ -3177,8 +3310,170 @@
           "return_s": 90,
           "hours": [
             5,
-            8
-          ]
+            22
+          ],
+          "behaviour": {
+            "sight": 8,
+            "ear": 2,
+            "smell": 6,
+            "weights": {
+              "idle": 20,
+              "graze": 50,
+              "wander": 30
+            },
+            "roam": 12,
+            "flight": "ground",
+            "sleeps": "ground",
+            "alarm": 4,
+            "looks_back": true,
+            "drinks": true,
+            "carrion": false,
+            "fire": "keeps_away",
+            "water": "wall",
+            "weather": "cover",
+            "town": "avoids",
+            "habitat": [
+              "meadow"
+            ],
+            "group": {
+              "class": "herd",
+              "bands": [
+                0,
+                40,
+                60,
+                0
+              ],
+              "season": {
+                "winter": [
+                  0,
+                  10,
+                  50,
+                  40
+                ]
+              }
+            },
+            "family": "deer"
+          },
+          "hunt": {
+            "size": "medium",
+            "tier": 1,
+            "danger": 0,
+            "take_s": 90,
+            "drops": [
+              {
+                "item": "core/roe-meat",
+                "qty": 3,
+                "share_pct": 45
+              },
+              {
+                "item": "core/roe-hide",
+                "qty": 1,
+                "share_pct": 30
+              },
+              {
+                "item": "core/roe-bone",
+                "qty": 1,
+                "share_pct": 10
+              },
+              {
+                "item": "core/roe-sinew",
+                "qty": 2,
+                "share_pct": 15
+              }
+            ],
+            "ways": [
+              "snare",
+              "stalk"
+            ],
+            "spawn": {
+              "cap_per_1000": 12,
+              "refill_d": 1
+            }
+          }
+        },
+        "core/wolf": {
+          "look": "canid",
+          "perch": "ground",
+          "alert_tiles": 8,
+          "return_s": 120,
+          "hours": [
+            20,
+            5
+          ],
+          "behaviour": {
+            "sight": 8,
+            "ear": 2,
+            "smell": 9,
+            "weights": {
+              "idle": 10,
+              "graze": 20,
+              "wander": 70
+            },
+            "roam": 14,
+            "flight": "ground",
+            "sleeps": "den",
+            "alarm": 12,
+            "looks_back": true,
+            "drinks": true,
+            "carrion": true,
+            "fire": "holds_edge",
+            "water": "wall",
+            "weather": "none",
+            "town": "avoids",
+            "habitat": [
+              "grove",
+              "meadow"
+            ],
+            "group": {
+              "class": "pack",
+              "bands": [
+                30,
+                60,
+                10,
+                0
+              ],
+              "season": {
+                "winter": [
+                  10,
+                  60,
+                  30,
+                  0
+                ]
+              }
+            },
+            "family": "canids"
+          },
+          "hunt": {
+            "size": "medium",
+            "tier": 3,
+            "danger": 2,
+            "take_s": 150,
+            "drops": [
+              {
+                "item": "core/wolf-hide",
+                "qty": 1,
+                "share_pct": 50
+              },
+              {
+                "item": "core/wolf-fang",
+                "qty": 1,
+                "share_pct": 30
+              },
+              {
+                "item": "core/wolf-meat",
+                "qty": 1,
+                "share_pct": 20
+              }
+            ],
+            "ways": [
+              "fight",
+              "lure"
+            ],
+            "spawn": {
+              "cap_per_1000": 5,
+              "refill_d": 3
+            }
+          }
         }
       },
       "spots": [
@@ -3259,7 +3554,7 @@
         },
         {
           "kind": "core/roe",
-          "x": 44,
+          "x": 10,
           "y": 11
         },
         {
