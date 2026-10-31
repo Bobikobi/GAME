@@ -103,8 +103,6 @@ export function googleProvider(options: GoogleOptions): OAuthProvider {
 
   return {
     id: 'google',
-    // the id token is signed by Google and says the address is verified: as strong as the email link itself
-    joinsByEmail: true,
     authorizeUrl({ state, challenge, nonce, redirectUri }) {
       const url = new URL(AUTHORIZE_URL);
       url.search = new URLSearchParams({

@@ -67,6 +67,11 @@ export interface AuthStore {
   /** Whether the account is closed and still inside its grace. */
   isClosed(accountId: string): Promise<boolean>;
   addIdentity(provider: ProviderId, subject: string, accountId: string): Promise<void>;
+  /**
+   * A proof of the address takes it back: the account's identities of these ways in are removed and, when one
+   * was, every session of the account is ended, in one transaction. Returns how many identities went.
+   */
+  dropIdentities(accountId: string, providers: readonly ProviderId[], now: number): Promise<number>;
 
   /** Whether a live account already has the name, in any case: the sign-up asks before it replays an opening. */
   nameTaken(name: string): Promise<boolean>;

@@ -156,6 +156,25 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     expect(await store.sessionAccount(live, NOW)).toBeUndefined();
   });
 
+  test('a proof of the address drops the weaker ways in and ends the sessions in one go, and only when one went', async () => {
+    const accountId = await account();
+    await store.addIdentity('discord', '80351110224678912', accountId);
+    const before = await pool.query<{ provider: string }>('select provider from sign_in_identities where account_id = $1 order by provider', [accountId]);
+    const kept = before.rows.map((row) => row.provider).filter((provider) => provider !== 'discord');
+    const session = tokenHash(newToken());
+    await store.createSession(session, accountId, NOW, NOW + MINUTE);
+    expect(await store.dropIdentities(accountId, ['discord'], NOW)).toBe(1);
+    expect(await store.sessionAccount(session, NOW)).toBeUndefined();
+    expect(await store.accountForIdentity('discord', '80351110224678912')).toBeUndefined();
+    const after = await pool.query<{ provider: string }>('select provider from sign_in_identities where account_id = $1 order by provider', [accountId]);
+    expect(after.rows.map((row) => row.provider)).toEqual(kept);
+    // nothing weaker left: a later proof ends no session
+    const next = tokenHash(newToken());
+    await store.createSession(next, accountId, NOW, NOW + MINUTE);
+    expect(await store.dropIdentities(accountId, ['discord'], NOW)).toBe(0);
+    expect(await store.sessionAccount(next, NOW)).toBe(accountId);
+  });
+
   /** An account with a played game, a session, a board place and a ledger row, ready to be closed. */
   async function played(name?: string): Promise<string> {
     const record = createPlayerRecord(bundle, started(), NOW);

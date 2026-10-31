@@ -23,7 +23,8 @@ export interface DiscordOptions {
  * Sign-in with Discord: the authorization code flow with PKCE (S256) and a `state` the callback checks, as
  * Google's. Discord signs no id token for this flow, so the identity is what its own API answers for the
  * access token, over TLS, straight from discord.com: the account's id, its address, and whether Discord has
- * verified that address. An unverified address or none is refused, as it is for Google. The token is used for
+ * verified that address. An unverified address or none is refused, as it is for Google; even a verified one
+ * does not prove the mailbox (`PROVES_ADDRESS`), so it never joins an account by it. The token is used for
  * that one call and kept nowhere. The nonce has no place to ride here; the state and the verifier bind the flow.
  */
 export function discordProvider(options: DiscordOptions): OAuthProvider {
@@ -33,9 +34,6 @@ export function discordProvider(options: DiscordOptions): OAuthProvider {
 
   return {
     id: 'discord',
-    // Discord's `verified` says only that the address was confirmed once, in an answer it does not sign; an
-    // account that already has the address is signed in to the way it was made, never through Discord
-    joinsByEmail: false,
     authorizeUrl({ state, challenge, redirectUri }) {
       const url = new URL(DISCORD_AUTHORIZE_URL);
       url.search = new URLSearchParams({

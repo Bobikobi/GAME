@@ -50,6 +50,17 @@ export class MemoryAuthStore implements AuthStore {
   async addIdentity(provider: ProviderId, subject: string, accountId: string) {
     if (!this.identities.has(`${provider}:${subject}`)) this.identities.set(`${provider}:${subject}`, accountId);
   }
+  async dropIdentities(accountId: string, providers: readonly ProviderId[], now: number) {
+    let count = 0;
+    for (const [key, id] of this.identities) {
+      if (id === accountId && providers.includes(key.slice(0, key.indexOf(':')) as ProviderId)) {
+        this.identities.delete(key);
+        count++;
+      }
+    }
+    if (count > 0) for (const session of this.sessions.values()) if (session.accountId === accountId && session.revokedAt === undefined) session.revokedAt = now;
+    return count;
+  }
   async nameTaken(name: string) {
     return [...this.accounts.values()].some((account) => account.name.toLowerCase() === name.toLowerCase());
   }

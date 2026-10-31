@@ -9,7 +9,7 @@ import { AGE_COOKIE, clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKI
 import type { CountryLookup } from './country';
 import { inboxOf, RateLimit } from './limits';
 import type { Mailer } from './mailer';
-import { SignInRefusal, type OAuthProvider, type ProvenIdentity } from './provider';
+import { PROVES_ADDRESS, SignInRefusal, WEAKER_WAYS, type OAuthProvider, type ProvenIdentity } from './provider';
 import { CLOSED_ACCOUNT_GRACE_MS, type AuthStore } from './store';
 import { isToken, newToken, pkceChallenge, sameSecret, tokenHash } from './tokens';
 
@@ -220,19 +220,24 @@ export function createSignIn(options: SignInOptions): SignIn {
   }
 
   /**
-   * Where a proven identity leads: the account it already signs in to; else the account its address
-   * already has, which it joins where the provider's proof of the address is strong enough (`joinsByEmail`)
-   * and is refused where it is not; else a sign-up ticket.
+   * Where a proven identity leads: the account it already signs in to; else the account its address already
+   * has, which a proof of the address joins (`PROVES_ADDRESS`), taking the address back from any weaker way in
+   * on it, and which a weaker one is refused; else a sign-up ticket.
    */
-  async function arrive(request: IncomingMessage, response: ServerResponse, identity: ProvenIdentity, at: number, joinsByEmail = true): Promise<void> {
+  async function arrive(request: IncomingMessage, response: ServerResponse, identity: ProvenIdentity, at: number): Promise<void> {
     const email = identity.email.trim().toLowerCase();
     let accountId = await store.accountForIdentity(identity.provider, identity.subject);
     if (!accountId) {
       accountId = await store.accountForEmail(email);
-      if (accountId && !joinsByEmail) {
+      if (accountId && !PROVES_ADDRESS[identity.provider]) {
         throw new SignInRefusal('That address already has an account. Sign in the way you made it.', 'email-taken', 409);
       }
-      if (accountId) await store.addIdentity(identity.provider, identity.subject, accountId);
+      if (accountId) {
+        // whoever made or joined the account through a weaker way in may not have held this mailbox: they are signed
+        // out and that way in is gone, so the address's owner is the only one left in the account
+        await store.dropIdentities(accountId, WEAKER_WAYS, at);
+        await store.addIdentity(identity.provider, identity.subject, accountId);
+      }
     }
     if (accountId) {
       // an account closed within its 30 days comes back by signing in; the game is told plainly
@@ -277,7 +282,7 @@ export function createSignIn(options: SignInOptions): SignIn {
       throw new SignInRefusal('The sign-in was not completed.', 'provider');
     }
     const identity = await provider.identify({ code, verifier: flow.verifier, nonce: flow.nonce, redirectUri: redirectUri(provider.id), now: at });
-    await arrive(request, response, identity, at, provider.joinsByEmail);
+    await arrive(request, response, identity, at);
   }
 
   async function emailStart(request: IncomingMessage, response: ServerResponse): Promise<void> {

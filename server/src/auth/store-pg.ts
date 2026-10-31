@@ -194,6 +194,24 @@ export function createPgAuthStore(pool: Pool): AuthStore {
       return rows[0];
     },
 
+    async dropIdentities(accountId, providers, now) {
+      if (!UUID.test(accountId) || providers.length === 0) return 0;
+      const client = await pool.connect();
+      try {
+        await client.query('begin');
+        const dropped = await client.query('delete from sign_in_identities where account_id = $1 and provider = any($2::text[])', [accountId, providers]);
+        const count = dropped.rowCount ?? 0;
+        if (count > 0) await client.query('update sessions set revoked_at = $2 where account_id = $1 and revoked_at is null', [accountId, at(now)]);
+        await client.query('commit');
+        return count;
+      } catch (error) {
+        await client.query('rollback').catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
     async closeAccount(accountId, now) {
       if (!UUID.test(accountId)) return;
       const client = await pool.connect();

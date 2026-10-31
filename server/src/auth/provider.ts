@@ -1,6 +1,18 @@
 /** The ways in (the owner, Q2): an email link, Google, and Discord. */
 export type ProviderId = 'email' | 'google' | 'discord';
 
+/**
+ * Whether a way in proves the address itself: the email link is the mailbox, and Google signs the address it
+ * calls verified. Discord's `verified` only says the address was confirmed once, in an answer it does not sign.
+ * A proof of the address may sign in to the account that has it, and takes the address back from every weaker
+ * way in on that account; a weaker one never joins an account by its address (refused as `email-taken`).
+ * Never a second account for one address, and never a quiet way into someone else's.
+ */
+export const PROVES_ADDRESS: Readonly<Record<ProviderId, boolean>> = { email: true, google: true, discord: false };
+
+/** The ways in that do not prove the address: what a proof of it removes from an account it joins. */
+export const WEAKER_WAYS = (Object.keys(PROVES_ADDRESS) as ProviderId[]).filter((id) => !PROVES_ADDRESS[id]);
+
 /** An identity a provider has proven: who it is there, and the address it vouches for. */
 export interface ProvenIdentity {
   provider: ProviderId;
@@ -11,12 +23,6 @@ export interface ProvenIdentity {
 /** An OAuth provider: where the browser is sent, and how its answer becomes a proven identity. */
 export interface OAuthProvider {
   id: Exclude<ProviderId, 'email'>;
-  /**
-   * Whether the address it proves may sign in to an account that already has that address. True only where the
-   * proof is strong enough to stand for the mailbox itself; otherwise such an address is refused (`email-taken`):
-   * never a second account for one address, and never a silent way into someone's account.
-   */
-  joinsByEmail: boolean;
   authorizeUrl(request: { state: string; challenge: string; nonce: string; redirectUri: string }): string;
   /** Exchange the code and check what comes back; throws a SignInRefusal on anything short of proof. */
   identify(request: { code: string; verifier: string; nonce: string; redirectUri: string; now: number }): Promise<ProvenIdentity>;

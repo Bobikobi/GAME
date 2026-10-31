@@ -364,6 +364,33 @@ describe('sign-in with Discord (gate 4)', () => {
     expect(w.store.tickets.size).toBe(0);
   });
 
+  test('the address\'s owner takes back an account made through Discord: the Discord way in is gone and its sessions end', async () => {
+    const w = await ready();
+    // someone made an account through a Discord account that carries the address
+    await discordSignIn(w);
+    await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
+    expect((await w.browser.request('/auth/me')).status).toBe(200);
+    // the address's owner proves the mailbox with a link
+    const owner = new Browser(w.base, APP);
+    const link = await emailLink({ ...w, browser: owner }, 'player@example.com');
+    expect(outcome(await followLink(owner, link))).toBe('ok');
+    expect((await owner.request('/auth/me')).status).toBe(200);
+    // the Discord session no longer answers, and Discord no longer leads into the account
+    expect((await w.browser.request('/auth/me')).status).toBe(401);
+    expect([...w.store.identities.keys()]).toEqual(['email:player@example.com']);
+    expect(outcome(await discordSignIn(w))).toBe('email-taken');
+    expect(w.store.accounts.size).toBe(1);
+  });
+
+  test('a proof of the address that joins an account with no weaker way in leaves its sessions alone', async () => {
+    const w = await ready();
+    await googleSignIn(w);
+    await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
+    const phone = new Browser(w.base, APP);
+    expect(outcome(await followLink(phone, await emailLink({ ...w, browser: phone })))).toBe('ok');
+    expect((await w.browser.request('/auth/me')).status).toBe(200);
+  });
+
   test.each([
     ['an address Discord has not verified', { verified: false }, 'email-unverified'],
     ['no address', { email: null }, 'email-unverified'],
