@@ -1,12 +1,6 @@
 {
   "note": "Sprites accepted under their floor today, each with the stream that owns its redraw. pnpm check still prints a ! line for each. The list only shrinks: a redraw that lifts a sprite takes its name off; a short sprite that is not here fails the content tests (tools/test/art-scale.test.ts).",
   "short": {
-    "core/base-kit:props/tree_oak": "trees: wave 3c (the crowns session)",
-    "core/base-kit:props/dead_tree": "trees: wave 3c (the crowns session)",
-    "core/base-kit:props/young_tree": "trees: wave 3c (the crowns session)",
-    "core/base-kit:props/sapling": "trees: wave 3c (the crowns session)",
-    "ceosisrael/kit:props/fig_bush": "trees: wave 3c (the crowns session)",
-    "ceosisrael/kit:props/fig_bush_empty": "trees: wave 3c (the crowns session)",
     "core/base-kit:chars/skeleton_down": "characters stream",
     "core/base-kit:chars/skeleton_left": "characters stream"
   }

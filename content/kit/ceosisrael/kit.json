@@ -20,7 +20,7 @@
           "plum",
           "bark"
         ],
-        "scale": 3.25,
+        "scale": 3.26,
         "source": {
           "spec": "tools/src/art/trees.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:161"
@@ -36,7 +36,7 @@
           "green",
           "bark"
         ],
-        "scale": 3.25,
+        "scale": 3.26,
         "source": {
           "spec": "tools/src/art/trees.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:162"
