@@ -3986,3 +3986,8 @@ Wave 1 left the valley's ground flat and wave 2 gave the props their 64 px look,
 - The page draws in the browser from one JSON file read every 60 s (`web/src/data/tree.ts`). The file is written every few minutes on the machine that runs the agents and published outside the site, so a refresh costs no deploy (the project is at its daily deploy cap) and needs no new secret on the site.
 - The file has a public part (stages, items by title, pull requests by number and check, agents by stream, model, busy or idle, branch and minutes quiet) and a sealed part (agents' names and last lines, the queue's notes, the owner's open asks): AES-GCM under a PBKDF2-SHA256 key from a temporary password, opened in the browser with WebCrypto and kept for the tab only. A wrong password opens nothing.
 **Retry when:** the sealed part must resist more than casual eyes (then a longer password or a gate on a server, since the sealed file itself is public); or the hub gets a deploy-free data channel of its own (then the tree moves onto it). Model: claude-opus-5-5.
+
+## 2026-10-31 ✅ Animals wear no outline: the creatures group leaves the ink rule
+**The owner's pick C of 31.10 for the animals' look is three-tone shading with no outline, so the `creatures/` group of the kit is outside the ink rule of 23.10 (PR #305): the check does not measure it and `kit:ink` does not paint it.** The rule stands for every other 64 px sprite. Found when the first creature sheet (the roe, 4 frames) failed `pnpm check` with "only 0% of its edge pixels are ink"; the pick had been made knowing A was the outlined still.
+**Retry when:** an animal's silhouette is lost on the ground at phone size (then that animal alone is outlined, as its own pick).
+Model: claude-sonnet-5-5.
