@@ -27,7 +27,7 @@ export const MAX_H = 7;
 export const LEAN = [0, 2, 4, 2] as const;
 
 /** The moss ramp, then the pale yellow-green the reference's tufts wear on their tips (31.10: one shade lighter than the meadow). */
-const MOSS = ['#2f4722', '#4a6a2c', '#6f8d36', '#9cb24c', '#c6d66e'].map(hexToRgb);
+const MOSS = ['#2f4722', '#4a6a2c', '#6f8d36', '#9cb24c', '#cfd36e'].map(hexToRgb);
 
 interface Blade {
   /** root column, px from the tuft's middle */
