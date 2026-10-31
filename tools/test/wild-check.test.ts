@@ -79,6 +79,8 @@ const HARE = 'core/hare';
 const ROE = 'core/roe';
 const CROW = 'core/crow';
 const WOLF = 'core/wolf';
+const SPARROW = 'core/sparrow';
+const TROUT = 'core/trout';
 
 let core: CheckResult;
 beforeAll(() => {
@@ -86,18 +88,19 @@ beforeAll(() => {
 });
 
 describe('the shipped content', () => {
-  it('passes: the four wild kinds of the core (hare, roe, crow, wolf) carry behaviour and the check prints no wild line', () => {
+  it('passes: the six wild kinds of the core (hare, roe, crow, wolf, sparrow, trout) carry behaviour and the check prints no wild line', () => {
     expect(lines(core)).toEqual([]);
     expect(lines(core, 'warning')).toEqual([]);
     const kinds = core.assembled.bundle!.map.creatures!.kinds;
-    for (const id of [HARE, ROE, CROW, WOLF]) expect(kinds[id]!.behaviour, id).toBeDefined();
+    for (const id of [HARE, ROE, CROW, WOLF, SPARROW, TROUT]) expect(kinds[id]!.behaviour, id).toBeDefined();
     expect(kinds[WOLF]!.hours).toEqual([20, 5]);
     expect(core.assembled.bundle!.values['core/roe-sinew']).toBeGreaterThan(0);
   });
 
-  it('keeps a kind without behaviour cosmetic: no row reads the sparrow, though it sits by the square', () => {
-    expect(core.assembled.bundle!.map.creatures!.kinds['core/sparrow']!.behaviour).toBeUndefined();
-    expect(core.issues.filter((i) => i.message.includes('core/sparrow') || i.where.includes('core/sparrow'))).toEqual([]);
+  it('keeps the sparrow, a town kind, off the square\'s 12-tile rule while it sits by it', () => {
+    const be = core.assembled.bundle!.map.creatures!.kinds[SPARROW]!.behaviour!;
+    expect(be.town).toBe('town_kind');
+    expect(core.issues.filter((i) => (i.message.includes(SPARROW) || i.where.includes(SPARROW)) && i.level === 'error')).toEqual([]);
   });
 
   it('passes the white hart fixture, priced as a fifth source', () => {
