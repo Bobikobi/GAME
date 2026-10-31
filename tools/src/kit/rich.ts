@@ -92,7 +92,6 @@ export const SIXTEEN_PX_LEFT: readonly string[] = [
   'props/flowers_blue',
   'props/fog',
   'props/hazard_wolf',
-  'props/house_small',
   'props/rubble',
   'props/ruin_arch',
   'props/ruin_pillar',

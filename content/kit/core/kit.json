@@ -702,8 +702,18 @@
       },
       "props/house_small": {
         "file": "props/house_small.png",
-        "w": 48,
-        "h": 48
+        "w": 192,
+        "h": 320,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
+        }
       },
       "props/lantern_post": {
         "file": "props/lantern_post.png",
