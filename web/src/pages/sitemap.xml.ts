@@ -4,7 +4,7 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { builders } from '../data/boards';
 
-const FIXED = ['/', '/play/', '/hub/', '/hub/boards/', '/hub/rules/', '/api/'];
+const FIXED = ['/', '/play/', '/hub/', '/hub/boards/', '/hub/rules/', '/hub/tree/', '/api/'];
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site ?? new URL('https://loomvale.vercel.app');
