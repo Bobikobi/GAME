@@ -4,6 +4,7 @@ import { ATTRIBUTES, KERNEL_VERSION, STEP_MILLI, WEAR_SLOTS, adaptState, appearS
 
 import { goldRowsOf, isGait, moveOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
+import { cachedCounts, type AccountCounts } from './stats';
 
 const BODY_LIMIT = 64 * 1024;
 const MOVE_LIMIT = 256;
@@ -65,6 +66,11 @@ export interface ApiOptions {
    * name, in the world and on the character (finding 11 of the 27.10 review).
    */
   nameOf?(playerId: string): Promise<string | undefined>;
+  /**
+   * How many accounts are open and how many are new (stats.ts), when players are accounts (the session mode);
+   * GET /stats answers it to anyone, read at most once a minute. Absent in the header mode, where /stats is not found.
+   */
+  accountCounts?(now: number): Promise<AccountCounts>;
   /** Whether the database answers; GET /health reports it and reads no player row. Absent, the process is the only thing checked. */
   health?(): Promise<boolean>;
   /** Sign-in's routes under `/auth/` (NEXT 18 e); absent in the header mode, where those paths are not found. */
@@ -261,9 +267,9 @@ interface HealthBody {
   ok: boolean;
 }
 
-function json(response: ServerResponse, status: number, body: ErrorBody | StateBody | ChangeBody | HealthBody): void {
+function json(response: ServerResponse, status: number, body: ErrorBody | StateBody | ChangeBody | HealthBody | AccountCounts, cache = 'no-store'): void {
   response.writeHead(status, {
-    'cache-control': 'no-store',
+    'cache-control': cache,
     'content-type': 'application/json; charset=utf-8',
     'x-content-type-options': 'nosniff',
   });
@@ -420,6 +426,19 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     json(response, up ? 200 : 503, { ok: up });
     return;
   }
+  if (url.pathname === '/stats' && options.accountCounts) {
+    // no identity and no player row: two counts, the same for everyone, so a cache on the way may keep them a minute
+    if (request.method !== 'GET') {
+      response.setHeader('allow', 'GET');
+      throw new RequestError('Method not allowed.', 405);
+    }
+    const counts = await options.accountCounts((options.now ?? Date.now)()).catch((error: unknown) => {
+      console.error('counting the accounts failed', error);
+      throw new RequestError('The players count is not available right now.', 503);
+    });
+    json(response, 200, { accounts: counts.accounts, new_7d: counts.new_7d }, 'public, max-age=60');
+    return;
+  }
   if (!['/action', '/moves', '/state', '/session'].includes(url.pathname)) {
     throw new RequestError('Not found.', 404);
   }
@@ -542,7 +561,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   json(response, 200, { events, patch: statePatch(record.state, state), version: next.version, appears: appearIds(options.bundle, state) });
 }
 
-export function createGameApi(options: ApiOptions): Server {
+export function createGameApi(given: ApiOptions): Server {
+  const options = given.accountCounts ? { ...given, accountCounts: cachedCounts(given.accountCounts.bind(given)) } : given;
   return createServer((request, response) => {
     void route(request, response, options).catch((error: unknown) => {
       if (response.headersSent) {

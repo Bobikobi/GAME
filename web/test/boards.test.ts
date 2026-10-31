@@ -47,6 +47,11 @@ describe('the boards page', () => {
     expect(html).toContain('opens with accounts');
   });
 
+  it('says how many players have an account, or that it is unknown, never a guessed 0 (DECISIONS.md, 2026-10-31)', () => {
+    const line = html.match(/<p class="formula"[^>]*data-accounts[^>]*>(.*?)<\/p>/s)?.[1]?.replace(/\s+/g, ' ').trim();
+    expect(line).toMatch(/^Players with an account: (unknown\.|\d+, \d+ of them new in the last 7 days\.)$/);
+  });
+
   it('does not mention the weekly pool while it is off', () => {
     if (weights['weekly_pool_active'] === true) return;
     expect(html.toLowerCase()).not.toContain('pool');

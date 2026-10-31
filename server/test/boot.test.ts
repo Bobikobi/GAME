@@ -268,8 +268,8 @@ describe('the nginx site file (the 27.10 review)', () => {
     expect(game).not.toContain('proxy_pass');
     expect(game).toMatch(/add_header Cache-Control "no-cache"/);
     expect(blocks.get('/assets/') ?? '').toMatch(/add_header Cache-Control "public, max-age=\d+, immutable"/);
-    // the API answers these five and nothing else (api.ts): each is an exact location, so /state.html is a file, not the API
-    for (const path of ['/session', '/state', '/action', '/moves']) {
+    // the API answers these, /auth/ and nothing else (api.ts): each is an exact location, so /state.html is a file, not the API
+    for (const path of ['/session', '/state', '/action', '/moves', '/stats']) {
       expect(blocks.get(`= ${path}`), path).toMatch(/^\s*proxy_pass http:\/\/127\.0\.0\.1:\d+;\s*$/);
     }
     expect(auth).toMatch(/proxy_pass http:\/\/127\.0\.0\.1:\d+;/);

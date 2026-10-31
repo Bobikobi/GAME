@@ -114,6 +114,9 @@ jobs:
           KV_REST_API_READ_ONLY_TOKEN: ${{ secrets.KV_REST_API_READ_ONLY_TOKEN }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
           DEPLOYED: https://loomvale.vercel.app/api/hub-data.json
+          # the players counter (tools/src/hub/accounts.ts): the game server's origin, a repository variable so the
+          # name stays out of the repo; unset, the count is null and the hub says it is unknown
+          GAME_SERVER_ORIGIN: ${{ vars.GAME_SERVER_ORIGIN }}
         run: |
           if [ -z "$KV_REST_API_URL" ] || [ -z "$KV_REST_API_READ_ONLY_TOKEN" ]; then
             echo "::warning::hub-data not compared: the KV_REST_API_URL and KV_REST_API_READ_ONLY_TOKEN secrets are missing"
