@@ -64,29 +64,57 @@ export class WireRefusal extends Error {
 /** The line is gone: the game pauses until a resume answers. Nothing was sent. */
 export class WireGap extends Error {}
 
+function wireObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Transport envelope checks; a truncated/proxy response must never replace known state. */
+function completeReply(value: unknown, snapshot: boolean): boolean {
+  if (!wireObject(value) || !Number.isSafeInteger(value.version) || (value.version as number) < 1
+    || !Array.isArray(value.appears) || !value.appears.every(id => typeof id === 'string')) return false;
+  if (snapshot) return wireObject(value.state) && Number.isSafeInteger(value.state.tick) && wireObject(value.state.player);
+  return wireObject(value.patch) && Array.isArray(value.events)
+    && value.events.every(event => wireObject(event) && typeof event.e === 'string');
+}
+
 /**
  * The wire over `fetch`, with the session cookie a signed-in player carries. Same-origin by default, so
  * the cookie is `httpOnly`, `secure` and `same-site` without the script ever touching it (NEXT 18 e).
  */
-export function fetchWire(base = '', send: typeof fetch = fetch): Wire {
+export function fetchWire(base = '', send: typeof fetch = fetch, timeoutMs = 15_000): Wire {
   const call = async (path: string, method: 'GET' | 'POST', body?: unknown): Promise<StateReply | ChangeReply> => {
-    let response: Response;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      response = await send(`${base}${path}`, {
-        method,
-        credentials: 'same-origin',
-        headers: body === undefined ? { accept: 'application/json' } : { accept: 'application/json', 'content-type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
-    } catch {
-      throw new WireGap('Waiting for the connection');
-    }
-    if (response.status === 401) throw new WireRefusal('Sign in to continue.', 401);
-    const answer = await response.json().catch(() => ({})) as { error?: string; reason?: string };
-    if (!response.ok) {
-      throw new WireRefusal(answer.error ?? 'The game server could not complete the request.', response.status, answer.reason);
-    }
-    return answer as StateReply | ChangeReply;
+      let response: Response;
+      try {
+        response = await send(`${base}${path}`, {
+          method,
+          signal: controller.signal,
+          credentials: 'same-origin',
+          headers: body === undefined ? { accept: 'application/json' } : { accept: 'application/json', 'content-type': 'application/json' },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+      } catch {
+        throw new WireGap('Waiting for the connection');
+      }
+      if (response.status === 401) throw new WireRefusal('Sign in to continue.', 401);
+      // A gateway may fail after the server committed. Pause and read state; never retry the action here.
+      if (response.status === 408 || response.status === 429 || response.status >= 500) {
+        await response.body?.cancel().catch(() => undefined);
+        throw new WireGap('Waiting for the connection');
+      }
+      let answer: unknown;
+      try { answer = await response.json(); }
+      catch { throw new WireGap('Waiting for the connection'); }
+      if (!response.ok) {
+        const error = wireObject(answer) && typeof answer.error === 'string' ? answer.error : 'The game server could not complete the request.';
+        const reason = wireObject(answer) && typeof answer.reason === 'string' ? answer.reason : undefined;
+        throw new WireRefusal(error, response.status, reason);
+      }
+      if (!completeReply(answer, path === '/session' || path === '/state')) throw new WireGap('Waiting for the connection');
+      return answer as StateReply | ChangeReply;
+    } finally { clearTimeout(timeout); }
   };
   function post(path: '/session', body: unknown): Promise<StateReply>;
   function post(path: '/action' | '/moves', body: unknown): Promise<ChangeReply>;
@@ -148,6 +176,7 @@ export class RemoteSession implements GameSession {
   private open = true;
   /** the end of the last call queued for the wire: the next call starts only after this one landed */
   private queue: Promise<unknown> = Promise.resolve();
+  private resuming: Promise<void> | undefined;
   /** the tick up to which burns that ran out were asked about (`tellOuts`) */
   private outSeen = 0;
   private pauses = 0;
@@ -421,7 +450,8 @@ export class RemoteSession implements GameSession {
    * session stays closed and says so (`change`), and the error reaches the caller: it never pretends to have resumed.
    */
   resumeFromServer(): Promise<void> {
-    return this.enqueue(() => this.resync());
+    this.resuming ??= this.enqueue(() => this.resync()).finally(() => { this.resuming = undefined; });
+    return this.resuming;
   }
 
   private async resync(): Promise<void> {
