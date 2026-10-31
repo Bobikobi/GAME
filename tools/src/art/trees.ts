@@ -35,8 +35,6 @@ export interface TreeDraw {
   frames: number;
   ramps: readonly string[];
   what: string;
-  /** False while the check still holds the sprite to a floor that is not its own (the sapling: the check calls it a young tree, 2 characters, until the scale audit lands its own row of 1). */
-  declareScale?: boolean;
   draw: (frame: number) => PNG;
 }
 
@@ -225,7 +223,7 @@ export const TREES: readonly TreeDraw[] = [
   { id: 'props/tree_oak', kit: 'core', w: 192, h: 320, frames: 2, ramps: ['green', 'bark'], what: 'an oak at 64 px, three characters tall: a bark trunk with roots under a wide crown of lit lobes and leaf clumps, swaying a pixel in its second frame', draw: oak },
   { id: 'props/dead_tree', kit: 'core', w: 192, h: 256, frames: 2, ramps: ['bark'], what: 'a dead tree at 64 px, two and a half characters tall: a twisting trunk forking into bare limbs, bark roots at its foot, the limbs swaying a pixel in its second frame', draw: deadTree },
   { id: 'props/young_tree', kit: 'core', w: 128, h: 192, frames: 1, ramps: ['green', 'bark'], what: 'a young tree at 64 px, two characters tall: a slim bark trunk under a rounded crown of lit lobes', draw: youngTree },
-  { id: 'props/sapling', kit: 'core', w: 64, h: 96, frames: 1, ramps: ['green', 'bark'], what: 'a sapling at 64 px, a person tall: a thin curved stem with a few small leaf clusters', declareScale: false, draw: sapling },
+  { id: 'props/sapling', kit: 'core', w: 64, h: 96, frames: 1, ramps: ['green', 'bark'], what: 'a sapling at 64 px, a person tall: a thin curved stem with a few small leaf clusters', draw: sapling },
   { id: 'props/fig_bush', kit: 'ceosisrael', w: 128, h: 256, frames: 2, ramps: ['green', 'plum', 'bark'], what: 'the glade fig held as a tree, three characters tall: a slender trunk under a tall crown of big leaves with plum figs', draw: (f) => fig(f, true) },
   { id: 'props/fig_bush_empty', kit: 'ceosisrael', w: 128, h: 256, frames: 2, ramps: ['green', 'bark'], what: 'the glade fig held as a tree, picked clean: the same crown without its figs', draw: (f) => fig(f, false) },
 ];
@@ -260,7 +258,7 @@ export function writeTrees(only?: readonly string[], root = ROOT, today = new Da
       const line = { sprite: t.id, name: t.id.split('/').pop(), spec: SPEC, drawer: 'script', ref: t.id, what: t.what, ramps: t.ramps, picked: `script, ${today}` };
       appendFileSync(manifest, `${lead}${JSON.stringify(line)}\n`);
     }
-    const entry: Record<string, unknown> = { file: `${t.id}.png`, w: t.w, h: t.h, density: 4, ramps: t.ramps, ...(t.declareScale === false ? {} : { scale }), source: { spec: SPEC, manifest: `${MANIFEST}:${number}` } };
+    const entry: Record<string, unknown> = { file: `${t.id}.png`, w: t.w, h: t.h, density: 4, ramps: t.ramps, scale, source: { spec: SPEC, manifest: `${MANIFEST}:${number}` } };
     if (t.frames > 1) entry.frames = t.frames;
     writeFileSync(kitPath, withSprite(readFileSync(kitPath, 'utf8'), t.id, entry));
     wrote.push(`${t.id} ${t.w}x${t.h} x${t.frames}, opaque ${opaqueHeight(first)} px = ${scale} characters`);

@@ -53,120 +53,140 @@
       "chars/elder": {
         "file": "chars/elder.png",
         "w": 16,
-        "h": 24
+        "h": 24,
+        "scale": 1.15
       },
       "chars/elder_blink": {
         "file": "chars/elder_blink.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.15
       },
       "chars/player_down": {
         "file": "chars/player_down.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/player_idle_down": {
         "file": "chars/player_idle_down.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.26
       },
       "chars/player_idle_left": {
         "file": "chars/player_idle_left.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.32
       },
       "chars/player_idle_up": {
         "file": "chars/player_idle_up.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.26
       },
       "chars/player_left": {
         "file": "chars/player_left.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/player_up": {
         "file": "chars/player_up.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/player_work_down": {
         "file": "chars/player_work_down.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/player_work_left": {
         "file": "chars/player_work_left.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/player_work_up": {
         "file": "chars/player_work_up.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/trader": {
         "file": "chars/trader.png",
         "w": 16,
-        "h": 24
+        "h": 24,
+        "scale": 1.26
       },
       "chars/trader_blink": {
         "file": "chars/trader_blink.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.26
       },
       "chars/woman_down": {
         "file": "chars/woman_down.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.26
       },
       "chars/woman_idle_down": {
         "file": "chars/woman_idle_down.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.26
       },
       "chars/woman_idle_left": {
         "file": "chars/woman_idle_left.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.32
       },
       "chars/woman_idle_up": {
         "file": "chars/woman_idle_up.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.32
       },
       "chars/woman_left": {
         "file": "chars/woman_left.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/woman_up": {
         "file": "chars/woman_up.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/woman_work_down": {
         "file": "chars/woman_work_down.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "items/basket": {
         "file": "items/basket.png",
@@ -419,7 +439,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:151"
-        }
+        },
+        "scale": 2.1
       },
       "props/bush_berry": {
         "file": "props/bush_berry.png",
@@ -434,13 +455,15 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:147"
-        }
+        },
+        "scale": 0.86
       },
       "props/bush_empty": {
         "file": "props/bush_empty.png",
         "w": 16,
         "h": 16,
-        "frames": 2
+        "frames": 2,
+        "scale": 0.77
       },
       "props/campfire_lit": {
         "file": "props/campfire_lit.png",
@@ -455,7 +478,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:144"
-        }
+        },
+        "scale": 0.79
       },
       "props/campfire_unlit": {
         "file": "props/campfire_unlit.png",
@@ -469,7 +493,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:7"
-        }
+        },
+        "scale": 0.7
       },
       "props/canopy_1": {
         "file": "props/canopy_1.png",
@@ -525,7 +550,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:8"
-        }
+        },
+        "scale": 0.44
       },
       "props/sapling": {
         "file": "props/sapling.png",
@@ -536,6 +562,7 @@
           "green",
           "bark"
         ],
+        "scale": 1.11,
         "source": {
           "spec": "tools/src/art/trees.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:160"
@@ -583,7 +610,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:9"
-        }
+        },
+        "scale": 0.47
       },
       "props/fallen_branches": {
         "file": "props/fallen_branches.png",
@@ -597,7 +625,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:10"
-        }
+        },
+        "scale": 0.88
       },
       "props/fence": {
         "file": "props/fence.png",
@@ -611,7 +640,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:135"
-        }
+        },
+        "scale": 0.66
       },
       "props/fence_post": {
         "file": "props/fence_post.png",
@@ -625,7 +655,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:136"
-        }
+        },
+        "scale": 0.88
       },
       "props/flowers": {
         "file": "props/flowers.png",
@@ -640,13 +671,15 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:129"
-        }
+        },
+        "scale": 0.3
       },
       "props/flowers_blue": {
         "file": "props/flowers_blue.png",
         "w": 16,
         "h": 16,
-        "frames": 2
+        "frames": 2,
+        "scale": 0.55
       },
       "props/flowers_white": {
         "file": "props/flowers_white.png",
@@ -661,12 +694,14 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:130"
-        }
+        },
+        "scale": 0.3
       },
       "props/fog": {
         "file": "props/fog.png",
         "w": 32,
-        "h": 32
+        "h": 32,
+        "scale": 1.37
       },
       "props/glow_mushrooms": {
         "file": "props/glow_mushrooms.png",
@@ -681,7 +716,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:137"
-        }
+        },
+        "scale": 0.88
       },
       "props/grass_tall": {
         "file": "props/grass_tall.png",
@@ -695,7 +731,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:138"
-        }
+        },
+        "scale": 0.42
       },
       "props/hazard_pit": {
         "file": "props/hazard_pit.png",
@@ -709,7 +746,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:12"
-        }
+        },
+        "scale": 0.74
       },
       "props/hazard_trap": {
         "file": "props/hazard_trap.png",
@@ -723,13 +761,15 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:13"
-        }
+        },
+        "scale": 0.77
       },
       "props/hazard_wolf": {
         "file": "props/hazard_wolf.png",
         "w": 16,
         "h": 16,
-        "frames": 2
+        "frames": 2,
+        "scale": 0.66
       },
       "props/herb_plant": {
         "file": "props/herb_plant.png",
@@ -744,7 +784,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:141"
-        }
+        },
+        "scale": 0.88
       },
       "props/house_small": {
         "file": "props/house_small.png",
@@ -759,7 +800,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
-        }
+        },
+        "scale": 2.86
       },
       "props/lantern_post": {
         "file": "props/lantern_post.png",
@@ -774,7 +816,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:150"
-        }
+        },
+        "scale": 2.63
       },
       "props/log_fallen": {
         "file": "props/log_fallen.png",
@@ -788,7 +831,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:18"
-        }
+        },
+        "scale": 0.56
       },
       "props/log_mossy": {
         "file": "props/log_mossy.png",
@@ -802,7 +846,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:19"
-        }
+        },
+        "scale": 0.48
       },
       "props/market_stall": {
         "file": "props/market_stall.png",
@@ -817,7 +862,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:152"
-        }
+        },
+        "scale": 2.4
       },
       "props/mushroom_patch": {
         "file": "props/mushroom_patch.png",
@@ -831,7 +877,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:21"
-        }
+        },
+        "scale": 0.59
       },
       "props/mushrooms_small": {
         "file": "props/mushrooms_small.png",
@@ -845,7 +892,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:23"
-        }
+        },
+        "scale": 0.88
       },
       "props/pebbles": {
         "file": "props/pebbles.png",
@@ -859,7 +907,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:37"
-        }
+        },
+        "scale": 0.73
       },
       "props/reeds": {
         "file": "props/reeds.png",
@@ -874,7 +923,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:131"
-        }
+        },
+        "scale": 0.88
       },
       "props/rock_mossy": {
         "file": "props/rock_mossy.png",
@@ -888,7 +938,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:26"
-        }
+        },
+        "scale": 0.73
       },
       "props/rock_small": {
         "file": "props/rock_small.png",
@@ -902,7 +953,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:36"
-        }
+        },
+        "scale": 0.51
       },
       "props/rock_stones": {
         "file": "props/rock_stones.png",
@@ -916,27 +968,32 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:27"
-        }
+        },
+        "scale": 0.67
       },
       "props/rubble": {
         "file": "props/rubble.png",
         "w": 32,
-        "h": 16
+        "h": 16,
+        "scale": 0.88
       },
       "props/ruin_arch": {
         "file": "props/ruin_arch.png",
         "w": 32,
-        "h": 32
+        "h": 32,
+        "scale": 1.75
       },
       "props/ruin_pillar": {
         "file": "props/ruin_pillar.png",
         "w": 16,
-        "h": 32
+        "h": 32,
+        "scale": 1.7
       },
       "props/ruin_wall": {
         "file": "props/ruin_wall.png",
         "w": 32,
-        "h": 32
+        "h": 32,
+        "scale": 1.21
       },
       "props/shelf": {
         "file": "props/shelf.png",
@@ -951,7 +1008,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:29"
-        }
+        },
+        "scale": 0.88
       },
       "props/sign": {
         "file": "props/sign.png",
@@ -965,7 +1023,8 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:30"
-        }
+        },
+        "scale": 0.66
       },
       "props/standing_stone": {
         "file": "props/standing_stone.png",
@@ -980,12 +1039,14 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:132"
-        }
+        },
+        "scale": 1.36
       },
       "props/statue_head": {
         "file": "props/statue_head.png",
         "w": 32,
-        "h": 32
+        "h": 32,
+        "scale": 1.7
       },
       "props/stump": {
         "file": "props/stump.png",
@@ -999,12 +1060,14 @@
         "source": {
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:34"
-        }
+        },
+        "scale": 0.6
       },
       "props/totem": {
         "file": "props/totem.png",
         "w": 16,
-        "h": 32
+        "h": 32,
+        "scale": 1.75
       },
       "props/tree_oak": {
         "file": "props/tree_oak.png",
@@ -1036,7 +1099,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:133"
-        }
+        },
+        "scale": 1.64
       },
       "tiles/bank_e": {
         "file": "tiles/bank_e.png",
@@ -1496,325 +1560,379 @@
         "file": "chars/explorer_down.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/explorer_idle_down": {
         "file": "chars/explorer_idle_down.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.32
       },
       "chars/explorer_work_down": {
         "file": "chars/explorer_work_down.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/explorer_left": {
         "file": "chars/explorer_left.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/explorer_idle_left": {
         "file": "chars/explorer_idle_left.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.32
       },
       "chars/explorer_work_left": {
         "file": "chars/explorer_work_left.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/explorer_up": {
         "file": "chars/explorer_up.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/explorer_idle_up": {
         "file": "chars/explorer_idle_up.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.32
       },
       "chars/explorer_work_up": {
         "file": "chars/explorer_work_up.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/explorer_w_down": {
         "file": "chars/explorer_w_down.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/explorer_w_idle_down": {
         "file": "chars/explorer_w_idle_down.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.26
       },
       "chars/explorer_w_work_down": {
         "file": "chars/explorer_w_work_down.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/explorer_w_left": {
         "file": "chars/explorer_w_left.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/explorer_w_idle_left": {
         "file": "chars/explorer_w_idle_left.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.32
       },
       "chars/explorer_w_work_left": {
         "file": "chars/explorer_w_work_left.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/explorer_w_up": {
         "file": "chars/explorer_w_up.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.32
       },
       "chars/explorer_w_idle_up": {
         "file": "chars/explorer_w_idle_up.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.32
       },
       "chars/explorer_w_work_up": {
         "file": "chars/explorer_w_work_up.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.75
       },
       "chars/forager_down": {
         "file": "chars/forager_down.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.15
       },
       "chars/forager_idle_down": {
         "file": "chars/forager_idle_down.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.15
       },
       "chars/forager_work_down": {
         "file": "chars/forager_work_down.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.53
       },
       "chars/forager_left": {
         "file": "chars/forager_left.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.1
       },
       "chars/forager_idle_left": {
         "file": "chars/forager_idle_left.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.1
       },
       "chars/forager_work_left": {
         "file": "chars/forager_work_left.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.53
       },
       "chars/forager_up": {
         "file": "chars/forager_up.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.1
       },
       "chars/forager_idle_up": {
         "file": "chars/forager_idle_up.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.04
       },
       "chars/forager_work_up": {
         "file": "chars/forager_work_up.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.53
       },
       "chars/forager_w_down": {
         "file": "chars/forager_w_down.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.15
       },
       "chars/forager_w_idle_down": {
         "file": "chars/forager_w_idle_down.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.15
       },
       "chars/forager_w_work_down": {
         "file": "chars/forager_w_work_down.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.53
       },
       "chars/forager_w_left": {
         "file": "chars/forager_w_left.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.1
       },
       "chars/forager_w_idle_left": {
         "file": "chars/forager_w_idle_left.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.1
       },
       "chars/forager_w_work_left": {
         "file": "chars/forager_w_work_left.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.53
       },
       "chars/forager_w_up": {
         "file": "chars/forager_w_up.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.1
       },
       "chars/forager_w_idle_up": {
         "file": "chars/forager_w_idle_up.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.1
       },
       "chars/forager_w_work_up": {
         "file": "chars/forager_w_work_up.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.53
       },
       "chars/digger_down": {
         "file": "chars/digger_down.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.26
       },
       "chars/digger_idle_down": {
         "file": "chars/digger_idle_down.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.21
       },
       "chars/digger_work_down": {
         "file": "chars/digger_work_down.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.7
       },
       "chars/digger_left": {
         "file": "chars/digger_left.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.26
       },
       "chars/digger_idle_left": {
         "file": "chars/digger_idle_left.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.26
       },
       "chars/digger_work_left": {
         "file": "chars/digger_work_left.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.7
       },
       "chars/digger_up": {
         "file": "chars/digger_up.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.26
       },
       "chars/digger_idle_up": {
         "file": "chars/digger_idle_up.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.21
       },
       "chars/digger_work_up": {
         "file": "chars/digger_work_up.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.7
       },
       "chars/digger_w_down": {
         "file": "chars/digger_w_down.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.21
       },
       "chars/digger_w_idle_down": {
         "file": "chars/digger_w_idle_down.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.21
       },
       "chars/digger_w_work_down": {
         "file": "chars/digger_w_work_down.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.7
       },
       "chars/digger_w_left": {
         "file": "chars/digger_w_left.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.26
       },
       "chars/digger_w_idle_left": {
         "file": "chars/digger_w_idle_left.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.26
       },
       "chars/digger_w_work_left": {
         "file": "chars/digger_w_work_left.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.7
       },
       "chars/digger_w_up": {
         "file": "chars/digger_w_up.png",
         "w": 16,
         "h": 24,
-        "frames": 3
+        "frames": 3,
+        "scale": 1.26
       },
       "chars/digger_w_idle_up": {
         "file": "chars/digger_w_idle_up.png",
         "w": 16,
         "h": 24,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.26
       },
       "chars/digger_w_work_up": {
         "file": "chars/digger_w_work_up.png",
         "w": 32,
         "h": 32,
-        "frames": 2
+        "frames": 2,
+        "scale": 1.7
       },
       "chars/human_down": {
         "file": "chars/human_down.png",
@@ -1833,7 +1951,8 @@
             64,
             90
           ]
-        }
+        },
+        "scale": 1
       },
       "chars/human_up": {
         "file": "chars/human_up.png",
@@ -1852,7 +1971,8 @@
             64,
             90
           ]
-        }
+        },
+        "scale": 1.15
       },
       "chars/human_left": {
         "file": "chars/human_left.png",
@@ -1871,7 +1991,8 @@
             64,
             90
           ]
-        }
+        },
+        "scale": 0.95
       },
       "chars/human_w_down": {
         "file": "chars/human_w_down.png",
@@ -1890,7 +2011,8 @@
             64,
             90
           ]
-        }
+        },
+        "scale": 0.96
       },
       "chars/human_w_up": {
         "file": "chars/human_w_up.png",
@@ -1909,7 +2031,8 @@
             64,
             90
           ]
-        }
+        },
+        "scale": 1.07
       },
       "chars/human_w_left": {
         "file": "chars/human_w_left.png",
@@ -1928,7 +2051,8 @@
             64,
             90
           ]
-        }
+        },
+        "scale": 0.9
       },
       "chars/elf_down": {
         "file": "chars/elf_down.png",
@@ -1949,7 +2073,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 1.08
       },
       "chars/elf_up": {
         "file": "chars/elf_up.png",
@@ -1970,7 +2095,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 1.37
       },
       "chars/elf_left": {
         "file": "chars/elf_left.png",
@@ -1991,7 +2117,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 1.15
       },
       "chars/elf_w_down": {
         "file": "chars/elf_w_down.png",
@@ -2012,7 +2139,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 1.08
       },
       "chars/elf_w_up": {
         "file": "chars/elf_w_up.png",
@@ -2033,7 +2161,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 1.36
       },
       "chars/elf_w_left": {
         "file": "chars/elf_w_left.png",
@@ -2054,7 +2183,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 1.11
       },
       "chars/skeleton_down": {
         "file": "chars/skeleton_down.png",
@@ -2073,7 +2203,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 0.77
       },
       "chars/skeleton_up": {
         "file": "chars/skeleton_up.png",
@@ -2092,7 +2223,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 0.93
       },
       "chars/skeleton_left": {
         "file": "chars/skeleton_left.png",
@@ -2111,7 +2243,8 @@
             90
           ],
           "bob": false
-        }
+        },
+        "scale": 0.74
       },
       "tiles/planks": {
         "file": "tiles/planks.png",
@@ -2153,7 +2286,8 @@
           "fire",
           "red"
         ],
-        "frames": 3
+        "frames": 3,
+        "scale": 2.36
       },
       "props/shop_window": {
         "file": "props/shop_window.png",
@@ -2164,7 +2298,8 @@
           "wood",
           "water"
         ],
-        "frames": 2
+        "frames": 2,
+        "scale": 1.01
       },
       "props/jar_shelf": {
         "file": "props/jar_shelf.png",
@@ -2175,7 +2310,8 @@
           "wood",
           "plum",
           "fire"
-        ]
+        ],
+        "scale": 1.38
       },
       "props/counter": {
         "file": "props/counter.png",
@@ -2185,7 +2321,8 @@
         "ramps": [
           "wood",
           "bark"
-        ]
+        ],
+        "scale": 0.9
       },
       "props/scale": {
         "file": "props/scale.png",
@@ -2195,7 +2332,8 @@
         "ramps": [
           "fire",
           "grey"
-        ]
+        ],
+        "scale": 0.47
       },
       "props/shop_cat": {
         "file": "props/shop_cat.png",
@@ -2206,7 +2344,8 @@
           "fire",
           "wood"
         ],
-        "frames": 3
+        "frames": 3,
+        "scale": 0.41
       },
       "props/runner": {
         "file": "props/runner.png",
@@ -2216,7 +2355,8 @@
         "ramps": [
           "red",
           "water"
-        ]
+        ],
+        "scale": 3.51
       },
       "props/door_mat": {
         "file": "props/door_mat.png",
@@ -2226,7 +2366,8 @@
         "ramps": [
           "red",
           "fire"
-        ]
+        ],
+        "scale": 0.36
       },
       "props/pear_barrel": {
         "file": "props/pear_barrel.png",
@@ -2236,7 +2377,8 @@
         "ramps": [
           "wood",
           "green"
-        ]
+        ],
+        "scale": 0.89
       },
       "props/mushroom_crate": {
         "file": "props/mushroom_crate.png",
@@ -2246,7 +2388,8 @@
         "ramps": [
           "wood",
           "bark"
-        ]
+        ],
+        "scale": 0.79
       },
       "props/flour_sack": {
         "file": "props/flour_sack.png",
@@ -2256,7 +2399,8 @@
         "ramps": [
           "wood",
           "bark"
-        ]
+        ],
+        "scale": 0.74
       },
       "props/potted_herb": {
         "file": "props/potted_herb.png",
@@ -2266,7 +2410,8 @@
         "ramps": [
           "green",
           "red"
-        ]
+        ],
+        "scale": 0.63
       },
       "props/shop_sign_food": {
         "file": "props/shop_sign_food.png",
@@ -2276,7 +2421,8 @@
         "ramps": [
           "wood",
           "red"
-        ]
+        ],
+        "scale": 0.84
       },
       "props/room_wall_left": {
         "file": "props/room_wall_left.png",
@@ -2286,7 +2432,8 @@
         "ramps": [
           "wood",
           "bark"
-        ]
+        ],
+        "scale": 2.59
       },
       "props/room_wall_right": {
         "file": "props/room_wall_right.png",
@@ -2296,7 +2443,8 @@
         "ramps": [
           "wood",
           "bark"
-        ]
+        ],
+        "scale": 2.59
       },
       "tiles/worn_n": {
         "file": "tiles/worn_n.png",
@@ -2368,7 +2516,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:134"
-        }
+        },
+        "scale": 1.75
       },
       "props/grass_tall_b": {
         "file": "props/grass_tall_b.png",
@@ -2382,7 +2531,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:139"
-        }
+        },
+        "scale": 0.88
       },
       "props/grass_tall_c": {
         "file": "props/grass_tall_c.png",
@@ -2396,7 +2546,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:140"
-        }
+        },
+        "scale": 0.88
       },
       "props/herb_plant_b": {
         "file": "props/herb_plant_b.png",
@@ -2411,7 +2562,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:142"
-        }
+        },
+        "scale": 0.88
       },
       "props/herb_plant_c": {
         "file": "props/herb_plant_c.png",
@@ -2426,7 +2578,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:143"
-        }
+        },
+        "scale": 0.88
       },
       "props/campfire_lit_b": {
         "file": "props/campfire_lit_b.png",
@@ -2441,7 +2594,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:145"
-        }
+        },
+        "scale": 0.75
       },
       "props/campfire_lit_c": {
         "file": "props/campfire_lit_c.png",
@@ -2456,7 +2610,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:146"
-        }
+        },
+        "scale": 0.84
       },
       "props/bush_berry_b": {
         "file": "props/bush_berry_b.png",
@@ -2471,7 +2626,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:148"
-        }
+        },
+        "scale": 0.86
       },
       "props/bush_berry_c": {
         "file": "props/bush_berry_c.png",
@@ -2486,7 +2642,8 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
-        }
+        },
+        "scale": 0.88
       }
     }
   }
