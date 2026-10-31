@@ -24,6 +24,7 @@ import { CACHE_DIR, type Draft, DraftIndex } from './drafts.js';
 import { ROOT } from './queue.js';
 import { type PoolEntry, type PoolName, POOLS, readPool } from './status.js';
 import { hexToRgb, paletteWithRamps } from '../kit/palette.js';
+import { measureSprite } from './measure-sprite.js';
 
 export interface Limits {
   minColours: number;
@@ -182,6 +183,10 @@ export function measurePool(pools: readonly PoolName[], names: readonly string[]
         if (file === null) continue;
         const png = PNG.sync.read(readFileSync(file));
         if (png.width !== entry.width || png.height !== entry.height) continue;
+        if (entry.kind === 'sprite') {
+          out.push({ pool, entry, draft, file, m: measureSprite(png, entry.ramps ?? [], entry) });
+          continue;
+        }
         out.push({ pool, entry, draft, file, m: measureTile(png, entry.ramps ?? []) });
       }
     }

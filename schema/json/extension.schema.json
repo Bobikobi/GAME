@@ -12149,6 +12149,7 @@
             "load",
             "gait",
             "hunt",
+            "wild",
             "starting_gold_mg",
             "per_point"
           ],
@@ -13965,6 +13966,547 @@
                     }
                   },
                   "description": "Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain."
+                }
+              }
+            },
+            "wild": {
+              "additionalProperties": false,
+              "description": "The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1): the clock an animal thinks on, how far round a player animals are stepped, how long a flight, a den stay and a print last, where a den's bolt hole may lie, and the distances kept from a fire and the town. A kind's own character is its `behaviour`; these are the numbers every kind shares.",
+              "type": "object",
+              "required": [
+                "tick_ms",
+                "think_ticks",
+                "wake_tiles",
+                "awake_max",
+                "catchup_max_steps",
+                "flee_avoid_steps",
+                "refill_clear_tiles",
+                "spread_tiles",
+                "print_ring",
+                "print_fade_ms",
+                "den_stay_steps",
+                "bolt_min_tiles",
+                "bolt_max_tiles",
+                "throw_ms",
+                "strike_noise",
+                "fire_keep_day",
+                "fire_keep_night",
+                "town_keep_day",
+                "town_keep_night"
+              ],
+              "properties": {
+                "tick_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds of one world tick (COMBAT section 4.9). Fixed: every duration below is whole ticks or whole think steps."
+                },
+                "think_ticks": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks between two think steps of one animal, staggered by its id (HUNTING section 1): 8 ticks of 100 ms, a think step of 800 ms."
+                },
+                "wake_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "An animal is stepped only while a player is within this many tiles; beyond it its group is kept as an anchor and a count (HUNTING section 1)."
+                },
+                "awake_max": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The most animals stepped round one player at once (BESTIARY section 1)."
+                },
+                "catchup_max_steps": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A gap longer than this many think steps settles each animal to its rest pose at once instead of stepping it, so one action never pays for an hour of the wild."
+                },
+                "flee_avoid_steps": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Think steps a fled animal keeps away from the tile it fled (HUNTING section 2, FLEE); a flushed burrower comes back to its den after them (HUNT_FAMILIES section 3.1)."
+                },
+                "refill_clear_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A lost member comes back to its anchor only with no player within this many tiles (HUNTING section 8)."
+                },
+                "spread_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "ALERT spreads to the group members within this many tiles, and a member that sees one of its group in FLEE this close flees too (HUNTING section 2; CREATURE_BEHAVIOUR section 5.1.3)."
+                },
+                "print_ring": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles of fresh prints a fleeing animal leaves behind it on ground that holds prints, its last tiles, oldest first out (HUNT_FAMILIES section 3.1, the line home)."
+                },
+                "print_fade_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a fresh print stays readable (one game hour is day_length_ms / 24)."
+                },
+                "den_stay_steps": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Think steps a burrower stays in its den after a flight once no player is near the mouth, then WANDER (CREATURE_BEHAVIOUR section 1, flight burrow; HUNT_FAMILIES section 3.1, inside while watched)."
+                },
+                "bolt_min_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The nearest a den's bolt hole lies to its mouth, by the squared distance (HUNT_FAMILIES section 3.1: 64 <= d2 <= 100). Far enough that a flusher beside the mouth stands beyond a burrower's sight of the bolt hole (the check)."
+                },
+                "bolt_max_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The farthest a den's bolt hole lies from its mouth, by the squared distance."
+                },
+                "throw_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a thrown stone takes to leave the hand (HUNTING section 5, T0)."
+                },
+                "strike_noise": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles within which a strike is heard (HUNTING section 4; COMBAT section 4.9)."
+                },
+                "fire_keep_day": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles a prey kind keeps from a burning fire on the ground by day (CREATURE_BEHAVIOUR section 2)."
+                },
+                "fire_keep_night": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same by night: a lit circle nothing grazes in. At least the fire's safe ring and one tile more (the check)."
+                },
+                "town_keep_day": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles a wild kind keeps from the town's cobbles by day (CREATURE_BEHAVIOUR section 2)."
+                },
+                "town_keep_night": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same at night, when the lamps push the wall out; never under the day's (the check)."
                 }
               }
             },
@@ -16583,7 +17125,7 @@
             },
             "creatures": {
               "additionalProperties": false,
-              "description": "Ambient life the client draws behind ?rich= motion: kinds, and the spots where each sits until the player comes close. A kind with \"hunt\" is the kernel's too: it dresses its carcasses and the value table prices its goods, with its spots as the source's capacity (HUNTING sections 5-9).",
+              "description": "Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A kind with \"hunt\" is the kernel's too: it dresses its carcasses and the value table prices its goods, with its spots as the source's capacity (HUNTING sections 5-9). A kind with \"behaviour\" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den's mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).",
               "type": "object",
               "required": [
                 "kinds",
@@ -16604,7 +17146,7 @@
                       ],
                       "properties": {
                         "look": {
-                          "description": "The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off.",
+                          "description": "The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off, a canid lopes away.",
                           "anyOf": [
                             {
                               "const": "bird",
@@ -16620,6 +17162,10 @@
                             },
                             {
                               "const": "deer",
+                              "type": "string"
+                            },
+                            {
+                              "const": "canid",
                               "type": "string"
                             }
                           ]
@@ -16654,7 +17200,7 @@
                           "type": "integer"
                         },
                         "hours": {
-                          "description": "The game hours it is out, from (inclusive) to (exclusive). Absent: all day, never at night.",
+                          "description": "The game hours it is out, from (inclusive) to (exclusive); a night kind wraps midnight, from after to (the wolf's 20 to 5). Outside them it has gone to ground (BESTIARY section 1). Absent: out at every hour, the night included, as the wild brain's `awake` reads it, so a day kind names its hours; every kind of the core does.",
                           "type": "array",
                           "items": [
                             {
@@ -16671,6 +17217,563 @@
                           "additionalItems": false,
                           "minItems": 2,
                           "maxItems": 2
+                        },
+                        "behaviour": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "sight",
+                            "ear",
+                            "weights",
+                            "roam",
+                            "flight",
+                            "sleeps",
+                            "alarm",
+                            "fire",
+                            "water",
+                            "weather",
+                            "town",
+                            "habitat",
+                            "group",
+                            "family"
+                          ],
+                          "properties": {
+                            "sight": {
+                              "minimum": 1,
+                              "maximum": 12,
+                              "description": "Tiles it sees in its cone, by the squared distance (HUNTING sections 3 and 8).",
+                              "type": "integer"
+                            },
+                            "ear": {
+                              "description": "HUNTING section 3's ear: -2 dull, 0 normal, +2 keen. A noise of radius n is heard within n + ear tiles.",
+                              "anyOf": [
+                                {
+                                  "const": -2,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 0,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 2,
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "smell": {
+                              "minimum": 0,
+                              "maximum": 12,
+                              "description": "Its nose (HUNTING section 8). Stored, read by nothing until the wind is built (HUNTING section 11, question 6).",
+                              "type": "integer"
+                            },
+                            "weights": {
+                              "additionalProperties": false,
+                              "description": "Shares of 100 for where a quiet state goes when it ends (CREATURE_BEHAVIOUR section 1): a heron stands (60/30/10), a fox ranges (10/20/70). For a hunter GRAZE is the rest at its den.",
+                              "type": "object",
+                              "required": [
+                                "idle",
+                                "graze",
+                                "wander"
+                              ],
+                              "properties": {
+                                "idle": {
+                                  "minimum": 0,
+                                  "maximum": 100,
+                                  "type": "integer"
+                                },
+                                "graze": {
+                                  "minimum": 0,
+                                  "maximum": 100,
+                                  "type": "integer"
+                                },
+                                "wander": {
+                                  "minimum": 0,
+                                  "maximum": 100,
+                                  "type": "integer"
+                                }
+                              }
+                            },
+                            "roam": {
+                              "minimum": 6,
+                              "maximum": 14,
+                              "description": "Tiles round its anchor WANDER picks in, and how far RETURN walks (HUNTING section 2).",
+                              "type": "integer"
+                            },
+                            "flight": {
+                              "description": "How FLEE runs and ends: ground runs the distance map, fly lands sight + 4 away, swim ends under water, climb up a tree or a rock, burrow into its anchor (CREATURE_BEHAVIOUR section 1).",
+                              "anyOf": [
+                                {
+                                  "const": "ground",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "fly",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "swim",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "climb",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "burrow",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "sleeps": {
+                              "description": "What its anchor stands on and where it goes to ground out of its hours: a form in the grass, a perch, the river bed, a warm rock, the reeds, a den, a roof beam. A day kind leaves the map there at night rather than sleeping in view, a few stragglers at most (DECISIONS 2026-10-30: the night empties the day kinds).",
+                              "anyOf": [
+                                {
+                                  "const": "ground",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "tree",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "water",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "rock",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "reeds",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "den",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "roof",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "alarm": {
+                              "minimum": 0,
+                              "maximum": 12,
+                              "description": "The noise its ALERT tell makes, in HUNTING section 4's table, so other animals hear it; 0 is a silent kind (CREATURE_BEHAVIOUR section 1).",
+                              "type": "integer"
+                            },
+                            "looks_back": {
+                              "description": "At FLEE's end it takes two steps of ALERT at sight + 2, facing the player, before WANDER: the deer's stop and turn. Absent: no.",
+                              "type": "boolean"
+                            },
+                            "drinks": {
+                              "description": "Twice a day its WANDER target is the nearest water or riverbank tile within roam, at dawn and at dusk (CREATURE_BEHAVIOUR section 4). Absent: no.",
+                              "type": "boolean"
+                            },
+                            "carrion": {
+                              "description": "It comes to a carcass within sight + 4 after 30 think steps (CREATURE_BEHAVIOUR section 2). Absent: no.",
+                              "type": "boolean"
+                            },
+                            "fire": {
+                              "description": "A fire on the ground: prey keeps away, a hunter holds at the edge of its safe ring, a moth is drawn to a lamp, or it ignores the fire (CREATURE_BEHAVIOUR section 2).",
+                              "anyOf": [
+                                {
+                                  "const": "keeps_away",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "holds_edge",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "drawn_to_lamp",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "ignores",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "water": {
+                              "description": "A water tile: a wall, crossed in the air, swum, lived in, or the edge it lives along (CREATURE_BEHAVIOUR section 1).",
+                              "anyOf": [
+                                {
+                                  "const": "wall",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "crosses",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "swims",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "lives_in",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "edge",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "weather": {
+                              "description": "Rain and storm: cover under the trees in rain, roost in a storm, stay in while it rains, or no change beyond the shorter hearing (CREATURE_BEHAVIOUR section 2).",
+                              "anyOf": [
+                                {
+                                  "const": "cover",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "roosts",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "stays_in",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "none",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "town": {
+                              "description": "The town: a wall it never crosses, its own ground (a town kind: the sparrow, the crow, the rat under a roof), or nothing (CREATURE_BEHAVIOUR sections 2 and 5).",
+                              "anyOf": [
+                                {
+                                  "const": "avoids",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "town_kind",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "none",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "habitat": {
+                              "minItems": 1,
+                              "maxItems": 8,
+                              "uniqueItems": true,
+                              "description": "The tile tags it lives on: where the spawner lays it and WANDER picks, and the tiles its spawn cap is read over (CREATURE_BEHAVIOUR section 3). A wild kind never names town.",
+                              "type": "array",
+                              "items": {
+                                "anyOf": [
+                                  {
+                                    "const": "grove",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "meadow",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "riverbank",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "ruin",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "town",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "water",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "path",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "interior",
+                                    "type": "string"
+                                  }
+                                ]
+                              }
+                            },
+                            "group": {
+                              "additionalProperties": false,
+                              "description": "Who goes with whom (CREATURE_BEHAVIOUR section 5.1): the class says how the group moves and flees, the bands how many stand at one anchor. The size is drawn on the server, once a group period, while nobody can see the group.",
+                              "type": "object",
+                              "required": [
+                                "class",
+                                "bands"
+                              ],
+                              "properties": {
+                                "class": {
+                                  "description": "solitary: one at its anchor; herd: scatters on FLEE and regroups at the anchor; flock: lifts and lands as one; pack: keeps within 2 of its leader on every move (CREATURE_BEHAVIOUR section 5.1.3).",
+                                  "anyOf": [
+                                    {
+                                      "const": "solitary",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "herd",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "flock",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "pack",
+                                      "type": "string"
+                                    }
+                                  ]
+                                },
+                                "bands": {
+                                  "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                  "type": "array",
+                                  "items": [
+                                    {
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "type": "integer"
+                                    },
+                                    {
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "type": "integer"
+                                    },
+                                    {
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "type": "integer"
+                                    },
+                                    {
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "type": "integer"
+                                    }
+                                  ],
+                                  "additionalItems": false,
+                                  "minItems": 4,
+                                  "maxItems": 4
+                                },
+                                "sentinel": {
+                                  "description": "Only on a herd or a flock: its leader never GRAZEs while the others do, and its ALERT is its alarm noise (CREATURE_BEHAVIOUR section 5.1.1). Absent: no.",
+                                  "type": "boolean"
+                                },
+                                "season": {
+                                  "additionalProperties": false,
+                                  "minProperties": 1,
+                                  "description": "Bands that replace the plain ones in one season: pairs in spring, larger groups in winter (CREATURE_BEHAVIOUR section 5.1.4). Read by nothing until seasons are built; the cap and the refill never move with it.",
+                                  "type": "object",
+                                  "properties": {
+                                    "spring": {
+                                      "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        }
+                                      ],
+                                      "additionalItems": false,
+                                      "minItems": 4,
+                                      "maxItems": 4
+                                    },
+                                    "summer": {
+                                      "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        }
+                                      ],
+                                      "additionalItems": false,
+                                      "minItems": 4,
+                                      "maxItems": 4
+                                    },
+                                    "autumn": {
+                                      "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        }
+                                      ],
+                                      "additionalItems": false,
+                                      "minItems": 4,
+                                      "maxItems": 4
+                                    },
+                                    "winter": {
+                                      "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        }
+                                      ],
+                                      "additionalItems": false,
+                                      "minItems": 4,
+                                      "maxItems": 4
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "family": {
+                              "description": "Its hunt family (HUNT_FAMILIES section 2): one body, one hunting style, one shape of drops.",
+                              "anyOf": [
+                                {
+                                  "const": "burrowers",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "deer",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "wild-goats",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "pigs",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "canids",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "cats",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "bears",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "game-birds",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "perching-birds",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "waterfowl",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "raptors",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "mustelids",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "fish",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "reptiles",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "night-fliers",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "horned-beasts",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "spiders",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "drakes",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "flush": {
+                              "description": "Its found den may be flushed (HUNT_FAMILIES section 3.1, the line home): a smoke bundle at the mouth bolts it out of the bolt hole, a second tile 8 to 10 tiles away the server draws once per anchor and never moves. Only a burrower that sleeps in a den at danger 0. Absent: no.",
+                              "type": "boolean"
+                            }
+                          }
                         },
                         "hunt": {
                           "additionalProperties": false,

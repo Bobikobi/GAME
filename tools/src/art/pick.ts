@@ -27,6 +27,8 @@ export type PickActionName = (typeof ACTIONS)[number];
 
 export interface PickAction {
   draft: string;
+  /** The pool entry the pick fills when it is not the draft's own name: a `variant_of` entry (owner, 30.10: every approved look is kept). */
+  entry?: string;
   action: PickActionName;
   note?: string;
 }
@@ -52,6 +54,7 @@ export function parsePicksFile(text: string): PicksFile {
     if (typeof p?.draft !== 'string' || !/^[0-9a-f]{16}$/u.test(p.draft)) throw new Error(`${where}.draft must be a draft id`);
     if (!(ACTIONS as readonly string[]).includes(p.action)) throw new Error(`${where}.action must be ${ACTIONS.join(', ')}`);
     if (p.note !== undefined && typeof p.note !== 'string') throw new Error(`${where}.note must be text`);
+    if (p.entry !== undefined && typeof p.entry !== 'string') throw new Error(`${where}.entry must be an entry name`);
     if (p.action === 'wrong' && (p.note ?? '').trim() === '') throw new Error(`${where}: a wrong object says what it looks like (note)`);
   });
   return data as PicksFile;
@@ -75,14 +78,17 @@ export interface PickContext {
   today?: string;
 }
 
-function findEntry(root: string, draft: Draft): { pool: PoolName; entry: PoolEntry } {
+function findEntry(root: string, draft: Draft, entryName?: string): { pool: PoolName; entry: PoolEntry } {
+  const want = entryName ?? draft.name;
   const pools = draft.pool !== null && (POOLS as readonly string[]).includes(draft.pool) ? [draft.pool as PoolName] : [...POOLS];
   for (const pool of pools) {
     if (pool === 'cast') continue;
-    const entry = readPool(pool, root).find((e) => e.name === draft.name);
-    if (entry !== undefined) return { pool, entry };
+    const entry = readPool(pool, root).find((e) => e.name === want);
+    if (entry === undefined) continue;
+    if (want !== draft.name && entry.variant_of !== draft.name) throw new Error(`draft ${draft.id} is a draw of ${draft.name}, and ${want} is not a variant of it`);
+    return { pool, entry };
   }
-  throw new Error(`draft ${draft.id} (${draft.name}) is in no pool`);
+  throw new Error(`draft ${draft.id} (${draft.name}${want === draft.name ? '' : ` as ${want}`}) is in no pool`);
 }
 
 /** Check a whole file against the index, the pools and the cache; throws on the first problem, writes nothing. */
@@ -98,7 +104,7 @@ export function planPicks(file: PicksFile, ctx: PickContext = {}): Step[] {
     if (draft === undefined) throw new Error(`no draft ${action.draft} in the index`);
     if (seen.has(action.draft)) throw new Error(`draft ${action.draft} is in the file twice`);
     seen.add(action.draft);
-    const { pool, entry } = findEntry(root, draft);
+    const { pool, entry } = findEntry(root, draft, action.entry);
     const lines: string[] = [];
     if (action.action === 'pick') {
       const other = picked.get(entry.name);
@@ -194,12 +200,12 @@ export function pickCli(args: readonly string[], ctx: PickContext = {}): { text:
     if (pool === undefined || name === undefined || id === undefined || positional.length > 3) throw new Error(usage);
     if (!(POOLS as readonly string[]).includes(pool)) throw new Error(`${usage}\n(unknown pool "${pool}")`);
     const by = flag('--by') ?? readPickers(ctx.root ?? ROOT)[0] ?? '';
-    file = { picked_by: by, picks: [{ draft: id, action: 'pick' }] };
+    file = { picked_by: by, picks: [{ draft: id, action: 'pick', entry: name }] };
     const root = ctx.root ?? ROOT;
     const entry = readPool(pool as PoolName, root).find((e) => e.name === name);
     if (entry === undefined) throw new Error(`no entry "${name}" in the ${pool} pool`);
     const draft = DraftIndex.open(ctx.indexPath ?? join(root, 'tools/kit-gen/drafts.jsonl')).drafts.get(id);
-    if (draft !== undefined && draft.name !== name) throw new Error(`draft ${id} is a draw of ${draft.name}, not ${name}`);
+    if (draft !== undefined && draft.name !== name && entry.variant_of !== draft.name) throw new Error(`draft ${id} is a draw of ${draft.name}, not ${name}`);
   }
   const steps = planPicks(file, ctx);
   if (!dry) applyPicks(file, steps, ctx);

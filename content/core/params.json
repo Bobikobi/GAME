@@ -400,6 +400,122 @@
         "step": 50
       }
     },
+    "wild": {
+      "tick_ms": {
+        "value": 100,
+        "min": 100,
+        "max": 100,
+        "step": 0
+      },
+      "think_ticks": {
+        "value": 8,
+        "min": 8,
+        "max": 8,
+        "step": 0
+      },
+      "wake_tiles": {
+        "value": 40,
+        "min": 20,
+        "max": 60,
+        "step": 5
+      },
+      "awake_max": {
+        "value": 24,
+        "min": 8,
+        "max": 40,
+        "step": 4
+      },
+      "catchup_max_steps": {
+        "value": 64,
+        "min": 16,
+        "max": 256,
+        "step": 16
+      },
+      "flee_avoid_steps": {
+        "value": 60,
+        "min": 20,
+        "max": 120,
+        "step": 10
+      },
+      "refill_clear_tiles": {
+        "value": 20,
+        "min": 10,
+        "max": 40,
+        "step": 5
+      },
+      "spread_tiles": {
+        "value": 8,
+        "min": 4,
+        "max": 12,
+        "step": 1
+      },
+      "print_ring": {
+        "value": 16,
+        "min": 8,
+        "max": 32,
+        "step": 4
+      },
+      "print_fade_ms": {
+        "value": 50000,
+        "min": 25000,
+        "max": 200000,
+        "step": 5000
+      },
+      "den_stay_steps": {
+        "value": 8,
+        "min": 4,
+        "max": 20,
+        "step": 1
+      },
+      "bolt_min_tiles": {
+        "value": 8,
+        "min": 6,
+        "max": 10,
+        "step": 1
+      },
+      "bolt_max_tiles": {
+        "value": 10,
+        "min": 8,
+        "max": 12,
+        "step": 1
+      },
+      "throw_ms": {
+        "value": 1000,
+        "min": 500,
+        "max": 4000,
+        "step": 250
+      },
+      "strike_noise": {
+        "value": 4,
+        "min": 2,
+        "max": 6,
+        "step": 1
+      },
+      "fire_keep_day": {
+        "value": 4,
+        "min": 2,
+        "max": 8,
+        "step": 1
+      },
+      "fire_keep_night": {
+        "value": 6,
+        "min": 2,
+        "max": 10,
+        "step": 1
+      },
+      "town_keep_day": {
+        "value": 2,
+        "min": 1,
+        "max": 6,
+        "step": 1
+      },
+      "town_keep_night": {
+        "value": 4,
+        "min": 1,
+        "max": 8,
+        "step": 1
+      }
+    },
     "starting_gold_mg": {
       "value": 0,
       "min": 0,

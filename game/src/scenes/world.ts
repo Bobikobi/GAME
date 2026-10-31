@@ -51,7 +51,7 @@ import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { sunAt, sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
-import { HOLE, LIGHT_POOL, READ, SHAFT, bankAt, cloudAt, dappleAt, frameAt, nightAt, shadeAt, shaftAt, tableOf } from '../light';
+import { HOLE, LIGHT_POOL, READ, SHAFT, bankAt, cloudAt, dappleAt, frameAlpha, frameAt, nightAt, shadeAt, shaftAt, tableOf } from '../light';
 import { LightLayer, litWindow, type Light } from '../light-layer';
 import { Flame, Sway, installMotion } from '../motion';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
@@ -1952,7 +1952,8 @@ export class WorldScene extends Phaser.Scene {
     // holds the player in the middle), as the shade does
     const view = this.cameras.main.worldView;
     const ring = this.light && this.night > 0 && view.width > 0 ? { x: (READ.ring * T) / view.width, y: (READ.ring * T) / view.height } : undefined;
-    const key = `${w}x${h}:${strength.toFixed(2)}:${radius.toFixed(2)}:${ring ? `${ring.x.toFixed(3)},${ring.y.toFixed(3)}` : ''}`;
+    const night = this.night;
+    const key = `${w}x${h}:${strength.toFixed(2)}:${radius.toFixed(2)}:${night.toFixed(2)}:${ring ? `${ring.x.toFixed(3)},${ring.y.toFixed(3)}` : ''}`;
     if (key === this.frameKey) return;
     this.frameKey = key;
     let tex = this.textures.exists('fx-frame') ? (this.textures.get('fx-frame') as Phaser.Textures.CanvasTexture) : undefined;
@@ -1971,7 +1972,7 @@ export class WorldScene extends Phaser.Scene {
         data.data[i + 1] = (PALETTE.ink >> 8) & 255;
         data.data[i + 2] = PALETTE.ink & 255;
         const inRing = ring !== undefined && Math.hypot(((x + 0.5) / w - 0.5) / ring.x, ((y + 0.5) / h - 0.5) / ring.y) <= 1;
-        data.data[i + 3] = inRing ? 0 : Math.round(255 * (d <= radius ? Math.max(0, Math.sin((d / radius) * 3.14 * strength)) : 1));
+        data.data[i + 3] = inRing ? 0 : Math.round(255 * frameAlpha(d, this.frameLook, night));
       }
     }
     ctx.putImageData(data, 0, 0);

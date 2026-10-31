@@ -5,7 +5,7 @@
  * sprite it redraws, what it is, the grid, and the detail to spell out. The prompt's house style
  * lives here, so the spec is the only thing that changes between waves.
  *
- *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle] [--picks manifest.jsonl | --no-picks]
+ *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle|gemini-web] [--picks manifest.jsonl | --no-picks]
  *
  * For each entry: the reference is enlarged onto flat magenta (a white ground keys out a white
  * beard), Codex's image generation redraws it on the subscription, and the importer brings the
@@ -61,7 +61,7 @@ import { PNG } from 'pngjs';
 
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
 import { wrapTile } from './wrap.js';
-import { type DrawerId, type Drawn, type KaggleRecipe, detailWithNotes, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
+import { type DrawerId, type Drawn, type KaggleRecipe, detailWithNotes, drawWaveWithKaggle, drawWithGemini, drawWithGeminiWeb, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { applyInk } from './ink.js';
 import { CORE_PALETTE, CORE_RAMPS, type Rgb, hexToRgb, paletteWithRamps } from './palette.js';
@@ -452,7 +452,7 @@ interface Options {
 export function parseArgs(args: readonly string[], env: NodeJS.ProcessEnv = process.env): Options {
   const spec = args[0];
   if (spec === undefined || spec.startsWith('--')) {
-    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle] [--picks manifest.jsonl | --no-picks]');
+    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle|gemini-web] [--picks manifest.jsonl | --no-picks]');
   }
   const value = (flag: string): string | undefined => {
     const at = args.indexOf(flag);
@@ -578,7 +578,7 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       out: options.out, name: entry.name, stamp, prompt: line.prompt, images: [refPath, ...(entry.style_refs ?? []).map((p) => join(ROOT, p))], expect: file, timeoutSeconds: options.timeoutSeconds,
       ...(plan?.seed === undefined ? {} : { seed: plan.seed }),
     };
-    const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'local' ? drawWithLocal(call)
+    const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'gemini-web' ? drawWithGeminiWeb(call) : route === 'local' ? drawWithLocal(call)
       : route === 'kaggle' ? options.predrawn?.get(entry.name) ?? drawWithKaggle({ ...call, subject: kaggleSubject(entry.ref), grid: { width: entry.width, height: entry.height }, env: kaggleEnv }) : null;
     const asked = drawn === null
       ? askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file)

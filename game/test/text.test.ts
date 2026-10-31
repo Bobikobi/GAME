@@ -287,7 +287,7 @@ describe('class and tier (crafting wave 4)', () => {
   test("an extension's own class reads by its name, and an item with no class shows its tier alone", () => {
     const withDye: Bundle = {
       ...bundle,
-      classes: { 'test/dye': { id: 'test/dye', name: 'Dye', base: 'plant', creator: 'test', file: 'test.json' } },
+      classes: { ...bundle.classes, 'test/dye': { id: 'test/dye', name: 'Dye', base: 'plant', creator: 'test', file: 'test.json' } },
       items: {
         ...bundle.items,
         'test/indigo': { ...bundle.items['core/berry']!, id: 'test/indigo', name: 'Indigo', class: 'test/dye', family: undefined, tier: 2 },
@@ -296,7 +296,7 @@ describe('class and tier (crafting wave 4)', () => {
     };
     expect(classLine(withDye, 'test/indigo')).toBe('Dye, tier 2');
     expect(classLine(withDye, 'test/plain')).toBe('Tier 1');
-    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Animal', 'Clay', 'Dye', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Other', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']);
+    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Animal', 'Bone', 'Clay', 'Dye', 'Fibre', 'Garment', 'Hide', 'Jewelry', 'Meal', 'Meat', 'Other', 'Plant', 'Relic', 'Sinew', 'Stone', 'Tool', 'Wood']);
   });
 
   test('where a recipe is made names the tier past the first', () => {
