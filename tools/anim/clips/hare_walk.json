@@ -1,0 +1,33 @@
+{
+  "about": "The hare's walk: four poses of the body's own Walk (a slow lope made from its bound), side-on, down and up, at a browsing pace of 1000 ms a tile (a placeholder inside the pose-rate cap: a stride of 9 to 12 px across the views, drawn in four poses, holds its feet only up to about 65 px/s). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop. Four poses a loop, as the owner picked for the wolf (DECISIONS 2026-10-29).",
+  "target": "hare",
+  "base": {
+    "library": "self:hare",
+    "action": "Walk"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 1000
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "foot_slide_px": 2
+  }
+}
