@@ -198,3 +198,87 @@ On the listen page, 30.10 at 10:09.
 - **The effects cut** (section 1.3): liked. "make sure the sounds also take the distance from the character into account, with multiplayer in mind: another player chopping nearby is fine, another player picking up a coin is not relevant, a fight close by off-screen sounds distant accordingly."
 
 What it opens: the quality of C is the bar and B as played is not, so the source stays open until round 2: a long routine piece and one piece per state, both through the synth pushed as far as it goes and through sampled instruments, beside open-licence tracks (sections 5 and 6, a pull request of their own). The music by state is CR-112 and the sound by distance CR-113 in `docs/team/GRUNT.md`. The effects cut of section 1.3 is built with the distance rule in a pull request of its own.
+
+## 5. Round 2: the routine and the states, synth and sampled
+
+The owner's answers (section 4) ask for a long routine piece in a medieval lofi cozy style, and for one piece each for night outside the town, hunting, combat and near death. They also ask whether B can answer all of it. Round 2 writes those five pieces once, as scores from the valley's tune family, and plays each score two ways:
+- **(a) the synth pushed as far as it goes:** recorder, reed, lute, harp, pad, strings and drums all made from oscillators and noise, with one filter per part, a room, and for the routine a lofi low-pass, a faint vinyl tick and a slow tape wobble;
+- **(b) sampled instruments, as listen C was:** FluidR3_GM by Frank Wen, CC BY 3.0, through [gleitz/midi-js-soundfonts](https://github.com/gleitz/midi-js-soundfonts).
+
+The scores are kept in the game: `game/src/audio/pieces.ts` holds the five pieces' notes and `game/src/audio/voices.ts` the synth's voices, as #464 builds them. The game plays those same events live on the synth and ships the sampled renders of them. The sampled renders take each part to one FluidR3_GM instrument:
+
+| Part | Instrument |
+|---|---|
+| lead | recorder |
+| counter | flute |
+| horn | French horn |
+| lute and pluck | nylon guitar |
+| pizz | pizzicato strings |
+| harp | orchestral harp |
+| pad, strings and stab | string ensemble 1 |
+| bass | acoustic bass |
+| bell | celesta |
+| kick and taiko | taiko drum |
+| snare and rim | woodblock |
+
+The one-off render harness, a page that plays the events into an `OfflineAudioContext`, was scratch work and is not kept. Each file sits at the game's levels: it goes through the game's music bus, master and compressor, each sampled piece is matched to its synth twin's loudness, and one common gain is applied to all ten files, setting the loudest to -1 dBFS. So the files are as loud as each other as the game would play them. The routine is Ogg Vorbis at 80 kbps; the state pieces are at 96 kbps.
+
+### 5.1 The pieces
+
+- **Routine** (3 min 8 s, 76 bpm, a lazy swing, A minor). Six sections that never play the same way twice:
+  1. Intro, 4 bars: the lute alone over a held chord.
+  2. A1, 16 bars: the valley tune on the recorder, with grace notes, over the lute, brushes and a lazy kick.
+  3. B, 8 bars: a new line in the relative major that answers the tune, with a rim instead of the brush.
+  4. A2, 16 bars: the tune moves to the lute an octave down, the recorder takes the counter-melody of listen B, and the bass walks.
+  5. C, 8 bars: the bridge. The drums rest and the tune's head is slowed to half its pace over the harp.
+  6. A3, 6 bars: the head an octave up, then the cadence, and the chord left to ring.
+- **Night outside the town** (30 s, 60 bpm): the night song's line over the harp's broken chords and a held drone. No drum.
+- **Hunting** (30 s, 100 bpm, E Phrygian): the chase song's bass as a held-breath ostinato with plucked strings. The tune's head (A C E, F E C) is turned into a horn call (E G B, C B G) three times. A low drum enters, then a rim.
+- **Combat** (30 s, 138 bpm): the chase song's call doubled by strings, an octave up in the second half, over its driving bass. A big drum lands on every downbeat, string stabs and a horn answer come every fourth bar, and it ends on one hit.
+- **Near death** (30 s, 56 bpm): the tune's head falling slowly (E D C, A; C B A, F; E F E) over a heartbeat, with a held A minor and a high bell. A low-pass closes from 3 kHz to 600 Hz, so the room closes in.
+
+### 5.2 The files, their bytes and their CPU
+
+"As a file" is the rendered Ogg in this folder: what the game would ship if it played recordings. "Live" is what the game ships to play it as it plays music today:
+- for the synth, the score: the events as JSON, gzipped (the game's own notation would be smaller);
+- for the sampled pieces, the FluidR3 notes the score uses, as Ogg.
+
+"CPU" is the time to render the piece in 30 s windows (a fresh context for each, as a live context collects finished notes), divided by its length. It includes the room's reverb and the game's compressor, was measured in headless Chromium on a desktop core in a cloud sandbox, and is the median of three runs. A mid-range phone is perhaps three to four times slower. For scale, today's valley song costs about 3.5 % on the same machine (section 2.2).
+
+| File | Length | As a file | Live: bytes | Live: CPU |
+|---|---|---|---|---|
+| [r2-synth-routine](sound/2026-10-30-r2-synth-routine.ogg) | 188 s | 1,171,803 B | 5,841 B of score | 11.7 % |
+| [r2-sampled-routine](sound/2026-10-30-r2-sampled-routine.ogg) | 188 s | 1,305,117 B | 2,002,794 B of samples | 8.8 % |
+| [r2-synth-night](sound/2026-10-30-r2-synth-night.ogg) | 30 s | 243,626 B | 386 B of score | 6.4 % |
+| [r2-sampled-night](sound/2026-10-30-r2-sampled-night.ogg) | 30 s | 305,577 B | 759,366 B of samples | 4.5 % |
+| [r2-synth-hunting](sound/2026-10-30-r2-synth-hunting.ogg) | 30 s | 244,657 B | 931 B of score | 15.6 % |
+| [r2-sampled-hunting](sound/2026-10-30-r2-sampled-hunting.ogg) | 30 s | 273,178 B | 459,492 B of samples | 8.2 % |
+| [r2-synth-combat](sound/2026-10-30-r2-synth-combat.ogg) | 30 s | 241,771 B | 1,364 B of score | 20.7 % |
+| [r2-sampled-combat](sound/2026-10-30-r2-sampled-combat.ogg) | 30 s | 306,226 B | 827,979 B of samples | 12.9 % |
+| [r2-synth-near-death](sound/2026-10-30-r2-synth-near-death.ogg) | 30 s | 196,403 B | 343 B of score | 6.3 % |
+| [r2-sampled-near-death](sound/2026-10-30-r2-sampled-near-death.ogg) | 30 s | 237,427 B | 362,020 B of samples | 4.9 % |
+
+- **Live sample bytes.** The five pieces together need at most 4.4 MB of samples: that is the sum, and notes they share make it less. The FluidR3 notes are long, several seconds each, so a set trimmed to each note's useful length and encoded in Opus would be perhaps a third of that.
+- **Files.** The whole set as files is about 4.5 MB: synth 2.1 MB, sampled 2.4 MB.
+- **CPU.** The synth pushed this far costs more CPU than the samples, by 1.3 to 1.9 times. Every synth note is two or three oscillators and their envelopes, while a sampled note is one buffer.
+
+### 5.3 Can B answer everything?
+
+Measured and written down; the ear is the owner's. The two columns play the same scores.
+
+| What the owner asked, or what it takes | B, the synth pushed far | C, sampled instruments |
+|---|---|---|
+| Longer, not repetitive over a long game | Yes: a score of any length costs a few kilobytes, and it can vary each time it plays (a section skipped, a voice swapped) | Yes when played live from the same scores; as files, every minute is about 0.4 to 0.6 MB more |
+| A piece per state (night outside the town, hunting, combat, near death) | Yes | Yes |
+| Switched by the state and the place, live | Yes: the score is played live, so a layer, a section or the tempo can follow the game (G26) | Yes when played live from samples; as files, only crossfades between whole recordings |
+| **Medieval lofi cozy: the timbre of real instruments** (breath in a recorder, the body of a plucked string, a bow on strings, a harp's ring) | **No.** It reads as a synth imitating them, close to the chip sound the owner marked "no" in B | **Yes:** the recorder, harp, strings, horn and lute (a nylon guitar stands in) are recordings of instruments |
+| Dynamics that sound played (a note's colour changes with how hard it is struck) | **No:** louder is only louder | **Partly:** one sample a note here, so louder is mostly louder too; a soundfont with velocity layers does it |
+| Bytes on the page | 0 B of audio, a few KB of score | About 2 MB for the routine's instruments, up to 4.4 MB for all five; less trimmed |
+| CPU (measured on a desktop core; a mid-range phone is perhaps 3 to 4 times that) | 6 to 21 % of a desktop core, about 20 to 80 % of a phone's (combat the most), the highest of the options | 4.5 to 13 % of a desktop core, perhaps 15 to 50 % of a phone's |
+| A composer's arrangement and performance | No | No: these are our scores. That is section 6's open-licence tracks, or a composer |
+
+So B answers the length, the states and the switching, but not the sound of real instruments, which is what the owner liked in C. C played live answers all of it except a person's performance, for about 2 to 4 MB.
+
+## 6. Open-licence candidates
+
+(Filled by the local session that can reach the open libraries: CC0 and CC BY tracks, each with its page and licence.)
