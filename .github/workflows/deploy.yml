@@ -1,0 +1,149 @@
+name: Deploy
+
+# Deploys from CI at the stages that need one, instead of Vercel deploying every push to every branch (the Hobby
+# plan's 100 deployments a day ran out on 31.10, and a skipped build still counts). Off until the repository
+# variable DEPLOY_FROM_CI is "1"; the owner's switch and the way back are in deploy/RUNBOOK.md, "Deploys".
+#   - main, after CI passed on it: production
+#   - develop, after CI passed on it: one preview, aliased to the develop address the RUNBOOK names
+#   - a pull request labelled `preview`, once CI passed on its head: one preview, its address in a comment
+#   - by hand (Actions, Deploy, Run workflow): production or the develop preview, from the branch's head
+# A head CI did not pass is never deployed. A pull request from a fork never is either: its code would run beside
+# the Vercel token.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: production (main) or develop (the develop preview)
+        type: choice
+        options: [production, develop]
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
+env:
+  VERCEL_CLI: vercel@64.5.0
+  DEVELOP_ALIAS: loomvale-develop.vercel.app
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      target: ${{ steps.plan.outputs.target }}
+      sha: ${{ steps.plan.outputs.sha }}
+      pr: ${{ steps.plan.outputs.pr }}
+    steps:
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SWITCH: ${{ vars.DEPLOY_FROM_CI }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+          LABEL: ${{ github.event.label.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          ASKED: ${{ inputs.target }}
+        run: |
+          skip() { echo "No deploy: $1"; echo "target=" >> "$GITHUB_OUTPUT"; exit 0; }
+          [ "$SWITCH" = "1" ] || skip "DEPLOY_FROM_CI is not 1 (Vercel's own Git deploys are on)"
+          case "$EVENT" in
+            workflow_run)
+              [ "$RUN_CONCLUSION" = success ] || skip "CI did not pass on $RUN_SHA"
+              [ "$RUN_REPO" = "$REPO" ] || skip "a head from another repository"
+              if [ "$RUN_EVENT" = push ] && [ "$RUN_BRANCH" = main ]; then target=production; pr=
+              elif [ "$RUN_EVENT" = push ] && [ "$RUN_BRANCH" = develop ]; then target=develop; pr=
+              elif [ "$RUN_EVENT" = pull_request ]; then
+                # the pull request whose head this is, open and labelled `preview`
+                pr=$(gh api "repos/$REPO/commits/$RUN_SHA/pulls" --jq '[.[] | select(.state == "open" and .head.sha == "'"$RUN_SHA"'" and any(.labels[]; .name == "preview"))][0].number // empty')
+                [ -n "$pr" ] || skip "no open pull request labelled preview has this head"
+                target=preview
+              else skip "CI ran on $RUN_EVENT $RUN_BRANCH"; fi
+              sha=$RUN_SHA ;;
+            pull_request)
+              [ "$LABEL" = preview ] || skip "the label is not preview"
+              [ "$PR_REPO" = "$REPO" ] || skip "a pull request from a fork is never deployed"
+              # labelled after CI finished: deploy now if CI passed on this head; otherwise its CI run deploys it
+              passed=$(gh api "repos/$REPO/actions/runs?head_sha=$PR_SHA&event=pull_request" --jq '[.workflow_runs[] | select(.name == "CI" and .conclusion == "success")] | length')
+              [ "$passed" -gt 0 ] || skip "CI has not passed on $PR_SHA yet; its run deploys it when it does"
+              target=preview; sha=$PR_SHA; pr=$PR_NUMBER ;;
+            workflow_dispatch)
+              branch=$([ "$ASKED" = production ] && echo main || echo develop)
+              sha=$(gh api "repos/$REPO/commits/$branch" --jq .sha)
+              passed=$(gh api "repos/$REPO/actions/runs?head_sha=$sha&event=push" --jq '[.workflow_runs[] | select(.name == "CI" and .conclusion == "success")] | length')
+              [ "$passed" -gt 0 ] || skip "CI has not passed on the head of $branch ($sha)"
+              target=$ASKED; pr= ;;
+            *) skip "event $EVENT" ;;
+          esac
+          echo "Deploy $target from $sha${pr:+ (pull request #$pr)}"
+          { echo "target=$target"; echo "sha=$sha"; echo "pr=$pr"; } >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: plan
+    if: needs.plan.outputs.target != ''
+    runs-on: ubuntu-24.04
+    # keyed on what the plan vetted, never on a branch name a fork chooses, so no outside run can cancel a deploy;
+    # a newer develop or pull request head replaces an older one, and a production deploy always runs to its end
+    concurrency:
+      group: deploy-${{ needs.plan.outputs.target }}${{ needs.plan.outputs.pr && format('-{0}', needs.plan.outputs.pr) || '' }}
+      cancel-in-progress: ${{ needs.plan.outputs.target != 'production' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # shallow, as Vercel's own clone is: the hub's content dates are skipped on a shallow checkout either way
+          ref: ${{ needs.plan.outputs.sha }}
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: npm install --global "$VERCEL_CLI"
+      - name: Build and deploy
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          TARGET: ${{ needs.plan.outputs.target }}
+        run: |
+          if [ "$TARGET" = production ]; then
+            vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+            vercel build --prod --token="$VERCEL_TOKEN"
+            url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          else
+            vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+            vercel build --token="$VERCEL_TOKEN"
+            url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed $TARGET: $url" >> "$GITHUB_STEP_SUMMARY"
+      - name: Point the develop address at it
+        if: needs.plan.outputs.target == 'develop'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          vercel alias set "$URL" "$DEVELOP_ALIAS" --token="$VERCEL_TOKEN"
+          echo "develop: https://$DEVELOP_ALIAS" >> "$GITHUB_STEP_SUMMARY"
+      - name: Tell the pull request
+        if: needs.plan.outputs.target == 'preview'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ needs.plan.outputs.pr }}
+          SHA: ${{ needs.plan.outputs.sha }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "Preview of ${SHA:0:9}: $URL"
