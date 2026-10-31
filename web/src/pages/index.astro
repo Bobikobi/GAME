@@ -7,7 +7,7 @@ import KeyArt from '../components/KeyArt.astro';
 import '../styles/scene.css';
 import '../styles/home.css';
 import '../styles/keyart.css';
-import { GAME_LD, repoTree } from '../data/site';
+import { GAME_LD, PLAY, repoTree } from '../data/site';
 import { bridgeBuilder, builders, count, door3d, earn, signature } from '../data/home';
 
 const ROWS = 5;
@@ -48,7 +48,7 @@ const signs = bridgeBuilder ? `, and the builder ${bridgeBuilder} signs it` : ''
               <h2 class="door-name" id="classic-h">Classic</h2>
               <p class="door-note">The pixel valley, free in your browser. Your progress stays on this device.</p>
             </div>
-            <a class="btn primary stretch" href="/play/">Play</a>
+            <a class="btn primary stretch" href={PLAY}>Play</a>
           </div>
         </section>
 

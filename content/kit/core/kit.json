@@ -408,8 +408,18 @@
       },
       "props/broken_statue": {
         "file": "props/broken_statue.png",
-        "w": 16,
-        "h": 32
+        "w": 64,
+        "h": 160,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:151"
+        }
       },
       "props/bush_berry": {
         "file": "props/bush_berry.png",
@@ -692,14 +702,33 @@
       },
       "props/house_small": {
         "file": "props/house_small.png",
-        "w": 48,
-        "h": 48
+        "w": 192,
+        "h": 320,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
+        }
       },
       "props/lantern_post": {
         "file": "props/lantern_post.png",
-        "w": 16,
-        "h": 32,
-        "frames": 2
+        "w": 64,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "fire",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:150"
+        }
       },
       "props/log_fallen": {
         "file": "props/log_fallen.png",
@@ -731,8 +760,18 @@
       },
       "props/market_stall": {
         "file": "props/market_stall.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:152"
+        }
       },
       "props/mushroom_patch": {
         "file": "props/mushroom_patch.png",

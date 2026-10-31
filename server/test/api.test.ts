@@ -1,8 +1,9 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { appearSlots, appears, makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type State, type Tile } from '@game/kernel';
+import { appearSlots, appears, gaitStepMs, makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type Gait, type State, type Tile } from '@game/kernel';
 import type { IncomingMessage, Server } from 'node:http';
 
-import { createGameApi, createPlayerRecord, listen, type Books, type PlayerRecord, type PlayerStore } from '../src';
+import { createGameApi, createPlayerRecord, isAction, listen, replayAccount, type Books, type PlayerRecord, type PlayerStore } from '../src';
+import { newerKernel } from '../src/api';
 import { applyStatePatch, publicState } from '../src/patch';
 import { bfsNear, bfsToTile, loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -41,11 +42,11 @@ class MemoryStore implements PlayerStore {
   }
 }
 
-async function api(state: State, now = 1_000_000): Promise<{ store: MemoryStore; base: string; clock: { now: number } }> {
+async function api(state: State, now = 1_000_000, world: Bundle = bundle): Promise<{ store: MemoryStore; base: string; clock: { now: number } }> {
   const clock = { now };
   const store = new MemoryStore(state, now);
   server = createGameApi({
-    bundle,
+    bundle: world,
     store,
     now: () => clock.now,
     resolvePlayerId: async (request: IncomingMessage) => request.headers.authorization === 'Bearer test' ? PLAYER : undefined,
@@ -63,11 +64,13 @@ async function post(base: string, path: string, body: unknown, authorization = '
   });
 }
 
-afterEach(async () => {
+async function closeServer(): Promise<void> {
   if (!server) return;
   await new Promise<void>((resolve, reject) => server!.close((error) => error ? reject(error) : resolve()));
   server = undefined;
-});
+}
+
+afterEach(closeServer);
 
 function started(): State {
   const result = step(bundle, newState(bundle, 17), { t: 'start', starter: 'core/forager', name: 'Tester' }, 0);
@@ -393,7 +396,7 @@ describe('Stage 2a server protocol', () => {
 
     const extraField = await post(base, '/moves', { version: 1, moves: [{ kind: 'move', at, tick: 0, blows: [] }] });
     expect(extraField.status).toBe(400);
-    expect(await extraField.json()).toEqual({ error: 'A movement report holds a kind, a tile and a tick, nothing else.' });
+    expect(await extraField.json()).toEqual({ error: 'A movement report holds a kind, a tile, a tick and a gait, nothing else.' });
 
     expect(serialize(store.record.state)).toBe(before);
     expect(store.record.version).toBe(1);
@@ -576,5 +579,222 @@ describe('a 409 says why in a code as well as in words', () => {
       error: 'Movement report times cannot run backwards.',
       reason: 'backwards',
     });
+  });
+});
+
+describe('the move carries its gait to the server (DECISIONS 2026-10-29, the gaits)', () => {
+  // the night round of kernel/test/stealth.test.ts: at dusk the wolf stands on [8, 22] and looks east
+  const DUSK = 400_000;
+  const ROUND: Tile[] = [[8, 22], [9, 22], [9, 23], [8, 23]];
+
+  function wolfWorld(): Bundle {
+    const b = structuredClone(bundle);
+    b.map.props = [
+      ...b.map.props.filter((p) => !p.hazard && p.cover !== true),
+      {
+        id: 'test/wolf',
+        sprite: 'core/base-kit:props/standing_stone',
+        x: 8,
+        y: 22,
+        w: 1,
+        h: 1,
+        solid: false,
+        hazard: { kind: 'predator', window: ['night'], reach: 3, round: ROUND, pace_ms: 600, eyes: 5 },
+      },
+    ];
+    return b;
+  }
+
+  function moveAt(at: Tile, tick: number, gait?: Gait): { kind: 'move'; at: Tile; tick: number; gait?: Gait } {
+    return gait === undefined ? { kind: 'move', at, tick } : { kind: 'move', at, tick, gait };
+  }
+
+  /**
+   * A fresh account in the wolf's world, played over the wire from its first request: the start, a day walk
+   * from the spawn to [12, 22] (four tiles in front of the wolf's den, where a walk is heard and a sneak is
+   * not), and at dusk one batch of `gait` steps that stays four tiles off the wolf. Every row is the server's own.
+   */
+  async function nightBatch(gait: Gait): Promise<{ world: Bundle; seed: State['seed']; store: MemoryStore }> {
+    const world = wolfWorld();
+    const fresh = newState(world, 17);
+    const { base, store, clock } = await api(fresh, 1_000_000, world);
+    const start = await post(base, '/action', { version: 1, tick: 0, action: { t: 'start', starter: 'core/forager', name: 'Tess' } });
+    expect(start.status, await start.clone().text()).toBe(200);
+
+    const path = bfsToTile(world, store.record.state.player, store.record.state.player.at, [12, 22]);
+    expect(path, 'the day walk from the spawn to the wolf').toBeTruthy();
+    const stepMs = world.params.walk_step_ms;
+    const day = path!.slice(1).map((at, i) => moveAt(at, 1_000 + i * stepMs));
+    clock.now += 1_000 + day.length * stepMs;
+    const walked = await post(base, '/moves', { version: store.record.version, moves: day });
+    expect(walked.status, await walked.clone().text()).toBe(200);
+    expect(store.record.state.player.chase).toBeNull();
+
+    clock.now += DUSK;
+    const night = [moveAt([12, 23], DUSK + 100, gait), moveAt([12, 22], DUSK + 100, gait), moveAt([12, 23], DUSK + 100, gait)];
+    const response = await post(base, '/moves', { version: store.record.version, moves: night });
+    expect(response.status, await response.clone().text()).toBe(200);
+    // the book holds the reports as they came, gait and all, so the replay hears the same steps
+    expect(store.actionLog.at(-1)!.books.action).toEqual({ kind: 'moves', moves: night });
+    return { world, seed: fresh.seed, store };
+  }
+
+  function logOf(store: MemoryStore): { seq: number; action: unknown; tick: number }[] {
+    return store.actionLog.map(({ seq, books }) => ({ seq, action: books.action, tick: books.tick }));
+  }
+
+  test('a sneak batch four tiles off the wolf is not seen, the same batch run is (stealth.test.ts on the wire)', async () => {
+    const sneak = await nightBatch('sneak');
+    expect(sneak.store.record.state.player.chase).toBeNull();
+    await closeServer();
+    const run = await nightBatch('run');
+    expect(run.store.record.state.player.chase).toEqual({ hazard: 'test/wolf', since: DUSK + 100, bites: 0 });
+  });
+
+  test('the replay of a log with gaits lands on the stored state, and the same log without them does not', async () => {
+    const { world, seed, store } = await nightBatch('sneak');
+    const replay = replayAccount(world, seed, logOf(store));
+    expect(replay.ok, replay.ok ? '' : replay.problem).toBe(true);
+    if (!replay.ok) return;
+    expect(serialize(replay.replay.state)).toBe(serialize(store.record.state));
+
+    // what the server did before the fix: every step a walk, and the wolf hears the walk at four tiles
+    const walked = logOf(store).map((row) => {
+      const action = row.action as { kind?: string; moves?: { gait?: Gait }[] };
+      if (action.kind !== 'moves') return row;
+      return { ...row, action: { ...action, moves: action.moves!.map(({ gait: _gait, ...report }) => report) } };
+    });
+    const asWalks = replayAccount(world, seed, walked);
+    expect(asWalks.ok).toBe(true);
+    if (!asWalks.ok) return;
+    expect(asWalks.replay.state.player.chase).not.toBeNull();
+  });
+
+  test('an unknown gait is refused before the kernel, and a known one is an action', async () => {
+    const { base, store } = await api(started());
+    const before = serialize(store.record.state);
+    const at = store.record.state.player.at;
+    const crawl = await post(base, '/moves', { version: 1, moves: [{ kind: 'move', at, tick: 0, gait: 'crawl' }] });
+    expect(crawl.status).toBe(400);
+    expect(await crawl.json()).toEqual({ error: 'A movement report walks, runs or sneaks.' });
+    expect(serialize(store.record.state)).toBe(before);
+    expect(store.record.version).toBe(1);
+    expect(store.actionLog).toEqual([]);
+
+    // the wire's action shape (an opening's log is read by it) knows the kernel's three gaits and no fourth
+    expect(isAction({ t: 'move', at, gait: 'sneak' })).toBe(true);
+    expect(isAction({ t: 'move', at, gait: 'run' })).toBe(true);
+    expect(isAction({ t: 'move', at, gait: 'walk' })).toBe(true);
+    expect(isAction({ t: 'move', at })).toBe(true);
+    expect(isAction({ t: 'move', at, gait: 'crawl' })).toBe(false);
+    expect(isAction({ t: 'move', at, gait: 1 })).toBe(false);
+  });
+
+  test('the credit pays a tile at the gait\'s pace: a run buys twice the tiles of a walk, a sneak half', async () => {
+    const state = started();
+    const path = longMovementPath(state);
+    const creditMs = 2 * bundle.params.walk_step_ms;
+    // a fresh record holds two tiles of credit at the content's walk: at the forager's light pace that buys four run tiles and one sneak tile
+    expect(Math.floor(creditMs / gaitStepMs(bundle, state, 'run'))).toBe(4);
+    expect(Math.floor(creditMs / gaitStepMs(bundle, state, 'sneak'))).toBe(1);
+
+    const ran = await api(state);
+    const run = await post(ran.base, '/moves', { version: 1, moves: path.slice(1, 5).map((at) => moveAt(at, 0, 'run')) });
+    expect(run.status, await run.clone().text()).toBe(200);
+    const spent = await post(ran.base, '/moves', { version: 2, moves: [moveAt(path[3]!, 0, 'run')] });
+    expect(spent.status).toBe(409);
+    expect(((await spent.json()) as { reason: string }).reason).toBe('walk-credit');
+    await closeServer();
+
+    // a sneak cannot be claimed at a walk's speed: the second tile in the same instant is past the credit
+    const crept = await api(state);
+    const first = await post(crept.base, '/moves', { version: 1, moves: [moveAt(path[1]!, 0, 'sneak')] });
+    expect(first.status, await first.clone().text()).toBe(200);
+    const second = await post(crept.base, '/moves', { version: 2, moves: [moveAt(path[2]!, 0, 'sneak')] });
+    expect(second.status).toBe(409);
+    expect(((await second.json()) as { reason: string }).reason).toBe('walk-credit');
+  });
+});
+
+describe('a state stored under older content (a new image of the server)', () => {
+  function olderWorld(): State {
+    const state = started();
+    state.content = 'an-older-world';
+    // an item the older content had and today's does not
+    state.player.bag['core/no-longer-made'] = 3;
+    return state;
+  }
+
+  function neighbour(state: State): Tile {
+    const walkable = makeWalkable(bundle);
+    const [x, y] = state.player.at;
+    const found = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).map(([dx, dy]): Tile => [x + dx, y + dy]).find(([tx, ty]) => walkable(tx, ty, state.player));
+    if (!found) throw new Error('The start tile has no walkable neighbour.');
+    return found;
+  }
+
+  test('is adapted on its first read, logged once as its own version, and plays on', async () => {
+    const { base, store, clock } = await api(olderWorld());
+    const read = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
+    expect(read.status).toBe(200);
+    const body = (await read.json()) as { state: State; version: number };
+    expect(body.version).toBe(2);
+    expect(body.state.content).toBe(bundle.tag);
+    expect(body.state.player.bag['core/no-longer-made']).toBeUndefined();
+    expect(store.actionLog).toEqual([{ seq: 2, books: { action: { kind: 'adapt', from: 'an-older-world', to: bundle.tag }, tick: store.record.state.tick, gold: [] } }]);
+    // a second read finds today's content and writes nothing
+    expect((await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } })).status).toBe(200);
+    expect(store.actionLog).toHaveLength(1);
+
+    clock.now += 10_000;
+    const tick = store.record.state.tick + bundle.params.walk_step_ms;
+    const walked = await post(base, '/moves', { version: 2, moves: [move(neighbour(store.record.state), tick)] });
+    expect(walked.status).toBe(200);
+    expect(store.record.version).toBe(3);
+  });
+
+  test('a request that names the version before the adapt is told to read the state again', async () => {
+    const { base, store, clock } = await api(olderWorld());
+    clock.now += 10_000;
+    const tick = store.record.state.tick + bundle.params.walk_step_ms;
+    const stale = await post(base, '/moves', { version: 1, moves: [move(neighbour(store.record.state), tick)] });
+    expect(stale.status).toBe(409);
+    expect(await stale.json()).toMatchObject({ reason: 'stale' });
+    // the adapt was written, once, and the walk was not
+    expect(store.record.version).toBe(2);
+    expect(store.actionLog.map((entry) => entry.books.action)).toEqual([{ kind: 'adapt', from: 'an-older-world', to: bundle.tag }]);
+  });
+
+  test('a state a newer kernel wrote is left for the newer image: a rolled-back server never adapts it down', async () => {
+    const newer = olderWorld();
+    newer.kernel = '99.0.0';
+    const { base, store } = await api(newer);
+    const before = serialize(store.record.state);
+    const read = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
+    expect(read.status).toBe(503);
+    expect(serialize(store.record.state)).toBe(before);
+    expect(store.actionLog).toHaveLength(0);
+  });
+
+  test('newerKernel compares major, minor and patch as numbers, and reads nothing it cannot parse as newer', () => {
+    expect(newerKernel('0.22.1', '0.22.0')).toBe(true);
+    expect(newerKernel('0.23.0', '0.22.9')).toBe(true);
+    expect(newerKernel('0.10.0', '0.9.0')).toBe(true);
+    expect(newerKernel('0.22.0', '0.22.0')).toBe(false);
+    expect(newerKernel('0.20.0', '0.22.0')).toBe(false);
+    expect(newerKernel(undefined, '0.22.0')).toBe(false);
+    expect(newerKernel('next', '0.22.0')).toBe(false);
+  });
+
+  test('a character whose race left the content is refused, and its row is left as it was', async () => {
+    const gone = olderWorld();
+    gone.player.race = 'core/a-race-that-left';
+    const { base, store } = await api(gone);
+    const before = serialize(store.record.state);
+    const read = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
+    expect(read.status).toBe(409);
+    expect(await read.json()).toEqual({ error: 'The race of this character is no longer in the game.', reason: 'refused' });
+    expect(serialize(store.record.state)).toBe(before);
+    expect(store.actionLog).toHaveLength(0);
   });
 });

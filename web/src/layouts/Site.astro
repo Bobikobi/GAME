@@ -2,7 +2,7 @@
 // The frame of every page (docs/team/GRUNT.md, item 4): the wordmark and the links, the page, and a footer that
 // says what was built, from which commit and when.
 import '../styles/site.css';
-import { FOOT_COLS, NAV, dateTime, fromFixture, hub, type Section } from '../data/site';
+import { FOOT_COLS, NAV, PLAY, dateTime, fromFixture, hub, type Section } from '../data/site';
 
 interface Props {
   title: string;
@@ -67,7 +67,7 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
       <div class="wrap bar">
         <a class="wordmark" href="/" aria-label="Loomvale, home">Loomvale</a>
         <nav class="nav" aria-label="Main">
-          {NAV.map((l) => <a href={l.href} aria-current={current(l.section)}>{l.label}</a>)}
+          {NAV.map((l) => <a href={l.href} aria-current={current(l.section)} data-play={l.href === PLAY ? '' : undefined}>{l.label}</a>)}
         </nav>
         <details class="menu">
           <summary class="btn">Menu</summary>
