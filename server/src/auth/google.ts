@@ -1,6 +1,6 @@
 import { createPublicKey, verify, type JsonWebKey } from 'node:crypto';
 
-import { SignInRefusal, type OAuthProvider, type ProvenIdentity } from './provider';
+import { askProvider, SignInRefusal, type OAuthProvider, type ProvenIdentity } from './provider';
 
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -50,30 +50,7 @@ export function googleProvider(options: GoogleOptions): OAuthProvider {
   const timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
   let keys: { at: number; list: Jwk[] } | undefined;
 
-  /**
-   * One call to Google and its JSON (finding 8 of the 27.10 review). A call that fails, hangs past the
-   * timeout, or answers with something that is not a JSON object is a refusal like any other, so the
-   * player goes back to the game instead of a 500 or nginx's 504.
-   */
-  async function ask(url: string, init: RequestInit, refused: string): Promise<Record<string, unknown>> {
-    let response: Response;
-    try {
-      response = await send(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
-    } catch {
-      throw new SignInRefusal('Google could not be reached to finish the sign-in. Try again.', 'provider');
-    }
-    if (!response.ok) throw new SignInRefusal(refused, 'provider');
-    let body: unknown;
-    try {
-      body = await response.json();
-    } catch {
-      throw new SignInRefusal('Google sent an answer this server cannot read. Try again.', 'provider');
-    }
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-      throw new SignInRefusal('Google sent an answer this server cannot read. Try again.', 'provider');
-    }
-    return body as Record<string, unknown>;
-  }
+  const ask = (url: string, init: RequestInit, refused: string) => askProvider(send, url, init, { who: 'Google', timeoutMs, refused });
 
   async function signingKey(kid: string, now: number): Promise<Jwk> {
     const cached = keys && now - keys.at < KEYS_TTL_MS ? keys.list.find((key) => key.kid === kid) : undefined;
@@ -126,6 +103,8 @@ export function googleProvider(options: GoogleOptions): OAuthProvider {
 
   return {
     id: 'google',
+    // the id token is signed by Google and says the address is verified: as strong as the email link itself
+    joinsByEmail: true,
     authorizeUrl({ state, challenge, nonce, redirectUri }) {
       const url = new URL(AUTHORIZE_URL);
       url.search = new URLSearchParams({

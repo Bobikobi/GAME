@@ -114,7 +114,9 @@ stays unset: the API refuses a second origin off a laptop), `CLIENT_ADDRESS_HEAD
 it; the sign-in limits count by it), and the Google pair `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` from the
 owner's secrets folder on the laptop (Google project `openfold-game`). On the Google client, add
 `https://<name>/auth/google/callback` as a redirect; it lists only the laptop's
-`http://localhost:8080/auth/google/callback` today. Set `MAILER=resend`, `RESEND_API_KEY` (from the owner's
+`http://localhost:8080/auth/google/callback` today. The Discord pair `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET`
+is set the same way once the owner has made the game's Discord app, with `https://<name>/auth/discord/callback`
+as its redirect; left unset, Discord answers "not open yet". Set `MAILER=resend`, `RESEND_API_KEY` (from the owner's
 secrets folder) and `MAIL_FROM=Loomvale <play@<verified domain>>`. With `MAILER=log` instead, the API starts only
 beside `ALLOW_LOG_MAILER=staging-only`: every link lands in its log, so such a box is a staging one and the name
 is not given to players. Then `docker compose -f compose.yml up -d --no-build`.

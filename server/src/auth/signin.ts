@@ -46,8 +46,10 @@ export interface SignInOptions {
   /** the account's secret key, 128 bits; a test passes its own */
   newSeed?: () => Seed;
   mailer: Mailer;
-  /** Google, when its client id and secret are set; Discord is a slot that is not open yet */
+  /** Google, when its client id and secret are set; closed ("not open yet") without them */
   google?: OAuthProvider;
+  /** Discord, the same way */
+  discord?: OAuthProvider;
   /** the origin this API answers on: the OAuth redirect and the email link are built on it */
   publicOrigin: string;
   /** where the game is: a browser is sent there after a sign-in, and a POST must come from it or from publicOrigin */
@@ -166,7 +168,7 @@ function slowDown(): SignInRefusal {
 }
 
 /**
- * Sign-in for the game's API (NEXT 18 e): Google by OAuth, an email link, and a Discord slot not open yet.
+ * Sign-in for the game's API (NEXT 18 e): Google and Discord by OAuth, and an email link.
  * A proven identity that names an account signs in at once; one that names none waits on a sign-up ticket
  * until the player gives a name and a year of birth, and only then is the account made.
  */
@@ -219,13 +221,17 @@ export function createSignIn(options: SignInOptions): SignIn {
 
   /**
    * Where a proven identity leads: the account it already signs in to; else the account its address
-   * already has, which it joins (the provider has proven the address); else a sign-up ticket.
+   * already has, which it joins where the provider's proof of the address is strong enough (`joinsByEmail`)
+   * and is refused where it is not; else a sign-up ticket.
    */
-  async function arrive(request: IncomingMessage, response: ServerResponse, identity: ProvenIdentity, at: number): Promise<void> {
+  async function arrive(request: IncomingMessage, response: ServerResponse, identity: ProvenIdentity, at: number, joinsByEmail = true): Promise<void> {
     const email = identity.email.trim().toLowerCase();
     let accountId = await store.accountForIdentity(identity.provider, identity.subject);
     if (!accountId) {
       accountId = await store.accountForEmail(email);
+      if (accountId && !joinsByEmail) {
+        throw new SignInRefusal('That address already has an account. Sign in the way you made it.', 'email-taken', 409);
+      }
       if (accountId) await store.addIdentity(identity.provider, identity.subject, accountId);
     }
     if (accountId) {
@@ -271,7 +277,7 @@ export function createSignIn(options: SignInOptions): SignIn {
       throw new SignInRefusal('The sign-in was not completed.', 'provider');
     }
     const identity = await provider.identify({ code, verifier: flow.verifier, nonce: flow.nonce, redirectUri: redirectUri(provider.id), now: at });
-    await arrive(request, response, identity, at);
+    await arrive(request, response, identity, at, provider.joinsByEmail);
   }
 
   async function emailStart(request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -480,9 +486,7 @@ export function createSignIn(options: SignInOptions): SignIn {
   type Route = (request: IncomingMessage, response: ServerResponse, url: URL) => Promise<void>;
 
   function oauth(provider: 'google' | 'discord'): { start: Route; callback: Route } {
-    const open = provider === 'google' ? options.google : undefined;
-    // TODO(NEXT 18 e, gate h5): Discord's OAuth app needs the owner's own login, so the slot answers "not
-    // open" until it exists; a `discordProvider` then fills `open` like Google's.
+    const open = provider === 'google' ? options.google : options.discord;
     const closed: Route = () => Promise.reject(new SignInRefusal(`Sign-in with ${provider === 'google' ? 'Google' : 'Discord'} is not open yet.`, 'not-open', 501));
     // every start writes a flow row, so one client address starts only so many (finding 6 of the 27.10 review)
     const start: Route = async (request, response, url) => {

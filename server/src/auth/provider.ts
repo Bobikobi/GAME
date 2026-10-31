@@ -11,6 +11,12 @@ export interface ProvenIdentity {
 /** An OAuth provider: where the browser is sent, and how its answer becomes a proven identity. */
 export interface OAuthProvider {
   id: Exclude<ProviderId, 'email'>;
+  /**
+   * Whether the address it proves may sign in to an account that already has that address. True only where the
+   * proof is strong enough to stand for the mailbox itself; otherwise such an address is refused (`email-taken`):
+   * never a second account for one address, and never a silent way into someone's account.
+   */
+  joinsByEmail: boolean;
   authorizeUrl(request: { state: string; challenge: string; nonce: string; redirectUri: string }): string;
   /** Exchange the code and check what comes back; throws a SignInRefusal on anything short of proof. */
   identify(request: { code: string; verifier: string; nonce: string; redirectUri: string; now: number }): Promise<ProvenIdentity>;
@@ -45,4 +51,34 @@ export class SignInRefusal extends Error {
   ) {
     super(message);
   }
+}
+
+/**
+ * One call to a provider and its JSON (finding 8 of the 27.10 review). A call that fails, hangs past the
+ * timeout, or answers with something that is not a JSON object is a refusal like any other, so the player
+ * goes back to the game instead of a 500 or nginx's 504. `who` names the provider in the player's words.
+ */
+export async function askProvider(
+  send: typeof fetch,
+  url: string,
+  init: RequestInit,
+  call: { who: string; timeoutMs: number; refused: string },
+): Promise<Record<string, unknown>> {
+  let response: Response;
+  try {
+    response = await send(url, { ...init, signal: AbortSignal.timeout(call.timeoutMs) });
+  } catch {
+    throw new SignInRefusal(`${call.who} could not be reached to finish the sign-in. Try again.`, 'provider');
+  }
+  if (!response.ok) throw new SignInRefusal(call.refused, 'provider');
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new SignInRefusal(`${call.who} sent an answer this server cannot read. Try again.`, 'provider');
+  }
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    throw new SignInRefusal(`${call.who} sent an answer this server cannot read. Try again.`, 'provider');
+  }
+  return body as Record<string, unknown>;
 }

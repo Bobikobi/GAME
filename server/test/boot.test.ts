@@ -115,6 +115,20 @@ describe('the session mode at boot (NEXT 18 e)', () => {
     expect(() => authFromEnv({ ...ready, GOOGLE_CLIENT_SECRET: 'secret' })).toThrow(/GOOGLE_CLIENT_ID/);
   });
 
+  test('takes Discord only as a pair, closed without it, and the notice never carries the secret', () => {
+    const closed = authFromEnv(ready);
+    if (closed.mode !== 'session') throw new Error('expected the session mode');
+    expect(closed.session.discord).toBeUndefined();
+    expect(closed.notice).not.toContain('Discord');
+    const auth = authFromEnv({ ...ready, DISCORD_CLIENT_ID: '1300000000000000000', DISCORD_CLIENT_SECRET: 'not-for-the-log' });
+    if (auth.mode !== 'session') throw new Error('expected the session mode');
+    expect(auth.session.discord).toEqual({ clientId: '1300000000000000000', clientSecret: 'not-for-the-log' });
+    expect(auth.notice).toContain('Discord');
+    expect(auth.notice).not.toContain('not-for-the-log');
+    expect(() => authFromEnv({ ...ready, DISCORD_CLIENT_ID: 'id' })).toThrow(/DISCORD_CLIENT_SECRET/);
+    expect(() => authFromEnv({ ...ready, DISCORD_CLIENT_SECRET: 'secret' })).toThrow(/DISCORD_CLIENT_ID/);
+  });
+
   test('refuses a missing origin, a path, a trailing slash, and plain http off a loopback host', () => {
     expect(() => authFromEnv({ AUTH_MODE: 'session', APP_ORIGIN: ready.PUBLIC_ORIGIN })).toThrow(/PUBLIC_ORIGIN/);
     for (const bad of ['https://play.example.org/', 'https://play.example.org/auth', 'http://play.example.org', 'play.example.org', 'ftp://play.example.org']) {
