@@ -1366,9 +1366,17 @@
       },
       "tiles/water": {
         "file": "tiles/water.png",
-        "w": 16,
-        "h": 16,
-        "frames": 4
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/water.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:150"
+        }
       },
       "items/bandage": {
         "file": "items/bandage.png",
@@ -2391,6 +2399,48 @@
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
+        }
+      },
+      "tiles/water_1": {
+        "file": "tiles/water_1.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/water.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:151"
+        }
+      },
+      "tiles/water_2": {
+        "file": "tiles/water_2.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/water.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:152"
+        }
+      },
+      "tiles/water_3": {
+        "file": "tiles/water_3.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/water.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
         }
       }
     }
