@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, adaptState, appearSlots, appears, step, walkCharge, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, KERNEL_VERSION, STEP_MILLI, WEAR_SLOTS, adaptState, appearSlots, appears, step, walkCharge, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
@@ -356,6 +356,15 @@ async function requireAccountName(nameOf: NonNullable<ApiOptions['nameOf']>, pla
   if (named !== account) refused(`Your name in this world is ${account}.`);
 }
 
+/** Whether kernel version `stored` (major.minor.patch) is later than `running`; an unreadable one is not. */
+export function newerKernel(stored: string | undefined, running: string): boolean {
+  const parts = (version: string | undefined) => (version ?? '').split('.').map(Number);
+  const [a, b] = [parts(stored), parts(running)];
+  if (a.length !== 3 || !a.every(Number.isSafeInteger) || b.length !== 3 || !b.every(Number.isSafeInteger)) return false;
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i]! > b[i]!;
+  return false;
+}
+
 /**
  * A state stored under content this server no longer runs, brought to today's content as the phone brings a
  * save (`adaptState`), and written back before anything reads it: `step` refuses a state whose content is not
@@ -365,6 +374,11 @@ async function requireAccountName(nameOf: NonNullable<ApiOptions['nameOf']>, pla
  * it is stale and reads the state again, as after any other write.
  */
 async function adaptRecord(options: ApiOptions, playerId: string, record: PlayerRecord): Promise<PlayerRecord> {
+  // a state a newer kernel wrote is an image rolled back: adapting it would drop what only the newer content
+  // holds, and nothing could bring that back, so the row is left for the newer image (deploy/RUNBOOK.md step 2)
+  if (newerKernel(record.state.kernel, KERNEL_VERSION)) {
+    throw new RequestError('This game was saved by a newer version of the server. Try again soon.', 503);
+  }
   const state = adaptState(options.bundle, record.state);
   if (!state) refused('The race of this character is no longer in the game.');
   const next: PlayerRecord = { ...record, state, version: record.version + 1 };

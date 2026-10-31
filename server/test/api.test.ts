@@ -3,6 +3,7 @@ import { appearSlots, appears, makeWalkable, newState, npcTile, salePrice, seria
 import type { IncomingMessage, Server } from 'node:http';
 
 import { createGameApi, createPlayerRecord, listen, type Books, type PlayerRecord, type PlayerStore } from '../src';
+import { newerKernel } from '../src/api';
 import { applyStatePatch, publicState } from '../src/patch';
 import { bfsNear, bfsToTile, loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -626,6 +627,27 @@ describe('a state stored under older content (a new image of the server)', () =>
     // the adapt was written, once, and the walk was not
     expect(store.record.version).toBe(2);
     expect(store.actionLog.map((entry) => entry.books.action)).toEqual([{ kind: 'adapt', from: 'an-older-world', to: bundle.tag }]);
+  });
+
+  test('a state a newer kernel wrote is left for the newer image: a rolled-back server never adapts it down', async () => {
+    const newer = olderWorld();
+    newer.kernel = '99.0.0';
+    const { base, store } = await api(newer);
+    const before = serialize(store.record.state);
+    const read = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
+    expect(read.status).toBe(503);
+    expect(serialize(store.record.state)).toBe(before);
+    expect(store.actionLog).toHaveLength(0);
+  });
+
+  test('newerKernel compares major, minor and patch as numbers, and reads nothing it cannot parse as newer', () => {
+    expect(newerKernel('0.22.1', '0.22.0')).toBe(true);
+    expect(newerKernel('0.23.0', '0.22.9')).toBe(true);
+    expect(newerKernel('0.10.0', '0.9.0')).toBe(true);
+    expect(newerKernel('0.22.0', '0.22.0')).toBe(false);
+    expect(newerKernel('0.20.0', '0.22.0')).toBe(false);
+    expect(newerKernel(undefined, '0.22.0')).toBe(false);
+    expect(newerKernel('next', '0.22.0')).toBe(false);
   });
 
   test('a character whose race left the content is refused, and its row is left as it was', async () => {
