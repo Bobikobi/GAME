@@ -1,5 +1,5 @@
 {
-  "about": "The crow caws, a fidget with its sound and the crow's sign of suspicion (HUNT_FAMILIES 7): bowed forward with the head stretched up and out, the beak wide open, the tail up and the wings closed, then back up with the head raised. Two poses of the body's own Caw, played two or three times by time.",
+  "about": "The crow caws: the voice of its ALERT, the alarm other animals hear (CREATURE_BEHAVIOUR 1, alarm 5), played with its sound when the kernel sends that alarm (its alert event, sent by every ALERT but the look-back after a flight), before crow_alert; the look-back ALERT after a flight sends no alarm and plays crow_alert alone. Never a fidget, since a caw that moved no animal would blur the one a player reads. Bowed forward with the head stretched up and out, the beak wide open, the tail up and the wings closed, then back up with the head raised. Two poses of the body's own Caw, played two or three times by time.",
   "target": "crow",
   "base": {
     "library": "self:crow",

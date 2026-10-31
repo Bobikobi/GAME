@@ -416,14 +416,14 @@ Four families have a body or one in flight; fourteen need one.
 
 | Family | Fidgets (poses) | Delay between |
 |---|---|---|
-| Burrowers | ear twitch (2), look to the side (1, mirrored), sit up tall (1, then the alert pose), face wash (3) | 2.5 to 6 s |
+| Burrowers | ear twitch (2), look to the side (1, mirrored), sit up part way (2: three quarters of the way to the alert pose, the ears tipped back, so the alert pose stays the tell; the kind's wary fidget, DECISIONS 2026-10-30, "Life between the states", question 3), face wash (3) | 2.5 to 6 s |
 | Deer | the head-up beat of the graze cycle (head down 3 to 8 s, head up and chewing 1.5 to 4 s; 2), ear flick (2), look to the side (1, mirrored), alarm stamp (2, at suspicion); later head shake (2), lick a flank (2). Drinking is the graze at the water's edge with a ripple, no new poses | only while the head is up, at most two a beat |
-| Perching birds | head turn and tilt (2), caw with its sound (2), wing ruffle (2), preen (2) | 1.5 to 4 s |
-| Every other family | two to four of the same kinds (an ear or a head turn, a look to the side, a scratch or a shake, a call), chosen when its body is made | by class: prey 2.5 to 6 s, hunters 4 to 8 s, birds 1.5 to 4 s |
+| Perching birds | head turn and tilt (2), wing ruffle (2), preen (2); the caw with its sound (2) is the crow's ALERT alarm (BEHAVIOUR 1, `alarm`), played when the kernel sends it (every ALERT but the look-back after a flight, which sends none), not a fidget | 1.5 to 4 s |
+| Every other family | two to four of the same kinds (an ear or a head turn, a look to the side, a scratch or a shake), chosen when its body is made; a voice is a state's own sound (an ALERT's alarm, the covey's call at FLEE's end, 6.1), never a fidget | by class: prey 2.5 to 6 s, hunters 4 to 8 s, birds 1.5 to 4 s |
 
-Cooldowns: grooming 20 s, sitting up 8 s, a call 6 s. Suspicion (BEHAVIOUR's alarm below ALERT) turns grooming off and makes the look and the ear more likely, the deer stamps, the crow calls, the hare sits up. After a flight, the first fidget back in IDLE is a look to the side.
+Cooldowns: grooming 20 s, sitting up 8 s. Suspicion (the noticing count above 0, below ALERT; HUNTING 3) turns grooming off and makes the look and the ear more likely, the deer stamps, the hare sits up; the crow has no wary fidget, since its caw is its ALERT's alarm, the noise other animals hear (BEHAVIOUR 1; DECISIONS 2026-10-30, "Life between the states"), so its preen stops and it tilts and ruffles in turn. After a flight, the first fidget back in IDLE is a look to the side.
 
-**The budget this asks.** ANIMATION 5.2's cap of 69 frames a quadruped and 27 a bird was set for drawn frames; rendered frames cost a render, not a drawing, and what remains is the texture: a 128 px frame is 64 KiB uncompressed, so the hare with its fidgets (87 frames) is about 5.4 MiB, the roe deer (90) about 5.6 MiB, the crow (49) about 3.1 MiB, and a scene with all three about 14 MiB against about 10 today, before packing trimmed frames into an atlas (estimated to cut it by half or more). Proposed: a hunted animal's cap is its base sheet plus up to 12 fidget poses (36 frames at three views), measured on the device tier's memory before a family's second member is added (open question 8).
+**The budget this asks.** ANIMATION 5.2's cap of 69 frames a quadruped and 27 a bird was set for drawn frames; rendered frames cost a render, not a drawing, and what remains is the texture: a 128 px frame is 64 KiB uncompressed, so the hare with its fidgets (87 frames) is about 5.4 MiB, the roe deer (90) about 5.6 MiB, the crow (75 as built, six fidget poses and its caw's two) about 4.7 MiB, and a scene with all three about 15.7 MiB against about 11 today, before packing trimmed frames into an atlas (estimated to cut it by half or more). Proposed: a wild animal's cap is its base sheet plus up to 12 fidget poses (36 frames at three views), measured on the device tier's memory before a family's second member is added (open question 8).
 
 ## 8. The check rows
 
@@ -516,7 +516,7 @@ Each one sentence, three options, A the recommendation, and the default this pag
 6. **The order new members enter.** A (recommended): one member a family, as each family's body lands, the marmot and the red stag first. B: by land, the highland's five first. C: none until the creature schema and the take are built. Default: A.
 7. **The bat's lantern lure.** A (recommended): a lamp prop with the proposed `light` flag, placed by the map, never the carried lantern, as BEHAVIOUR 2 reads G31. B: the carried lantern draws bats, which needs the lantern to become a state item and amends G31 and BEHAVIOUR 2's carried-light row. C: drop the lure; the net only. Default: A.
 
-8. **A hunted animal's frame budget.** A (recommended): the base sheet plus up to 12 fidget poses (36 frames at three views), measured on the device tier's memory before a family's second member. B: ANIMATION 5.2's caps as they stand, fidgets only by the code layer. C: no cap for rendered bodies, memory measured per scene. Default: A.
+8. **A wild animal's frame budget.** A (recommended): the base sheet plus up to 12 fidget poses (36 frames at three views), measured on the device tier's memory before a family's second member. B: ANIMATION 5.2's caps as they stand, fidgets only by the code layer. C: no cap for rendered bodies, memory measured per scene. Default: A.
 
 9. **Hunting companions (proposed).** A (recommended): the dog, the ferret and the hawk enter with the hunt through a hunting school's "bond" node, protected, never biting, home at nightfall. B: they wait for GROWTH's pets at stage 3. C: no companions; every flush and point is the player's own act. Default: A.
 

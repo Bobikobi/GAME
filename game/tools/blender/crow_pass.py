@@ -20,14 +20,15 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
     Alert 48 frames : standing tall, the head up; then a tail flick with the head turned a little;
     Peck  24 frames : tipped forward, the beak solved onto the floor; then the head part way back up;
     Lie   24 frames : on its side, the legs tucked back, the wings closed: one pose, held.
-  Four fidgets for life between the states (HUNT_FAMILIES 7, game/src/fidget.ts), short and played over the base loop:
+  Three fidgets for life between the states (HUNT_FAMILIES 7, game/src/fidget.ts), short and played over the base loop:
     Tilt   24 frames : the bird turned on its feet, the body tipped up and the head turned far to one side, then
-                       cocked (one eye to the sky): two poses, mirrored by the client for the other side;
-    Caw    24 frames : a bow with the head stretched up and out and the beak wide, the wings closed, then back up
-                       with it shut: two poses;
+                       cocked (an eye to the ground): two poses, mirrored by the client for the other side;
     Ruffle 24 frames : the wings loosened and the body rolled one way, then less and the other: two poses;
     Preen  48 frames : the left wing lifted a little and the head turned back and down to it, then further: two
                        poses.
+  And the voice of its ALERT, never a fidget (its alarm, CREATURE_BEHAVIOUR 1, played when the kernel sends it):
+    Caw    24 frames : a bow with the head stretched up and out and the beak wide, the wings closed, then back up
+                       with it shut: two poses.
 - caps every map at --tex pixels and exports one GLB with the clips on NLA tracks.
 Prints one DIAG line per fact.
 """
@@ -592,12 +593,13 @@ lie_pose()
 diag("Lie 24 frames, one pose: rolled", LIE_ROLL, "deg onto its side, turned", LIE_YAW, "deg, legs forward", LIE_LEGS, "deg with the knee", LIE_KNEE, "deg; lowest", lowest(), "parts z", parts())
 
 
-# ------------------------------------------------------------------ fidgets: short one-shots between the states
-# Life between the states (HUNT_FAMILIES 7): after a random delay the idle plays one of these and returns to it (the
+# ------------------------------------------------------------------ fidgets and the caw: short one-shots
+# Life between the states (HUNT_FAMILIES 7): after a delay the idle plays one of the fidgets and returns to it (the
 # scheduler, game/src/fidget.ts, starts it on one of the idle's pose boundaries and the client restarts the idle at its
-# first pose when it ends). Each is keyed from the stand (the idle's pose), two poses each, and changes what reads at
-# the tile: the bird's and the head's direction and tilt, the bow of a call, the wings' outline, the head turned back
-# into a wing.
+# first pose when it ends). The caw is keyed here the same way but is no fidget: it is the voice of ALERT, played when
+# the kernel sends the crow's alarm. Each is keyed from the stand (the idle's pose), two poses each, and changes what
+# reads at the tile: the bird's and the head's direction and tilt, the wings' outline, the head turned back into a
+# wing, and the caw's bow.
 WINGS = {n for n in bones if n.startswith("Bone.001_")}
 WING_L = {n for n in WINGS if n.startswith("Bone.001_L")}
 TILT_TURN = 80.0                      # degrees, Tilt: the head turned toward the bird's left, the beak out past the head's
@@ -680,10 +682,10 @@ for name, (_, poses) in FIDGET_POSES.items():
     for i, pose in enumerate(poses):
         pose()
         low = lowest()
-        diag("fidget", name, "pose", i + 1, "lowest point", low, "toes", round(toe_z(), 4), "stand's lowest", round(STAND_LOW, 4), "WARNING: a part under the soles lifts the feet" if low[2] < STAND_LOW - 0.002 else "")
+        diag("alarm" if name == "Caw" else "fidget", name, "pose", i + 1, "lowest point", low, "toes", round(toe_z(), 4), "stand's lowest", round(STAND_LOW, 4), "WARNING: a part under the soles lifts the feet" if low[2] < STAND_LOW - 0.002 else "")
 tilt, caw, ruffle, preen = (held(n, *FIDGET_POSES[n]) for n in ("Tilt", "Caw", "Ruffle", "Preen"))
-diag("fidgets: Tilt 24 frames (turned", TILT_TURN, "then cocked", TILT_COCK, ", the bird turned", TILT_YAW, "); Caw 24 frames (bow", CAW_BOW, "beak", CAW_BEAK, "then up", CAW_UP,
-     "); Ruffle 24 frames", RUFFLE, "; Preen 48 frames", PREEN, "; lowest", lowest())
+diag("fidgets: Tilt 24 frames (turned", TILT_TURN, "then cocked", TILT_COCK, ", the bird turned", TILT_YAW, "); Ruffle 24 frames", RUFFLE, "; Preen 48 frames", PREEN,
+     "; the alarm: Caw 24 frames (bow", CAW_BOW, "beak", CAW_BEAK, "then up", CAW_UP, "); lowest", lowest())
 
 # ------------------------------------------------------------------ keep the flight, drop the rest
 fly.name = "Fly"

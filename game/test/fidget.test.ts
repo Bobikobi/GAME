@@ -13,6 +13,7 @@ import {
   fidgetPlays,
   type FidgetTable,
   FIDGET_KINDS,
+  lookHash,
   poseAt,
   SUSPICION_BOOST,
   weightAt,
@@ -29,7 +30,7 @@ function tableOf(kind: string): FidgetTable {
   return {
     class: spec.class as FidgetTable['class'],
     base_ms: readClip(spec.base).ms ?? [],
-    alarm: spec.alarm,
+    wary: spec.wary,
     entries: spec.entries.map((e) => ({ ...e, ms: readClip(e.clip).ms ?? [] })),
   };
 }
@@ -67,10 +68,11 @@ function boundaries(baseMs: readonly number[], to: number): Set<number> {
 }
 
 describe('fidget scheduler (game/src/fidget.ts)', () => {
-  test('the kinds match the clip tool\'s, and each table is the page\'s four fidgets with pose times from their clips', () => {
+  test('the kinds match the clip tool\'s, none a voice, and each table is the page\'s fidgets with pose times from their clips', () => {
     expect([...FIDGET_KINDS]).toEqual([...TOOL_KINDS]);
+    expect(FIDGET_KINDS).not.toContain('call');
     expect(tableOf('hare').entries.map((e) => e.kind)).toEqual(['ear', 'look', 'sit', 'groom']);
-    expect(tableOf('crow').entries.map((e) => e.kind)).toEqual(['look', 'call', 'shake', 'groom']);
+    expect(tableOf('crow').entries.map((e) => e.kind)).toEqual(['look', 'shake', 'groom']);
     for (const kind of KINDS) {
       const t = tableOf(kind);
       expect(t.base_ms).toEqual(readClip(`${kind}_idle`).ms);
@@ -202,13 +204,13 @@ describe('fidget scheduler (game/src/fidget.ts)', () => {
     expect(episodeAfter(t, DELAYS, e, q.end + 1, 'calm', true).base).toBe(q.end + 1);
   });
 
-  test('suspicion turns grooming off, triples the look, the ear and the alarm; alert plays nothing', () => {
+  test('suspicion turns grooming off, triples the look, the ear and the wary clip; alert plays nothing', () => {
     for (const kind of KINDS) {
       const t = tableOf(kind);
       for (const e of t.entries) {
         const w = weightAt(e, t, 'suspicion');
         if (e.kind === 'groom') expect(w, e.clip).toBe(0);
-        else if (e.kind === 'look' || e.kind === 'ear' || e.clip === t.alarm) expect(w, e.clip).toBe(e.weight * SUSPICION_BOOST);
+        else if (e.kind === 'look' || e.kind === 'ear' || e.clip === t.wary) expect(w, e.clip).toBe(e.weight * SUSPICION_BOOST);
         else expect(w, e.clip).toBe(e.weight);
         expect(weightAt(e, t, 'alert')).toBe(0);
         expect(weightAt(e, t, 'calm')).toBe(e.weight);
@@ -220,9 +222,24 @@ describe('fidget scheduler (game/src/fidget.ts)', () => {
       expect(take(t, ep({ awareness: 'alert' }), 5)).toEqual([]);
       expect(fidgetAt(t, DELAYS, ep({ awareness: 'alert' }), 100000)).toBeNull();
     }
-    // the alarm is the commoner pick under suspicion: the hare sits up, the crow caws
-    expect(tableOf('hare').alarm).toBe('hare_situp');
-    expect(tableOf('crow').alarm).toBe('crow_caw');
+    // the wary clip is the commoner pick under suspicion: the hare sits up; the crow, whose caw is its ALERT alarm,
+    // has none
+    expect(tableOf('hare').wary).toBe('hare_situp');
+    expect(tableOf('crow').wary).toBeUndefined();
+    expect(tableOf('crow').entries.map((e) => e.clip)).not.toContain('crow_caw');
+  });
+
+  test('the look hash gives the numbers the coat\'s hash gave, unsigned, and takes a numeric id and its text alike', () => {
+    // the values of coat.ts's hash before #433 made the coat the server's draw
+    expect(lookHash('hare-17', 3)).toBe(878794491);
+    expect(lookHash(123456789, -7)).toBe(1798065590);
+    expect(lookHash('', 0)).toBe(2872998923);
+    expect(lookHash('a', 0)).toBe(444641715);
+    expect(lookHash(42, 3)).toBe(lookHash('42', 3));
+    expect(lookHash('hare-17', 3)).not.toBe(lookHash('hare-17', 4));
+    expect(lookHash('hare-17', 3)).not.toBe(lookHash('hare-18', 3));
+    const h = lookHash(123456789, -7);
+    expect(Number.isInteger(h) && h >= 0 && h < 2 ** 32).toBe(true);
   });
 
   test('after a flight the first fidget is a look, for every animal', () => {
@@ -232,6 +249,9 @@ describe('fidget scheduler (game/src/fidget.ts)', () => {
       for (let id = 0; id < 50; id += 1) {
         const first = take(t, ep({ id: `${kind}-${id}`, afterFlight: true }), 1)[0]!;
         expect(first.clip).toBe(look);
+        // settling while still suspicious (the count rose again on the way back) looks first too
+        const wary = take(t, ep({ id: `${kind}-${id}`, afterFlight: true, awareness: 'suspicion' }), 1)[0]!;
+        expect(wary.clip).toBe(look);
       }
       // through episodeAfter: calm, a flight (alert), then calm again after it
       const calm = ep({ id: `${kind}-x` });
@@ -239,6 +259,38 @@ describe('fidget scheduler (game/src/fidget.ts)', () => {
       expect(take(t, fled, 3)).toEqual([]);
       const back = episodeAfter(t, DELAYS, fled, 26000, 'calm', true);
       expect(take(t, back, 1)[0]!.clip).toBe(look);
+    }
+  });
+
+  test('the look owed after a flight survives a change of level before it plays, and ends once it begins or at an alert', () => {
+    for (const kind of KINDS) {
+      const t = tableOf(kind);
+      const look = t.entries.find((e) => e.kind === 'look')!.clip;
+      for (const [from, to] of [['calm', 'suspicion'], ['suspicion', 'calm']] as const) {
+        for (let id = 0; id < 20; id += 1) {
+          const settle = ep({ id: `${kind}-${id}`, start: 5000, afterFlight: true, awareness: from });
+          const first = take(t, settle, 1)[0]!;
+          const mid = Math.floor((settle.start + first.start) / 2);
+          expect(mid, `${kind}-${id}`).toBeGreaterThan(settle.start);
+          const next = episodeAfter(t, DELAYS, settle, mid, to);
+          expect(next.afterFlight).toBe(true);
+          expect(next.base).toBe(settle.start);
+          expect(take(t, next, 1)[0]!.clip, `${kind}-${id} ${from} to ${to}`).toBe(look);
+          // due exactly then, the look has shown nothing yet
+          expect(episodeAfter(t, DELAYS, settle, first.start, to).afterFlight).toBe(true);
+          // once the look has begun the next level owes none, and an alert ends the settling
+          expect(episodeAfter(t, DELAYS, settle, first.start + 1, to).afterFlight).toBe(false);
+          expect(episodeAfter(t, DELAYS, settle, mid, 'alert').afterFlight).toBe(false);
+          // nor once it has ended: the look is the last fidget then, so the next level does not open with it again
+          const second = take(t, settle, 2)[1]!;
+          for (const at of [first.end, Math.floor((first.end + second.start) / 2)]) {
+            const next2 = episodeAfter(t, DELAYS, settle, at, to);
+            expect(next2.afterFlight, `${kind}-${id} at ${at}`).toBe(false);
+            expect(next2.last).toBe(look);
+            expect(take(t, next2, 1)[0]!.clip).not.toBe(look);
+          }
+        }
+      }
     }
   });
 
@@ -373,8 +425,8 @@ describe('fidget scheduler (game/src/fidget.ts)', () => {
   test('a cursor gives fidgetAt\'s and episodeAfter\'s answers over a long run, forward and when time steps back', () => {
     for (const kind of KINDS) {
       const t = tableOf(kind);
-      for (const awareness of ['calm', 'suspicion'] as const) {
-        const e = ep({ id: `${kind}-cursor`, awareness, start: 1000, base: 400 });
+      for (const [awareness, afterFlight] of [['calm', false], ['suspicion', false], ['calm', true], ['suspicion', true]] as const) {
+        const e = ep({ id: `${kind}-cursor`, awareness, start: 1000, base: 400, afterFlight });
         const c = fidgetCursor(t, DELAYS, e);
         let shown = 0;
         // an hour at uneven frame steps, checked against the replay every 997th call
@@ -382,7 +434,7 @@ describe('fidget scheduler (game/src/fidget.ts)', () => {
           const got = c.at(now);
           if (got !== null) shown += 1;
           if (i % 997 === 0) {
-            expect(got, `${kind} ${awareness} at ${now}`).toEqual(fidgetAt(t, DELAYS, e, now));
+            expect(got, `${kind} ${awareness} ${afterFlight} at ${now}`).toEqual(fidgetAt(t, DELAYS, e, now));
             expect(c.after(now, 'suspicion')).toEqual(episodeAfter(t, DELAYS, e, now, 'suspicion'));
           }
         }
@@ -391,6 +443,7 @@ describe('fidget scheduler (game/src/fidget.ts)', () => {
         for (const now of [2500000, 5000, 1000, 999, 777777]) {
           expect(c.at(now)).toEqual(fidgetAt(t, DELAYS, e, now));
           expect(c.after(now, 'alert', true)).toEqual(episodeAfter(t, DELAYS, e, now, 'alert', true));
+          expect(c.after(now, 'calm')).toEqual(episodeAfter(t, DELAYS, e, now, 'calm'));
         }
       }
     }

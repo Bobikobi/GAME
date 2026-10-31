@@ -166,7 +166,7 @@ describe('clip configs', () => {
     expect(clipProblems('hare_idle', readClip('hare_idle'), libs, bad).join(' ')).toMatch(/hare coats/);
   });
 
-  it('every fidget table can be scheduled: the idle as its base, clips of its own body played by time, known kinds, whole weights and cooldowns, a look, an alarm', () => {
+  it('every fidget table can be scheduled: the idle as its base, clips of its own body played by time, known kinds, whole weights and cooldowns, a look, and a wary clip where the kind has one', () => {
     const clips = readClips();
     const withFidgets = Object.keys(settings.targets).filter((id) => settings.targets[id]?.fidgets !== undefined);
     expect(withFidgets.sort()).toEqual(['crow', 'hare']);
@@ -176,6 +176,8 @@ describe('clip configs', () => {
       expect(spec.base, id).toBe(`${id}_idle`);
       for (const e of spec.entries) expect(settings.targets[id]!.actions?.[clips[e.clip]!.base.action], e.clip).toBeDefined();
     }
+    expect(settings.targets.hare!.fidgets!.wary).toBe('hare_situp');
+    expect(settings.targets.crow!.fidgets!.wary).toBeUndefined();
   });
 
   it('only the pied hare\'s body is one-sided, and a coat body\'s one_sided must be true or false', () => {
@@ -184,7 +186,7 @@ describe('clip configs', () => {
     expect(coatProblems('hare', bad).join(' ')).toMatch(/brown-pied: body "hare-pied" has one_sided that is not true or false/);
   });
 
-  it('refuses a fidget table with an unknown clip, a clip of another body, a locomotion clip, a bad kind, weight, cooldown or repeats, no look, a repeated clip, a bad alarm and an unknown class', () => {
+  it('refuses a fidget table with an unknown clip, a clip of another body, a locomotion clip, a bad kind, weight, cooldown or repeats, no look, a repeated clip, a voice, a bad wary clip and an unknown class', () => {
     const clips = readClips();
     const hare = settings.targets.hare!;
     const bad: Settings = {
@@ -196,10 +198,10 @@ describe('clip configs', () => {
           fidgets: {
             class: 'rock',
             base: 'hare_run',
-            alarm: 'hare_wash',
+            wary: 'hare_wash',
             entries: [
               { clip: 'hare_nope', kind: 'ear', weight: 1, cooldown_ms: 0 },
-              { clip: 'crow_caw', kind: 'call', weight: 1, cooldown_ms: 0 },
+              { clip: 'crow_caw', kind: 'call' as 'ear', weight: 1, cooldown_ms: 0 },
               { clip: 'hare_walk', kind: 'sit', weight: 1, cooldown_ms: 0 },
               { clip: 'hare_wash', kind: 'groom', weight: 0, cooldown_ms: -1, repeats: [3, 2] },
               { clip: 'hare_ear', kind: 'dance' as 'ear', weight: 1.5, cooldown_ms: 0 },
@@ -214,6 +216,7 @@ describe('clip configs', () => {
     expect(problems).toMatch(/class "rock" has no delay range/);
     expect(problems).toMatch(/hare_nope: not a clip/);
     expect(problems).toMatch(/crow_caw: a clip of crow, not of hare/);
+    expect(problems).toMatch(/crow_caw: kind "call" is not one of/);
     expect(problems).toMatch(/hare_walk: a locomotion clip, not one played by time/);
     expect(problems).toMatch(/base hare_run: a locomotion clip, not one played by time/);
     expect(problems).toMatch(/hare_graze: kind "feed" is not one of/);
@@ -224,7 +227,7 @@ describe('clip configs', () => {
     expect(problems).toMatch(/hare_ear: weight is a positive whole number/);
     expect(problems).toMatch(/hare_ear: each clip once/);
     expect(problems).toMatch(/a look among the entries/);
-    expect(problems).toMatch(/alarm "hare_wash" is groom/);
+    expect(problems).toMatch(/wary "hare_wash" is groom/);
     const one: Settings = { ...settings, targets: { ...settings.targets, hare: { ...hare, fidgets: { class: 'prey', base: 'hare_idle', entries: [{ clip: 'hare_look', kind: 'look', weight: 1, cooldown_ms: 0 }] } } } };
     expect(fidgetProblems('hare', one, clips).join(' ')).toMatch(/two fidgets or more/);
     // a look and a groom: under suspicion the look could play once and then nothing ever again

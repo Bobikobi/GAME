@@ -144,19 +144,20 @@ it. DECISIONS 2026-10-30 holds the coats and their weights.
 
 A target may list `fidgets`: the short clips one of its kind plays while its idle loop runs (in IDLE, and in GRAZE's
 head-up beat, which the client draws as the idle; never over the head-down graze, where HUNTING 2 shortens the sight).
-The table is `{ "class": "prey" | "hunter" | "bird", "base": "<idle clip>", "alarm": "<clip>", "entries": [ { "clip",
+The table is `{ "class": "prey" | "hunter" | "bird", "base": "<idle clip>", "wary": "<clip>", "entries": [ { "clip",
 "kind", "weight", "cooldown_ms", "repeats": [least, most], "mirror" } ] }`; the class's delay between two fidgets is
 `fidget_delay_ms` at the top of `anim.json` ([least, most] ms), and a fidget waits for the next pose boundary of the
 base clip, which the client restarts at its first pose (the crouch or the stand every fidget is keyed from) when the
-fidget ends. A kind is one of look, ear, call, sit, shake and groom; feeding is not a fidget, since the graze and the
-peck are GRAZE's own clips. Suspicion turns groom off and makes look, ear and the alarm clip three times as likely,
+fidget ends. A kind is one of look, ear, sit, shake and groom; feeding is not a fidget, since the graze and the
+peck are GRAZE's own clips, nor is a voice, which is a state's own sound (the crow's caw is its ALERT's alarm). Suspicion turns
+groom off and makes look, ear and the wary clip (the kind's sign of suspicion) three times as likely,
 and the first fidget after a flight is a look. A target with `"one_sided": true` (the pied hare's body, whose patches
 differ left from right) never has a fidget mirrored on it. `fidgetProblems` (run by `pnpm anim list` and
 `pnpm anim check`) refuses a class with no delay range, a base that is not a clip of this target played by time,
 fewer than two entries, a clip that is not this target's or is locomotion or has no whole `ms`, an unknown kind, a
 weight that is not a positive integer, a negative or fractional cooldown, bad repeats, a clip listed twice, a table
-with no look, fewer than two entries that suspicion leaves on (one alone could never follow itself), and an alarm
-that is not an entry or is a groom. The client picks them with `game/src/fidget.ts` (the coat hash of the creature's
+with no look, fewer than two entries that suspicion leaves on (one alone could never follow itself), and a wary clip
+that is not an entry or is a groom. The client picks them with `game/src/fidget.ts` (a fixed hash of the creature's
 id and the episode's start on the shared world clock: integer milliseconds, never a roll; a scene keeps a
 `fidgetCursor` per animal). The hare's and the crow's tables are DECISIONS 2026-10-30.
 

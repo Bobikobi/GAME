@@ -24,8 +24,7 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
   idle loop: Ear (both ears laid back along the shoulders, then both out sideways: two poses), Look (the head turned
   to the hare's right and up a little: one pose, mirrored by the client for the other side), SitUp (part way up, then
   three quarters of the way to Alert's top with the ears tipped back, short of ALERT's tell: two poses) and Wash
-  (sitting up with both fore paws at the face, the head bowing and turning: three poses); the graze serves as the
-  drink,
+  (sitting up with both fore paws at the face, the head bowing and turning: three poses),
 - caps every map at --tex pixels and exports one GLB with the ten clips on NLA tracks,
 - with --pied, exports a second GLB of the same body and clips whose colour map carries white patches (a pied coat:
   patches on the back, the flanks and the face from seeded 3D noise over the body, the belly white), painted in
@@ -622,7 +621,7 @@ diag("Lie 24 frames, one pose: Dying's rest, held, the paws drawn", LIE_FOLD, "o
 # the idle's pose boundaries and the client restarts the idle at its first pose when it ends, so a fidget rejoins the
 # loop on the crouch without a jump, and leaves it with no bigger step than the loop's own from its fourth pose back
 # to its first. Each changes what reads at the tile: the ears, the head's direction, the height of the head, the paws
-# at the face. Drinking is the graze at the water's edge (no poses of its own).
+# at the face. The hare does not drink, so it has no drink pose.
 def blend_pose(a, b, w):
     """two read poses mixed: locations and scales lerped, rotations slerped (the shorter way)"""
     out = {}

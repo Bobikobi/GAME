@@ -7,8 +7,7 @@
   "paces": { "light": "load.light_step_ms", "steady": "walk_step_ms", "heavy": "load.heavy_step_ms" },
   "limits": { "palette_pct": 100, "foot_slide_px": 1, "silhouette_dev_pct": 10, "poses_per_s_max": 30 },
   "clothed_width": { "max_pct": 80, "pairs": [["elf", "human"], ["elf_w", "human"]] },
-  "fidget_delay_ms": { "about": "The delay between two fidgets of an animal standing in IDLE or GRAZE, [least, most] ms by class, drawn again after each one (HUNT_FAMILIES 7; halved under suspicion by game/src/fidget.ts).", "prey": [2500, 6000], "hunter": [4000, 8000], "bird": [1500, 4000] },
-  "fidget_delay_ms": { "about": "The delay between two fidgets of an animal while its idle loop plays (IDLE, or GRAZE's head-up beat), [least, most] ms by class, drawn again after each one (HUNT_FAMILIES 7; halved under suspicion by game/src/fidget.ts, and the fidget waits for the idle's next pose boundary).", "prey": [2500, 6000], "hunter": [4000, 8000], "bird": [1500, 4000] },
+  "fidget_delay_ms": { "about": "The delay between two fidgets of an animal while its idle loop plays (IDLE, or GRAZE's head-up beat), [least, most] ms by class, drawn again after each one (HUNT_FAMILIES 7; halved under suspicion by game/src/fidget.ts, and the fidget waits for the idle's next pose boundary). A class follows the kind's family of HUNT_FAMILIES 7: the burrowers prey, the perching birds bird.", "prey": [2500, 6000], "hunter": [4000, 8000], "bird": [1500, 4000] },
   "targets": {
     "forager": {
       "about": "The forager, the man (character-forager-m.glb), as the 3D game uses him (Mixamo bone names), lit and snapped to his ramps.",
@@ -216,10 +215,10 @@
         {"id": "black-pied", "name": "black pied", "weight": 5, "map": {"skin": {"steps": ["stone:0", "stone:1", "stone:1", "stone:2", "stone:2", "stone:3"]}, "wood": {"steps": ["stone:0", "stone:0", "stone:1", "stone:1", "stone:2", "stone:2"]}}, "body": "hare-pied"}
       ],
       "fidgets": {
-        "about": "The hare's fidgets (HUNT_FAMILIES 7, game/src/fidget.ts), played over the base clip (the idle, whose crouch every fidget starts from and returns to): an entry is a clip of this body, its kind, a weight, a cooldown after it ends, how many times it runs through its poses, and whether the client may mirror the down and up views. Feeding is not a fidget: the graze is GRAZE's own clip (HUNTING 2 shortens the sight while the head is down), and drinking is the graze at the water's edge.",
+        "about": "The hare's fidgets (HUNT_FAMILIES 7, game/src/fidget.ts), played over the base clip (the idle, whose crouch every fidget starts from and returns to): an entry is a clip of this body, its kind, a weight, a cooldown after it ends, how many times it runs through its poses, and whether the client may mirror the down and up views. Feeding is not a fidget: the graze is GRAZE's own clip (HUNTING 2 shortens the sight while the head is down). The hare does not drink (its kind's drinks is false). \"wary\" is its sign of suspicion, the part sit-up, never ALERT's full one (hare_alert).",
         "class": "prey",
         "base": "hare_idle",
-        "alarm": "hare_situp",
+        "wary": "hare_situp",
         "entries": [
           {"clip": "hare_ear", "kind": "ear", "weight": 35, "cooldown_ms": 0, "repeats": [1, 2]},
           {"clip": "hare_look", "kind": "look", "weight": 25, "cooldown_ms": 0, "mirror": true},
@@ -263,18 +262,16 @@
         {"id": "leucistic", "name": "pale leucistic", "weight": 3, "map": {"stone": {"steps": ["grey:4", "grey:5", "grey:5", "grey:3", "grey:3", "grey:3"]}}}
       ],
       "fidgets": {
-        "about": "The crow's fidgets (HUNT_FAMILIES 7, game/src/fidget.ts), as the hare's, over the idle's stand; the peck is GRAZE's own clip, not a fidget.",
+        "about": "The crow's fidgets (HUNT_FAMILIES 7, game/src/fidget.ts), as the hare's, over the idle's stand; the peck is GRAZE's own clip, not a fidget, and the caw (crow_caw) is its ALERT's alarm, the noise other animals hear (CREATURE_BEHAVIOUR 1), played when the kernel sends it (its alert event; the look-back ALERT after a flight sends none) and never a fidget, so the crow has no wary clip: under suspicion the preen stops and it tilts and ruffles in turn.",
         "class": "bird",
         "base": "crow_idle",
-        "alarm": "crow_caw",
         "entries": [
           {"clip": "crow_tilt", "kind": "look", "weight": 30, "cooldown_ms": 0, "mirror": true},
-          {"clip": "crow_caw", "kind": "call", "weight": 20, "cooldown_ms": 6000, "repeats": [2, 3]},
           {"clip": "crow_ruffle", "kind": "shake", "weight": 15, "cooldown_ms": 0, "repeats": [2, 2]},
           {"clip": "crow_preen", "kind": "groom", "weight": 10, "cooldown_ms": 20000, "repeats": [2, 2]}
         ]
       },
-      "credit": "Raven by Teh_Bucket, OpenGameArt, CC0, https://opengameart.org/content/raven-0; modified: the mirror and edge-split modifiers applied (one whole mesh); the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, lightened; turned to face -Y and scaled to 0.3 m standing, both baked into the bones, and a tip bone under each foot (the renderer reads a foot from its bone's tail); the tail held up so the bird stands on its feet; Idle, Hop, Lift, Alert, Peck and Lie, and four fidgets (Tilt, Caw, Ruffle and Preen), made in Blender from the file's standing pose and its flight (game/tools/blender/crow_pass.py), the flight kept as Fly; posed with its own actions and rendered to pixels by tools/anim"
+      "credit": "Raven by Teh_Bucket, OpenGameArt, CC0, https://opengameart.org/content/raven-0; modified: the mirror and edge-split modifiers applied (one whole mesh); the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, lightened; turned to face -Y and scaled to 0.3 m standing, both baked into the bones, and a tip bone under each foot (the renderer reads a foot from its bone's tail); the tail held up so the bird stands on its feet; Idle, Hop, Lift, Alert, Peck and Lie, three fidgets (Tilt, Ruffle and Preen) and the alarm's Caw, made in Blender from the file's standing pose and its flight (game/tools/blender/crow_pass.py), the flight kept as Fly; posed with its own actions and rendered to pixels by tools/anim"
     },
     "deer": {
       "about": "The roe deer (animal-deer.glb): a four-legged body that carries its own Idle, Walk, Run, Alert, Graze and Lie, so nothing is retargeted ('native'). The feet are the tails of the hoof bones. The camera is the forager's; the scale makes the deer about 0.75 m at the withers.",

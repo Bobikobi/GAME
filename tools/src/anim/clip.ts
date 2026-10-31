@@ -93,8 +93,11 @@ export interface Target {
   fidgets?: FidgetsSpec;
 }
 
-/** What a fidget does (game/src/fidget.ts FidgetKind): it decides how the animal's awareness weighs it. */
-export const FIDGET_KINDS = ['look', 'ear', 'call', 'sit', 'shake', 'groom'] as const;
+/**
+ * What a fidget does (game/src/fidget.ts FidgetKind): it decides how the animal's awareness weighs it. Never a voice:
+ * a voice is a state's own sound (the crow's caw is its ALERT's alarm, CREATURE_BEHAVIOUR 1; the covey's call ends FLEE).
+ */
+export const FIDGET_KINDS = ['look', 'ear', 'sit', 'shake', 'groom'] as const;
 
 /** One fidget of a kind: a clip of its body and how often, how long apart and how many times through it plays. */
 export interface FidgetSpec {
@@ -114,7 +117,7 @@ export interface FidgetsSpec {
   about?: string;
   class: string;
   base: string;
-  alarm?: string;
+  wary?: string;
   entries: FidgetSpec[];
 }
 
@@ -309,8 +312,8 @@ export function coatProblems(id: string, settings: Settings): string[] {
  * with whole positive pose times (a coat's body draws the same clip names on its own target), a known kind, a
  * positive whole weight, a whole cooldown of 0 or more, repeats of whole numbers from 1 with the least not over the
  * most, each clip once, a look among them (the first fidget after a flight), two entries or more that suspicion leaves
- * on (it turns grooming off; with one, nothing could ever follow it), and an alarm that is one of the entries and not
- * grooming.
+ * on (it turns grooming off; with one, nothing could ever follow it), and a wary clip that is one of the entries and
+ * not grooming.
  */
 export function fidgetProblems(id: string, settings: Settings, clips: Readonly<Record<string, Clip>>): string[] {
   const out: string[] = [];
@@ -353,10 +356,10 @@ export function fidgetProblems(id: string, settings: Settings, clips: Readonly<R
   }
   if (!spec.entries.some((e) => e.kind === 'look')) say('a look among the entries (the first fidget after a flight)');
   if (spec.entries.filter((e) => e.kind !== 'groom').length < 2) say('two entries or more that suspicion leaves on (it turns grooming off, and one alone could never follow itself)');
-  if (spec.alarm !== undefined) {
-    const alarm = spec.entries.find((e) => e.clip === spec.alarm);
-    if (alarm === undefined) say(`alarm "${spec.alarm}" is not one of the entries`);
-    else if (alarm.kind === 'groom') say(`alarm "${spec.alarm}" is ${alarm.kind}, which suspicion turns off`);
+  if (spec.wary !== undefined) {
+    const wary = spec.entries.find((e) => e.clip === spec.wary);
+    if (wary === undefined) say(`wary "${spec.wary}" is not one of the entries`);
+    else if (wary.kind === 'groom') say(`wary "${spec.wary}" is ${wary.kind}, which suspicion turns off`);
   }
   return out;
 }

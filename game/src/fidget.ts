@@ -3,37 +3,44 @@
  * out without Phaser so it can be tested. The base loop is the idle: in IDLE, and in GRAZE's head-up beat, which the
  * client draws as the idle. Never over GRAZE's head-down poses: the fidgets are keyed from the idle's first pose, and
  * HUNTING 2 shortens the animal's sight while its head is down, so a head-up fidget there would draw a sight the
- * kernel does not have. The caller runs an episode only while the idle is the base loop.
+ * kernel does not have. The caller runs an episode only while the idle is the base loop. On the kernel's lengths
+ * (IDLE 2 to 6 thinks of 800 ms, GRAZE's head-up beat 2) a first fidget, no sooner than the class's least delay on
+ * the idle's next pose boundary (2.8 s for a calm hare, 2.1 s for a calm crow), never fits a head-up beat, and comes
+ * in about one calm IDLE in six for the hare and one in two for the crow (DECISIONS 2026-10-30, question 5).
  *
  * After a delay drawn from its class's range the animal plays one fidget picked by weight, starting on the next pose
  * boundary of the idle loop; when the fidget ends the client restarts the idle at its first pose (the hare's crouch,
  * the crow's stand: the pose every fidget is keyed from), then a new delay is drawn. A fidget never follows itself,
- * never plays inside its cooldown, and stops at its next pose when the animal's awareness rises. Suspicion turns
- * grooming off, makes the look, the ear and the kind's alarm fidget three times as likely and halves the delay; at
- * alert no fidget plays (the alert clip is the state's own). After a flight the first fidget is a look. Feeding is
- * never a fidget: the graze and the peck are GRAZE's own clips, and a head-down pose over the idle would draw the
+ * never plays inside its cooldown, and stops at its next pose when the animal's awareness rises. Suspicion (the
+ * kernel's noticing count above 0, HUNTING 3) turns grooming off, makes the look, the ear and the kind's wary fidget
+ * (the hare's sit-up) three times as likely and halves the delay; at alert no fidget plays (the alert clip is the
+ * state's own). No fidget is a voice: a voice is a state's own sound (the crow's caw is its ALERT's alarm,
+ * CREATURE_BEHAVIOUR 1, played when the kernel sends it; the ground fowl's call ends its FLEE). After a flight the
+ * first fidget is a look, calm or suspicious, and a change between the two before it plays keeps it owed. Feeding is never a fidget: the graze and the peck are GRAZE's own clips, and a head-down pose over the idle would draw the
  * shorter sight while the kernel sees in full.
  *
- * Nothing is rolled: every draw is the coat hash (coat.ts) of the creature's id and a public salt, keyed by the
- * episode's start and the fidget's index, and no Math.random or clock is read. All times are integer milliseconds on
+ * Nothing is rolled: every draw is lookHash of the creature's id and a public salt, keyed by the episode's start and
+ * the fidget's index, and no Math.random or clock is read. A fidget is look alone, so a hash of public numbers is
+ * enough; a coat, which the hide carries, is the server's draw (coat.ts). All times are integer milliseconds on
  * one world clock that every client derives from the shared state (the kernel's tick of the awareness change, in
  * ms), never a client's own load-relative clock: the draws key on `start`, so two devices that disagree about it by
  * 1 ms play a different sequence, not the same one shifted. On that clock every client shows the same animal doing
- * the same thing at the same time.
+ * the same thing at the same time. The kernel keeps no tick for suspicion yet, only the count: until the pull request
+ * that steps animals records the think at which the count leaves 0, a suspicion episode starts on each client's own
+ * reading, and its fidgets are not shared.
  *
- * The tables are data: tools/anim/anim.json, "fidgets" on a target (class, base clip, alarm clip, entries) and
+ * The tables are data: tools/anim/anim.json, "fidgets" on a target (class, base clip, wary clip, entries) and
  * "fidget_delay_ms" (the delay range of each class); each entry's pose times are its clip's `ms`, and `base_ms` is the
  * base clip's. A scene keeps one fidgetCursor per visible animal and asks it every frame (fidgetAt and episodeAfter
  * replay the episode from its start, for tests and one-off lookups). Not wired yet: the client does not draw the hare
- * or the crow today, so no scene calls this module.
+ * or the crow today, so no scene calls this module. A scene finds a table from the creature's kind id (core/hare to
+ * the target hare, core/crow to crow), never from the kind's look, which the crow shares with the sparrow.
  */
-import { coatHash } from './coat';
-
 export type Awareness = 'calm' | 'suspicion' | 'alert';
 
-/** What a fidget does, which decides how awareness weighs it. */
-export type FidgetKind = 'look' | 'ear' | 'call' | 'sit' | 'shake' | 'groom';
-export const FIDGET_KINDS: readonly FidgetKind[] = ['look', 'ear', 'call', 'sit', 'shake', 'groom'];
+/** What a fidget does, which decides how awareness weighs it. Never a voice, which is a state's own sound. */
+export type FidgetKind = 'look' | 'ear' | 'sit' | 'shake' | 'groom';
+export const FIDGET_KINDS: readonly FidgetKind[] = ['look', 'ear', 'sit', 'shake', 'groom'];
 
 export type FidgetClass = 'prey' | 'hunter' | 'bird';
 
@@ -57,15 +64,18 @@ export interface FidgetTable {
   class: FidgetClass;
   /** the base loop's time per pose (the idle clip's `ms`): a fidget starts only on one of its pose boundaries */
   base_ms: readonly number[];
-  /** the clip that is the kind's sign of suspicion (the hare sits up, the crow caws): three times as likely then */
-  alarm?: string;
+  /**
+   * the clip that is the kind's sign of suspicion (the hare's part sit-up): three times as likely then. Not its ALERT
+   * tell (the hare's full sit-up, hare_alert) and never a voice (the crow's caw is its alarm), so the crow has none
+   */
+  wary?: string;
   entries: readonly FidgetEntry[];
 }
 
 /** A class's delay between two fidgets, [least, most] ms inclusive. */
 export type DelayRanges = Readonly<Record<FidgetClass, readonly [number, number]>>;
 
-/** Suspicion multiplies the look, ear and alarm weights by this. */
+/** Suspicion multiplies the look, ear and wary weights by this. */
 export const SUSPICION_BOOST = 3;
 
 /**
@@ -79,7 +89,10 @@ export interface Episode {
   /** on the shared world clock (see the module doc) */
   start: number;
   awareness: Awareness;
-  /** the episode began as the animal settled after a flight: its first fidget is a look */
+  /**
+   * the animal settled after a flight and has not fidgeted since: its first fidget is a look. episodeAfter passes it
+   * on to a new level of calm or suspicion until the look has begun; an ALERT ends it
+   */
   afterFlight?: boolean;
   /** the clip of the last fidget played before this episode */
   last?: string;
@@ -112,10 +125,29 @@ const PURPOSE_PICK = 2;
 const PURPOSE_REPEATS = 3;
 const PURPOSE_FLIP = 4;
 
-/** A 32-bit draw for one purpose of one fidget of one episode: the coat hash with the salt keyed by all three. */
+/**
+ * A fixed 32-bit hash of a creature id and a 32-bit salt: FNV-1a over the id's UTF-16 code units (offset basis
+ * 2166136261, prime 16777619, so a numeric id and its text hash alike), mixed with the salt and run through murmur3's
+ * 32-bit finaliser, all in Math.imul (richground's tile hash multiplies in doubles and would drop an id's low bits).
+ * coat.ts held it until the coat became the server's draw; a fidget is look alone and needs no seed.
+ */
+export function lookHash(id: string | number, salt: number): number {
+  const text = String(id);
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  h = (h ^ Math.imul(salt | 0, 0x9e3779b1)) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+/** A 32-bit draw for one purpose of one fidget of one episode: lookHash with the salt keyed by all three. */
 export function fidgetHash(ep: Pick<Episode, 'id' | 'salt' | 'start'>, index: number, purpose: number): number {
   const key = (ep.salt ^ Math.imul(ep.start | 0, 0x27d4eb2d) ^ Math.imul(index + 1, 0x9e3779b1) ^ Math.imul(purpose, 0x85ebca6b)) | 0;
-  return coatHash(ep.id, key);
+  return lookHash(ep.id, key);
 }
 
 /** The delay range at an awareness level: the class's, halved (rounded down) under suspicion. */
@@ -129,7 +161,7 @@ export function weightAt(entry: FidgetEntry, table: FidgetTable, awareness: Awar
   if (awareness === 'alert') return 0;
   if (awareness === 'calm') return entry.weight;
   if (entry.kind === 'groom') return 0;
-  const boosted = entry.kind === 'look' || entry.kind === 'ear' || entry.clip === table.alarm;
+  const boosted = entry.kind === 'look' || entry.kind === 'ear' || entry.clip === table.wary;
   return boosted ? entry.weight * SUSPICION_BOOST : entry.weight;
 }
 
@@ -168,7 +200,7 @@ function* slots(table: FidgetTable, delays: DelayRanges, ep: Episode): Generator
   for (let slot = 0; ; slot += 1) {
     const now = baseBoundary(table.base_ms, anchor, t + lo + (fidgetHash(ep, slot, PURPOSE_DELAY) % (hi - lo + 1)));
     let pick: FidgetEntry | undefined;
-    if (slot === 0 && ep.afterFlight === true && ep.awareness === 'calm') {
+    if (slot === 0 && ep.afterFlight === true) {
       pick = table.entries.find((e) => e.kind === 'look');
     }
     if (pick === undefined) {
@@ -238,6 +270,8 @@ export function fidgetCursor(table: FidgetTable, delays: DelayRanges, ep: Episod
   let ready: Record<string, number>;
   let base: number;
   let asked: number;
+  /** some play of the episode has ended by the last `t` asked */
+  let played: boolean;
   const reset = (): void => {
     plays = fidgetPlays(table, delays, ep);
     next = undefined;
@@ -245,6 +279,7 @@ export function fidgetCursor(table: FidgetTable, delays: DelayRanges, ep: Episod
     ready = { ...(ep.ready ?? {}) };
     base = ep.base ?? ep.start;
     asked = -Infinity;
+    played = false;
   };
   const peek = (): FidgetPlay | null => {
     if (next === undefined) {
@@ -262,6 +297,7 @@ export function fidgetCursor(table: FidgetTable, delays: DelayRanges, ep: Episod
       ready[p.clip] = p.end + (entryOf(p.clip)?.cooldown_ms ?? 0);
       base = p.end;
       next = undefined;
+      played = true;
     }
   };
   reset();
@@ -277,8 +313,10 @@ export function fidgetCursor(table: FidgetTable, delays: DelayRanges, ep: Episod
       let carryLast = ep.last;
       let carryReady: Record<string, number> = { ...(ep.ready ?? {}) };
       let carryBase = ep.base ?? ep.start;
+      let begun = false;
       if (t > ep.start) {
         advance(t);
+        begun = played;
         carryLast = last;
         carryReady = { ...ready };
         carryBase = base;
@@ -286,6 +324,7 @@ export function fidgetCursor(table: FidgetTable, delays: DelayRanges, ep: Episod
         // a fidget that has begun is cut at its next pose and the new episode starts there; one due exactly at `t`
         // has shown nothing, so it is neither the last nor cooling
         if (p !== null && p.start < t) {
+          begun = true;
           const entry = entryOf(p.clip);
           start = cutAt(p, entry?.ms ?? [p.end - p.start], t);
           carryLast = p.clip;
@@ -295,8 +334,11 @@ export function fidgetCursor(table: FidgetTable, delays: DelayRanges, ep: Episod
       }
       // the idle starts again at its first pose after the alert clip or a flight
       if (ep.awareness === 'alert' || afterFlight) carryBase = start;
+      // the look owed after a flight stays owed at a new level of calm or suspicion until it has begun (the idle keeps
+      // its phase, nothing has played); an ALERT ends the settling
+      const owed = afterFlight || (ep.afterFlight === true && !begun && awareness !== 'alert');
       // a flight between the two breaks the chain: the look that follows it may repeat the last fidget before it
-      const out: Episode = { id: ep.id, salt: ep.salt, start, awareness, afterFlight, last: afterFlight ? undefined : carryLast, ready: carryReady, base: carryBase };
+      const out: Episode = { id: ep.id, salt: ep.salt, start, awareness, afterFlight: owed, last: afterFlight ? undefined : carryLast, ready: carryReady, base: carryBase };
       if (ep.oneSided === true) out.oneSided = true;
       return out;
     },
@@ -340,8 +382,9 @@ export function cutAt(play: FidgetPlay, ms: readonly number[], t: number): numbe
 /**
  * The episode that starts at time `t` at a new awareness level, carrying the last fidget, the cooldowns and the idle's
  * phase of the one before. A fidget that has begun by `t` is cut at its next pose (cutAt), and the new episode starts
- * there. `afterFlight` marks the animal settling after a flight. Replays from the episode's start: a scene asks its
- * cursor's `after` instead.
+ * there. `afterFlight` marks the animal settling after a flight; an episode after a flight whose look has not begun
+ * passes the look on to a new level of calm or suspicion. Replays from the episode's start: a scene asks its cursor's
+ * `after` instead.
  */
 export function episodeAfter(table: FidgetTable, delays: DelayRanges, ep: Episode, t: number, awareness: Awareness, afterFlight = false): Episode {
   return fidgetCursor(table, delays, ep).after(t, awareness, afterFlight);
