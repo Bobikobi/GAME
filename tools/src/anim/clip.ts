@@ -217,7 +217,7 @@ export function coatProblems(id: string, settings: Settings): string[] {
     const name = typeof c.id === 'string' && c.id.length > 0 ? c.id : '?';
     if (name === '?') say('every coat has an id');
     if (typeof c.name !== 'string' || c.name.length === 0) say(`${name}: a name`);
-    if (!isInt(c.weight) || c.weight <= 0) say(`${name}: weight is a positive whole number`);
+    if (!Number.isSafeInteger(c.weight) || c.weight <= 0) say(`${name}: weight is a positive whole number`);
     let ramps = target.ramps;
     if (c.body !== undefined) {
       const body = settings.targets[c.body];

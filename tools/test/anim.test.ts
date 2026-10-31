@@ -118,7 +118,7 @@ describe('clip configs', () => {
     for (const id of ['crow', 'hare']) expect(coatProblems(id, spanned), id).toEqual([]);
   });
 
-  it('refuses a coat with an unknown ramp, a ramp the body does not draw, a weight of zero, a repeated id, a shift past 5, a missing body, a step on the ink and a bad step list', () => {
+  it('refuses a coat with an unknown ramp, a ramp the body does not draw, a weight of zero or one that is not whole, a repeated id, a shift past 5, a missing body, a step on the ink and a bad step list', () => {
     const hare = settings.targets.hare!;
     const bad: Settings = {
       ...settings,
@@ -129,7 +129,7 @@ describe('clip configs', () => {
           coats: [
             { id: 'a', name: 'a', weight: 0.5, map: { velvet: { to: 'grey' } } },
             { id: 'a', name: 'b', weight: 1, map: { stone: { to: 'grey' }, skin: { to: 'nowhere', shift: 9 } } },
-            { id: 'c', name: 'c', weight: 1, map: {}, body: 'nobody' },
+            { id: 'c', name: 'c', weight: 0, map: {}, body: 'nobody' },
             { id: 'd', name: 'd', weight: 1, map: { skin: { to: 'grey', shift: -1 }, wood: { steps: [null, 'grey:0', null, null, null, null] } } },
             { id: 'e', name: 'e', weight: 1, map: { skin: { steps: ['wood:1', 'velvet:2'] } } },
             { id: 'f', name: 'f', weight: 1, map: { skin: { steps: ['wood:1', 'velvet:2', null, null, null, null] } } },
@@ -140,6 +140,7 @@ describe('clip configs', () => {
     const problems = coatProblems('hare', bad).join('\n');
     expect(problems).toMatch(/each coat id once/);
     expect(problems).toMatch(/a: weight is a positive whole number/);
+    expect(problems).toMatch(/c: weight is a positive whole number/);
     expect(problems).toMatch(/ramp "velvet" is not a shared ramp/);
     expect(problems).toMatch(/ramp "stone" is not one the body draws in/);
     expect(problems).toMatch(/"nowhere", not a shared ramp/);
