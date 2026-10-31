@@ -969,13 +969,31 @@
       },
       "tiles/bridge": {
         "file": "tiles/bridge.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/bridge.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:163"
+        }
       },
       "tiles/bridge_broken": {
         "file": "tiles/bridge_broken.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/bridge.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:164"
+        }
       },
       "tiles/cobble": {
         "file": "tiles/cobble.png",
@@ -1284,8 +1302,16 @@
       },
       "tiles/rubble": {
         "file": "tiles/rubble.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/src/art/rubble.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:160"
+        }
       },
       "tiles/ruin_floor": {
         "file": "tiles/ruin_floor.png",
@@ -2483,6 +2509,101 @@
         "source": {
           "spec": "tools/kit-gen/pools/ground.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:45"
+        }
+      },
+      "tiles/rubble_1": {
+        "file": "tiles/rubble_1.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/src/art/rubble.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:161"
+        }
+      },
+      "tiles/rubble_2": {
+        "file": "tiles/rubble_2.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/src/art/rubble.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:162"
+        }
+      },
+      "tiles/bridge_n": {
+        "file": "tiles/bridge_n.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/bridge.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:165"
+        }
+      },
+      "tiles/bridge_s": {
+        "file": "tiles/bridge_s.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/bridge.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:166"
+        }
+      },
+      "tiles/bridge_broken_n": {
+        "file": "tiles/bridge_broken_n.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/bridge.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:167"
+        }
+      },
+      "tiles/bridge_broken_s": {
+        "file": "tiles/bridge_broken_s.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/src/art/bridge.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:168"
+        }
+      },
+      "tiles/rubble_3": {
+        "file": "tiles/rubble_3.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/src/art/rubble.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:169"
         }
       }
     }

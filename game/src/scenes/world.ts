@@ -990,7 +990,7 @@ export class WorldScene extends Phaser.Scene {
       const near = m.legend[m.ground[y + dy]?.[x + dx] ?? ''];
       if (!near) continue;
       let ref: string | undefined;
-      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path') || (kind === 'bank' && (near.tag === 'meadow' || near.tag === 'riverbank')) || (tag === 'riverbank' && near.tag === 'water'))) continue;
+      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path') || (kind === 'bank' && (near.tag === 'meadow' || near.tag === 'riverbank' || near.tag === 'grove')) || (tag === 'riverbank' && near.tag === 'water'))) continue;
       if (kind === 'bank' && near.tag !== 'water') ref = `${kit}tiles/bank_${side}`;
       else if (kind === 'fringe' && (near.tag === 'meadow' || near.tag === 'grove')) ref = `${kit}tiles/fringe_${side}`;
       else if (kind === 'worn' && near.tag === 'path') ref = `${kit}tiles/worn_${side}`;
@@ -1468,6 +1468,12 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** A restore's sprite on one row of its slot: a slot two rows tall or more takes `_n` on its first row and `_s` on its last when the kit has them (the old bridge, rails on the outer sides only). */
+  private restoreRef(ref: string, side: string): string {
+    const part = side === '' ? ref : `${ref}_${side}`;
+    return part !== ref && this.has(part) ? part : ref;
+  }
+
   private buildRestores(): void {
     for (const [id, r] of Object.entries(this.b.restores)) {
       const slot = findSlot(this.b.map, r.place.slot);
@@ -1477,7 +1483,8 @@ export class WorldScene extends Phaser.Scene {
       if (unit.w === T && unit.h === T) {
         for (let y = slot.y; y < slot.y + slot.h; y++) {
           for (let x = slot.x; x < slot.x + slot.w; x++) {
-            art.push(kitImage(this, x * T, y * T, r.before).setOrigin(0).setDepth(DEPTH.restore));
+            const side = slot.h > 1 ? (y === slot.y ? 'n' : y === slot.y + slot.h - 1 ? 's' : '') : '';
+            art.push(kitImage(this, x * T, y * T, this.restoreRef(r.before, side)).setOrigin(0).setDepth(DEPTH.restore).setData('side', side));
           }
         }
       } else {
@@ -2166,7 +2173,7 @@ export class WorldScene extends Phaser.Scene {
     for (const [id, art] of this.restoreArt) {
       const r = this.b.restores[id]!;
       const done = p.restored.includes(id);
-      for (const img of art) retex(img, done ? r.after : r.before);
+      for (const img of art) retex(img, this.restoreRef(done ? r.after : r.before, (img.getData('side') as string | undefined) ?? ''));
     }
     for (const [id, img] of this.campArt) {
       const built = p.camp.includes(id);
