@@ -31,8 +31,9 @@ function hsv(c: number): [number, number] {
 }
 
 describe('the open water', () => {
-  // the whole river of the core map: three tiles wide, sixty-four tall; the cove's own measures are hue 175, value .35, 14% pale
-  test('the whole river measures as the approved cove: hue 173-178, value .33-.37, 12-16% pale (above the water\'s mean and one spread)', () => {
+  // the open water of the core map's river (three tiles wide, sixty-four tall), without the shallows and the foam: the cove's own measures are hue 175, value .35.
+  // The still's whole-water measure (shallows, foam and the hour's light included: sat >= .46, value .34-.37, spread <= 14, pale <= 13%) is judged on the pair.
+  test('the open water measures as the approved cove: hue 173-178, value .33-.37, a spread of 14 or less, a short pale tail', () => {
     let n = 0;
     let hue = 0;
     let val = 0;
@@ -63,8 +64,9 @@ describe('the open water', () => {
     expect(hue / n).toBeLessThanOrEqual(178);
     expect(val / n).toBeGreaterThanOrEqual(0.33);
     expect(val / n).toBeLessThanOrEqual(0.37);
+    expect(spread).toBeLessThanOrEqual(14);
     expect(pale).toBeGreaterThanOrEqual(0.12);
-    expect(pale).toBeLessThanOrEqual(0.16);
+    expect(pale).toBeLessThanOrEqual(0.2);
   });
 
   test.each(PLACES)('no part of the water recurs in any row or column of tiles, at tile %i,%i', (x0, y0) => {

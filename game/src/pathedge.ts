@@ -41,9 +41,9 @@ const RIM_LIGHT: readonly [number, number, number] = [0xf3, 0xc7, 0xa0];
 const FOAM_WHITE: readonly [number, number, number] = [0xc6, 0xca, 0xd6];
 const FOAM_ICE: readonly [number, number, number] = [0xf5, 0xf4, 0xef];
 /** How much the bed shows at the waterline (a share), how far out it fades (px, an exponential), the share of the bed's own colour in what shows, and the colour of the shallow water it mixes with. */
-const SHALLOW_MIX = 0.8;
+const SHALLOW_MIX = 0.6;
 const SHALLOW_REACH = 11;
-const SHALLOW_BED = 0.35;
+const SHALLOW_BED = 0.25;
 const SHALLOW_WATER: readonly [number, number, number] = [0x62, 0xb3, 0xa2];
 /** The pale line's width on the land side, in art pixels. */
 const RIM_PX = 2.5;

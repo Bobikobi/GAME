@@ -12,6 +12,7 @@ import { WATER_LAYERS, type WaterLayerData } from './waterlayers';
 /** The shared teal ramp, dark to light: what the water is drawn in. */
 export const TEAL = { h: 0x122b2c, i: 0x1c4a49, j: 0x2a6c66, k: 0x3f8f84, l: 0x62b3a2, m: 0x93d6c2 } as const;
 
+/** The bed and foam layers are source layers, read mirrored (bounced at their edges), not tiles: they are used as the study made them. */
 const SIZE = 128;
 const FRAMES = 4;
 
@@ -59,16 +60,19 @@ const bounce = (v: number): number => {
 /** The study's deep base, and its body layer's weights: `base * .65 + body * .2 + body * .15`, the body read at two scales. */
 const BASE = [28, 74, 73] as const;
 /** The weights of the base and of the body at its two scales (the study's .65, .2 and .15; the body leans harder here so the water is as lively as the cove's). */
-const BASE_W = 0.18;
-const WA = 0.52;
-const WB = 0.30;
+const BASE_W = 0.45;
+const WA = 0.4;
+const WB = 0.15;
 /** Texels of the body layer to an art pixel at the study's two scales. */
 const SCALE_A = 0.65;
 const SCALE_B = 0.39;
 /** How far a slow noise leans the body's sampling, in texels: the two scales never settle into a lattice. */
 const WARP = 26;
 /** The grade that takes the study's composite to the cove as it stands in the world (measured on the approved frame: about 52, 92, 87). */
-const GRADE = [15, 6, 2] as const;
+const GRADE = [6, 6, 4] as const;
+/** The luminance above which the body is held back, and the share of the excess taken off. */
+const KNEE = 80;
+const KNEE_HOLD = 0.5;
 /** The light layer's sparkle colour. */
 const SPARKLE = [196, 232, 220] as const;
 
@@ -109,6 +113,12 @@ export function deepAt(gx: number, gy: number, frame: number): number {
   sample(l.body, gx * SCALE_B + 61 - wy * 0.7 - dy, gy * SCALE_B + 23 + wx * 0.7 + dx, scratchB);
   const out = [0, 0, 0];
   for (let c = 0; c < 3; c++) out[c] = BASE[c]! * BASE_W + scratchA[c]! * WA + scratchB[c]! * WB + GRADE[c]!;
+  // the body's brightest veins are held back toward a knee, so the river reads as quiet as the cove: the pale tail is short
+  const lumNow = out[0]! * 0.3 + out[1]! * 0.5 + out[2]! * 0.2;
+  if (lumNow > KNEE) {
+    const cut = (lumNow - KNEE) * KNEE_HOLD;
+    for (let c = 0; c < 3; c++) out[c] = out[c]! - cut;
+  }
   // the light layer's glints, read at two scales through the same slow lean as the body and mirrored at its edges: no chunk border, no seam
   const bright = (u: number, v: number): number => {
     const i = (bounce(v) * SIZE + bounce(u)) * 3;
@@ -118,7 +128,7 @@ export function deepAt(gx: number, gy: number, frame: number): number {
   const pulse = 0.12 + 0.65 * Math.max(0, Math.sin((frame / FRAMES) * Math.PI * 2 + gx * 0.045 + gy * 0.018)) ** 6;
   const glint = Math.min(1, Math.max(0, (lv - 0.42) * 2.5)) * pulse;
   if (glint > SPARK) {
-    const k = Math.min(1, (glint - SPARK) * 2.2);
+    const k = Math.min(SPARK_MAX, (glint - SPARK) * 2.2);
     for (let c = 0; c < 3; c++) out[c] = out[c]! * (1 - k) + SPARKLE[c]! * k;
   }
   const clamp = (v: number): number => Math.min(255, Math.max(0, Math.round(v)));
@@ -126,7 +136,9 @@ export function deepAt(gx: number, gy: number, frame: number): number {
 }
 
 /** The glint level where a sparkle starts. */
-const SPARK = 0.48;
+const SPARK = 0.56;
+/** The most a glint takes of the water's colour toward the sparkle's: the light layer is a light touch on the body, not a second pattern. */
+const SPARK_MAX = 0.2;
 
 /** One tile of the open water, RGBA, `px` a side, for a frame: the tile's place in the world is what it draws. */
 export function deepTile(tx: number, ty: number, frame: number, out: Uint8ClampedArray, px = 64): void {
