@@ -368,6 +368,154 @@
         "step": 1
       }
     },
+    "hunt": {
+      "dress_step_ms": {
+        "value": 1500,
+        "min": 500,
+        "max": 4000,
+        "step": 250
+      },
+      "meat_spoil_d": {
+        "value": 3,
+        "min": 1,
+        "max": 6,
+        "step": 1
+      },
+      "hide_spoil_d": {
+        "value": 6,
+        "min": 2,
+        "max": 12,
+        "step": 1
+      },
+      "grade2_bp": {
+        "value": 2500,
+        "min": 0,
+        "max": 5000,
+        "step": 100
+      },
+      "grade3_bp": {
+        "value": 500,
+        "min": 0,
+        "max": 2000,
+        "step": 50
+      }
+    },
+    "wild": {
+      "tick_ms": {
+        "value": 100,
+        "min": 100,
+        "max": 100,
+        "step": 0
+      },
+      "think_ticks": {
+        "value": 8,
+        "min": 8,
+        "max": 8,
+        "step": 0
+      },
+      "wake_tiles": {
+        "value": 40,
+        "min": 20,
+        "max": 60,
+        "step": 5
+      },
+      "awake_max": {
+        "value": 24,
+        "min": 8,
+        "max": 40,
+        "step": 4
+      },
+      "catchup_max_steps": {
+        "value": 64,
+        "min": 16,
+        "max": 256,
+        "step": 16
+      },
+      "flee_avoid_steps": {
+        "value": 60,
+        "min": 20,
+        "max": 120,
+        "step": 10
+      },
+      "refill_clear_tiles": {
+        "value": 20,
+        "min": 10,
+        "max": 40,
+        "step": 5
+      },
+      "spread_tiles": {
+        "value": 8,
+        "min": 4,
+        "max": 12,
+        "step": 1
+      },
+      "print_ring": {
+        "value": 16,
+        "min": 8,
+        "max": 32,
+        "step": 4
+      },
+      "print_fade_ms": {
+        "value": 50000,
+        "min": 25000,
+        "max": 200000,
+        "step": 5000
+      },
+      "den_stay_steps": {
+        "value": 8,
+        "min": 4,
+        "max": 20,
+        "step": 1
+      },
+      "bolt_min_tiles": {
+        "value": 8,
+        "min": 6,
+        "max": 10,
+        "step": 1
+      },
+      "bolt_max_tiles": {
+        "value": 10,
+        "min": 8,
+        "max": 12,
+        "step": 1
+      },
+      "throw_ms": {
+        "value": 1000,
+        "min": 500,
+        "max": 4000,
+        "step": 250
+      },
+      "strike_noise": {
+        "value": 4,
+        "min": 2,
+        "max": 6,
+        "step": 1
+      },
+      "fire_keep_day": {
+        "value": 4,
+        "min": 2,
+        "max": 8,
+        "step": 1
+      },
+      "fire_keep_night": {
+        "value": 6,
+        "min": 2,
+        "max": 10,
+        "step": 1
+      },
+      "town_keep_day": {
+        "value": 2,
+        "min": 1,
+        "max": 6,
+        "step": 1
+      },
+      "town_keep_night": {
+        "value": 4,
+        "min": 1,
+        "max": 8,
+        "step": 1
+      }
+    },
     "starting_gold_mg": {
       "value": 0,
       "min": 0,
@@ -451,46 +599,45 @@
     "light": {
       "keys": [
         {
-          "at": "04:15",
-          "tint": "#eda83a",
-          "pct": 0
-        },
-        {
-          "at": "05:00",
-          "tint": "#eda83a",
-          "pct": 40
+          "at": "04:00",
+          "tint": "#172a52",
+          "pct": 92
         },
         {
           "at": "06:00",
-          "tint": "#eda83a",
-          "pct": 40
+          "tint": "#172a52",
+          "pct": 0
         },
         {
-          "at": "06:45",
+          "at": "15:30",
           "tint": "#eda83a",
           "pct": 0
         },
         {
-          "at": "18:45",
+          "at": "16:30",
           "tint": "#eda83a",
-          "pct": 0
+          "pct": 12
         },
         {
-          "at": "19:30",
+          "at": "17:30",
           "tint": "#eda83a",
+          "pct": 28
+        },
+        {
+          "at": "19:00",
+          "tint": "#e2533f",
           "pct": 40
         },
         {
-          "at": "20:30",
-          "tint": "#eda83a",
-          "pct": 40
-        },
-        {
-          "at": "21:15",
-          "tint": "#eda83a",
-          "pct": 0
+          "at": "21:00",
+          "tint": "#172a52",
+          "pct": 92
         }
       ],
+      "read": {
+        "floor": 22,
+        "fog": 40
+      },
       "sun": {
         "alpha": 30,
         "cap": 110,
@@ -716,7 +863,7 @@
         "step": 1
       },
       "top_over_median_max_permille": {
-        "value": 1600,
+        "value": 2000,
         "min": 1000,
         "max": 5000,
         "step": 100
@@ -744,7 +891,7 @@
         ],
         [
           750,
-          1000
+          900
         ],
         [
           1000,
@@ -785,7 +932,7 @@
       ],
       "grade_drain_pct": [
         0,
-        20,
+        10,
         35,
         60,
         100

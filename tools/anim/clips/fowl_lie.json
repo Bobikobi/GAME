@@ -1,0 +1,29 @@
+{
+  "about": "The ground fowl at rest (SLEEP in HUNTING 2, and rest): one held pose of the body's own Lie, a roosting hen keyed from the standing pose: the body settled level on the ground as a round loaf, the legs folded under it out of sight, the wings closed, the feathers a little puffed, the head drawn in onto the shoulders and the tail level. SLEEP and rest only. A take is a fade and a drop of goods (HUNTING 10, which names no pose): no take pose is drawn; a bird taken in its sleep fades from the roost like any held pose, and the bird is never laid down into this pose for a take (an owner question, default: fade the pose it holds). One pose, a still (a one-frame list).",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Lie"
+  },
+  "frames": [
+    0
+  ],
+  "ms": [
+    1000
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

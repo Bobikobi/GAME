@@ -237,7 +237,7 @@ export class FreeWalk {
     const [x, y] = VEC[dir];
     await this.steer(x, y);
     try {
-      await this.page.waitFor(until, what, timeoutMs);
+      await this.page.waitFor(until, what, timeoutMs, false);
     } finally {
       await this.release();
     }
@@ -249,7 +249,7 @@ export class FreeWalk {
     const [x, y] = VEC[dir];
     await this.steer(x, y);
     try {
-      await this.page.waitFor('window.__walk.done()', `the turn toward ${what}`, 3000);
+      await this.page.waitFor('window.__walk.done()', `the turn toward ${what}`, 3000, false);
     } finally {
       await this.release();
     }

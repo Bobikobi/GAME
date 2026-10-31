@@ -92,6 +92,20 @@ describe('cutting a wave', () => {
     expect(cut.skipped.get('held by an open owner call (--unheld)')).toEqual(['missing_a', 'sent_back_blocked']);
   });
 
+  test('--redo cuts an imported entry that carries a rework draft, as another round, and only then', () => {
+    const dir = fixture([draftLine('imported_one', 7, { round: 1, pool: 'props' }), { id: idOf(7), amend: true, review: 'rework' }]);
+    const pool = readPool('props', dir);
+    const without = cutWave('props', pool, loadEvidence(dir), 12, new Set());
+    expect(without.candidates.map((c) => c.entry.name)).not.toContain('imported_one');
+    expect(without.skipped.get('already imported')).toEqual(['imported_one']);
+    const cut = cutWave('props', pool, loadEvidence(dir), 12, new Set(), false, true);
+    expect(cut.candidates.find((c) => c.entry.name === 'imported_one')).toMatchObject({ kind: 'again', round: 2 });
+    expect(cut.skipped.get('already imported')).toBeUndefined();
+    // once a later round exists, the same rework mark no longer asks for another
+    const answered = fixture([draftLine('imported_one', 7, { round: 1, pool: 'props' }), { id: idOf(7), amend: true, review: 'rework' }, draftLine('imported_one', 8, { round: 2, pool: 'props' })]);
+    expect(cutWave('props', readPool('props', answered), loadEvidence(answered), 12, new Set(), false, true).candidates.map((c) => c.entry.name)).not.toContain('imported_one');
+  });
+
   test('a wave is at most N, and entries already in the queue are not cut twice', () => {
     const dir = fixture();
     expect(names(dir, 2)).toEqual(['missing_a', 'missing_b']);
@@ -107,6 +121,18 @@ describe('cutting a wave', () => {
 
 describe('the jobs of a wave', () => {
   const cand = (dir: string): ReturnType<typeof cutWave>['candidates'] => cutWave('props', readPool('props', dir), loadEvidence(dir), 12, new Set()).candidates;
+
+  test('a creature entry gets its own kernels with the creature negative prompt, and the rest keep the default', () => {
+    const dir = fixture();
+    const first = cand(dir).filter((c) => c.round === 1);
+    const marked = first.map((c, i) => (i === 0 ? { ...c, entry: { ...c.entry, creature: true } } : c));
+    const jobs = planJobs('props-x', 'props', marked, '2026-10-28T20:00:00.000Z');
+    expect(jobs).toHaveLength(6);
+    const creature = jobs.filter((j) => j.env['KAGGLE_NEGATIVE_KIND'] === 'creature');
+    expect(creature.map((j) => j.entries)).toEqual([[first[0]?.entry.name], [first[0]?.entry.name], [first[0]?.entry.name]]);
+    for (const j of jobs.filter((x) => x.env['KAGGLE_NEGATIVE_KIND'] === undefined)) expect(j.entries).not.toContain(first[0]?.entry.name);
+    expect(new Set(jobs.map((j) => j.id)).size).toBe(6);
+  });
 
   test('qwen on one seed and flux on two, each spelling its recipe and seed in the environment and refusing picks', () => {
     const dir = fixture();
