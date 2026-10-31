@@ -1,3 +1,4 @@
+export * from './adapt';
 export * from './bundle';
 export * from './canon';
 export * from './danger';
