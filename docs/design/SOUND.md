@@ -205,7 +205,23 @@ The owner's answers (section 4) ask for a long routine piece in a medieval lofi 
 - **(a) the synth pushed as far as it goes:** recorder, reed, lute, harp, pad, strings and drums all made from oscillators and noise, with one filter per part, a room, and for the routine a lofi low-pass, a faint vinyl tick and a slow tape wobble;
 - **(b) sampled instruments, as listen C was:** FluidR3_GM by Frank Wen, CC BY 3.0, through [gleitz/midi-js-soundfonts](https://github.com/gleitz/midi-js-soundfonts).
 
-The scores and the render scripts are scratch work and are not in the repository. Each file sits at the game's levels: it goes through the game's music bus, master and compressor, each sampled piece is matched to its synth twin's loudness, and one common gain is applied to all ten files, setting the loudest to -1 dBFS. So the files are as loud as each other as the game would play them. The routine is Ogg Vorbis at 80 kbps; the state pieces are at 96 kbps.
+The scores are kept in the game: `game/src/audio/pieces.ts` holds the five pieces' notes and `game/src/audio/voices.ts` the synth's voices, as #464 builds them. The game plays those same events live on the synth and ships the sampled renders of them. The sampled renders take each part to one FluidR3_GM instrument:
+
+| Part | Instrument |
+|---|---|
+| lead | recorder |
+| counter | flute |
+| horn | French horn |
+| lute and pluck | nylon guitar |
+| pizz | pizzicato strings |
+| harp | orchestral harp |
+| pad, strings and stab | string ensemble 1 |
+| bass | acoustic bass |
+| bell | celesta |
+| kick and taiko | taiko drum |
+| snare and rim | woodblock |
+
+The one-off render harness, a page that plays the events into an `OfflineAudioContext`, was scratch work and is not kept. Each file sits at the game's levels: it goes through the game's music bus, master and compressor, each sampled piece is matched to its synth twin's loudness, and one common gain is applied to all ten files, setting the loudest to -1 dBFS. So the files are as loud as each other as the game would play them. The routine is Ogg Vorbis at 80 kbps; the state pieces are at 96 kbps.
 
 ### 5.1 The pieces
 
@@ -258,7 +274,7 @@ Measured and written down; the ear is the owner's. The two columns play the same
 | **Medieval lofi cozy: the timbre of real instruments** (breath in a recorder, the body of a plucked string, a bow on strings, a harp's ring) | **No.** It reads as a synth imitating them, close to the chip sound the owner marked "no" in B | **Yes:** the recorder, harp, strings, horn and lute (a nylon guitar stands in) are recordings of instruments |
 | Dynamics that sound played (a note's colour changes with how hard it is struck) | **No:** louder is only louder | **Partly:** one sample a note here, so louder is mostly louder too; a soundfont with velocity layers does it |
 | Bytes on the page | 0 B of audio, a few KB of score | About 2 MB for the routine's instruments, up to 4.4 MB for all five; less trimmed |
-| CPU on a phone | 6 to 21 % of a desktop core here, the highest of the options | 4.5 to 13 % here |
+| CPU (measured on a desktop core; a mid-range phone is perhaps 3 to 4 times that) | 6 to 21 % of a desktop core, perhaps 20 to 80 % of a phone's for combat, the highest of the options | 4.5 to 13 % of a desktop core, perhaps 15 to 50 % of a phone's |
 | A composer's arrangement and performance | No | No: these are our scores. That is section 6's open-licence tracks, or a composer |
 
 So B answers the length, the states and the switching, but not the sound of real instruments, which is what the owner liked in C. C played live answers all of it except a person's performance, for about 2 to 4 MB.
