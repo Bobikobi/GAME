@@ -37,11 +37,13 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
     const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
     if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
   }
-  // a race whose outfit came with this version: a save that holds none of an outfit piece gets it once
+  // a race whose outfit came with this version: a save that never held an outfit piece gets it once. The journal
+  // is the save's record of every item the character held, and a sale or a drop never takes an entry out, so a
+  // piece sold or dropped is not handed out again by the next release (the second finding of the #490 review).
   // (the pocket's tools are never granted here: they lie on the ground by the wake)
   if (p.race !== '') {
     for (const stack of bundle.races[p.race]!.outfit ?? []) {
-      if ((p.bag[stack.item] ?? 0) > 0) continue;
+      if ((p.bag[stack.item] ?? 0) > 0 || p.journal.includes(stack.item)) continue;
       p.bag[stack.item] = stack.qty;
       if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();
     }

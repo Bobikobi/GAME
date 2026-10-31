@@ -44,6 +44,34 @@ describe('adaptState', () => {
     expect(serialize(saved)).toBe(before);
   });
 
+  test('gives an outfit piece the save never held once, and never again one it sold or dropped', () => {
+    const started = step(b, newState(b, 17), { t: 'start', race: 'core/elf', name: 'Tess' }, 0);
+    if (!started.ok) throw new Error(started.error);
+    const outfit = (b.races['core/elf']!.outfit ?? []).map((stack) => stack.item);
+    expect(outfit.length).toBeGreaterThan(1);
+    const [sold, never] = outfit as [string, string];
+    const saved = structuredClone(started.state);
+    saved.content = 'an-older-world';
+    // one piece was sold or dropped: gone from the bag and its place, still in the journal
+    delete saved.player.bag[sold];
+    saved.player.worn = Object.fromEntries(Object.entries(saved.player.worn).filter(([, id]) => id !== sold));
+    expect(saved.player.journal).toContain(sold);
+    // the other came with this version: the save never held it
+    delete saved.player.bag[never];
+    saved.player.worn = Object.fromEntries(Object.entries(saved.player.worn).filter(([, id]) => id !== never));
+    saved.player.journal = saved.player.journal.filter((id) => id !== never);
+
+    const adapted = adaptState(b, saved)!;
+    expect(adapted.player.bag[sold]).toBeUndefined();
+    expect(adapted.player.bag[never]).toBe(1);
+    expect(adapted.player.journal).toContain(never);
+    // the next release finds it held, sold or not
+    delete adapted.player.bag[never];
+    adapted.content = 'a-later-world';
+    const later = adaptState(b, adapted)!;
+    expect([later.player.bag[sold], later.player.bag[never]]).toEqual([undefined, undefined]);
+  });
+
   test('gives up on a character whose race left the content', () => {
     const saved = olderWorld();
     saved.player.race = 'core/a-race-that-left';
