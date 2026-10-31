@@ -5,6 +5,7 @@
  */
 import type { HubData } from '@game/schema/hub';
 import fixture from '../../../schema/test/fixtures/hub-data.json';
+import { DEMO_DOOR, playDoor } from '../../../tools/src/site/door';
 
 /** The repository on GitHub; the game's own copy is REPO_URL in game/src/config.ts. */
 export const REPO = 'https://github.com/Bobikobi/GAME';
@@ -28,9 +29,14 @@ export function dateTime(iso: string): string {
 
 export type Section = 'home' | 'boards' | 'developers' | 'docs';
 
+/** Where every Play door leads: the demo at /play/, or the game with an account when the build names it (tools/src/site/door.ts). */
+export const PLAY = playDoor();
+/** True when the doors open the game with an account, whose progress lives on the server, not on the device. */
+export const playWithAccount = PLAY !== DEMO_DOOR;
+
 /** The header's links; `section` marks the page a link leads to, for aria-current. */
 export const NAV: readonly { label: string; href: string; section?: Section }[] = [
-  { label: 'Play', href: '/play/' },
+  { label: 'Play', href: PLAY },
   { label: 'Leaderboard', href: '/hub/boards/', section: 'boards' },
   { label: 'Developers', href: '/hub/', section: 'developers' },
   { label: 'Guide', href: '/docs/', section: 'docs' },
@@ -39,7 +45,7 @@ export const NAV: readonly { label: string; href: string; section?: Section }[] 
 
 /** The footer's columns: where to play, how to build, where the community meets. */
 export const FOOT_COLS: readonly { title: string; links: readonly { label: string; href: string }[] }[] = [
-  { title: 'Play', links: [ { label: 'Classic, in your browser', href: '/play/' }, { label: 'Leaderboard', href: '/hub/boards/' }, { label: 'Guide', href: '/docs/' } ] },
+  { title: 'Play', links: [ { label: 'Classic, in your browser', href: PLAY }, { label: 'Leaderboard', href: '/hub/boards/' }, { label: 'Guide', href: '/docs/' } ] },
   { title: 'Build', links: [ { label: 'Developer area', href: '/hub/' }, { label: 'API and schemas', href: '/api/' }, { label: 'llms.txt', href: '/llms.txt' } ] },
   { title: 'Community', links: [ { label: 'GitHub', href: REPO }, { label: 'Rules', href: '/hub/rules/' }, { label: 'Licence', href: repoFile('LICENSE') } ] },
 ];
