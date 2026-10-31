@@ -17,8 +17,13 @@
  * An account whose opening was handed over from the phone (NEXT 18 d) starts its log with that opening:
  * one row `{ kind: 'opening', seed, log }`. The replay plays it from `newState(bundle, seed)` under the
  * phone's seed, then gives the state the account's own seed, as the sign-up did, and goes on from there.
+ *
+ * A state the server brought to new content (`adaptRecord` in api.ts) is one row `{ kind: 'adapt', from, to }`:
+ * the replay adapts the state at that row as the server did. The replay runs under one bundle, today's, so an
+ * account that crossed a change of content proves its log only when the steps before the change still play
+ * the same under today's content.
  */
-import { GAITS, isSeed, newState, serialize, step, type Action, type Bundle, type Gait, type GameEvent, type Seed, type State, type Tile } from '@game/kernel';
+import { GAITS, adaptState, isSeed, newState, serialize, step, type Action, type Bundle, type Gait, type GameEvent, type Seed, type State, type Tile } from '@game/kernel';
 
 /**
  * The step a movement report stands for: its tile, and its gait when the report named one. The server
@@ -194,6 +199,12 @@ export function replayAccount(bundle: Bundle, seed: Seed, log: readonly LoggedAc
         state = result.state;
       }
       state = { ...state, seed };
+      continue;
+    }
+    if (isRecord(row.action) && row.action.kind === 'adapt') {
+      const adapted = adaptState(bundle, state);
+      if (!adapted) return { ok: false, problem: `seq ${row.seq}: the adapt row's state cannot be brought to this content` };
+      state = adapted;
       continue;
     }
     const steps = stepsOf(row.action, row.tick);

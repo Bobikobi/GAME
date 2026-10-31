@@ -740,3 +740,30 @@ Measurable (first version):
 3. `pnpm check` refuses a routine that names a missing slot or takes from a task's resource; `pnpm verify` exit 0.
 
 Not here: ghosts of real players (after the server), chat, combat, houses (paused, DECISIONS 2026-10-10).
+
+## presence. Players who see each other without chat
+
+Status: open
+
+Stage 4 of the order (DECISIONS 2026-10-17, "The order from here": accounts and a server, then players who see each other walk in the world without chat, chat last). It is not built before section 18 closes (the box on the session mode with a real mail sender, and the cutover of 18 h6 live) and the owner says go. Read first: section 18 (the wire this rides on); DECISIONS 2026-10-17 "The order from here", 2026-10-20 "The world's hour is the server's clock", 2026-10-11 "P-5b", 2026-10-10 "The shared world" and "The world and its clocks", 2026-10-23 "Combat, round 1"; `docs/design/COMBAT.md` sections 4.2 to 4.4 (a fight rides the same socket); and `docs/design/PRESENCE.md` on the branch `docs/presence-wire` (pull request #221, closed unmerged, written 19.10).
+
+What is already specified. PRESENCE.md holds the design; this section cites it and does not copy it. A relay beside the API keeps the last position of each connected player in memory only and decides nothing that lasts (its section 2); one socket per account, opened with a short-lived token from the API (3.1); a room per 64 by 64 chunk, and the 3 by 3 chunks around the player as the interest area, the same nine the client streams (3.2); the live reach check at the relay through one kernel function shared with `moveTo`, and the batch check at the API by G56's search (3.3); what is sent about a player and what is never sent (4); the threat model (5); the parameters with their clocks (8); the numbers to measure on the box (9). Its section 0, the clock, is decided (below); the rest is the builder's proposal of 19.10, which the owner had not seen. The first pull request of this section brings it back onto `develop` as `docs/design/PRESENCE.md`, updated to what was built since 19.10: free movement and its octile charge (section 22), one origin for the game and its API (DECISIONS 2026-10-27), the server's movement credit, and a fight on the same socket (combat round 1).
+
+The clock (DECISIONS 2026-10-20, option A, the owner's word): the world's hour is the server's clock, `world.epoch` with tick 0 a noon; the server sets `state.tick` at every accepted action; a return after an absence is one kernel action `resume`, which moves the player to the world's tick and shifts what counts their own elapsed time; `leave` comes after `logout_countdown_s` outside a safe place. No tick travels on the presence wire: the relay stamps each report with the box's clock, which is the world's.
+
+The wire in one paragraph. The client already reports every tile it enters as `{t:'move', at}` (P-5b), and `RemoteSession` batches those reports into `POST /moves` (section 18 a). Presence carries the same report over a socket at `/live` on the game's own name, as `{ k: 'pos', at: [x, y], face, pose }` with the pose one of idle, walk, work, fall or rest. The relay checks it against the reach rule and answers `{ k: 'snap', at }` to a report a walk cannot make; it fans the rest out to the players subscribed to that chunk at most `presence.rate_hz` times a second, and hands each player's accepted reports to the API every `presence.batch_s` seconds and before any action of theirs, where the kernel stays the judge. Between reports the other figures move on the client by the walk rules of `game/src/walking.ts`. After each action the API tells the relay where the kernel put the player. A relay that is down loses only the figures on screen; play goes on through the API.
+
+Not here:
+- Chat of any kind. The `say` kind and the bubble frame stay reserved; chat is the last stage.
+- A name over a head. It is not decided: the order's own retry line says a name shown to other players may need chat-level moderation, so until the owner decides, a figure is drawn by its look and pose alone. PRESENCE section 4 proposes a name; that line waits for him.
+- Trading and the trade window, a group's signals, friends' presence, any list of who is online (there is none, 10.10), combat of any kind (COMBAT.md), copies of the world (W1, on a measurement).
+- The look of other players is a direction: two or three phone-size stills go to the owner before a sprite is drawn (AGENTS.md).
+
+The builds, each its own pull request off `origin/develop`, in PRESENCE section 7's order once the docs pull request above has landed: a) the relay, b) the API side, c) the client, d) ops and the moderation runbook. Every step on the box is a production gate with three lines to the owner (section 18 h). A `presence` stream joins `streams.json` in a small docs pull request when the first build starts.
+
+Measurable at the end:
+1. In CI, two simulated players (section 18 g's simulator, run twice) over the real relay and API in one chunk each receive the other's tile within 2 relay frames (400 ms at `presence.rate_hz` 5) of every report, and a third player outside their 3 by 3 chunks never receives either.
+2. A report beyond the reach rule is not fanned out and its sender gets a snap to the last accepted tile; after every accepted action the relay's tile for the player equals the kernel's (a test).
+3. No frame of that CI run carries a field of PRESENCE section 4's never-sent list, and the relay's route table holds no route that lists players (tests).
+4. On the box, the numbers of PRESENCE section 9 are measured and written into build d's pull request, the load test run with the owner's yes.
+- For the owner: whether a name stands over a head; the look of other players, as stills; each three-line gate on the box.

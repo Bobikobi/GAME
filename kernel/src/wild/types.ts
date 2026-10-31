@@ -145,8 +145,12 @@ export const THINK_EVERY = 8;
 export const THINK_MS = 800;
 
 /**
- * The numbers of HUNTING 2 to 4 and BEHAVIOUR 5.1 that are not a kind's own. The noise rows are the
- * core's `gait` params; the creature schema pull request reads every one of them from params.
+ * The numbers of HUNTING 2 to 4 and BEHAVIOUR 5.1 that are not a kind's own. Four of them have a row in
+ * the core's params: `walkNoise` is `gait.noise_walk`, and since the creature schema `avoidSteps` is
+ * `wild.flee_avoid_steps`, `denStay` `wild.den_stay_steps` and `spread` `wild.spread_tiles` (and
+ * `THINK_EVERY` above is `wild.think_ticks`). The pull request that steps animals builds this object from params,
+ * with a `wild` row for each number it reads that has none yet; `leash` and `giveUp` take the fight's
+ * own rows (COMBAT 4.9) when the fight lands.
  */
 export const WILD = {
   /** a noise this loud, or a hit, skips straight to the tier's state (HUNTING 2, ALERT) */

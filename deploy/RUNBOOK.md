@@ -47,6 +47,12 @@ recreate the `db` container, with its data volume kept; run `backup.sh` by hand 
 the step's name in `backups/`.
 What happens if it goes wrong: the two new containers fail to start; nothing else on the box notices, and
 `docker compose -f compose.yml down` removes them without touching the data volume.
+A new image on a box that already runs brings every stored state to its content on the state's first read
+(DECISIONS 2026-10-31, "The server brings a stored state to new content"), so going back is not only the old
+tag: an older image refuses a state a newer kernel wrote (503) and leaves it, but under the same kernel version
+it would adapt a state down to its older content and drop what only the newer content holds. The way back from
+a roll is therefore the previous `IMAGE_TAG` and `up -d --no-build --no-deps api` together with the dump taken
+before the roll, restored first on a scratch database (step 5) and then on the live one, each with its own yes.
 Verify: `docker compose -f compose.yml ps` shows `db` and `api` both healthy (the API's check is `GET /health`, which needs no identity); the boot log carries one line saying the server trusts the `x-player-id` header; `curl -s -H 'x-player-id: smoke' -X POST http://127.0.0.1:8710/session` answers 404 "No game state exists for this account." (the row is made by the opening handover, NEXT 18 d).
 
 ## 3. The game and the API behind nginx, under one name

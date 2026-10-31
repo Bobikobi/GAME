@@ -114,6 +114,22 @@ export function frameAt(night: number, rich: boolean): { strength: number; radiu
   };
 }
 
+/**
+ * The frame's ink alpha (0..1) at a distance `d` from the middle of the screen, in screen widths and heights (0.5 is
+ * the middle of an edge). The curve is the vignette's own, a sine of the distance toward ink. By night it is whole,
+ * the dark the owner asked for; by day it is held at nothing until the outer ~15% of the way to the edge, so the frame
+ * is an edge and not a veil over the whole phone (the grass at 40% of the way out keeps its own colour).
+ */
+export function frameAlpha(d: number, look: { strength: number; radius: number }, night: number): number {
+  const curve = d <= look.radius ? Math.max(0, Math.sin((d / look.radius) * 3.14 * look.strength)) : 1;
+  const t = Math.min(1, Math.max(0, (d - FRAME_EDGE.from) / (FRAME_EDGE.to - FRAME_EDGE.from)));
+  const edge = t * t * (3 - 2 * t);
+  return curve * (night + (1 - night) * edge);
+}
+
+/** Where the day's frame begins and is whole, as a distance from the middle (the middle of an edge is 0.5). */
+const FRAME_EDGE = { from: 0.36, to: 0.48 };
+
 /** The hour a minute of the day falls in, 0 to 23. */
 export function hourAt(minute: Minute): number {
   return Math.floor(minute / 60);

@@ -5,7 +5,7 @@
   "id": "core/goods",
   "title": "Goods of the hunt",
   "creator": "core",
-  "description": "The five classes an animal gives when it is dressed (docs/design/HUNTING.md section 6), each under the animal base class. Their items come with the first hunted kinds and their drawings; a finer grade of a good is an item of its own.",
+  "description": "The five goods classes of the hunt (docs/design/HUNTING.md section 6) and the goods of the hare, the roe deer and the wolf, drawn with stand-ins from existing art until their own drawings land.",
   "classes": [
     {
       "id": "core/meat",
@@ -36,6 +36,127 @@
       "name": "Feather",
       "base": "animal",
       "description": "Plumes and down: fletching and finery."
+    }
+  ],
+  "items": [
+    {
+      "id": "core/hare-meat",
+      "name": "Hare meat",
+      "description": "Lean raw meat off a hare. It heals a little and spoils with the carcass.",
+      "kind": "food",
+      "rarity": "common",
+      "class": "core/meat",
+      "tier": 1,
+      "sprite": "core/base-kit:items/mushroom-skewer",
+      "weight": 1,
+      "food": {
+        "satiety": 5
+      }
+    },
+    {
+      "id": "core/hare-hide",
+      "name": "Hare hide",
+      "description": "A small soft skin, scraped for a lining or a cord's wrap.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/hide",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stew-scrap",
+      "weight": 1
+    },
+    {
+      "id": "core/hare-bone",
+      "name": "Hare bone",
+      "description": "Light bones for needles and small handles.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/bone",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stone",
+      "weight": 1
+    },
+    {
+      "id": "core/roe-meat",
+      "name": "Roe meat",
+      "description": "Raw venison off a roe deer. It heals a little and spoils with the carcass.",
+      "kind": "food",
+      "rarity": "common",
+      "class": "core/meat",
+      "tier": 1,
+      "sprite": "core/base-kit:items/mushroom-skewer",
+      "weight": 1,
+      "food": {
+        "satiety": 5
+      }
+    },
+    {
+      "id": "core/roe-hide",
+      "name": "Roe hide",
+      "description": "A supple roe skin, the first leather.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/hide",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stew-scrap",
+      "weight": 1
+    },
+    {
+      "id": "core/roe-bone",
+      "name": "Roe bone",
+      "description": "Long bones for handles and awls.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/bone",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stone",
+      "weight": 1
+    },
+    {
+      "id": "core/roe-sinew",
+      "name": "Roe sinew",
+      "description": "Tendon off a roe deer: the cord and the first bowstring.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/sinew",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch",
+      "weight": 1
+    },
+    {
+      "id": "core/wolf-hide",
+      "name": "Wolf hide",
+      "description": "A thick wolf pelt.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/hide",
+      "tier": 3,
+      "sprite": "core/base-kit:items/stew-scrap",
+      "weight": 1
+    },
+    {
+      "id": "core/wolf-fang",
+      "name": "Wolf fang",
+      "description": "A long fang, for a charm or a fine point.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/bone",
+      "tier": 3,
+      "sprite": "core/base-kit:items/stone",
+      "weight": 1
+    },
+    {
+      "id": "core/wolf-meat",
+      "name": "Wolf meat",
+      "description": "Tough raw meat. It heals a little and spoils with the carcass.",
+      "kind": "food",
+      "rarity": "common",
+      "class": "core/meat",
+      "tier": 3,
+      "sprite": "core/base-kit:items/mushroom-skewer",
+      "weight": 1,
+      "food": {
+        "satiety": 5
+      }
     }
   ]
 }

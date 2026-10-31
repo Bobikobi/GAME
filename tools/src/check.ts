@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { type Bundle, DRESS_PART_STEPS, computeValues, huntGoods, idiv, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
 import { GOODS, RARITIES, type ParamsBody } from '@game/schema';
+import { checkWild } from './wild';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { holeProblems } from './kit/holes';
@@ -56,6 +57,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkCrafting(b, assembled.origin));
     issues.push(...checkWear(b));
     issues.push(...checkHunt(b, assembled.origin));
+    issues.push(...checkWild(b, assembled.origin));
     issues.push(...checkDrift(b));
     issues.push(...checkRetiredWords());
     issues.push(...checkKits(assembled));
@@ -171,6 +173,18 @@ function checkParams(file: { params?: ParamsBody } | undefined): Issue[] {
   }
   if (meatD.value > hideD.value) {
     issues.push({ file: 'content/core/params.json', where: 'params.hunt.meat_spoil_d', message: 'the meat goes before the rest: keep meat_spoil_d at or under hide_spoil_d (HUNTING 6)', level: 'error' });
+  }
+  // the wild's shared distances (CREATURE_BEHAVIOUR 2; HUNT_FAMILIES 3.1)
+  const wild = file.params.wild;
+  const wildErr = (key: string, message: string) => issues.push({ file: 'content/core/params.json', where: `params.wild.${key}`, message, level: 'error' });
+  if (wild.fire_keep_night.value < file.params.fire.safe_tiles.value + 1) {
+    wildErr('fire_keep_night', 'at night prey keeps outside the fire\'s safe ring and one tile more: keep fire_keep_night at or over fire.safe_tiles + 1 (CREATURE_BEHAVIOUR 2)');
+  }
+  if (wild.town_keep_night.value < wild.town_keep_day.value) {
+    wildErr('town_keep_night', 'the lamps push the town\'s wall out at night, never in: keep town_keep_night at or over town_keep_day (CREATURE_BEHAVIOUR 2)');
+  }
+  if (wild.bolt_min_tiles.value > wild.bolt_max_tiles.value) {
+    wildErr('bolt_min_tiles', 'a den\'s bolt hole ring runs from bolt_min_tiles out to bolt_max_tiles: keep the first at or under the second (HUNT_FAMILIES 3.1)');
   }
   return issues;
 }
