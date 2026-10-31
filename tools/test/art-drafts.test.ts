@@ -268,6 +268,29 @@ describe('the drafts repo: push, fetch, verify', () => {
     expect([...store.keys()]).toEqual([tag]);
   });
 
+  test('a jpg and a glb are drafts too: the store keeps their extension, fetch and verify find them', () => {
+    const { gh, store } = fakeGh();
+    const index = DraftIndex.open(join(folder('index-ext'), 'drafts.jsonl'));
+    const dir = folder('ext-pictures');
+    writeFileSync(join(dir, 'look.jpg'), Buffer.from('not really a jpeg'));
+    writeFileSync(join(dir, 'model.glb'), Buffer.from('glTF fake model'));
+    writeFileSync(join(dir, 'notes.txt'), 'skip me');
+    const skipped: { name: string; why: string }[] = [];
+    const items = collectPictures([join(dir, 'look.jpg'), join(dir, 'model.glb'), join(dir, 'notes.txt')], { label: 'ext', skipped });
+    expect(items.map((i) => i.record.files.raw.ext)).toEqual(['.jpg', '.glb']);
+    expect(skipped.map((x) => x.name)).toEqual(['notes.txt']);
+    const report = pushCollected(items, index, { gh });
+    expect(report.uploaded).toBe(2);
+    const [jpg, glb] = items;
+    expect(index.drafts.get(jpg!.record.id)?.stored?.assets.raw).toBe(`${jpg!.record.id}.jpg`);
+    expect(index.drafts.get(glb!.record.id)?.stored?.assets.raw).toBe(`${glb!.record.id}.glb`);
+    expect([...(store.get(index.drafts.get(jpg!.record.id)!.stored!.tag)?.keys() ?? [])].sort()).toEqual([`${jpg!.record.id}.jpg`, `${glb!.record.id}.glb`].sort());
+    const cache = folder('cache-ext');
+    const verified = verifyDrafts(index, null, { gh, cache });
+    expect(verified.ok).toBe(2);
+    expect(verifyExitCode(verified)).toBe(0);
+  });
+
   test('a second push uploads nothing, and never overwrites', () => {
     const { gh, calls } = fakeGh();
     const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
