@@ -873,13 +873,13 @@ export class WorldScene extends Phaser.Scene {
             if (cur) tex.putData(new ImageData(cur as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
           }
           // open water, and the water under a bridge's deck, is composed from the world's pixel (waterbody.ts): no tile of it repeats
-          const water = RICH.detail && gd === 4 && !blended && (baseName(sprite) === 'water' || baseName(sprite).startsWith('bridge'));
+          const water = RICH.detail && gd === 4 && !blended && (isOpenWater(sprite) || baseName(sprite).startsWith('bridge'));
           if (water) {
             const px = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
             deepTile(x, y, frame, px, EDGE_PX);
             tex.putData(new ImageData(px as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
           }
-          if (!blended && !(water && baseName(sprite) === 'water')) put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
+          if (!blended && !(water && isOpenWater(sprite))) put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
           if (RICH.detail && this.drawEdges(put, tex, x - tx0, y - ty0, x, y, tile.sprite, tile.tag, frame, blended)) animated = true;
         }
       }
@@ -962,7 +962,7 @@ export class WorldScene extends Phaser.Scene {
     const theirs = others.length === 0 ? undefined : others[(h >>> 3) % others.length];
     // open water is composed from the world's pixel (waterbody.ts), not read from a tile, so it never repeats
     const pix = (ref: string): Uint8ClampedArray | null => {
-      if (baseName(ref) !== 'water') return this.pixelsOf(ref, frame);
+      if (!isOpenWater(ref)) return this.pixelsOf(ref, frame);
       const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
       deepTile(x, y, frame, out, EDGE_PX);
       return out;
@@ -3819,6 +3819,11 @@ function spriteName(ref: string): string {
 /** "core/base-kit:props/standing_stone" -> "standing_stone" */
 function baseName(ref: string): string {
   return ref.split('/').pop() ?? ref;
+}
+
+/** The open water's tile, or one of its variants (`water`, `water_1`..): the world composes all of them from the pixel, none is drawn as a sprite. */
+function isOpenWater(ref: string): boolean {
+  return /^water(_\d+)?$/.test(baseName(ref));
 }
 
 /** "core/base-kit:props/standing_stone" -> "core/base-kit:" */

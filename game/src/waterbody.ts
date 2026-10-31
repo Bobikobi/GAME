@@ -1,4 +1,4 @@
-import { hash, valueNoise } from './richground';
+import { valueNoise } from './richground';
 import { WATER_LAYERS, type WaterLayerData } from './waterlayers';
 
 /**
@@ -59,16 +59,16 @@ const bounce = (v: number): number => {
 /** The study's deep base, and its body layer's weights: `base * .65 + body * .2 + body * .15`, the body read at two scales. */
 const BASE = [28, 74, 73] as const;
 /** The weights of the base and of the body at its two scales (the study's .65, .2 and .15; the body leans harder here so the water is as lively as the cove's). */
-const BASE_W = 0.3;
-const WA = 0.42;
-const WB = 0.28;
+const BASE_W = 0.18;
+const WA = 0.52;
+const WB = 0.30;
 /** Texels of the body layer to an art pixel at the study's two scales. */
 const SCALE_A = 0.65;
 const SCALE_B = 0.39;
 /** How far a slow noise leans the body's sampling, in texels: the two scales never settle into a lattice. */
 const WARP = 26;
 /** The grade that takes the study's composite to the cove as it stands in the world (measured on the approved frame: about 52, 92, 87). */
-const GRADE = [16, 8, 7] as const;
+const GRADE = [15, 6, 2] as const;
 /** The light layer's sparkle colour. */
 const SPARKLE = [196, 232, 220] as const;
 
@@ -109,12 +109,12 @@ export function deepAt(gx: number, gy: number, frame: number): number {
   sample(l.body, gx * SCALE_B + 61 - wy * 0.7 - dy, gy * SCALE_B + 23 + wx * 0.7 + dx, scratchB);
   const out = [0, 0, 0];
   for (let c = 0; c < 3; c++) out[c] = BASE[c]! * BASE_W + scratchA[c]! * WA + scratchB[c]! * WB + GRADE[c]!;
-  // the light layer's sparkles, read from a window that differs, and is mirrored, in every 128 px chunk: where it is bright, in the frame whose turn it is
-  const cell = hash(Math.floor(gx / SIZE) + 5, Math.floor(gy / SIZE) + 11);
-  const lx = (cell & 1 ? SIZE - 1 - wrap(gx) : wrap(gx)) + ((cell >>> 1) & 127);
-  const ly = (cell & 2 ? SIZE - 1 - wrap(gy * 1.4) : wrap(gy * 1.4)) + ((cell >>> 8) & 127);
-  const li = (wrap(ly) * SIZE + wrap(lx)) * 3;
-  const lv = (l.light.rgb[li]! + l.light.rgb[li + 1]! + l.light.rgb[li + 2]!) / 765;
+  // the light layer's glints, read at two scales through the same slow lean as the body and mirrored at its edges: no chunk border, no seam
+  const bright = (u: number, v: number): number => {
+    const i = (bounce(v) * SIZE + bounce(u)) * 3;
+    return (l.light.rgb[i]! + l.light.rgb[i + 1]! + l.light.rgb[i + 2]!) / 765;
+  };
+  const lv = Math.max(bright(gx * 0.9 + 37 + wy * 0.8, gy * 0.9 + 71 + wx * 0.8), bright(gx * 0.55 + 90 - wx, gy * 0.55 + 12 + wy));
   const pulse = 0.12 + 0.65 * Math.max(0, Math.sin((frame / FRAMES) * Math.PI * 2 + gx * 0.045 + gy * 0.018)) ** 6;
   const glint = Math.min(1, Math.max(0, (lv - 0.42) * 2.5)) * pulse;
   if (glint > SPARK) {
@@ -126,7 +126,7 @@ export function deepAt(gx: number, gy: number, frame: number): number {
 }
 
 /** The glint level where a sparkle starts. */
-const SPARK = 0.42;
+const SPARK = 0.48;
 
 /** One tile of the open water, RGBA, `px` a side, for a frame: the tile's place in the world is what it draws. */
 export function deepTile(tx: number, ty: number, frame: number, out: Uint8ClampedArray, px = 64): void {
