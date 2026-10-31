@@ -14,6 +14,15 @@ export const EDGE_PX = 64;
 /** 1 for a path tile, 0 for a meadow tile, undefined for any other (cobble, sand, water, forest ...): the tile's own side. */
 export type PathAt = (tx: number, ty: number) => 0 | 1 | undefined;
 
+const STONE_CELL = 10;
+const STONE_SHADE: readonly [number, number, number] = [0x5d, 0x61, 0x77];
+/** One step lighter on the blue ramp: the shallows. */
+const LIGHTER = new Map<number, number>([
+  [0x172a52, 0x275a99],
+  [0x275a99, 0x3f8fd1],
+  [0x3f8fd1, 0x7cc4ec],
+  [0x7cc4ec, 0xc4ecf8],
+]);
 const STONE: readonly [number, number, number] = [0x8f, 0x94, 0xa8];
 const STONE_LIGHT: readonly [number, number, number] = [0xc6, 0xca, 0xd6];
 const STONE_DARK: readonly [number, number, number] = [0x3a, 0x35, 0x54];
@@ -36,7 +45,7 @@ export interface EdgeLook {
 export const PATH_EDGE: EdgeLook = { threshold: 0.78, wander: 1, sparse: true, tufts: true, worn: true };
 export const BANK_EDGE: EdgeLook = { threshold: 0.5, wander: 1.6, sparse: false, tufts: true, worn: false };
 /** Where land meets water: a wandering line, a wet dark rim, chunky stones breaking it, a shaded water side. */
-export const WATER_EDGE: EdgeLook = { threshold: 0.5, wander: 1.5, sparse: false, tufts: false, worn: false, rim: { wet: 0.16, shade: 0.08 } };
+export const WATER_EDGE: EdgeLook = { threshold: 0.5, wander: 2.1, sparse: false, tufts: false, worn: false, rim: { wet: 0.2, shade: 0.09 } };
 export const WOOD_EDGE: EdgeLook = { threshold: 0.5, wander: 1.3, sparse: false, tufts: false, worn: false };
 
 /** The blended path field at a point of tile (tx, ty), u and v in 0..1 across it. */
@@ -73,6 +82,50 @@ export function needsBlend(tx: number, ty: number, at: PathAt, own: 0 | 1): bool
  * `own` is the side the tile itself is on.
  */
 export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pathPx: Uint8ClampedArray, grassPx: Uint8ClampedArray, out: Uint8ClampedArray, look: EdgeLook = PATH_EDGE): void {
+  // the stones of a water's rim: rounded, 6 to 12 px across, one to a 10 px cell along the line, with gaps; each is judged
+  // from its own centre, so one stone is the same in every tile it crosses
+  const rim = look.rim;
+  const tAt = (gx: number, gy: number): number => {
+    const f = pathField(tx, ty, (gx - tx * EDGE_PX + 0.5) / EDGE_PX, (gy - ty * EDGE_PX + 0.5) / EDGE_PX, at, own);
+    return f + ((valueNoise(gx, gy, 31, 14) - 0.5) * 0.3 + (valueNoise(gx, gy, 57, 5) - 0.5) * 0.14) * look.wander;
+  };
+  const cells = new Map<number, { x: number; y: number; rx: number; ry: number } | null>();
+  const cellOf = (cx: number, cy: number): { x: number; y: number; rx: number; ry: number } | null => {
+    const key = cx * 100003 + cy;
+    const hit = cells.get(key);
+    if (hit !== undefined) return hit;
+    let out: { x: number; y: number; rx: number; ry: number } | null = null;
+    if (rim && hash(cx, cy + 61) % 100 < 84) {
+      const x = (cx + 0.5 + ((hash(cx, cy + 62) % 100) / 100 - 0.5) * 0.5) * STONE_CELL;
+      const y = (cy + 0.5 + ((hash(cx, cy + 63) % 100) / 100 - 0.5) * 0.5) * STONE_CELL;
+      const tc = tAt(Math.round(x), Math.round(y));
+      if (tc > look.threshold - 0.05 && tc < look.threshold + rim.wet * 0.7) {
+        const rx = 3 + ((hash(cx, cy + 64) % 100) / 100) * 3.2;
+        out = { x, y, rx, ry: rx * (0.72 + ((hash(cx, cy + 65) % 100) / 100) * 0.25) };
+      }
+    }
+    cells.set(key, out);
+    return out;
+  };
+  const stoneAt = (gx: number, gy: number): readonly [number, number, number] | undefined => {
+    const bx = Math.floor(gx / STONE_CELL);
+    const by = Math.floor(gy / STONE_CELL);
+    for (let cy = by - 1; cy <= by + 1; cy++) {
+      for (let cx = bx - 1; cx <= bx + 1; cx++) {
+        const c = cellOf(cx, cy);
+        if (!c) continue;
+        const u = (gx + 0.5 - c.x) / c.rx;
+        const v = (gy + 0.5 - c.y) / c.ry;
+        const d = u * u + v * v;
+        if (d > 1) continue;
+        if (v > 0.62 && d > 0.62) return STONE_DARK;
+        if (u + v > 0.55) return STONE_SHADE;
+        if (u + v < -0.45 && hash(gx, gy + 71) % 100 < 80) return STONE_LIGHT;
+        return hash(gx, gy + 73) % 100 < 14 ? STONE_SHADE : STONE;
+      }
+    }
+    return undefined;
+  };
   for (let py = 0; py < EDGE_PX; py++) {
     for (let px = 0; px < EDGE_PX; px++) {
       const gx = tx * EDGE_PX + px;
@@ -96,28 +149,28 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
       out[i + 2] = src[i + 2]!;
       out[i + 3] = 255;
       if (look.rim) {
-        const sideLand = !grass;
-        if (sideLand && t < edge + look.rim.wet) {
-          // a stone: a 4 x 4 cell along the rim that holds one, light on its top left, dark underneath
-          const cx = gx >> 2;
-          const cy = gy >> 2;
-          const stone = t < edge + look.rim.wet * 0.85 && hash(cx, cy + 41) % 100 < 62;
-          const lx = gx & 3;
-          const ly = gy & 3;
-          if (stone && !((lx === 0 || lx === 3) && (ly === 0 || ly === 3))) {
-            const c = ly === 3 ? STONE_DARK : lx === 0 || ly === 0 ? STONE_LIGHT : STONE;
-            out[i] = c[0];
-            out[i + 1] = c[1];
-            out[i + 2] = c[2];
-          } else {
-            out[i] = out[i]! * 0.62;
-            out[i + 1] = out[i + 1]! * 0.62;
-            out[i + 2] = out[i + 2]! * 0.62;
+        const r = look.rim;
+        if (grass) {
+          // the shallows: the water within a hand of the shore is one step of the blue ramp lighter
+          if (t > edge - r.shade) {
+            const lit = LIGHTER.get((out[i]! << 16) | (out[i + 1]! << 8) | out[i + 2]!);
+            if (lit !== undefined && hash(gx, gy + 23) % 100 < 85) {
+              out[i] = lit >> 16;
+              out[i + 1] = (lit >> 8) & 255;
+              out[i + 2] = lit & 255;
+            }
           }
-        } else if (!sideLand && t > edge - look.rim.shade) {
-          out[i] = out[i]! * 0.8;
-          out[i + 1] = out[i + 1]! * 0.85;
-          out[i + 2] = out[i + 2]! * 0.92;
+        } else if (t < edge + r.wet) {
+          // the land's own pixels wet dark where no stone lies
+          out[i] = out[i]! * 0.5;
+          out[i + 1] = out[i + 1]! * 0.5;
+          out[i + 2] = out[i + 2]! * 0.52;
+        }
+        const st = stoneAt(gx, gy);
+        if (st) {
+          out[i] = st[0];
+          out[i + 1] = st[1];
+          out[i + 2] = st[2];
         }
       }
       if (look.worn && !grass && ((t < edge + 0.06 && hash(gx, gy + 5) % 100 < 45) || (t < edge + 0.14 && hash(gx, gy + 9) % 100 < 16))) {

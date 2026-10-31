@@ -48,11 +48,11 @@ export function waterRows(seed: number, frame: number): string[] {
     const row = rows[((y % SIZE) + SIZE) % SIZE];
     if (row) row[((x % SIZE) + SIZE) % SIZE] = c;
   };
-  // the deeper patches: static, with a dithered edge
+  // the water is deeper than the shallows the world draws along a shore: a calm stipple of the next darker step
   for (let y = 0; y < SIZE; y += 1) {
     for (let x = 0; x < SIZE; x += 1) {
-      const n = wrapNoise(seed, 4, x, y) * 0.7 + wrapNoise(seed + 5, 8, x, y) * 0.3;
-      if (n > 0.72 || (n > 0.64 && h(seed + 9, x, y) < (n - 0.64) / 0.08 * 0.5)) set(x, y, 'r');
+      const n = wrapNoise(seed, 3, x, y);
+      if (h(seed + 9, x, y) < 0.08 + n * 0.22 && (x + y) % 2 === 0) set(x, y, 'r');
     }
   }
   // the ripples: short wavy strokes, each rocking on its own phase
