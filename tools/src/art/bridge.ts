@@ -2,13 +2,12 @@
  * The old bridge at 64 px (rich wave 3b), whole and broken, each in three tiles: the whole width (`bridge`, a rail each
  * side) and, for a bridge two tiles wide, its north half (`_n`, the rail and the water above, the deck running off the
  * bottom edge) and south half (`_s`); the world draws the halves on the first and last row of the slot. The water under
- * it is the river's teal body (water.ts), the same on every variant, so it joins the water beside it.
+ * it is the world's own (waterbody.ts composes it per pixel), so the sprite leaves it clear, and the shadow under the deck is the teal ramp's darkest step.
  * The deck is eight upright boards a tile with a dark seam, a lit left edge and grain, nails at both ends; a rail beam
  * runs along each side with a post every 32 px, and the deck throws a shadow on the water. The broken one has two
  * boards gone, one snapped, a plank adrift and a post and a stretch of rail missing. `pnpm art:bridge` writes the PNGs.
  */
 import { TILE, hash3, writeScripted } from './scripted.js';
-import { waterRows } from './water.js';
 
 const SEED = 101;
 const RAIL_TOP = 12;
@@ -33,13 +32,13 @@ interface Options {
 }
 
 function bridgeRows(o: Options): string[] {
-  const g = waterRows(SEED, 0).map((r) => [...r]);
+  const g = Array.from({ length: TILE }, () => new Array<string>(TILE).fill('.'));
   const set = (x: number, y: number, ch: string): void => {
     if (x >= 0 && y >= 0 && x < TILE && y < TILE) g[y]![x] = ch;
   };
   // the shadow under the deck on the water, then the planks on top of it
   for (let y = RAIL_BOTTOM + 1; o.bottom && y < RAIL_BOTTOM + 6; y += 1) {
-    for (let x = 0; x < TILE; x += 1) if ((y - RAIL_BOTTOM < 4 || (x + y) % 2 === 0) && 'ijklm'.includes(g[y]![x]!)) set(x, y, 'h');
+    for (let x = 0; x < TILE; x += 1) if ((y - RAIL_BOTTOM < 4 || (x + y) % 2 === 0) && g[y]![x] === '.') set(x, y, 'h');
   }
   // the boards
   for (let b = 0; b < 8; b += 1) {

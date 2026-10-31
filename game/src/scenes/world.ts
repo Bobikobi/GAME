@@ -63,6 +63,7 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
+import { deepTile } from '../waterbody';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -871,7 +872,14 @@ export class WorldScene extends Phaser.Scene {
             }
             if (cur) tex.putData(new ImageData(cur as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
           }
-          if (!blended) put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
+          // open water, and the water under a bridge's deck, is composed from the world's pixel (waterbody.ts): no tile of it repeats
+          const water = RICH.detail && gd === 4 && !blended && (baseName(sprite) === 'water' || baseName(sprite).startsWith('bridge'));
+          if (water) {
+            const px = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+            deepTile(x, y, frame, px, EDGE_PX);
+            tex.putData(new ImageData(px as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
+          }
+          if (!blended && !(water && baseName(sprite) === 'water')) put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
           if (RICH.detail && this.drawEdges(put, tex, x - tx0, y - ty0, x, y, tile.sprite, tile.tag, frame, blended)) animated = true;
         }
       }
@@ -952,8 +960,15 @@ export class WorldScene extends Phaser.Scene {
     if (!needsBlend(x, y, edge.at, own)) return null;
     const h = hash(x, y);
     const theirs = others.length === 0 ? undefined : others[(h >>> 3) % others.length];
-    const mineLocal = typeof mine === 'string' ? this.pixelsOf(mine, frame) : mine;
-    const theirsLocal = theirs === undefined ? null : this.pixelsOf(theirs, frame);
+    // open water is composed from the world's pixel (waterbody.ts), not read from a tile, so it never repeats
+    const pix = (ref: string): Uint8ClampedArray | null => {
+      if (baseName(ref) !== 'water') return this.pixelsOf(ref, frame);
+      const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+      deepTile(x, y, frame, out, EDGE_PX);
+      return out;
+    };
+    const mineLocal = typeof mine === 'string' ? pix(mine) : mine;
+    const theirsLocal = theirs === undefined ? null : pix(theirs);
     if (!mineLocal || !theirsLocal) return null;
     const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
     // the field counts the ground (a) as 1: its pixels are the "path" side of the blend, the other's the grass side

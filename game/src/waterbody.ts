@@ -1,11 +1,12 @@
+import { hash, valueNoise } from './richground';
 import { WATER_LAYERS, type WaterLayerData } from './waterlayers';
 
 /**
- * The open water, drawn from the world's pixel and not from a tile, so no tile repeats: the owner's layered water of
- * 25.10 (a Codex study, tools/kit-gen/water-layers), baked into one still per frame. The study composed four generated layers at run
- * time; this reads the same ones the same way, `base * .65 + body * .2 + body * .15` with the body sampled at two scales
- * (.65 and .39 texels to an art pixel), the light layer's glints, the bed showing through toward a shore, and the foam's
- * holes, then puts every pixel on the teal ramp. Pure, fixed by the pixel's place.
+ * The open water, composed from the world's pixel and not drawn as a tile, so nothing in it repeats (a tile showed the same
+ * pale patches once every 64 px, a diagonal lattice over a river). It is the owner's layered water of 25.10 (a Codex study,
+ * tools/kit-gen/water-layers) the way the study composed it live: a deep teal base, broad soft patches of a lighter step
+ * (noise, so they are irregular and never line up), the body layer roughening them, the light layer's glints, and below, the
+ * bed and the foam the shore reads. Every pixel is put on the teal ramp. Pure, fixed by the pixel's place.
  */
 
 /** The shared teal ramp, dark to light: what the water is drawn in. */
@@ -54,64 +55,81 @@ interface Layers {
   body: Raster;
   light: Raster;
   foam: Raster;
-  soft: Float32Array;
 }
 let layers: Layers | undefined;
 let cuts: { deep: number; light: number } | undefined;
 
-/** Radius, in texels, of the box blur that softens the body. */
-const BLUR = 1;
-/** The share of the open water that falls in a deeper patch, and in a lighter one. */
-const SHARE_DEEP = 0.2;
-const SHARE_LIGHT = 0.08;
-/** Texels of the body layer to an art pixel, at the study's two scales. */
-const SCALE_A = 0.65;
-const SCALE_B = 0.39;
+/** The patches' two lattice spacings, in art pixels: broad soft drifts (about two to four to a tile) and a finer wobble that roughens their edge. */
+const PATCH_BIG = 14;
+const PATCH_SMALL = 7;
+const PATCH_SEED = 41;
+/** The share of the open water that lies in a lighter patch, and in a deeper one. */
+const SHARE_PALE = 0.3;
+const SHARE_DEEP = 0.08;
+/** 2x2 ordered dither, as a share of the field's spread: a patch's edge is a soft stipple, not a line. */
+const BAYER = [0, 2, 3, 1].map((n) => (n + 0.5) / 4 - 0.5);
+const DITHER = 0.1;
+/** How far the study's body layer (at .65 texels to a pixel) roughens the field. */
+const GRAIN = 0.1;
 
 function read(): Layers {
-  if (!layers) {
-    const body = decode(WATER_LAYERS.body);
-    layers = { bed: decode(WATER_LAYERS.bed), body, light: decode(WATER_LAYERS.light), foam: decode(WATER_LAYERS.foam), soft: soften(body.lum, BLUR) };
-  }
+  if (!layers) layers = { bed: decode(WATER_LAYERS.bed), body: decode(WATER_LAYERS.body), light: decode(WATER_LAYERS.light), foam: decode(WATER_LAYERS.foam) };
   return layers;
 }
 
 const wrap = (v: number): number => ((Math.floor(v) % SIZE) + SIZE) % SIZE;
 
-/** The body's brightness at an art pixel in a frame: its two scales, mixed as the study mixed them, and rocked a texel between frames. */
-function bodyAt(l: Layers, gx: number, gy: number, frame: number): number {
+/** Where the water's drift has moved it by a frame: a gentle rock of a pixel or two that closes at the fourth frame. */
+function drift(frame: number): [number, number] {
   const a = (frame / FRAMES) * Math.PI * 2;
-  const rx = Math.round(Math.sin(a));
-  const ry = Math.round(Math.sin(a + 1.3));
-  const first = l.soft[wrap(gy * SCALE_A + ry) * SIZE + wrap(gx * SCALE_A + rx)]!;
-  const second = l.soft[wrap(gy * SCALE_B - rx + 73) * SIZE + wrap(gx * SCALE_B + ry + 41)]!;
-  return first * 0.57 + second * 0.43;
+  return [Math.round(2 * Math.sin(a)), Math.round(2 * Math.sin(a + 1.3))];
 }
 
-/** The brightness that cuts the deeper patches off, and the one that cuts the lighter ones, from a sweep of the open world. */
+/** The water's brightness at an art pixel in a frame, 0 to about 1: soft drifts of noise at two scales, roughened by the study's body layer. Nothing in it repeats. */
+function fieldAt(l: Layers, gx: number, gy: number, frame: number): number {
+  const [dx, dy] = drift(frame);
+  const x = gx + dx;
+  const y = gy + dy;
+  const big = valueNoise(x, y, PATCH_SEED, PATCH_BIG);
+  const small = valueNoise(x, y, PATCH_SEED + 9, PATCH_SMALL);
+  // the grain is read from a window of the layer that moves a different way in every 128 px cell, so it never lines up
+  const cell = hash(Math.floor(gx / SIZE), Math.floor(gy / SIZE));
+  const i = wrap(y * 0.65 + (cell & 127)) * SIZE + wrap(x * 0.65 + ((cell >>> 7) & 127));
+  const grain = l.body.lum[i]! - 0.5;
+  return big * 0.68 + small * 0.32 + grain * GRAIN;
+}
+
+/** The brightness that cuts the lighter patches off, and the one that cuts the deeper ones, from a sweep of the world's water. */
 function cutsOf(l: Layers): { deep: number; light: number } {
   if (!cuts) {
     const seen: number[] = [];
-    for (let y = 0; y < 640; y += 5) for (let x = 0; x < 640; x += 5) seen.push(bodyAt(l, x, y, 0));
+    for (let y = 0; y < 1200; y += 6) for (let x = 0; x < 1200; x += 6) seen.push(fieldAt(l, x, y, 0));
     seen.sort((p, q) => p - q);
-    cuts = { deep: seen[Math.floor(seen.length * SHARE_DEEP)]!, light: seen[Math.floor(seen.length * (1 - SHARE_LIGHT))]! };
+    cuts = { deep: seen[Math.floor(seen.length * SHARE_DEEP)]!, light: seen[Math.floor(seen.length * (1 - SHARE_PALE))]! };
   }
   return cuts;
 }
 
-/** The colour of the open water at an art pixel, in a frame (0 to 3): the teal body, with the light layer's glints. */
+/** True where the open water lies in a lighter patch at an art pixel (before the soft stipple of its edge): what the patches are, for counting them. */
+export function patchAt(gx: number, gy: number, frame = 0): boolean {
+  const l = read();
+  return fieldAt(l, gx, gy, frame) > cutsOf(l).light;
+}
+
+/** The colour of the open water at an art pixel, in a frame (0 to 3): the teal body, a lighter or deeper step in the patches, the light layer's glints. */
 export function deepAt(gx: number, gy: number, frame: number): number {
   const l = read();
   const c = cutsOf(l);
-  const v = bodyAt(l, gx, gy, frame);
+  const v = fieldAt(l, gx, gy, frame) + BAYER[(gx & 1) + 2 * (gy & 1)]! * DITHER * (c.light - c.deep);
   // the light layer's glints: where it is bright, and in the frame whose turn it is
-  const li = (wrap(gy * 1.4) * SIZE + wrap(gx)) * 3;
+  const cell = hash(Math.floor(gx / SIZE) + 5, Math.floor(gy / SIZE) + 11);
+  const li = (wrap(gy * 1.4 + (cell & 127)) * SIZE + wrap(gx + ((cell >>> 7) & 127))) * 3;
   const lv = (l.light.rgb[li]! + l.light.rgb[li + 1]! + l.light.rgb[li + 2]!) / 765;
   const pulse = 0.12 + 0.65 * Math.max(0, Math.sin((frame / FRAMES) * Math.PI * 2 + gx * 0.045 + gy * 0.018)) ** 6;
   const glint = Math.min(1, Math.max(0, (lv - 0.42) * 2.5)) * pulse;
   if (glint > 0.62) return TEAL.m;
   if (glint > 0.4) return TEAL.l;
-  return v < c.deep ? TEAL.i : v > c.light ? TEAL.k : TEAL.j;
+  return v < c.deep ? TEAL.h : v > c.light ? TEAL.j : TEAL.i;
 }
 
 /** One tile of the open water, RGBA, `px` a side, for a frame: the tile's place in the world is what it draws. */

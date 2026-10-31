@@ -39,7 +39,8 @@ export function sheetPng(frames: readonly (readonly string[])[]): PNG {
       [...row].forEach((ch, x) => {
         const index = PALETTE_LEGEND[ch];
         const [r, g, b] = hexToRgb(TEAL_LETTERS[ch] ?? LETTER_PALETTE[index ?? 0] ?? '#1b1a2e');
-        png.data.set([r, g, b, 255], (y * TILE * frames.length + f * TILE + x) * 4);
+        // a '.' is nothing: the world draws the water under it
+        png.data.set([r, g, b, ch === '.' ? 0 : 255], (y * TILE * frames.length + f * TILE + x) * 4);
       });
     });
   });
