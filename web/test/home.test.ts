@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { playDoor } from '../../tools/src/site/door';
 
 /** The page without the Vercel Web Analytics pair (its queue stub and its loader), the only scripts the home page may carry; a JSON-LD block is data, not script, and is removed too. */
 const withoutAnalytics = (page: string): string =>
@@ -28,8 +29,11 @@ describe('the home page', () => {
     expect(html).not.toMatch(/\sstyle="/);
   });
 
-  it('opens the classic game at /play/ with the primary button', () => {
-    expect(html).toMatch(/<a class="btn primary stretch" href="\/play\/">Play<\/a>/);
+  it('opens the classic game at its door with the primary button and the header: /play/, or the game SITE_GAME_URL names', () => {
+    const door = playDoor();
+    expect(html).toContain(`<a class="btn primary stretch" href="${door}">Play</a>`);
+    expect(html).toContain(`<a class="ka-btn go" href="${door}">Play free</a>`);
+    expect(html).toContain(`<a href="${door}" data-play>Play</a>`);
   });
 
   it('hides the 3D door while 3D is paused, unless a screenshot forces it, and ships its loop only with the door', () => {

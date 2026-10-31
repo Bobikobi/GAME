@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { OWN_FIRE, canonical, lastDusk, publicState, type Action, type Bundle, type GameEvent, type Tile } from '@game/kernel';
+import { OWN_FIRE, canonical, lastDusk, publicState, type Action, type Bundle, type Gait, type GameEvent, type Tile } from '@game/kernel';
 
 import { Session } from '../src/session';
 import { RemoteSession, fetchWire, type ActResult, type ChangeReply, type StateReply, type Wire, WireGap, WireRefusal } from '../src/remote';
@@ -107,6 +107,27 @@ describe('the remote session (NEXT 18 c)', () => {
     const body = call!.body as { version: number; moves: { kind: string; at: Tile; tick: number }[] };
     expect(body.moves.map((move) => move.kind)).toEqual(path.map(() => 'move'));
     expect(body.moves.map((move) => move.at)).toEqual(path);
+    expect(canonical(remote.state)).toBe(canonical(publicState(server.state)));
+  });
+
+  test('a run or a sneak names its gait on the wire, a walk leaves it out (DECISIONS 2026-10-29)', async () => {
+    const local = Session.fresh(bundle);
+    const server = new FakeServer(bundle, local.state);
+    const remote = await RemoteSession.join(bundle, server);
+    await remote.act({ t: 'start', starter: 'core/forager', name: 'Tess' });
+    server.calls.length = 0;
+
+    const path = workNearby(local).route.slice(0, 3);
+    const gaits: Gait[] = ['run', 'walk', 'sneak'];
+    for (const [i, at] of path.entries()) remote.report(at, false, gaits[i]);
+    await remote.flushMoves();
+
+    const call = server.calls.find((entry) => entry.path === '/moves');
+    const body = call!.body as { moves: { kind: string; at: Tile; tick: number; gait?: Gait }[] };
+    expect(path).toHaveLength(3);
+    expect(body.moves.map((move) => move.gait)).toEqual(['run', undefined, 'sneak']);
+    // a walk carries no gait key at all, so a walked report reads as one from before the gaits
+    expect(body.moves.filter((move) => move.gait === undefined).every((move) => !('gait' in move))).toBe(true);
     expect(canonical(remote.state)).toBe(canonical(publicState(server.state)));
   });
 

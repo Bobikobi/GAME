@@ -75,5 +75,8 @@ export const reviewers: Reviewer[] = githubRead ? [...(hub.reviewers as Reviewer
 /** The weights the boards are computed with: the built document's, else the file it copies them from. */
 export const weights = fromFixture ? pointsFile : hub.parameters.points;
 
+/** The players counter (DECISIONS.md, 2026-10-31): the game server's two counts, or null when they are unknown. */
+export const accounts = fromFixture ? null : (hub.accounts ?? null);
+
 /** This week's summary, when there is a real one. */
 export const week = githubRead ? hub.summary : null;

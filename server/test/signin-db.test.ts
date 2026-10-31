@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { Pool } from 'pg';
 import { newState, step, widenSeed, type Bundle, type Seed, type State } from '@game/kernel';
 
-import { checkAccount, createPgAuthStore, createPgStore, createPlayerRecord, takeOpening, type AuthStore, type NewGame } from '../src';
+import { checkAccount, createPgAuthStore, createPgStore, createPlayerRecord, NEW_ACCOUNT_WINDOW_MS, pgAccountCounts, takeOpening, type AuthStore, type NewGame } from '../src';
 import { CLOSED_ACCOUNT_GRACE_MS } from '../src/auth/store';
 import { migrate } from '../src/migrate';
 import { newToken, tokenHash } from '../src/auth/tokens';
@@ -262,5 +262,19 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     expect(await store.nameTaken('Juniper')).toBe(true);
     await store.eraseClosed(NOW + CLOSED_ACCOUNT_GRACE_MS, CLOSED_ACCOUNT_GRACE_MS);
     expect(await store.nameTaken('Juniper')).toBe(false);
+  });
+
+  test('the players counter counts the open accounts and the ones opened in the window, and nothing of a closed one', async () => {
+    const counts = pgAccountCounts(pool);
+    // an instant after everything earlier tests made, so their accounts count in the total and not as new
+    const later = Date.UTC(2031, 0, 1);
+    const before = await counts(later);
+    const add = (email: string, name: string, openedAt: number, closedAt: number | null) =>
+      pool.query("insert into accounts (email, name, country, created_at, closed_at) values ($1, $2, 'DE', $3, $4)", [email, name, new Date(openedAt), closedAt === null ? null : new Date(closedAt)]);
+    await add('fresh@example.com', 'Fresh', later - 24 * 60 * MINUTE, null);
+    await add('edge@example.com', 'Edge', later - NEW_ACCOUNT_WINDOW_MS, null);
+    await add('settled@example.com', 'Settled', later - NEW_ACCOUNT_WINDOW_MS - MINUTE, null);
+    await add('gone@example.com', 'Gone', later - MINUTE, later);
+    expect(await counts(later)).toEqual({ accounts: before.accounts + 3, new_7d: before.new_7d + 2 });
   });
 });

@@ -408,8 +408,18 @@
       },
       "props/broken_statue": {
         "file": "props/broken_statue.png",
-        "w": 16,
-        "h": 32
+        "w": 64,
+        "h": 160,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:151"
+        }
       },
       "props/bush_berry": {
         "file": "props/bush_berry.png",
@@ -573,8 +583,8 @@
       },
       "props/flowers": {
         "file": "props/flowers.png",
-        "w": 64,
-        "h": 64,
+        "w": 32,
+        "h": 32,
         "density": 4,
         "ramps": [
           "green",
@@ -594,8 +604,8 @@
       },
       "props/flowers_white": {
         "file": "props/flowers_white.png",
-        "w": 64,
-        "h": 64,
+        "w": 32,
+        "h": 32,
         "density": 4,
         "ramps": [
           "green",
@@ -692,14 +702,33 @@
       },
       "props/house_small": {
         "file": "props/house_small.png",
-        "w": 48,
-        "h": 48
+        "w": 192,
+        "h": 320,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
+        }
       },
       "props/lantern_post": {
         "file": "props/lantern_post.png",
-        "w": 16,
-        "h": 32,
-        "frames": 2
+        "w": 64,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "fire",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:150"
+        }
       },
       "props/log_fallen": {
         "file": "props/log_fallen.png",
@@ -731,8 +760,18 @@
       },
       "props/market_stall": {
         "file": "props/market_stall.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:152"
+        }
       },
       "props/mushroom_patch": {
         "file": "props/mushroom_patch.png",
@@ -978,7 +1017,7 @@
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:163"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:167"
         }
       },
       "tiles/bridge_broken": {
@@ -992,7 +1031,7 @@
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:164"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:168"
         }
       },
       "tiles/cobble": {
@@ -1310,7 +1349,7 @@
         ],
         "source": {
           "spec": "tools/src/art/rubble.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:160"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:164"
         }
       },
       "tiles/ruin_floor": {
@@ -1401,7 +1440,7 @@
         ],
         "source": {
           "spec": "tools/src/art/water.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:150"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:154"
         }
       },
       "items/bandage": {
@@ -2438,7 +2477,7 @@
         ],
         "source": {
           "spec": "tools/src/art/water.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:151"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:155"
         }
       },
       "tiles/water_2": {
@@ -2452,7 +2491,7 @@
         ],
         "source": {
           "spec": "tools/src/art/water.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:152"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:156"
         }
       },
       "tiles/water_3": {
@@ -2466,7 +2505,7 @@
         ],
         "source": {
           "spec": "tools/src/art/water.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:157"
         }
       },
       "tiles/sand_ruin": {
@@ -2521,7 +2560,7 @@
         ],
         "source": {
           "spec": "tools/src/art/rubble.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:161"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:165"
         }
       },
       "tiles/rubble_2": {
@@ -2534,7 +2573,7 @@
         ],
         "source": {
           "spec": "tools/src/art/rubble.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:162"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:166"
         }
       },
       "tiles/bridge_n": {
@@ -2548,7 +2587,7 @@
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:165"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:169"
         }
       },
       "tiles/bridge_s": {
@@ -2562,7 +2601,7 @@
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:166"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:170"
         }
       },
       "tiles/bridge_broken_n": {
@@ -2576,7 +2615,7 @@
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:167"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:171"
         }
       },
       "tiles/bridge_broken_s": {
@@ -2590,7 +2629,7 @@
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:168"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:172"
         }
       },
       "tiles/rubble_3": {
@@ -2603,7 +2642,7 @@
         ],
         "source": {
           "spec": "tools/src/art/rubble.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:169"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:173"
         }
       }
     }

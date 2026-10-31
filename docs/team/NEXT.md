@@ -640,7 +640,7 @@ What there is today:
 - `game/src/scenes/world.ts` `tryStep`: one tile per `walk_step_ms` (190), `facing`, `strideFrame` by step count, and `landStep` reports the tile. `game/src/play3d/world3d.ts` walks by the same rules.
 - `game/src/walking.ts`: `canEnter` (the kernel's walkable, and a ready plant or stone stands in the way), `landStep`, `StandingReports`.
 - The kernel: `{t:'move', at}` is valid within Chebyshev `2 + floor(elapsed / walk_step_ms)` of the last tile; `validateTravel` (G56) asks four-way reachability inside that square.
-- The server (`server/src/api.ts` `nextMovementCredit`): a report costs its four-way `walkDistance` times `walk_step_ms`, from a pool of `move_reach_max` (32) steps that refills with time. `RemoteSession` (`game/src/remote.ts`) batches the reports with `kind: 'move'`; #254 is open on it.
+- The server (`server/src/api.ts` `nextMovementCredit`): a report costs its octile charge (`walkCharge`) times the gait's pace (`gaitStepMs`: the pace the load allows, divided for a run, multiplied for a sneak), from a pool of `move_reach_max` (32) steps at that pace that refills with time. `RemoteSession` (`game/src/remote.ts`) batches the reports with `kind: 'move'`; #254 is open on it.
 - The e2e (`game/e2e/opening.ts`, `stealth.ts`, `tending.ts`) walk by held arrow keys or the pad, counted in tiles.
 
 One pull request, branch `feat/free-walk`, off `origin/develop`. The pixel game first; the walk's rules move into `walking.ts`, so the 3D door takes them in the same pull request if that is a few lines, and otherwise as a note under section 8 e.
