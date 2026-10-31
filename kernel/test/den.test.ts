@@ -49,7 +49,7 @@ describe('the bolt hole', () => {
   test('every candidate of the core hares is open meadow 8 to 10 tiles from the mouth, in ring order', () => {
     const solid = staticSolid(b.map);
     const dens = b.map.creatures!.spots.filter((s) => s.kind === HARE);
-    expect(dens.length).toBe(2);
+    expect(dens.length).toBe(8);
     for (const s of dens) {
       const list = boltCandidates(b, [s.x, s.y], ['meadow']);
       expect(list.length).toBeGreaterThan(0);
