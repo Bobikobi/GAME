@@ -4000,3 +4000,8 @@ Added `?frame=off`, a debug flag that hides the frame for a still or a measureme
 **The owner's pick C of 31.10 for the animals' look is three-tone shading with no outline, so the `creatures/` group of the kit is outside the ink rule of 23.10 (PR #305): the check does not measure it and `kit:ink` does not paint it.** The rule stands for every other 64 px sprite. Found when the first creature sheet (the roe, 4 frames) failed `pnpm check` with "only 0% of its edge pixels are ink"; the pick had been made knowing A was the outlined still.
 **Retry when:** an animal's silhouette is lost on the ground at phone size (then that animal alone is outlined, as its own pick).
 Model: claude-sonnet-5-5.
+## 2026-10-31 ✅ The project tree reads as one trunk with two sides
+**The owner picked the simplified tree: "the tree that splits in two is better".** [The frame](docs/design/frames/2026-10-31-project-tree-two-sided.png) (as it was, simplified, one stage open, at 390 px). Radial B was picked at 11:32 and found too complicated at 19:5x: rings, per-item marks, agents on the rim and a legend.
+- `/hub/tree/` now shows the root and one branch per stage, half on each side, each stage a node with its done/total counter and a name of two or three words at 16 px; one tap opens that stage's card with its pull requests, agents and work items. One colour family and one accent for what is alive now. The data file and the gate are unchanged.
+- Measured at 360, 390 and 1280 px: no word on the wheel under 16 px, no two words overlapping, no sideways scroll.
+**Retry when:** the plan passes about 16 stages (then two columns stop fitting a phone and the radial layout is worth another look). Model: claude-opus-5-5. PR #517.

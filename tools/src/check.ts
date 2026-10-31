@@ -17,6 +17,7 @@ import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { CORE_KIT, richProblem, staleLeft } from './kit/rich';
 import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
+import { strayArt, strayIssue } from './art/stray';
 import { checkInk } from './ink-check';
 import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
@@ -105,6 +106,7 @@ export function runRepoCheck(opts: { root?: string; repo?: string; env?: Readonl
   }
   const atBase = base.ref ? gitReader(base.ref, RATCHETS.map((r) => r.file), repo) : null;
   issues.push(...checkRatchets(readHead, atBase ? (file) => atBase.get(file) ?? null : null));
+  issues.push(...strayIssue(strayArt(repo)));
   return { ...result, issues: dedupe(issues) };
 }
 
