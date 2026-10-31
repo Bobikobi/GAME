@@ -62,6 +62,7 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
+import { EDGE_PX, blendEdgeTile, needsBlend, type PathAt } from '../pathedge';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -806,6 +807,14 @@ export class WorldScene extends Phaser.Scene {
       if (gd === 1) tex.drawFrame(ref, frame, x, y, false);
       else drawScaled(tex, ref, frame, x * gd, y * gd, gd / density);
     };
+    const pathAt: PathAt = (x, y) => {
+      const t = at(x, y);
+      return t?.tag === 'path' ? 1 : t?.tag === 'meadow' ? 0 : undefined;
+    };
+    const pathTile = tiles.find((t) => t.tag === 'path');
+    const grassTile = tiles.find((t) => t.tag === 'meadow' && baseName(t.sprite) === 'grass');
+    const pathSprites = pathTile ? [pathTile.sprite, ...(variants.get(pathTile.sprite) ?? [])] : [];
+    const grassSprites = grassTile ? [grassTile.sprite, ...(variants.get(grassTile.sprite) ?? [])] : [];
     // paints the tiles of a rectangle of the map into a canvas whose corner is that rectangle's; true when any is animated
     const paint = (tex: Phaser.Textures.CanvasTexture, frame: number, tx0: number, ty0: number, tw: number, th: number): boolean => {
       let animated = false;
@@ -824,8 +833,10 @@ export class WorldScene extends Phaser.Scene {
           const tone = tones?.[y * m.width + x] ?? 0;
           const key = tone === 1 || tone === 2 ? (this.toned(sprite, tone) ?? sprite) : sprite;
           if (info.frames > 1) animated = true;
-          put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
-          if (RICH.detail && this.drawEdges(put, tex, x - tx0, y - ty0, x, y, tile.sprite, tile.tag, frame)) animated = true;
+          // a path meeting a meadow is drawn per pixel (pathedge.ts), not as tiles with strips over them
+          const blended = RICH.detail && gd === 4 && (tile.tag === 'path' || tile.tag === 'meadow') && this.blendTile(tex, tx0, ty0, x, y, tile.tag === 'path' ? 1 : 0, sprite, key, pathAt, pathSprites, grassSprites);
+          if (!blended) put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
+          if (RICH.detail && this.drawEdges(put, tex, x - tx0, y - ty0, x, y, tile.sprite, tile.tag, frame, blended)) animated = true;
         }
       }
       // one crown over each block of four forest tiles; the eyes still watch from the forest's edge
@@ -870,6 +881,59 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** The pixels of the first frame of a ground sprite (or of a toned copy of it), cached. */
+  private pixelCache = new Map<string, Uint8ClampedArray | null>();
+  private pixelsOf(ref: string): Uint8ClampedArray | null {
+    const hit = this.pixelCache.get(ref);
+    if (hit !== undefined) return hit;
+    let out: Uint8ClampedArray | null = null;
+    const f = this.textures.exists(ref) ? this.textures.getFrame(ref, this.b.sprites[ref]?.frames && this.b.sprites[ref]!.frames > 1 ? 0 : undefined) : null;
+    if (f && f.cutWidth === EDGE_PX && f.cutHeight === EDGE_PX) {
+      const cut = f.canvasData as { x: number; y: number };
+      const c = document.createElement('canvas');
+      c.width = EDGE_PX;
+      c.height = EDGE_PX;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(f.source.image as CanvasImageSource, cut.x, cut.y, EDGE_PX, EDGE_PX, 0, 0, EDGE_PX, EDGE_PX);
+        out = ctx.getImageData(0, 0, EDGE_PX, EDGE_PX).data;
+      }
+    }
+    this.pixelCache.set(ref, out);
+    return out;
+  }
+
+  /**
+   * Draws a path or meadow tile that has the other within a tile of it as one blended tile (pathedge.ts): the path
+   * tile's pixels and the grass tile's, cut along the smooth edge. False when the tile needs none or a sprite is not
+   * a single 64 px frame, so the caller draws it plain.
+   */
+  private blendTile(
+    tex: Phaser.Textures.CanvasTexture,
+    tx0: number,
+    ty0: number,
+    x: number,
+    y: number,
+    own: 0 | 1,
+    sprite: string,
+    key: string,
+    at: PathAt,
+    pathSprites: readonly string[],
+    grassSprites: readonly string[],
+  ): boolean {
+    if (!needsBlend(x, y, at, own)) return false;
+    const h = hash(x, y);
+    const pick = (list: readonly string[]): string | undefined => (list.length === 0 ? undefined : list[(h >>> 3) % list.length]);
+    const pathPx = this.pixelsOf(own === 1 ? sprite : (pick(pathSprites) ?? ''));
+    const grassPx = this.pixelsOf(own === 0 ? key : (pick(grassSprites) ?? ''));
+    if (!pathPx || !grassPx) return false;
+    const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+    blendEdgeTile(x, y, at, own, pathPx, grassPx, out);
+    tex.putData(new ImageData(out, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
+    return true;
+  }
+
   /**
    * Edge strips over a tile, one per side, read from the four neighbours: a bank
    * where water meets land, a fringe of grass over a path, cobble, sand or ruin floor
@@ -887,6 +951,7 @@ export class WorldScene extends Phaser.Scene {
     sprite: string,
     tag: string,
     frame: number,
+    blended = false,
   ): boolean {
     const m = this.b.map;
     const kit = kitOf(sprite);
@@ -898,6 +963,7 @@ export class WorldScene extends Phaser.Scene {
       const near = m.legend[m.ground[y + dy]?.[x + dx] ?? ''];
       if (!near) continue;
       let ref: string | undefined;
+      if (blended && ((kind === 'fringe' && tag === 'path') || kind === 'worn')) continue;
       if (kind === 'bank' && near.tag !== 'water') ref = `${kit}tiles/bank_${side}`;
       else if (kind === 'fringe' && (near.tag === 'meadow' || near.tag === 'grove')) ref = `${kit}tiles/fringe_${side}`;
       else if (kind === 'worn' && near.tag === 'path') ref = `${kit}tiles/worn_${side}`;

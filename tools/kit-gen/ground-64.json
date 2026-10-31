@@ -476,7 +476,7 @@
       "speckles": [
         {
           "letter": "x",
-          "per_tile": 140
+          "per_tile": 1000
         },
         {
           "letter": "u",
@@ -484,15 +484,15 @@
         },
         {
           "letter": "g",
-          "per_tile": 26
+          "per_tile": 40
         },
         {
           "letter": "G",
-          "per_tile": 14
+          "per_tile": 20
         },
         {
           "letter": "y",
-          "per_tile": 6
+          "per_tile": 30
         }
       ],
       "motifs": [
@@ -588,22 +588,22 @@
       "width": 64,
       "height": 64,
       "what": "pale warm sand path, worn by feet, with a few earth wear spots",
-      "base": "y",
+      "base": "x",
       "variants": 3,
       "cell": 32,
       "chance": 0.5,
       "speckles": [
         {
-          "letter": "I",
-          "per_tile": 70
-        },
-        {
-          "letter": "x",
-          "per_tile": 56
+          "letter": "y",
+          "per_tile": 380
         },
         {
           "letter": "w",
-          "per_tile": 6
+          "per_tile": 70
+        },
+        {
+          "letter": "I",
+          "per_tile": 18
         },
         {
           "letter": "f",
