@@ -12,24 +12,36 @@
     "sprites": {
       "props/fig_bush": {
         "file": "props/fig_bush.png",
-        "w": 64,
-        "h": 64,
+        "w": 128,
+        "h": 256,
         "density": 4,
         "ramps": [
           "green",
           "plum",
           "bark"
-        ]
+        ],
+        "scale": 3.23,
+        "source": {
+          "spec": "tools/src/art/trees.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:161"
+        },
+        "frames": 2
       },
       "props/fig_bush_empty": {
         "file": "props/fig_bush_empty.png",
-        "w": 64,
-        "h": 64,
+        "w": 128,
+        "h": 256,
         "density": 4,
         "ramps": [
           "green",
           "bark"
-        ]
+        ],
+        "scale": 3.23,
+        "source": {
+          "spec": "tools/src/art/trees.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:162"
+        },
+        "frames": 2
       },
       "items/fig": {
         "file": "items/fig.png",

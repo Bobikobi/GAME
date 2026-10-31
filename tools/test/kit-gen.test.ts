@@ -75,9 +75,9 @@ describe('the spec', () => {
 describe('the reference', () => {
   test('a sheet gives its first frame, a sprite itself', () => {
     const oak = loadReference('props/tree_oak');
-    expect([oak.width, oak.height]).toEqual([32, 32]);
+    expect([oak.width, oak.height]).toEqual([192, 320]);
     const sheet = PNG.sync.read(readFileSync(join(root, 'content/kit/core/props/tree_oak.png')));
-    expect(oak.data.subarray(0, 32 * 4)).toEqual(sheet.data.subarray(0, 32 * 4));
+    expect(oak.data.subarray(0, 192 * 4)).toEqual(sheet.data.subarray(0, 192 * 4));
     expect(() => loadReference('chars/nobody')).toThrow(/No core kit sprite/);
   });
 

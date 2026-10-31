@@ -527,26 +527,46 @@
       "props/sapling": {
         "file": "props/sapling.png",
         "w": 64,
-        "h": 64,
+        "h": 96,
         "density": 4,
         "ramps": [
           "green",
           "bark"
         ],
         "source": {
-          "spec": "tools/kit-gen/rich-props-small.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:28"
+          "spec": "tools/src/art/trees.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:160"
         }
       },
       "props/young_tree": {
         "file": "props/young_tree.png",
-        "w": 16,
-        "h": 24
+        "w": 128,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "green",
+          "bark"
+        ],
+        "scale": 2.27,
+        "source": {
+          "spec": "tools/src/art/trees.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:159"
+        }
       },
       "props/dead_tree": {
         "file": "props/dead_tree.png",
-        "w": 32,
-        "h": 32,
+        "w": 192,
+        "h": 256,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "bark"
+        ],
+        "scale": 2.99,
+        "source": {
+          "spec": "tools/src/art/trees.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:158"
+        },
         "frames": 2
       },
       "props/dig_spot": {
@@ -986,8 +1006,18 @@
       },
       "props/tree_oak": {
         "file": "props/tree_oak.png",
-        "w": 32,
-        "h": 32,
+        "w": 192,
+        "h": 320,
+        "density": 4,
+        "ramps": [
+          "green",
+          "bark"
+        ],
+        "scale": 3.55,
+        "source": {
+          "spec": "tools/src/art/trees.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:157"
+        },
         "frames": 2
       },
       "props/well_old": {
