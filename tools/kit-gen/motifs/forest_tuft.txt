@@ -1,0 +1,6 @@
+...c...
+..cb.c.
+.cbcbcb
+.bbabbb
+..bab..
+...a...

@@ -13,7 +13,7 @@ Sizes are by code complexity and the hardware a step needs, never by hours.
 
 - Two grids, picked per sprite by its `density` (STYLE.md section 1). At 64 art
   pixels per tile (`density: 4`, the standard for new art): items and tiles
-  64x64, character frames 64x96, work poses 128x128 in two frames, props up to
+  64x64, character frames 128x128 (the anim tool's frame), work poses 128x128 in two frames, props up to
   384x384. At 16 per tile (the default; closed to new art since 23.10, the
   whole game is rich, and kept only by the core kit's sprites still waiting,
   listed in `tools/src/kit/rich.ts`): 16x16, 16x24, 32x32, 64x64. The 32 colours of the core palette; every pixel

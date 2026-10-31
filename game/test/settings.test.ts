@@ -65,7 +65,7 @@ describe('richOf', () => {
 describe('storage', () => {
   it('round-trips', () => {
     const m = mem();
-    const s: Settings = { quality: 'high', frameCap: 120, reducedMotion: true };
+    const s: Settings = { quality: 'high', frameCap: 120, reducedMotion: true, textSize: 20 };
     writeSettings(m, s);
     expect(readSettings(m)).toEqual(s);
   });

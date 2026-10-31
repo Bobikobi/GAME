@@ -1,0 +1,22 @@
+{
+  "about": "The jog for the skeleton, whose legs are 81 percent of the human's and whose stride is short: 12 poses, so that a pose is held for the 13.6 art px the body walks and the walk needs under 30 poses a second at the light pace (15 poses would need 34.6, over the limit). Same library action and views as jog.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Jog_Fwd_Loop"
+  },
+  "frames": {
+    "even": 12
+  },
+  "locomotion": {
+    "playback": "distance"
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "silhouette_dev_pct": 25
+  }
+}

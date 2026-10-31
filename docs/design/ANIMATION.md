@@ -48,7 +48,7 @@ Animals and monsters have their own sets in BESTIARY (the animals session); this
 
 | Effect | What | Starting numbers | Reduced motion |
 |---|---|---|---|
-| bob | the body rises and falls with the stride | a triangle wave, not a sine; per step 2 px down, 2 px more, then 4 px up back to zero, so 4 px peak to trough on a human (the 1, 1, 2 px of a 32 px figure, doubled for 64 px); rise faster than fall; never below the sheet's own ground. The jog clip's own head travel is already 4 px (measured), so the layer doubles it: gate A (section 6) judges it, and it is dropped for a clip that carries its own bob | off |
+| bob | the body rises and falls with the stride | a triangle wave, not a sine; per step 2 px down, 2 px more, then 4 px up back to zero, so 4 px peak to trough on a human (the 1, 1, 2 px of a 32 px figure, doubled for 64 px); rise faster than fall; never below the sheet's own ground. The jog clip's own head travel is already 4 px (measured), so the layer doubles it: gate A (section 6) judges it, and it is dropped for a clip that carries its own bob. On the races' sheets (DECISIONS 2026-10-30) it stays on the human, stepped to the sheet's own step, and is dropped for the elf and the skeleton (`stride.bob` false) | off |
 | breath | the chest lifts at rest | 1 px on the upper body, a period of 1.0 to 1.5 s, a phase from the id | off (the sheet's frame) |
 | blink | two frames of closed eyes | 100 ms every 3 to 5 s, from a seeded hash | off |
 | squash and stretch | on a landing, a hop, a hit, a pounce | 1 to 2 px on a 64 to 96 px body, volume kept, 1 to 2 frames | off |

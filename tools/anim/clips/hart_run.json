@@ -1,0 +1,33 @@
+{
+  "about": "The white hart's run: four poses of the body's own Run (a four-beat rotary gallop keyed on the leg IK targets in deer_pass.py: hind left, hind right, fore right, fore left; the file's Run is not used), judged at the run of 95 ms a tile (`walk_step_ms` over `gait.run_div`: a FLEE runs, HUNTING.md section 2). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop.",
+  "target": "hart",
+  "base": {
+    "library": "self:hart",
+    "action": "Run"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      176,
+      176
+    ],
+    "anchor": [
+      88,
+      124
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 95
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "foot_slide_px": 2
+  }
+}

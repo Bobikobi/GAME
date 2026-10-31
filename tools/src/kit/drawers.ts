@@ -25,6 +25,11 @@
  *           reference's shape and a denoise of its own for characters. A kernel takes minutes to start, so `kit:gen` sends the whole wave in one run
  *           (`drawWaveWithKaggle`): push, poll, fetch the output.
  *
+ *   gemini-web  Gemini's image tool in the owner's logged-in invisible Chrome (`~/browser-agent/gemini_image.py`, CDP
+ *           127.0.0.1:9222), on the owner's subscription: no key, no billing. Reference images attach in the composer; the
+ *           full-size picture is downloaded from the result card. One Chrome, so one call at a time. The script path is
+ *           `GEMINI_WEB_SCRIPT`. Seconds to a minute per image (30.10 probe: 1408x768, a bush on magenta).
+ *
  * `--drawer <id>` picks the route, else `KIT_DRAWER`, else codex. A text route (a grid tile, a scatter
  * motif) stays with Codex: those are letters, not pictures. Adding a route is one `Drawer` here and
  * one line in `docs/art/DRAWERS.md`; the key is read from the environment and never written to a log.
@@ -36,7 +41,7 @@ import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const DRAWERS = ['codex', 'gemini', 'local', 'kaggle'] as const;
+export const DRAWERS = ['codex', 'gemini', 'local', 'kaggle', 'gemini-web'] as const;
 export type DrawerId = (typeof DRAWERS)[number];
 
 export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash-image';
@@ -174,6 +179,27 @@ export function drawWithGemini(call: DrawCall): Drawn {
   const saved = join(call.out, 'work', call.expect);
   writeFileSync(saved, answer.png);
   return done(0, log, existsSync(saved) ? saved : null, 'Gemini saved no image', answer.tokens);
+}
+
+/** One Gemini web call: the browser rig's script saves the full-size picture, reference images attached. */
+export function drawWithGeminiWeb(call: DrawCall): Drawn {
+  const env = call.env ?? process.env;
+  const script = env['GEMINI_WEB_SCRIPT'] ?? join(env['HOME'] ?? '', 'browser-agent', 'gemini_image.py');
+  const logPath = join(call.out, 'log', `${call.name}-${call.stamp}.txt`);
+  const saved = join(call.out, 'work', call.expect);
+  const since = Date.now();
+  const done = (exit: number | null, log: string, got: string | null, error: string): Drawn => {
+    writeFileSync(logPath, log);
+    return { version: 'gemini-web', exit, seconds: Math.round((Date.now() - since) / 1000), tokens: null, log: logPath.replace(`${call.out}/`, ''), saved: got, error };
+  };
+  if (!existsSync(script)) return done(null, `no script at ${script}`, null, `the Gemini web script is not at ${script} (GEMINI_WEB_SCRIPT)`);
+  const args = [call.prompt, '--out', saved, '--timeout', String(Math.max(60, call.timeoutSeconds)), ...call.images.flatMap((p) => ['--image', p])];
+  const run = spawnSync(script, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: (call.timeoutSeconds + 60) * 1000, maxBuffer: 16 * 1024 * 1024 });
+  const log = [`script ${script}`, run.stdout ?? '', run.stderr ?? ''].filter((l) => l !== '').join('\n');
+  if (run.error !== undefined) return done(run.status, log, null, `the Gemini web script did not run: ${run.error.message}`);
+  if (run.status !== 0) return done(run.status, log, null, `the Gemini web script exited ${run.status}: ${(run.stderr ?? '').trim().slice(-200)}`);
+  if (/saved a screenshot of the card/.test(run.stderr ?? '')) return done(run.status, log, null, 'the script fell back to a screenshot of the card, not the full image');
+  return done(0, log, existsSync(saved) ? saved : null, 'the Gemini web script saved no image');
 }
 
 /* ---------------------------------------------------------------- the local route */
@@ -602,7 +628,7 @@ export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSett
     tokenLimit: recipe.tokenLimit,
     dtype: choice('KAGGLE_DTYPE', ['fp16', 'bf16', 'fp32'] as const, recipe.dtype),
     post: choice('KAGGLE_POST', ['grid', 'off'] as const, recipe.post),
-    negative: choice('KAGGLE_NEGATIVE_KIND', ['default', 'creature'] as const, 'default') === 'creature' ? KAGGLE_CREATURE_NEGATIVE : KAGGLE_NEGATIVE,
+    negative: NEGATIVE_BY_KIND[choice('KAGGLE_NEGATIVE_KIND', ['default', 'creature', 'ground'] as const, 'default')],
   };
 }
 
@@ -663,6 +689,15 @@ export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, 
  */
 export const KAGGLE_CREATURE_NEGATIVE = KAGGLE_NEGATIVE.split(', ').filter((w) => w !== 'animal').join(', ');
 
+/**
+ * The negative prompt of a ground fill (`KAGGLE_NEGATIVE_KIND=ground`): a ground is no object, so the figure words go and
+ * what the first first-map draws turned into (a cube, a block with a side, a vignette with rounded corners, a frame) is
+ * named instead.
+ */
+export const KAGGLE_GROUND_NEGATIVE = 'object, character, animal, cube, block, isometric, perspective, horizon, border, frame, outline, rounded corners, vignette, centred composition, blurry, photo, realistic, 3d render, text, watermark, gradient, shadow, glow, light rays, halo';
+
+const NEGATIVE_BY_KIND = { default: KAGGLE_NEGATIVE, creature: KAGGLE_CREATURE_NEGATIVE, ground: KAGGLE_GROUND_NEGATIVE } as const;
+
 const NUMBER_WORD = '(?:\\d+|two|three|four|five|six)';
 
 /**
@@ -706,7 +741,7 @@ function clauses(text: string | undefined): string[] {
  * magenta). Detail clauses go from the end while the estimate is past the window, so the words that matter
  * most are never the ones cut. The local route keeps `localPrompt`.
  */
-export function kagglePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number }, recipe: KaggleRecipe = 'sd15'): string {
+export function kagglePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number; kind?: string }, recipe: KaggleRecipe = 'sd15'): string {
   if (kaggleFromPrompt(recipe)) return kaggleSentencePrompt(entry);
   const shape = shapeOf(entry);
   const head = [
@@ -734,7 +769,8 @@ function shapeWords(shape: 'tall' | 'wide' | null): string[] {
  * one, and the three things the importer needs. Nothing is dropped: the kernel counts it against the encoder's
  * real window.
  */
-export function kaggleSentencePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number }): string {
+export function kaggleSentencePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number; kind?: string }): string {
+  if (entry.kind === 'tile') return kaggleFillPrompt(entry);
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null).join(', ');
   const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null);
   const character = kaggleSubject(entry.ref) === 'character';
@@ -750,6 +786,23 @@ export function kaggleSentencePrompt(entry: { what: string; detail?: string; not
     'Crisp square pixels, a thick dark navy outline, a limited palette.',
     'Flat pure magenta background, no shadow on the ground, no text, no other objects.',
   ].filter((s) => s !== '').join(' ');
+}
+
+/**
+ * The prompt of a ground fill on a long-prompt recipe: a texture seen straight from above that fills the whole
+ * picture, with no object, outline, background or border (the sprite prompt drew isometric cubes and rounded
+ * tiles on magenta: the first first-map ground, 30.10). Wrapping is the script's (`wrapTile`), not the model's.
+ */
+export function kaggleFillPrompt(entry: { what: string; detail?: string; notes?: readonly string[] }): string {
+  const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null).join(', ');
+  const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null).join(', ');
+  return [
+    `Pixel art game ground texture, seen straight from above: ${subject}.`,
+    detail === '' ? '' : `${detail.charAt(0).toUpperCase()}${detail.slice(1)}.`,
+    'The texture fills the entire picture edge to edge, an even field with no object in the middle, no border, no frame, no outline, no background, no horizon.',
+    'Many small details spread over the whole picture in several shades, light from the upper left, shading and texture drawn in pixels.',
+    'Crisp square pixels, a limited palette.',
+  ].filter((t) => t !== '').join(' ');
 }
 
 /** A PNG's width and height from its header, or null when the bytes are not a PNG. */
