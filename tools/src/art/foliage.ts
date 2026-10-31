@@ -77,6 +77,9 @@ export interface MassOptions {
   glints?: number;
   /** How hard the light and shade of each clump pull from the middle step: 1 as the trees, more for a mass that reads dark with lit tops. */
   contrast?: number;
+  /** Trial: how ragged the silhouette is (1 as the trees), and how far the light leans to the left across the mass (0 none). */
+  ragged?: number;
+  side?: number;
 }
 
 /**
@@ -92,7 +95,7 @@ export function drawMass(png: PNG, o: MassOptions): Uint8Array {
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
       // a ragged edge: the distance to a lobe is nudged by noise at three sizes, so the silhouette is leaf clumps with notches, not a circle
-      const wob = (noise(seed + 5, x, y, 9) - 0.5) * 9 + (noise(seed + 6, x, y, 4) - 0.5) * 5 + (hash3(seed + 10, x, y) - 0.5) * 2.2;
+      const wob = ((noise(seed + 5, x, y, 9) - 0.5) * 9 + (noise(seed + 6, x, y, 4) - 0.5) * 5 + (hash3(seed + 10, x, y) - 0.5) * 2.2) * (o.ragged ?? 1);
       let best = -1;
       let owner = 0;
       for (const [n, l] of lobes.entries()) {
@@ -154,7 +157,7 @@ export function drawMass(png: PNG, o: MassOptions): Uint8Array {
       const reach = clumpSize * 0.62;
       const lit = (-(xw - cx) * 0.45 - (yw - cy) * 0.9) / reach;
       const crown = Math.min(1, near / reach);
-      let v = 2.25 + tone + dome * 0.9 * contrast + lit * 2.6 * contrast - crown * crown * 1.1 * contrast - (y / h - 0.5) * 2.4 + (hash3(seed + 9, x, y) - 0.5) * 0.3;
+      let v = 2.25 + tone + dome * 0.9 * contrast + lit * 2.6 * contrast - crown * crown * 1.1 * contrast - (y / h - 0.5) * 2.4 - ((x / w - 0.5) * (o.side ?? 0)) + (hash3(seed + 9, x, y) - 0.5) * 0.3;
       // a higher lobe up and to the left throws its shadow here
       const above = Math.max(at(x - 3, y - 3), at(x - 5, y - 2), at(x - 2, y - 5));
       if (above > height[y * w + x]! + 0.12) v -= 0.8;

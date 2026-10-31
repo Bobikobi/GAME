@@ -76,19 +76,36 @@ function trunk(points: readonly (readonly [number, number, number])[], roots: re
   return tubes;
 }
 
+/** Trial knobs for the oak (route A): the defaults are 3c's own. */
+const OAK = {
+  trunk: 1, // trunk radius scale
+  rx: 80, ry: 52, cy: 86, // the crown's ellipse
+  lobe: 1, // lobe radius scale
+  clump: 34,
+  tone: 0.85,
+  contrast: 1,
+  glints: 1,
+  ragged: 1,
+  side: 0,
+  boxH: 180,
+  ...(JSON.parse(process.env.OAK_TUNE ?? '{}') as Record<string, number>),
+};
+
 function oak(frame: number): PNG {
   const W = 192;
   const H = 320;
   const png = surface(W, H);
+  const k = OAK.trunk;
   // a thick, warm trunk that flares into four roots spreading over the ground, two boughs reaching into the crown
   drawTubes(png, [
-    ...trunk([[96, 316, 29], [96, 296, 25], [96, 262, 21], [97, 228, 19], [98, 196, 17]], [[26, 318, 6], [60, 319, 6.5], [132, 319, 6.5], [166, 318, 6]]),
-    { x0: 98, y0: 222, r0: 12, x1: 56, y1: 170, r1: 7 },
-    { x0: 98, y0: 218, r0: 12, x1: 142, y1: 168, r1: 7 },
+    ...trunk([[96, 316, 29 * k], [96, 296, 25 * k], [96, 262, 21 * k], [97, 228, 19 * k], [98, 196, 17 * k]], [[26, 318, 6], [60, 319, 6.5], [132, 319, 6.5], [166, 318, 6]]),
+    { x0: 98, y0: 222, r0: 12 * k, x1: 56, y1: 170, r1: 7 * k },
+    { x0: 98, y0: 218, r0: 12 * k, x1: 142, y1: 168, r1: 7 * k },
   ], { seed: 301, ramp: BARK, tone: 0.1, grain: 1.0 });
-  const box = { oy: 52, h: 180 };
-  const lobes = swayed(crownLobes(31, W, box.h, 96, 86, 80, 52, [[0.6, 9, 29], [1, 13, 25]], 38), box.h, frame, 2.5);
-  drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 31, lobes, ramp: GREEN, clump: 34, tone: 0.85, shift: [frame * 3, frame * 2] });
+  const box = { oy: 52 + (180 - OAK.boxH) / 2, h: OAK.boxH };
+  const L = OAK.lobe;
+  const lobes = swayed(crownLobes(31, W, box.h, 96, OAK.cy, OAK.rx, OAK.ry, [[0.6, 9, 29 * L], [1, 13, 25 * L]], 38 * L), box.h, frame, 2.5);
+  drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 31, lobes, ramp: GREEN, clump: OAK.clump, tone: OAK.tone, contrast: OAK.contrast, glints: OAK.glints, ragged: OAK.ragged, side: OAK.side, shift: [frame * 3, frame * 2] });
   return finish(png);
 }
 
