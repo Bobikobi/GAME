@@ -158,6 +158,35 @@ On the laptop, the same mode runs against the dev client: `AUTH_MODE=session PUB
 APP_ORIGIN=http://localhost:5173 ALLOW_LOG_MAILER=staging-only` with the Google pair exported from the secrets
 file, never pasted into a shell history or a chat. Two loopback ports are the one pair of origins the API accepts.
 
+## Deploys (the site and the game on Vercel)
+
+Vercel's Hobby plan allows 100 deployments a day. Through the Git integration, every push to every branch deploys,
+and a build the ignored step skips still counts, so the limit ran out on 31.10. The industry's way is to deploy from
+CI, at the stages that need it. `.github/workflows/deploy.yml` does that once the repository variable
+`DEPLOY_FROM_CI` is `1`, and only on a head CI passed:
+- main: production.
+- develop: one preview, kept at `https://loomvale-develop.vercel.app`.
+- a pull request labelled `preview`: one preview, whose address the workflow comments on the pull request. Never
+  a pull request from a fork.
+The hourly hub refresh then asks that workflow for production instead of firing the deploy hook, because the hook
+needs the Git connection. Production can also be deployed by hand: Actions, Deploy, Run workflow.
+The daily budget is about 15 develop landings, plus the releases, plus the previews asked for by label, plus up to
+24 hub refreshes on the hours when the hub's data changed. That is about 30 on a busy day, against 100.
+
+The owner's three steps (none of them is in this repository):
+1. Secrets, by name only, in the repository's Settings, Secrets, Actions:
+   - `VERCEL_TOKEN`: a token from the Vercel account's Settings, Tokens, scoped to the project's team.
+   - `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`: from the project's Settings, General, or from `.vercel/project.json`
+     after `vercel link`.
+   Then the label: `gh label create preview --repo <the repository>`.
+2. In the Vercel project, Settings, Git: disconnect the repository. The Git deploys and the deploy hook stop.
+3. The repository variable `DEPLOY_FROM_CI` = `1` (Settings, Variables, Actions). The next landing on develop
+   deploys from CI.
+Verify: the Deploy run of that landing says `Deploy develop from <sha>`, the develop address shows the new build,
+and Vercel's deployments list grows by one per landing, not by one per push.
+The way back: reconnect the repository in the Vercel project's Settings, Git, and set the variable to `0`. Then
+every run of the workflow stops at its first step, and the hook works again. The secrets can stay.
+
 ## Never
 
 - `docker system prune` on this host: the other product's images and its auto-updater live there.
