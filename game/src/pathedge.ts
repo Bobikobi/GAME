@@ -16,6 +16,22 @@ export type PathAt = (tx: number, ty: number) => 0 | 1 | undefined;
 
 const WORN: readonly [number, number, number] = [0x9e, 0x6b, 0x3c];
 
+/** How one kind of edge is drawn. */
+export interface EdgeLook {
+  /** where the sand's own side begins on the blended field: 0.5 is the tiles' own edge, above it narrows the drawn band */
+  threshold: number;
+  /** how far the line wanders (1 is the path's) */
+  wander: number;
+  /** the band between the tiles' edge and the threshold is worn grass with sparse flecks of the other side */
+  sparse: boolean;
+  /** tufts of grass crossing into the other side, and a darker worn rim on it */
+  tufts: boolean;
+  worn: boolean;
+}
+export const PATH_EDGE: EdgeLook = { threshold: 0.78, wander: 1, sparse: true, tufts: true, worn: true };
+export const BANK_EDGE: EdgeLook = { threshold: 0.5, wander: 1.6, sparse: false, tufts: true, worn: false };
+export const WOOD_EDGE: EdgeLook = { threshold: 0.5, wander: 1.3, sparse: false, tufts: false, worn: false };
+
 /** The blended path field at a point of tile (tx, ty), u and v in 0..1 across it. */
 export function pathField(tx: number, ty: number, u: number, v: number, at: PathAt, own: 0 | 1): number {
   const fx = tx + u - 0.5;
@@ -49,27 +65,30 @@ export function needsBlend(tx: number, ty: number, at: PathAt, own: 0 | 1): bool
  * Writes the blended tile into `out` (RGBA, EDGE_PX square) from the path tile's and the grass tile's pixels.
  * `own` is the side the tile itself is on.
  */
-export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pathPx: Uint8ClampedArray, grassPx: Uint8ClampedArray, out: Uint8ClampedArray): void {
+export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pathPx: Uint8ClampedArray, grassPx: Uint8ClampedArray, out: Uint8ClampedArray, look: EdgeLook = PATH_EDGE): void {
   for (let py = 0; py < EDGE_PX; py++) {
     for (let px = 0; px < EDGE_PX; px++) {
       const gx = tx * EDGE_PX + px;
       const gy = ty * EDGE_PX + py;
       const field = pathField(tx, ty, (px + 0.5) / EDGE_PX, (py + 0.5) / EDGE_PX, at, own);
-      const wander = (valueNoise(gx, gy, 31, 14) - 0.5) * 0.3 + (valueNoise(gx, gy, 57, 5) - 0.5) * 0.14;
+      const wander = ((valueNoise(gx, gy, 31, 14) - 0.5) * 0.3 + (valueNoise(gx, gy, 57, 5) - 0.5) * 0.14) * look.wander;
       const t = field + wander;
+      const edge = look.threshold;
       const i = (py * EDGE_PX + px) * 4;
-      let grass = t < 0.5;
-      const near = Math.abs(t - 0.5);
+      let grass = t < edge;
+      // the worn band: grass with sparse flecks of the path's sand
+      if (look.sparse && grass && t > 0.42 && hash(gx, gy + 17) % 100 < (32 * (t - 0.42)) / (edge - 0.42)) grass = false;
+      const near = Math.abs(t - edge);
       // the line itself is a dither, not a cut
       if (near < 0.03 && hash(gx, gy + 3) % 100 < 35) grass = !grass;
       // a tuft of grass crossing into the sand: a column that carries one, as far as its own length
-      if (!grass && t < 0.66 && hash(gx, 11) % 100 < 13 && t < 0.5 + 0.16 * ((hash(gx, 13) % 100) / 100)) grass = true;
+      if (look.tufts && !grass && t < edge + 0.16 && hash(gx, 11) % 100 < 13 && t < edge + 0.16 * ((hash(gx, 13) % 100) / 100)) grass = true;
       const src = grass ? grassPx : pathPx;
       out[i] = src[i]!;
       out[i + 1] = src[i + 1]!;
       out[i + 2] = src[i + 2]!;
       out[i + 3] = 255;
-      if (!grass && ((t < 0.56 && hash(gx, gy + 5) % 100 < 45) || (t < 0.64 && hash(gx, gy + 9) % 100 < 16))) {
+      if (look.worn && !grass && ((t < edge + 0.06 && hash(gx, gy + 5) % 100 < 45) || (t < edge + 0.14 && hash(gx, gy + 9) % 100 < 16))) {
         out[i] = WORN[0];
         out[i + 1] = WORN[1];
         out[i + 2] = WORN[2];
