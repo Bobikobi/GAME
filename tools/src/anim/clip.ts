@@ -195,7 +195,7 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 const isInt = (v: unknown): v is number => Number.isInteger(v);
 
 /**
- * The problems of a target's coats, in plain words; empty when they can be drawn: ids unique, a name, a positive
+ * The problems of a target's coats, in plain words; empty when they can be drawn: ids unique, a name, a positive whole
  * weight, each mapped ramp a shared ramp that the target (or the coat's body) draws in, whole or as a span of it, each
  * `to` a shared ramp and a whole shift from -5 to 5 (or six `steps`, each "ramp:step" of a shared ramp or null), no
  * step that lands on the ink (a body pixel in the outline's colour melts into the outline), a body that is another
@@ -217,7 +217,7 @@ export function coatProblems(id: string, settings: Settings): string[] {
     const name = typeof c.id === 'string' && c.id.length > 0 ? c.id : '?';
     if (name === '?') say('every coat has an id');
     if (typeof c.name !== 'string' || c.name.length === 0) say(`${name}: a name`);
-    if (!isNum(c.weight) || c.weight <= 0) say(`${name}: weight is a positive number`);
+    if (!isInt(c.weight) || c.weight <= 0) say(`${name}: weight is a positive whole number`);
     let ramps = target.ramps;
     if (c.body !== undefined) {
       const body = settings.targets[c.body];

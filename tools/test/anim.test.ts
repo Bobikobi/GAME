@@ -127,7 +127,7 @@ describe('clip configs', () => {
         hare: {
           ...hare,
           coats: [
-            { id: 'a', name: 'a', weight: 0, map: { velvet: { to: 'grey' } } },
+            { id: 'a', name: 'a', weight: 0.5, map: { velvet: { to: 'grey' } } },
             { id: 'a', name: 'b', weight: 1, map: { stone: { to: 'grey' }, skin: { to: 'nowhere', shift: 9 } } },
             { id: 'c', name: 'c', weight: 1, map: {}, body: 'nobody' },
             { id: 'd', name: 'd', weight: 1, map: { skin: { to: 'grey', shift: -1 }, wood: { steps: [null, 'grey:0', null, null, null, null] } } },
@@ -139,7 +139,7 @@ describe('clip configs', () => {
     };
     const problems = coatProblems('hare', bad).join('\n');
     expect(problems).toMatch(/each coat id once/);
-    expect(problems).toMatch(/weight is a positive number/);
+    expect(problems).toMatch(/a: weight is a positive whole number/);
     expect(problems).toMatch(/ramp "velvet" is not a shared ramp/);
     expect(problems).toMatch(/ramp "stone" is not one the body draws in/);
     expect(problems).toMatch(/"nowhere", not a shared ramp/);

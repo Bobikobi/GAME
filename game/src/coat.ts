@@ -1,15 +1,19 @@
+import { mulDiv } from '@game/kernel';
+
 /**
  * An animal's coat: which of its kind's coats one creature wears, and the recolour that draws it, worked out
  * without Phaser so it can be tested. The coats of a kind are listed on its target in tools/anim/anim.json
  * ("coats"), each with a weight. A creature's coat comes from the server's keyed draw, `draw(seed, coatEntity(id), 0)`
  * (kernel/src/rng.ts; HUNT_FAMILIES 7): the world's seed is the server's alone (kernel publicState), so the server
- * picks the coat with coatOf when the creature appears and sends it with the creature, and every client draws the
- * coat it is sent, the same creature in the same coat on every screen. A coat changes no value, no weight and no
- * count; the hide carries it (DECISIONS 2026-10-30, "The hide carries the coat").
+ * picks the coat when the creature appears and sends it with the creature, and every client draws the coat it is
+ * sent, the same creature in the same coat on every screen. A coat changes no value, no weight and no count; the hide
+ * carries it (DECISIONS 2026-10-30, "The hide carries the coat").
  *
  * Not wired yet: nothing spawns or draws the hare or the crow today, so nothing calls this module. The pull request
  * that steps animals draws the coat on the server, and a scene draws it with remapCoat on the shared ramps
- * (tools/src/kit/palette.ts CORE_RAMPS, carried to the client the way the bundle carries content). A coat table
+ * (tools/src/kit/palette.ts CORE_RAMPS, carried to the client the way the bundle carries content). coatOf is the
+ * server's pick in the kernel's whole-number steps (mulDiv, rule R2): the server never imports this package, so that
+ * pull request moves the pick into the kernel beside the other wild draws as it stands and drops it here. A coat table
  * belongs to a body's target, found from the creature's kind id (core/hare to the target hare, core/crow to crow),
  * never from the kind's look, which the crow shares with the sparrow; hare-pied is a coat's body, never a kind. When
  * the hide carries the coat, the tables move from anim.json into the content the server reads.
@@ -31,7 +35,7 @@ export type CoatStep = { to: string; shift?: number } | { steps: readonly (strin
 export interface Coat {
   id: string;
   name: string;
-  /** the coat's share of its kind, against the sum of the kind's weights */
+  /** the coat's share of its kind against the sum of the kind's weights, a whole number */
   weight: number;
   /** ramp id -> where its steps go; a ramp left out keeps its colours */
   map: Readonly<Record<string, CoatStep>>;
@@ -56,13 +60,21 @@ export const coatEntity = (creatureId: string | number): string => `coat:${creat
 
 /**
  * The coat a creature wears: a coat by weight, from the server's draw for it (an unsigned 32-bit number; see
- * coatEntity). The same draw gives the same coat; over many creatures each coat's share is its weight's share.
- * Undefined only for a kind with no coats.
+ * coatEntity). The same draw gives the same coat; over many creatures each coat's share is its weight's share. Whole
+ * numbers only, as the kernel's own draws are: the draw scaled to the weights' sum with mulDiv, then the coat whose
+ * span holds it. Undefined for a kind with no coats or whose weights sum to 0; throws on a weight that is not a whole
+ * number of 0 or more (coatProblems refuses one in anim.json).
  */
 export function coatOf(coats: readonly Coat[], roll: number): Coat | undefined {
-  const total = coats.reduce((sum, c) => sum + c.weight, 0);
-  if (coats.length === 0 || !(total > 0)) return undefined;
-  let x = ((roll >>> 0) / 4294967296) * total;
+  let total = 0;
+  for (const c of coats) {
+    if (!Number.isSafeInteger(c.weight) || c.weight < 0) {
+      throw new Error(`coat: "${c.id}" has a weight that is not a whole number of 0 or more`);
+    }
+    total += c.weight;
+  }
+  if (total === 0) return undefined;
+  let x = mulDiv(roll >>> 0, total, 4_294_967_296);
   for (const coat of coats) {
     x -= coat.weight;
     if (x < 0) return coat;

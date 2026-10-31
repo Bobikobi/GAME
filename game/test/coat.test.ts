@@ -106,9 +106,11 @@ describe('coat pick', () => {
     }
   });
 
-  test('a kind with no coats, or weights that sum to nothing, wears none', () => {
+  test('a kind with no coats, or weights that sum to nothing, wears none, and a weight that is not whole is refused', () => {
     expect(coatOf([], 1)).toBeUndefined();
     expect(coatOf([{ id: 'z', name: 'z', weight: 0, map: {} }], 1)).toBeUndefined();
+    expect(() => coatOf([{ id: 'z', name: 'z', weight: 0.5, map: {} }, { id: 'y', name: 'y', weight: 0.5, map: {} }], 1)).toThrow(/"z" has a weight that is not a whole number/);
+    expect(() => coatOf([{ id: 'z', name: 'z', weight: -1, map: {} }, { id: 'y', name: 'y', weight: 2, map: {} }], 1)).toThrow(/"z" has a weight/);
   });
 });
 
