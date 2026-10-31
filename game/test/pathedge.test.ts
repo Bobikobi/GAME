@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { deepTile } from '../src/waterbody';
 import { EDGE_PX, PATH_EDGE, WATER_EDGE, blendEdgeTile, needsBlend, pathField, type PathAt } from '../src/pathedge';
 
 const grid = (rows: string[]): PathAt => (x, y) => {
@@ -95,7 +96,7 @@ describe('where land meets water', () => {
   });
   test('the water lightens toward the shore, flat in the middle, with flecks of foam and runs of stones on the line', () => {
     const DEEP = [0x2a, 0x6c, 0x66] as const;
-    // tile 2 is water with land to its left: its right half is more than a band away from the shore
+    // tile 2 is water with land to its left: its right edge is more than the shallows (24 px) away from the shore
     let farOther = 0;
     let lighter = 0;
     let foam = 0;
@@ -107,14 +108,15 @@ describe('where land meets water', () => {
       for (let py = 0; py < EDGE_PX; py++) {
         for (let px = 0; px < EDGE_PX; px++) {
           const i = (py * EDGE_PX + px) * 4;
-          if (px >= 44 && !is(i, DEEP)) farOther += 1;
+          if (px >= 56 && !is(i, DEEP)) farOther += 1;
           if (is(i, [0x3f, 0x8f, 0x84]) || is(i, [0x62, 0xb3, 0xa2])) lighter += 1;
           if (is(i, [0xc6, 0xca, 0xd6]) || is(i, [0xf5, 0xf4, 0xef])) foam += 1;
           if (is(i, [0x1b, 0x1a, 0x2e])) ink += 1;
         }
       }
     }
-    expect(farOther).toBe(0);
+    // the shallows fade out: at the far edge of the tile only a scatter of pixels (a few in a hundred) is lighter
+    expect(farOther).toBeLessThan(200);
     expect(lighter).toBeGreaterThan(500);
     // foam only in flecks, never a band
     expect(foam).toBeGreaterThan(0);
@@ -122,6 +124,41 @@ describe('where land meets water', () => {
     // the 1 px ink round the stones of the runs, but a stretch of bare shore too: not every row carries a stone
     expect(ink).toBeGreaterThan(100);
     expect(ink).toBeLessThan(EDGE_PX * 8 * 0.9);
+  });
+  test('the water is 6 to 10 luminance steps lighter within 24 px of the line than 60 px out', () => {
+    const lum = (r: number, g: number, b: number): number => 0.3 * r + 0.5 * g + 0.2 * b;
+    const teal = new Set([0x122b2c, 0x1c4a49, 0x2a6c66, 0x3f8f84, 0x62b3a2, 0x93d6c2, 0xc6cad6, 0xf5f4ef]);
+    let near = 0;
+    let nn = 0;
+    let far = 0;
+    let nf = 0;
+    for (const [x0, y0] of [[20, 7], [0, 30], [41, 3]]) {
+      for (let ty = 0; ty < 8; ty++) {
+        for (let tx = 1; tx < 6; tx++) {
+          const water = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+          deepTile(x0! + tx, y0! + ty, 0, water);
+          const o = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+          blendEdgeTile(tx, ty, at, tx < 2 ? 1 : 0, solid(...LAND), water, o, WATER_EDGE);
+          for (let py = 0; py < EDGE_PX; py++) {
+            for (let px = 0; px < EDGE_PX; px++) {
+              const i = (py * EDGE_PX + px) * 4;
+              if (!teal.has((o[i]! << 16) | (o[i + 1]! << 8) | o[i + 2]!)) continue;
+              const d = tx * EDGE_PX + px - 2 * EDGE_PX;
+              const l = lum(o[i]!, o[i + 1]!, o[i + 2]!);
+              if (d >= 1 && d <= 24) {
+                near += l;
+                nn += 1;
+              } else if (d >= 60) {
+                far += l;
+                nf += 1;
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(near / nn - far / nf).toBeGreaterThanOrEqual(6);
+    expect(near / nn - far / nf).toBeLessThanOrEqual(10);
   });
   test('it is fixed by the map', () => {
     const a = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);

@@ -1,5 +1,5 @@
 import { hash, valueNoise } from './richground';
-import { TEAL, bedAt, foamAt } from './waterbody';
+import { BAYER4, TEAL, bedAt, foamAt } from './waterbody';
 
 /**
  * Where a path meets the meadow, worked out per pixel and not per tile, so no 64 px step shows: the tiles' own
@@ -52,12 +52,12 @@ const RIM_LIGHT: readonly [number, number, number] = [0xf3, 0xc7, 0xa0];
 // (not the blue ramp's pale step: the sway shader (richground.ts MOVES) drifts that one, and a fleck of foam holds still)
 const FOAM_WHITE: readonly [number, number, number] = [0xc6, 0xca, 0xd6];
 const FOAM_ICE: readonly [number, number, number] = [0xf5, 0xf4, 0xef];
+/** The share of the pixels a step lighter right at the waterline, falling to none 24 px out. */
+const SHALLOW_LIFT = 0.5;
 /** The pale line's width on the land side, in art pixels. */
 const RIM_PX = 2.5;
 /** The ink of a stone's outline, the props' own. */
 const STONE_INK: readonly [number, number, number] = [0x1b, 0x1a, 0x2e];
-/** Ordered 2x2 thresholds, so two bands meet on a regular dither and not on noise. */
-const BAYER = [0.125, 0.625, 0.875, 0.375];
 /** How one kind of edge is drawn. */
 export interface EdgeLook {
   /** where the sand's own side begins on the blended field: 0.5 is the tiles' own edge, above it narrows the drawn band */
@@ -75,7 +75,7 @@ export interface EdgeLook {
 export const PATH_EDGE: EdgeLook = { threshold: 0.78, wander: 1, sparse: true, tufts: true, worn: true };
 export const BANK_EDGE: EdgeLook = { threshold: 0.5, wander: 1.6, sparse: false, tufts: true, worn: false };
 /** Where land meets water: a wandering line, a wet dark rim, chunky stones breaking it, a shaded water side. */
-export const WATER_EDGE: EdgeLook = { threshold: 0.5, wander: 2.1, sparse: false, tufts: false, worn: false, rim: { wet: 0.16, shallow: 0.16, foam: 0.06 } };
+export const WATER_EDGE: EdgeLook = { threshold: 0.5, wander: 2.1, sparse: false, tufts: false, worn: false, rim: { wet: 0.16, shallow: 0.375, foam: 0.06 } };
 export const WOOD_EDGE: EdgeLook = { threshold: 0.5, wander: 1.3, sparse: false, tufts: false, worn: false };
 
 /** The blended path field at a point of tile (tx, ty), u and v in 0..1 across it. */
@@ -272,8 +272,11 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
             const near = 1 - Math.max(0, dpx) / shallowPx;
             const bed = bedAt(gx, gy);
             const bedLum = (bed[0] * 0.3 + bed[1] * 0.5 + bed[2] * 0.2) / 255;
-            const level = Math.floor(near * near * 2.2 + (bedLum - 0.42) * 1.4 + BAYER[(gx & 1) + 2 * (gy & 1)]!);
-            for (let n = 0; n < Math.min(2, level); n++) {
+            // from the line outward a smaller share of the pixels is a step lighter, the bed's own light and dark moving it a little; the last stretch to the line takes a second step
+            const lift = SHALLOW_LIFT * near ** 0.9 + (bedLum - 0.42) * 0.5;
+            const cut = BAYER4[(gx & 3) + 4 * (gy & 3)]!;
+            const level = (cut < lift ? 1 : 0) + (near > 0.7 && cut < (near - 0.7) * 1.2 ? 1 : 0);
+            for (let n = 0; n < level; n++) {
               const lit = LIGHTER.get((out[i]! << 16) | (out[i + 1]! << 8) | out[i + 2]!);
               if (lit === undefined) break;
               out[i] = lit >> 16;

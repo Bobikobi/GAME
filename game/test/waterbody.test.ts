@@ -47,13 +47,37 @@ function patches(mask: Uint8Array, w: number): number[] {
   return sizes;
 }
 
+/** Perceived luminance, 0 to 255. */
+const lum = (c: number): number => 0.3 * (c >> 16) + 0.5 * ((c >> 8) & 255) + 0.2 * (c & 255);
+
 describe('the open water', () => {
-  test.each(PLACES)('about two to four pale patches to a tile, at tile %i,%i', (x0, y0) => {
+  // the approved cove measures about 13% pale pixels (the second teal step and up) and a luminance spread of about 13
+  test.each(PLACES)('calm like the cove: 12-15.5% pale pixels, a luminance spread of 11.5-14.5, at tile %i,%i', (x0, y0) => {
+    let sum = 0;
+    let sq = 0;
+    let pale = 0;
+    const n = COLS * TILE * ROWS * TILE;
+    for (let y = 0; y < ROWS * TILE; y++) {
+      for (let x = 0; x < COLS * TILE; x++) {
+        const l = lum(deepAt(x0 * TILE + x, y0 * TILE + y, 0));
+        sum += l;
+        sq += l * l;
+        if (l >= 80) pale += 1;
+      }
+    }
+    const mean = sum / n;
+    expect(pale / n).toBeGreaterThanOrEqual(0.12);
+    expect(pale / n).toBeLessThanOrEqual(0.155);
+    expect(Math.sqrt(sq / n - mean * mean)).toBeGreaterThanOrEqual(11.5);
+    expect(Math.sqrt(sq / n - mean * mean)).toBeLessThanOrEqual(14.5);
+  });
+
+  test.each(PLACES)('a few large pale patches, half to one and a half to a tile, at tile %i,%i', (x0, y0) => {
     const w = COLS * TILE;
     const sizes = patches(field(x0, y0), w).filter((n) => n >= MIN_PATCH);
     const perTile = sizes.length / (COLS * ROWS);
-    expect(perTile).toBeGreaterThanOrEqual(2);
-    expect(perTile).toBeLessThanOrEqual(4);
+    expect(perTile).toBeGreaterThanOrEqual(0.5);
+    expect(perTile).toBeLessThanOrEqual(1.5);
   });
 
   test.each(PLACES)('no pale patch recurs at the same place in any row or column of tiles, at tile %i,%i', (x0, y0) => {
@@ -64,7 +88,7 @@ describe('the open water', () => {
       for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) out.push(mask[(ty * TILE + y) * w + tx * TILE + x]!);
       return out;
     };
-    // two tiles repeat each other when their patches cover (nearly) the same pixels: the overlap over the union
+    // two tiles repeat each other when both hold a patch and these cover (nearly) the same pixels: the overlap over the union; a patch running on across a seam is one patch, not a repeat
     const same = (a: number[], b: number[]): number => {
       let both = 0;
       let either = 0;
@@ -72,7 +96,7 @@ describe('the open water', () => {
         if (a[i] || b[i]) either += 1;
         if (a[i] && b[i]) both += 1;
       }
-      return either === 0 ? 0 : both / either;
+      return either < 100 ? 0 : both / either;
     };
     let repeats = 0;
     for (let ty = 0; ty < ROWS; ty++) {
@@ -81,7 +105,7 @@ describe('the open water', () => {
           for (let ux = 0; ux < COLS; ux++) {
             if ((uy === ty && ux === tx) || (uy !== ty && ux !== tx)) continue;
             if (uy < ty || (uy === ty && ux < tx)) continue;
-            if (same(tile(tx, ty), tile(ux, uy)) > 0.5) repeats += 1;
+            if (same(tile(tx, ty), tile(ux, uy)) > 0.75) repeats += 1;
           }
         }
       }

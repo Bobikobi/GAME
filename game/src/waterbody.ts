@@ -43,20 +43,22 @@ interface Layers {
   foam: Raster;
 }
 let layers: Layers | undefined;
-let cuts: { deep: number; light: number } | undefined;
+let cuts: { low: number; high: number } | undefined;
 
-/** The patches' two lattice spacings, in art pixels: broad soft drifts (about two to four to a tile) and a finer wobble that roughens their edge. */
-const PATCH_BIG = 14;
-const PATCH_SMALL = 7;
+/** The patches' two lattice spacings, in art pixels: a few broad soft drifts to a tile or two, and a finer wobble that roughens their edge. */
+const PATCH_BIG = 32;
+const PATCH_SMALL = 16;
 const PATCH_SEED = 41;
-/** The share of the open water that lies in a lighter patch, and in a deeper one. */
-const SHARE_PALE = 0.24;
-const SHARE_DEEP = 0;
-/** 2x2 ordered dither, as a share of the field's spread: a patch's edge is a soft stipple, not a line. */
-const BAYER = [0, 2, 3, 1].map((n) => (n + 0.5) / 4 - 0.5);
-const DITHER = 0.1;
+/** The share of the open water that lies in a pale patch's core, and the feather round it, in the field's own units (a few pixels). */
+const SHARE_PALE = 0.108;
+const FEATHER = 0.075;
+/** 4x4 ordered dither, 0 up to 1: a patch's feather steps from the base to the lighter step in sixteen densities, not one hard line. */
+export const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((n) => (n + 0.5) / 16);
 /** How far the study's body layer (at .65 texels to a pixel) roughens the field. */
-const GRAIN = 0.1;
+const GRAIN = 0.05;
+/** The glint levels that make a sparkle of the lighter steps: high, so only a handful show. */
+const SPARK_L = 0.42;
+const SPARK_M = 0.62;
 
 function read(): Layers {
   if (!layers) layers = { bed: decode(WATER_LAYERS.bed), body: decode(WATER_LAYERS.body), light: decode(WATER_LAYERS.light), foam: decode(WATER_LAYERS.foam) };
@@ -85,37 +87,41 @@ function fieldAt(l: Layers, gx: number, gy: number, frame: number): number {
   return big * 0.68 + small * 0.32 + grain * GRAIN;
 }
 
-/** The brightness that cuts the lighter patches off, and the one that cuts the deeper ones, from a sweep of the world's water. */
-function cutsOf(l: Layers): { deep: number; light: number } {
+/** The field's value above which a pixel is in a patch's core, and the one below which it is outside its feather, from a sweep of the world's water. */
+function cutsOf(l: Layers): { low: number; high: number } {
   if (!cuts) {
     const seen: number[] = [];
-    for (let y = 0; y < 1200; y += 6) for (let x = 0; x < 1200; x += 6) seen.push(fieldAt(l, x, y, 0));
+    for (let y = 0; y < 1600; y += 6) for (let x = 0; x < 1600; x += 6) seen.push(fieldAt(l, x, y, 0));
     seen.sort((p, q) => p - q);
-    cuts = { deep: seen[Math.floor(seen.length * SHARE_DEEP)]!, light: seen[Math.floor(seen.length * (1 - SHARE_PALE))]! };
+    const high = seen[Math.floor(seen.length * (1 - SHARE_PALE))]!;
+    cuts = { low: high - FEATHER, high };
   }
   return cuts;
 }
 
-/** True where the open water lies in a lighter patch at an art pixel (before the soft stipple of its edge): what the patches are, for counting them. */
-export function patchAt(gx: number, gy: number, frame = 0): boolean {
-  const l = read();
-  return fieldAt(l, gx, gy, frame) > cutsOf(l).light;
+/** How far into a pale patch an art pixel is, 0 (outside) to 1 (its core), across a feather of a few pixels. */
+function paleAt(l: Layers, gx: number, gy: number, frame: number): number {
+  const c = cutsOf(l);
+  return Math.min(1, Math.max(0, (fieldAt(l, gx, gy, frame) - c.low) / (c.high - c.low)));
 }
 
-/** The colour of the open water at an art pixel, in a frame (0 to 3): the teal body, a lighter or deeper step in the patches, the light layer's glints. */
+/** True where the open water lies in a pale patch at an art pixel, its feather's half counted: what the patches are, for counting them. */
+export function patchAt(gx: number, gy: number, frame = 0): boolean {
+  return paleAt(read(), gx, gy, frame) > 0.5;
+}
+
+/** The colour of the open water at an art pixel, in a frame (0 to 3): the teal base, the next step in the pale patches (dithered across their feather), the light layer's sparkles. */
 export function deepAt(gx: number, gy: number, frame: number): number {
   const l = read();
-  const c = cutsOf(l);
-  const v = fieldAt(l, gx, gy, frame) + BAYER[(gx & 1) + 2 * (gy & 1)]! * DITHER * (c.light - c.deep);
-  // the light layer's glints: where it is bright, and in the frame whose turn it is
+  // the light layer's sparkles: where it is bright, and in the frame whose turn it is
   const cell = hash(Math.floor(gx / SIZE) + 5, Math.floor(gy / SIZE) + 11);
   const li = (wrap(gy * 1.4 + (cell & 127)) * SIZE + wrap(gx + ((cell >>> 7) & 127))) * 3;
   const lv = (l.light.rgb[li]! + l.light.rgb[li + 1]! + l.light.rgb[li + 2]!) / 765;
   const pulse = 0.12 + 0.65 * Math.max(0, Math.sin((frame / FRAMES) * Math.PI * 2 + gx * 0.045 + gy * 0.018)) ** 6;
   const glint = Math.min(1, Math.max(0, (lv - 0.42) * 2.5)) * pulse;
-  if (glint > 0.62) return TEAL.m;
-  if (glint > 0.4) return TEAL.l;
-  return v < c.deep ? TEAL.h : v > c.light ? TEAL.j : TEAL.i;
+  if (glint > SPARK_M) return TEAL.m;
+  if (glint > SPARK_L) return TEAL.l;
+  return paleAt(l, gx, gy, frame) > BAYER4[(gx & 3) + 4 * (gy & 3)]! ? TEAL.j : TEAL.i;
 }
 
 /** One tile of the open water, RGBA, `px` a side, for a frame: the tile's place in the world is what it draws. */
