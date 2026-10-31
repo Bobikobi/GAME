@@ -473,18 +473,42 @@
       },
       "props/canopy_1": {
         "file": "props/canopy_1.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "green"
+        ],
+        "source": {
+          "spec": "tools/src/art/crowns.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:154"
+        }
       },
       "props/canopy_2": {
         "file": "props/canopy_2.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "green"
+        ],
+        "source": {
+          "spec": "tools/src/art/crowns.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:155"
+        }
       },
       "props/canopy_3": {
         "file": "props/canopy_3.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "green"
+        ],
+        "source": {
+          "spec": "tools/src/art/crowns.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:156"
+        }
       },
       "props/chest": {
         "file": "props/chest.png",
