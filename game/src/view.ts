@@ -23,6 +23,21 @@ export function cameraZoom(shortSide: number): number {
   return 4 * Math.ceil((3 * cameraK(shortSide)) / 2);
 }
 
+/** How many whole steps the wheel may come closer than the default view (CR-109): up to k + 2 of the screen's own step. */
+export const WHEEL_STEPS = 2;
+
+/** The wheel's step after one notch: a negative delta (the wheel away from the player) comes in, a positive one goes out, held to 0..WHEEL_STEPS. */
+export function wheelStep(step: number, deltaY: number): number {
+  if (deltaY < 0) return Math.min(WHEEL_STEPS, step + 1);
+  if (deltaY > 0) return Math.max(0, step - 1);
+  return step;
+}
+
+/** The zoom at a wheel step: the default view's own plus 4 per step, so every art pixel stays a whole block of device pixels. Step 0 is the view every player has. */
+export function wheelZoom(shortSide: number, step: number): number {
+  return cameraZoom(shortSide) + 4 * Math.min(WHEEL_STEPS, Math.max(0, Math.round(step)));
+}
+
 /** A world point as a CSS-pixel point on the page, for what the page lays over the world: the camera's zoom is in canvas pixels. */
 export function worldToPage(view: { x: number; y: number }, zoom: number, canvasPerCss: number, x: number, y: number): { x: number; y: number } {
   const k = zoom / canvasPerCss;
