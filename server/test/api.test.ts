@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { appearSlots, appears, gaitStepMs, makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type Gait, type State, type Tile } from '@game/kernel';
 import type { IncomingMessage, Server } from 'node:http';
 
@@ -796,5 +796,57 @@ describe('a state stored under older content (a new image of the server)', () =>
     expect(await read.json()).toEqual({ error: 'The race of this character is no longer in the game.', reason: 'refused' });
     expect(serialize(store.record.state)).toBe(before);
     expect(store.actionLog).toHaveLength(0);
+  });
+});
+
+describe('the players counter (GET /stats)', () => {
+  async function counted(counts: (now: number) => Promise<{ accounts: number; new_7d: number }>, clock = { now: 1_000_000 }) {
+    const store = new MemoryStore(started(), clock.now);
+    const loads: string[] = [];
+    const load = store.load.bind(store);
+    store.load = async (id) => { loads.push(id); return load(id); };
+    server = createGameApi({ bundle, store, now: () => clock.now, resolvePlayerId: async () => undefined, accountCounts: counts });
+    const address = await listen(server, 0);
+    return { base: `http://127.0.0.1:${address.port}`, loads };
+  }
+
+  test('answers the two counts to anyone, with no identity and no player row read, and lets a cache keep them a minute', async () => {
+    const { base, loads } = await counted(async () => ({ accounts: 12, new_7d: 3 }));
+    const response = await fetch(`${base}/stats`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('public, max-age=60');
+    expect(await response.json()).toEqual({ accounts: 12, new_7d: 3 });
+    expect(loads).toEqual([]);
+    expect((await fetch(`${base}/stats`, { method: 'POST' })).status).toBe(405);
+    expect((await fetch(`${base}/stats?who=all`)).status).toBe(400);
+  });
+
+  test('reads the store once a minute however often it is asked, and asks again after a failed read', async () => {
+    const clock = { now: 1_000_000 };
+    let reads = 0;
+    let failing = false;
+    const { base } = await counted(async () => {
+      reads++;
+      if (failing) throw new Error('the database is away');
+      return { accounts: reads, new_7d: 0 };
+    }, clock);
+    await Promise.all(Array.from({ length: 5 }, () => fetch(`${base}/stats`)));
+    expect(reads).toBe(1);
+    clock.now += 59_999;
+    expect(await (await fetch(`${base}/stats`)).json()).toEqual({ accounts: 1, new_7d: 0 });
+    clock.now += 1;
+    failing = true;
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const down = await fetch(`${base}/stats`).finally(() => quiet.mockRestore());
+    expect(down.status).toBe(503);
+    expect(down.headers.get('cache-control')).toBe('no-store');
+    failing = false;
+    expect(await (await fetch(`${base}/stats`)).json()).toEqual({ accounts: 3, new_7d: 0 });
+    expect(reads).toBe(3);
+  });
+
+  test('is not found where players are not accounts (the header mode passes no counter)', async () => {
+    const { base } = await api(started());
+    expect((await fetch(`${base}/stats`)).status).toBe(404);
   });
 });
