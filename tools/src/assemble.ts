@@ -15,6 +15,7 @@ import {
   type Params,
   type RecipeDef,
   type SpriteInfo,
+  type Telegraph,
   canonical,
   computeValues,
   hashText,
@@ -151,6 +152,9 @@ export function flattenParams(p: ParamsBody): Params {
         bite_ms: p.hazard.predator.bite_ms.value,
         bite_pct: p.hazard.predator.bite_pct.value,
         refill_bp: p.hazard.predator.refill_bp.value,
+        ...(p.hazard.predator.telegraph
+          ? { telegraph: Object.fromEntries(Object.entries(p.hazard.predator.telegraph).map(([k, v]) => [k, v.value])) as unknown as Telegraph }
+          : {}),
       },
       pit: { harm_pct: p.hazard.pit.harm_pct.value },
       trap: { harm_pct: p.hazard.trap.harm_pct.value },

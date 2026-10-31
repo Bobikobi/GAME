@@ -26,6 +26,7 @@ import {
   OWN_FIRE,
   fireBurns,
   hazardsOf,
+  lastDusk,
   headingOf,
   hourOf,
   inRect,
@@ -70,6 +71,7 @@ import type { GameSession } from '../session-surface';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
 import { soundscape } from '../soundscape';
+import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
 import { questTargets } from '../targets';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
@@ -471,6 +473,11 @@ export class WorldScene extends Phaser.Scene {
     /** what stays of a predator by day: its den mouth and the prints along its round */
     marks?: Phaser.GameObjects.Image[];
   }[] = [];
+  /** the threat telegraph's far and near beats, and its drawn bites (NEXT.md 12 c); made with the session's bundle */
+  private telegraph: Telegraph | undefined;
+  private bites: Bites | undefined;
+  /** the player's flinch at a bite, in game px, folded into the feet's origin */
+  private flinch: [number, number] = [0, 0];
   /** the reports a player standing still owes the kernel while a predator watches or a hunt runs */
   private readonly stillReports = new StandingReports();
   /** the lantern's light around the player, and the night it was lit for (G31) */
@@ -2003,6 +2010,8 @@ export class WorldScene extends Phaser.Scene {
     this.inside.clear();
     this.peek.end();
     this.lastAt = [...session.pos];
+    this.telegraph = new Telegraph(this.b);
+    this.bites = new Bites(this.b);
     this.unbind = [
       session.on('busy', ({ ms }) => {
         this.busyFrom = session.tick;
@@ -2010,6 +2019,7 @@ export class WorldScene extends Phaser.Scene {
         this.nextSwing = 0;
       }),
       session.on('events', (events) => {
+        this.biteDrawn(events);
         this.celebrate(events);
         for (const event of events) if (event.e === 'cue') this.playCue(event);
       }),
@@ -2060,7 +2070,9 @@ export class WorldScene extends Phaser.Scene {
       : st.bob === false
         ? 0
         : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000);
-    this.player.setOrigin(0.5, footOrigin(k) - (dy * (T / ART_PX)) / (this.player.displayHeight || 1));
+    // a bite's flinch moves the drawn player only, never where the body stands
+    const [fx, fy] = this.flinch;
+    this.player.setOrigin(0.5 - fx / (this.player.displayWidth || 1), footOrigin(k) - (dy * (T / ART_PX) + fy) / (this.player.displayHeight || 1));
   }
 
   /** The race's sprite for a direction, in the look the player picked (races wear today's sheets until their own art). */
@@ -2663,6 +2675,35 @@ export class WorldScene extends Phaser.Scene {
     const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
     for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
     sound.crackle(scape.crackle.level, scape.crackle.pan);
+    this.hearThreats(s);
+  }
+
+  /**
+   * The threat telegraph's far and near beats (NEXT.md 12 c): the prowl grows as the player comes near a drawn
+   * predator, whose eyes already show in the dark; after dark a far howl now and then, and the first of a night
+   * goes up in the toast band. The mute covers the sounds and never the toast.
+   */
+  private hearThreats(s: GameSession): void {
+    if (!this.telegraph) return;
+    const threats: Threat[] = [];
+    for (const h of this.hazards) {
+      if (h.kind !== 'predator' || !h.rule) continue;
+      threats.push({ id: h.rule.id, kind: 'predator', at: [h.spr.x / T, h.spr.y / T - 0.5], out: windowOpen(this.b, h.rule, s.tick) && this.wolfShown(h, s) });
+    }
+    const dusk = isNight(this.b, s.tick) ? lastDusk(this.b, s.tick) : null;
+    const heard = this.telegraph.hear(this.time.now, dusk, [this.player.x / T, this.player.y / T - 0.5], threats, s.state.player.chase?.hazard ?? null);
+    const prowl = heard.near.prowl;
+    sound.bed('prowl', prowl?.level ?? 0, prowl?.pan ?? 0);
+    if (!heard.far) return;
+    sound.sfx(heard.far.sfx, { gain: heard.far.gain, pan: heard.far.pan, heard: { owner: 'world' } });
+    if (heard.far.first) app.ui.toast(HOWL_LINE, 'info');
+  }
+
+  /** Beat 4 of the telegraph: each `hurt` from a predator starts one drawn bite, and the health meter shows it. */
+  private biteDrawn(events: readonly GameEvent[]): void {
+    const t = this.b.params.hazard.predator.telegraph;
+    if (!this.bites || !t) return;
+    if (this.bites.take(events, this.time.now).length > 0) app.ui.meterHit(t.hit_ms);
   }
 
   /** Draws B2's mist for the places the save leaves clear (src/mist.ts); a new texture only when they change, and a growing one in steps. */
@@ -3077,6 +3118,7 @@ export class WorldScene extends Phaser.Scene {
     const chase = s.state.player.chase;
     const since = chase ? s.tick - chase.since : -1;
     let alarmed: Phaser.GameObjects.Sprite | undefined;
+    let flinch: [number, number] = [0, 0];
     for (const h of this.hazards) {
       const { spr, rule, eyes, halo, flare } = h;
       const hunting = chase !== null && chase.hazard === rule?.id;
@@ -3088,7 +3130,13 @@ export class WorldScene extends Phaser.Scene {
       const [x, y] = drawn.at;
       const [hx, hy] = drawn.heading;
       const bottom = (y + 1) * T;
-      spr.setPosition(Math.round((x + 0.5) * T), Math.round(bottom)).setDepth(Math.round(bottom)).setVisible(this.wolfShown(h, s));
+      // a bite drawn (the telegraph's act): the wolf lunges at the player and the player flinches away, once
+      const pose = hunting && this.bites ? this.bites.pose(rule.id, this.time.now, RICH.motion) : undefined;
+      const [ux, uy] = this.towardPlayer(x, y);
+      if (pose) flinch = [ux * pose.flinch, uy * pose.flinch];
+      const lx = pose ? ux * pose.lunge : 0;
+      const ly = pose ? uy * pose.lunge : 0;
+      spr.setPosition(Math.round((x + 0.5) * T + lx), Math.round(bottom + ly)).setDepth(Math.round(bottom)).setVisible(this.wolfShown(h, s));
       if (!eyes) continue;
       const faceY = spr.y - spr.displayHeight * 0.55;
       // steady at full strength while awake (the owner's pick): no pulse, no blink
@@ -3099,6 +3147,18 @@ export class WorldScene extends Phaser.Scene {
     }
     this.bang.setVisible(alarmed !== undefined);
     if (alarmed) this.bang.setPosition(Math.round(alarmed.x), Math.round(alarmed.y - alarmed.displayHeight - 2));
+    if (flinch[0] !== this.flinch[0] || flinch[1] !== this.flinch[1]) {
+      this.flinch = flinch;
+      if (!this.falling) this.standOnFeet();
+    }
+  }
+
+  /** The unit step from a spot drawn at (x, y) in tiles toward the drawn player, or straight down when they meet. */
+  private towardPlayer(x: number, y: number): [number, number] {
+    const dx = this.player.x / T - 0.5 - x;
+    const dy = this.player.y / T - 1 - y;
+    const d = Math.hypot(dx, dy);
+    return d < 1e-6 ? [0, 1] : [dx / d, dy / d];
   }
 
   /** The ground a drawn wolf runs on (`huntGround`), worked out again only when a mend or the camp changes it. */

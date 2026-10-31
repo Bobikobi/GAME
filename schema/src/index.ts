@@ -1504,6 +1504,30 @@ export const ParamsBody = Type.Object(
               description:
                 'How high a hunt outrun to a safe place lifts health, in basis points of the health cap: it gives back what its bites took, up to this share. It never lowers health.',
             },
+            telegraph: Type.Optional(
+              Type.Object(
+                {
+                  howl_tiles: { ...Bounded, description: 'From this many tiles on, a predator\'s far howl is not heard; nearer it is louder, and above 0 at 12 tiles.' },
+                  howl_pct: { ...Bounded, description: 'The far howl\'s level beside its cause, in percent of the effect\'s whole level.' },
+                  howl_gap_min_s: { ...Bounded, description: 'The shortest wait between two far howls, in seconds of the wall clock.' },
+                  howl_gap_max_s: { ...Bounded, description: 'The longest wait between two far howls, in seconds of the wall clock.' },
+                  near_tiles: { ...Bounded, description: 'Inside this many tiles of a predator the rising layer (breath, a twig, a padding) is heard; 0 beyond.' },
+                  near_pct: { ...Bounded, description: 'The rising layer\'s level beside the predator, in percent of the bed\'s whole level.' },
+                  near_curve: { ...Bounded, description: 'How steeply the rising layer grows as the player comes closer: its level is the share of `near_tiles` closed, to this power.' },
+                  dash_ms: { ...Bounded, description: 'The fastest a drawn predator runs to stand beside the player by the next bite, in game milliseconds a tile.' },
+                  lunge_ms: { ...Bounded, description: 'How long a drawn bite\'s lunge lasts, in milliseconds.' },
+                  lunge_px: { ...Bounded, description: 'How far the predator lunges at the player, in game pixels.' },
+                  flinch_ms: { ...Bounded, description: 'How long the player\'s flinch at a bite lasts, in milliseconds.' },
+                  flinch_px: { ...Bounded, description: 'How far the player flinches back, in game pixels.' },
+                  hit_ms: { ...Bounded, description: 'How long the health meter shows a bite, in milliseconds.' },
+                },
+                {
+                  additionalProperties: false,
+                  description:
+                    'The threat telegraph (NEXT.md 12 c): how a predator is heard far off and near, and how its bite is drawn. Read by the client only; the kernel decides every sight, bite and safe place.',
+                },
+              ),
+            ),
           },
           { additionalProperties: false },
         ),
