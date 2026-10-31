@@ -8,7 +8,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import {
   type Collected, type Draft, DraftIndex, type Gh, annotateWrongDraws, assetName, collectLine, collectPictures, draftId, fetchDrafts,
-  foldIndex, gpuSecondsSince, indexGrewOnly, noteDraft, parseIndex, parseRunLog, pacing, pngDims, pushCollected, sha256Hex, tagFor,
+  foldIndex, gpuSecondsSince, runCli, indexGrewOnly, noteDraft, parseIndex, parseRunLog, pacing, pngDims, pushCollected, sha256Hex, tagFor,
   verifyDrafts, verifyExitCode, verifyText, wrongDrawOrphans, wrongDrawsText,
 } from '../src/art/drafts.js';
 
@@ -266,6 +266,51 @@ describe('the drafts repo: push, fetch, verify', () => {
     });
     // the second run has the same kernel run id in the fixture, so both share a release
     expect([...store.keys()]).toEqual([tag]);
+  });
+
+  test('a jpg and a glb are drafts too: the store keeps their extension, fetch and verify find them', () => {
+    const { gh, store } = fakeGh();
+    const index = DraftIndex.open(join(folder('index-ext'), 'drafts.jsonl'));
+    const dir = folder('ext-pictures');
+    writeFileSync(join(dir, 'look.jpg'), Buffer.from('not really a jpeg'));
+    writeFileSync(join(dir, 'model.glb'), Buffer.from('glTF fake model'));
+    writeFileSync(join(dir, 'notes.txt'), 'skip me');
+    const skipped: { name: string; why: string }[] = [];
+    const items = collectPictures([join(dir, 'look.jpg'), join(dir, 'model.glb'), join(dir, 'notes.txt')], { label: 'ext', skipped });
+    expect(items.map((i) => i.record.files.raw.ext)).toEqual(['.jpg', '.glb']);
+    expect(skipped.map((x) => x.name)).toEqual(['notes.txt']);
+    const report = pushCollected(items, index, { gh });
+    expect(report.uploaded).toBe(2);
+    const [jpg, glb] = items;
+    expect(index.drafts.get(jpg!.record.id)?.stored?.assets.raw).toBe(`${jpg!.record.id}.jpg`);
+    expect(index.drafts.get(glb!.record.id)?.stored?.assets.raw).toBe(`${glb!.record.id}.glb`);
+    expect([...(store.get(index.drafts.get(jpg!.record.id)!.stored!.tag)?.keys() ?? [])].sort()).toEqual([`${jpg!.record.id}.jpg`, `${glb!.record.id}.glb`].sort());
+    const cache = folder('cache-ext');
+    const verified = verifyDrafts(index, null, { gh, cache });
+    expect(verified.ok).toBe(2);
+    expect(verifyExitCode(verified)).toBe(0);
+  });
+
+  test('a run folder pushed with --recursive also gives its sub-folders\' pictures; without it only the manifest\'s', () => {
+    const fx = runFolder({ seed: 5, name: 'urn' });
+    writeFileSync(join(fx.dir, 'manifest.jsonl'), `${JSON.stringify(fx.line)}\n`);
+    mkdirSync(join(fx.dir, 'refinement'), { recursive: true });
+    writeFileSync(join(fx.dir, 'refinement', 'urn-v2.png'), picture(77));
+    const before = process.env['ART_DRAFTS_INDEX'];
+    try {
+      const flat = join(folder('idx-flat'), 'drafts.jsonl');
+      process.env['ART_DRAFTS_INDEX'] = flat;
+      runCli(['push', fx.dir, '--label', 'urn', '--no-upload']);
+      const deep = join(folder('idx-deep'), 'drafts.jsonl');
+      process.env['ART_DRAFTS_INDEX'] = deep;
+      runCli(['push', fx.dir, '--label', 'urn', '--recursive', '--no-upload']);
+      expect(DraftIndex.open(flat).drafts.size).toBe(1);
+      expect(DraftIndex.open(deep).drafts.size).toBeGreaterThan(1);
+      expect([...DraftIndex.open(deep).drafts.values()].some((d) => d.sources.some((x) => x.file === 'urn-v2.png'))).toBe(true);
+    } finally {
+      if (before === undefined) delete process.env['ART_DRAFTS_INDEX'];
+      else process.env['ART_DRAFTS_INDEX'] = before;
+    }
   });
 
   test('a second push uploads nothing, and never overwrites', () => {

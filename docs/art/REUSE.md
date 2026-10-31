@@ -91,7 +91,9 @@ store, `Bobikobi/GAME-art-drafts` (private, releases only) with its index
   `pnpm art:stray` lists every art file under a registered worktree's `.scratch`,
   `assets/gen` or run folder whose hash is not in the index (exit 1 when any, 0 when
   none), and `pnpm check` prints its count as a `!` line: run it before removing a
-  worktree, and push what it names.
+  worktree, and push what it names. Build output (`dist*`, `*-dist`) and captures
+  (`e2e*`, `shots*`, and those taken for a pick or a review: `refs`, `ref-*`,
+  `stills*`, `owner-*`, `*-pick`) are regenerable and are not listed.
 - **Review states are the sorting.** `keep` is the library of good material;
   `reuse-parts` names the part worth cutting out; `rework` and `archive` stay
   retrievable. A drawing that fails its brief but is clean keeps a tag for its
