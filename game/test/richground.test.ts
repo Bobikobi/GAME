@@ -184,17 +184,18 @@ describe('tone remap', () => {
           base += 1;
           if (now !== was) changed += 1;
         } else {
-          expect(now).toBe(tone === 1 ? GREENS[2] : GREENS[4]);
+          // the light green steps a hatch of its pixels, the rest stay (the flat meadow must not tone as a block)
+          expect([was, tone === 1 ? GREENS[2] : GREENS[4]]).toContain(now);
         }
         if (p % W >= FRAME) expect(now).toBe(pixel(data, p - FRAME));
       }
       const share = changed / base;
       if (tone === 1) {
-        expect(share).toBeGreaterThan(0.2);
-        expect(share).toBeLessThan(0.5);
+        expect(share).toBeGreaterThan(0.08);
+        expect(share).toBeLessThan(0.3);
       } else {
-        expect(share).toBeGreaterThan(0.15);
-        expect(share).toBeLessThan(0.4);
+        expect(share).toBeGreaterThan(0.08);
+        expect(share).toBeLessThan(0.3);
       }
     }
   });

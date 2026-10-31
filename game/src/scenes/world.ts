@@ -49,9 +49,9 @@ import { sound, type Heard, type Owner, type SfxId, type SongId } from '../audio
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
-import { sunAt, sunTableOf } from '../cast';
+import { castsShadow, sunAt, sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
-import { HOLE, LIGHT_POOL, READ, SHAFT, bankAt, cloudAt, dappleAt, frameAt, nightAt, shadeAt, shaftAt, tableOf } from '../light';
+import { HOLE, LIGHT_POOL, READ, SHAFT, bankAt, cloudAt, dappleAt, frameAlpha, frameAt, nightAt, shadeAt, shaftAt, tableOf } from '../light';
 import { LightLayer, litWindow, type Light } from '../light-layer';
 import { Flame, Sway, installMotion } from '../motion';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
@@ -62,6 +62,7 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
+import { BANK_EDGE, EDGE_PX, PATH_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -118,14 +119,10 @@ const PALETTE = {
 /** The ground tags whose tiles, props or canopies draw the colours the sway moves (richground.ts `MOVES`). */
 const SWAYS = new Set(['meadow', 'grove', 'water', 'riverbank']);
 
-/** Props that lie on the ground and cast no shadow, by sprite name. */
-const FLAT = new Set([
-  'flowers', 'flowers_white', 'flowers_blue', 'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
-  'log_fallen', 'log_mossy', 'grass_tall', 'dig_spot', 'fog', 'reeds', 'herb_plant', 'fence', 'fence_post', 'campfire_lit', 'campfire_unlit',
-]);
 /** Where the smoke leaves house_small: the chimney top, in pixels of the 48x48 sprite (read from the art). */
 const CHIMNEY = { x: 37, y: 6 };
 /** Edge strips are named by the side of the tile they sit on. */
+const DIRS_8: readonly (readonly [number, number])[] = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
 const SIDES: readonly [string, number, number][] = [['n', 0, -1], ['e', 1, 0], ['s', 0, 1], ['w', -1, 0]];
 
 export interface Target {
@@ -806,6 +803,27 @@ export class WorldScene extends Phaser.Scene {
       if (gd === 1) tex.drawFrame(ref, frame, x, y, false);
       else drawScaled(tex, ref, frame, x * gd, y * gd, gd / density);
     };
+    // the edges drawn per pixel (pathedge.ts): each pair of grounds that meet, `a` the side the field counts as 1, in the order looked for
+    // the sand is one ground whatever its tag (the river's bank, the ruin's floor)
+    const kindOf = (t: { sprite: string; tag: string } | undefined): string | undefined => (t === undefined ? undefined : baseName(t.sprite) === 'sand' ? 'sand' : t.tag);
+    const EDGES: readonly { a: string; b: string; look: EdgeLook; at: PathAt }[] = ([
+      ['path', 'meadow', PATH_EDGE],
+      ['sand', 'meadow', BANK_EDGE],
+      ['grove', 'meadow', WOOD_EDGE],
+      ['path', 'sand', BANK_EDGE],
+      ['path', 'grove', WOOD_EDGE],
+    ] as const).map(([a, b, look]) => ({
+      a,
+      b,
+      look,
+      at: (x: number, y: number) => {
+        const k = kindOf(at(x, y));
+        return k === a ? 1 : k === b ? 0 : undefined;
+      },
+    }));
+    const grassTile = tiles.find((t) => t.tag === 'meadow' && baseName(t.sprite) === 'grass');
+    const grassSprites = grassTile ? [grassTile.sprite, ...(variants.get(grassTile.sprite) ?? [])] : [];
+    const withVariants = (sprite: string): string[] => [sprite, ...(variants.get(sprite) ?? [])];
     // paints the tiles of a rectangle of the map into a canvas whose corner is that rectangle's; true when any is animated
     const paint = (tex: Phaser.Textures.CanvasTexture, frame: number, tx0: number, ty0: number, tw: number, th: number): boolean => {
       let animated = false;
@@ -824,8 +842,30 @@ export class WorldScene extends Phaser.Scene {
           const tone = tones?.[y * m.width + x] ?? 0;
           const key = tone === 1 || tone === 2 ? (this.toned(sprite, tone) ?? sprite) : sprite;
           if (info.frames > 1) animated = true;
-          put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
-          if (RICH.detail && this.drawEdges(put, tex, x - tx0, y - ty0, x, y, tile.sprite, tile.tag, frame)) animated = true;
+          // a path meeting a meadow is drawn per pixel (pathedge.ts), not as tiles with strips over them
+          let blended = false;
+          // a tile that meets two kinds of ground (a sand tile between a path and a meadow) takes each blend in turn
+          let cur: Uint8ClampedArray | null = null;
+          if (RICH.detail && gd === 4) {
+            for (const edge of EDGES) {
+              const kind = kindOf(tile);
+              if (kind !== edge.a && kind !== edge.b) continue;
+              // the other side's sprite: the neighbour's kind of ground (a meadow's own is the plain grass)
+              const side = kind === edge.a ? edge.b : edge.a;
+              const near = DIRS_8.map(([dx, dy]) => at(x + dx, y + dy)).find((t) => kindOf(t) === side);
+              if (!near) continue;
+              const mine = kind === 'meadow' ? key : sprite;
+              const theirs = side === 'meadow' ? grassSprites : withVariants(near.sprite);
+              const next: Uint8ClampedArray | null = this.blendTile(x, y, kind === edge.a ? 1 : 0, cur ?? mine, edge, theirs);
+              if (next) {
+                cur = next;
+                blended = true;
+              }
+            }
+            if (cur) tex.putData(new ImageData(cur as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
+          }
+          if (!blended) put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
+          if (RICH.detail && this.drawEdges(put, tex, x - tx0, y - ty0, x, y, tile.sprite, tile.tag, frame, blended)) animated = true;
         }
       }
       // one crown over each block of four forest tiles; the eyes still watch from the forest's edge
@@ -870,6 +910,48 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** The pixels of the first frame of a ground sprite (or of a toned copy of it), cached. */
+  private pixelCache = new Map<string, Uint8ClampedArray | null>();
+  private pixelsOf(ref: string): Uint8ClampedArray | null {
+    const hit = this.pixelCache.get(ref);
+    if (hit !== undefined) return hit;
+    let out: Uint8ClampedArray | null = null;
+    const f = this.textures.exists(ref) ? this.textures.getFrame(ref, this.b.sprites[ref]?.frames && this.b.sprites[ref]!.frames > 1 ? 0 : undefined) : null;
+    if (f && f.cutWidth === EDGE_PX && f.cutHeight === EDGE_PX) {
+      const cut = f.canvasData as { x: number; y: number };
+      const c = document.createElement('canvas');
+      c.width = EDGE_PX;
+      c.height = EDGE_PX;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(f.source.image as CanvasImageSource, cut.x, cut.y, EDGE_PX, EDGE_PX, 0, 0, EDGE_PX, EDGE_PX);
+        out = ctx.getImageData(0, 0, EDGE_PX, EDGE_PX).data;
+      }
+    }
+    this.pixelCache.set(ref, out);
+    return out;
+  }
+
+  /**
+   * A ground tile that has another kind within a tile of it, as one blended tile (pathedge.ts): its pixels and the
+   * other kind's, cut along the smooth edge. Null when the tile needs none or a sprite is not a single 64 px frame,
+   * so the caller draws it plain.
+   */
+  private blendTile(x: number, y: number, own: 0 | 1, mine: Uint8ClampedArray | string, edge: { look: EdgeLook; at: PathAt }, others: readonly string[]): Uint8ClampedArray | null {
+    if (!needsBlend(x, y, edge.at, own)) return null;
+    const h = hash(x, y);
+    const theirs = others.length === 0 ? undefined : others[(h >>> 3) % others.length];
+    const mineLocal = typeof mine === 'string' ? this.pixelsOf(mine) : mine;
+    const theirsLocal = theirs === undefined ? null : this.pixelsOf(theirs);
+    if (!mineLocal || !theirsLocal) return null;
+    const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+    // the field counts the ground (a) as 1: its pixels are the "path" side of the blend, the other's the grass side
+    if (own === 1) blendEdgeTile(x, y, edge.at, own, mineLocal, theirsLocal, out, edge.look);
+    else blendEdgeTile(x, y, edge.at, own, theirsLocal, mineLocal, out, edge.look);
+    return out;
+  }
+
   /**
    * Edge strips over a tile, one per side, read from the four neighbours: a bank
    * where water meets land, a fringe of grass over a path, cobble, sand or ruin floor
@@ -887,6 +969,7 @@ export class WorldScene extends Phaser.Scene {
     sprite: string,
     tag: string,
     frame: number,
+    blended = false,
   ): boolean {
     const m = this.b.map;
     const kit = kitOf(sprite);
@@ -898,6 +981,7 @@ export class WorldScene extends Phaser.Scene {
       const near = m.legend[m.ground[y + dy]?.[x + dx] ?? ''];
       if (!near) continue;
       let ref: string | undefined;
+      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path'))) continue;
       if (kind === 'bank' && near.tag !== 'water') ref = `${kit}tiles/bank_${side}`;
       else if (kind === 'fringe' && (near.tag === 'meadow' || near.tag === 'grove')) ref = `${kit}tiles/fringe_${side}`;
       else if (kind === 'worn' && near.tag === 'path') ref = `${kit}tiles/worn_${side}`;
@@ -1267,7 +1351,7 @@ export class WorldScene extends Phaser.Scene {
       const key = obj.texture.key;
       if (!key || key.startsWith('fx-') || key.startsWith('senses-') || key.startsWith('cast-') || key.startsWith('cast:')) continue;
       if (key === '__DEFAULT' || key === '__WHITE' || key.startsWith('ground-')) continue;
-      if (FLAT.has(baseName(key))) continue;
+      if (!castsShadow(key)) continue;
       const depth = obj.depth;
       if (depth < DEPTH.flat || depth > 1000) continue;
       // a dig spot and a puff lie at 3 and 3.5; the props and the people stand at their own feet
@@ -1863,7 +1947,8 @@ export class WorldScene extends Phaser.Scene {
     // holds the player in the middle), as the shade does
     const view = this.cameras.main.worldView;
     const ring = this.light && this.night > 0 && view.width > 0 ? { x: (READ.ring * T) / view.width, y: (READ.ring * T) / view.height } : undefined;
-    const key = `${w}x${h}:${strength.toFixed(2)}:${radius.toFixed(2)}:${ring ? `${ring.x.toFixed(3)},${ring.y.toFixed(3)}` : ''}`;
+    const night = this.night;
+    const key = `${w}x${h}:${strength.toFixed(2)}:${radius.toFixed(2)}:${night.toFixed(2)}:${ring ? `${ring.x.toFixed(3)},${ring.y.toFixed(3)}` : ''}`;
     if (key === this.frameKey) return;
     this.frameKey = key;
     let tex = this.textures.exists('fx-frame') ? (this.textures.get('fx-frame') as Phaser.Textures.CanvasTexture) : undefined;
@@ -1882,7 +1967,7 @@ export class WorldScene extends Phaser.Scene {
         data.data[i + 1] = (PALETTE.ink >> 8) & 255;
         data.data[i + 2] = PALETTE.ink & 255;
         const inRing = ring !== undefined && Math.hypot(((x + 0.5) / w - 0.5) / ring.x, ((y + 0.5) / h - 0.5) / ring.y) <= 1;
-        data.data[i + 3] = inRing ? 0 : Math.round(255 * (d <= radius ? Math.max(0, Math.sin((d / radius) * 3.14 * strength)) : 1));
+        data.data[i + 3] = inRing ? 0 : Math.round(255 * frameAlpha(d, this.frameLook, night));
       }
     }
     ctx.putImageData(data, 0, 0);
