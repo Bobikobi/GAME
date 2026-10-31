@@ -30,12 +30,15 @@ export interface MotifSpec {
   /** How often this motif is picked among the others (default 1). */
   weight?: number;
   detail?: string;
+  /** Drawn in the fine pass (`fine_cell`), a second scatter over the first, so a small stroke can be dense. */
+  fine?: boolean;
 }
 
 export interface Motif {
   name: string;
   weight: number;
   grid: Grid;
+  fine?: boolean;
 }
 
 export interface Speckle {
@@ -60,6 +63,10 @@ export interface ScatterEntry {
   cell?: number;
   /** The share of cells that hold a motif (default 0.85). */
   chance?: number;
+  /** The fine pass: motifs marked `fine` go here, one at most per cell of this many art pixels (default half of `cell`). */
+  fine_cell?: number;
+  /** The share of fine cells that hold a motif (default 0.9). */
+  fine_chance?: number;
   speckles?: Speckle[];
   motifs?: MotifSpec[];
 }
@@ -68,6 +75,8 @@ export interface Scatter {
   base: string;
   cell: number;
   chance: number;
+  fineCell?: number;
+  fineChance?: number;
   speckles: readonly Speckle[];
   /** Art pixels in one side of a tile: `per_tile` is counted over a tile's area. */
   tile: number;
@@ -91,6 +100,8 @@ export function scatterProblem(entry: ScatterEntry): string | null {
   if (!Number.isInteger(cell) || cell < 4) return 'cell must be an integer from 4';
   if (entry.width !== entry.height) return 'a scatter tile is square';
   if (entry.width % cell !== 0) return `cell ${cell} must divide the tile's ${entry.width}`;
+  const fineCell = entry.fine_cell ?? cell / 2;
+  if (!Number.isInteger(fineCell) || fineCell < 4 || entry.width % fineCell !== 0) return `fine_cell ${fineCell} must be an integer from 4 that divides the tile's ${entry.width}`;
   if (!isLetter(entry.base)) return 'base must be a palette letter';
   const variants = entry.variants ?? 4;
   if (entry.names !== undefined && !(Array.isArray(entry.names) && entry.names.every((n) => typeof n === 'string' && /^[a-z][a-z0-9_]*$/u.test(n)))) return 'names must be a list of lowercase names';
@@ -111,8 +122,9 @@ export function scatterProblem(entry: ScatterEntry): string | null {
     if (seen.has(m.name)) return `motif "${m.name}" appears twice`;
     seen.add(m.name);
     if (typeof m.what !== 'string' || m.what.trim() === '') return `motif "${m.name}" must say what it is`;
+    const reach = m.fine === true ? fineCell : cell;
     for (const side of [m.width, m.height]) {
-      if (!Number.isInteger(side) || side < 1 || side > cell) return `motif "${m.name}" is at most the ${cell} px cell on a side`;
+      if (!Number.isInteger(side) || side < 1 || side > reach) return `motif "${m.name}" is at most the ${reach} px cell on a side`;
     }
     if (m.weight !== undefined && !(typeof m.weight === 'number' && m.weight > 0)) return `motif "${m.name}" weight must be above 0`;
   }
@@ -200,26 +212,33 @@ const mod = (n: number, m: number): number => ((n % m) + m) % m;
  * period square, x0 and y0 only roll it, and cell `n` is cell 0 again.
  */
 export function place(s: Scatter, x0: number, y0: number, w: number, h: number, period: number | null): Placed[] {
-  const seed = seedOf(s.seed);
-  const total = s.motifs.reduce((sum, m) => sum + m.weight, 0);
-  const cells = period === null ? null : period / s.cell;
-  const from = (v: number): number => (cells === null ? Math.floor(v / s.cell) - 1 : 0);
-  const to = (v: number, n: number | null): number => (n === null ? Math.floor(v / s.cell) + 1 : n - 1);
   const placed: Placed[] = [];
-  for (let cy = from(y0); cy <= to(y0 + h, cells); cy += 1) {
-    for (let cx = from(x0); cx <= to(x0 + w, cells); cx += 1) {
-      if (hash(seed, cx, cy, 1) >= s.chance) continue;
-      let pick = hash(seed, cx, cy, 2) * total;
-      const motif = s.motifs.find((m) => (pick -= m.weight) < 0) ?? s.motifs[s.motifs.length - 1];
-      if (motif === undefined) continue;
-      const mw = motif.grid[0]?.length ?? 0;
-      const mh = motif.grid.length;
-      placed.push({
-        x: cx * s.cell + Math.floor(hash(seed, cx, cy, 4) * s.cell) - Math.floor(mw / 2),
-        y: cy * s.cell + Math.floor(hash(seed, cx, cy, 5) * s.cell) - Math.floor(mh / 2),
-        motif,
-        flip: hash(seed, cx, cy, 3) < 0.5,
-      });
+  const layers: [Motif[], number, number, string][] = [
+    [s.motifs.filter((m) => m.fine !== true), s.cell, s.chance, ''],
+    [s.motifs.filter((m) => m.fine === true), s.fineCell ?? s.cell / 2, s.fineChance ?? 0.9, ':fine'],
+  ];
+  for (const [motifs, cell, chance, salt] of layers) {
+    if (motifs.length === 0) continue;
+    const seed = seedOf(s.seed + salt);
+    const total = motifs.reduce((sum, m) => sum + m.weight, 0);
+    const cells = period === null ? null : period / cell;
+    const from = (v: number): number => (cells === null ? Math.floor(v / cell) - 1 : 0);
+    const to = (v: number, n: number | null): number => (n === null ? Math.floor(v / cell) + 1 : n - 1);
+    for (let cy = from(y0); cy <= to(y0 + h, cells); cy += 1) {
+      for (let cx = from(x0); cx <= to(x0 + w, cells); cx += 1) {
+        if (hash(seed, cx, cy, 1) >= chance) continue;
+        let pick = hash(seed, cx, cy, 2) * total;
+        const motif = motifs.find((m) => (pick -= m.weight) < 0) ?? motifs[motifs.length - 1];
+        if (motif === undefined) continue;
+        const mw = motif.grid[0]?.length ?? 0;
+        const mh = motif.grid.length;
+        placed.push({
+          x: cx * cell + Math.floor(hash(seed, cx, cy, 4) * cell) - Math.floor(mw / 2),
+          y: cy * cell + Math.floor(hash(seed, cx, cy, 5) * cell) - Math.floor(mh / 2),
+          motif,
+          flip: hash(seed, cx, cy, 3) < 0.5,
+        });
+      }
     }
   }
   return placed;
