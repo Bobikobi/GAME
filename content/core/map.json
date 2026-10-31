@@ -1824,22 +1824,6 @@
       {
         "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
-        "y": 5,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
-        "y": 10,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
         "y": 24,
         "w": 1,
         "h": 1,
@@ -1854,38 +1838,6 @@
         "h": 1,
         "solid": false,
         "cover": true
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 7,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 12,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 21,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 27,
-        "w": 1,
-        "h": 1,
-        "solid": false
       },
       {
         "sprite": "core/base-kit:props/pebbles",
@@ -2099,94 +2051,6 @@
       },
       {
         "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 13,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 15,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 11,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 14,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 20,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
-        "y": 7,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
-        "y": 9,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
-        "y": 6,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 31,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 30,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 32,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 29,
         "w": 1,
@@ -2238,38 +2102,6 @@
         "h": 1,
         "solid": false,
         "cover": true
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 26,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 22,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 23,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 25,
-        "w": 1,
-        "h": 1,
-        "solid": false
       },
       {
         "sprite": "core/base-kit:props/pebbles",
@@ -3777,30 +3609,6 @@
       },
       {
         "sprite": "core/base-kit:props/grass_tall_c",
-        "x": 16,
-        "y": 33,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall_c",
-        "x": 16,
-        "y": 29,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 28,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall_c",
         "x": 3,
         "y": 5,
         "w": 1,
@@ -3848,22 +3656,6 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 3,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall_b",
-        "x": 16,
-        "y": 4,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/grass_tall_c",
         "x": 20,
         "y": 3,
@@ -3872,24 +3664,8 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/grass_tall_c",
-        "x": 16,
-        "y": 5,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/grass_tall",
         "x": 20,
-        "y": 6,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
         "y": 6,
         "w": 1,
         "h": 1,
@@ -3910,6 +3686,214 @@
         "w": 2,
         "h": 1,
         "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 12,
+        "y": 2,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 5,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 12,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 9,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 12,
+        "y": 10,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 14,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 12,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 11,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_c",
+        "x": 11,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 10,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 11,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 16,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_c",
+        "x": 16,
+        "y": 5,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 16,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 17,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 16,
+        "y": 10,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_c",
+        "x": 16,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 17,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 18,
+        "y": 17,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 16,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_c",
+        "x": 16,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 17,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": false
       }
     ],
     "creatures": {
