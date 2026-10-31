@@ -56,8 +56,10 @@ function rules(file: string): Rule[] {
         for (const ch of head) {
           if (ch === '(') level++;
           if (ch === ')') level--;
-          if (ch === ',' && !level) (selectors.push(cur.replace(/\s+/g, ' ').trim()), (cur = ''));
-          else cur += ch;
+          if (ch === ',' && !level) {
+            selectors.push(cur.replace(/\s+/g, ' ').trim());
+            cur = '';
+          } else cur += ch;
         }
         selectors.push(cur.replace(/\s+/g, ' ').trim());
         const decl: Record<string, string> = {};
