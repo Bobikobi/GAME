@@ -7,6 +7,8 @@ import type { AmbienceKind } from './ambience';
 import { MusicPlayer, renderSong } from './player';
 import { jingles, songs } from './songs';
 import { playSfx } from './sfx';
+import { gapAllows, hearing } from './heard';
+import type { Heard } from './heard';
 import type { SfxId, SfxOptions } from './sfx';
 import { readMuted, writeMuted } from './storage';
 import { PiecePlayer } from './pieces-player';
@@ -16,11 +18,12 @@ import type { SoundStorage } from './storage';
 
 /** The music by state's pieces, by their song ids: the valley's tune is the routine, the chase is a fight (state.ts). */
 export type SongId = 'valley' | 'night' | 'hunting' | 'chase' | 'near-death';
+export type { JingleId, Heard, Owner } from './heard';
+import type { JingleId } from './heard';
 export type { MusicSource } from './source';
 export type { MusicState } from './state';
 
 const STATE_OF = Object.fromEntries(Object.entries(SONG_OF).map(([state, song]) => [song, state])) as Record<SongId, MusicState>;
-export type JingleId = 'level' | 'quest' | 'found';
 export type { SfxId } from './sfx';
 export type { BedId } from './beds';
 
@@ -38,6 +41,8 @@ export interface SoundState {
   lastSfx: string | null;
   /** how many of each effect were asked for, and how many of those actually sounded (not muted, not locked) */
   asked: Record<string, number>;
+  /** how many asks were silent by rule (SOUND.md 1.3, 1.4): another player's own cue, too far, or inside its gap */
+  silenced: Record<string, number>;
   counts: Record<string, number>;
   /** each position bed's level, 0 to 1, as the player's place asks for it */
   beds: Record<BedId, number>;
@@ -66,7 +71,8 @@ export interface SoundApi {
   readonly source: MusicSource;
   setSource(source: MusicSource): void;
   jingle(id: JingleId): void;
-  sfx(id: SfxId, opts?: SfxOptions): void;
+  /** Plays an effect; `heard` says whose cause it is and how far, and the level follows (SOUND.md section 1.4). */
+  sfx(id: SfxId, opts?: SfxOptions & { heard?: Heard }): void;
   ambience(kind: AmbienceKind | null): void;
   /** Sets a position bed (campfire, stream, ruins) to a level 0..1 and a stereo pan -1..1. */
   bed(id: BedId, level: number, pan?: number): void;
@@ -96,6 +102,9 @@ let appliedAmbience: AmbienceKind | null = null;
 let playedCount = 0;
 const asked: Record<string, number> = {};
 const played: Record<string, number> = {};
+const silenced: Record<string, number> = {};
+/** when each effect last sounded, in ms of the page's clock, for the gap of a repeated cause */
+const lastSounded: Partial<Record<SfxId, number>> = {};
 const bedRequests: Record<BedId, { level: number; pan: number }> = {
   fire: { level: 0, pan: 0 },
   stream: { level: 0, pan: 0 },
@@ -254,13 +263,24 @@ function jingle(id: JingleId): void {
   lastPlayed = id;
 }
 
-function sfx(id: SfxId, options: SfxOptions = {}): void {
+function sfx(id: SfxId, options: SfxOptions & { heard?: Heard } = {}): void {
   loadPreference();
   asked[id] = (asked[id] ?? 0) + 1;
+  const { heard, ...rest } = options;
+  const how = hearing(id, heard);
+  const now = typeof performance === 'undefined' ? Date.now() : performance.now();
+  if (!how || !gapAllows(id, now, lastSounded[id])) {
+    silenced[id] = (silenced[id] ?? 0) + 1;
+    return;
+  }
+  lastSounded[id] = now;
   if (!context || context.state !== 'running' || isMuted || !graph) return;
+  const lowpass = how.lowpass === undefined ? rest.lowpass : Math.min(how.lowpass, rest.lowpass ?? how.lowpass);
   playSfx(context, graph.effects, id, context.currentTime, {
-    ...options,
-    detune: options.detune ?? Math.random() * 80 - 40,
+    ...rest,
+    gain: (rest.gain ?? 1) * how.gain,
+    lowpass,
+    detune: rest.detune ?? Math.random() * 80 - 40,
   });
   playedCount += 1;
   played[id] = (played[id] ?? 0) + 1;
@@ -319,6 +339,7 @@ function state(): SoundState {
     sfxCount: playedCount,
     lastSfx: lastPlayed,
     asked: { ...asked },
+    silenced: { ...silenced },
     counts: { ...played },
     beds: { fire: bedRequests.fire.level, stream: bedRequests.stream.level, dread: bedRequests.dread.level },
     crackle: crackleRequest.level,

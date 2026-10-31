@@ -11,8 +11,8 @@ import { type Clip, clipNames, clipPaces, clipProblems, job, type Library, paces
 import { onTarget, outDir } from '../src/anim/cli';
 import { archiveProblems, itchUploads, sha256, unpack } from '../src/anim/fetch';
 import { fourBeatProblems, footfalls, measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
-import { classPalettes, flipX, type Picture, rampColours, sheetRamps, snap } from '../src/anim/snap';
-import { CORE_PALETTE, CORE_RAMPS } from '../src/kit/palette';
+import { classPalettes, flipX, type Picture, rampColours, rampSteps, sheetRamps, snap } from '../src/anim/snap';
+import { CORE_PALETTE, CORE_RAMPS, coreRamp } from '../src/kit/palette';
 import { allowedColors } from '../src/kit/ramps';
 import { CORE_KIT, richProblem } from '../src/kit/rich';
 import { applyInk, INK_HEX, inkShare } from '../src/kit/ink';
@@ -53,6 +53,28 @@ describe('clip configs', () => {
     }
   });
 
+  it('a native target declares each action at the length its glb plays it', () => {
+    /** The animations of a glb by name, each with its length in seconds (the largest time of its keyframe inputs). */
+    const glbAnimations = (path: string): Map<string, number> => {
+      const bin = readFileSync(path);
+      const json = JSON.parse(bin.subarray(20, 20 + bin.readUInt32LE(12)).toString('utf8')) as {
+        animations?: { name?: string; samplers: { input: number }[] }[];
+        accessors: { max?: number[] }[];
+      };
+      return new Map((json.animations ?? []).map((a) => [a.name ?? '', Math.max(...a.samplers.map((sm) => json.accessors[sm.input]?.max?.[0] ?? 0))]));
+    };
+    const natives = Object.entries(settings.targets).filter(([, t]) => t.map === 'native');
+    expect(natives.length).toBeGreaterThan(0);
+    for (const [id, t] of natives) {
+      expect(t.model, id).toBeDefined();
+      const played = glbAnimations(join(REPO_ROOT, t.model ?? ''));
+      for (const [action, frames] of Object.entries(t.actions ?? {})) {
+        expect(played.has(action), `${id} ${action}`).toBe(true);
+        expect((played.get(action) ?? 0) * (t.fps ?? 24), `${id} ${action}`).toBeCloseTo(frames, 1);
+      }
+    }
+  });
+
   it('a clip moved onto another target keeps its motion, takes that body and writes to its own folder', () => {
     const chop = readClip('chop');
     const moved = onTarget(chop, 'digger-f');
@@ -89,19 +111,21 @@ describe('clip configs', () => {
     expect(problems).toMatch(/ramp "velvet"/);
   });
 
-  it('a native body is played by its own actions, four poses a loop, and a sheet stays inside the budget of 69 frames', () => {
+  it('a native body is played by its own actions, four poses a loop (the lying pose held, until the owner answers), and a sheet stays inside the budget of 69 frames', () => {
     const wolf = settings.targets.wolf;
     expect(wolf?.map).toBe('native');
     expect(Object.keys(wolf?.contacts ?? {}).sort()).toEqual(['LB', 'LF', 'RB', 'RF']);
     const clips = clipNames().filter((n) => readClip(n).target === 'wolf');
-    expect(clips.sort()).toEqual(['wolf_idle', 'wolf_run', 'wolf_walk']);
+    expect(clips.sort()).toEqual(['wolf_alert', 'wolf_graze', 'wolf_idle', 'wolf_lie', 'wolf_run', 'wolf_walk']);
     let frames = 0;
     for (const n of clips) {
       const c = readClip(n);
       expect(clipProblems(n, c, libs, settings)).toEqual([]);
       expect(c.base.library).toBe('self:wolf');
       const poses = poseMs(c, libs).length;
-      expect(poses, n).toBe(4);
+      // Four poses a loop is the owner's rule (DECISIONS 2026-10-29, answer C). wolf_lie, one held pose, is the only
+      // exception, until the owner answers question 5 of DECISIONS 2026-10-30; the exception goes with that answer.
+      expect(poses, n).toBe(n === 'wolf_lie' ? 1 : 4);
       frames += poses * c.views.length;
     }
     expect(frames).toBeLessThanOrEqual(69);
@@ -327,6 +351,22 @@ describe('snap', () => {
 
 describe('a sheet and the rich rule', () => {
   const core = CORE_PALETTE.map((h) => h.toLowerCase());
+  it('a body ramp may be a span of one shared ramp, the sheet naming the whole ramp; a bad span is refused', () => {
+    const wood = coreRamp('wood')?.steps ?? [];
+    const bark = coreRamp('bark')?.steps ?? [];
+    expect(rampSteps('wood')).toEqual({ id: 'wood', steps: wood });
+    expect(rampColours(['wood:2-5'])).toEqual(wood.slice(2));
+    expect(rampColours(['bark', 'wood:2-5'])).toEqual([...bark, ...wood.slice(2)]);
+    expect(classPalettes(['bark', 'wood:2-5'], 'grey').body).not.toContain(wood[0]);
+    expect(sheetRamps(['bark', 'wood:2-5'], 'grey')).toEqual(['bark', 'wood', 'fire', 'grey', 'green']);
+    for (const bad of ['wood:4-2', 'wood:2-6', 'wood:2', 'wood:2-', 'velvet:0-1', 'wood:0-1:2', '']) {
+      expect(rampSteps(bad), bad).toBeUndefined();
+      expect(() => rampColours([bad]), bad).toThrow(/not a shared ramp/);
+    }
+    const lie = readClip('boar_lie');
+    expect(clipProblems('boar_lie', { ...lie, ramps: ['bark', 'wood:2-5'] }, libs, settings)).toEqual([]);
+    expect(clipProblems('boar_lie', { ...lie, ramps: ['wood:3-9'] }, libs, settings).join(' ')).toMatch(/ramp "wood:3-9"/);
+  });
   it('names shared ramps that hold every colour a target can draw, and the core kit takes it at density 4', () => {
     for (const [id, t] of Object.entries(settings.targets)) {
       const ramps = sheetRamps(t.ramps, t.metal, t.leaf);

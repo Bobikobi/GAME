@@ -6,6 +6,7 @@
 const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 const DESK = '(min-width: 1024px)';
 const PHONE = '(max-width: 1023px)';
+import { PLAY } from '../data/site';
 ---
 
 <section class="keyart" data-keyart aria-labelledby="ka-h">
@@ -29,7 +30,7 @@ const PHONE = '(max-width: 1023px)';
     <h1 id="ka-h">Write the valley <em>back</em></h1>
     <p class="ka-lead">An elf, a human and a skeleton wake in a valley its players write in code.</p>
     <div class="ka-acts">
-      <a class="ka-btn go" href="/play/">Play free</a>
+      <a class="ka-btn go" href={PLAY}>Play free</a>
       <a class="ka-btn line" href="/hub/">Build a place</a>
     </div>
   </div>

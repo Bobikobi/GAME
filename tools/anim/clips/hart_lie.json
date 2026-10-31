@@ -1,0 +1,29 @@
+{
+  "about": "The white hart lying still on its side: one held pose of the body's own Lie, no fall played and no twitch. A take is the client's fade of this pose and a drop of goods (HUNTING.md section 10: no blood, no suffering).",
+  "target": "hart",
+  "base": {
+    "library": "self:hart",
+    "action": "Lie"
+  },
+  "frames": [
+    0
+  ],
+  "ms": [
+    1000
+  ],
+  "frame": {
+    "size": [
+      176,
+      176
+    ],
+    "anchor": [
+      88,
+      124
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

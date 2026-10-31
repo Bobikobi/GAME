@@ -14,6 +14,7 @@ import type { LoopClient } from '../loop/github';
 import { REPO_ROOT } from '../load';
 import { addedTimes, contentSections, head, parameters } from './content';
 import { githubSections, type GitHubSections } from './github';
+import type { AccountsReader } from './accounts';
 import { readUsage, type UsageReader } from './usage';
 
 export const DEFAULT_REPOSITORY = 'Bobikobi/GAME';
@@ -28,6 +29,8 @@ export interface HubBuildOptions {
   previews: boolean;
   /** the stage-1 counters, read-only; null leaves `usage` null */
   usage?: UsageReader | null;
+  /** the game server's players counter; null leaves `accounts` null */
+  accounts?: AccountsReader | null;
   /** "owner/name"; defaults to the build's own repository */
   repository?: string;
   /** the branch or tag the document names; defaults to the checkout's */
@@ -84,6 +87,15 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
       log(`warning: the stage-1 counters could not be read, so usage is empty: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+  let accounts: HubData['accounts'] = null;
+  if (options.accounts) {
+    try {
+      accounts = await options.accounts();
+    } catch (error) {
+      // unknown is said as unknown: the hub never shows a guessed 0
+      log(`warning: the game server's players counter could not be read, so accounts is null: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
   const compose = (gh: GitHubSections, at: string | null): HubData => ({
     format: HUB_FORMAT,
     built_at: options.now.toISOString(),
@@ -100,6 +112,7 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
       github: at ? { fetched_at: at } : null,
       vercel: at && options.previews ? { fetched_at: at } : null,
       usage: usage ? { fetched_at: options.now.toISOString(), window_days: usage.window_days } : null,
+      accounts: accounts ? { fetched_at: options.now.toISOString() } : null,
     },
     ...content,
     reviewers: gh.reviewers,
@@ -109,6 +122,7 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
     summary: gh.summary,
     parameters: parameters(root, loop, points),
     players: null,
+    accounts,
     usage: usage?.usage ?? null,
   });
   const doc = compose(github, fetched);

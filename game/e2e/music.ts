@@ -93,15 +93,18 @@ async function run(page: Page, url: string): Promise<void> {
     await sleep(150);
   }
 
-  // the switch in the menu: to the synth and back, the page never reloads
+  // the switch in the Settings window: to the synth and back, the page never reloads
   await page.eval('window.__musicMark = 1');
   await page.eval(`__game.ui.handle('menu')`);
-  await page.tap('.menu-list button', 'Music: real instruments');
+  await page.tap('.menu-list button', 'Settings');
+  const musicOpt = (label: string) => `[...document.querySelectorAll('.set-seg[aria-label="Music"] .set-opt')].find((b) => b.textContent === '${label}')`;
+  await page.waitFor(`${musicOpt('Real instruments')}?.getAttribute('aria-checked') === 'true'`, 'the Music row on the real instruments', 5_000);
+  await page.tap('.set-seg[aria-label="Music"] .set-opt', 'Synth');
   await page.waitFor(`${SOUND}.source === 'synth' && ${SOUND}.playing?.source === 'synth'`, 'the synth to take the routine', 5_000);
-  await page.waitFor(`[...document.querySelectorAll('.menu-list button')].some((b) => b.textContent === 'Music: synth')`, 'the row to read synth', 5_000);
+  await page.waitFor(`${musicOpt('Synth')}?.getAttribute('aria-checked') === 'true'`, 'the row to read synth', 5_000);
   const kept = await page.eval<string | null>(`localStorage.getItem('openfold.music.1')`);
   if (!kept?.includes('synth')) throw new Error(`the choice is not kept on the device: ${kept}`);
-  await page.tap('.menu-list button', 'Music: synth');
+  await page.tap('.set-seg[aria-label="Music"] .set-opt', 'Real instruments');
   await page.waitFor(`${SOUND}.source === 'real' && ${SOUND}.playing?.source === 'real'`, 'the real instruments to come back', 10_000);
   if ((await page.eval<number | undefined>('window.__musicMark')) !== 1) throw new Error('the page reloaded at the switch');
   await page.press('Escape');

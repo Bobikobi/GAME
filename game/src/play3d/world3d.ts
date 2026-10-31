@@ -28,7 +28,8 @@ import {
 } from '@game/kernel';
 import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
-import { sound, type SfxId } from '../audio';
+import { sound, type Heard, type SfxId } from '../audio';
+import { BLOW_GAIN } from '../audio/heard';
 import { SONG_OF, crossfadeMs, musicState, signalsOf, type MusicState } from '../audio/state';
 import { DIG_SPOT_SPRITE } from '../config';
 import { DIRS, type Dir } from '../input';
@@ -245,7 +246,7 @@ export class World3D implements WorldView {
   private wasNight: boolean | undefined;
   /** the music's state asked for last */
   private musicNow: MusicState | undefined;
-  private readonly hazards: { kind: string; art: THREE.Object3D; frames: number; wolf?: { idle: THREE.AnimationAction | null; body: THREE.Object3D; eyes: THREE.Object3D } }[] = [];
+  private readonly hazards: { id: string; kind: string; art: THREE.Object3D; frames: number; wolf?: { idle: THREE.AnimationAction | null; body: THREE.Object3D; eyes: THREE.Object3D } }[] = [];
   private prompt = '';
   private hinted = new Set<string>();
   /** slots the player stands in now, so a riddle's slot is tried once per entry */
@@ -406,7 +407,7 @@ export class World3D implements WorldView {
         const art = wolf?.holder ?? (await this.picture(p.sprite, p.hazard.kind !== 'predator', p.x + p.w / 2, p.y + p.h / 2 + (p.hazard.kind === 'predator' ? 0.4 : 0)));
         if (art) {
           this.scene.add(art);
-          this.hazards.push({ kind: p.hazard.kind, art, frames: info.frames, wolf: wolf ? { idle: wolf.idle, body: wolf.body, eyes: wolf.eyes } : undefined });
+          this.hazards.push({ id: p.id ?? '', kind: p.hazard.kind, art, frames: info.frames, wolf: wolf ? { idle: wolf.idle, body: wolf.body, eyes: wolf.eyes } : undefined });
         }
       }
     }
@@ -1196,13 +1197,14 @@ export class World3D implements WorldView {
     if (!inst) return;
     const at = this.screenOf(inst.x, inst.y);
     const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, window.innerWidth) - 0.5) * 1.2));
+    // one sound per blow, as the pixel game (SOUND.md section 1.3): past the middle the crack is the blow
     if (w.kind === 'fell') {
-      sound.sfx('thud', { pan });
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
+      else sound.sfx('thud', { pan, gain: BLOW_GAIN.thud });
     } else if (w.kind === 'mine') {
-      sound.sfx('strike', { pan });
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
-    } else sound.sfx('dig', { pan });
+      else sound.sfx('strike', { pan, gain: BLOW_GAIN.strike });
+    } else sound.sfx('dig', { pan, gain: BLOW_GAIN.dig });
     const art = this.nodes.get(w.node)?.art;
     if (!art) return;
     const x0 = inst.x + 0.5;
@@ -1376,6 +1378,17 @@ export class World3D implements WorldView {
   }
 
   /** Where a tile is on the page, for UI that points at the world. */
+  /** Where a predator stands as the player hears it, for its growl (SOUND.md section 1.4): tiles on the larger axis, and whether the camera sees it. */
+  hazardHeard(id: string): Heard | undefined {
+    const h = this.hazards.find((z) => z.id === id);
+    if (!h) return undefined;
+    const at = h.art.position;
+    const tiles = Math.max(Math.abs(at.x - this.pos.x), Math.abs(at.z - this.pos.z));
+    const v = at.clone().project(this.camera);
+    const offscreen = v.z > 1 || Math.abs(v.x) > 1 || Math.abs(v.y) > 1;
+    return { owner: 'world', tiles, offscreen };
+  }
+
   screenOf(x: number, y: number): { x: number; y: number } {
     const v = new THREE.Vector3(x + 0.5, groundY(x + 0.5, y + 0.5) + 0.6, y + 0.5).project(this.camera);
     return { x: ((v.x + 1) / 2) * window.innerWidth, y: ((1 - v.y) / 2) * window.innerHeight };

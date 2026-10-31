@@ -114,7 +114,7 @@ export function replayOpening(bundle: Bundle, upload: OpeningUpload, timeMaxMs =
     if (tick > timeMaxMs) return `step ${index} claims more than ${timeMaxMs} ms of game time`;
     if (a.t !== 'start') {
       // the walk a step claims costs what it costs on the wire: a phone that walked faster than the credit allows did not walk
-      const walk = spendWalk(bundle, state, state.player.at, a.t === 'move' ? a.at : 'at' in a ? a.at : state.player.at, tick, movementAt, creditMs, leg);
+      const walk = spendWalk(bundle, state, state.player.at, a.t === 'move' ? a.at : 'at' in a ? a.at : state.player.at, tick, movementAt, creditMs, leg, a.t === 'move' ? a.gait : undefined);
       if (!walk) return `step ${index} walks further than the time allows`;
       ({ at: movementAt, creditMs, leg } = walk);
     }

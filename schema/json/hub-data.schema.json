@@ -182,6 +182,28 @@
               "type": "null"
             }
           ]
+        },
+        "accounts": {
+          "description": "null when the game server's counter could not be read (not named, unreachable, an error or too slow); accounts is then null. Absent in documents built before the counter.",
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "fetched_at"
+              ],
+              "properties": {
+                "fetched_at": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+                  "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -1358,6 +1380,33 @@
                   }
                 }
               }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "accounts": {
+      "description": "null when the count is unknown, never a guessed 0.",
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "description": "The players counter (DECISIONS.md, 2026-10-31): open accounts on the game server, and how many of them were opened in the last 7 days, as its GET /stats counts them. Two counts and nothing about any account.",
+          "type": "object",
+          "required": [
+            "open",
+            "new_7d"
+          ],
+          "properties": {
+            "open": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "new_7d": {
+              "minimum": 0,
+              "type": "integer"
             }
           }
         },

@@ -1,0 +1,32 @@
+{
+  "about": "The wolf feeding (GRAZE in docs/design/HUNTING.md section 2, the head-down steps): four poses of the body's own Graze, played by time: the muzzle at the ground in front of the splayed forepaws, a pull back with the head turned, a second bite a little to the other side, and a chew made with the head bone (there is no jaw). Frames 0 and 12 (the bite and the pull) are a loop of two on their own, for a graze of two poses. GRAZE's head-up beat (2 steps at full sight) is the standing head of Idle's first pose, not this clip and not Alert, so it does not read as the alert's tell.",
+  "target": "wolf",
+  "base": {
+    "library": "self:wolf",
+    "action": "Graze"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    400,
+    400,
+    400,
+    400
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

@@ -1,9 +1,10 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, step, walkCharge, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, KERNEL_VERSION, STEP_MILLI, WEAR_SLOTS, adaptState, appearSlots, appears, gaitStepMs, step, walkCharge, type Action, type Bundle, type Gait, type GameEvent, type State, type Tile } from '@game/kernel';
 
-import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
+import { goldRowsOf, isGait, moveOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
+import { cachedCounts, type AccountCounts } from './stats';
 
 const BODY_LIMIT = 64 * 1024;
 const MOVE_LIMIT = 256;
@@ -65,6 +66,11 @@ export interface ApiOptions {
    * name, in the world and on the character (finding 11 of the 27.10 review).
    */
   nameOf?(playerId: string): Promise<string | undefined>;
+  /**
+   * How many accounts are open and how many are new (stats.ts), when players are accounts (the session mode);
+   * GET /stats answers it to anyone, read at most once a minute. Absent in the header mode, where /stats is not found.
+   */
+  accountCounts?(now: number): Promise<AccountCounts>;
   /** Whether the database answers; GET /health reports it and reads no player row. Absent, the process is the only thing checked. */
   health?(): Promise<boolean>;
   /** Sign-in's routes under `/auth/` (NEXT 18 e); absent in the header mode, where those paths are not found. */
@@ -99,13 +105,17 @@ interface ChangeBody {
   appears: string[];
 }
 
-/** The kinds of client-played step a batch may carry. An encounter joins this list later (NEXT 18 a), with no new endpoint. */
-const MOVE_REPORT_KEYS = ['kind', 'at', 'tick'] as const;
+/**
+ * The kinds of client-played step a batch may carry. An encounter joins this list later (NEXT 18 a), with no new endpoint.
+ * A move names its gait when it is not a walk (DECISIONS 2026-10-29, the gaits): the kernel hears a sneak and a run by it.
+ */
+const MOVE_REPORT_KEYS = ['kind', 'at', 'tick', 'gait'] as const;
 
 interface MoveReport {
   kind: 'move';
   at: Tile;
   tick: number;
+  gait?: Gait;
 }
 
 class RequestError extends Error {
@@ -133,13 +143,16 @@ function hasOnlyKeys(value: Record<string, unknown>, keys: readonly string[]): b
 function moveReport(value: unknown): MoveReport {
   if (!isRecord(value)) throw new RequestError('Each movement report must be an object.', 400);
   if (!hasOnlyKeys(value, MOVE_REPORT_KEYS)) {
-    throw new RequestError('A movement report holds a kind, a tile and a tick, nothing else.', 400);
+    throw new RequestError('A movement report holds a kind, a tile, a tick and a gait, nothing else.', 400);
   }
   if (value.kind !== 'move') throw new RequestError('Only movement reports are accepted here for now.', 400);
   if (!isTile(value.at) || !validTick(value.tick)) {
     throw new RequestError('Each movement report needs a tile and a valid tick.', 400);
   }
-  return { kind: 'move', at: value.at, tick: value.tick };
+  if (value.gait !== undefined && !isGait(value.gait)) {
+    throw new RequestError('A movement report walks, runs or sneaks.', 400);
+  }
+  return value.gait === undefined ? { kind: 'move', at: value.at, tick: value.tick } : { kind: 'move', at: value.at, tick: value.tick, gait: value.gait };
 }
 
 /** Whether a value is an action the wire accepts: the kernel's shape, and no field besides it. */
@@ -226,8 +239,11 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t', 'item', 'qty', 'at']) && typeof value.item === 'string' && Number.isSafeInteger(value.qty) && isTile(value.at);
     case 'pickup':
       return hasOnlyKeys(value, ['t', 'item', 'at']) && typeof value.item === 'string' && isTile(value.at);
+    case 'dress':
+      return hasOnlyKeys(value, ['t', 'carcass', 'at']) && Number.isSafeInteger(value.carcass) && isTile(value.at);
     case 'move':
-      return hasOnlyKeys(value, ['t', 'at']) && isTile(value.at);
+      // a walk leaves its gait out (an old log reads walk); a run or a sneak names it, as the kernel's action does
+      return hasOnlyKeys(value, ['t', 'at', 'gait']) && isTile(value.at) && (value.gait === undefined || isGait(value.gait));
     default:
       return false;
   }
@@ -251,9 +267,9 @@ interface HealthBody {
   ok: boolean;
 }
 
-function json(response: ServerResponse, status: number, body: ErrorBody | StateBody | ChangeBody | HealthBody): void {
+function json(response: ServerResponse, status: number, body: ErrorBody | StateBody | ChangeBody | HealthBody | AccountCounts, cache = 'no-store'): void {
   response.writeHead(status, {
-    'cache-control': 'no-store',
+    'cache-control': cache,
     'content-type': 'application/json; charset=utf-8',
     'x-content-type-options': 'nosniff',
   });
@@ -296,9 +312,11 @@ function checkClock(tick: number, record: PlayerRecord, now: number): void {
 }
 
 /**
- * The movement-time credit after a walk to `target` at `tick` (NEXT 18 a): a four-way path spends it, the
+ * The movement-time credit after a walk to `target` at `tick` (NEXT 18 a): its octile charge spends it, the
  * game time since it was last refilled refills it, and `move_reach_max` caps it. Undefined when the walk
  * costs more than the credit holds. A target the kernel cannot reach is left to the kernel to refuse.
+ * The tile is paid at the gait's pace (`gaitStepMs`), as the kernel's own reach reads it: a run pays half a
+ * walk's time and a sneak more, so a report cannot claim a sneak's quiet at a walk's speed.
  */
 export function spendWalk(
   bundle: Bundle,
@@ -309,9 +327,10 @@ export function spendWalk(
   movementAt: number,
   movementCreditMs: number,
   leg: Tile | null = null,
+  gait: Gait = 'walk',
 ): { at: number; creditMs: number; leg: Tile | null } | undefined {
-  // the pace the load allows (the 23.10 decision): a heavy player cannot report a light walk
-  const stepMs = walkStepMs(bundle, state);
+  // the pace the load allows (the 23.10 decision) at the gait the step names: a heavy player cannot report a light walk
+  const stepMs = gaitStepMs(bundle, state, gait);
   const maxReach = bundle.params.move_reach_max;
   const elapsedSinceMove = Math.max(0, tick - state.player.movedAt);
   const reach = Math.min(2 + Math.floor(elapsedSinceMove / stepMs), maxReach);
@@ -354,6 +373,38 @@ async function requireAccountName(nameOf: NonNullable<ApiOptions['nameOf']>, pla
   if (named !== account) refused(`Your name in this world is ${account}.`);
 }
 
+/** Whether kernel version `stored` (major.minor.patch) is later than `running`; an unreadable one is not. */
+export function newerKernel(stored: string | undefined, running: string): boolean {
+  const parts = (version: string | undefined) => (version ?? '').split('.').map(Number);
+  const [a, b] = [parts(stored), parts(running)];
+  if (a.length !== 3 || !a.every(Number.isSafeInteger) || b.length !== 3 || !b.every(Number.isSafeInteger)) return false;
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i]! > b[i]!;
+  return false;
+}
+
+/**
+ * A state stored under content this server no longer runs, brought to today's content as the phone brings a
+ * save (`adaptState`), and written back before anything reads it: `step` refuses a state whose content is not
+ * the bundle's, so without this every new version of the world would lock every account out. The write is a
+ * version of its own and one `action_log` row, `{ kind: 'adapt', from, to }`, so the log has no gap and the
+ * replay plays it as it happened (`replayAccount`); it moves no gold. A request that named the version before
+ * it is stale and reads the state again, as after any other write.
+ */
+async function adaptRecord(options: ApiOptions, playerId: string, record: PlayerRecord): Promise<PlayerRecord> {
+  // a state a newer kernel wrote is an image rolled back: adapting it would drop what only the newer content
+  // holds, and nothing could bring that back, so the row is left for the newer image (deploy/RUNBOOK.md step 2)
+  if (newerKernel(record.state.kernel, KERNEL_VERSION)) {
+    throw new RequestError('This game was saved by a newer version of the server. Try again soon.', 503);
+  }
+  const state = adaptState(options.bundle, record.state);
+  if (!state) refused('The race of this character is no longer in the game.');
+  const next: PlayerRecord = { ...record, state, version: record.version + 1 };
+  const books: Books = { action: { kind: 'adapt', from: record.state.content, to: state.content }, tick: state.tick, gold: [] };
+  if (await options.store.compareAndSet(playerId, record.version, next, books)) return next;
+  // another request adapted it first: what it wrote is the state now
+  return requirePlayer(await options.store.load(playerId));
+}
+
 async function playerIdFor(request: IncomingMessage, resolve: ApiOptions['resolvePlayerId']): Promise<string> {
   const playerId = await resolve(request);
   if (!playerId) throw new RequestError('Sign in to continue.', 401);
@@ -375,6 +426,19 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     json(response, up ? 200 : 503, { ok: up });
     return;
   }
+  if (url.pathname === '/stats' && options.accountCounts) {
+    // no identity and no player row: two counts, the same for everyone, so a cache on the way may keep them a minute
+    if (request.method !== 'GET') {
+      response.setHeader('allow', 'GET');
+      throw new RequestError('Method not allowed.', 405);
+    }
+    const counts = await options.accountCounts((options.now ?? Date.now)()).catch((error: unknown) => {
+      console.error('counting the accounts failed', error);
+      throw new RequestError('The players count is not available right now.', 503);
+    });
+    json(response, 200, { accounts: counts.accounts, new_7d: counts.new_7d }, 'public, max-age=60');
+    return;
+  }
   if (!['/action', '/moves', '/state', '/session'].includes(url.pathname)) {
     throw new RequestError('Not found.', 404);
   }
@@ -385,7 +449,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   }
 
   const playerId = await playerIdFor(request, options.resolvePlayerId);
-  const record = requirePlayer(await options.store.load(playerId));
+  let record = requirePlayer(await options.store.load(playerId));
+  if (record.state.content !== options.bundle.tag) record = await adaptRecord(options, playerId, record);
 
   if (url.pathname === '/state' || url.pathname === '/session') {
     if (url.pathname === '/session') {
@@ -462,8 +527,10 @@ async function route(request: IncomingMessage, response: ServerResponse, options
         movementAt,
         movementCreditMs,
         leg,
+        report.gait,
       );
-      const result = step(options.bundle, state, { t: 'move', at: report.at }, report.tick, { validateTravel: true });
+      const action = moveOf(report.at, report.gait);
+      const result = step(options.bundle, state, action, report.tick, { validateTravel: true });
       if (!result.ok) refused(result.error);
       state = result.state;
       events.push(...result.events);
@@ -471,7 +538,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       movementCreditMs = nextCredit.creditMs;
       leg = nextCredit.leg;
       // the report is the action that paid, at the report's own tick, and the replay reads the same two
-      played.push({ action: { t: 'move', at: report.at }, tick: report.tick, events: result.events });
+      played.push({ action, tick: report.tick, events: result.events });
     }
     booked = { kind: 'moves', moves: reports };
   }
@@ -494,7 +561,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   json(response, 200, { events, patch: statePatch(record.state, state), version: next.version, appears: appearIds(options.bundle, state) });
 }
 
-export function createGameApi(options: ApiOptions): Server {
+export function createGameApi(given: ApiOptions): Server {
+  const options = given.accountCounts ? { ...given, accountCounts: cachedCounts(given.accountCounts.bind(given)) } : given;
   return createServer((request, response) => {
     void route(request, response, options).catch((error: unknown) => {
       if (response.headersSent) {

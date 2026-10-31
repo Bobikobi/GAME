@@ -31,4 +31,4 @@ export function writeSource(storage: SoundStorage | null | undefined, source: Mu
 }
 
 /** The settings row's words for each source. */
-export const SOURCE_LABEL: Readonly<Record<MusicSource, string>> = { real: 'real instruments', synth: 'synth' };
+export const SOURCE_LABEL: Readonly<Record<MusicSource, string>> = { real: 'Real instruments', synth: 'Synth' };

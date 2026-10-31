@@ -67,6 +67,8 @@ export interface Params {
   /** The hours the valley is washed in a colour and the sun's shear (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
   light?: {
     keys: { at: string; tint: string; pct: number }[];
+    /** the night kept readable: the floor's luma and the fog's cap at night, whole percent */
+    read?: { floor: number; fog: number };
     sun?: { alpha: number; cap: number; keys: { at: string; right: number; down: number }[] };
   };
   k_permille: number;
@@ -131,6 +133,36 @@ export interface Params {
    * (whole milliseconds, checked), and each gait is heard at its own radius in tiles (`noise_*`, still to run).
    */
   gait: { run_div: number; sneak_mul: number; noise_still: number; noise_sneak: number; noise_walk: number; noise_run: number };
+  /**
+   * Dressing a taken animal (docs/design/HUNTING.md sections 5-6): what one step takes, how many game days a carcass
+   * keeps its meat and then anything, and how often an animal appears fine or true (basis points).
+   */
+  hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; grade2_bp: number; grade3_bp: number };
+  /**
+   * The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1):
+   * the numbers every kind shares, its own character being the kind's `behaviour`. Ticks, think steps, tiles and game ms.
+   */
+  wild: {
+    tick_ms: number;
+    think_ticks: number;
+    wake_tiles: number;
+    awake_max: number;
+    catchup_max_steps: number;
+    flee_avoid_steps: number;
+    refill_clear_tiles: number;
+    spread_tiles: number;
+    print_ring: number;
+    print_fade_ms: number;
+    den_stay_steps: number;
+    bolt_min_tiles: number;
+    bolt_max_tiles: number;
+    throw_ms: number;
+    strike_noise: number;
+    fire_keep_day: number;
+    fire_keep_night: number;
+    town_keep_day: number;
+    town_keep_night: number;
+  };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };

@@ -5,6 +5,12 @@ export const GAME_TITLE = 'Loomvale';
 export const SAVE_KEY = 'openfold.save.1';
 /** Set once the one-time development review was answered or skipped; cleared with the save. */
 export const REVIEW_KEY = 'openfold.review.1';
+/**
+ * The content tag of the last world this browser showed from the game server: a server that brought the account's
+ * state to newer content since then answers another tag, and the game says the valley was updated, as it does for a
+ * save on the phone.
+ */
+export const SEEN_CONTENT_KEY = 'openfold.server-content.1';
 /** Where saves lived under the working title: read while SAVE_KEY is empty, removed at the next save. */
 export const LEGACY_SAVE_KEY = 'mistvale.save.1';
 /** Tile size in pixels. Every tile is 16x16 and every character frame 16x24. */

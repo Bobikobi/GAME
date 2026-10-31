@@ -6,8 +6,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
-import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
-import { RARITIES, type ParamsBody } from '@game/schema';
+import { type Bundle, DRESS_PART_STEPS, computeValues, huntGoods, idiv, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
+import { GOODS, RARITIES, type ParamsBody } from '@game/schema';
+import { checkWild } from './wild';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { holeProblems } from './kit/holes';
@@ -55,6 +56,8 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkReactions(b, assembled.origin));
     issues.push(...checkCrafting(b, assembled.origin));
     issues.push(...checkWear(b));
+    issues.push(...checkHunt(b, assembled.origin));
+    issues.push(...checkWild(b, assembled.origin));
     issues.push(...checkDrift(b));
     issues.push(...checkRetiredWords());
     issues.push(...checkKits(assembled));
@@ -156,6 +159,32 @@ function checkParams(file: { params?: ParamsBody } | undefined): Issue[] {
   const { cap, log_ms: logMs, warn_min: warnMin } = file.params.fire;
   if (idiv(warnMin.value * file.params.day_length_ms.value, 24 * 60) > (cap.value - 1) * logMs.value) {
     issues.push({ file: 'content/core/params.json', where: 'params.fire', message: 'the fire would warn before it takes a log: keep warn_min within cap - 1 logs of burn (G48)', level: 'error' });
+  }
+  // the hunt's dressing (HUNTING 6): a part is six steps and one action, so it sits inside the action cap (G43), and
+  // the meat goes before the rest
+  const { dress_step_ms: dressStep, meat_spoil_d: meatD, hide_spoil_d: hideD } = file.params.hunt;
+  if (DRESS_PART_STEPS * dressStep.value > file.params.max_action_ms.value) {
+    issues.push({
+      file: 'content/core/params.json',
+      where: 'params.hunt.dress_step_ms',
+      message: `a part of the dressing is ${DRESS_PART_STEPS} steps and one action: keep ${DRESS_PART_STEPS} x dress_step_ms within max_action_ms (G43)`,
+      level: 'error',
+    });
+  }
+  if (meatD.value > hideD.value) {
+    issues.push({ file: 'content/core/params.json', where: 'params.hunt.meat_spoil_d', message: 'the meat goes before the rest: keep meat_spoil_d at or under hide_spoil_d (HUNTING 6)', level: 'error' });
+  }
+  // the wild's shared distances (CREATURE_BEHAVIOUR 2; HUNT_FAMILIES 3.1)
+  const wild = file.params.wild;
+  const wildErr = (key: string, message: string) => issues.push({ file: 'content/core/params.json', where: `params.wild.${key}`, message, level: 'error' });
+  if (wild.fire_keep_night.value < file.params.fire.safe_tiles.value + 1) {
+    wildErr('fire_keep_night', 'at night prey keeps outside the fire\'s safe ring and one tile more: keep fire_keep_night at or over fire.safe_tiles + 1 (CREATURE_BEHAVIOUR 2)');
+  }
+  if (wild.town_keep_night.value < wild.town_keep_day.value) {
+    wildErr('town_keep_night', 'the lamps push the town\'s wall out at night, never in: keep town_keep_night at or over town_keep_day (CREATURE_BEHAVIOUR 2)');
+  }
+  if (wild.bolt_min_tiles.value > wild.bolt_max_tiles.value) {
+    wildErr('bolt_min_tiles', 'a den\'s bolt hole ring runs from bolt_min_tiles out to bolt_max_tiles: keep the first at or under the second (HUNT_FAMILIES 3.1)');
   }
   return issues;
 }
@@ -528,6 +557,77 @@ function checkWear(b: Bundle): Issue[] {
 const RETIRED_WORDS: { file: string; word: RegExp; now: string }[] = [
   { file: 'docs/creators/README.md', word: /\bstarters?\b/i, now: 'a race (chosen) in a wake pocket (drawn by the seed): "race" and "pocket"' },
 ];
+
+/** Spawn caps per 1000 habitat tiles by danger (docs/design/HUNTING.md section 8): fleeing, defending, hunting. */
+const HUNT_CAPS = [12, 8, 5] as const;
+
+/**
+ * The hunt foundations (docs/design/HUNTING.md sections 5-10; DECISIONS.md, "The hunt foundations"): a hunted kind drops plain goods
+ * of the five goods classes at or below its tier, with shares that sum to 100, under the spawn cap of its danger; a
+ * protected kind is never dressed; a grade is a plain good's twin; and no good of the hunt is sold.
+ */
+function checkHunt(b: Bundle, origin: Record<string, string>): Issue[] {
+  const issues: Issue[] = [];
+  const mapFile = origin[b.map.id] ?? 'content';
+  const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
+  const kinds = b.map.creatures?.kinds ?? {};
+  const hunted = Object.entries(kinds)
+    .filter(([, k]) => k.hunt)
+    .sort(([x], [y]) => (x < y ? -1 : 1));
+  const goodsClasses = new Set(GOODS.map((g) => `core/${g}`));
+  if (hunted.length > 0) {
+    for (const cls of goodsClasses) if (!b.classes[cls]) err(mapFile, 'map.creatures.kinds', `the goods class "${cls}" is not declared (content/core/items/goods.json)`);
+  }
+  for (const [id, k] of Object.entries(kinds).sort(([x], [y]) => (x < y ? -1 : 1))) {
+    const where = `map.creatures.kinds.${id}`;
+    if (k.protected && k.hunt) err(mapFile, `${where}.hunt`, 'a protected creature is never dressed: drop "hunt" or "protected" (HUNTING 10)');
+    const h = k.hunt;
+    if (!h) continue;
+    const shares = h.drops.reduce((n, d) => n + d.share_pct, 0);
+    if (shares !== 100) err(mapFile, `${where}.hunt.drops`, `shares sum to ${shares}, they must sum to 100`);
+    const seen = new Set<string>();
+    h.drops.forEach((d, i) => {
+      const at = `${where}.hunt.drops.${i}.item`;
+      const it = b.items[d.item];
+      if (!it) return err(mapFile, at, `no item "${d.item}"`);
+      if (!it.class || !goodsClasses.has(it.class)) err(mapFile, at, `${d.item} is not a good: a drop is meat, hide, bone, sinew or feather (HUNTING 6, G45)`);
+      else if (seen.has(it.class)) err(mapFile, at, `${d.item} is a second ${it.class.slice('core/'.length)}: each good once (HUNTING 6)`);
+      else seen.add(it.class);
+      if (it.grade) err(mapFile, at, `${d.item} is a finer grade: name the plain good, the grade follows the animal (HUNTING 5)`);
+      if ((it.tier ?? 1) > h.tier) err(mapFile, at, `${d.item} is tier ${it.tier}, above the animal's tier ${h.tier}`);
+    });
+    const cap = HUNT_CAPS[h.danger];
+    if (h.spawn.cap_per_1000 > cap) {
+      err(mapFile, `${where}.hunt.spawn.cap_per_1000`, `at most ${cap} per 1000 habitat tiles at danger ${h.danger} (HUNTING 8), not ${h.spawn.cap_per_1000}`);
+    }
+    if (h.danger === 2 && h.size === 'small') err(mapFile, `${where}.hunt.danger`, 'a small animal does not hunt the player: danger 2 is medium or large (HUNTING 8)');
+  }
+  const grades = Object.values(b.items)
+    .filter((it) => it.grade)
+    .sort((x, y) => (x.id < y.id ? -1 : 1));
+  for (const it of grades) {
+    const g = it.grade!;
+    const where = `items.${it.id}.grade`;
+    const of = b.items[g.of];
+    if (!of) {
+      err(it.file, `${where}.of`, `no item "${g.of}"`);
+      continue;
+    }
+    if (of.grade) err(it.file, `${where}.of`, `${g.of} is a grade itself: point at the plain good`);
+    if (of.class !== it.class || of.kind !== it.kind || (of.tier ?? 1) !== (it.tier ?? 1)) {
+      err(it.file, where, `a grade keeps the plain good's class, kind and tier (${g.of})`);
+    }
+    const twin = grades.find((x) => x !== it && x.grade!.of === g.of && x.grade!.step === g.step);
+    if (twin && twin.id < it.id) err(it.file, `${where}.step`, `${twin.id} is already grade ${g.step} of ${g.of}`);
+  }
+  const goods = huntGoods(b);
+  for (const shop of Object.values(b.shops).sort((x, y) => (x.id < y.id ? -1 : 1))) {
+    shop.sells.forEach((o, i) => {
+      if (goods.has(o.item)) err(origin[shop.id] ?? 'content', `shop.sells.${i}`, `${o.item} is sold: no good of the hunt carries a price (HUNTING 9)`);
+    });
+  }
+  return issues;
+}
 
 function checkRetiredWords(): Issue[] {
   const issues: Issue[] = [];

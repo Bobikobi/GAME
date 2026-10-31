@@ -74,8 +74,8 @@ The session that made a pull request merges it into `develop` once the owner has
 ## Releasing
 
 1. `develop` is green, and the owner has played its preview. The release's prep pull request into `develop` bumps `kernel/package.json`, writes the CHANGELOG entry and reruns `pnpm credits` and `pnpm board --base origin/develop`: `main` takes no direct pushes, so no bot writes CREDITS.md there.
-2. The lead asks the owner for a yes, then merges `develop` into `main`.
-3. Vercel deploys `main`. The lead opens the live game and checks the opening.
+2. The lead asks the owner for a yes, checks that the repository setting "automatically delete head branches" is off (`gh api repos/Bobikobi/GAME --jq .delete_branch_on_merge` prints `false`; on 31.10.2026 it was on, and the v0.1.11 merge deleted `develop`, closed four pull requests and retargeted thirteen to `main`), then merges `develop` into `main` with a merge commit.
+3. Vercel deploys `main`. The lead opens the live game and checks the opening. When the day's deployment quota is spent (the Hobby plan allows 100 a day, counted over the last 24 hours, skipped builds included) the deploy goes from a checkout of `main` with `vercel --prod --build-env VERCEL_GIT_COMMIT_SHA=<the merge's full sha>`; without that variable `pnpm hub:data` fails inside the build. `vercel inspect loomvale.vercel.app` proves which deployment the alias serves.
 4. The release gets a tag, `v0.<stage>.<n>`, and a short note of what players will notice.
 
 To roll back, promote the previous production deployment in Vercel, then revert the merge on `main` with a new pull request.

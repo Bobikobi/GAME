@@ -196,7 +196,7 @@ describe('the tone remap on a 64 px frame', () => {
     return data;
   };
 
-  test('shades about a third of a 64 x 64 grass tile, every pixel still a palette green, and keeps the stipple from frame to frame', () => {
+  test('shades a tenth of a 64 x 64 grass tile, every pixel still a palette green, and keeps the stipple from frame to frame', () => {
     const base = GREENS[2]!;
     const sheet = new Uint8ClampedArray(128 * 64 * 4);
     // two frames side by side, both plain base green
@@ -215,9 +215,9 @@ describe('the tone remap on a 64 px frame', () => {
         (x < 64 ? left : right).push(rgb);
       }
     }
-    // about a third of 2 x 4096 art pixels
-    expect(shaded / (2 * 64 * 64)).toBeGreaterThan(0.28);
-    expect(shaded / (2 * 64 * 64)).toBeLessThan(0.39);
+    // a checker-biased tenth of 2 x 4096 art pixels
+    expect(shaded / (2 * 64 * 64)).toBeGreaterThan(0.08);
+    expect(shaded / (2 * 64 * 64)).toBeLessThan(0.3);
     // both frames of a sheet share the stipple: nothing twinkles
     expect(right).toEqual(left);
   });
