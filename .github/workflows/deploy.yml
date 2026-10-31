@@ -29,11 +29,6 @@ permissions:
   actions: read
   pull-requests: write
 
-concurrency:
-  # one deploy per target at a time; a newer develop or pull request head replaces the one still waiting
-  group: deploy-${{ github.event.workflow_run.head_branch || github.event.pull_request.number || inputs.target }}
-  cancel-in-progress: true
-
 env:
   VERCEL_CLI: vercel@64.5.0
   DEVELOP_ALIAS: loomvale-develop.vercel.app
@@ -102,6 +97,11 @@ jobs:
     needs: plan
     if: needs.plan.outputs.target != ''
     runs-on: ubuntu-24.04
+    # keyed on what the plan vetted, never on a branch name a fork chooses, so no outside run can cancel a deploy;
+    # a newer develop or pull request head replaces an older one, and a production deploy always runs to its end
+    concurrency:
+      group: deploy-${{ needs.plan.outputs.target }}${{ needs.plan.outputs.pr && format('-{0}', needs.plan.outputs.pr) || '' }}
+      cancel-in-progress: ${{ needs.plan.outputs.target != 'production' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
