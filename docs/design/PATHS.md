@@ -4,7 +4,7 @@ Status: a proposal for the owner. The numbers in section 2 are printed by `pnpm 
 
 ## 1. The finding in one paragraph
 
-All six built paths are **band-1 paths with seven placeholder nodes**. `pnpm tree:coverage` shows the content touching band 1 and nothing above it: bands 2, 3 and 4 and the crown have no quest, recipe or place that trains them, in every built school. The paths also differ a great deal in what surrounds the nodes: Foraging and Digging have ten or more kinds of node, 21 or more placed places and four quests each, while Fishing has one kind of node, three places and no quest, and Handcraft, the only school with real recipes, has no quest that trains it. **Six of the fifteen quests train no path at all**, which is the gap the owner's rule of 25.10 ("every quest and task starts from the tree") exists to close. The fix is not to grow the weakest school to the size of the strongest. It is to set one floor every path must reach, and to build the floor in the order below.
+All six built paths are **band-1 paths with seven placeholder nodes**. `pnpm tree:coverage` shows the content touching band 1 and almost nothing above it: bands 3 and 4 and the crown have no quest, recipe or place that trains them in any built school, and band 2 has two touches, both Handcraft's. The paths also differ a great deal in what surrounds the nodes: Foraging and Digging have ten or more kinds of node, 21 or more placed places and four quests each, while Fishing has one kind of node, three places and no quest, and Handcraft, the only school with real recipes, has no quest that trains it. **Six of the fifteen quests train no path at all**, which is the gap the owner's rule of 25.10 ("every quest and task starts from the tree") exists to close. The fix is not to grow the weakest school to the size of the strongest. It is to set one floor every path must reach, and to build the floor in the order below.
 
 ## 2. Today, measured
 
@@ -32,12 +32,12 @@ Quests no path trains (6 of 15): first-fire, fix-the-bridge, into-town, the-long
 
 How to read it:
 
-- **"Hours to master" is the old hand-set table, not the target.** The profession files hold `xp_levels` in active seconds (the schema says so), and the top entry of each today is 1.0 to 1.2 hours. The owner's answer Q1 of 25.10 is a school of about 50 active hours (`t1` 28 s, 51.7 hours a school, the catalogue past 800). The page measures the content as it is. The table will be regenerated to the formula when the progression map is built (PROGRESSION.md 4.6), and every path then needs about fifty times the content it has to fill its hours.
+- **"Hours to master" is the old hand-set table, not the target.** The profession files hold `xp_levels` in active seconds (the schema says so), and the top entry of each today is 1.0 to 1.2 hours. The owner's answer Q1 of 25.10 is a school of about 50 active hours (`t1` 28 s, 51.7 hours a school, the catalogue past 800). The page measures the content as it is. The table will be regenerated to the formula when the progression map is built (PROGRESSION.md 4.6), and every path then has about forty-seven times the hours to fill (51.7 against 1.1), which is the content the floor of section 4 starts to answer.
 - **"Places" mixes two things:** placed nodes and dig spots on the map, and the camp parts that provide a station. Cooking's one place is a fire; Handcraft's three are workshops.
 - **"Quests" counts a quest when a step makes, brings or finds what the path makes.** A quest that starts from a node, which is what 25.10 asks for, is a different and stricter test, and no quest is marked that way yet.
 - **Tiers are all 1 outside Handcraft** because the valley holds only tier 1 of what grows and lies in it. Tier 2 and 3 of gathered goods wait for the first map's regions (NEXT.md section 19), so this column is a fact about the world, not about the schools.
 
-The six quests no path trains, by their steps: `first-fire` (a build), `fix-the-bridge` (a restore), `into-town` and `the-tangle` (a visit), `the-long-night` (a tend), `the-night-arch` (a riddle). Three of the schools they belong to do not exist yet (Survival, Travel, Lore: PROGRESSION.md 4.2).
+The six quests no path trains, by their steps: `first-fire` (a build), `fix-the-bridge` (a restore), `into-town` and `the-tangle` (a visit), `the-long-night` (a tend), `the-night-arch` (a riddle). The last four would belong to schools that do not exist yet: `into-town` and `the-tangle` to Travel, `the-long-night` to Survival, `the-night-arch` to Lore (proposed, PROGRESSION.md 4.2).
 
 What `pnpm tree:coverage` adds, quoted from its run on 31.10: the tree holds 76 nodes, 33 touched, 43 untouched, 13 reserved (all Travel). Fishing has **7 of 7 nodes untouched**; Cooking, Foraging and Woodcutting have one untouched each; Digging has one; Handcraft has none. Band 1 holds all the touches; Handcraft alone touches band 2, twice.
 
@@ -63,7 +63,7 @@ The progression map already sizes a path's **tree**: 32 nodes (12 on the main li
 | Tools, for a gathering path | 3 grades (a plain one, one made at the workshop, a fine one) | Foraging has three baskets; Digging has five tools |
 | Recipes, for a crafting path | 16, the top at level 7 | Handcraft is the model: 16 recipes, top level 7 |
 | Kinds of node, for a gathering path | 8 | Foraging has 10, Digging 11 |
-| Places | 8 | the weakest built path outside Cooking and Handcraft has 3 |
+| Places | 8 | Digging has 21, Foraging 23 and Woodcutting 16; Fishing and Handcraft have 3 |
 | Quests that train it, each starting from one of its nodes | 3 | Foraging and Digging have 4 each |
 | What it pays | money (what it makes sells inside the market's band), access (a place it opens), a look (a trophy garment, no effect), never power sold (G39) | the four prices of decision 39 and the pays of PROGRESSION.md 6.1 |
 
@@ -85,10 +85,10 @@ The thin paths by the numbers are, in order, **Fishing, Cooking, Woodcutting, Ha
 For each built path: what to add, with numbers, and what the path pays. All content is declarative JSON under `content/`; prices are never hardcoded; nothing here is a story claim (STORY.md: the narrator never states the past). The order of building is section 6.
 
 **Fishing** (the thinnest: 5 misses; its 7 nodes are all untouched).
-- Kinds of node: 1 to 8 (waters of different depth and speed: shallow, still, running, deep, with a fish or two of each; the nodes `still-water`, `deep-pool`, `river-listener` need a kind of water each).
+- Kinds of node: 1 to 8 (waters of different depth and speed: shallow, still, running, deep, with a fish or two of each; the existing nodes `still-water`, `deep-pool` and `river-listener` point at three of them).
 - Tools: 1 to 3 (the rod; a made rod; a net the Fishing node `net-mender` serves).
 - Places: 3 to 8, at least four distinct waters.
-- Recipes: none of its own; its catch feeds Cooking (the pair of paths to link, section 5 below).
+- Recipes: none of its own; its catch feeds Cooking (see Pairs below).
 - Quests: 0 to 3, each starting from a node (for example one that starts from `still-water`, one from `deep-pool`, one from `net-mender`).
 - Pays: money (fish sell inside the band), a look at the crown, and access (deep water opens a place the shore does not).
 
@@ -103,7 +103,7 @@ For each built path: what to add, with numbers, and what the path pays. All cont
 - Tools: 1 to 3 (the axe; a made axe; a fine axe). This path owns the tool the opening gives first, so its grades are the first thing a player upgrades.
 - Quests: 0 to 3, including `first-fire` (a build step that needs a felled tree) re-pointed to start from a Woodcutting node.
 - Places: ok (16).
-- Pays: logs, bark and resin to Handcraft and Woodcraft; money; access (a felled tree is a bridge, the node `fell_facing`).
+- Pays: logs, bark and resin to Handcraft and Woodcraft; money; access (a felled tree can be a bridge: the effect `fell_facing`, PROGRESSION.md 4.2).
 
 **Handcraft** (the only school with a real recipe ladder).
 - Quests: 0 to 3, including `fix-the-bridge` (a restore step) re-pointed to start from a Handcraft node.
