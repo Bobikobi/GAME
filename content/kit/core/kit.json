@@ -2392,6 +2392,36 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
         }
+      },
+      "props/grass_tuft": {
+        "file": "props/grass_tuft.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "moss"
+        ]
+      },
+      "props/grass_tuft_b": {
+        "file": "props/grass_tuft_b.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "moss"
+        ]
+      },
+      "props/grass_tuft_c": {
+        "file": "props/grass_tuft_c.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "moss"
+        ]
       }
     }
   }
