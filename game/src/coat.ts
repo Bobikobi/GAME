@@ -1,14 +1,18 @@
 /**
  * An animal's coat: which of its kind's coats one creature wears, and the recolour that draws it, worked out
  * without Phaser so it can be tested. The coats of a kind are listed on its target in tools/anim/anim.json
- * ("coats"), each with a weight; a creature's coat comes from its id and a world number through a fixed hash, so
- * every client draws the same creature in the same coat, every time, and nothing is rolled. A coat is look only:
- * it changes no goods, no value and nothing the server counts.
+ * ("coats"), each with a weight. A creature's coat comes from the server's keyed draw, `draw(seed, coatEntity(id), 0)`
+ * (kernel/src/rng.ts; HUNT_FAMILIES 7): the world's seed is the server's alone (kernel publicState), so the server
+ * picks the coat with coatOf when the creature appears and sends it with the creature, and every client draws the
+ * coat it is sent, the same creature in the same coat on every screen. A coat changes no value, no weight and no
+ * count; the hide carries it (DECISIONS 2026-10-30, "The hide carries the coat").
  *
- * Not wired yet: the client does not draw the hare or the crow today, so no scene calls this module. When one
- * does, it passes the shared ramps (tools/src/kit/palette.ts CORE_RAMPS, carried to the client the way the bundle
- * carries content) and a world number every client can see: the state's rng seed is kept from the client
- * (kernel publicState), so it is not that seed.
+ * Not wired yet: nothing spawns or draws the hare or the crow today, so nothing calls this module. The pull request
+ * that steps animals draws the coat on the server, and a scene draws it with remapCoat on the shared ramps
+ * (tools/src/kit/palette.ts CORE_RAMPS, carried to the client the way the bundle carries content). A coat table
+ * belongs to a body's target, found from the creature's kind id (core/hare to the target hare, core/crow to crow),
+ * never from the kind's look, which the crow shares with the sparrow; hare-pied is a coat's body, never a kind. When
+ * the hide carries the coat, the tables move from anim.json into the content the server reads.
  *
  * The recolour is a pure step to step map, like richground's remapTone: a pixel at step i of ramp A becomes step
  * clamp(i + shift) of ramp B, or the step its own list names (a coat that keeps the shading of a white or a black
@@ -45,40 +49,20 @@ export const COAT_INK = 0x1b1a2e;
 const STEPS = 6;
 
 /**
- * A creature id as a 32-bit number: FNV-1a over the UTF-16 code units of its text form (offset basis 2166136261,
- * prime 16777619), so a numeric id and its text pick the same coat.
+ * The entity a creature's coat is drawn under, a prefix of its own beside the other keyed draws' (`group:`, `bolt:`;
+ * CREATURE_BEHAVIOUR 5.1.2 rule 2): the server's draw is `draw(seed, coatEntity(id), 0)`.
  */
-export function idHash(creatureId: string | number): number {
-  const text = String(creatureId);
-  let h = 2166136261;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return h >>> 0;
-}
+export const coatEntity = (creatureId: string | number): string => `coat:${creatureId}`;
 
 /**
- * The fixed 32-bit number a creature's coat is drawn from: its id's FNV-1a, mixed with the world number and run
- * through murmur3's 32-bit finaliser, all in Math.imul. Not richground's tile hash: that one multiplies in
- * doubles, exact only for small tile coordinates, and a 32-bit id would lose its low bits there.
- */
-export function coatHash(creatureId: string | number, worldSeed: number): number {
-  let h = (idHash(creatureId) ^ Math.imul(worldSeed | 0, 0x9e3779b1)) >>> 0;
-  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
-  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
-  return (h ^ (h >>> 16)) >>> 0;
-}
-
-/**
- * The coat this creature wears: a coat by weight, through the fixed hash of its id and the world number. The same
- * id and number give the same coat on every client; over many ids each coat's share is its weight's share.
+ * The coat a creature wears: a coat by weight, from the server's draw for it (an unsigned 32-bit number; see
+ * coatEntity). The same draw gives the same coat; over many creatures each coat's share is its weight's share.
  * Undefined only for a kind with no coats.
  */
-export function coatOf(coats: readonly Coat[], creatureId: string | number, worldSeed: number): Coat | undefined {
+export function coatOf(coats: readonly Coat[], roll: number): Coat | undefined {
   const total = coats.reduce((sum, c) => sum + c.weight, 0);
   if (coats.length === 0 || !(total > 0)) return undefined;
-  let x = (coatHash(creatureId, worldSeed) / 4294967296) * total;
+  let x = ((roll >>> 0) / 4294967296) * total;
   for (const coat of coats) {
     x -= coat.weight;
     if (x < 0) return coat;

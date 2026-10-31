@@ -130,9 +130,10 @@ no body pixel melts into the outline, and the frames of a sheet do not swim. A r
 map cannot make (white patches) comes from `body`: another target whose model carries the pattern on its colour map
 (the hare's `hare-pied`, painted by `game/tools/blender/hare_pass.py --pied`), whose sheets the coat recolours.
 `clipProblems` refuses unknown ramps, a ramp the body does not draw in, a weight that is not positive, a repeated id,
-a step list that does not name six steps, a step that lands on the ink and a body that is not another target. The client picks and draws a coat with `game/src/coat.ts` (a fixed hash of
-the creature's id and a world number, never a roll); a coat is look only. DECISIONS 2026-10-30 holds the coats and
-their weights.
+a step list that does not name six steps, a step that lands on the ink and a body that is not another target. The server picks a creature's coat with `coatOf` in
+`game/src/coat.ts` from its keyed draw (`draw(seed, "coat:<id>", 0)`, never a roll on a client) and sends it with the
+creature; the client draws it with `remapCoat`. A coat changes no value, weight or count. DECISIONS 2026-10-30 holds
+the coats and their weights.
 
 ## The four measures, and what fails
 

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
+import { draw, widenSeed } from '@game/kernel';
 
-import { COAT_INK, type Coat, coatHash, coatOf, coatTable, idHash, type Ramps, remapCoat } from '../src/coat';
+import { COAT_INK, type Coat, coatEntity, coatOf, coatTable, type Ramps, remapCoat } from '../src/coat';
 import { readSettings } from '../../tools/src/anim/clip';
 import { INK_HEX } from '../../tools/src/kit/ink';
 import { CORE_RAMPS, DEEP_PALETTE } from '../../tools/src/kit/palette';
@@ -9,6 +10,8 @@ const RAMPS: Ramps = Object.fromEntries(CORE_RAMPS.map((r) => [r.id, r.steps]));
 const PALETTE = new Set(DEEP_PALETTE.map((hex) => Number.parseInt(hex.slice(1), 16)));
 const settings = readSettings();
 const KINDS = ['hare', 'crow'] as const;
+/** A world's key, as the server holds it: the coats' draws are taken under it. */
+const SEED = widenSeed(911);
 const coatsOf = (kind: string): Coat[] => (settings.targets[kind]?.coats ?? []) as Coat[];
 const rgb = (hex: string): [number, number, number] => {
   const n = Number.parseInt(hex.slice(1), 16);
@@ -65,36 +68,38 @@ describe('coat pick', () => {
     expect(COAT_INK).toBe(Number.parseInt(INK_HEX.slice(1), 16));
   });
 
-  test('the hash is fixed, unsigned and takes a numeric id and its text alike', () => {
-    expect(idHash('')).toBe(2166136261);
-    expect(idHash('a')).toBe(0xe40c292c);
-    expect(idHash(42)).toBe(idHash('42'));
-    expect(coatHash('hare-17', 3)).toBe(coatHash('hare-17', 3));
-    expect(coatHash('hare-17', 3)).not.toBe(coatHash('hare-17', 4));
-    expect(coatHash('hare-17', 3)).not.toBe(coatHash('hare-18', 3));
-    const h = coatHash(123456789, -7);
-    expect(Number.isInteger(h) && h >= 0 && h < 2 ** 32).toBe(true);
+  test('a coat is drawn under its own prefix, and the server\'s draw is fixed for a creature and a world', () => {
+    expect(coatEntity('core/hare@3,4')).toBe('coat:core/hare@3,4');
+    expect(coatEntity(42)).toBe('coat:42');
+    const roll = draw(SEED, coatEntity('hare-17'), 0);
+    expect(draw(SEED, coatEntity('hare-17'), 0)).toBe(roll);
+    expect(draw(SEED, coatEntity('hare-18'), 0)).not.toBe(roll);
+    expect(draw(widenSeed(912), coatEntity('hare-17'), 0)).not.toBe(roll);
+    expect(Number.isInteger(roll) && roll >= 0 && roll < 2 ** 32).toBe(true);
   });
 
-  test('the same creature in the same world always wears the same coat', () => {
+  test('the same draw always gives the same coat, and the ends of the draw the first and the last coat', () => {
     for (const kind of KINDS) {
       const coats = coatsOf(kind);
       for (let i = 0; i < 200; i += 1) {
-        const a = coatOf(coats, `${kind}-${i}`, 20261030);
+        const roll = draw(SEED, coatEntity(`${kind}-${i}`), 0);
+        const a = coatOf(coats, roll);
         expect(a).toBeDefined();
-        expect(coatOf([...coats], `${kind}-${i}`, 20261030)).toBe(a);
+        expect(coatOf([...coats], roll)).toBe(a);
       }
+      expect(coatOf(coats, 0)).toBe(coats[0]);
+      expect(coatOf(coats, 2 ** 32 - 1)).toBe(coats[coats.length - 1]);
     }
   });
 
-  test('over many creatures each coat\'s share is its weight\'s share, within a point and a half', () => {
+  test('over many creatures drawn by the kernel each coat\'s share is its weight\'s share, within a point and a half', () => {
     const n = 40000;
     for (const kind of KINDS) {
       const coats = coatsOf(kind);
       const total = coats.reduce((s, c) => s + c.weight, 0);
       const count = new Map<string, number>();
       for (let i = 0; i < n; i += 1) {
-        const c = coatOf(coats, i, 911)!;
+        const c = coatOf(coats, draw(SEED, coatEntity(i), 0))!;
         count.set(c.id, (count.get(c.id) ?? 0) + 1);
       }
       for (const c of coats) expect(Math.abs((count.get(c.id) ?? 0) / n - c.weight / total), `${kind} ${c.id}`).toBeLessThan(0.015);
@@ -102,8 +107,8 @@ describe('coat pick', () => {
   });
 
   test('a kind with no coats, or weights that sum to nothing, wears none', () => {
-    expect(coatOf([], 'x', 1)).toBeUndefined();
-    expect(coatOf([{ id: 'z', name: 'z', weight: 0, map: {} }], 'x', 1)).toBeUndefined();
+    expect(coatOf([], 1)).toBeUndefined();
+    expect(coatOf([{ id: 'z', name: 'z', weight: 0, map: {} }], 1)).toBeUndefined();
   });
 });
 
