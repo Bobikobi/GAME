@@ -80,6 +80,8 @@ export interface MassOptions {
   /** Trial: how ragged the silhouette is (1 as the trees), and how far the light leans to the left across the mass (0 none). */
   ragged?: number;
   side?: number;
+  /** Trial: a lit rim on each clump's upper left and a shaded underside on its lower right, in steps. */
+  rim?: number;
 }
 
 /**
@@ -158,6 +160,7 @@ export function drawMass(png: PNG, o: MassOptions): Uint8Array {
       const lit = (-(xw - cx) * 0.45 - (yw - cy) * 0.9) / reach;
       const crown = Math.min(1, near / reach);
       let v = 2.25 + tone + dome * 0.9 * contrast + lit * 2.6 * contrast - crown * crown * 1.1 * contrast - (y / h - 0.5) * 2.4 - ((x / w - 0.5) * (o.side ?? 0)) + (hash3(seed + 9, x, y) - 0.5) * 0.3;
+      if (o.rim) v += lit > 0.35 ? o.rim * Math.min(1, (lit - 0.35) * 3) : lit < -0.3 ? -o.rim * 0.4 * Math.min(1, (-lit - 0.3) * 3) : 0;
       // a higher lobe up and to the left throws its shadow here
       const above = Math.max(at(x - 3, y - 3), at(x - 5, y - 2), at(x - 2, y - 5));
       if (above > height[y * w + x]! + 0.12) v -= 0.8;
