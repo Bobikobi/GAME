@@ -505,6 +505,7 @@
           "green",
           "moss"
         ],
+        "scale": 1.47,
         "source": {
           "spec": "tools/src/art/crowns.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:154"
@@ -519,6 +520,7 @@
           "green",
           "moss"
         ],
+        "scale": 1.4,
         "source": {
           "spec": "tools/src/art/crowns.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:155"
@@ -533,6 +535,7 @@
           "green",
           "moss"
         ],
+        "scale": 1.63,
         "source": {
           "spec": "tools/src/art/crowns.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:156"

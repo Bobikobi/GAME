@@ -13,8 +13,9 @@ import type { PNG } from 'pngjs';
 import { PNG as Png } from 'pngjs';
 
 import { KIT_JSON, withSprite } from './pick.js';
-import { type Lobe, drawMass, fillPockets, hash3, inkEdge, rampOf, surface } from './foliage.js';
+import { type Lobe, drawMass, fillPockets, hash3, inkEdge, opaqueHeight, rampOf, surface } from './foliage.js';
 import { ROOT } from './queue.js';
+import { CHARACTER_PX } from './trees.js';
 
 export const CROWN = 128;
 /**
@@ -62,7 +63,9 @@ export function writeCrowns(root = ROOT, today = new Date().toISOString().slice(
     const id = `props/${name}`;
     const file = join(root, 'content/kit/core', `${id}.png`);
     mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, Png.sync.write(crownPng(SEEDS[n]!)));
+    const crown = crownPng(SEEDS[n]!);
+    writeFileSync(file, Png.sync.write(crown));
+    const scale = Math.round((opaqueHeight(crown) / CHARACTER_PX) * 100) / 100;
     const before = existsSync(manifest) ? readFileSync(manifest, 'utf8') : '';
     const lines = before.split('\n').filter((l) => l.trim() !== '');
     const own = lines.findIndex((l) => l.includes(`"sprite":"${id}"`) && l.includes(SPEC));
@@ -73,7 +76,7 @@ export function writeCrowns(root = ROOT, today = new Date().toISOString().slice(
       const line = { sprite: id, name, spec: SPEC, drawer: 'script', ref: id, what: 'a forest crown at 64 px: rounded lobes of leaf clumps, lit from the top left', ramps: ['green', 'moss'], picked: `script, ${today}` };
       appendFileSync(manifest, `${lead}${JSON.stringify(line)}\n`);
     }
-    kit = withSprite(kit, id, { file: `${id}.png`, w: CROWN, h: CROWN, density: 4, ramps: ['green', 'moss'], source: { spec: SPEC, manifest: `tools/kit-gen/rich-wave.manifest.jsonl:${number}` } });
+    kit = withSprite(kit, id, { file: `${id}.png`, w: CROWN, h: CROWN, density: 4, ramps: ['green', 'moss'], scale, source: { spec: SPEC, manifest: `tools/kit-gen/rich-wave.manifest.jsonl:${number}` } });
     wrote.push(id);
   });
   writeFileSync(kitPath, kit);
