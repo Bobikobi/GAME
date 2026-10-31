@@ -42,6 +42,15 @@ describe('sameHubData', () => {
     expect(hubDifferences(a, b)).toEqual(['/sources/usage', '/usage']);
   });
 
+  it('reads a changed players count as changed, and the time it was read as no change', async () => {
+    const counted = (now: string, open: number) =>
+      buildHubData({ client: null, now: new Date(now), previews: true, repository: REPO, usage: reader(3), accounts: async () => ({ open, new_7d: 1 }), log: () => {} });
+    const a = await counted('2026-10-15T10:00:00Z', 5);
+    expect(sameHubData(a, await counted('2026-10-15T11:00:00Z', 5))).toBe(true);
+    expect(hubDifferences(a, await counted('2026-10-15T11:00:00Z', 6))).toEqual(['/accounts/open']);
+    expect(hubDifferences(a, { ...a, accounts: null, sources: { ...a.sources, accounts: null } })).toEqual(['/accounts', '/sources/accounts']);
+  });
+
   it('keeps every other time: a moved vote close is data', () => {
     const a = { built_at: '1', votes: [{ closes_at: '2026-10-16T00:00:00Z' }] };
     expect(hubDifferences(a, { built_at: '2', votes: [{ closes_at: '2026-10-17T00:00:00Z' }] })).toEqual(['/votes/0/closes_at']);
