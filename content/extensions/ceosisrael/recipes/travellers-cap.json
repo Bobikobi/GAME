@@ -1,0 +1,50 @@
+{
+  "$schema": "../../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "ceosisrael/travellers-cap",
+  "title": "Traveller's cap",
+  "creator": "ceosisrael",
+  "ai_tools": ["Claude (Anthropic)"],
+  "items": [
+    {
+      "id": "ceosisrael/travellers-cap",
+      "name": "Traveller's cap",
+      "description": "Plaited reed with a cord tie. The kind travellers wear over the hills.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "garment",
+      "family": "cap",
+      "tier": 1,
+      "sprite": "ceosisrael/kit:items/travellers_cap",
+      "weight": 1,
+      "wear": {
+        "slot": "head",
+        "look": true
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 4000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/reed-cord",
+        "qty": 2
+      },
+      {
+        "item": "core/reed",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "ceosisrael/travellers-cap",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

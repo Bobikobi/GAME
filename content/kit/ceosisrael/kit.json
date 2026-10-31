@@ -2,14 +2,57 @@
   "format": 1,
   "type": "kit",
   "id": "ceosisrael/kit",
-  "title": "Glade fig art",
+  "title": "CeosIsrael's kit art",
   "creator": "ceosisrael",
-  "ai_tools": ["Claude (Anthropic)", "Qwen-Image 2512 (kit:gen, kaggle drawer)"],
+  "ai_tools": [
+    "Claude (Anthropic)",
+    "Qwen-Image 2512 (kit:gen, kaggle drawer)"
+  ],
   "kit": {
     "sprites": {
-      "props/fig_bush": { "file": "props/fig_bush.png", "w": 64, "h": 64, "density": 4, "ramps": ["green", "plum", "bark"] },
-      "props/fig_bush_empty": { "file": "props/fig_bush_empty.png", "w": 64, "h": 64, "density": 4, "ramps": ["green", "bark"] },
-      "items/fig": { "file": "items/fig.png", "w": 64, "h": 64, "density": 4, "ramps": ["plum", "red", "green"] }
+      "props/fig_bush": {
+        "file": "props/fig_bush.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "plum",
+          "bark"
+        ]
+      },
+      "props/fig_bush_empty": {
+        "file": "props/fig_bush_empty.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "bark"
+        ]
+      },
+      "items/fig": {
+        "file": "items/fig.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "plum",
+          "red",
+          "green"
+        ]
+      },
+      "items/travellers_cap": {
+        "file": "items/travellers_cap.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "rust"
+        ]
+      }
     }
   }
 }
