@@ -121,7 +121,7 @@ describe('the spec', () => {
 
   test('the 64 px ground spec reads, and its grounds are scatter tiles with references in the kit', () => {
     const entries = parseSpec(readFileSync(join(root, 'tools/kit-gen/ground-64.json'), 'utf8'));
-    expect(entries.map((e) => e.name)).toEqual(['meadow', 'meadow_dry', 'meadow_lush', 'flowers', 'sand', 'path', 'cobble', 'ruin_floor', 'forest', 'grove']);
+    expect(entries.map((e) => e.name)).toEqual(['meadow', 'meadow_cluster', 'meadow_dry', 'meadow_lush', 'flowers', 'sand', 'path', 'cobble', 'ruin_floor', 'forest', 'grove']);
     expect(entries.every((e) => e.route === 'scatter' && e.kind === 'tile' && e.width === 64)).toBe(true);
   });
 
@@ -148,5 +148,28 @@ describe('the spec', () => {
     expect(entryMatches(entry, new Set(['meadow']))).toBe(true);
     expect(entryMatches(entry, new Set(['meadow_tuft']))).toBe(true);
     expect(entryMatches(entry, new Set(['sand']))).toBe(false);
+  });
+});
+
+describe('the fine pass', () => {
+  const blade: Motif = { name: 'blade', weight: 1, fine: true, grid: ['..4..', '.43..', '.23..'] };
+  const fine = (): Scatter => ({ ...meadow('fine'), fineCell: 8, fineChance: 0.9, motifs: [tuft, blade] });
+
+  test('puts small strokes in a second, denser scatter and keeps the first pass as it was', () => {
+    const both = place(fine(), 0, 0, 64, 64, 64);
+    const strokes = both.filter((p) => p.motif.fine === true);
+    const big = both.filter((p) => p.motif.fine !== true);
+    expect(strokes.length).toBeGreaterThan(big.length * 2);
+    expect(big).toEqual(place({ ...fine(), motifs: [tuft] }, 0, 0, 64, 64, 64));
+  });
+
+  test('a stroke is at most the fine cell, a fine cell divides the tile', () => {
+    const spec = { width: 64, height: 64, base: 'c', cell: 16, fine_cell: 8, motifs: [{ name: 'blade', what: 'a blade', width: 9, height: 4, fine: true }] };
+    expect(scatterProblem(spec)).toContain('at most the 8 px cell');
+    expect(scatterProblem({ ...spec, fine_cell: 5, motifs: [{ name: 'blade', what: 'a blade', width: 4, height: 4, fine: true }] })).toContain('fine_cell 5');
+  });
+
+  test('the tile still wraps with the fine pass', () => {
+    expect(wrapsExactly(fine())).toBe(true);
   });
 });
