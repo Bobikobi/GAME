@@ -50,8 +50,8 @@ const PATCH_BIG = 14;
 const PATCH_SMALL = 7;
 const PATCH_SEED = 41;
 /** The share of the open water that lies in a lighter patch, and in a deeper one. */
-const SHARE_PALE = 0.3;
-const SHARE_DEEP = 0.08;
+const SHARE_PALE = 0.24;
+const SHARE_DEEP = 0;
 /** 2x2 ordered dither, as a share of the field's spread: a patch's edge is a soft stipple, not a line. */
 const BAYER = [0, 2, 3, 1].map((n) => (n + 0.5) / 4 - 0.5);
 const DITHER = 0.1;
