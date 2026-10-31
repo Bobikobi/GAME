@@ -17,8 +17,8 @@ export interface PlantLook {
 /** The names that stand as tufts. */
 export const TUFTS: readonly string[] = ['grass_tall', 'grass_tall_b', 'grass_tall_c'];
 /** The dominant lean, in degrees, and how far a tuft strays from it. */
-export const LEAN = 4;
-export const LEAN_SPREAD = 3;
+export const LEAN = 8;
+export const LEAN_SPREAD = 4;
 
 export function plantLook(x: number, y: number): PlantLook {
   const h = hash(x * 7 + 3, y * 13 + 5);
