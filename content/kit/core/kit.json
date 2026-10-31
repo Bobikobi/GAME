@@ -635,10 +635,18 @@
       },
       "props/flowers_blue": {
         "file": "props/flowers_blue.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2,
-        "scale": 0.55
+        "w": 32,
+        "h": 32,
+        "density": 4,
+        "ramps": [
+          "green"
+        ],
+        "scale": 0.3,
+        "source": {
+          "spec": "tools/src/art/smalls.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:159"
+        },
+        "frames": 2
       },
       "props/flowers_white": {
         "file": "props/flowers_white.png",
@@ -938,21 +946,51 @@
       },
       "props/ruin_arch": {
         "file": "props/ruin_arch.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.75
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "scale": 1.62,
+        "source": {
+          "spec": "tools/src/art/ruins.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:156"
+        }
       },
       "props/ruin_pillar": {
         "file": "props/ruin_pillar.png",
-        "w": 16,
-        "h": 32,
-        "scale": 1.7
+        "w": 64,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "scale": 1.56,
+        "source": {
+          "spec": "tools/src/art/ruins.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:154"
+        }
       },
       "props/ruin_wall": {
         "file": "props/ruin_wall.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.21
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "scale": 1.18,
+        "source": {
+          "spec": "tools/src/art/ruins.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:155"
+        }
       },
       "props/shelf": {
         "file": "props/shelf.png",
@@ -1003,9 +1041,19 @@
       },
       "props/statue_head": {
         "file": "props/statue_head.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.7
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "scale": 1.18,
+        "source": {
+          "spec": "tools/src/art/ruins.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:157"
+        }
       },
       "props/stump": {
         "file": "props/stump.png",
@@ -1024,9 +1072,20 @@
       },
       "props/totem": {
         "file": "props/totem.png",
-        "w": 16,
-        "h": 32,
-        "scale": 1.75
+        "w": 64,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss",
+          "wood"
+        ],
+        "scale": 1.56,
+        "source": {
+          "spec": "tools/src/art/ruins.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:158"
+        }
       },
       "props/tree_oak": {
         "file": "props/tree_oak.png",
