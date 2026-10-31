@@ -3922,7 +3922,50 @@
           "hours": [
             5,
             20
-          ]
+          ],
+          "behaviour": {
+            "sight": 5,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 30,
+              "graze": 40,
+              "wander": 30
+            },
+            "roam": 6,
+            "flight": "fly",
+            "sleeps": "ground",
+            "alarm": 5,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "ignores",
+            "water": "crosses",
+            "weather": "roosts",
+            "town": "town_kind",
+            "habitat": [
+              "meadow",
+              "town"
+            ],
+            "group": {
+              "class": "flock",
+              "bands": [
+                0,
+                0,
+                20,
+                80
+              ],
+              "season": {
+                "winter": [
+                  0,
+                  0,
+                  10,
+                  90
+                ]
+              }
+            },
+            "family": "perching-birds"
+          }
         },
         "core/crow": {
           "look": "bird",
@@ -3985,7 +4028,41 @@
           "hours": [
             5,
             22
-          ]
+          ],
+          "behaviour": {
+            "sight": 2,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 50,
+              "graze": 30,
+              "wander": 20
+            },
+            "roam": 6,
+            "flight": "swim",
+            "sleeps": "water",
+            "alarm": 0,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "ignores",
+            "water": "lives_in",
+            "weather": "none",
+            "town": "town_kind",
+            "habitat": [
+              "water"
+            ],
+            "group": {
+              "class": "herd",
+              "bands": [
+                20,
+                40,
+                40,
+                0
+              ]
+            },
+            "family": "fish"
+          }
         },
         "core/hare": {
           "look": "rabbit",
