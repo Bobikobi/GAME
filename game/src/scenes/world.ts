@@ -49,7 +49,7 @@ import { sound, type Heard, type Owner, type SfxId, type SongId } from '../audio
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
-import { sunAt, sunTableOf } from '../cast';
+import { castsShadow, sunAt, sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
 import { HOLE, LIGHT_POOL, READ, SHAFT, bankAt, cloudAt, dappleAt, frameAlpha, frameAt, nightAt, shadeAt, shaftAt, tableOf } from '../light';
 import { LightLayer, litWindow, type Light } from '../light-layer';
@@ -119,11 +119,6 @@ const PALETTE = {
 /** The ground tags whose tiles, props or canopies draw the colours the sway moves (richground.ts `MOVES`). */
 const SWAYS = new Set(['meadow', 'grove', 'water', 'riverbank']);
 
-/** Props that lie on the ground and cast no shadow, by sprite name. */
-const FLAT = new Set([
-  'flowers', 'flowers_white', 'flowers_blue', 'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
-  'log_fallen', 'log_mossy', 'grass_tall', 'dig_spot', 'fog', 'reeds', 'herb_plant', 'fence', 'fence_post', 'campfire_lit', 'campfire_unlit',
-]);
 /** Where the smoke leaves house_small: the chimney top, in pixels of the 48x48 sprite (read from the art). */
 const CHIMNEY = { x: 37, y: 6 };
 /** Edge strips are named by the side of the tile they sit on. */
@@ -1356,7 +1351,7 @@ export class WorldScene extends Phaser.Scene {
       const key = obj.texture.key;
       if (!key || key.startsWith('fx-') || key.startsWith('senses-') || key.startsWith('cast-') || key.startsWith('cast:')) continue;
       if (key === '__DEFAULT' || key === '__WHITE' || key.startsWith('ground-')) continue;
-      if (FLAT.has(baseName(key))) continue;
+      if (!castsShadow(key)) continue;
       const depth = obj.depth;
       if (depth < DEPTH.flat || depth > 1000) continue;
       // a dig spot and a puff lie at 3 and 3.5; the props and the people stand at their own feet
