@@ -5,7 +5,7 @@
  */
 import type { HubData } from '@game/schema/hub';
 import fixture from '../../../schema/test/fixtures/hub-data.json';
-import { DEMO_DOOR, playDoor } from '../../../tools/src/site/door';
+import { playDoor } from '../../../tools/src/site/door';
 
 /** The repository on GitHub; the game's own copy is REPO_URL in game/src/config.ts. */
 export const REPO = 'https://github.com/Bobikobi/GAME';
@@ -31,8 +31,6 @@ export type Section = 'home' | 'boards' | 'developers' | 'docs';
 
 /** Where every Play door leads: the demo at /play/, or the game with an account when the build names it (tools/src/site/door.ts). */
 export const PLAY = playDoor();
-/** True when the doors open the game with an account, whose progress lives on the server, not on the device. */
-export const playWithAccount = PLAY !== DEMO_DOOR;
 
 /** The header's links; `section` marks the page a link leads to, for aria-current. */
 export const NAV: readonly { label: string; href: string; section?: Section }[] = [
