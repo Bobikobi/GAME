@@ -573,8 +573,8 @@
       },
       "props/flowers": {
         "file": "props/flowers.png",
-        "w": 64,
-        "h": 64,
+        "w": 32,
+        "h": 32,
         "density": 4,
         "ramps": [
           "green",
@@ -594,8 +594,8 @@
       },
       "props/flowers_white": {
         "file": "props/flowers_white.png",
-        "w": 64,
-        "h": 64,
+        "w": 32,
+        "h": 32,
         "density": 4,
         "ramps": [
           "green",
