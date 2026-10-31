@@ -4329,6 +4329,91 @@
           "kind": "core/roe",
           "x": 3,
           "y": 25
+        },
+        {
+          "kind": "core/hare",
+          "x": 11,
+          "y": 31
+        },
+        {
+          "kind": "core/hare",
+          "x": 3,
+          "y": 22
+        },
+        {
+          "kind": "core/hare",
+          "x": 10,
+          "y": 3
+        },
+        {
+          "kind": "core/hare",
+          "x": 28,
+          "y": 23
+        },
+        {
+          "kind": "core/hare",
+          "x": 18,
+          "y": 24
+        },
+        {
+          "kind": "core/hare",
+          "x": 42,
+          "y": 5
+        },
+        {
+          "kind": "core/roe",
+          "x": 8,
+          "y": 33
+        },
+        {
+          "kind": "core/roe",
+          "x": 3,
+          "y": 5
+        },
+        {
+          "kind": "core/roe",
+          "x": 20,
+          "y": 24
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 43,
+          "y": 17
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 25,
+          "y": 22
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 10,
+          "y": 29
+        },
+        {
+          "kind": "core/crow",
+          "x": 30,
+          "y": 26
+        },
+        {
+          "kind": "core/crow",
+          "x": 28,
+          "y": 48
+        },
+        {
+          "kind": "core/crow",
+          "x": 44,
+          "y": 48
+        },
+        {
+          "kind": "core/trout",
+          "x": 13,
+          "y": 14
+        },
+        {
+          "kind": "core/trout",
+          "x": 13,
+          "y": 3
         }
       ]
     },
