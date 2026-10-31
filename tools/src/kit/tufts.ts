@@ -22,7 +22,7 @@ import { hexToRgb } from './palette.js';
 export const CANVAS = 64;
 export const FRAMES = 4;
 /** The most a tuft may stand, native px (density 4): the ankle, 0.16 of the character (31.10: 7 px, the sole-to-ankle foot, left only the ink edge; the manager set 10). */
-export const MAX_H = 10;
+export const MAX_H = 12;
 /** How far the tips lean in each frame, native px (4 = one art px). */
 export const LEAN = [0, 2, 4, 2] as const;
 
@@ -38,20 +38,20 @@ interface Blade {
   fan: number;
 }
 
-/** Three clumps, root narrow and tips spread. */
+/** Three clumps of 5, 6 and 7 blades, 8 to 10 px wide and 10 to 12 tall, over a 3 px body. */
 export const VARIANTS: Record<string, Blade[]> = {
   grass_tuft: [
-    { at: -3, h: 7, fan: -3 }, { at: -1, h: 10, fan: -1 }, { at: 0, h: 8, fan: 1 }, { at: 2, h: 10, fan: 2 }, { at: 3, h: 7, fan: 3 },
+    { at: -3, h: 10, fan: -1 }, { at: -1, h: 12, fan: 0 }, { at: 0, h: 11, fan: 0 }, { at: 2, h: 12, fan: 1 }, { at: 3, h: 10, fan: 1 },
   ],
   grass_tuft_b: [
-    { at: -4, h: 6, fan: -3 }, { at: -2, h: 8, fan: -2 }, { at: -1, h: 10, fan: 0 }, { at: 1, h: 8, fan: 1 }, { at: 3, h: 10, fan: 3 }, { at: 4, h: 6, fan: 3 },
+    { at: -3, h: 10, fan: -2 }, { at: -2, h: 11, fan: -1 }, { at: -1, h: 12, fan: 0 }, { at: 1, h: 12, fan: 0 }, { at: 2, h: 11, fan: 1 }, { at: 3, h: 10, fan: 2 },
   ],
   grass_tuft_c: [
-    { at: -2, h: 8, fan: -3 }, { at: -1, h: 7, fan: -1 }, { at: 1, h: 10, fan: 0 }, { at: 2, h: 7, fan: 2 },
+    { at: -3, h: 10, fan: -1 }, { at: -2, h: 11, fan: -1 }, { at: -1, h: 12, fan: 0 }, { at: 0, h: 11, fan: 0 }, { at: 1, h: 12, fan: 1 }, { at: 2, h: 11, fan: 1 }, { at: 3, h: 10, fan: 1 },
   ],
 };
 
-/** One frame's picture of a tuft: thin blades, two px wide below 60% of their height and one above, a dark root pixel each. */
+/** One frame's picture of a tuft: blades of 2 px (3 below their middle) ending in a point, over a 3 px body that the lean never touches. */
 function drawFrame(blades: Blade[], lean: number, rgba: Uint8Array, x0: number): void {
   const mid = x0 + CANVAS / 2;
   const put = (x: number, r: number, step: number): void => {
@@ -62,13 +62,17 @@ function drawFrame(blades: Blade[], lean: number, rgba: Uint8Array, x0: number):
     rgba[p + 2] = B;
     rgba[p + 3] = 255;
   };
+  const lo = Math.min(...blades.map((b) => b.at));
+  const hi = Math.max(...blades.map((b) => b.at)) + 1;
+  for (let r = 0; r < 3; r++) for (let x = lo; x <= hi; x++) put(mid + x, r, r === 0 ? 2 : 3);
   for (const b of blades) {
-    put(mid + b.at, 0, 1);
-    for (let r = 1; r < b.h; r++) {
+    for (let r = 3; r < b.h; r++) {
       const f = r / Math.max(1, b.h - 1);
       const cx = mid + b.at + Math.round(b.fan * f + lean * f);
-      put(cx, r, f >= 0.45 ? 4 : 3);
-      if (f < 0.6) put(cx + 1, r, f >= 0.3 ? 4 : 3);
+      const step = f >= 0.55 ? 4 : 3;
+      put(cx, r, step);
+      if (r < b.h - 1) put(cx + 1, r, step);
+      if (f < 0.6) put(cx - 1, r, 3);
     }
   }
 }
