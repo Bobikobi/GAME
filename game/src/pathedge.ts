@@ -1,5 +1,5 @@
 import { hash, valueNoise } from './richground';
-import { BAYER4, TEAL, bedAt, foamAt } from './waterbody';
+import { bedAt, foamAt } from './waterbody';
 
 /**
  * Where a path meets the meadow, worked out per pixel and not per tile, so no 64 px step shows: the tiles' own
@@ -21,18 +21,6 @@ const STONE_RUN = 46;
 /** A stone's gap to the next: stones nearer than this share of their two radii give way to the stronger one. */
 const STONE_TOUCH = 0.85;
 const STONE_SHADE: readonly [number, number, number] = [0x5d, 0x61, 0x77];
-/** One step lighter on the teal ramp (and the blue one): the shallows. */
-const LIGHTER = new Map<number, number>([
-  [TEAL.h, TEAL.i],
-  [TEAL.i, TEAL.j],
-  [TEAL.j, TEAL.k],
-  [TEAL.k, TEAL.l],
-  [TEAL.l, TEAL.m],
-  [0x172a52, 0x275a99],
-  [0x275a99, 0x3f8fd1],
-  [0x3f8fd1, 0x7cc4ec],
-  [0x7cc4ec, 0xc4ecf8],
-]);
 const STONE: readonly [number, number, number] = [0x8f, 0x94, 0xa8];
 const STONE_LIGHT: readonly [number, number, number] = [0xc6, 0xca, 0xd6];
 const STONE_DARK: readonly [number, number, number] = [0x3a, 0x35, 0x54];
@@ -52,8 +40,11 @@ const RIM_LIGHT: readonly [number, number, number] = [0xf3, 0xc7, 0xa0];
 // (not the blue ramp's pale step: the sway shader (richground.ts MOVES) drifts that one, and a fleck of foam holds still)
 const FOAM_WHITE: readonly [number, number, number] = [0xc6, 0xca, 0xd6];
 const FOAM_ICE: readonly [number, number, number] = [0xf5, 0xf4, 0xef];
-/** The share of the pixels a step lighter right at the waterline, falling to none 24 px out. */
-const SHALLOW_LIFT = 0.5;
+/** How much the bed shows at the waterline (a share), how far out it fades (px, an exponential), the share of the bed's own colour in what shows, and the colour of the shallow water it mixes with. */
+const SHALLOW_MIX = 0.8;
+const SHALLOW_REACH = 11;
+const SHALLOW_BED = 0.35;
+const SHALLOW_WATER: readonly [number, number, number] = [0x62, 0xb3, 0xa2];
 /** The pale line's width on the land side, in art pixels. */
 const RIM_PX = 2.5;
 /** The ink of a stone's outline, the props' own. */
@@ -269,19 +260,14 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
           const dpx = (edge - t) * EDGE_PX;
           const shallowPx = r.shallow * EDGE_PX;
           if (dpx < shallowPx) {
-            const near = 1 - Math.max(0, dpx) / shallowPx;
+            // the study's bed shows through toward the line, fading out with the distance: the water mixes toward the bed's own colour, held to a muted teal so it reads as shallow water and not as sand
             const bed = bedAt(gx, gy);
-            const bedLum = (bed[0] * 0.3 + bed[1] * 0.5 + bed[2] * 0.2) / 255;
-            // from the line outward a smaller share of the pixels is a step lighter, the bed's own light and dark moving it a little; the last stretch to the line takes a second step
-            const lift = SHALLOW_LIFT * near ** 0.9 + (bedLum - 0.42) * 0.5;
-            const cut = BAYER4[(gx & 3) + 4 * (gy & 3)]!;
-            const level = (cut < lift ? 1 : 0) + (near > 0.7 && cut < (near - 0.7) * 1.2 ? 1 : 0);
-            for (let n = 0; n < level; n++) {
-              const lit = LIGHTER.get((out[i]! << 16) | (out[i + 1]! << 8) | out[i + 2]!);
-              if (lit === undefined) break;
-              out[i] = lit >> 16;
-              out[i + 1] = (lit >> 8) & 255;
-              out[i + 2] = lit & 255;
+            const near = Math.max(0, dpx);
+            // an exponential fade that is cut to nothing where the shallows end, so the open water is never touched
+            const k = SHALLOW_MIX * Math.exp(-near / SHALLOW_REACH) * (1 - near / shallowPx);
+            for (let c = 0; c < 3; c++) {
+              const tint = bed[c]! * SHALLOW_BED + SHALLOW_WATER[c]! * (1 - SHALLOW_BED);
+              out[i + c] = Math.round(out[i + c]! * (1 - k) + tint * k);
             }
           }
           if (dpx < r.foam * EDGE_PX) {

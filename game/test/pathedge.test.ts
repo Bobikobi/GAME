@@ -108,14 +108,14 @@ describe('where land meets water', () => {
       for (let py = 0; py < EDGE_PX; py++) {
         for (let px = 0; px < EDGE_PX; px++) {
           const i = (py * EDGE_PX + px) * 4;
-          if (px >= 56 && !is(i, DEEP)) farOther += 1;
-          if (is(i, [0x3f, 0x8f, 0x84]) || is(i, [0x62, 0xb3, 0xa2])) lighter += 1;
+          if (px >= 56 && Math.max(Math.abs(o[i]! - DEEP[0]), Math.abs(o[i + 1]! - DEEP[1]), Math.abs(o[i + 2]! - DEEP[2])) > 4) farOther += 1;
+          if (0.3 * o[i]! + 0.5 * o[i + 1]! + 0.2 * o[i + 2]! > 0.3 * DEEP[0] + 0.5 * DEEP[1] + 0.2 * DEEP[2] + 8) lighter += 1;
           if (is(i, [0xc6, 0xca, 0xd6]) || is(i, [0xf5, 0xf4, 0xef])) foam += 1;
           if (is(i, [0x1b, 0x1a, 0x2e])) ink += 1;
         }
       }
     }
-    // the shallows fade out: at the far edge of the tile only a scatter of pixels (a few in a hundred) is lighter
+    // the shallows fade out: at the far edge of the tile only a few pixels in a hundred differ from the open water by more than a hair
     expect(farOther).toBeLessThan(200);
     expect(lighter).toBeGreaterThan(500);
     // foam only in flecks, never a band
@@ -127,7 +127,8 @@ describe('where land meets water', () => {
   });
   test('the water is 6 to 10 luminance steps lighter within 24 px of the line than 60 px out', () => {
     const lum = (r: number, g: number, b: number): number => 0.3 * r + 0.5 * g + 0.2 * b;
-    const teal = new Set([0x122b2c, 0x1c4a49, 0x2a6c66, 0x3f8f84, 0x62b3a2, 0x93d6c2, 0xc6cad6, 0xf5f4ef]);
+    // water is the green-blue pixels: sand has red above green, stones and foam have none to spare
+    const isWater = (r: number, g: number, b: number): boolean => g - r > 20 && b - r > 15;
     let near = 0;
     let nn = 0;
     let far = 0;
@@ -142,7 +143,7 @@ describe('where land meets water', () => {
           for (let py = 0; py < EDGE_PX; py++) {
             for (let px = 0; px < EDGE_PX; px++) {
               const i = (py * EDGE_PX + px) * 4;
-              if (!teal.has((o[i]! << 16) | (o[i + 1]! << 8) | o[i + 2]!)) continue;
+              if (!isWater(o[i]!, o[i + 1]!, o[i + 2]!)) continue;
               const d = tx * EDGE_PX + px - 2 * EDGE_PX;
               const l = lum(o[i]!, o[i + 1]!, o[i + 2]!);
               if (d >= 1 && d <= 24) {

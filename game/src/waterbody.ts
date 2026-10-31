@@ -43,22 +43,6 @@ interface Layers {
   foam: Raster;
 }
 let layers: Layers | undefined;
-let cuts: { low: number; high: number } | undefined;
-
-/** The patches' two lattice spacings, in art pixels: a few broad soft drifts to a tile or two, and a finer wobble that roughens their edge. */
-const PATCH_BIG = 32;
-const PATCH_SMALL = 16;
-const PATCH_SEED = 41;
-/** The share of the open water that lies in a pale patch's core, and the feather round it, in the field's own units (a few pixels). */
-const SHARE_PALE = 0.108;
-const FEATHER = 0.075;
-/** 4x4 ordered dither, 0 up to 1: a patch's feather steps from the base to the lighter step in sixteen densities, not one hard line. */
-export const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((n) => (n + 0.5) / 16);
-/** How far the study's body layer (at .65 texels to a pixel) roughens the field. */
-const GRAIN = 0.05;
-/** The glint levels that make a sparkle of the lighter steps: high, so only a handful show. */
-const SPARK_L = 0.42;
-const SPARK_M = 0.62;
 
 function read(): Layers {
   if (!layers) layers = { bed: decode(WATER_LAYERS.bed), body: decode(WATER_LAYERS.body), light: decode(WATER_LAYERS.light), foam: decode(WATER_LAYERS.foam) };
@@ -66,63 +50,83 @@ function read(): Layers {
 }
 
 const wrap = (v: number): number => ((Math.floor(v) % SIZE) + SIZE) % SIZE;
+/** A texel coordinate bounced back and forth over the layer (0..127, then 127..0), so a sample never meets an edge: the layers are not made to tile. */
+const bounce = (v: number): number => {
+  const t = ((Math.floor(v) % (2 * SIZE)) + 2 * SIZE) % (2 * SIZE);
+  return t < SIZE ? t : 2 * SIZE - 1 - t;
+};
+
+/** The study's deep base, and its body layer's weights: `base * .65 + body * .2 + body * .15`, the body read at two scales. */
+const BASE = [28, 74, 73] as const;
+/** The weights of the base and of the body at its two scales (the study's .65, .2 and .15; the body leans harder here so the water is as lively as the cove's). */
+const BASE_W = 0.3;
+const WA = 0.42;
+const WB = 0.28;
+/** Texels of the body layer to an art pixel at the study's two scales. */
+const SCALE_A = 0.65;
+const SCALE_B = 0.39;
+/** How far a slow noise leans the body's sampling, in texels: the two scales never settle into a lattice. */
+const WARP = 26;
+/** The grade that takes the study's composite to the cove as it stands in the world (measured on the approved frame: about 52, 92, 87). */
+const GRADE = [16, 8, 7] as const;
+/** The light layer's sparkle colour. */
+const SPARKLE = [196, 232, 220] as const;
 
 /** Where the water's drift has moved it by a frame: a gentle rock of a pixel or two that closes at the fourth frame. */
 function drift(frame: number): [number, number] {
   const a = (frame / FRAMES) * Math.PI * 2;
-  return [Math.round(2 * Math.sin(a)), Math.round(2 * Math.sin(a + 1.3))];
+  return [2 * Math.sin(a), 2 * Math.sin(a + 1.3)];
 }
 
-/** The water's brightness at an art pixel in a frame, 0 to about 1: soft drifts of noise at two scales, roughened by the study's body layer. Nothing in it repeats. */
-function fieldAt(l: Layers, gx: number, gy: number, frame: number): number {
-  const [dx, dy] = drift(frame);
-  const x = gx + dx;
-  const y = gy + dy;
-  const big = valueNoise(x, y, PATCH_SEED, PATCH_BIG);
-  const small = valueNoise(x, y, PATCH_SEED + 9, PATCH_SMALL);
-  // the grain is read from a window of the layer that moves a different way in every 128 px cell, so it never lines up
-  const cell = hash(Math.floor(gx / SIZE), Math.floor(gy / SIZE));
-  const i = wrap(y * 0.65 + (cell & 127)) * SIZE + wrap(x * 0.65 + ((cell >>> 7) & 127));
-  const grain = l.body.lum[i]! - 0.5;
-  return big * 0.68 + small * 0.32 + grain * GRAIN;
-}
-
-/** The field's value above which a pixel is in a patch's core, and the one below which it is outside its feather, from a sweep of the world's water. */
-function cutsOf(l: Layers): { low: number; high: number } {
-  if (!cuts) {
-    const seen: number[] = [];
-    for (let y = 0; y < 1600; y += 6) for (let x = 0; x < 1600; x += 6) seen.push(fieldAt(l, x, y, 0));
-    seen.sort((p, q) => p - q);
-    const high = seen[Math.floor(seen.length * (1 - SHARE_PALE))]!;
-    cuts = { low: high - FEATHER, high };
+/** A layer's colour at a fractional texel, bilinear, bouncing at the edges: the smooth read the study's canvas gave. */
+function sample(r: Raster, u: number, v: number, out: number[]): void {
+  const x0 = Math.floor(u);
+  const y0 = Math.floor(v);
+  const fx = u - x0;
+  const fy = v - y0;
+  const xa = bounce(x0);
+  const xb = bounce(x0 + 1);
+  const ya = bounce(y0);
+  const yb = bounce(y0 + 1);
+  for (let c = 0; c < 3; c++) {
+    const top = r.rgb[(ya * SIZE + xa) * 3 + c]! * (1 - fx) + r.rgb[(ya * SIZE + xb) * 3 + c]! * fx;
+    const bottom = r.rgb[(yb * SIZE + xa) * 3 + c]! * (1 - fx) + r.rgb[(yb * SIZE + xb) * 3 + c]! * fx;
+    out[c] = top * (1 - fy) + bottom * fy;
   }
-  return cuts;
 }
 
-/** How far into a pale patch an art pixel is, 0 (outside) to 1 (its core), across a feather of a few pixels. */
-function paleAt(l: Layers, gx: number, gy: number, frame: number): number {
-  const c = cutsOf(l);
-  return Math.min(1, Math.max(0, (fieldAt(l, gx, gy, frame) - c.low) / (c.high - c.low)));
-}
+const scratchA = [0, 0, 0];
+const scratchB = [0, 0, 0];
 
-/** True where the open water lies in a pale patch at an art pixel, its feather's half counted: what the patches are, for counting them. */
-export function patchAt(gx: number, gy: number, frame = 0): boolean {
-  return paleAt(read(), gx, gy, frame) > 0.5;
-}
-
-/** The colour of the open water at an art pixel, in a frame (0 to 3): the teal base, the next step in the pale patches (dithered across their feather), the light layer's sparkles. */
+/** The colour of the open water at an art pixel, in a frame (0 to 3): the study's composite of base and body, its light layer's sparkles on top. A packed 0xRRGGBB. */
 export function deepAt(gx: number, gy: number, frame: number): number {
   const l = read();
-  // the light layer's sparkles: where it is bright, and in the frame whose turn it is
+  const [dx, dy] = drift(frame);
+  // the body, read at the study's two scales, each leaned a little by slow noise so no lattice forms
+  const wx = (valueNoise(gx, gy, 51, 90) - 0.5) * 2 * WARP;
+  const wy = (valueNoise(gx, gy, 57, 90) - 0.5) * 2 * WARP;
+  sample(l.body, gx * SCALE_A + wx + dx, gy * SCALE_A + wy + dy, scratchA);
+  sample(l.body, gx * SCALE_B + 61 - wy * 0.7 - dy, gy * SCALE_B + 23 + wx * 0.7 + dx, scratchB);
+  const out = [0, 0, 0];
+  for (let c = 0; c < 3; c++) out[c] = BASE[c]! * BASE_W + scratchA[c]! * WA + scratchB[c]! * WB + GRADE[c]!;
+  // the light layer's sparkles, read from a window that differs, and is mirrored, in every 128 px chunk: where it is bright, in the frame whose turn it is
   const cell = hash(Math.floor(gx / SIZE) + 5, Math.floor(gy / SIZE) + 11);
-  const li = (wrap(gy * 1.4 + (cell & 127)) * SIZE + wrap(gx + ((cell >>> 7) & 127))) * 3;
+  const lx = (cell & 1 ? SIZE - 1 - wrap(gx) : wrap(gx)) + ((cell >>> 1) & 127);
+  const ly = (cell & 2 ? SIZE - 1 - wrap(gy * 1.4) : wrap(gy * 1.4)) + ((cell >>> 8) & 127);
+  const li = (wrap(ly) * SIZE + wrap(lx)) * 3;
   const lv = (l.light.rgb[li]! + l.light.rgb[li + 1]! + l.light.rgb[li + 2]!) / 765;
   const pulse = 0.12 + 0.65 * Math.max(0, Math.sin((frame / FRAMES) * Math.PI * 2 + gx * 0.045 + gy * 0.018)) ** 6;
   const glint = Math.min(1, Math.max(0, (lv - 0.42) * 2.5)) * pulse;
-  if (glint > SPARK_M) return TEAL.m;
-  if (glint > SPARK_L) return TEAL.l;
-  return paleAt(l, gx, gy, frame) > BAYER4[(gx & 3) + 4 * (gy & 3)]! ? TEAL.j : TEAL.i;
+  if (glint > SPARK) {
+    const k = Math.min(1, (glint - SPARK) * 2.2);
+    for (let c = 0; c < 3; c++) out[c] = out[c]! * (1 - k) + SPARKLE[c]! * k;
+  }
+  const clamp = (v: number): number => Math.min(255, Math.max(0, Math.round(v)));
+  return (clamp(out[0]!) << 16) | (clamp(out[1]!) << 8) | clamp(out[2]!);
 }
+
+/** The glint level where a sparkle starts. */
+const SPARK = 0.42;
 
 /** One tile of the open water, RGBA, `px` a side, for a frame: the tile's place in the world is what it draws. */
 export function deepTile(tx: number, ty: number, frame: number, out: Uint8ClampedArray, px = 64): void {
