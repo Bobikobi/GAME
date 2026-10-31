@@ -7,6 +7,7 @@ One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 What players notice
 - The valley floor is drawn in the rich 64 px art: one continuous olive meadow varied by tone, tufts and seed heads, flowers sparse, and soft wandering joins where the grass meets a path (wave 1, the owner's pick after two passes). The plants, stones and small things of the first ten minutes follow at 64 px, 21 pictures (wave 2).
 - The opening's bank path is two to three tiles wide, uneven and rounded, instead of one straight tile.
+- The small props stand in groups instead of single scatter: flowers in threes and more, drifts of tall grass, berry bushes, and the second well in one home near a path. Plants cast shadows now, and flat things (rubble, pebbles, logs, fences, fires) still do not.
 - Light follows the hour: from 17:00 lamps and fires cast pools of light, the figure is lit by what it stands near, clouds drift their shade over the ground, and dusk and night take the tint the owner picked.
 - The dark frame around the phone's view is an edge by day, not a veil: at noon the grass shows its own colour to the middle of the screen; the veil returns with the night.
 - The top bar wears frame D on phone, desktop and landscape: lacquer black with a hairline of lit gold on the meter, the chips, the tracker, the toasts, the buttons and the pocket map.
