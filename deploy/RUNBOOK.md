@@ -144,6 +144,16 @@ Verify: the boot log line says `the age limit by the country in the file /app/co
 replaced by taking the next month's name and sha256 into `deploy/Dockerfile` and building again; DB-IP's credit
 (CC BY 4.0, https://db-ip.com) stays in the game's credits panel and in the README.
 
+The players counter (DECISIONS 2026-10-31). In this mode the API answers `GET /stats` with two counts, open accounts
+and the ones opened in the last 7 days. Each count is read from the database at most once a minute, and no id is
+in the answer. The nginx file proxies that one path; `dev-header` has no accounts and answers it 404. The hub's
+hourly refresh reads it through the repository variable `GAME_SERVER_ORIGIN` (Settings, Variables, Actions), which
+holds the box's https origin. It is written there and never in this repository, and setting it is the owner's
+step. Unset, unreachable, an error or more than 5 s, the board says "unknown", never 0.
+Verify: `curl -s https://<name>/stats` prints `{"accounts":N,"new_7d":M}`, and a second call within a minute prints the
+same counts from the cache, even after a sign-up in between. After the next hourly refresh, the boards page shows the
+counts.
+
 On the laptop, the same mode runs against the dev client: `AUTH_MODE=session PUBLIC_ORIGIN=http://localhost:8080
 APP_ORIGIN=http://localhost:5173 ALLOW_LOG_MAILER=staging-only` with the Google pair exported from the secrets
 file, never pasted into a shell history or a chat. Two loopback ports are the one pair of origins the API accepts.
