@@ -2594,6 +2594,39 @@
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
         },
         "scale": 0.88
+      },
+      "tiles/grass_tuft": {
+        "file": "tiles/grass_tuft.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "fire"
+        ]
+      },
+      "tiles/grass_tuft_b": {
+        "file": "tiles/grass_tuft_b.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "fire"
+        ]
+      },
+      "tiles/grass_tuft_c": {
+        "file": "tiles/grass_tuft_c.png",
+        "w": 64,
+        "h": 64,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "fire"
+        ]
       }
     }
   }
