@@ -1742,6 +1742,379 @@
                     }
                   },
                   "description": "How high a hunt outrun to a safe place lifts health, in basis points of the health cap: it gives back what its bites took, up to this share. It never lowers health."
+                },
+                "telegraph": {
+                  "additionalProperties": false,
+                  "description": "The threat telegraph (NEXT.md 12 c): how a predator is heard far off and near, and how its bite is drawn. Read by the client only; the kernel decides every sight, bite and safe place.",
+                  "type": "object",
+                  "required": [
+                    "howl_tiles",
+                    "howl_pct",
+                    "howl_gap_min_s",
+                    "howl_gap_max_s",
+                    "near_tiles",
+                    "near_pct",
+                    "near_curve",
+                    "dash_ms",
+                    "lunge_ms",
+                    "lunge_px",
+                    "flinch_ms",
+                    "flinch_px",
+                    "hit_ms"
+                  ],
+                  "properties": {
+                    "howl_tiles": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "From this many tiles on, a predator's far howl is not heard; nearer it is louder, and above 0 at 12 tiles."
+                    },
+                    "howl_pct": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The far howl's level beside its cause, in percent of the effect's whole level."
+                    },
+                    "howl_gap_min_s": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The shortest wait between two far howls, in seconds of the wall clock."
+                    },
+                    "howl_gap_max_s": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The longest wait between two far howls, in seconds of the wall clock."
+                    },
+                    "near_tiles": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "Inside this many tiles of a predator the rising layer (breath, a twig, a padding) is heard; 0 beyond."
+                    },
+                    "near_pct": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The rising layer's level beside the predator, in percent of the bed's whole level."
+                    },
+                    "near_curve": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How steeply the rising layer grows as the player comes closer: its level is the share of `near_tiles` closed, to this power."
+                    },
+                    "dash_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The fastest a drawn predator runs to stand beside the player by the next bite, in game milliseconds a tile."
+                    },
+                    "lunge_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How long a drawn bite's lunge lasts, in milliseconds."
+                    },
+                    "lunge_px": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How far the predator lunges at the player, in game pixels."
+                    },
+                    "flinch_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How long the player's flinch at a bite lasts, in milliseconds."
+                    },
+                    "flinch_px": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How far the player flinches back, in game pixels."
+                    },
+                    "hit_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How long the health meter shows a bite, in milliseconds."
+                    }
+                  }
                 }
               }
             },

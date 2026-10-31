@@ -300,6 +300,12 @@ already handles that and the e2e run checks it.
   word); reduced motion is honoured by every effect; one hand is enough on a
   phone; the strike window grows with agility so a slower hand still wins
   (G15).
+- **G102 The code tells the odds, the server tells the result.** Nothing in
+  the open repository is a secret a rule leans on: every value, rule and
+  chance may be read, and a reading gains a player knowledge, never gold, an
+  item, a place or time. What must stay unknown is drawn from the server's
+  seed or learned by playing (G47), and a client that sends a change the
+  kernel did not make is refused (PLATFORM.md 9.6; GRUNT CR-115).
 - **G70 A race changes how, never whether.** The valley speaks to each race
   in its own lines, and a quest may offer a race a step variant or a harder
   way through; no quest step, door or reward closes to a race (G12, G28).
@@ -588,7 +594,7 @@ Added 2026-10-18 on the owner's word (DECISIONS.md, "Height crossings and windin
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace, combat | This page | Rules G1-G49, G68-G71, and G78, G81, G83, G84 and G86. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace, combat | This page | Rules G1-G49, G68-G71, and G78, G81, G83, G84, G86 and G102. |
 | Economy and balance | The kernel rules R1-R12, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |

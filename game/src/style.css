@@ -482,6 +482,15 @@ textarea {
   text-align: right;
 }
 
+/* a bite (the threat telegraph's act, NEXT.md 12 c): the meter turns the warning colour for a moment, and nothing moves */
+.meter[data-hit] {
+  --hud-line: var(--ui-hud-line-warn);
+}
+
+.meter[data-hit] .meter-bar i {
+  background: var(--ui-warn);
+}
+
 .chip {
   display: inline-flex;
   align-items: center;

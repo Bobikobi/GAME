@@ -90,6 +90,7 @@ const bedRequests: Record<BedId, { level: number; pan: number }> = {
   fire: { level: 0, pan: 0 },
   stream: { level: 0, pan: 0 },
   dread: { level: 0, pan: 0 },
+  prowl: { level: 0, pan: 0 },
 };
 let crackleRequest = { level: 0, pan: 0 };
 let lastPlayed: string | null = null;
@@ -298,7 +299,7 @@ function state(): SoundState {
     asked: { ...asked },
     silenced: { ...silenced },
     counts: { ...played },
-    beds: { fire: bedRequests.fire.level, stream: bedRequests.stream.level, dread: bedRequests.dread.level },
+    beds: { fire: bedRequests.fire.level, stream: bedRequests.stream.level, dread: bedRequests.dread.level, prowl: bedRequests.prowl.level },
     crackle: crackleRequest.level,
   };
 }
