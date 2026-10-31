@@ -1,0 +1,31 @@
+{
+  "about": "The wild boar's walk: four poses of the body's own Walk (a calm four-beat pace keyed on the leg targets in boar_pass.py: hind left, fore left, hind right, fore right; three hooves on the ground in every pose, a low swing, the body low and level with no bob and the head carried low; the file's walk is a trot and is not used), side-on, down and up, judged at the kernel's walk of 190 ms a tile (`walk_step_ms`; WANDER walks at it, HUNTING.md section 2).",
+  "target": "boar",
+  "base": {
+    "library": "self:boar",
+    "action": "Walk"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 190,
+    "gait": "four-beat"
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

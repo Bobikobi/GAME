@@ -18,11 +18,30 @@ export interface Picture {
 export type SnapClass = 'body' | 'fire' | 'metal' | 'leaf';
 const CLASSES: readonly SnapClass[] = ['body', 'fire', 'metal', 'leaf'];
 
+/**
+ * A body ramp as a target or a clip names it: a shared ramp's id, or `<id>:<a>-<b>` for that ramp's steps a to b only
+ * (0 is the darkest). A span lets a coat take one ramp's dark steps and another's light ones without the snap reaching
+ * for the rest (the boar's coat D: `bark` and `wood:2-5`, the lighter hairs on wood's warm steps instead of stone).
+ * Undefined when the name is neither.
+ */
+export function rampSteps(name: string): { id: string; steps: string[] } | undefined {
+  const [id = '', span, ...more] = name.split(':');
+  const ramp = coreRamp(id);
+  if (ramp === undefined || more.length > 0) return undefined;
+  if (span === undefined) return { id, steps: [...ramp.steps] };
+  const m = /^(\d+)-(\d+)$/.exec(span);
+  if (m === null) return undefined;
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+  if (a > b || b >= ramp.steps.length) return undefined;
+  return { id, steps: ramp.steps.slice(a, b + 1) };
+}
+
 export function rampColours(ids: readonly string[]): string[] {
   const out: string[] = [];
-  for (const id of ids) {
-    const ramp = coreRamp(id);
-    if (ramp === undefined) throw new Error(`"${id}" is not a shared ramp`);
+  for (const name of ids) {
+    const ramp = rampSteps(name);
+    if (ramp === undefined) throw new Error(`"${name}" is not a shared ramp or a span of one (<id>:<a>-<b>)`);
     for (const step of ramp.steps) if (!out.includes(step)) out.push(step);
   }
   return out;
@@ -35,10 +54,11 @@ export function classPalettes(body: readonly string[], metal: string, leaf = 'gr
 
 /**
  * The shared ramps a sheet draws in, by id: what its json names as `ramps`, and what a kit entry for it must name
- * (the rich rule, tools/src/kit/rich.ts) so that every colour of the sheet is one of the sprite's ramps.
+ * (the rich rule, tools/src/kit/rich.ts) so that every colour of the sheet is one of the sprite's ramps. A span names
+ * its whole ramp: its steps are that ramp's.
  */
 export function sheetRamps(body: readonly string[], metal: string, leaf = 'green'): string[] {
-  return [...new Set([...body, 'fire', metal, leaf])];
+  return [...new Set([...body.map((r) => rampSteps(r)?.id ?? r), 'fire', metal, leaf])];
 }
 
 export function lab(r: number, g: number, b: number): [number, number, number] {

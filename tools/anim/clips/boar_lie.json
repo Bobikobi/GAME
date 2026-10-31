@@ -1,0 +1,29 @@
+{
+  "about": "The wild boar lying still in its den (SLEEP, 09 to 19): one held pose of the body's own Lie, down on its belly with the legs folded under it and the chin on the ground, no fall played and no twitch; its breath is left to the feel layer (game/src/feel.ts, ANIMATION.md section 4). SLEEP only. A take is a fade and a drop of goods (HUNTING.md section 10, which names no pose; no blood, no suffering): it fades whatever pose the boar holds, and this clip is not used for it (DECISIONS 2026-10-30, the owner's question on the take).",
+  "target": "boar",
+  "base": {
+    "library": "self:boar",
+    "action": "Lie"
+  },
+  "frames": [
+    0
+  ],
+  "ms": [
+    1000
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

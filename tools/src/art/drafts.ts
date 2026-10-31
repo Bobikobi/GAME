@@ -276,6 +276,7 @@ export function gpuSecondsSince(drafts: Iterable<Draft>, since: Date): number {
 /** The fields of a `kit:gen` manifest line that a draft is made from. */
 export interface RunLine {
   name: string;
+  route?: string;
   spec?: string;
   width?: number;
   height?: number;
@@ -401,14 +402,16 @@ export function collectLine(folder: string, line: RunLine, opts: CollectOptions)
     opts.skipped?.push({ name: line.name, why });
     return null;
   };
-  if (typeof line.raw !== 'string' || !line.raw.endsWith('.png')) return skip('no picture was drawn');
-  const raw = readIf(join(folder, line.raw));
+  // a scatter tile has no raw picture: the script wrote it, so the tile is both its raw and its imported file
+  const rawFile = typeof line.raw === 'string' && line.raw.endsWith('.png') ? line.raw : line.route === 'scatter' && typeof line.out === 'string' && line.out.endsWith('.png') ? line.out : null;
+  if (rawFile === null) return skip('no picture was drawn');
+  const raw = readIf(join(folder, rawFile));
   if (raw === null) return skip('the raw file is not on disk');
   if (pngDims(raw) === null) return skip('the raw file is not a PNG');
   const imported = typeof line.out === 'string' ? readIf(join(folder, line.out)) : null;
   const log = typeof line.codex?.log === 'string' ? readIf(join(folder, line.codex.log))?.toString('utf8') ?? '' : '';
   const logged = parseRunLog(log);
-  const route = line.drawer ?? 'codex';
+  const route = line.drawer ?? (line.route === 'scatter' ? 'scatter' : 'codex');
 
   let full: Buffer | null = null;
   let fullPath: string | null = null;
@@ -469,13 +472,13 @@ export function collectLine(folder: string, line: RunLine, opts: CollectOptions)
     review: 'unreviewed',
     at: line.at ?? null,
     sources: [{
-      label: opts.label, spec, run: basename(folder), file: basename(line.raw), at: line.at ?? null,
+      label: opts.label, spec, run: basename(folder), file: basename(rawFile), at: line.at ?? null,
       provenance: notes.length === 0 ? null : notes.join('; '),
     }],
   };
   return {
     record,
-    paths: { raw: join(folder, line.raw), full: fullPath, imported: typeof line.out === 'string' && imported !== null ? join(folder, line.out) : null },
+    paths: { raw: join(folder, rawFile), full: fullPath, imported: typeof line.out === 'string' && imported !== null ? join(folder, line.out) : null },
   };
 }
 

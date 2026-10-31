@@ -1,8 +1,11 @@
 /**
  * Ambient creatures are map content (DECISIONS 2026-10-19): kinds and spots in
- * `content/core/map.json`, drawn by the client behind `?rich=` motion, never
- * seen by the kernel. These pin that every spot sits where its kind perches,
- * and that the four looks the first step promises are all present.
+ * `content/core/map.json`, for the client to draw behind `?rich=` motion (no
+ * client draws them yet). The kernel reads them since: a kind's `hunt` (the
+ * dress verb and the hunt value source) and, for a den, its spots (the bolt
+ * hole, kernel/src/wild/den.ts). These pin that every spot sits where its kind
+ * perches, that the four looks the first step promises are all present, and
+ * that every kind of the core keeps BESTIARY 1's hours.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Bundle } from '@game/kernel';
@@ -36,8 +39,12 @@ describe('ambient creatures', () => {
     }
   });
 
-  it('keeps deer to the dawn', () => {
-    const deer = Object.values(bundle.map.creatures!.kinds).filter((k) => k.look === 'deer');
-    for (const k of deer) expect(k.hours).toBeDefined();
+  it('keeps deer to the bestiary hours, the dusk ramp included, and no kind of the core out at every hour', () => {
+    const { kinds } = bundle.map.creatures!;
+    const deer = Object.values(kinds).filter((k) => k.look === 'deer');
+    expect(deer.length).toBeGreaterThan(0);
+    for (const k of deer) expect(k.hours).toEqual([5, 22]);
+    // a kind with no hours is out at every hour, the night included (the wild brain's awake), so each names its own
+    for (const [id, k] of Object.entries(kinds)) expect(k.hours, id).toBeDefined();
   });
 });

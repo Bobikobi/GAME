@@ -1,7 +1,9 @@
 /** The pieces every module reaches for, wired together once in main.ts. */
 import type { Bundle, Grade } from '@game/kernel';
-import type { SoundApi } from './audio';
+import type * as Phaser from 'phaser';
+import type { Heard, SoundApi } from './audio';
 import type { Controls } from './input';
+import type { Perf } from './perf';
 import { RemoteSession, WireRefusal, fetchWire } from './remote';
 import type { SignInfo } from './scenes/world';
 import type { GameSession } from './session-surface';
@@ -26,6 +28,8 @@ export interface WorldView {
   /** the camera lets go of the hold and follows the player again */
   stoneRelease?(): void;
   sees?(r: { x: number; y: number; w: number; h: number }): boolean;
+  /** where a predator stands as the player hears it (SOUND.md section 1.4); both doors place it, and a view without it plays the growl whole */
+  hazardHeard?(id: string): Heard | undefined;
 }
 
 export interface App {
@@ -33,6 +37,10 @@ export interface App {
   controls: Controls;
   ui: UI;
   sound?: SoundApi;
+  /** the settings in force and the device they resolve on (perf.ts), for the Settings window */
+  perf?: Perf;
+  /** the running Phaser game, for the frame cap */
+  game?: Pick<Phaser.Game, 'loop'>;
   world?: WorldView;
   session?: GameSession;
 }
