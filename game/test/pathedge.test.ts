@@ -75,7 +75,7 @@ describe('the narrowed band', () => {
 });
 
 describe('where land meets water', () => {
-  const at: PathAt = (x, y) => (x < 2 ? 1 : 0);
+  const at: PathAt = (x) => (x < 2 ? 1 : 0);
   const LAND = [200, 160, 100] as const;
   const WATER = [60, 140, 210] as const;
   test('the land side wets darker or carries stones, the water side shades, near the line only', () => {
