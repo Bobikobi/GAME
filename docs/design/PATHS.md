@@ -33,9 +33,9 @@ Quests no path trains (6 of 15): first-fire, fix-the-bridge, into-town, the-long
 How to read it:
 
 - **"Hours to master" is the old hand-set table, not the target.** The profession files hold `xp_levels` in active seconds (the schema says so), and the top entry of each today is 1.0 to 1.2 hours. The owner's answer Q1 of 25.10 is a school of about 50 active hours (`t1` 28 s, 51.7 hours a school, the catalogue past 800). The page measures the content as it is. The table will be regenerated to the formula when the progression map is built (PROGRESSION.md 4.6), and every path then has about forty-seven times the hours to fill (51.7 against 1.1), which is the content the floor of section 4 starts to answer.
-- **"Places" mixes two things:** placed nodes and dig spots on the map, and the camp parts that provide a station. Cooking's one place is a fire; Handcraft's three are workshops.
+- **"Places" mixes two things:** placed nodes and dig spots on the map, and the camp parts that provide a station. Cooking's one place is the campfire (the fire station); Handcraft's three are camp parts that provide the workshop station (the workshop, the work stone and the workbench).
 - **"Quests" counts a quest when a step makes, brings or finds what the path makes.** A quest that starts from a node, which is what 25.10 asks for, is a different and stricter test, and no quest is marked that way yet.
-- **Tiers are all 1 outside Handcraft** because the valley holds only tier 1 of what grows and lies in it. Tier 2 and 3 of gathered goods wait for the first map's regions (NEXT.md section 19), so this column is a fact about the world, not about the schools.
+- **Tiers are all 1 outside Handcraft** because the content holds only tier 1 of what grows and lies in it. Where tier 2 and 3 of gathered goods come from is a question for the first map (NEXT.md section 19); the column is a fact about the content, not about the schools.
 
 The six quests no path trains, by their steps: `first-fire` (a build), `fix-the-bridge` (a restore), `into-town` and `the-tangle` (a visit), `the-long-night` (a tend), `the-night-arch` (a riddle). The last four would belong to schools that do not exist yet: `into-town` and `the-tangle` to Travel, `the-long-night` to Survival, `the-night-arch` to Lore (proposed, PROGRESSION.md 4.2).
 
@@ -112,7 +112,7 @@ For each built path: what to add, with numbers, and what the path pays. All cont
 - Pays: tools and work clothes for every other path, which is the path's money (everything else needs a made tool); a look at the crown.
 
 **Foraging and Digging** (1 miss each).
-- Tiers: 1 to 3 for each: a tier-2 and a tier-3 plant or find, gated by the first map's regions (NEXT.md 19), not by a node.
+- Tiers: 1 to 3 for each: a tier-2 and a tier-3 plant or find, expected to come with the first map (NEXT.md 19), not from a node.
 - Nodes: from 7 and 9 to 32 each, by branch.
 - Pays: Foraging feeds Cooking and Remedies; Digging feeds Smithing, Mining and the relics.
 
@@ -147,4 +147,4 @@ Outside games (read on 31.10.2026):
 - S5: Valheim, Wikipedia: skills to level 100 with different effects (spear damage, stamina while running). https://en.wikipedia.org/wiki/Valheim
 - S6: Prima Games, Valheim skills: skills level up with use; crafting at level 100 (faster crafting, a chance of an extra item), read as quoted in a search result (the page itself was not opened). https://primagames.com/tips/valheim-list-all-skills
 
-Ours: `pnpm paths:depth` (this page's table) and `pnpm tree:coverage` (section 2's quoted numbers); DECISIONS 2026-10-23 "The skill tree's format", 2026-10-25 "The progression map, Q1", "Tree first, both ways", "The tree's foundations"; [PROGRESSION.md](PROGRESSION.md) sections 3.3, 4.2, 4.3, 4.5, 4.6, 4.9, 5.6, 6.1, 6.5; [BODY_CLOCKS.md](BODY_CLOCKS.md) section 7; [GAME_RULES.md](GAME_RULES.md) G39; NEXT.md section 19; the quests in `content/core/quests/`.
+Ours: `pnpm paths:depth` (this page's table) and `pnpm tree:coverage` (section 2's quoted numbers); DECISIONS 2026-10-23 "The skill tree's format", 2026-10-25 "The progression map, Q1", "Tree first, both ways"; [PROGRESSION.md](PROGRESSION.md) sections 3.3, 4.2, 4.3, 4.5, 4.6, 4.9, 5.6, 6.1, 6.5; [BODY_CLOCKS.md](BODY_CLOCKS.md) section 7; [GAME_RULES.md](GAME_RULES.md) G39; NEXT.md section 19; the quests in `content/core/quests/`.

@@ -6,7 +6,7 @@ Status: a proposal for the owner. Nothing here is built. The owner's word of 28.
 
 **Separate weapons from clothing: yes, and they already are separate. Do not separate them any further.**
 
-- By **slot**, they are apart today: clothing sits in head, top, legs, outfit and feet; the hand holds a tool and, when combat opens, a weapon; jewelry has two places; the back holds a bag or a quiver (`WORN_SLOTS` in the schema; DECISIONS 2026-10-23, "races, weight and bags"; G44).
+- By **slot**, they are apart today: clothing sits in head, top, legs, outfit and feet; the hand holds a tool and, when combat opens, a weapon; jewelry has two places; the back holds a bag or a quiver (`WORN_SLOTS` in the schema; DECISIONS 2026-10-23, "The owner's answers on the bag"; G44).
 - By **class**, PROGRESSION.md 5.1 already names them apart: weapons are `blade, blunt, spear, staff, bow, thrown`; armour is `cloth, leather, mail, plate` on head, top, legs and feet.
 - By **who makes them**: cloth from Tailoring, leather from Leatherwork, mail and plate from Smithing, bows and staves from Woodcraft (PROGRESSION.md 5.1).
 
@@ -77,10 +77,23 @@ Item
             req?    { school, level, attr? },          new: PROGRESSION.md 5.6
             trait?  { cold_proof | snow_shod | ... } } new: PROGRESSION.md 4.5 (garment traits)
   bind    'none' | 'account' | 'character'             new: section 3.6
-  quality 'plain' | 'fine' | 'true' | 'master'         new, rolled at the craft (PROGRESSION.md 5.2); stored on the stack, not the id
+  quality 'plain' | 'fine' | 'true' | 'master'         new, rolled at the craft (PROGRESSION.md 5.2); storage undecided, see 3.3b
 ```
 
 The three keys a fight reads from an item are the weapon block (reach, wind-up, cooldown, harm), the wear block's `attrs` (the six attributes as small keys, decision 45) and its `effects` (the five rates, which a fight does not read). Armour adds `guard_pct` and `quiet_wear` from PROGRESSION.md 4.2, as worn effects with a minus allowed inside the cap (CR-21).
+
+### 3.3b Two ladders with the same words (a finding)
+
+The repo holds two "fine / true" ladders that were written apart and do not agree on storage:
+
+| | Grade (`Item.grade` in the schema; MATERIALS.md section 1 in open #432, as HUNT_FAMILIES.md cites it) | Quality (PROGRESSION.md 5.2, proposed here) |
+|---|---|---|
+| Applies to | a good off a better animal (a hide, a pelt) | a made thing (a tool, a garment, a blade) |
+| Steps | 2 is fine, 3 is true; 1 is the plain item | plain, fine, true, master |
+| Stored as | **an item of its own**: a stack splits by grade the way it splits by tier | not decided |
+| Read by | `min_grade` in a recipe | the worn-effect cap (a fine piece reaches more of the tier's cap) |
+
+Proposal: **quality follows grade's rule** (a stack splits by quality; no hidden number on a stack), so a player can see and trade a "fine" coat as a thing, and the two ladders share one vocabulary: `plain, fine, true` for both, `master` for made things only. This needs the owner's word only if he wants the names to differ; the manager can settle the storage when the hunt-to-gear chain (#432) lands. Not built here.
 
 ### 3.4 Durability
 
@@ -92,7 +105,7 @@ The owner's four (9.10) stay: **common, uncommon, rare, legendary**. They are a 
 
 ### 3.6 Binding
 
-The owner's rule is already in two places: a bought look is bound to the account (G39), and a holiday's look is bound to the character (G42). The model **adds one value and no more**:
+The owner's rule is already in two places: a bought look is bound to the account (G39), and a holiday's look is bound to the character and never traded (G42). The model **adds one value and no more**:
 
 | `bind` | Meaning | Which items |
 |---|---|---|
