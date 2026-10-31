@@ -4,24 +4,20 @@ Every sprite a player sees in the world (props, characters, creatures; not groun
 
 The adult: `chars/human_down`, 73 art px of opaque height at density 4, 18.25 world units. One character is that height. A sprite's drawn height is its opaque box (not the canvas), its tallest frame, divided by its density and by the adult's.
 
-Verdicts: under 12 · over 0 · in range 103 · no rule 50 (165 sprites).
+Verdicts: under 8 · over 0 · in range 107 · no rule 50 (165 sprites).
 
-A range with one number is a floor and the size of the common one; bigger is open (STYLE 1b), so only a kind with a top in NATURE can be over. `no rule` is a kind no page gives a height: it is listed, not judged. The open list is also what `pnpm check` prints as `!` lines.
+A range with one number is a floor and the size of the common one; bigger is open (STYLE 1b), so only a kind with a top in NATURE can be over. A height up to a tenth under its floor is in range (the tolerance, NATURE section 1). `no rule` is a kind no page gives a height: it is listed, not judged. The open list is also what `pnpm check` prints as `!` lines.
 
 | Sprite | Kind | Drawn px | Density | Characters | Range | Verdict | Out by |
 |---|---|---|---|---|---|---|---|
-| `props/tree_oak` | oak | 32 | 1 | 1.75 | 3+ | under | 1.25 |
-| `props/sapling` | young tree | 60 | 4 | 0.82 | 2+ | under | 1.18 |
-| `props/dead_tree` | dead tree | 32 | 1 | 1.75 | 2.5+ | under | 0.75 |
-| `props/young_tree` | young tree | 23 | 1 | 1.26 | 2+ | under | 0.74 |
-| `chars/skeleton_left` | adult | 54 | 4 | 0.74 | 1+ | under | 0.26 |
-| `chars/skeleton_down` | adult | 56 | 4 | 0.77 | 1+ | under | 0.23 |
-| `props/house_small` | house | 209 | 4 | 2.86 | 3+ | under | 0.14 |
-| `props/standing_stone` | standing stone | 99 | 4 | 1.36 | 1.5+ | under | 0.14 |
-| `chars/human_w_left` | adult | 66 | 4 | 0.9 | 1+ | under | 0.1 |
-| `chars/skeleton_up` | adult | 68 | 4 | 0.93 | 1+ | under | 0.07 |
-| `chars/human_left` | adult | 69 | 4 | 0.95 | 1+ | under | 0.05 |
-| `chars/human_w_down` | adult | 70 | 4 | 0.96 | 1+ | under | 0.04 |
+| `props/fig_bush` (ceosisrael) | oak | 58 | 4 | 0.79 | 3+ | under | 1.91 |
+| `props/fig_bush_empty` (ceosisrael) | oak | 58 | 4 | 0.79 | 3+ | under | 1.91 |
+| `props/tree_oak` | oak | 32 | 1 | 1.75 | 3+ | under | 0.95 |
+| `props/young_tree` | young tree | 23 | 1 | 1.26 | 2+ | under | 0.54 |
+| `props/dead_tree` | dead tree | 32 | 1 | 1.75 | 2.5+ | under | 0.5 |
+| `chars/skeleton_left` | adult | 54 | 4 | 0.74 | 1+ | under | 0.16 |
+| `chars/skeleton_down` | adult | 56 | 4 | 0.77 | 1+ | under | 0.13 |
+| `props/sapling` | sapling | 60 | 4 | 0.82 | 1+ | under | 0.08 |
 | `chars/digger_down` | adult | 23 | 1 | 1.26 | 1+ | in range |  |
 | `chars/digger_idle_down` | adult | 22 | 1 | 1.21 | 1+ | in range |  |
 | `chars/digger_idle_left` | adult | 23 | 1 | 1.26 | 1+ | in range |  |
@@ -85,7 +81,10 @@ A range with one number is a floor and the size of the common one; bigger is ope
 | `chars/forager_work_left` | adult | 28 | 1 | 1.53 | 1+ | in range |  |
 | `chars/forager_work_up` | adult | 28 | 1 | 1.53 | 1+ | in range |  |
 | `chars/human_down` | adult | 73 | 4 | 1 | 1+ | in range |  |
+| `chars/human_left` | adult | 69 | 4 | 0.95 | 1+ | in range |  |
 | `chars/human_up` | adult | 84 | 4 | 1.15 | 1+ | in range |  |
+| `chars/human_w_down` | adult | 70 | 4 | 0.96 | 1+ | in range |  |
+| `chars/human_w_left` | adult | 66 | 4 | 0.9 | 1+ | in range |  |
 | `chars/human_w_up` | adult | 78 | 4 | 1.07 | 1+ | in range |  |
 | `chars/player_down` | adult | 24 | 1 | 1.32 | 1+ | in range |  |
 | `chars/player_idle_down` | adult | 23 | 1 | 1.26 | 1+ | in range |  |
@@ -96,6 +95,7 @@ A range with one number is a floor and the size of the common one; bigger is ope
 | `chars/player_work_down` | adult | 32 | 1 | 1.75 | 1+ | in range |  |
 | `chars/player_work_left` | adult | 32 | 1 | 1.75 | 1+ | in range |  |
 | `chars/player_work_up` | adult | 32 | 1 | 1.75 | 1+ | in range |  |
+| `chars/skeleton_up` | adult | 68 | 4 | 0.93 | 1+ | in range |  |
 | `chars/trader` | adult | 23 | 1 | 1.26 | 1+ | in range |  |
 | `chars/trader_blink` | adult | 23 | 1 | 1.26 | 1+ | in range |  |
 | `chars/woman_down` | adult | 23 | 1 | 1.26 | 1+ | in range |  |
@@ -124,8 +124,6 @@ A range with one number is a floor and the size of the common one; bigger is ope
 | `props/fallen_branches` | - | 64 | 4 | 0.88 | no rule | no rule |  |
 | `props/fence` | - | 48 | 4 | 0.66 | no rule | no rule |  |
 | `props/fence_post` | - | 64 | 4 | 0.88 | no rule | no rule |  |
-| `props/fig_bush` (ceosisrael) | bush | 58 | 4 | 0.79 | 0.5+ | in range |  |
-| `props/fig_bush_empty` (ceosisrael) | bush | 58 | 4 | 0.79 | 0.5+ | in range |  |
 | `props/flour_sack` | - | 54 | 4 | 0.74 | no rule | no rule |  |
 | `props/flowers` | tall grass | 22 | 4 | 0.3 | 0.25+ | in range |  |
 | `props/flowers_blue` | tall grass | 10 | 1 | 0.55 | 0.25+ | in range |  |
@@ -142,6 +140,7 @@ A range with one number is a floor and the size of the common one; bigger is ope
 | `props/herb_plant` | - | 64 | 4 | 0.88 | no rule | no rule |  |
 | `props/herb_plant_b` | - | 64 | 4 | 0.88 | no rule | no rule |  |
 | `props/herb_plant_c` | - | 64 | 4 | 0.88 | no rule | no rule |  |
+| `props/house_small` | house | 209 | 4 | 2.86 | 3+ | in range |  |
 | `props/jar_shelf` | - | 101 | 4 | 1.38 | no rule | no rule |  |
 | `props/lantern_post` | street lamp | 192 | 4 | 2.63 | 2+ | in range |  |
 | `props/log_fallen` | - | 41 | 4 | 0.56 | no rule | no rule |  |
@@ -170,6 +169,7 @@ A range with one number is a floor and the size of the common one; bigger is ope
 | `props/shop_sign_food` | - | 61 | 4 | 0.84 | no rule | no rule |  |
 | `props/shop_window` | - | 74 | 4 | 1.01 | no rule | no rule |  |
 | `props/sign` | - | 48 | 4 | 0.66 | no rule | no rule |  |
+| `props/standing_stone` | standing stone | 99 | 4 | 1.36 | 1.5+ | in range |  |
 | `props/statue_head` | - | 31 | 1 | 1.7 | no rule | no rule |  |
 | `props/stump` | - | 44 | 4 | 0.6 | no rule | no rule |  |
 | `props/totem` | standing stone | 32 | 1 | 1.75 | 1.5+ | in range |  |

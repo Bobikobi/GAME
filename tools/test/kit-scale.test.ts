@@ -29,6 +29,14 @@ describe('which kind a sprite is', () => {
     expect(scaleKindOf('chars/forager_w_work_left')?.floor).toBe(1);
   });
 
+  test('a sapling has its own floor and the glade fig is a tree', () => {
+    expect([scaleKindOf('props/sapling')?.kind, scaleKindOf('props/sapling')?.floor]).toEqual(['sapling', 1]);
+    expect(scaleKindOf('props/young_tree')?.kind).toBe('young tree');
+    expect(scaleKindOf('props/fig_bush')?.kind).toBe('oak');
+    expect(scaleKindOf('props/fig_bush_empty')?.floor).toBe(3);
+    expect(scaleKindOf('props/bush_berry')?.kind).toBe('bush');
+  });
+
   test('a mat is no door and a head is no statue', () => {
     expect(scaleKindOf('props/door_mat')).toBeUndefined();
     expect(scaleKindOf('props/statue_head')).toBeUndefined();
@@ -51,8 +59,15 @@ describe('the scale warnings', () => {
   test('a kind with a scale under its floor is a warning', () => {
     const [problem] = scaleProblems('props/tree_oak', 2);
     expect(problem).toContain('under the floor of a oak, 3 characters');
-    expect(scaleProblems('props/hazard_wolf', 0.5)[0]).toContain('0.55');
-    expect(scaleProblems('chars/child_down', 0.6)[0]).toContain('child');
+    expect(scaleProblems('props/hazard_wolf', 0.4)[0]).toContain('0.55');
+    expect(scaleProblems('chars/child_down', 0.5)[0]).toContain('child');
+  });
+
+  test('a tenth under the floor still passes, more does not', () => {
+    expect(scaleProblems('props/house_small', 2.86)).toEqual([]);
+    expect(scaleProblems('props/house_small', 2.7)).toEqual([]);
+    expect(scaleProblems('props/house_small', 2.69)[0]).toContain('a tenth under still passes');
+    expect(scaleProblems('chars/human_left', 0.9)).toEqual([]);
   });
 
   test('a scale at or over its floor says nothing: bigger is open', () => {
@@ -71,8 +86,8 @@ describe('the scale warnings', () => {
 
   test('the floors STYLE 1b picked with two decimals hold as given', () => {
     expect(scaleProblems('props/dog', 0.45)).toEqual([]);
-    expect(scaleProblems('props/dog', 0.4)[0]).toContain('0.45');
-    expect(scaleProblems('props/horse', 1.2)[0]).toContain('1.25');
+    expect(scaleProblems('props/dog', 0.35)[0]).toContain('0.45');
+    expect(scaleProblems('props/horse', 1.1)[0]).toContain('1.25');
   });
 
   test('a creature with no scale is a warning', () => {

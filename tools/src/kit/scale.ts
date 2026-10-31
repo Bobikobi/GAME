@@ -41,11 +41,14 @@ export const SCALE_KINDS: readonly ScaleKind[] = [
   { kind: 'cow', floor: 1.1, ceil: 1.4, words: [['cow'], ['ox']] },
   { kind: 'horse', floor: 1.25, words: [['horse']] },
   // trees and plants (STYLE 1b; pines and palms NATURE 1)
-  { kind: 'young tree', floor: 2, words: [['young', 'tree'], ['sapling']] },
+  // a sapling is no young tree: it reaches a person's height, no more (NATURE 1 gives it no row; the owner may set it)
+  { kind: 'sapling', floor: 1, words: [['sapling']] },
+  { kind: 'young tree', floor: 2, words: [['young', 'tree']] },
   { kind: 'dead tree', floor: 2.5, words: [['dead', 'tree']] },
   { kind: 'pine', floor: 4, ceil: 5, words: [['pine'], ['fir']] },
   { kind: 'palm', floor: 3, ceil: 4, words: [['palm'], ['cypress']] },
-  { kind: 'oak', floor: 3, words: [['oak'], ['tree']] },
+  // the glade fig is a tree to the owner (31.10: "the fig tree is the size of the character"), though its sprite is named a bush
+  { kind: 'oak', floor: 3, words: [['oak'], ['tree'], ['fig', 'bush']] },
   { kind: 'bush', floor: 0.5, words: [['bush']] },
   { kind: 'tall grass', floor: 0.25, words: [['grass'], ['reeds'], ['flowers']] },
   // built things (STYLE 1b; towers and doors NATURE 1)
@@ -66,6 +69,12 @@ export const ADULT: ScaleKind = { kind: 'adult', floor: 1, words: [] };
 
 /** The group a creature's sprites live in. No kit has one yet; the first creature kit opens it. */
 export const CREATURE_GROUP = 'creatures';
+
+/** A drawn height this much under its floor is still in range: art is drawn by hand and a pixel is 1.4% of a character (owner's manager, 31.10). */
+export const SCALE_TOLERANCE = 0.1;
+
+/** The lowest height that passes for a floor: the floor less the tolerance. */
+export const passes = (floor: number): number => floor * (1 - SCALE_TOLERANCE);
 
 /** The kind a sprite is by its name, or undefined when no floor speaks for it. */
 export function scaleKindOf(name: string): ScaleKind | undefined {
@@ -95,7 +104,7 @@ export function scaleProblems(name: string, scale: number | undefined): string[]
     return NOT_WORLD.includes(name.split('/')[0] ?? '') ? [] : ['declare "scale", the sprite\'s drawn height in characters: `pnpm art:scale --declare` measures and writes it'];
   }
   const kind = scaleKindOf(name);
-  return kind && scale < kind.floor
-    ? [`scale ${scale} is under the floor of a ${kind.kind}, ${kind.floor} characters (NATURE section 1, STYLE 1b); bigger is open`]
+  return kind && scale < passes(kind.floor)
+    ? [`scale ${scale} is under the floor of a ${kind.kind}, ${kind.floor} characters (NATURE section 1, STYLE 1b; a tenth under still passes); bigger is open`]
     : [];
 }

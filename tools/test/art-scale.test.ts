@@ -41,15 +41,16 @@ describe('the verdict', () => {
   const oak = rangeOf(scaleKindOf('props/tree_oak'));
 
   test('under, in range and over for a kind with a range', () => {
-    expect([1.2, 1.4, 1.6].map((c) => verdictOf(c, door))).toEqual(['under', 'in range', 'over']);
-    expect(distanceOf(1.2, door)).toBeCloseTo(0.1);
+    expect([1.1, 1.2, 1.4, 1.6].map((c) => verdictOf(c, door))).toEqual(['under', 'in range', 'in range', 'over']);
+    expect(distanceOf(1.1, door)).toBeCloseTo(0.07);
     expect(distanceOf(1.7, door)).toBeCloseTo(0.2);
     expect(distanceOf(1.4, door)).toBe(0);
   });
 
   test('a floor with no top is never over', () => {
     expect(verdictOf(12, oak)).toBe('in range');
-    expect(verdictOf(2.9, oak)).toBe('under');
+    expect(verdictOf(2.7, oak)).toBe('in range');
+    expect(verdictOf(2.6, oak)).toBe('under');
   });
 
   test('a kind no page speaks for says no rule and is never out', () => {

@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 
 import { PNG } from 'pngjs';
 
-import { ADULT, NOT_WORLD, scaleKindOf, type ScaleKind } from '../kit/scale.js';
+import { ADULT, NOT_WORLD, passes, scaleKindOf, type ScaleKind } from '../kit/scale.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const KITS_DIR = join(ROOT, 'content', 'kit');
@@ -93,7 +93,7 @@ export function rangeOf(kind: ScaleKind | undefined): { lo: number; hi: number |
 
 export function verdictOf(chars: number, range: { lo: number; hi: number | null } | undefined): Verdict {
   if (!range) return 'no rule';
-  if (chars < range.lo) return 'under';
+  if (chars < passes(range.lo)) return 'under';
   if (range.hi !== null && chars > range.hi) return 'over';
   return 'in range';
 }
@@ -101,7 +101,7 @@ export function verdictOf(chars: number, range: { lo: number; hi: number | null 
 /** How far a height stands outside its range, in characters; 0 inside or with no rule. */
 export function distanceOf(chars: number, range: { lo: number; hi: number | null } | undefined): number {
   if (!range) return 0;
-  if (chars < range.lo) return range.lo - chars;
+  if (chars < passes(range.lo)) return passes(range.lo) - chars;
   if (range.hi !== null && chars > range.hi) return chars - range.hi;
   return 0;
 }
@@ -203,7 +203,7 @@ export function renderScale(rows: readonly Row[], adultPx: number, adultUnits: n
     '',
     `Verdicts: ${VERDICTS.map((v) => `${v} ${c[v]}`).join(' · ')} (${rows.length} sprites).`,
     '',
-    'A range with one number is a floor and the size of the common one; bigger is open (STYLE 1b), so only a kind with a top in NATURE can be over. `no rule` is a kind no page gives a height: it is listed, not judged. The open list is also what `pnpm check` prints as `!` lines.',
+    'A range with one number is a floor and the size of the common one; bigger is open (STYLE 1b), so only a kind with a top in NATURE can be over. A height up to a tenth under its floor is in range (the tolerance, NATURE section 1). `no rule` is a kind no page gives a height: it is listed, not judged. The open list is also what `pnpm check` prints as `!` lines.',
     '',
     '| Sprite | Kind | Drawn px | Density | Characters | Range | Verdict | Out by |',
     '|---|---|---|---|---|---|---|---|',
