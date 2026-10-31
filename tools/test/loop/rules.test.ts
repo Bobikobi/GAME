@@ -4,6 +4,7 @@ import { validateConfig } from '../../src/loop/config';
 import { evaluateMerge, quotaAllowed, quotaOverflow, type MergeInput } from '../../src/loop/merge';
 import { answeredRequest, collectSlots, competingGroups, competitionRule } from '../../src/loop/proposals';
 import { requestBoardUrl, requestsToOpen } from '../../src/loop/requests';
+import { isProposal } from '../../src/loop/run';
 import type { Issue } from '../../src/loop/types';
 import { config } from './helpers';
 
@@ -141,3 +142,22 @@ function issue(number: number, support: number, labels: string[] = []): Issue {
     reactions: { '+1': support },
   };
 }
+
+describe('who proposes', () => {
+  const edit = [{ filename: 'content/extensions/fig/tree.json', status: 'modified' }];
+  const add = [{ filename: 'content/extensions/fig/tree.json', status: 'added' }];
+
+  it('a builder account that edits an extension (#509 declaring the fig scale) is not a proposal', () => {
+    expect(isProposal('Bobikobi', edit)).toBe(false);
+    expect(isProposal('claude', edit)).toBe(false);
+  });
+
+  it('a builder that adds a file under an extension, and any creator who touches one, is a proposal', () => {
+    expect(isProposal('Bobikobi', add)).toBe(true);
+    expect(isProposal('alice', edit)).toBe(true);
+  });
+
+  it('a pull request that touches no extension path is never one', () => {
+    expect(isProposal('alice', [{ filename: 'game/src/x.ts', status: 'added' }])).toBe(false);
+  });
+});
