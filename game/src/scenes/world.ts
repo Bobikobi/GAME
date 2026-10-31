@@ -64,6 +64,7 @@ import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, h
 import { emptySlots, slotContent } from '../places';
 import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
 import { deepTile } from '../waterbody';
+import { plantLook, TUFTS } from '../plantlook';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -1084,7 +1085,9 @@ export class WorldScene extends Phaser.Scene {
       if (p.fire === true && p.id !== undefined) {
         this.buildFire(p.id, p, cx, bottom);
       } else {
-        const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
+        const look = !p.solid && p.w === 1 && p.h === 1 && TUFTS.includes(name) ? plantLook(p.x, p.y) : undefined;
+        const img = this.standing(p.sprite, look ? cx + look.dx : cx, look ? bottom + look.dy : bottom, hash(p.x, p.y));
+        if (look) img.setFlipX(look.flip).setAngle(look.angle);
         img.setDepth(p.solid ? bottom : DEPTH.flat);
         // the lamp's pool lies at its foot; its head glows in the top 8 px of the post
         if (name === 'lantern_post') this.light?.add({ kind: 'lamp', x: cx, y: bottom, head: { x: cx, y: bottom - unit.h + 4 } });
