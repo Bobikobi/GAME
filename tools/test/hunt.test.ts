@@ -173,7 +173,8 @@ describe('a hunted kind', () => {
   });
 
   it('leaves a protected ambient kind alone', () => {
-    expect(ours(world({}, [hare(undefined, { protected: true })]))).toEqual([]);
+    // the core hare is hunted and flushable now (the creature schema): this one is the ambient hare of before
+    expect(ours(world({}, [hare(undefined, { protected: true, hunt: undefined, behaviour: undefined })]))).toEqual([]);
   });
 });
 

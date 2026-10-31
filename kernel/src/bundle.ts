@@ -138,6 +138,31 @@ export interface Params {
    * keeps its meat and then anything, and how often an animal appears fine or true (basis points).
    */
   hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; grade2_bp: number; grade3_bp: number };
+  /**
+   * The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1):
+   * the numbers every kind shares, its own character being the kind's `behaviour`. Ticks, think steps, tiles and game ms.
+   */
+  wild: {
+    tick_ms: number;
+    think_ticks: number;
+    wake_tiles: number;
+    awake_max: number;
+    catchup_max_steps: number;
+    flee_avoid_steps: number;
+    refill_clear_tiles: number;
+    spread_tiles: number;
+    print_ring: number;
+    print_fade_ms: number;
+    den_stay_steps: number;
+    bolt_min_tiles: number;
+    bolt_max_tiles: number;
+    throw_ms: number;
+    strike_noise: number;
+    fire_keep_day: number;
+    fire_keep_night: number;
+    town_keep_day: number;
+    town_keep_night: number;
+  };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };

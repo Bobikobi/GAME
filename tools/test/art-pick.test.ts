@@ -44,7 +44,7 @@ function fixture(): { dir: string; cache: string } {
     writeFileSync(join(dir, path), text);
   };
   const entry = (name: string): object => ({ name, ref: 'tiles/grass', kit_id: `tiles/${name}`, new: true, kind: 'tile', width: 64, height: 64, ramps: ['grey'], what: 'snow tile', detail: 'white drifts' });
-  write('tools/kit-gen/pools/ground.json', JSON.stringify({ entries: [entry('snow'), entry('ice')] }));
+  write('tools/kit-gen/pools/ground.json', JSON.stringify({ entries: [entry('snow'), { ...entry('snow_b'), variant_of: 'snow' }, entry('ice')] }));
   write('tools/kit-gen/pickers/owner.json', JSON.stringify({ pickers: ['elad'] }));
   write('content/kit/core/kit.json', `${JSON.stringify({ kit: { sprites: { 'tiles/grass': { file: 'tiles/grass.png', w: 16, h: 16 } } } }, null, 2)}\n`);
   write('tools/kit-gen/rich-wave.manifest.jsonl', '{"name":"old","picked":"x"}\n');
@@ -55,6 +55,16 @@ function fixture(): { dir: string; cache: string } {
 }
 
 describe('art:pick', () => {
+  test('a variant entry takes a draw of its base name: both looks are kept (owner, 30.10)', () => {
+    const { dir, cache } = fixture();
+    const file = parsePicksFile(JSON.stringify({ picked_by: 'elad', picks: [{ draft: ID(1), action: 'pick' }, { draft: ID(2), action: 'pick', entry: 'snow_b' }] }));
+    applyPicks(file, planPicks(file, { root: dir, cacheDir: cache }), { root: dir, cacheDir: cache, today: '2026-10-30' });
+    expect(existsSync(join(dir, 'content/kit/core/tiles/snow.png'))).toBe(true);
+    expect(existsSync(join(dir, 'content/kit/core/tiles/snow_b.png'))).toBe(true);
+    const bad = parsePicksFile(JSON.stringify({ picked_by: 'elad', picks: [{ draft: ID(3), action: 'pick', entry: 'snow_b' }] }));
+    expect(() => planPicks(bad, { root: dir, cacheDir: cache })).toThrow(/not a variant of it/);
+  });
+
   test('a pick lands the picture, the kit entry, a manifest line and keep; the other actions only amend the index', () => {
     const { dir, cache } = fixture();
     const file = parsePicksFile(JSON.stringify({ picked_by: 'elad', picks: [
