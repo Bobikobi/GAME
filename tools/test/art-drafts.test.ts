@@ -8,7 +8,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import {
   type Collected, type Draft, DraftIndex, type Gh, annotateWrongDraws, assetName, collectLine, collectPictures, draftId, fetchDrafts,
-  foldIndex, gpuSecondsSince, indexGrewOnly, noteDraft, parseIndex, parseRunLog, pacing, pngDims, pushCollected, sha256Hex, tagFor,
+  foldIndex, gpuSecondsSince, runCli, indexGrewOnly, noteDraft, parseIndex, parseRunLog, pacing, pngDims, pushCollected, sha256Hex, tagFor,
   verifyDrafts, verifyExitCode, verifyText, wrongDrawOrphans, wrongDrawsText,
 } from '../src/art/drafts.js';
 
@@ -289,6 +289,28 @@ describe('the drafts repo: push, fetch, verify', () => {
     const verified = verifyDrafts(index, null, { gh, cache });
     expect(verified.ok).toBe(2);
     expect(verifyExitCode(verified)).toBe(0);
+  });
+
+  test('a run folder pushed with --recursive also gives its sub-folders\' pictures; without it only the manifest\'s', () => {
+    const fx = runFolder({ seed: 5, name: 'urn' });
+    writeFileSync(join(fx.dir, 'manifest.jsonl'), `${JSON.stringify(fx.line)}\n`);
+    mkdirSync(join(fx.dir, 'refinement'), { recursive: true });
+    writeFileSync(join(fx.dir, 'refinement', 'urn-v2.png'), picture(77));
+    const before = process.env['ART_DRAFTS_INDEX'];
+    try {
+      const flat = join(folder('idx-flat'), 'drafts.jsonl');
+      process.env['ART_DRAFTS_INDEX'] = flat;
+      runCli(['push', fx.dir, '--label', 'urn', '--no-upload']);
+      const deep = join(folder('idx-deep'), 'drafts.jsonl');
+      process.env['ART_DRAFTS_INDEX'] = deep;
+      runCli(['push', fx.dir, '--label', 'urn', '--recursive', '--no-upload']);
+      expect(DraftIndex.open(flat).drafts.size).toBe(1);
+      expect(DraftIndex.open(deep).drafts.size).toBeGreaterThan(1);
+      expect([...DraftIndex.open(deep).drafts.values()].some((d) => d.sources.some((x) => x.file === 'urn-v2.png'))).toBe(true);
+    } finally {
+      if (before === undefined) delete process.env['ART_DRAFTS_INDEX'];
+      else process.env['ART_DRAFTS_INDEX'] = before;
+    }
   });
 
   test('a second push uploads nothing, and never overwrites', () => {

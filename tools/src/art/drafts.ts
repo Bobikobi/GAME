@@ -941,10 +941,15 @@ export function runCli(argv: readonly string[]): number {
       const base = { label, ...(provenance === undefined ? {} : { provenance }), hints, skipped, roundFromFolder: flags.has('round-from-folder') };
       const items: Collected[] = [];
       for (const target of positional) {
-        if (existsSync(join(target, 'manifest.jsonl'))) items.push(...collectRun(target, base));
-        else {
-          const files = statSync(target).isDirectory() ? listPictures(target, flags.has('recursive')) : [target];
-          items.push(...collectPictures(files, { ...base, pool: text('pool') ?? null, route: text('route') ?? null }));
+        const pictureOpts = { ...base, pool: text('pool') ?? null, route: text('route') ?? null };
+        const recursive = flags.has('recursive');
+        if (existsSync(join(target, 'manifest.jsonl'))) {
+          items.push(...collectRun(target, base));
+          // a run folder's own manifest names only its sprites; with --recursive the sub-folders (refinements, references) are read too
+          if (recursive) items.push(...collectPictures(listPictures(target, true), pictureOpts));
+        } else {
+          const files = statSync(target).isDirectory() ? listPictures(target, recursive) : [target];
+          items.push(...collectPictures(files, pictureOpts));
         }
       }
       const tag = text('tag') ?? (flags.has('backfill') ? `run-backfill-${label}` : undefined);
