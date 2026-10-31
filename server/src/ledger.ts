@@ -23,7 +23,21 @@
  * account that crossed a change of content proves its log only when the steps before the change still play
  * the same under today's content.
  */
-import { adaptState, isSeed, newState, serialize, step, type Action, type Bundle, type GameEvent, type Seed, type State } from '@game/kernel';
+import { GAITS, adaptState, isSeed, newState, serialize, step, type Action, type Bundle, type Gait, type GameEvent, type Seed, type State, type Tile } from '@game/kernel';
+
+/**
+ * The step a movement report stands for: its tile, and its gait when the report named one. The server
+ * steps it, books it and a replay plays it as this one object, so the gold rows a move pays read alike in
+ * both books, and a sneak stays a sneak on the server (a report without a gait is a walk, as an old log is).
+ */
+export function moveOf(at: Tile, gait?: Gait): Extract<Action, { t: 'move' }> {
+  return gait === undefined ? { t: 'move', at } : { t: 'move', at, gait };
+}
+
+/** Whether a value names one of the kernel's gaits. */
+export function isGait(value: unknown): value is Gait {
+  return (GAITS as readonly unknown[]).includes(value);
+}
 
 /** One row of `action_log`: the action as the client sent it (a `moves` batch included) and its tick. */
 export interface LoggedAction {
@@ -140,7 +154,8 @@ function stepsOf(action: unknown, tick: number): { action: Action; tick: number 
     if (!isRecord(report) || !Array.isArray(report.at) || !Number.isSafeInteger(report.tick)) {
       return 'a movement report holds no tile or tick';
     }
-    steps.push({ action: { t: 'move', at: report.at as [number, number] }, tick: report.tick as number });
+    if (report.gait !== undefined && !isGait(report.gait)) return 'a movement report names no gait the kernel knows';
+    steps.push({ action: moveOf(report.at as Tile, report.gait), tick: report.tick as number });
   }
   return steps;
 }
