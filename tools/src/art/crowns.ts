@@ -17,8 +17,11 @@ import { type Lobe, drawMass, fillPockets, hash3, inkEdge, rampOf, surface } fro
 import { ROOT } from './queue.js';
 
 export const CROWN = 128;
-/** The green ramp, dark to light (the shared `green` ramp's six steps). */
-export const GREEN = ['#15301f', '#1f3d2b', '#2e6b3b', '#4c9a3f', '#84c450', '#c8e88a'] as const;
+/**
+ * The forest's crown ramp, dark to light: the moss ramp's two olive darks for the shade a mass of crowns makes, then the green
+ * ramp's fresh greens and its pale lime for the lit clumps (the shared `moss` and `green` ramps; the owner's olive moss of 30.10).
+ */
+export const GREEN = ['#1b2a16', '#2f4722', '#4a6a2c', '#4c9a3f', '#84c450', '#c8e88a'] as const;
 
 /** The lobes of a variant: a ring of big ones round a middle one, each wholly inside the 128 box. */
 function lobesOf(seed: number): Lobe[] {
@@ -39,7 +42,7 @@ function lobesOf(seed: number): Lobe[] {
 /** One crown as RGBA pixels. */
 export function crownPng(seed: number): PNG {
   const png = surface(CROWN, CROWN);
-  drawMass(png, { ox: 0, oy: 0, w: CROWN, h: CROWN, seed, lobes: lobesOf(seed), ramp: rampOf(GREEN), clump: 15 });
+  drawMass(png, { ox: 0, oy: 0, w: CROWN, h: CROWN, seed, lobes: lobesOf(seed), ramp: rampOf(GREEN), clump: 26, tone: 0.1, glints: 1, contrast: 1.8 });
   fillPockets(png, rampOf(GREEN)[1]!);
   inkEdge(png);
   return png;
@@ -67,10 +70,10 @@ export function writeCrowns(root = ROOT, today = new Date().toISOString().slice(
     if (own < 0) {
       const lead = before === '' || before.endsWith('\n') ? '' : '\n';
       number = lines.length + 1;
-      const line = { sprite: id, name, spec: SPEC, drawer: 'script', ref: id, what: 'a forest crown at 64 px: rounded lobes of leaf clumps, lit from the top left', ramps: ['green'], picked: `script, ${today}` };
+      const line = { sprite: id, name, spec: SPEC, drawer: 'script', ref: id, what: 'a forest crown at 64 px: rounded lobes of leaf clumps, lit from the top left', ramps: ['green', 'moss'], picked: `script, ${today}` };
       appendFileSync(manifest, `${lead}${JSON.stringify(line)}\n`);
     }
-    kit = withSprite(kit, id, { file: `${id}.png`, w: CROWN, h: CROWN, density: 4, ramps: ['green'], source: { spec: SPEC, manifest: `tools/kit-gen/rich-wave.manifest.jsonl:${number}` } });
+    kit = withSprite(kit, id, { file: `${id}.png`, w: CROWN, h: CROWN, density: 4, ramps: ['green', 'moss'], source: { spec: SPEC, manifest: `tools/kit-gen/rich-wave.manifest.jsonl:${number}` } });
     wrote.push(id);
   });
   writeFileSync(kitPath, kit);

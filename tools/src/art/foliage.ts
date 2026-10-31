@@ -75,6 +75,8 @@ export interface MassOptions {
   tone?: number;
   /** How bright the glints on lit clumps are, 0 none. */
   glints?: number;
+  /** How hard the light and shade of each clump pull from the middle step: 1 as the trees, more for a mass that reads dark with lit tops. */
+  contrast?: number;
 }
 
 /**
@@ -89,8 +91,8 @@ export function drawMass(png: PNG, o: MassOptions): Uint8Array {
   const top = new Int16Array(w * h);
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
-      // a scalloped edge: the distance to a lobe is nudged by noise, so the silhouette is leafy, not a circle
-      const wob = (noise(seed + 5, x, y, 6) - 0.5) * 7;
+      // a ragged edge: the distance to a lobe is nudged by noise at three sizes, so the silhouette is leaf clumps with notches, not a circle
+      const wob = (noise(seed + 5, x, y, 9) - 0.5) * 9 + (noise(seed + 6, x, y, 4) - 0.5) * 5 + (hash3(seed + 10, x, y) - 0.5) * 2.2;
       let best = -1;
       let owner = 0;
       for (const [n, l] of lobes.entries()) {
@@ -115,6 +117,7 @@ export function drawMass(png: PNG, o: MassOptions): Uint8Array {
   const [sx, sy] = o.shift ?? [0, 0];
   const tone = o.tone ?? 0;
   const glints = o.glints ?? 1;
+  const contrast = o.contrast ?? 1;
   const clumpSize = o.clump;
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
@@ -125,18 +128,21 @@ export function drawMass(png: PNG, o: MassOptions): Uint8Array {
       const ly = (y - lobe.y) / lobe.r;
       const lz = Math.sqrt(Math.max(0, 1 - lx * lx - ly * ly));
       const dome = lx * LIGHT[0] + ly * LIGHT[1] + lz * LIGHT[2];
-      // the leaf clumps: the nearest of a jittered grid of centres, and the second nearest for the crevice between
-      const gx = Math.floor((x + sx) / clumpSize);
-      const gy = Math.floor((y + sy) / clumpSize);
+      // the leaf clumps: the nearest of a jittered grid of centres (looked up through a slow warp, so the seams between clumps wander),
+      // and the second nearest for the crevice between; each clump is its own small dome lit from the top, dark on its underside
+      const xw = x + sx + (noise(seed + 21, x, y, 11) - 0.5) * clumpSize * 0.45;
+      const yw = y + sy + (noise(seed + 22, x, y, 11) - 0.5) * clumpSize * 0.45;
+      const gx = Math.floor(xw / clumpSize);
+      const gy = Math.floor(yw / clumpSize);
       let near = 1e9;
       let second = 1e9;
       let cx = 0;
       let cy = 0;
       for (let oy = -1; oy <= 1; oy += 1) {
         for (let ox = -1; ox <= 1; ox += 1) {
-          const px0 = (gx + ox + 0.25 + hash3(seed + 7, gx + ox, gy + oy) * 0.5) * clumpSize - sx;
-          const py0 = (gy + oy + 0.25 + hash3(seed + 8, gx + ox, gy + oy) * 0.5) * clumpSize - sy;
-          const d = Math.hypot(x - px0, y - py0);
+          const px0 = (gx + ox + 0.2 + hash3(seed + 7, gx + ox, gy + oy) * 0.6) * clumpSize;
+          const py0 = (gy + oy + 0.2 + hash3(seed + 8, gx + ox, gy + oy) * 0.6) * clumpSize * 0.9;
+          const d = Math.hypot(xw - px0, (yw - py0) * 1.15);
           if (d < near) {
             second = near;
             near = d;
@@ -145,16 +151,18 @@ export function drawMass(png: PNG, o: MassOptions): Uint8Array {
           } else if (d < second) second = d;
         }
       }
-      const clump = (-(x - cx) * 0.55 - (y - cy) * 0.8) / (clumpSize * 0.5);
-      let v = 1.55 + tone + dome * 2.7 + clump * 1.0 - (y / h - 0.5) * 1.2 + (hash3(seed + 9, x, y) - 0.5) * 0.4;
+      const reach = clumpSize * 0.62;
+      const lit = (-(xw - cx) * 0.45 - (yw - cy) * 0.9) / reach;
+      const crown = Math.min(1, near / reach);
+      let v = 2.25 + tone + dome * 0.9 * contrast + lit * 2.6 * contrast - crown * crown * 1.1 * contrast - (y / h - 0.5) * 2.4 + (hash3(seed + 9, x, y) - 0.5) * 0.3;
       // a higher lobe up and to the left throws its shadow here
       const above = Math.max(at(x - 3, y - 3), at(x - 5, y - 2), at(x - 2, y - 5));
-      if (above > height[y * w + x]! + 0.12) v -= 1.3;
-      // the crevice between two clumps is a step darker
-      if (second - near < 1.8 && hash3(seed + 12, Math.floor(cx), Math.floor(cy)) > 0.3) v -= 1.0;
+      if (above > height[y * w + x]! + 0.12) v -= 0.8;
+      // the crevice between two clumps is darker
+      if (second - near < 2.2) v -= 1.0;
       let step = Math.max(1, Math.min(5, Math.round(v)));
       // a pale leaf glint on a lit clump
-      if (glints > 0 && step >= 4 && hash3(seed + 11, x, y) > 1 - 0.035 * glints) step = 5;
+      if (glints > 0 && step >= 4 && hash3(seed + 11, x, y) > 1 - 0.02 * glints) step = 5;
       // the lower right is the darkest green, one step in from the ink
       if (lowerRight(x, y)) step = Math.min(step, 1);
       else if (!px(x + 2, y + 2) && step > 1) step -= 1;

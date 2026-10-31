@@ -477,7 +477,8 @@
         "h": 128,
         "density": 4,
         "ramps": [
-          "green"
+          "green",
+          "moss"
         ],
         "source": {
           "spec": "tools/src/art/crowns.ts",
@@ -490,7 +491,8 @@
         "h": 128,
         "density": 4,
         "ramps": [
-          "green"
+          "green",
+          "moss"
         ],
         "source": {
           "spec": "tools/src/art/crowns.ts",
@@ -503,7 +505,8 @@
         "h": 128,
         "density": 4,
         "ramps": [
-          "green"
+          "green",
+          "moss"
         ],
         "source": {
           "spec": "tools/src/art/crowns.ts",
@@ -547,7 +550,7 @@
           "green",
           "bark"
         ],
-        "scale": 2.27,
+        "scale": 2.26,
         "source": {
           "spec": "tools/src/art/trees.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:159"
@@ -559,7 +562,6 @@
         "h": 256,
         "density": 4,
         "ramps": [
-          "grey",
           "bark"
         ],
         "scale": 2.99,
@@ -1013,7 +1015,7 @@
           "green",
           "bark"
         ],
-        "scale": 3.55,
+        "scale": 3.59,
         "source": {
           "spec": "tools/src/art/trees.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:157"

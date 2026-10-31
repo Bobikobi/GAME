@@ -21,8 +21,8 @@ export const CHARACTER_PX = 73;
 
 const GREEN = rampOf(['#15301f', '#1f3d2b', '#2e6b3b', '#4c9a3f', '#84c450', '#c8e88a']);
 const BARK = rampOf(['#1f1210', '#3f1e17', '#5e2e20', '#7f452a', '#a3633a', '#cc8e55']);
-/** Dead wood: the ink, the purple greys, and one pale step for the bleached side. */
-const DEAD = rampOf(['#1b1a2e', '#3a3554', '#3a3554', '#5d6177', '#5d6177', '#8f94a8']);
+/** Dead wood: the bark ramp itself, drawn dark (a bare tree is the oak's own wood without its leaves). */
+const DEAD = BARK;
 const PLUM = rampOf(['#241238', '#43204a', '#5b3373', '#7c4593', '#9a5bb0', '#c28bc9']);
 
 export interface TreeDraw {
@@ -82,14 +82,15 @@ function oak(frame: number): PNG {
   const W = 192;
   const H = 320;
   const png = surface(W, H);
+  // a thick, warm trunk that flares into four roots spreading over the ground, two boughs reaching into the crown
   drawTubes(png, [
-    ...trunk([[96, 316, 21], [96, 292, 18], [96, 250, 15], [97, 215, 13], [98, 190, 12]], [[62, 318, 4.5], [132, 318, 4.5]]),
-    { x0: 98, y0: 214, r0: 9, x1: 62, y1: 168, r1: 6 },
-    { x0: 98, y0: 210, r0: 9, x1: 136, y1: 170, r1: 6 },
-  ], { seed: 301, ramp: BARK, tone: -0.35, grain: 1.0 });
-  const box = { oy: 56, h: 188 };
-  const lobes = swayed(crownLobes(31, W, box.h, 96, 94, 70, 62, [[0.55, 8, 33], [1, 15, 29]], 40), box.h, frame, 2.5);
-  drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 31, lobes, ramp: GREEN, clump: 20, shift: [frame * 3, frame * 2] });
+    ...trunk([[96, 316, 29], [96, 296, 25], [96, 262, 21], [97, 228, 19], [98, 196, 17]], [[26, 318, 6], [60, 319, 6.5], [132, 319, 6.5], [166, 318, 6]]),
+    { x0: 98, y0: 222, r0: 12, x1: 56, y1: 170, r1: 7 },
+    { x0: 98, y0: 218, r0: 12, x1: 142, y1: 168, r1: 7 },
+  ], { seed: 301, ramp: BARK, tone: 0.1, grain: 1.0 });
+  const box = { oy: 52, h: 180 };
+  const lobes = swayed(crownLobes(31, W, box.h, 96, 86, 80, 52, [[0.6, 9, 29], [1, 13, 25]], 38), box.h, frame, 2.5);
+  drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 31, lobes, ramp: GREEN, clump: 34, tone: 0.85, shift: [frame * 3, frame * 2] });
   return finish(png);
 }
 
@@ -128,7 +129,7 @@ function deadTree(frame: number): PNG {
   add(96, 252, -0.04, 80, 21, 0, 1);
   // the roots grip the ground
   const roots: Tube[] = trunk([[96, 252, 21]], [[58, 254, 4], [134, 254, 4]]);
-  drawTubes(png, [...tubes, ...roots], { seed: 401, ramp: DEAD, tone: -0.8, grain: 1.2 });
+  drawTubes(png, [...tubes, ...roots], { seed: 401, ramp: DEAD, tone: -0.55, grain: 1.2 });
   return finish(png);
 }
 
@@ -136,10 +137,10 @@ function youngTree(): PNG {
   const W = 128;
   const H = 192;
   const png = surface(W, H);
-  drawTubes(png, trunk([[64, 190, 12], [64, 170, 10], [64, 140, 8], [65, 112, 7]], [[46, 191, 3.5], [82, 191, 3.5]]), { seed: 501, ramp: BARK, tone: -0.3, grain: 0.9 });
+  drawTubes(png, trunk([[64, 190, 19], [64, 172, 15], [64, 140, 12], [65, 112, 10]], [[28, 191, 4.5], [46, 192, 4.5], [82, 192, 4.5], [100, 191, 4.5]]), { seed: 501, ramp: BARK, tone: 0.1, grain: 0.9 });
   const box = { oy: 20, h: 124 };
-  const lobes = crownLobes(52, W, box.h, 64, 62, 38, 34, [[0.55, 6, 24], [1, 9, 20]], 28);
-  drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 52, lobes, ramp: GREEN, clump: 15 });
+  const lobes = crownLobes(52, W, box.h, 64, 62, 42, 36, [[0.6, 6, 20], [1, 10, 18]], 26);
+  drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 52, lobes, ramp: GREEN, clump: 26, tone: 1.3 });
   return finish(png);
 }
 
@@ -170,10 +171,10 @@ function fig(frame: number, fruit: boolean): PNG {
   const W = 128;
   const H = 256;
   const png = surface(W, H);
-  drawTubes(png, trunk([[63, 254, 10], [64, 232, 8], [66, 205, 6], [65, 180, 5]], [[42, 255, 3.5], [86, 255, 3.5]]), { seed: 701, ramp: BARK, tone: -0.2, grain: 0.9 });
+  drawTubes(png, trunk([[63, 254, 17], [64, 232, 13], [66, 205, 10], [65, 180, 8]], [[28, 255, 4.5], [44, 256, 4.5], [84, 256, 4.5], [100, 255, 4.5]]), { seed: 701, ramp: BARK, tone: 0.1, grain: 0.9 });
   const box = { oy: 16, h: 190 };
   const lobes = swayed(crownLobes(71, W, box.h, 64, 100, 38, 76, [[0.5, 7, 27], [1, 11, 23]], 32), box.h, frame, 1.6);
-  const mask = drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 71, lobes, ramp: GREEN, clump: 22, tone: 0.15, glints: 0.6, shift: [frame * 3, frame * 2] });
+  const mask = drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 71, lobes, ramp: GREEN, clump: 28, tone: 1.3, glints: 0.6, shift: [frame * 3, frame * 2] });
   if (fruit) {
     // figs: small plum drops on the crown's face, each with a lit upper left and a dark under edge
     let placed = 0;
@@ -222,7 +223,7 @@ function sheet(frames: readonly PNG[]): PNG {
 
 export const TREES: readonly TreeDraw[] = [
   { id: 'props/tree_oak', kit: 'core', w: 192, h: 320, frames: 2, ramps: ['green', 'bark'], what: 'an oak at 64 px, three characters tall: a bark trunk with roots under a wide crown of lit lobes and leaf clumps, swaying a pixel in its second frame', draw: oak },
-  { id: 'props/dead_tree', kit: 'core', w: 192, h: 256, frames: 2, ramps: ['grey', 'bark'], what: 'a dead tree at 64 px, two and a half characters tall: a twisting trunk forking into bare limbs, bark roots at its foot, the limbs swaying a pixel in its second frame', draw: deadTree },
+  { id: 'props/dead_tree', kit: 'core', w: 192, h: 256, frames: 2, ramps: ['bark'], what: 'a dead tree at 64 px, two and a half characters tall: a twisting trunk forking into bare limbs, bark roots at its foot, the limbs swaying a pixel in its second frame', draw: deadTree },
   { id: 'props/young_tree', kit: 'core', w: 128, h: 192, frames: 1, ramps: ['green', 'bark'], what: 'a young tree at 64 px, two characters tall: a slim bark trunk under a rounded crown of lit lobes', draw: youngTree },
   { id: 'props/sapling', kit: 'core', w: 64, h: 96, frames: 1, ramps: ['green', 'bark'], what: 'a sapling at 64 px, a person tall: a thin curved stem with a few small leaf clusters', declareScale: false, draw: sapling },
   { id: 'props/fig_bush', kit: 'ceosisrael', w: 128, h: 256, frames: 2, ramps: ['green', 'plum', 'bark'], what: 'the glade fig held as a tree, three characters tall: a slender trunk under a tall crown of big leaves with plum figs', draw: (f) => fig(f, true) },

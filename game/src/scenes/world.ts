@@ -63,6 +63,8 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { BANK_EDGE, EDGE_PX, PATH_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
+import { shadeShare } from '../crownshade';
+import { CrownShades } from '../crownshade-layer';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -313,6 +315,8 @@ export class WorldScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
   /** the decided cast shadows, every caster's own alpha sheared away from the sun */
   private cast: CastLayer | undefined;
+  /** the soft shade under each tree's crown, kept under the tree as it grows or falls */
+  private crownShades: CrownShades | undefined;
   private readonly noCast = new Set<Phaser.GameObjects.GameObject>();
   /** the plain valley's night: one blue veil (the light layer draws the hour's shade when the light group is on) */
   private shade!: Phaser.GameObjects.Rectangle;
@@ -512,7 +516,15 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.light) this.buildDapple();
     const firstKey = this.playerFrame('down').key;
     this.player = kitSprite(this, 0, 0, firstKey, standingFrame(this.b.sprites[firstKey], 1)).setOrigin(0.5, footOrigin(firstKey)).setVisible(false);
-    if (RICH.detail) this.buildCasters();
+    if (RICH.detail) {
+      this.buildCasters();
+      // every resource node (a tree is a node that grows and falls) and every tree the map stands, deduped
+      const trees = new Set<Phaser.GameObjects.Image | Phaser.GameObjects.Sprite>(this.nodes.values());
+      for (const obj of this.children.list) {
+        if ((obj instanceof Phaser.GameObjects.Image || obj instanceof Phaser.GameObjects.Sprite) && shadeShare(obj.texture.key) > 0) trees.add(obj);
+      }
+      this.crownShades = new CrownShades(this, trees);
+    }
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
@@ -2308,6 +2320,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.walk(s, real);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
+    this.crownShades?.sync();
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
     this.placeShaft(minuteOfDay(this.b, s.tick));
     const playerCaster = this.cast?.of(this.player);
