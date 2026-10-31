@@ -47,6 +47,12 @@ recreate the `db` container, with its data volume kept; run `backup.sh` by hand 
 the step's name in `backups/`.
 What happens if it goes wrong: the two new containers fail to start; nothing else on the box notices, and
 `docker compose -f compose.yml down` removes them without touching the data volume.
+A new image on a box that already runs brings every stored state to its content on the state's first read
+(DECISIONS 2026-10-31, "The server brings a stored state to new content"), so going back is not only the old
+tag: an older image refuses a state a newer kernel wrote (503) and leaves it, but under the same kernel version
+it would adapt a state down to its older content and drop what only the newer content holds. The way back from
+a roll is therefore the previous `IMAGE_TAG` and `up -d --no-build --no-deps api` together with the dump taken
+before the roll, restored first on a scratch database (step 5) and then on the live one, each with its own yes.
 Verify: `docker compose -f compose.yml ps` shows `db` and `api` both healthy (the API's check is `GET /health`, which needs no identity); the boot log carries one line saying the server trusts the `x-player-id` header; `curl -s -H 'x-player-id: smoke' -X POST http://127.0.0.1:8710/session` answers 404 "No game state exists for this account." (the row is made by the opening handover, NEXT 18 d).
 
 ## 3. The game and the API behind nginx, under one name
@@ -108,7 +114,9 @@ stays unset: the API refuses a second origin off a laptop), `CLIENT_ADDRESS_HEAD
 it; the sign-in limits count by it), and the Google pair `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` from the
 owner's secrets folder on the laptop (Google project `openfold-game`). On the Google client, add
 `https://<name>/auth/google/callback` as a redirect; it lists only the laptop's
-`http://localhost:8080/auth/google/callback` today. Set `MAILER=resend`, `RESEND_API_KEY` (from the owner's
+`http://localhost:8080/auth/google/callback` today. The Discord pair `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET`
+is set the same way once the owner has made the game's Discord app, with `https://<name>/auth/discord/callback`
+as its redirect; left unset, Discord answers "not open yet". Set `MAILER=resend`, `RESEND_API_KEY` (from the owner's
 secrets folder) and `MAIL_FROM=Loomvale <play@<verified domain>>`. With `MAILER=log` instead, the API starts only
 beside `ALLOW_LOG_MAILER=staging-only`: every link lands in its log, so such a box is a staging one and the name
 is not given to players. Then `docker compose -f compose.yml up -d --no-build`.
@@ -136,9 +144,48 @@ Verify: the boot log line says `the age limit by the country in the file /app/co
 replaced by taking the next month's name and sha256 into `deploy/Dockerfile` and building again; DB-IP's credit
 (CC BY 4.0, https://db-ip.com) stays in the game's credits panel and in the README.
 
+The players counter (DECISIONS 2026-10-31). In this mode the API answers `GET /stats` with two counts, open accounts
+and the ones opened in the last 7 days. Each count is read from the database at most once a minute, and no id is
+in the answer. The nginx file proxies that one path; `dev-header` has no accounts and answers it 404. The hub's
+hourly refresh reads it through the repository variable `GAME_SERVER_ORIGIN` (Settings, Variables, Actions), which
+holds the box's https origin. It is written there and never in this repository, and setting it is the owner's
+step. Unset, unreachable, an error or more than 5 s, the board says "unknown", never 0.
+Verify: `curl -s https://<name>/stats` prints `{"accounts":N,"new_7d":M}`, and a second call within a minute prints the
+same counts from the cache, even after a sign-up in between. After the next hourly refresh, the boards page shows the
+counts.
+
 On the laptop, the same mode runs against the dev client: `AUTH_MODE=session PUBLIC_ORIGIN=http://localhost:8080
 APP_ORIGIN=http://localhost:5173 ALLOW_LOG_MAILER=staging-only` with the Google pair exported from the secrets
 file, never pasted into a shell history or a chat. Two loopback ports are the one pair of origins the API accepts.
+
+## Deploys (the site and the game on Vercel)
+
+Vercel's Hobby plan allows 100 deployments a day. Through the Git integration, every push to every branch deploys,
+and a build the ignored step skips still counts, so the limit ran out on 31.10. The industry's way is to deploy from
+CI, at the stages that need it. `.github/workflows/deploy.yml` does that once the repository variable
+`DEPLOY_FROM_CI` is `1`, and only on a head CI passed:
+- main: production.
+- develop: one preview, kept at `https://loomvale-develop.vercel.app`.
+- a pull request labelled `preview`: one preview, whose address the workflow comments on the pull request. Never
+  a pull request from a fork.
+The hourly hub refresh then asks that workflow for production instead of firing the deploy hook, because the hook
+needs the Git connection. Production can also be deployed by hand: Actions, Deploy, Run workflow.
+The daily budget is about 15 develop landings, plus the releases, plus the previews asked for by label, plus up to
+24 hub refreshes on the hours when the hub's data changed. That is about 30 on a busy day, against 100.
+
+The owner's three steps (none of them is in this repository):
+1. Secrets, by name only, in the repository's Settings, Secrets, Actions:
+   - `VERCEL_TOKEN`: a token from the Vercel account's Settings, Tokens, scoped to the project's team.
+   - `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`: from the project's Settings, General, or from `.vercel/project.json`
+     after `vercel link`.
+   Then the label: `gh label create preview --repo <the repository>`.
+2. In the Vercel project, Settings, Git: disconnect the repository. The Git deploys and the deploy hook stop.
+3. The repository variable `DEPLOY_FROM_CI` = `1` (Settings, Variables, Actions). The next landing on develop
+   deploys from CI.
+Verify: the Deploy run of that landing says `Deploy develop from <sha>`, the develop address shows the new build,
+and Vercel's deployments list grows by one per landing, not by one per push.
+The way back: reconnect the repository in the Vercel project's Settings, Git, and set the variable to `0`. Then
+every run of the workflow stops at its first step, and the hook works again. The secrets can stay.
 
 ## Never
 

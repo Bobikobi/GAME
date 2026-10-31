@@ -24,6 +24,8 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { loadChipFor } from './load';
+import { SettingsApplier } from '../settings-apply';
+import { settingsBody } from './settings-window';
 import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL, REVIEW_KEY } from '../config';
 import {
@@ -45,6 +47,7 @@ import { s1, s1Available } from '../net/s1';
 import { shopGroups } from '../shopstock';
 import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
 import { say } from './dialog';
+import { standingFrame } from '../work';
 import { button, h, sprite } from './dom';
 import { treeScreen, type TreeMemo } from './tree';
 import { mapSvg, placeKind } from './map';
@@ -209,7 +212,7 @@ export function openBag(ui: UI): void {
   const figure = () => {
     const race = b.races[s.state.player.race] ?? Object.entries(b.races).sort(([x], [y]) => x.localeCompare(y))[0]?.[1];
     const ref = (s.state.player.look === 1 && race?.sprite_alt) || race?.sprite;
-    return sprite(b, ref, 3, 1);
+    return sprite(b, ref, 3, standingFrame(ref ? b.sprites[ref] : undefined, 1));
   };
   const pick = (id: string) => {
     selected = id;
@@ -1096,6 +1099,8 @@ export function openMenu(ui: UI): void {
           sound.setMuted(!sound.muted);
           render();
         }),
+        // the 3D door has no settings host yet (it is paused): no row there rather than a dead one
+        ...(app.perf && app.game ? [button('Settings', go(() => openSettings(ui)))] : []),
         button('Controls', go(() => openControls(ui))),
         button('Creators', go(() => openCreators(ui))),
         button('Credits', go(() => openCredits(ui))),
@@ -1276,6 +1281,22 @@ export function openOpeningReview(ui: UI): Promise<void> {
     const closeBtn = p.layer.el.querySelector('.close');
     closeBtn?.addEventListener('click', () => finish());
   });
+}
+
+/** The Settings window: quality, frame rate, sound, reduced motion and text size, applied at once and kept (settings-apply.ts). */
+export function openSettings(ui: UI): void {
+  const perf = app.perf;
+  const game = app.game;
+  if (!perf || !game) return;
+  const p = panel(ui, 'Settings', 'settings');
+  let storage: Storage | null = null;
+  try {
+    storage = window.localStorage;
+  } catch {
+    // the settings still apply for this visit
+  }
+  const apply = new SettingsApplier({ perf, game, storage, root: document.documentElement, richFromUrl: new URLSearchParams(location.search).has('rich') });
+  p.body.replaceChildren(settingsBody(apply, app.sound, p.close));
 }
 
 function openControls(ui: UI): void {

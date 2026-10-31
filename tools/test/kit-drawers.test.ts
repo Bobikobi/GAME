@@ -23,7 +23,8 @@ describe('the routes', () => {
     expect(parseDrawer('gemini')).toBe('gemini');
     expect(parseDrawer('local')).toBe('local');
     expect(parseDrawer('kaggle')).toBe('kaggle');
-    expect(() => parseDrawer('midjourney')).toThrow(/codex, gemini, local or kaggle/);
+    expect(parseDrawer('gemini-web')).toBe('gemini-web');
+    expect(() => parseDrawer('midjourney')).toThrow(/codex, gemini, local, kaggle or gemini-web/);
   });
 
   test('a plain image model gets the drawing instructions without the agent sentences', () => {

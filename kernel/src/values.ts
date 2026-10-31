@@ -11,14 +11,15 @@
  * Waiting (respawn) is never paid: it does not appear in the cost.
  */
 import type { Bundle, Params } from './bundle';
+import { dressMs } from './hunt';
 import { idiv, mulDiv, mulDivUp } from './num';
 
 /** The effort tiers in order, lightest first; their weights live in the params file. */
 export const EFFORT_TIERS = ['easy', 'medium', 'craft', 'hard'] as const;
 export type EffortTier = (typeof EFFORT_TIERS)[number];
 
-/** The step each verb starts on: gathering easy, digging medium, crafting craft. */
-const VERB_EFFORT: Record<Activity['verb'], number> = { gather: 0, dig: 1, craft: 2 };
+/** The step each verb starts on: gathering easy, digging and hunting medium, crafting craft. */
+const VERB_EFFORT: Record<Activity['verb'], number> = { gather: 0, dig: 1, craft: 2, hunt: 1 };
 
 /**
  * Rule R6 with kernel review 8.1: an activity's effort tier is derived from
@@ -33,7 +34,7 @@ export function effortTier(verb: Activity['verb'], tier: number): EffortTier {
 
 export interface Activity {
   id: string;
-  verb: 'gather' | 'dig' | 'craft';
+  verb: 'gather' | 'dig' | 'craft' | 'hunt';
   /** derived effort tier; w is its weight */
   effort: EffortTier;
   /** effort weight, permille */
@@ -63,7 +64,7 @@ export interface ValueTable {
   issues: ValueIssue[];
 }
 
-type ContentForValues = Pick<Bundle, 'items' | 'resources' | 'treasures' | 'recipes' | 'params'> & Partial<Pick<Bundle, 'reactions'>>;
+type ContentForValues = Pick<Bundle, 'items' | 'resources' | 'treasures' | 'recipes' | 'params'> & Partial<Pick<Bundle, 'reactions' | 'map'>>;
 
 /** Rarity bonus: only on capacity-limited sources, never above beta of the base cost. */
 function rarityBonus(params: Params, rarity: keyof Params['rarity_bonus_ms'], w: number, t: number, limited: boolean): number {
@@ -156,6 +157,33 @@ export function activitiesOf(content: ContentForValues): Activity[] {
       ...(capacity ? { capacity } : {}),
     });
   }
+  // a hunted kind is a source of its own, the fifth (docs/design/HUNTING.md section 9): the hunt's time and the dressing,
+  // its drops as outputs, its spots as capacity refilled by the game day. It comes last, like the appearing node.
+  const kinds = content.map?.creatures?.kinds ?? {};
+  const spots = content.map?.creatures?.spots ?? [];
+  for (const id of Object.keys(kinds).sort()) {
+    const h = kinds[id]!.hunt;
+    if (!h) continue;
+    const effort = effortTier('hunt', tierOf(h.drops.map((d) => d.item)));
+    const w = params.effort_permille[effort];
+    const t = h.take_s * 1000 + dressMs(params, h.size);
+    const count = spots.filter((s) => s.kind === id).length;
+    const capacity = count > 0 ? { count, respawn_ms: h.spawn.refill_d * params.day_length_ms } : undefined;
+    const rarest = h.drops
+      .map((d) => rarityOf(d.item))
+      .sort((a, b) => rarityRank(b) - rarityRank(a))[0] ?? 'common';
+    out.push({
+      id,
+      verb: 'hunt',
+      effort,
+      w,
+      t,
+      b: rarityBonus(params, rarest, w, t, capacity !== undefined),
+      inputs: [],
+      outputs: h.drops.map((d) => ({ item: d.item, num: d.qty, den: 1, share: d.share_pct })),
+      ...(capacity ? { capacity } : {}),
+    });
+  }
   return out;
 }
 
@@ -235,6 +263,19 @@ export function computeValues(content: ContentForValues): ValueTable {
           changed = true;
         }
       }
+    }
+    // a finer grade of a good is the same good off a better animal (HUNTING section 5): it comes out of the same hunt,
+    // so it is worth the plain one and counts as made when the plain one is. It lands inside the rounds, so a recipe
+    // that asks for the grade (min_grade) is costed like any other; a grade with a cheaper source of its own keeps that.
+    for (const it of Object.values(content.items)) {
+      if (!it.grade) continue;
+      const v = values[it.grade.of];
+      const current = values[it.id];
+      if (v === undefined || (current !== undefined && v >= current)) continue;
+      values[it.id] = v;
+      cheapest[it.id] = cheapest[it.grade.of]!;
+      verbOf[it.id] = verbOf[it.grade.of]!;
+      changed = true;
     }
   }
   if (changed) {

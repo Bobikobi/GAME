@@ -347,10 +347,10 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  body[data-section='home'] .nav a[href^='http'] {
+  body[data-section='home'] .nav a[href^='http']:not([data-play]) {
     margin-left: auto;
   }
-  body[data-section='home'] .nav a[href='/play/'] {
+  body[data-section='home'] .nav a[data-play] {
     order: 9;
     padding: 0 22px;
     line-height: 44px;

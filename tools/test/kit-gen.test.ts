@@ -66,7 +66,7 @@ describe('the spec', () => {
     expect(parseArgs(['s.json'], { KIT_DRAWER: 'gemini' }).drawer).toBe('gemini');
     expect(parseArgs(['s.json', '--drawer', 'codex'], { KIT_DRAWER: 'gemini' }).drawer).toBe('codex');
     expect(parseArgs(['s.json', '--drawer', 'local'], {}).drawer).toBe('local');
-    expect(() => parseArgs(['s.json', '--drawer', 'dalle'], {})).toThrow(/codex, gemini, local or kaggle/);
+    expect(() => parseArgs(['s.json', '--drawer', 'dalle'], {})).toThrow(/codex, gemini, local, kaggle or gemini-web/);
     for (const bad of ['abc', '0', '-5']) expect(() => parseArgs(['s.json', '--timeout', bad])).toThrow(/positive/);
     expect(() => parseArgs(['s.json', '--timeout'])).toThrow(/positive/);
   });

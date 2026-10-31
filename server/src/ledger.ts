@@ -17,8 +17,27 @@
  * An account whose opening was handed over from the phone (NEXT 18 d) starts its log with that opening:
  * one row `{ kind: 'opening', seed, log }`. The replay plays it from `newState(bundle, seed)` under the
  * phone's seed, then gives the state the account's own seed, as the sign-up did, and goes on from there.
+ *
+ * A state the server brought to new content (`adaptRecord` in api.ts) is one row `{ kind: 'adapt', from, to }`:
+ * the replay adapts the state at that row as the server did. The replay runs under one bundle, today's, so an
+ * account that crossed a change of content proves its log only when the steps before the change still play
+ * the same under today's content.
  */
-import { isSeed, newState, serialize, step, type Action, type Bundle, type GameEvent, type Seed, type State } from '@game/kernel';
+import { GAITS, adaptState, isSeed, newState, serialize, step, type Action, type Bundle, type Gait, type GameEvent, type Seed, type State, type Tile } from '@game/kernel';
+
+/**
+ * The step a movement report stands for: its tile, and its gait when the report named one. The server
+ * steps it, books it and a replay plays it as this one object, so the gold rows a move pays read alike in
+ * both books, and a sneak stays a sneak on the server (a report without a gait is a walk, as an old log is).
+ */
+export function moveOf(at: Tile, gait?: Gait): Extract<Action, { t: 'move' }> {
+  return gait === undefined ? { t: 'move', at } : { t: 'move', at, gait };
+}
+
+/** Whether a value names one of the kernel's gaits. */
+export function isGait(value: unknown): value is Gait {
+  return (GAITS as readonly unknown[]).includes(value);
+}
 
 /** One row of `action_log`: the action as the client sent it (a `moves` batch included) and its tick. */
 export interface LoggedAction {
@@ -135,7 +154,8 @@ function stepsOf(action: unknown, tick: number): { action: Action; tick: number 
     if (!isRecord(report) || !Array.isArray(report.at) || !Number.isSafeInteger(report.tick)) {
       return 'a movement report holds no tile or tick';
     }
-    steps.push({ action: { t: 'move', at: report.at as [number, number] }, tick: report.tick as number });
+    if (report.gait !== undefined && !isGait(report.gait)) return 'a movement report names no gait the kernel knows';
+    steps.push({ action: moveOf(report.at as Tile, report.gait), tick: report.tick as number });
   }
   return steps;
 }
@@ -179,6 +199,12 @@ export function replayAccount(bundle: Bundle, seed: Seed, log: readonly LoggedAc
         state = result.state;
       }
       state = { ...state, seed };
+      continue;
+    }
+    if (isRecord(row.action) && row.action.kind === 'adapt') {
+      const adapted = adaptState(bundle, state);
+      if (!adapted) return { ok: false, problem: `seq ${row.seq}: the adapt row's state cannot be brought to this content` };
+      state = adapted;
       continue;
     }
     const steps = stepsOf(row.action, row.tick);

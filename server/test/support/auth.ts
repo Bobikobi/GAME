@@ -50,6 +50,17 @@ export class MemoryAuthStore implements AuthStore {
   async addIdentity(provider: ProviderId, subject: string, accountId: string) {
     if (!this.identities.has(`${provider}:${subject}`)) this.identities.set(`${provider}:${subject}`, accountId);
   }
+  async dropIdentities(accountId: string, providers: readonly ProviderId[], now: number) {
+    let count = 0;
+    for (const [key, id] of this.identities) {
+      if (id === accountId && providers.includes(key.slice(0, key.indexOf(':')) as ProviderId)) {
+        this.identities.delete(key);
+        count++;
+      }
+    }
+    if (count > 0) for (const session of this.sessions.values()) if (session.accountId === accountId && session.revokedAt === undefined) session.revokedAt = now;
+    return count;
+  }
   async nameTaken(name: string) {
     return [...this.accounts.values()].some((account) => account.name.toLowerCase() === name.toLowerCase());
   }
@@ -75,8 +86,10 @@ export class MemoryAuthStore implements AuthStore {
     this.games.set(accountId, structuredClone(game));
     return { accountId };
   }
-  async createSession(tokenHash: string, accountId: string, _createdAt: number, expiresAt: number) {
+  async createSession(tokenHash: string, accountId: string, _createdAt: number, expiresAt: number, via?: { provider: ProviderId; subject: string }) {
+    if (via && this.identities.get(`${via.provider}:${via.subject}`) !== accountId) return false;
     this.sessions.set(tokenHash, { accountId, expiresAt });
+    return true;
   }
   async sessionAccount(tokenHash: string, now: number) {
     const session = this.sessions.get(tokenHash);
@@ -194,6 +207,48 @@ export class FakeGoogle {
       return Response.json({ access_token: 'unused', token_type: 'Bearer', id_token: this.idToken(this.claims(this.nonce, this.clock())) });
     }
     throw new Error(`The fake Google was asked for ${url}`);
+  };
+}
+
+export const DISCORD_CLIENT_ID = '1300000000000000000';
+export const DISCORD_CLIENT_SECRET = 'discord-test-secret-not-a-real-one';
+const DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token';
+const DISCORD_ME_URL = 'https://discord.com/api/v10/users/@me';
+
+/**
+ * Discord as the tests need it: the token endpoint hands out an access token, and `/users/@me` answers for
+ * that token alone with `me`. A call with any other token is refused, as Discord refuses it.
+ */
+export class FakeDiscord {
+  /** every form the token endpoint received */
+  readonly exchanges: URLSearchParams[] = [];
+  /** every Authorization header `/users/@me` was asked with */
+  readonly asked: string[] = [];
+  me: Record<string, unknown> = { id: '80351110224678912', username: 'tess', email: 'Player@Example.com', verified: true };
+  tokenStatus = 200;
+  /** how the token endpoint fails, when it does: as `FakeGoogle.tokenFault` */
+  tokenFault: 'reject' | 'not-json' | 'hang' | undefined;
+  private readonly token = 'discord-access-token';
+
+  readonly fetch: typeof fetch = async (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (url === DISCORD_TOKEN_URL) {
+      this.exchanges.push(new URLSearchParams(String(init?.body ?? '')));
+      if (this.tokenFault === 'reject') throw new TypeError('fetch failed');
+      if (this.tokenFault === 'not-json') return new Response('<html>busy</html>', { status: 200, headers: { 'content-type': 'text/html' } });
+      if (this.tokenFault === 'hang') {
+        return new Promise<Response>((_resolve, reject) => init?.signal?.addEventListener('abort', () => reject(init.signal!.reason)));
+      }
+      if (this.tokenStatus !== 200) return Response.json({ error: 'invalid_grant' }, { status: this.tokenStatus });
+      return Response.json({ access_token: this.token, token_type: 'Bearer', expires_in: 604800, refresh_token: 'unused', scope: 'identify email' });
+    }
+    if (url === DISCORD_ME_URL) {
+      const authorization = new Headers(init?.headers).get('authorization') ?? '';
+      this.asked.push(authorization);
+      if (authorization !== `Bearer ${this.token}`) return Response.json({ message: '401: Unauthorized', code: 0 }, { status: 401 });
+      return Response.json(this.me);
+    }
+    throw new Error(`The fake Discord was asked for ${url}`);
   };
 }
 

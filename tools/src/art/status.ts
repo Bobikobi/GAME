@@ -57,6 +57,8 @@ export interface PoolEntry extends GenEntry {
   creature?: boolean;
   /** The DECISIONS title that retired the entry. */
   retired?: string;
+  /** The entry this one is another approved look of (owner, 30.10: room for all the good ones): its drafts carry the base's name, and a pick names this entry. */
+  variant_of?: string;
 }
 
 const KIT_ID = /^[a-z0-9_-]+\/[a-z0-9_-]+$/;
@@ -71,7 +73,7 @@ export function parsePool(text: string): PoolEntry[] {
     if (kitIds.has(entry.kit_id)) throw new Error(`${where}.kit_id "${entry.kit_id}" appears twice`);
     kitIds.add(entry.kit_id);
     if (entry.rank !== undefined && (!Number.isInteger(entry.rank) || entry.rank < 1)) throw new Error(`${where}.rank must be a whole row number from 1`);
-    for (const field of ['blocked_by', 'anchor_sprite', 'retired'] as const) {
+    for (const field of ['blocked_by', 'anchor_sprite', 'retired', 'variant_of'] as const) {
       const value: unknown = entry[field];
       if (value !== undefined && (typeof value !== 'string' || value.trim() === '')) throw new Error(`${where}.${field} must be text`);
     }
