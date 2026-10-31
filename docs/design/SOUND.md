@@ -274,7 +274,7 @@ Measured and written down; the ear is the owner's. The two columns play the same
 | **Medieval lofi cozy: the timbre of real instruments** (breath in a recorder, the body of a plucked string, a bow on strings, a harp's ring) | **No.** It reads as a synth imitating them, close to the chip sound the owner marked "no" in B | **Yes:** the recorder, harp, strings, horn and lute (a nylon guitar stands in) are recordings of instruments |
 | Dynamics that sound played (a note's colour changes with how hard it is struck) | **No:** louder is only louder | **Partly:** one sample a note here, so louder is mostly louder too; a soundfont with velocity layers does it |
 | Bytes on the page | 0 B of audio, a few KB of score | About 2 MB for the routine's instruments, up to 4.4 MB for all five; less trimmed |
-| CPU (measured on a desktop core; a mid-range phone is perhaps 3 to 4 times that) | 6 to 21 % of a desktop core, perhaps 20 to 80 % of a phone's for combat, the highest of the options | 4.5 to 13 % of a desktop core, perhaps 15 to 50 % of a phone's |
+| CPU (measured on a desktop core; a mid-range phone is perhaps 3 to 4 times that) | 6 to 21 % of a desktop core, about 20 to 80 % of a phone's (combat the most), the highest of the options | 4.5 to 13 % of a desktop core, perhaps 15 to 50 % of a phone's |
 | A composer's arrangement and performance | No | No: these are our scores. That is section 6's open-licence tracks, or a composer |
 
 So B answers the length, the states and the switching, but not the sound of real instruments, which is what the owner liked in C. C played live answers all of it except a person's performance, for about 2 to 4 MB.
