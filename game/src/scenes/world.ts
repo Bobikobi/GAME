@@ -838,7 +838,10 @@ export class WorldScene extends Phaser.Scene {
           const picks = variants.get(tile.sprite);
           const h = hash(x, y);
           // about two tiles in five take a variant, always the same one for the same tile
-          const sprite = picks && picks.length > 0 && h % 100 < 40 ? picks[Math.floor(h / 100) % picks.length]! : tile.sprite;
+          const picked = picks && picks.length > 0 && h % 100 < 40 ? picks[Math.floor(h / 100) % picks.length]! : tile.sprite;
+          // the ruin floor's sand keeps the old darker sand; the river's bank was dried to a pale one
+          const dark = tile.tag === 'ruin' && baseName(tile.sprite) === 'sand' ? picked.replace(/tiles\/sand(?=_\d|$)/, 'tiles/sand_ruin') : picked;
+          const sprite = dark !== picked && this.has(dark) ? dark : picked;
           const info = this.b.sprites[sprite];
           if (!info) continue;
           // a shaded or sunlit meadow tile draws from a toned copy of its sprite

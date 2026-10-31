@@ -2442,6 +2442,48 @@
           "spec": "tools/src/art/water.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
         }
+      },
+      "tiles/sand_ruin": {
+        "file": "tiles/sand_ruin.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:43"
+        }
+      },
+      "tiles/sand_ruin_1": {
+        "file": "tiles/sand_ruin_1.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:59"
+        }
+      },
+      "tiles/sand_ruin_2": {
+        "file": "tiles/sand_ruin_2.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:45"
+        }
       }
     }
   }

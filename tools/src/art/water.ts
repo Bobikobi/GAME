@@ -1,10 +1,9 @@
 /**
  * The water at 64 px (rich wave 3, part two): four variants of a four-frame sheet, 256 x 64 each.
  *
- * Open water is the shared blue ramp's deep step with a stipple of the mid step and a few darker pixels, and short
- * ripple strokes that rock a pixel or two from frame to frame and loop at the fourth. The light ripples live in the shallows
- * the world draws along a shore. A few single sparks
- * flash in one frame each. Everything wraps, so the tile repeats without a seam; the variants differ by seed, so
+ * Open water is the shared blue ramp's deep step, flat, with three short mid-step ripple strokes that rock a pixel or two
+ * from frame to frame and loop at the fourth, and a spark or two that flash in one frame each. The bands toward a shore
+ * (mid, then light, with the light highlights) are the world's (pathedge.ts), so the middle of a river stays the darkest. Everything wraps, so the tile repeats without a seam; the variants differ by seed, so
  * a lake does not show one tile over and over. `pnpm art:water` writes the PNGs and their kit.json entries.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -28,20 +27,6 @@ function h(seed: number, a: number, b: number): number {
   return (x >>> 0) / 4294967296;
 }
 
-/** Value noise that wraps over a `lat` x `lat` lattice across the tile. */
-function wrapNoise(seed: number, lat: number, x: number, y: number): number {
-  const fx = (x / SIZE) * lat;
-  const fy = (y / SIZE) * lat;
-  const x0 = Math.floor(fx);
-  const y0 = Math.floor(fy);
-  const tx = fx - x0;
-  const ty = fy - y0;
-  const sx = tx * tx * (3 - 2 * tx);
-  const sy = ty * ty * (3 - 2 * ty);
-  const g = (i: number, j: number): number => h(seed, ((i % lat) + lat) % lat, ((j % lat) + lat) % lat);
-  return (g(x0, y0) * (1 - sx) + g(x0 + 1, y0) * sx) * (1 - sy) + (g(x0, y0 + 1) * (1 - sx) + g(x0 + 1, y0 + 1) * sx) * sy;
-}
-
 /** One frame of one variant as rows of palette letters. */
 export function waterRows(seed: number, frame: number): string[] {
   const rows = Array.from({ length: SIZE }, () => new Array<string>(SIZE).fill('r'));
@@ -49,17 +34,8 @@ export function waterRows(seed: number, frame: number): string[] {
     const row = rows[((y % SIZE) + SIZE) % SIZE];
     if (row) row[((x % SIZE) + SIZE) % SIZE] = c;
   };
-  // open water is the deep step of the ramp; the world lifts it toward the shore (pathedge.ts), so the middle of a lake stays
-  // the darkest. A calm stipple of the next lighter step and a rare darker one keep it from reading flat
-  for (let y = 0; y < SIZE; y += 1) {
-    for (let x = 0; x < SIZE; x += 1) {
-      const n = wrapNoise(seed, 3, x, y);
-      if (h(seed + 9, x, y) < 0.06 + n * 0.2 && (x + y) % 2 === 0) set(x, y, 's');
-      else if (h(seed + 10, x, y) < 0.025 && (x + y) % 2 === 1) set(x, y, 'q');
-    }
-  }
   // the ripples: short wavy strokes, each rocking on its own phase
-  for (let i = 0; i < 7; i += 1) {
+  for (let i = 0; i < 3; i += 1) {
     const x0 = Math.floor(h(seed + 20, i, 0) * SIZE);
     const y0 = Math.floor(h(seed + 21, i, 0) * SIZE);
     const len = 7 + Math.floor(h(seed + 22, i, 0) * 9);
@@ -71,14 +47,14 @@ export function waterRows(seed: number, frame: number): string[] {
       const wave = Math.round(Math.sin((k / len) * Math.PI * 2 + phase) * 0.8);
       const x = x0 + k + rock;
       const y = y0 + wave + bob;
-      set(x, y, k > 0 && k < shown - 1 && k % 4 === 2 ? 'z' : 's');
+      set(x, y, k > 0 && k < shown - 1 && k % 4 === 2 ? 't' : 's');
       if (k % 2 === 0) set(x + 1, y + 1, 'q');
     }
   }
   // sparks: one pixel, one frame each
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 2; i += 1) {
     if ((i + seed) % FRAMES !== frame) continue;
-    set(Math.floor(h(seed + 30, i, 0) * SIZE), Math.floor(h(seed + 31, i, 0) * SIZE), 'z');
+    set(Math.floor(h(seed + 30, i, 0) * SIZE), Math.floor(h(seed + 31, i, 0) * SIZE), 't');
   }
   return rows.map((r) => r.join(''));
 }
