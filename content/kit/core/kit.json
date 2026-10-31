@@ -2431,6 +2431,20 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
         }
+      },
+      "creatures/roe": {
+        "file": "creatures/roe.png",
+        "w": 96,
+        "h": 96,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark",
+          "skin",
+          "grey"
+        ],
+        "scale": 1.27
       }
     }
   }
