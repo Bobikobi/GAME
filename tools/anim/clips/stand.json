@@ -1,0 +1,16 @@
+{
+  "about": "The standing pose of a character sheet: the library idle at its first frame, drawn in the same frame as the jog. A character sheet in content/kit is the jog's poses and this pose last.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Idle_Loop"
+  },
+  "frames": [
+    0
+  ],
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

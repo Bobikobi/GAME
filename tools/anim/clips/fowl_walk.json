@@ -1,0 +1,31 @@
+{
+  "about": "The ground fowl's walk: four poses of the body's own Walk (alternate low steps keyed on the leg targets in fowl_pass.py, the body level and the head carried low with a bob each step), side-on, down and up, at the kernel's walk of 190 ms a tile (`walk_step_ms`; WANDER walks at it, HUNTING.md section 2). At that pace four poses need about 0.9 m of ground a cycle, more than a 0.35 m bird's legs reach with a foot down, so each foot is down for a short share of the cycle and the clip is rendered airborne (one floor a cycle).",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Walk"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 190,
+    "airborne": true
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

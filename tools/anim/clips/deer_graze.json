@@ -1,0 +1,32 @@
+{
+  "about": "The roe deer grazing (GRAZE, HUNTING.md section 2): four poses of the body's own Graze, the head down with a small chew and an ear flick, played by time.",
+  "target": "deer",
+  "base": {
+    "library": "self:deer",
+    "action": "Graze"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    400,
+    400,
+    400,
+    400
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

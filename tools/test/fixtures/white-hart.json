@@ -1,0 +1,134 @@
+{
+  "description": "The white hart of the elf wood (BESTIARY_LANDS 3.1; CREATURE_BEHAVIOUR 5 and 5.1.6; HUNT_FAMILIES 2 and 4). The elf wood is not in the core yet, so the hart is a test fixture: a kind for map.creatures.kinds and the goods it drops, as an extension's items.",
+  "kind": {
+    "look": "deer",
+    "perch": "ground",
+    "alert_tiles": 6,
+    "return_s": 120,
+    "hours": [
+      5,
+      22
+    ],
+    "behaviour": {
+      "sight": 9,
+      "ear": 2,
+      "smell": 7,
+      "weights": {
+        "idle": 20,
+        "graze": 50,
+        "wander": 30
+      },
+      "roam": 14,
+      "flight": "ground",
+      "sleeps": "ground",
+      "alarm": 8,
+      "looks_back": true,
+      "drinks": true,
+      "carrion": false,
+      "fire": "keeps_away",
+      "water": "wall",
+      "weather": "cover",
+      "town": "avoids",
+      "habitat": [
+        "meadow",
+        "grove"
+      ],
+      "group": {
+        "class": "herd",
+        "bands": [
+          0,
+          40,
+          60,
+          0
+        ]
+      },
+      "family": "deer"
+    },
+    "hunt": {
+      "size": "large",
+      "tier": 3,
+      "danger": 0,
+      "take_s": 150,
+      "drops": [
+        {
+          "item": "tester/hart-meat",
+          "qty": 4,
+          "share_pct": 40
+        },
+        {
+          "item": "tester/hart-hide",
+          "qty": 1,
+          "share_pct": 25
+        },
+        {
+          "item": "tester/hart-antler",
+          "qty": 1,
+          "share_pct": 20
+        },
+        {
+          "item": "tester/hart-sinew",
+          "qty": 1,
+          "share_pct": 15
+        }
+      ],
+      "ways": [
+        "stalk",
+        "snare"
+      ],
+      "spawn": {
+        "cap_per_1000": 12,
+        "refill_d": 2
+      }
+    }
+  },
+  "spot": {
+    "kind": "tester/white-hart",
+    "x": 8,
+    "y": 14
+  },
+  "items": [
+    {
+      "id": "tester/hart-meat",
+      "name": "Hart meat",
+      "kind": "food",
+      "food": {
+        "satiety": 5
+      },
+      "rarity": "common",
+      "class": "core/meat",
+      "tier": 3,
+      "sprite": "core/base-kit:items/mushroom-skewer",
+      "weight": 1
+    },
+    {
+      "id": "tester/hart-hide",
+      "name": "White hide",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/hide",
+      "tier": 3,
+      "sprite": "core/base-kit:items/stew-scrap",
+      "weight": 1
+    },
+    {
+      "id": "tester/hart-antler",
+      "name": "Hart antler",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/bone",
+      "tier": 3,
+      "sprite": "core/base-kit:items/stone",
+      "weight": 1
+    },
+    {
+      "id": "tester/hart-sinew",
+      "name": "Hart sinew",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/sinew",
+      "tier": 3,
+      "sprite": "core/base-kit:items/branch",
+      "weight": 1
+    }
+  ]
+}

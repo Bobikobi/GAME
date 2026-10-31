@@ -1,0 +1,22 @@
+{
+  "about": "The jog for the human (the Meshy forager pair), whose stride is shorter than the elf's: 10 poses, so that a pose is held for the 14.4 art px the body walks and the walk needs about 23 poses a second at the steady pace and under 30 at the light one (15 poses would need 35 and 39, over the limit; 11 left the planted feet 1.2 px off in two views). Same library action and views as jog.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Jog_Fwd_Loop"
+  },
+  "frames": {
+    "even": 10
+  },
+  "locomotion": {
+    "playback": "distance"
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "silhouette_dev_pct": 25
+  }
+}

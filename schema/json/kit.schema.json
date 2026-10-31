@@ -434,6 +434,29 @@
               }
             }
           },
+          "grade": {
+            "additionalProperties": false,
+            "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+            "type": "object",
+            "required": [
+              "of",
+              "step"
+            ],
+            "properties": {
+              "of": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "step": {
+                "minimum": 2,
+                "maximum": 3,
+                "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                "type": "integer"
+              }
+            }
+          },
           "premium_later": {
             "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
             "type": "boolean"
@@ -680,6 +703,46 @@
                       "type": "number"
                     }
                   ]
+                },
+                "stride": {
+                  "additionalProperties": false,
+                  "description": "A walk cycle that follows the distance walked (tools/anim). Its frames are the poses of the cycle in order and, last, the standing pose; `frames` is the poses plus one. Left out for a sheet whose frames are time-based.",
+                  "type": "object",
+                  "required": [
+                    "travel_mpx",
+                    "anchor"
+                  ],
+                  "properties": {
+                    "travel_mpx": {
+                      "minimum": 1000,
+                      "maximum": 128000,
+                      "description": "Thousandths of an art pixel (64 per tile) the body walks for one pose of the cycle: the pose shown is the nearest to art pixels walked / (travel_mpx / 1000), so a planted foot is where the ground is.",
+                      "type": "integer"
+                    },
+                    "anchor": {
+                      "description": "The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body's feet.",
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "bob": {
+                      "description": "false when the sheet carries its own head travel and the feel layer's code bob is dropped for it (DECISIONS 2026-10-29: the bob is dropped for a clip that carries its own); left out, the bob plays on top of the poses.",
+                      "type": "boolean"
+                    }
+                  }
                 },
                 "scale": {
                   "minimum": 0.1,

@@ -129,7 +129,7 @@ Each is something a test or a capture can check. The first four restate the owne
 5. The bell rings once after the mend, never twice, and is not heard before it; the far bell is quieter than the threshold's bell.
 6. The stone shows at least six written names above one empty line; the carved name is the player's; a save made before the stone loads with its old name on the stone.
 7. The first box of the opening is one box of at most two lines of 80 characters (G14), and the first movement is possible after at most one tap.
-8. In the timed run of each starter (forager, digger, explorer) no stretch passes 90 s of play clock without a pay between the wake and the threshold, **including the wait before the dark** (Q2). The timed run is the one in section 1; the human recording is the final word.
+8. In the timed run of each starter (forager, digger, explorer) no stretch passes 90 s of play clock without a pay between the wake and the threshold, **including the wait before the dark** (Q2); a day the run itself skips (a late stew on a slow machine, `setHour` to the next dusk) is not a stretch and is logged as `WARN`. The timed run is the one in section 1; the human recording is the final word.
 9. The smoke marker at the view's edge points at the town and moves with the player; at night it dims with the world.
 10. Nothing hunts in the opening's ground: G30 and G31 stand as written.
 

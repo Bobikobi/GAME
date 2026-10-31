@@ -8,7 +8,7 @@
 import type * as Phaser from 'phaser';
 import { RICH } from './config';
 import { FrameTimer, measureRefresh, readDevice, type Device } from './device';
-import { SETTLE_FRAMES, readSettings, resolve, richOf, type Effective, type Settings } from './settings';
+import { SETTLE_FRAMES, motionReduced, phoneAsksReducedMotion, readSettings, resolve, richOf, type Effective, type Settings } from './settings';
 
 /** How often the overlay redraws, in ms. */
 const OVERLAY_MS = 250;
@@ -25,12 +25,12 @@ export function startPerf(query: string, storage: Storage | null): Perf {
   const settings = readSettings(storage);
   const device = readDevice();
   const effective = resolve(settings, device);
-  if (!new URLSearchParams(query).has('rich')) Object.assign(RICH, richOf(effective.quality, settings.reducedMotion));
+  if (!new URLSearchParams(query).has('rich')) Object.assign(RICH, richOf(effective.quality, motionReduced(settings, phoneAsksReducedMotion())));
   return { settings, device, effective, timer: new FrameTimer() };
 }
 
 /** Hands the cap to Phaser's loop; 0 removes the limit. */
-export function applyCap(game: Phaser.Game, perf: Perf): void {
+export function applyCap(game: { loop: Pick<Phaser.Game['loop'], 'fpsLimit' | 'setFPSLimit'> }, perf: Perf): void {
   perf.effective = resolve(perf.settings, perf.device);
   // setFPSLimit restarts a running loop, so it is called only when the limit really changes
   if (game.loop.fpsLimit !== perf.effective.frameCap) game.loop.setFPSLimit(perf.effective.frameCap);
