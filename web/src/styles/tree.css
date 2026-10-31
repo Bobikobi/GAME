@@ -1,7 +1,8 @@
 /*
- * The project tree (the owner's pick of 31.10, the radial tree): the plan's stages as sectors around the root, their
- * work as marks on each sector, the agents as leaves on the rim. The wheel draws in the token colours only; the
- * ledgers beside it carry every word at reading size. Tokens only.
+ * The project tree (the owner's pick of 31.10, the radial tree; simplified on his word of the same day): the root in
+ * the middle, one branch per stage of the plan with its count, the stage's short name beside it. One colour family
+ * for the tree (the wood and the cream) and one accent for what is alive now. Every word on the wheel is 16 px; the
+ * detail lives in the open stage's card. Tokens only.
  */
 .tree-head {
   padding-top: var(--s-6);
@@ -28,179 +29,101 @@
 }
 .tree-main {
   display: grid;
-  gap: var(--s-8);
-  margin-top: var(--s-8);
+  gap: var(--s-6);
+  margin-top: var(--s-6);
 }
 .tree-main > * {
   min-width: 0;
 }
+
+/* the wheel: one unit is one CSS pixel (the page sets its viewBox to its width) */
 .wheel {
   display: block;
   width: 100%;
-  max-width: 640px;
-  height: auto;
+  max-width: 720px;
   margin: 0 auto;
 }
 .wheel text {
-  font-family: var(--font-display);
-  font-weight: var(--w-display2);
+  font-size: 16px;
   fill: var(--fg);
 }
-.wheel .num {
-  font-size: 22px;
-}
-.wheel .leafnum {
-  font-size: 15px;
-  fill: var(--bg);
-}
-.wheel .rootname {
-  font-size: 20px;
-  fill: var(--bg);
-}
-.wheel .sector {
-  stroke: var(--line);
-  stroke-width: 2;
-}
 .wheel .limb {
-  stroke: var(--wood);
-  stroke-width: 8;
+  fill: none;
+  stroke: var(--wood2);
+  stroke-width: 4;
 }
-.wheel .twig {
+.wheel .node {
+  fill: var(--cream);
   stroke: var(--wood2);
   stroke-width: 3;
 }
-.wheel .track {
-  fill: none;
-  stroke: var(--line);
-  stroke-width: 14;
+.wheel .count {
+  font-family: var(--font-display);
+  font-weight: var(--w-display);
+  fill: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
-.wheel .done {
-  fill: none;
-  stroke-width: 14;
+.wheel .name {
+  fill: var(--fg);
+}
+.wheel .planned .limb {
+  stroke: var(--wood);
+}
+.wheel .planned .node {
+  fill: var(--ink2);
+  stroke: var(--wood);
+}
+.wheel .planned .count,
+.wheel .planned .name {
+  fill: var(--fg2);
+}
+/* the one accent: an agent at work or a pull request in flight */
+.wheel .limb.alive,
+.wheel .node.alive {
+  stroke: var(--accent);
 }
 .wheel .root {
   fill: var(--cream);
-  stroke: var(--rule);
-  stroke-width: 2;
+  stroke: var(--wood2);
+  stroke-width: 3;
+}
+.wheel [role='button'] {
+  cursor: pointer;
+}
+.wheel [role='button']:focus {
+  outline: none;
+}
+.wheel [role='button']:focus-visible .node,
+.wheel [role='button']:focus-visible .root,
+.wheel .open .node,
+.wheel .open .root {
+  stroke: var(--fg);
+  stroke-width: 4;
+}
+.wheel .open .name {
+  text-decoration: underline;
 }
 
-/* status, shared by the wheel (stroke, fill) and the ledgers (background) */
-.st-live {
-  stroke: var(--green3);
-  fill: var(--green3);
-  background: var(--green3);
-}
-.st-in-develop {
-  stroke: var(--blue2);
-  fill: var(--blue2);
-  background: var(--blue2);
-}
-.st-building {
-  stroke: var(--gold);
-  fill: var(--gold);
-  background: var(--gold);
-}
-.st-planned {
-  stroke: var(--grey);
-  fill: var(--grey);
-  background: var(--grey);
-}
-.it-done {
-  fill: var(--green3);
-}
-.it-building {
-  fill: var(--gold);
-}
-.it-open,
-.it-waiting {
-  fill: var(--grey);
-}
-.ci-green {
-  fill: var(--green3);
-  background: var(--green3);
-}
-.ci-red {
-  fill: var(--red2);
-  background: var(--red2);
-}
-.ci-amber {
-  fill: var(--gold);
-  background: var(--gold);
-}
-.ci-none {
-  fill: var(--paper2);
-  background: var(--paper2);
-}
-.sap {
-  fill: var(--yellow);
-  color: var(--yellow);
-}
-.lock {
-  fill: var(--purple2);
-  color: var(--paper);
-}
-
-/* the leaves: busy green, idle paper, cloud blue, the manager cream; quiet over half an hour turns grey and dashed */
-.lf {
-  stroke: var(--rule);
-  stroke-width: 2;
-}
-.lf-busy {
-  fill: var(--green2);
-}
-.lf-idle {
-  fill: var(--paper2);
-}
-.lf-cloud {
-  fill: var(--sky);
-}
-.lf-manager {
-  fill: var(--yellow);
-}
-.lf-faded {
-  fill: var(--grey);
-  stroke-dasharray: 4 3;
-}
-
-/* the ledgers */
+/* the open stage's card */
 .tree-side {
   display: grid;
-  gap: var(--s-8);
+  gap: var(--s-4);
+  align-content: start;
 }
-.tree-side h2 {
-  padding-top: var(--s-3);
-  border-top: 4px solid var(--rule);
-  font-size: 24px;
-  line-height: 28px;
+.tree-card {
+  padding: var(--s-4);
+  border: var(--px) solid var(--wood2);
+  background: var(--raise);
 }
-.stages,
-.agents {
-  list-style: none;
-  padding: 0;
-  margin-top: var(--s-2);
-}
-.stages > li,
-.agents > li {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  column-gap: var(--s-3);
-  padding: var(--s-3) 0;
-  border-bottom: var(--px) solid var(--line);
-}
-.stages .n,
-.agents .n {
-  grid-row: 1 / span 9;
-  font-family: var(--font-display);
-  font-weight: var(--w-display);
-  font-size: 24px;
+.tree-card h3 {
+  font-size: 20px;
   line-height: 26px;
-  color: var(--accent);
-}
-.stages h3,
-.agents h3 {
-  font-size: 18px;
-  line-height: 24px;
   overflow-wrap: anywhere;
+}
+.tree-card h4 {
+  margin-top: var(--s-4);
+  font-size: 16px;
+  color: var(--fg);
 }
 .row {
   display: flex;
@@ -211,41 +134,36 @@
   color: var(--fg2);
   overflow-wrap: anywhere;
 }
-.chip {
-  display: inline-block;
-  padding: 0 var(--s-2);
-  color: var(--bg);
-  font-size: var(--text-s);
-  font-weight: 700;
+.alive-word {
+  color: var(--accent);
 }
-.lock.chip {
-  background: var(--purple2);
+.card-list {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--s-1);
 }
-.count {
-  font-family: var(--font-display);
-  font-weight: var(--w-display);
+.card-list > li {
+  padding: var(--s-2) 0 var(--s-2) var(--s-3);
+  border-left: 4px solid var(--wood);
+  margin-top: var(--s-1);
+  color: var(--fg2);
+  overflow-wrap: anywhere;
+}
+.card-list > li.alive {
+  border-left-color: var(--accent);
+}
+.card-list > li.quiet {
+  color: var(--muted);
+}
+.card-list b {
   color: var(--fg);
-  font-variant-numeric: tabular-nums;
 }
-.stages details {
-  margin-top: var(--s-1);
-}
-.stages summary {
-  cursor: pointer;
-  color: var(--fg2);
-}
-.items {
-  padding-left: var(--s-4);
-  margin-top: var(--s-1);
-  color: var(--fg2);
-}
-.items .note,
-.agents .last {
+.card-list .note,
+.card-list .last {
   color: var(--muted);
 }
-.agents .faded h3,
-.agents .faded .row {
-  color: var(--muted);
+.card-close {
+  margin-top: var(--s-4);
 }
 
 /* the gate */
@@ -254,7 +172,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-2) var(--s-3);
-  margin-top: var(--s-4);
 }
 .gate input {
   min-height: 44px;
@@ -267,42 +184,10 @@
 .gate .said {
   color: var(--fg2);
 }
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-1) var(--s-4);
-  margin-top: var(--s-4);
-  color: var(--fg2);
-  font-size: var(--text-s);
-}
-.legend i {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  margin-right: var(--s-1);
-  vertical-align: -1px;
-}
 
 @media (min-width: 1024px) {
   .tree-main {
     grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
     align-items: start;
   }
-}
-
-/* the legend's swatches take the leaf colours as a background */
-.legend .lf-busy {
-  background: var(--green2);
-}
-.legend .lf-idle {
-  background: var(--paper2);
-}
-.legend .lf-cloud {
-  background: var(--sky);
-}
-.legend .lf-faded {
-  background: var(--grey);
-}
-.legend .lock {
-  background: var(--purple2);
 }
