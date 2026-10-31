@@ -136,7 +136,7 @@ export class RemoteSession implements GameSession {
   private outSeen = 0;
   private pauses = 0;
   private deferred: GameEvent[] = [];
-  private moves: { kind: 'move'; at: Tile; tick: number }[] = [];
+  private moves: { kind: 'move'; at: Tile; tick: number; gait?: Gait }[] = [];
   private listeners = new Map<keyof SessionEvents, Set<(payload: never) => void>>();
   private wire: Wire;
   /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
@@ -266,12 +266,13 @@ export class RemoteSession implements GameSession {
   }
 
   /** Report the tile the player stands on. Reports batch, and go out with the next action or on their own. */
-  // the wire's move report carries no gait yet: the server checks every step at the walk's pace
-  report(at: readonly [number, number], again = false, _gait?: Gait): void {
+  // a run or a sneak names its gait, so the server hears the step as the phone took it; a walk leaves it out, as the save does
+  report(at: readonly [number, number], again = false, gait: Gait = 'walk'): void {
     if (!this.started || !this.open) return;
     const p = this.state.player;
     if (!again && p.at[0] === at[0] && p.at[1] === at[1]) return;
-    this.moves.push({ kind: 'move', at: [at[0], at[1]], tick: this.tick });
+    const tile: Tile = [at[0], at[1]];
+    this.moves.push(gait === 'walk' ? { kind: 'move', at: tile, tick: this.tick } : { kind: 'move', at: tile, tick: this.tick, gait });
     if (this.moves.length >= MOVE_BATCH) void this.flushMoves().catch(() => undefined);
   }
 

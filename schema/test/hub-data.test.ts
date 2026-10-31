@@ -94,6 +94,22 @@ describe('hub-data', () => {
     expect(validateHubData(doc)).toEqual([]);
   });
 
+  it('takes the players counter as an added field: absent, null or two counts from a named source (DECISIONS.md, 2026-10-31)', () => {
+    const doc = fixture();
+    expect('accounts' in doc).toBe(false);
+    expect(validateHubData(doc)).toEqual([]);
+    doc.sources.accounts = null;
+    doc.accounts = null;
+    expect(validateHubData(doc)).toEqual([]);
+    doc.accounts = { open: 12, new_7d: 3 };
+    expect(validateHubData(doc)).toEqual([{ path: '/accounts', message: 'no accounts source, so accounts must be null' }]);
+    doc.sources.accounts = { fetched_at: '2026-10-07T15:00:00Z' };
+    expect(validateHubData(doc)).toEqual([]);
+    doc.accounts = { open: 2, new_7d: 3 };
+    expect(validateHubData(doc)).toEqual([{ path: '/accounts/new_7d', message: 'cannot be more than open' }]);
+    expect(Object.keys(DOCUMENT_SCHEMAS['hub-data'].properties.accounts.anyOf[0].properties).sort()).toEqual(['new_7d', 'open']);
+  });
+
   it('carries the ranking parameters as the committed JSON files say them', () => {
     const root = join(here, '..', '..');
     const loop = JSON.parse(readFileSync(join(root, '.github', 'loop.json'), 'utf8')) as unknown;
