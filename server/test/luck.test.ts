@@ -63,10 +63,10 @@ async function api(): Promise<{ store: MemoryStore; wire: Wire }> {
   return { store, wire };
 }
 
-async function scriptedRun(start: (typeof STARTS)[number]): Promise<PlayedRun & { store: MemoryStore }> {
+async function scriptedRun(start: (typeof STARTS)[number]): Promise<PlayedRun & { store: MemoryStore; wire: Wire }> {
   const { store, wire } = await api();
   const played = await playOpening(wire, start);
-  return { ...played, store };
+  return { ...played, store, wire };
 }
 
 function booksOf(store: MemoryStore, over: Partial<AccountBooks> = {}): AccountBooks {
@@ -205,6 +205,18 @@ describe('the ledger and the replay (NEXT 18 f)', () => {
       { deltaMg: -100, action: reports[0], tick: 1_000 },
       { deltaMg: 300, action: reports[1], tick: 1_000 + stepMs },
     ]);
+  });
+
+  test('a state the server brought to new content is one adapt row, and the whole log still plays again', async () => {
+    const { store, wire } = await scriptedRun(STARTS[0]);
+    // the state as a server running the content before this one stored it
+    store.record.state.content = 'an-older-world';
+    const read = await fetch(`${wire.base}/state`, { headers: { authorization: 'Bearer test' } });
+    expect(read.status).toBe(200);
+    expect(store.record.state.content).toBe(bundle.tag);
+    expect(store.actionLog.at(-1)!.action).toEqual({ kind: 'adapt', from: 'an-older-world', to: bundle.tag });
+    expect(store.actionLog.at(-1)!.seq).toBe(store.record.version);
+    expect(checkAccount(bundle, booksOf(store))).toEqual([]);
   });
 
   test('the log row and the state row line up: seq is the version the action made', async () => {

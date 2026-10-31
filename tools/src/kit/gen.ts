@@ -715,7 +715,7 @@ function generateScatter(entry: GenEntry, options: Options, version: string, ear
       line.logical = [m.width, m.height];
       line.colors = new Set([...grid.join('')].filter((ch) => ch !== '.')).size;
       line.warnings.push(...motifWarnings(grid));
-      motifs.push({ name: m.name, weight: m.weight ?? 1, grid });
+      motifs.push({ name: m.name, weight: m.weight ?? 1, grid, ...(m.fine === true ? { fine: true } : {}) });
       sources.push(line.raw ?? '');
     } catch (error) {
       line.error = `import: ${(error as Error).message}`;
@@ -724,7 +724,7 @@ function generateScatter(entry: GenEntry, options: Options, version: string, ear
   if (options.dry || motifs.length !== (entry.motifs ?? []).length) return lines;
 
   const ground = {
-    base, cell: entry.cell ?? 16, chance: entry.chance ?? 0.85, speckles: entry.speckles ?? [], tile: entry.width, motifs, seed: entry.name,
+    base, cell: entry.cell ?? 16, chance: entry.chance ?? 0.85, ...(entry.fine_cell !== undefined ? { fineCell: entry.fine_cell } : {}), ...(entry.fine_chance !== undefined ? { fineChance: entry.fine_chance } : {}), speckles: entry.speckles ?? [], tile: entry.width, motifs, seed: entry.name,
   };
   const variants = entry.variants ?? 4;
   const throws = variantsOf(ground, variants);

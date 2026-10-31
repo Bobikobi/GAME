@@ -408,8 +408,18 @@
       },
       "props/broken_statue": {
         "file": "props/broken_statue.png",
-        "w": 16,
-        "h": 32
+        "w": 64,
+        "h": 160,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:151"
+        }
       },
       "props/bush_berry": {
         "file": "props/bush_berry.png",
@@ -692,14 +702,33 @@
       },
       "props/house_small": {
         "file": "props/house_small.png",
-        "w": 48,
-        "h": 48
+        "w": 192,
+        "h": 320,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
+        }
       },
       "props/lantern_post": {
         "file": "props/lantern_post.png",
-        "w": 16,
-        "h": 32,
-        "frames": 2
+        "w": 64,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "fire",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:150"
+        }
       },
       "props/log_fallen": {
         "file": "props/log_fallen.png",
@@ -731,8 +760,18 @@
       },
       "props/market_stall": {
         "file": "props/market_stall.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 192,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:152"
+        }
       },
       "props/mushroom_patch": {
         "file": "props/mushroom_patch.png",
@@ -1073,7 +1112,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:117"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:130"
         }
       },
       "tiles/fringe_n": {
@@ -1088,7 +1127,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:116"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:129"
         }
       },
       "tiles/fringe_s": {
@@ -1103,7 +1142,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:118"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:131"
         }
       },
       "tiles/fringe_w": {
@@ -1118,7 +1157,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:119"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:132"
         }
       },
       "tiles/grass": {
@@ -2214,7 +2253,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:120"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:133"
         }
       },
       "tiles/worn_e": {
@@ -2228,7 +2267,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:121"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:134"
         }
       },
       "tiles/worn_s": {
@@ -2242,7 +2281,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:122"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:135"
         }
       },
       "tiles/worn_w": {
@@ -2256,7 +2295,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:123"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:136"
         }
       },
       "props/well_old_b": {
