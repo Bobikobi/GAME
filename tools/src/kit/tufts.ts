@@ -26,7 +26,8 @@ export const MAX_H = 7;
 /** How far the tips lean in each frame, native px (4 = one art px). */
 export const LEAN = [0, 2, 4, 2] as const;
 
-const MOSS = ['#2f4722', '#4a6a2c', '#6f8d36', '#9cb24c'].map(hexToRgb);
+/** The moss ramp, then the pale yellow-green the reference's tufts wear on their tips (31.10: one shade lighter than the meadow). */
+const MOSS = ['#2f4722', '#4a6a2c', '#6f8d36', '#9cb24c', '#c6d66e'].map(hexToRgb);
 
 interface Blade {
   /** root column, px from the tuft's middle */
@@ -71,7 +72,7 @@ function drawFrame(blades: Blade[], lean: number, rgba: Uint8Array, x0: number):
       const cx = mid + b.at + Math.round(b.fan * f + lean * f);
       // 3 px wide while the blade is young, 2 above its middle, a point at the top
       const half = r >= b.h - 1 ? 0 : f < 0.8 ? 1 : 0;
-      const step = Math.min(3, 1 + Math.floor(f * 3));
+      const step = f >= 0.7 ? 4 : Math.min(3, 1 + Math.floor(f * 3));
       for (let dx = -half; dx <= half; dx++) put(cx + dx, r, step);
       if (half === 0 && r < b.h - 1) put(cx + 1, r, step);
     }
