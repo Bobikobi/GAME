@@ -65,8 +65,25 @@ describe('the coming-soon boxes', () => {
     });
   }
 
-  it('the home page has the 3D door when a 3D build exists, and never links to a missing page', () => {
+  it('the home page has no 3D door while 3D is paused, unless a screenshot forces it', () => {
     const home = readFileSync(join(DIST, 'index.html'), 'utf8');
-    expect(home.includes('href="/play3d/"')).toBe(existsSync(join(DIST, 'play3d/index.html')));
+    expect(home.includes('href="/play3d/"')).toBe(process.env['SITE_3D_DOOR'] === 'force');
+  });
+});
+
+describe('the project tree', () => {
+  const tree = readFileSync(join(DIST, 'hub/tree/index.html'), 'utf8');
+
+  it('is linked from the developer area and wears the site frame', () => {
+    expect(html).toContain('href="/hub/tree/"');
+    expect(tree).toContain('class="wordmark"');
+    expect(tree).toMatch(/<a href="\/hub\/" aria-current="page"/);
+  });
+
+  it('draws in the browser from its data file, with a gate for the sealed branches and nothing sealed in the page', () => {
+    expect(tree).toContain('id="wheel"');
+    expect(tree).toMatch(/<input id="gate-pw" type="password"/);
+    expect(tree).toMatch(/data-refresh="60"/);
+    expect(tree).not.toMatch(/game-[0-9a-f]{2}\b|\/home\/|session_/);
   });
 });

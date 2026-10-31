@@ -253,6 +253,7 @@ window.__e2e = (() => {
       if (!d) return null;
       const o = d.querySelector('.dialog-options');
       return { text: d.querySelector('.dialog-text')?.textContent ?? '',
+        typed: !d.querySelector('.dialog-arrow')?.hidden || !!(o && !o.hidden),
         options: o && !o.hidden ? [...o.querySelectorAll('button')].map((b) => b.textContent) : [] };
     },
   };
@@ -552,11 +553,11 @@ class Player {
   async talkThrough(pick?: string): Promise<string[]> {
     const seen: string[] = [];
     for (let i = 0; i < 80; i++) {
-      let d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+      let d = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
       if (!d) {
         for (let wait = 0; !d && wait < 20; wait++) {
           await sleep(150);
-          d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+          d = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
         }
       }
       if (!d) {
@@ -564,6 +565,14 @@ class Player {
         await sleep(200);
         if (!(await this.page.eval('__e2e.dialog()'))) return seen;
         continue;
+      }
+      // the box types its line out; a slow runner reads it half typed ("Not tonigh", "gathered nothing out").
+      // The box shows its arrow (or its options) only when the line is whole: wait for that, no tap, then record.
+      for (let k = 0; k < 100 && !d.typed; k++) {
+        await sleep(80);
+        const again = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
+        if (!again) break;
+        d = again;
       }
       if (d.text && seen[seen.length - 1] !== d.text) seen.push(d.text);
       if (d.options.length > 0) {
@@ -746,14 +755,18 @@ const DAY_MINUTE = '(() => { const s = __game.session, day = __game.bundle.param
  */
 const LATEST_HILL_MINUTE = 19 * 60 + 10;
 
-/** OPENING_REVIEW criterion 8: the longest stretch of play clock between two pays, the clock's own jumps counted as waiting. */
+/**
+ * OPENING_REVIEW criterion 8: the longest stretch of play clock between two pays. A jump the run itself made (the wait for the
+ * next dusk after a late stew, `__e2e.setHour`) is not play: it is taken out of the stretch it falls in, and logged as skipped.
+ */
 const LONGEST_STRETCH_MS = 90_000;
 async function stretches(page: Page, log: (msg: string) => void, who: string, until: string): Promise<{ ms: number; from: string; to: string }[]> {
   const r = await page.eval<{ list: { t: number; k: string }[]; jumps: { from: number; to: number }[]; end: number }>('__e2e.paysOff()');
   const gaps: { ms: number; from: string; to: string }[] = [];
-  for (let i = 1; i < r.list.length; i++) gaps.push({ ms: r.list[i]!.t - r.list[i - 1]!.t, from: r.list[i - 1]!.k, to: r.list[i]!.k });
+  const played = (a: number, b: number) => b - a - r.jumps.reduce((n, j) => n + Math.max(0, Math.min(b, j.to) - Math.max(a, j.from)), 0);
+  for (let i = 1; i < r.list.length; i++) gaps.push({ ms: played(r.list[i - 1]!.t, r.list[i]!.t), from: r.list[i - 1]!.k, to: r.list[i]!.k });
   const last = r.list[r.list.length - 1]!;
-  gaps.push({ ms: r.end - last.t, from: last.k, to: until });
+  gaps.push({ ms: played(last.t, r.end), from: last.k, to: until });
   gaps.sort((a, b) => b.ms - a.ms);
   const skipped = r.jumps.reduce((n, j) => n + (j.to - j.from), 0);
   log(`${who}: ${r.list.length} pays to ${until} in ${Math.round(r.end / 1000)} s of play clock, ${Math.round(skipped / 1000)} s of it skipped by the run`);
@@ -1284,7 +1297,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const stewAt = await page.eval<number>(DAY_MINUTE);
       if (stewAt >= LATEST_HILL_MINUTE || stewAt < 5 * 60) {
         await page.eval('__e2e.setHour(19)');
-        log(`the stew came at ${Math.floor(stewAt / 60)}:${String(stewAt % 60).padStart(2, '0')}, too late to dig before dark: the player waits in town for the next dusk`);
+        log(`WARN the stew came at ${Math.floor(stewAt / 60)}:${String(stewAt % 60).padStart(2, '0')}, too late to dig before dark: the player waits in town for the next dusk`);
       }
       // at dusk the hill lantern lights the tile to dig: the player waits beside it, and the wait counts.
       // From the stew on, every step that can meet 20:00 on a slow machine reads the lantern warning where it opens (pastDusk)
@@ -1313,9 +1326,10 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const coin = await me.talkThrough();
       await me.idle('handing in the coin');
       if ((await me.quest('core/a-coin-for-maru')) !== 'done') throw new Error('a-coin-for-maru is not done');
-      // the coin pays gold and the herb tea, and no basket: every start holds one by now
+      // the coin pays the herb tea and the key to Maru's house, no gold and no basket: every start holds one by now
       const coinPaid = (await page.eval<number>('__e2e.player().gold')) - unpaid;
-      if (coinPaid !== 20_000) throw new Error(`the coin paid ${coinPaid} mg, not 20000`);
+      if (coinPaid !== 0) throw new Error(`the coin paid ${coinPaid} mg, not the key alone`);
+      if ((await me.bag('core/maru-house-key')) !== 1) throw new Error('no key to Maru\'s house after the coin');
       if ((await me.bag('core/basket')) !== 1) throw new Error('a second basket after the coin');
       if (!(await page.eval<string[]>('__e2e.player().recipes')).includes('core/herb-tea')) throw new Error('the herb-tea recipe was not learned');
       if (!coin.some((l) => l.includes('arch'))) throw new Error(`the elder never mentions the arch: ${coin.join(' / ')}`);

@@ -80,11 +80,17 @@ supersampled renders, the ID pass, the projected feet) and `job.json` (what Blen
 - `set`: pieces fixed on the ground by the body, `herb` (a leafy tuft, about 0.32 m) and `bush` (a berry bush, about
   0.8 m), at `[x, y]` metres in body axes on the IK side, `size` scaling them. They turn with the body in each view.
 - `worn`: parts carried on the hips, `pouch`, at `[x, y, z]` metres from the hips joint in body axes.
+- `ramps`: the body ramps in place of the target's (a target names its own the same way). Each is a shared ramp's id
+  or `<id>:<a>-<b>`, that ramp's steps a to b only (0 is the darkest), so a coat can take one ramp's dark steps and
+  another's light ones and the snap never reaches for the rest; the wild boar's coat D is `["bark", "wood:2-5"]`.
+  The sheet's json names the whole ramp, so the rich rule is unchanged.
 
 ## A body with its own actions (native targets)
 
 A four-legged body does not take the human libraries: the Meshy wolf (`character-wolf-grim.glb`) carries its own
-`Idle`, `Walk` and `Run`. A target with `"map": "native"` (the `wolf` in `anim.json`) is played by those: its clips use
+`Idle`, `Walk` and `Run`, and the hunt's `Alert`, `Graze` and `Lie` (keyed from the bind pose by
+`game/tools/blender/quad_pass.py --states`, which adds them to a finished body and keeps every other byte). A target
+with `"map": "native"` (the `wolf` in `anim.json`) is played by those: its clips use
 `"base": { "library": "self:<target>", "action": "Walk" }` (the `self:` library is made from the target's `actions`,
 each with its length in frames at the target's `fps`), and take no layer, IK, prop, set piece, worn part or basket. The
 renderer poses the body by the action's own bones (no retargeting, no scale), and the feet are the tails of the four
@@ -93,6 +99,9 @@ four, over four feet instead of two.
 
 - `locomotion.pace_ms`: the clip is judged at this pace (ms a tile) in place of the player's three, for a body that
   does not walk at the player's pace (the wolf's round is `hazard.predator.pace_ms`, 600).
+- `locomotion.airborne: true`: the gait has time in the air (the hare's lope and bound), so the renderer sets the body
+  on the ground once for the whole cycle, at its lowest point over every source frame, in place of at every pose (which
+  would pull a pose with every foot up down onto its lowest paw and read it as planted).
 - `locomotion.gait: "four-beat"`: adds the footfall measure. Each foot must plant once a cycle, the four landings must
   be evenly spread (each gap 0.2 to 0.35 of the cycle) and hind and fore must take turns. `pnpm anim render` prints
   the order and the gaps. Left off the Meshy `Walk` and `Run` on purpose: they are not four-beat, see below.
@@ -154,6 +163,11 @@ on its border fails the check as clipped).
 - The forager and the rest of the cast (`game/public3d/models/character-*.glb` but the two Kenney minis): made with
   Meshy, **CC BY 4.0**. A sprite rendered from one is a derivative and carries that model's credit line from
   `game/public3d/models/README.md` (each target's `credit` in `anim.json`, written into every `<clip>.json`).
+- The animals (`game/public3d/models/animal-*.glb`): from OpenGameArt, **CC0 1.0** (the roe deer and the white hart
+  from "Deer Female" by CDmir, collaborator TinyWorlds; the wild boar from "Boar" by Teh_Bucket; the ground fowl
+  from "Chicken (animated)" by CDmir, collaborator TinyWorlds, its colour map derived from photos by Rick
+  Hoppmann). CC0 asks for no attribution; each target still carries its credit line from
+  `game/public3d/models/README.md`.
 - A target's body ramps: the two shared ramps, plus `skin`, whose steps leave the smallest mean CIELAB error over the
   model's colour map (for the forager this gives the hand-picked `wood`, `red`, `skin`).
 - Blender is a tool (GPL); its output is ours. The props are built in `blender/render.py`.

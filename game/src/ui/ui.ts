@@ -244,6 +244,7 @@ export class UI {
       this.runBand();
     });
     session.on('change', () => this.renderHud());
+    session.on('updated', () => this.toast('The valley was updated.', 'info'));
     this.hud.hidden = false;
     this.tracker.hidden = false;
     this.hudMap.hidden = false;

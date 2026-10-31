@@ -1,0 +1,32 @@
+{
+  "about": "The ground fowl standing: four poses of the body's own Idle (a breath, a head turn, a head bob, a tail flick with the head turned the other way), played by time. Under the code layer's breath, never instead of it.",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Idle"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    700,
+    700,
+    700,
+    700
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

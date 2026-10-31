@@ -6,7 +6,8 @@
  *   pnpm e2e:group --list                          (the groups as JSON: CI's matrix is read from here)
  *
  * CI plays each group in its own job, side by side (.github/workflows/ci.yml), so the run takes as long as
- * its longest group, the phone opening, and not the sum. With --retry a script that fails is played once
+ * its longest group, the phone opening, and not the sum. A group that serves the 3D door says so (build3d), and
+ * only its job builds game/dist-3d. With --retry a script that fails is played once
  * more on its own, and the screenshots of its first attempt move to <out-dir>-attempt1/<entry>, so a flake
  * costs one script and stays countable; a script that fails twice fails the group, after the rest of it ran.
  *
@@ -30,23 +31,33 @@ interface Entry {
 
 interface Group {
   entries: Entry[];
-  /** The job's timeout: about twice its green time on a runner (26.10), which leaves room for one retry. */
+  /** The job's timeout: about three times its green time on a runner (30.10: a slow evening cancelled jobs at twice), which leaves room for one retry. */
   minutes: number;
+  /** Whether a script of the group serves game/dist-3d (the 3D door): only then does CI build it for the job. */
+  build3d?: boolean;
 }
 
 const plain = (script: string): Entry => ({ name: script, script });
 
-// balanced by the times of run 40279020921: the phone opening alone is 520 s, the desktop and slid-bank
-// openings 150 s, and each of the other groups 140-170 s
+// balanced by the times of run 41084544483 (30.10): the phone opening alone is 550 s, the desktop and slid-bank
+// openings 150 s, and each of the other groups 120-200 s. A group is a job, and the jobs run side by side.
 const GROUPS: Record<string, Group> = {
-  'opening-phone': { entries: [{ name: 'opening-phone', script: 'opening', env: { E2E_ONLY: 'phone' } }], minutes: 20 },
+  'opening-phone': { entries: [{ name: 'opening-phone', script: 'opening', env: { E2E_ONLY: 'phone' } }], minutes: 30 },
   // every other opening run, so a run added to opening.ts is played here without a change to this file
-  'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 8 },
-  'night-and-hud': { entries: ['stealth', 'tending', 'hud'].map(plain), minutes: 8 },
-  // 11: with landscape the group is about 5.5 min green, and a play3d retry alone took 314 s (run 41073597376)
-  '3d-and-load': { entries: ['play3d', 'load', 'camera', 'tree', 'landscape'].map(plain), minutes: 11 },
-  'map-and-shops': { entries: ['map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin'].map(plain), minutes: 8 },
+  'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 11 },
+  // landscape plays the 2D game on a phone turned sideways, so it rides with the HUD's scripts, not the 3D door's
+  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree', 'landscape'].map(plain), minutes: 14 },
+  // the only scripts that serve game/dist-3d: play3d, and load for its bag button
+  '3d-and-load': { entries: ['play3d', 'load', 'camera'].map(plain), minutes: 14, build3d: true },
+  'map-and-shop': { entries: ['map', 'shop', 'fishing'].map(plain), minutes: 10 },
+  'shop-rooms-and-signin': { entries: ['shop-stock', 'shop-interior', 'signin'].map(plain), minutes: 10 },
 };
+
+/**
+ * How much faster the game's clock runs while a script only waits on it (cdp.ts, WARP): the openings wait on digs,
+ * fellings, cookings and dusk. E2E_WARP=1 in the shell turns it off, to debug a run at the game's own pace.
+ */
+const WARP: Record<string, number> = { opening: 4 };
 
 /** Throws when a script is in no group or a plain script is in two: CI would skip it or play it twice. */
 function checkGroups(): void {
@@ -63,7 +74,7 @@ function checkGroups(): void {
 function play(entry: Entry, out: string | undefined): boolean {
   const run = spawnSync('tsx', [join(E2E_DIR, `${entry.script}.ts`), ...(out ? [out] : [])], {
     stdio: 'inherit',
-    env: { ...process.env, ...entry.env },
+    env: { ...process.env, E2E_WARP: process.env.E2E_WARP ?? String(WARP[entry.script] ?? 1), ...entry.env },
   });
   return run.status === 0;
 }
@@ -104,7 +115,7 @@ function main(): void {
   checkGroups();
   const args = process.argv.slice(2);
   if (args.includes('--list')) {
-    console.log(JSON.stringify(Object.entries(GROUPS).map(([group, g]) => ({ group, minutes: g.minutes }))));
+    console.log(JSON.stringify(Object.entries(GROUPS).map(([group, g]) => ({ group, minutes: g.minutes, build3d: g.build3d === true }))));
     return;
   }
   const retry = args.includes('--retry');

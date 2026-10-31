@@ -1,0 +1,408 @@
+---
+// The project tree (the owner's pick of 31.10: the radial tree, in the site's theme, under the developer area). The
+// page is a frame: the browser reads the tree's file (web/src/data/tree.ts) every minute and draws the wheel and the
+// ledgers from it. Names of the agents, their last lines, the queue's notes and the owner's open asks travel sealed
+// in the same file; the gate opens them in this browser only, and nothing typed leaves it.
+import Site from '../../layouts/Site.astro';
+import '../../styles/hub.css';
+import '../../styles/tree.css';
+import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
+---
+
+<Site
+  title="The project tree: the plan, its pull requests and the agents at work - Loomvale"
+  description="How Loomvale is being built right now: every stage of the plan with its progress, the open pull requests and their checks, and the agents at work on each branch, refreshed every minute."
+  section="developers"
+>
+  <div class="hub tree" data-src={TREE_URL} data-refresh={TREE_REFRESH_S} data-quiet={TREE_QUIET_MIN}>
+    <header class="wrap tree-head">
+      <p class="kicker">Developer area</p>
+      <h1>The project tree</h1>
+      <p class="lead">
+        The plan grows from the root: each stage is a sector, its work items and pull requests are marks on it, and the
+        agents at work are the leaves on the rim. A leaf turns grey when its agent has been quiet for half an hour.
+      </p>
+      <p class="tree-stamp" id="tree-stamp" aria-live="polite"></p>
+      <p class="tree-state" id="tree-state">Reading the tree.</p>
+      <noscript><p class="tree-state">The tree is drawn in the browser; it needs JavaScript.</p></noscript>
+    </header>
+
+    <div class="wrap tree-main">
+      <section aria-labelledby="wheel-h">
+        <h2 id="wheel-h" class="vh">The wheel</h2>
+        <svg class="wheel" id="wheel" viewBox="0 0 600 600" role="img" aria-label="The project as a radial tree"></svg>
+        <p class="legend">
+          <span><i class="st-live"></i>live</span>
+          <span><i class="st-in-develop"></i>in develop</span>
+          <span><i class="st-building"></i>building</span>
+          <span><i class="st-planned"></i>planned</span>
+          <span><i class="lf-busy"></i>agent busy</span>
+          <span><i class="lf-idle"></i>idle</span>
+          <span><i class="lf-cloud"></i>in the cloud</span>
+          <span><i class="lf-faded"></i>quiet</span>
+          <span class="sap">▲ landed today</span>
+          <span><i class="lock"></i>sealed</span>
+        </p>
+        <form class="gate" id="gate">
+          <label for="gate-pw">Sealed branches</label>
+          <input id="gate-pw" type="password" autocomplete="off" />
+          <button class="btn sm" type="submit">Open</button>
+          <span class="said" id="gate-said" aria-live="polite"></span>
+        </form>
+      </section>
+
+      <div class="tree-side">
+        <section aria-labelledby="stages-h">
+          <h2 id="stages-h">Stages</h2>
+          <ol class="stages" id="stages"></ol>
+        </section>
+        <section aria-labelledby="agents-h">
+          <h2 id="agents-h">Agents</h2>
+          <ol class="agents" id="agents"></ol>
+        </section>
+      </div>
+    </div>
+  </div>
+</Site>
+
+<script>
+  type Leaf = {
+    key: string;
+    stream: string;
+    model: string | null;
+    status: string;
+    where: string;
+    branch: string | null;
+    pr: { n: number; ci: string; draft: boolean } | null;
+    quiet_min: number | null;
+    faded: boolean;
+    manager: boolean;
+  };
+  type Item = { id: string | null; title: string; state: string; src: string };
+  type Limb = {
+    id: string;
+    title: string;
+    kind: string;
+    status: string;
+    done: number;
+    total: number;
+    items: Item[];
+    prs: { n: number; title: string; ci: string; draft: boolean }[];
+    sap: { n: number; title: string; at: string }[];
+    sealed_asks: boolean;
+    leaves: Leaf[];
+  };
+  type Sealed = { kdf: string; iter: number; salt: string; iv: string; alg: string; ct: string };
+  type Tree = {
+    v: number;
+    built: string;
+    release: { live: string | null; ahead: number | null };
+    counts: { sessions: number; busy: number; open_prs: number; landed_today: number };
+    notes: string[];
+    limbs: Limb[];
+    root: Leaf[];
+    trunk: Leaf[];
+    sealed: Sealed | null;
+  };
+  type Open = {
+    leaves: Record<string, { name: string; label: string; last: string; asking: boolean }>;
+    items: Record<string, { title: string; status: string }>;
+    asks: { file: string; at: string; limb: string }[];
+  };
+
+  const root = document.querySelector<HTMLElement>('.tree')!;
+  const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+  // a local preview may point the page at a file of its own; the site reads only its constant
+  const src = (local && new URLSearchParams(location.search).get('src')) || root.dataset['src'] || '';
+  const refresh = Number(root.dataset['refresh'] ?? 60);
+  const quietMin = Number(root.dataset['quiet'] ?? 30);
+  const KEY = 'loomvale-tree-gate';
+  const SVG = 'http://www.w3.org/2000/svg';
+  const $ = (id: string): HTMLElement => document.getElementById(id)!;
+  let tree: Tree | null = null;
+  let opened: Open | null = null;
+
+  const two = (n: number): string => String(n).padStart(2, '0');
+  // the site's form for a time a person reads: DD.MM.YY HH:MM, in UTC
+  const stamp = (d: Date): string =>
+    `${two(d.getUTCDate())}.${two(d.getUTCMonth() + 1)}.${two(d.getUTCFullYear() % 100)} ${two(d.getUTCHours())}:${two(d.getUTCMinutes())}`;
+  const cls = (s: string): string => s.replace(/\s+/g, '-');
+
+  function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function sv(tag: string, attrs: Record<string, string | number>, text?: string): SVGElement {
+    const e = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  const b64 = (s: string): Uint8Array<ArrayBuffer> => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function unseal(sealed: Sealed, password: string): Promise<Open> {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: b64(sealed.salt), iterations: sealed.iter },
+      base,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt'],
+    );
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(sealed.iv) }, key, b64(sealed.ct));
+    return JSON.parse(new TextDecoder().decode(plain)) as Open;
+  }
+
+  function leaves(t: Tree): Leaf[] {
+    return [...t.limbs.flatMap((l) => l.leaves), ...t.root, ...t.trunk];
+  }
+  function leafClass(l: Leaf): string {
+    if (l.faded || (l.quiet_min ?? 0) > quietMin) return 'lf lf-faded';
+    if (l.manager) return 'lf lf-manager';
+    return `lf lf-${l.where === 'cloud' ? 'cloud' : l.status === 'busy' ? 'busy' : 'idle'}`;
+  }
+
+  function drawWheel(t: Tree): void {
+    const svg = $('wheel');
+    svg.replaceChildren();
+    const cx = 300;
+    const cy = 300;
+    const n = t.limbs.length;
+    const pt = (r: number, a: number): [number, number] => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    const arc = (r: number, a0: number, a1: number): string => {
+      const [x0, y0] = pt(r, a0);
+      const [x1, y1] = pt(r, a1);
+      return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+    };
+    let num = 1;
+    t.limbs.forEach((l, i) => {
+      const a0 = -Math.PI / 2 + (2 * Math.PI * i) / n;
+      const a1 = a0 + (2 * Math.PI) / n;
+      const am = (a0 + a1) / 2;
+      const span = (k: number, of: number): number => a0 + ((a1 - a0) * (k + 1)) / (of + 1);
+      const g = sv('g', {});
+      const [sx, sy] = pt(62, a0);
+      const [ex, ey] = pt(288, a0);
+      g.append(sv('line', { class: 'sector', x1: sx, y1: sy, x2: ex, y2: ey }));
+      // the limb: from the root to the rim, where its leaves hang
+      const [lx0, ly0] = pt(60, am);
+      const [lx1, ly1] = pt(222, am);
+      g.append(sv('line', { class: 'limb', x1: lx0, y1: ly0, x2: lx1, y2: ly1 }));
+      // the stage ring: the share of its work items done, in its status colour
+      g.append(sv('path', { class: 'track', d: arc(100, a0 + 0.03, a1 - 0.03) }));
+      if (l.total > 0 && l.done > 0) {
+        g.append(sv('path', { class: `done st-${cls(l.status)}`, d: arc(100, a0 + 0.03, a0 + 0.03 + (a1 - a0 - 0.06) * (l.done / l.total)) }));
+      }
+      const [nx, ny] = pt(134, am);
+      g.append(sv('text', { class: 'num', x: nx, y: ny + 8, 'text-anchor': 'middle' }, String(i + 1)));
+      // the work items: one mark each, in two rows when there are many
+      const perRow = Math.max(1, Math.ceil(l.items.length / 2));
+      l.items.forEach((it, k) => {
+        const row = Math.floor(k / perRow);
+        const [x, y] = pt(162 + row * 14, span(k % perRow, perRow));
+        g.append(sv('rect', { class: `it-${it.state}`, x: x - 4, y: y - 4, width: 8, height: 8 }));
+      });
+      // the open pull requests, in their check's colour
+      l.prs.slice(0, 10).forEach((p, k) => {
+        const [x, y] = pt(200, span(k, Math.min(l.prs.length, 10)));
+        g.append(sv('rect', { class: `ci-${p.ci}`, x: x - 6, y: y - 6, width: 12, height: 12 }));
+      });
+      // sap: a pull request of this stage landed today
+      if (l.sap.length) {
+        const [x, y] = pt(78, am + 0.12);
+        g.append(sv('text', { class: 'sap', x, y: y + 6, 'text-anchor': 'middle', 'font-size': 16 }, '▲'));
+      }
+      if (l.sealed_asks) {
+        const [x, y] = pt(222, am + 0.16);
+        g.append(sv('rect', { class: 'lock', x: x - 6, y: y - 6, width: 12, height: 12, transform: `rotate(45 ${x.toFixed(1)} ${y.toFixed(1)})` }));
+      }
+      // the leaves on the rim
+      l.leaves.forEach((lf, k) => {
+        const [x, y] = pt(256, span(k, l.leaves.length));
+        g.append(sv('line', { class: 'twig', x1: lx1, y1: ly1, x2: x, y2: y }));
+        g.append(sv('circle', { class: leafClass(lf), cx: x, cy: y, r: 15 }));
+        g.append(sv('text', { class: 'leafnum', x, y: y + 5, 'text-anchor': 'middle' }, String(num++)));
+      });
+      svg.append(g);
+    });
+    svg.append(sv('circle', { class: 'root', cx, cy, r: 54 }));
+    svg.append(sv('text', { class: 'rootname', x: cx, y: cy - 4, 'text-anchor': 'middle' }, 'Loomvale'));
+    // the manager at the root, and the agents with no branch on the trunk
+    const near = [...t.root, ...t.trunk];
+    near.forEach((lf, k) => {
+      const x = cx + (k - (near.length - 1) / 2) * 22;
+      g2(svg, lf, x, cy + 26, num++);
+    });
+  }
+  function g2(svg: HTMLElement, lf: Leaf, x: number, y: number, num: number): void {
+    svg.append(sv('circle', { class: leafClass(lf), cx: x, cy: y, r: 10 }));
+    svg.append(sv('text', { class: 'leafnum', x, y: y + 5, 'text-anchor': 'middle', 'font-size': 12 }, String(num)));
+  }
+
+  function chip(text: string, className: string): HTMLElement {
+    return el('span', `chip ${className}`, text);
+  }
+
+  function drawStages(t: Tree): void {
+    const list = $('stages');
+    list.replaceChildren();
+    t.limbs.forEach((l, i) => {
+      const li = el('li');
+      li.append(el('span', 'n', String(i + 1)), el('h3', '', l.title));
+      const row = el('p', 'row');
+      row.append(chip(l.status, `st-${cls(l.status)}`), el('span', 'count', `${l.done}/${l.total}`));
+      if (!l.total) row.append(el('span', '', 'no work items yet'));
+      if (l.kind === 'side') row.append(el('span', '', 'beside the plan'));
+      li.append(row);
+      if (l.prs.length) {
+        const prs = el('p', 'row');
+        for (const p of l.prs) {
+          const c = chip(`#${p.n}`, `ci-${p.ci}`);
+          c.title = `${p.title}${p.draft ? ' (draft)' : ''}`;
+          prs.append(c);
+        }
+        li.append(prs);
+      }
+      if (l.sap.length) {
+        const sap = el('p', 'row sap');
+        sap.textContent = `▲ ${l.sap.map((s) => `#${s.n} at ${s.at}`).join(', ')} landed today`;
+        li.append(sap);
+      }
+      const asks = opened ? opened.asks.filter((a) => a.limb === l.id) : [];
+      if (l.sealed_asks) {
+        const r = el('p', 'row');
+        r.append(chip(opened ? `${asks.length} picture${asks.length === 1 ? '' : 's'} for the owner today` : 'sealed: the owner’s asks', 'lock'));
+        li.append(r);
+      }
+      if (l.items.length) {
+        const det = el('details');
+        det.append(el('summary', '', `${l.items.length} work item${l.items.length === 1 ? '' : 's'}`));
+        const ul = el('ul', 'items');
+        l.items.forEach((it, k) => {
+          const item = el('li', '', `${it.state}: ${it.title}`);
+          const extra = opened?.items[`${l.id}:${k}`];
+          if (extra) item.append(el('span', 'note', ` - ${extra.status}`));
+          ul.append(item);
+        });
+        det.append(ul);
+        li.append(det);
+      }
+      list.append(li);
+    });
+  }
+
+  function drawAgents(t: Tree): void {
+    const list = $('agents');
+    list.replaceChildren();
+    leaves(t).forEach((lf, i) => {
+      const faded = lf.faded || (lf.quiet_min ?? 0) > quietMin;
+      const li = el('li', faded ? 'faded' : '');
+      const open = opened?.leaves[lf.key];
+      const who = open ? `${open.name}${open.label ? ` (${open.label})` : ''}` : lf.manager ? 'The manager' : 'An agent';
+      li.append(el('span', 'n', String(i + 1)), el('h3', '', who));
+      const row = el('p', 'row');
+      row.append(
+        el('span', '', lf.stream),
+        el('span', '', lf.model ?? 'model unknown'),
+        el('span', '', lf.where === 'cloud' ? 'in the cloud' : lf.status),
+      );
+      if (lf.quiet_min !== null) row.append(el('span', '', `last line ${lf.quiet_min} min ago`));
+      li.append(row);
+      const br = el('p', 'row');
+      br.append(el('span', '', lf.branch ?? 'no branch'));
+      if (lf.pr) br.append(chip(`#${lf.pr.n}`, `ci-${lf.pr.ci}`));
+      if (open?.asking) br.append(chip('asks the owner', 'lock'));
+      li.append(br);
+      const last = el('p', 'row last');
+      last.dir = 'auto';
+      last.textContent = open ? open.last : 'Its name and last line are sealed.';
+      li.append(last);
+      list.append(li);
+    });
+  }
+
+  function draw(): void {
+    if (!tree) return;
+    const t = tree;
+    const built = new Date(t.built);
+    const s = $('tree-stamp');
+    s.replaceChildren();
+    const part = (b: string, rest: string): HTMLElement => {
+      const sp = el('span');
+      sp.append(el('b', '', b), document.createTextNode(` ${rest}`));
+      return sp;
+    };
+    s.append(
+      part(stamp(built), 'UTC, data built'),
+      part(t.release.live ?? 'unknown', 'live'),
+      part(String(t.counts.sessions), `agents, ${t.counts.busy} busy`),
+      part(String(t.counts.open_prs), 'open pull requests'),
+      part(String(t.counts.landed_today), 'landed today'),
+    );
+    const age = Math.round((Date.now() - built.getTime()) / 60000);
+    $('tree-state').textContent =
+      `Read ${stamp(new Date())} UTC; the data is ${age} min old and is read again every ${refresh} s.` +
+      (t.notes.length ? ` Missing this time: ${t.notes.join('; ')}.` : '');
+    drawWheel(t);
+    drawStages(t);
+    drawAgents(t);
+  }
+
+  async function read(): Promise<void> {
+    if (!src) {
+      $('tree-state').textContent = 'No data yet: the tree’s channel is not connected.';
+      return;
+    }
+    try {
+      const url = `${src}${src.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(String(res.status));
+      tree = (await res.json()) as Tree;
+      if (tree.v !== 1) throw new Error('version');
+      const pw = sessionStorage.getItem(KEY);
+      opened = null;
+      if (pw && tree.sealed) {
+        try {
+          opened = await unseal(tree.sealed, pw);
+        } catch {
+          sessionStorage.removeItem(KEY);
+        }
+      }
+      draw();
+    } catch {
+      $('tree-state').textContent = tree
+        ? `The last read failed; showing the tree read before. Trying again in ${refresh} s.`
+        : 'No data yet: the tree could not be read. Trying again in a minute.';
+    }
+  }
+
+  $('gate').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const input = $('gate-pw') as HTMLInputElement;
+    const said = $('gate-said');
+    if (!tree?.sealed) {
+      said.textContent = 'There is nothing sealed to open yet.';
+      return;
+    }
+    try {
+      opened = await unseal(tree.sealed, input.value);
+      try {
+        sessionStorage.setItem(KEY, input.value);
+      } catch {
+        // private windows may refuse storage: the branches stay open until the page reloads
+      }
+      said.textContent = 'Open in this browser until the tab closes.';
+      draw();
+    } catch {
+      opened = null;
+      said.textContent = 'That password opens nothing.';
+      draw();
+    }
+    input.value = '';
+  });
+
+  void read();
+  setInterval(() => void read(), refresh * 1000);
+</script>

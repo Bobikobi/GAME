@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.21.1';
+export const KERNEL_VERSION = '0.22.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -97,6 +97,21 @@ export interface Chase {
   since: number;
   /** bites already taken */
   bites: number;
+}
+
+/** An animal taken and not yet dressed (docs/design/HUNTING.md section 6): it lies where it fell until it is dressed or has spoiled away. */
+export interface Carcass {
+  /** its number in this game, so two of a kind on one tile stay apart */
+  id: number;
+  /** the creature kind, from `map.creatures.kinds` */
+  kind: string;
+  at: [number, number];
+  /** the grade the animal appeared with: 1 plain, 2 fine, 3 true */
+  grade: 1 | 2 | 3;
+  /** the tick it fell */
+  since: number;
+  /** parts of the dressing done so far (one action each; DRESS_PARTS by size); absent means none */
+  dressed?: number;
 }
 
 export interface FireState {
@@ -197,6 +212,10 @@ export interface Player {
   fires: Record<string, FireState>;
   /** what the player dropped, by tile (`groundKey`): it stays there until picked up again (DECISIONS.md, 2026-10-23) */
   ground?: Record<string, Record<string, number>>;
+  /** animals taken and not yet dressed, oldest first; absent in a save from before the hunt */
+  carcasses?: Carcass[];
+  /** how many animals have fallen in this game: the next carcass takes the number after */
+  fallen?: number;
   /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.12) */
   own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */

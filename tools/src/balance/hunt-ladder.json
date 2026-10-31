@@ -1,0 +1,453 @@
+{
+  "about": "The hunt ladder's typed tables (tools/src/balance/hunt-ladder.ts reads and validates them). Tools: the six of HUNTING 5, the smoke bundle of HUNT_FAMILIES 3.1, the fishing rod as built, and every tool, gear item and companion of HUNT_FAMILIES 3a (#451), all proposed. Kinds: the valley's hare, carrion crow, roe deer and wolf, the elf wood's white hart, one kind for each other family whose numbers are written, and the two foxes, the canids' take before the fight (BESTIARY_LANDS 2, 3.1, 3.2, #432; HUNTING 8; BESTIARY 1; HUNT_FAMILIES 2 and 4; CREATURE_BEHAVIOUR 3 and 5.1.6, #451). A kind names its habitat tag only: its tiles are counted on content/core/map.json at every run, never typed here. A quantity 3a leaves unstated is written as 1 and says so in its note. A kind's way_tools name the tools its source names for a way (BESTIARY_LANDS: \"stalk (a sling)\", \"lure (a pit with bait)\"); an empty list is a way no ladder row serves (the bat's lantern, the spider's moth). Nothing here is content: the kinds carry no hunt block in content/core yet.",
+  "params": {
+    "dress_step_ms": {
+      "value": 1500,
+      "source": "#431 content/core/params.json hunt.dress_step_ms (not on develop yet)"
+    },
+    "pay_per_s_mg": {
+      "value": 50,
+      "source": "HUNTING 9 and COMBAT 4.9: combat.pay_per_s_mg (proposed, not in content)"
+    },
+    "rarity_rank_cuts": {
+      "value": [10, 5, 2],
+      "source": "proposed here: cap_per_1000 / refill_d at or above 10 is rank 0, 5 rank 1, 2 rank 2, else rank 3"
+    },
+    "profession_levels": {
+      "value": 20,
+      "source": "GROWTH 3.6 and G87 (the owner, 19.10): the professions keep twenty levels; the xp proposal writes one threshold for each level from 2 to 20"
+    }
+  },
+  "families": [
+    { "id": "burrowers", "name": "Burrowers", "source": "HUNT_FAMILIES 2 and 3.1" },
+    { "id": "deer", "name": "Deer", "source": "HUNT_FAMILIES 2 and 3.2" },
+    { "id": "wild-goats", "name": "Wild goats", "source": "HUNT_FAMILIES 2 and 3.3" },
+    { "id": "pigs", "name": "Pigs", "source": "HUNT_FAMILIES 2 and 3.4" },
+    { "id": "canids", "name": "Canids", "source": "HUNT_FAMILIES 2 and 3.5" },
+    { "id": "cats", "name": "Cats", "source": "HUNT_FAMILIES 2 and 3.6" },
+    { "id": "bears", "name": "Bears", "source": "HUNT_FAMILIES 2 and 3.7" },
+    { "id": "game-birds", "name": "Game birds", "source": "HUNT_FAMILIES 2 and 3.8" },
+    { "id": "perching-birds", "name": "Perching birds", "source": "HUNT_FAMILIES 2 and 3.9" },
+    { "id": "waterfowl", "name": "Waterfowl and waders", "source": "HUNT_FAMILIES 2 and 3.10" },
+    { "id": "raptors", "name": "Raptors", "source": "HUNT_FAMILIES 2 and 3.11" },
+    { "id": "mustelids", "name": "Mustelids", "source": "HUNT_FAMILIES 2 and 3.12" },
+    { "id": "fish", "name": "Fish", "source": "HUNT_FAMILIES 2 and 3.13" },
+    { "id": "reptiles", "name": "Reptiles", "source": "HUNT_FAMILIES 2 and 3.14" },
+    { "id": "night-fliers", "name": "Night fliers", "source": "HUNT_FAMILIES 2 and 3.15" },
+    { "id": "horned-beasts", "name": "Horned beasts", "source": "HUNT_FAMILIES 2 and 3.16" },
+    { "id": "spiders", "name": "Spiders", "source": "HUNT_FAMILIES 2 and 3.17" },
+    { "id": "drakes", "name": "Drakes", "source": "HUNT_FAMILIES 2 and 3.18" }
+  ],
+  "materials": {
+    "core/stone": { "rung": 0, "source": "core/river-stones, gathered" },
+    "core/branch": { "rung": 0, "source": "gathered (core/branch)" },
+    "core/reed": { "rung": 0, "source": "core/reed-bank, gathered" },
+    "core/herb": { "rung": 0, "source": "core/wild-herbs, gathered" },
+    "core/berry": { "rung": 0, "source": "core/berry-bushes, gathered (the seed bait)" },
+    "core/river-fish": { "rung": 0, "source": "core/river-fish, the line (the fish bait)" },
+    "core/log": { "rung": 0, "source": "felling with the axe (timber)" },
+    "core/old-coin": { "rung": 0, "source": "a dig find (the imp's coin, BESTIARY_LANDS 3.2)" },
+    "core/reed-cord": { "rung": 1, "source": "core/reed-cord, the snare's cord (HUNTING 5: fibre cord first; HUNT_FAMILIES 3a: reed cord, T1)" },
+    "core/stone-blade": { "rung": 1, "source": "core/stone-blade, crafted" },
+    "core/stone-flakes": { "rung": 1, "source": "core/stone-flakes, crafted (a flint head)" },
+    "brush": { "rung": 0, "source": "felling or forage (HUNT_FAMILIES 3a, proposed item)", "proposed": true },
+    "roots": { "rung": 0, "source": "digging (HUNT_FAMILIES 3a, the boar's bait, proposed item)", "proposed": true },
+    "catmint": { "rung": 0, "source": "a herb (HUNT_FAMILIES 3a, the cats' bait, proposed item)", "proposed": true },
+    "salt": { "rung": 0, "source": "a dig find (HUNT_FAMILIES 3a, the salt lick, proposed item)", "proposed": true },
+    "lens": { "rung": 0, "source": "a dig find (HUNT_FAMILIES 3a, the spyglass, proposed item)", "proposed": true },
+    "leavings": { "rung": 0, "source": "a dressed carcass (HUNT_FAMILIES 3a); the hare is taken at T0", "proposed": true },
+    "leather": { "rung": 4, "source": "the tanning rack, after T3 (HUNT_FAMILIES 3a)", "proposed": true }
+  },
+  "tools": [
+    {
+      "id": "stone", "name": "thrown stone", "tier": "T0", "rung": 0, "use": "take", "ways": ["stalk"], "sizes": ["small"],
+      "range": 3, "unaware": true, "passive": false, "noise": 4, "craftTier": 1, "level": 1, "station": null,
+      "inputs": { "core/stone": 1 }, "status": "planned", "mismatch": false,
+      "source": "HUNTING 5", "note": "picked up again; small prey only (HUNTING 5's row), never a larger kind at a lower grade"
+    },
+    {
+      "id": "rod", "name": "fishing rod", "tier": "T1", "rung": 1, "use": "take", "ways": ["fish"], "sizes": ["small"],
+      "range": 1, "unaware": false, "passive": false, "noise": null, "craftTier": 1, "level": 1, "station": "workshop",
+      "inputs": { "core/branch": 2, "core/reed-cord": 1 }, "status": "built", "families": ["fish"],
+      "source": "content/core recipe core/fishing-rod; BESTIARY_LANDS 1 (the fish way)", "note": "an existing tool, listed so the fish family has its rung; at T1 because its recipe takes reed cord"
+    },
+    {
+      "id": "snare", "name": "snare", "tier": "T1", "rung": 1, "use": "take", "ways": ["snare", "lure"], "sizes": ["small"],
+      "range": 0, "unaware": false, "passive": true, "noise": 3, "craftTier": 1, "level": 1, "station": "work-stone (t1)",
+      "inputs": { "core/reed-cord": 2, "core/branch": 1 }, "status": "planned",
+      "source": "HUNTING 5", "note": "on its tile; noise 3 to set (proposed); a baited snare is the lure way"
+    },
+    {
+      "id": "smoke-bundle", "name": "smoke bundle", "tier": "T2f", "rung": 2, "use": "drive", "ways": [], "sizes": [],
+      "range": 1, "unaware": false, "passive": false, "noise": 3, "craftTier": 1, "level": 2, "station": "fire, burning",
+      "inputs": { "core/reed-cord": 1, "core/reed": 2 }, "status": "planned", "families": ["burrowers", "spiders"],
+      "source": "HUNT_FAMILIES 3.1 (the T2f row) and 3a", "note": "takes nothing alone: drives a burrower to a trap on its bolt hole; reeds or herbs 2; used up"
+    },
+    {
+      "id": "sling", "name": "sling", "tier": "T2", "rung": 2, "use": "take", "ways": ["stalk"], "sizes": ["small"],
+      "range": 6, "unaware": true, "passive": false, "noise": 4, "craftTier": 1, "level": 2, "station": "work-stone",
+      "inputs": { "core/reed-cord": 1, "hide": 1 }, "status": "later",
+      "source": "HUNTING 5", "note": "small kinds and ground fowl; the hide is the hare's"
+    },
+    {
+      "id": "spear", "name": "spear", "tier": "T3", "rung": 3, "use": "take", "ways": ["stalk"], "sizes": ["medium"],
+      "range": 4, "unaware": true, "passive": false, "noise": 4, "craftTier": 2, "level": 3, "station": "workbench (t2)",
+      "inputs": { "core/branch": 2, "core/stone-blade": 1, "sinew": 1 }, "status": "later",
+      "source": "HUNTING 5", "note": "thrust 1, throw 4; the sinew is the roe's"
+    },
+    {
+      "id": "bow", "name": "bow", "tier": "T4", "rung": 4, "use": "take", "ways": ["stalk"], "sizes": ["medium"],
+      "range": 8, "unaware": true, "passive": false, "noise": 4, "craftTier": 3, "level": 6, "station": "workshop (t3)",
+      "inputs": { "core/branch": 2, "sinew": 2, "core/reed-cord": 1 }, "status": "later",
+      "source": "HUNTING 5"
+    },
+    {
+      "id": "pit-trap", "name": "pit trap", "tier": "T5", "rung": 5, "use": "take", "ways": ["lure"], "sizes": ["large"],
+      "range": 0, "unaware": false, "passive": true, "noise": 5, "craftTier": 3, "level": 6, "station": "camp build, trowel",
+      "inputs": { "core/branch": 6 }, "status": "later",
+      "source": "HUNTING 5", "note": "large kinds and defenders; dug with the trowel (noise 5); its tile"
+    },
+    {
+      "id": "scent-cover", "name": "scent cover", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": false, "noise": null, "craftTier": 1, "level": 1, "station": "workbench",
+      "inputs": { "core/herb": 2 }, "status": "later", "families": ["canids", "deer", "pigs", "cats"],
+      "source": "HUNT_FAMILIES 3a", "note": "120 steps of the one-tile smell ring; never on a round predator"
+    },
+    {
+      "id": "bait-seed", "name": "seed bait", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": true, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "core/berry": 1 }, "status": "later", "families": ["game-birds"],
+      "source": "HUNT_FAMILIES 3a (bait by family)", "note": "a sight bait: within the kind's sight, front half; holds GRAZE 6 steps; spoils in 3 days; qty unstated, 1 written"
+    },
+    {
+      "id": "bait-roots", "name": "root bait", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": 6, "unaware": false, "passive": true, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "roots": 1 }, "status": "later", "families": ["pigs"],
+      "source": "HUNT_FAMILIES 3a (bait by family)", "note": "a scent bait: downwind within the larger of 6 and the kind's smell (the boar 8), 3 all round in a calm; spoils in 3 days; qty unstated, 1 written"
+    },
+    {
+      "id": "bait-fish", "name": "fish bait", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": 6, "unaware": false, "passive": true, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "core/river-fish": 1 }, "status": "later", "families": ["bears", "mustelids", "waterfowl"],
+      "source": "HUNT_FAMILIES 3a (bait by family)", "note": "a scent bait for the bear and the otter, a sight bait for the heron; spoils in 1 day; qty unstated, 1 written"
+    },
+    {
+      "id": "bait-leavings", "name": "leavings bait", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": 6, "unaware": false, "passive": true, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "leavings": 1 }, "status": "later", "families": ["canids", "perching-birds", "raptors"],
+      "source": "HUNT_FAMILIES 3a (bait by family)", "note": "a scent bait for the canids (8 or 9), a sight bait for crows and raptors; spoils in 1 day; qty unstated, 1 written"
+    },
+    {
+      "id": "bait-catmint", "name": "catmint bait", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": 6, "unaware": false, "passive": true, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "catmint": 1 }, "status": "later", "families": ["cats"],
+      "source": "HUNT_FAMILIES 3a (bait by family)", "note": "a scent bait that draws a cat and no canid or crow; qty unstated, 1 written"
+    },
+    {
+      "id": "bait-salt", "name": "salt lick", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": true, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "salt": 1 }, "status": "later", "families": ["wild-goats", "deer"],
+      "source": "HUNT_FAMILIES 3a (bait by family)", "note": "draws by no sense: a herd's dawn target for 5 dawns inside its roam circle; qty unstated, 1 written"
+    },
+    {
+      "id": "bait-coin", "name": "coin bait", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": true, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "core/old-coin": 1 }, "status": "later", "families": ["horned-beasts"],
+      "source": "HUNT_FAMILIES 3a (bait by family); BESTIARY_LANDS 3.2", "note": "a sight bait that never spoils; the imp, after the fight"
+    },
+    {
+      "id": "squeak-call", "name": "reed squeak call", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": 5, "unaware": false, "passive": false, "noise": 6, "craftTier": 1, "level": 1, "station": null,
+      "inputs": { "core/reed": 1 }, "status": "later", "families": ["canids"],
+      "source": "HUNT_FAMILIES 3a (calls), 3.5", "note": "draws a fox that hears it (6 + ear) to 5 tiles; never a defender or a hunter; qty unstated, 1 written"
+    },
+    {
+      "id": "crow-call", "name": "reed crow call", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": 5, "unaware": false, "passive": false, "noise": 6, "craftTier": 1, "level": 1, "station": null,
+      "inputs": { "core/reed": 1 }, "status": "later", "families": ["perching-birds"],
+      "source": "HUNT_FAMILIES 3a (calls), 3.9", "note": "with the owl decoy; qty unstated, 1 written"
+    },
+    {
+      "id": "coo-call", "name": "reed coo call", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": 5, "unaware": false, "passive": false, "noise": 6, "craftTier": 1, "level": 1, "station": null,
+      "inputs": { "core/reed": 1 }, "status": "later", "families": ["game-birds"],
+      "source": "HUNT_FAMILIES 3a (calls)", "note": "the dove's call; qty unstated, 1 written"
+    },
+    {
+      "id": "honk-call", "name": "reed honk call", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": 5, "unaware": false, "passive": false, "noise": 6, "craftTier": 1, "level": 1, "station": null,
+      "inputs": { "core/reed": 1 }, "status": "later", "families": ["waterfowl"],
+      "source": "HUNT_FAMILIES 3a (calls), 3.10", "note": "with two goose decoys; qty unstated, 1 written"
+    },
+    {
+      "id": "deer-call", "name": "bone deer call", "tier": "T3", "rung": 3, "use": "aid", "ways": [], "sizes": [],
+      "range": 5, "unaware": false, "passive": false, "noise": 6, "craftTier": 2, "level": 3, "station": null,
+      "inputs": { "bone": 1 }, "status": "later", "families": ["deer"],
+      "source": "HUNT_FAMILIES 3a (calls), 3.2", "note": "bone from the T1 to T2 takes, cut with flint; qty unstated, 1 written"
+    },
+    {
+      "id": "reed-blind", "name": "reed blind", "tier": "T2", "rung": 2, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": false, "noise": 3, "craftTier": 1, "level": 2, "station": null,
+      "inputs": { "core/reed": 1, "core/reed-cord": 2 }, "status": "later", "families": ["waterfowl", "mustelids"],
+      "source": "HUNT_FAMILIES 3a", "note": "3 off every sight, riverbank only; built in 6 steps; reeds qty unstated, 1 written"
+    },
+    {
+      "id": "brush-hide", "name": "brush hide", "tier": "T1", "rung": 1, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": false, "noise": 3, "craftTier": 1, "level": 1, "station": null,
+      "inputs": { "brush": 1, "core/reed-cord": 1 }, "status": "later", "families": ["wild-goats", "canids", "game-birds", "perching-birds"],
+      "source": "HUNT_FAMILIES 3a", "note": "2 off every sight, placeable; built in 4 steps; brush qty unstated, 1 written"
+    },
+    {
+      "id": "tree-perch", "name": "tree perch", "tier": "T3", "rung": 3, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": false, "noise": 5, "craftTier": 2, "level": 3, "station": null,
+      "inputs": { "core/log": 1, "core/reed-cord": 2 }, "status": "later", "families": ["deer", "pigs"],
+      "source": "HUNT_FAMILIES 3a", "note": "a ground kind's sight minus 3, half smell upwind; timber qty unstated, 1 written"
+    },
+    {
+      "id": "spyglass", "name": "spyglass", "tier": "T4", "rung": 4, "use": "aid", "ways": [], "sizes": [],
+      "range": 16, "unaware": false, "passive": false, "noise": 2, "craftTier": 3, "level": 6, "station": null,
+      "inputs": { "bone": 1, "leather": 1, "lens": 1 }, "status": "later",
+      "source": "HUNT_FAMILIES 3a", "note": "every family; shows state and quality as a pose, never a number; quantities unstated, 1 written"
+    },
+    {
+      "id": "throw-net", "name": "throw net", "tier": "T2", "rung": 2, "use": "take", "ways": ["stalk"], "sizes": ["small"],
+      "range": 3, "unaware": true, "passive": false, "noise": 3, "craftTier": 1, "level": 2, "station": null,
+      "inputs": { "core/reed-cord": 4 }, "status": "later", "families": ["game-birds", "burrowers"],
+      "source": "HUNT_FAMILIES 3a", "note": "unaware, or a bird in its burst's first 2 think steps (9a); worn out after 10 throws"
+    },
+    {
+      "id": "purse-net", "name": "purse net", "tier": "T2", "rung": 2, "use": "take", "ways": ["snare"], "sizes": ["small"],
+      "range": 0, "unaware": false, "passive": true, "noise": null, "craftTier": 1, "level": 2, "station": null,
+      "inputs": { "core/reed-cord": 3 }, "status": "later", "families": ["burrowers", "night-fliers", "raptors"],
+      "source": "HUNT_FAMILIES 3a", "note": "over a bolt hole, on a lamp post or raised by an owl decoy; a passive trap"
+    },
+    {
+      "id": "goose-decoy", "name": "goose decoy", "tier": "T2", "rung": 2, "use": "aid", "ways": [], "sizes": [],
+      "range": 12, "unaware": false, "passive": true, "noise": null, "craftTier": 1, "level": 2, "station": null,
+      "inputs": { "core/log": 1, "feather": 1 }, "status": "later", "families": ["waterfowl"],
+      "source": "HUNT_FAMILIES 3a (bird decoy)", "note": "a skein within 12 lands within 2; carved wood and feathers, qty unstated, 1 written"
+    },
+    {
+      "id": "owl-decoy", "name": "owl decoy", "tier": "T2", "rung": 2, "use": "aid", "ways": [], "sizes": [],
+      "range": 12, "unaware": false, "passive": true, "noise": null, "craftTier": 1, "level": 2, "station": null,
+      "inputs": { "core/log": 1, "feather": 1 }, "status": "later", "families": ["perching-birds", "raptors"],
+      "source": "HUNT_FAMILIES 3a (bird decoy)", "note": "crows within 12 circle within 3 for 6 steps; a raptor stoops at it; qty unstated, 1 written"
+    },
+    {
+      "id": "fish-trap", "name": "fish trap", "tier": "T1", "rung": 1, "use": "take", "ways": ["fish"], "sizes": ["small"],
+      "range": 0, "unaware": false, "passive": true, "noise": null, "craftTier": 1, "level": 1, "station": null,
+      "inputs": { "core/reed": 1, "core/reed-cord": 1 }, "status": "later", "families": ["fish"],
+      "source": "HUNT_FAMILIES 3a", "note": "one fish a game day while the pool lasts; a node of the fishing school; reeds qty unstated, 1 written"
+    },
+    {
+      "id": "weir", "name": "weir", "tier": "T3", "rung": 3, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": true, "noise": 5, "craftTier": 2, "level": 3, "station": null,
+      "inputs": { "core/stone": 1, "core/log": 1 }, "status": "later", "families": ["fish"],
+      "source": "HUNT_FAMILIES 3a", "note": "a stream 1 to 3 wide; its mouth trap takes two a day; falls in 3 days; qty unstated, 1 written"
+    },
+    {
+      "id": "pit-cover", "name": "pit cover", "tier": "T5", "rung": 5, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": true, "noise": null, "craftTier": 3, "level": 6, "station": null,
+      "inputs": { "core/branch": 1, "core/reed": 1 }, "status": "later", "families": ["pigs", "bears", "horned-beasts"],
+      "source": "HUNT_FAMILIES 3a", "note": "a covered pit is seen by no kind and by every player; qty unstated, 1 written"
+    },
+    {
+      "id": "bola", "name": "bola", "tier": "T3", "rung": 3, "use": "take", "ways": ["stalk"], "sizes": ["small", "medium"],
+      "range": 5, "unaware": true, "passive": false, "noise": 3, "craftTier": 2, "level": 3, "station": null,
+      "inputs": { "sinew": 2, "core/stone": 3 }, "status": "later", "families": ["game-birds", "waterfowl"],
+      "source": "HUNT_FAMILIES 3a", "note": "a bird in its burst's window or unaware on the ground; 2 sinew cord written as sinew 2"
+    },
+    {
+      "id": "sling-shaped-stone", "name": "sling, shaped stone", "tier": "T2", "rung": 2, "use": "take", "ways": ["stalk"], "sizes": ["small"],
+      "range": 7, "unaware": true, "passive": false, "noise": 4, "craftTier": 1, "level": 2, "station": "workbench",
+      "inputs": { "core/stone": 2 }, "status": "later", "variant_of": "sling", "families": ["game-birds", "perching-birds", "mustelids"],
+      "source": "HUNT_FAMILIES 3a (shaped stone)", "note": "the sling's second grade of ammunition; the inputs are the ammunition's"
+    },
+    {
+      "id": "blunt-arrow", "name": "bow, blunt arrow", "tier": "T4", "rung": 4, "use": "take", "ways": ["stalk"], "sizes": ["small"],
+      "range": 8, "unaware": true, "passive": false, "noise": 4, "craftTier": 3, "level": 6, "station": null,
+      "inputs": { "core/branch": 1, "bone": 1, "feather": 1 }, "status": "later", "variant_of": "bow", "oversize": true,
+      "families": ["deer", "wild-goats", "cats", "mustelids", "game-birds", "waterfowl"],
+      "source": "HUNT_FAMILIES 3a (arrows by size), 9a", "note": "small prey and birds at full quality; the wrong arrow one quality lower; qty unstated, 1 written"
+    },
+    {
+      "id": "broad-arrow", "name": "bow, broad arrow", "tier": "T4", "rung": 4, "use": "take", "ways": ["stalk"], "sizes": ["medium", "large"],
+      "range": 8, "unaware": true, "passive": false, "noise": 4, "craftTier": 3, "level": 6, "station": null,
+      "inputs": { "core/branch": 1, "core/stone-flakes": 1, "feather": 1 }, "status": "later", "variant_of": "bow", "oversize": true,
+      "families": ["deer", "wild-goats", "cats", "mustelids", "game-birds", "waterfowl"],
+      "source": "HUNT_FAMILIES 3a (arrows by size), 9a", "note": "medium and large at full quality; a flint head; qty unstated, 1 written"
+    },
+    {
+      "id": "hunting-dog", "name": "hunting dog", "tier": "T3", "rung": 3, "use": "companion", "ways": [], "sizes": [],
+      "range": 10, "unaware": false, "passive": false, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "meat": 1 }, "status": "proposed", "families": ["game-birds", "burrowers", "waterfowl"],
+      "source": "HUNT_FAMILIES 3a; 10, question 9", "note": "points within 10 upwind, flushes on command; never bites; a bond by a quest and meat (qty unstated, 1 written)"
+    },
+    {
+      "id": "ferret", "name": "ferret", "tier": "T3", "rung": 3, "use": "companion", "ways": [], "sizes": [],
+      "range": 0, "unaware": false, "passive": false, "noise": 2, "craftTier": null, "level": null, "station": null,
+      "inputs": {}, "status": "proposed", "families": ["burrowers"],
+      "source": "HUNT_FAMILIES 3a; 10, questions 9 and 13", "note": "sent into a found den, bolts the animal silently; a bond by a quest"
+    },
+    {
+      "id": "hawk", "name": "hawk", "tier": "T4", "rung": 4, "use": "companion", "ways": [], "sizes": [],
+      "range": 16, "unaware": false, "passive": false, "noise": null, "craftTier": null, "level": null, "station": null,
+      "inputs": { "leather": 1, "sinew": 1 }, "status": "proposed", "families": ["game-birds", "perching-birds"],
+      "source": "HUNT_FAMILIES 3a; 10, question 12", "note": "marks within 16 in open ground for 8 steps; takes nothing under question 12's default; glove and jesses, qty unstated, 1 written; a bond by a quest"
+    },
+    {
+      "id": "drive-hedge", "name": "drive hedge", "tier": "T3", "rung": 3, "use": "aid", "ways": [], "sizes": [],
+      "range": null, "unaware": false, "passive": true, "noise": 5, "craftTier": 2, "level": 3, "station": null,
+      "inputs": { "core/log": 1, "brush": 1 }, "status": "later", "families": ["pigs"],
+      "source": "HUNT_FAMILIES 3a", "note": "up to 6 brush props with one gap; falls in 3 days; qty unstated, 1 written"
+    },
+    {
+      "id": "box-trap", "name": "box trap", "tier": "T2", "rung": 2, "use": "take", "ways": ["lure", "snare"], "sizes": ["small", "medium"],
+      "range": 0, "unaware": false, "passive": true, "noise": null, "craftTier": 1, "level": 2, "station": null,
+      "inputs": { "core/log": 1, "core/reed-cord": 2 }, "status": "later", "families": ["cats"],
+      "source": "HUNT_FAMILIES 3a; BESTIARY 1 (wildcat: baited snare or box trap)", "note": "a small or medium climber; baited; timber qty unstated, 1 written"
+    }
+  ],
+  "kinds": [
+    {
+      "id": "hare", "name": "hare", "family": "burrowers", "land": "V", "size": "small", "tier": 1, "danger": 0, "take_s": 40,
+      "ways": ["stalk", "snare"],
+      "drops": [{ "item": "meat", "qty": 1, "share_pct": 50 }, { "item": "hide", "qty": 1, "share_pct": 40 }, { "item": "bone", "qty": 1, "share_pct": 10 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 6, "ear": 2, "smell": 0, "habitat_tag": "meadow",
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 2; HUNTING 8; BEHAVIOUR 3, 5.1.6"
+    },
+    {
+      "id": "carrion-crow", "name": "carrion crow", "family": "perching-birds", "land": "V", "size": "small", "tier": 1, "danger": 0, "take_s": 30,
+      "ways": ["snare", "stalk"], "way_tools": { "stalk": ["sling"] },
+      "drops": [{ "item": "feather", "qty": 1, "share_pct": 100 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 7, "ear": 0, "smell": 0, "habitat_tag": "grove",
+      "group": [10, 50, 40, 0], "source": "BESTIARY_LANDS 2; HUNTING 8; BEHAVIOUR 3, 5.1.6 (BESTIARY 1 keeps it ambient, LANDS 2 gives it a hunt; HUNT_FAMILIES 9 follows LANDS)"
+    },
+    {
+      "id": "roe-deer", "name": "roe deer", "family": "deer", "land": "V", "size": "medium", "tier": 1, "danger": 0, "take_s": 90,
+      "ways": ["snare", "stalk"], "way_tools": { "stalk": ["bow", "spear"] },
+      "drops": [{ "item": "meat", "qty": 3, "share_pct": 45 }, { "item": "hide", "qty": 1, "share_pct": 30 }, { "item": "bone", "qty": 1, "share_pct": 10 }, { "item": "sinew", "qty": 2, "share_pct": 15 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 8, "ear": 2, "smell": 6, "habitat_tag": "meadow",
+      "group": [0, 40, 60, 0], "source": "BESTIARY_LANDS 2; HUNTING 8; BEHAVIOUR 3, 5.1.6"
+    },
+    {
+      "id": "wolf", "name": "wolf", "family": "canids", "land": "V", "size": "medium", "tier": 3, "danger": 2, "take_s": 150,
+      "ways": ["fight", "lure"], "way_tools": { "lure": ["pit-trap"] }, "after_fight": ["lure"],
+      "drops": [{ "item": "hide", "qty": 1, "share_pct": 50 }, { "item": "bone", "qty": 1, "share_pct": 30 }, { "item": "meat", "qty": 1, "share_pct": 20 }],
+      "cap_per_1000": 5, "refill_d": 3, "sight": 8, "ear": 2, "smell": 9, "habitat_tag": "meadow",
+      "group": [30, 60, 10, 0], "source": "BESTIARY_LANDS 2; HUNTING 8; BEHAVIOUR 5.1.6 (no spots until the fight)"
+    },
+    {
+      "id": "white-hart", "name": "white hart", "family": "deer", "land": "E", "size": "large", "tier": 3, "danger": 0, "take_s": 150,
+      "ways": ["stalk", "snare"], "way_tools": { "stalk": ["bow"] },
+      "drops": [{ "item": "meat", "qty": 4, "share_pct": 40 }, { "item": "hide", "qty": 1, "share_pct": 25 }, { "item": "bone", "qty": 1, "share_pct": 20 }, { "item": "sinew", "qty": 1, "share_pct": 15 }],
+      "cap_per_1000": 12, "refill_d": 2, "sight": 9, "ear": 2, "smell": 7, "habitat_tag": null,
+      "group": [0, 40, 60, 0], "source": "BESTIARY_LANDS 3.1; HUNT_FAMILIES 4; BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "highland-goat", "name": "highland goat", "family": "wild-goats", "land": "V", "size": "medium", "tier": 2, "danger": 0, "take_s": 90,
+      "ways": ["stalk", "snare"], "way_tools": { "stalk": ["bow"] },
+      "drops": [{ "item": "meat", "qty": 2, "share_pct": 40 }, { "item": "hide", "qty": 1, "share_pct": 30 }, { "item": "bone", "qty": 1, "share_pct": 15 }, { "item": "sinew", "qty": 1, "share_pct": 15 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 8, "ear": 0, "smell": null, "habitat_tag": null,
+      "group": [0, 0, 20, 80], "source": "BESTIARY_LANDS 2; HUNTING 8; HUNT_FAMILIES 4; BEHAVIOUR 5.1.6 (no tile count for its high ground)"
+    },
+    {
+      "id": "wild-boar", "name": "wild boar", "family": "pigs", "land": "V", "size": "medium", "tier": 2, "danger": 1, "take_s": 120,
+      "ways": ["fight", "lure"], "way_tools": { "lure": ["pit-trap"] },
+      "drops": [{ "item": "meat", "qty": 3, "share_pct": 55 }, { "item": "hide", "qty": 1, "share_pct": 30 }, { "item": "bone", "qty": 1, "share_pct": 15 }],
+      "cap_per_1000": 8, "refill_d": 2, "sight": 4, "ear": 0, "smell": 8, "habitat_tag": "meadow",
+      "group": [20, 30, 50, 0], "source": "BESTIARY_LANDS 2; HUNTING 8; BEHAVIOUR 3 (the meadow's edges: an upper bound), 5.1.6"
+    },
+    {
+      "id": "wildcat", "name": "wildcat", "family": "cats", "land": "V", "size": "small", "tier": 3, "danger": 1, "take_s": 120,
+      "ways": ["lure", "fight"], "way_tools": { "lure": ["snare"] },
+      "drops": [{ "item": "hide", "qty": 1, "share_pct": 55 }, { "item": "meat", "qty": 2, "share_pct": 25 }, { "item": "bone", "qty": 1, "share_pct": 20 }],
+      "cap_per_1000": 8, "refill_d": 3, "sight": 7, "ear": 2, "smell": null, "habitat_tag": "grove",
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 2; HUNT_FAMILIES 4; BEHAVIOUR 3, 5.1.6"
+    },
+    {
+      "id": "white-bear", "name": "white bear", "family": "bears", "land": "V", "size": "large", "tier": 3, "danger": 2, "take_s": 240,
+      "ways": ["fight", "lure"], "way_tools": { "lure": ["pit-trap"] },
+      "drops": [{ "item": "meat", "qty": 5, "share_pct": 45 }, { "item": "hide", "qty": 1, "share_pct": 30 }, { "item": "bone", "qty": 1, "share_pct": 25 }],
+      "cap_per_1000": 5, "refill_d": 3, "sight": 5, "ear": 0, "smell": null, "habitat_tag": null,
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 2 (the ice pit before the fight); HUNT_FAMILIES 4; BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "ground-fowl", "name": "ground fowl", "family": "game-birds", "land": "V", "size": "small", "tier": 1, "danger": 0, "take_s": 30,
+      "ways": ["snare", "stalk"], "way_tools": { "stalk": ["sling"] },
+      "drops": [{ "item": "meat", "qty": 1, "share_pct": 60 }, { "item": "feather", "qty": 2, "share_pct": 40 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 5, "ear": 1, "smell": null, "habitat_tag": "meadow",
+      "group": [0, 0, 20, 80], "source": "BESTIARY_LANDS 2; HUNT_FAMILIES 4 (ear on the LANDS scale); BEHAVIOUR 3, 5.1.6"
+    },
+    {
+      "id": "grey-heron", "name": "grey heron", "family": "waterfowl", "land": "E", "size": "small", "tier": 1, "danger": 0, "take_s": 45,
+      "ways": ["stalk"], "way_tools": { "stalk": ["stone"] },
+      "drops": [{ "item": "feather", "qty": 3, "share_pct": 100 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 8, "ear": 1, "smell": 0, "habitat_tag": null,
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 3.1 (ear on the LANDS scale); BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "great-eagle", "name": "great eagle", "family": "raptors", "land": "E", "size": "medium", "tier": 3, "danger": 1, "take_s": 180,
+      "ways": ["fight", "lure"], "way_tools": { "lure": ["pit-trap"] }, "after_fight": ["lure"],
+      "drops": [{ "item": "feather", "qty": 4, "share_pct": 65 }, { "item": "bone", "qty": 1, "share_pct": 35 }],
+      "cap_per_1000": 8, "refill_d": 3, "sight": 10, "ear": 1, "smell": 0, "habitat_tag": null,
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 3.1 (ear on the LANDS scale); BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "river-otter", "name": "river otter", "family": "mustelids", "land": "E", "size": "small", "tier": 1, "danger": 0, "take_s": 60,
+      "ways": ["snare", "lure"], "way_tools": { "lure": ["snare"] },
+      "drops": [{ "item": "hide", "qty": 1, "share_pct": 55 }, { "item": "meat", "qty": 1, "share_pct": 45 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 5, "ear": 1, "smell": 2, "habitat_tag": null,
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 3.1 (ear on the LANDS scale); BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "trout", "name": "trout", "family": "fish", "land": "V", "size": "small", "tier": 1, "danger": 0, "take_s": 60,
+      "ways": ["fish"],
+      "drops": [{ "item": "meat", "qty": 2, "share_pct": 70 }, { "item": "bone", "qty": 1, "share_pct": 30 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 2, "ear": 0, "smell": null, "habitat_tag": "water",
+      "group": [20, 40, 40, 0], "source": "BESTIARY_LANDS 2; HUNT_FAMILIES 4; BEHAVIOUR 3, 5.1.6"
+    },
+    {
+      "id": "dust-adder", "name": "dust adder", "family": "reptiles", "land": "V", "size": "small", "tier": 2, "danger": 1, "take_s": 45,
+      "ways": ["stalk", "snare"], "way_tools": { "stalk": ["spear"] },
+      "drops": [{ "item": "hide", "qty": 1, "share_pct": 70 }, { "item": "meat", "qty": 1, "share_pct": 30 }],
+      "cap_per_1000": 8, "refill_d": 2, "sight": 2, "ear": 0, "smell": 0, "habitat_tag": "ruin",
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 2; HUNTING 8; BEHAVIOUR 3, 5.1.6"
+    },
+    {
+      "id": "ash-bat", "name": "ash bat", "family": "night-fliers", "land": "S", "size": "small", "tier": 1, "danger": 0, "take_s": 45,
+      "ways": ["snare", "lure"], "way_tools": { "lure": [] },
+      "drops": [{ "item": "hide", "qty": 1, "share_pct": 70 }, { "item": "bone", "qty": 1, "share_pct": 30 }],
+      "cap_per_1000": 12, "refill_d": 1, "sight": 2, "ear": 3, "smell": 0, "habitat_tag": null,
+      "group": [0, 0, 10, 90], "source": "BESTIARY_LANDS 3.2 (ear +3, beyond HUNTING's scale); BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "cinder-imp", "name": "cinder imp", "family": "horned-beasts", "land": "S", "size": "small", "tier": 3, "danger": 1, "take_s": 90,
+      "ways": ["fight", "lure"], "way_tools": { "lure": ["snare"] }, "after_fight": ["lure"],
+      "drops": [{ "item": "bone", "qty": 1, "share_pct": 50 }, { "item": "hide", "qty": 1, "share_pct": 50 }],
+      "cap_per_1000": 8, "refill_d": 2, "sight": 6, "ear": 2, "smell": 0, "habitat_tag": null,
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 3.2; BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "tomb-spider", "name": "tomb spider", "family": "spiders", "land": "S", "size": "medium", "tier": 3, "danger": 1, "take_s": 120,
+      "ways": ["fight", "lure"], "way_tools": { "lure": [] }, "after_fight": ["lure"],
+      "drops": [{ "item": "hide", "qty": 1, "share_pct": 60 }, { "item": "sinew", "qty": 2, "share_pct": 40 }],
+      "cap_per_1000": 8, "refill_d": 3, "sight": 3, "ear": 3, "smell": 0, "habitat_tag": null,
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 3.2 (ear +3, beyond HUNTING's scale); BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "silver-fox", "name": "silver fox", "family": "canids", "land": "E", "size": "small", "tier": 2, "danger": 0, "take_s": 75,
+      "ways": ["snare", "lure"], "way_tools": { "lure": ["snare"] },
+      "drops": [{ "item": "hide", "qty": 1, "share_pct": 70 }, { "item": "bone", "qty": 1, "share_pct": 30 }],
+      "cap_per_1000": 12, "refill_d": 2, "sight": 7, "ear": 2, "smell": 8, "habitat_tag": null,
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 3.1 (snare, lure with a fowl's leavings; the meat is not eaten); HUNT_FAMILIES 2, 3.5 (a snare at the bait) and 4; BEHAVIOUR 5.1.6"
+    },
+    {
+      "id": "shade-fox", "name": "shade fox", "family": "canids", "land": "S", "size": "small", "tier": 2, "danger": 0, "take_s": 75,
+      "ways": ["snare", "lure"], "way_tools": { "lure": ["snare"] },
+      "drops": [{ "item": "hide", "qty": 1, "share_pct": 80 }, { "item": "bone", "qty": 1, "share_pct": 20 }],
+      "cap_per_1000": 12, "refill_d": 2, "sight": 7, "ear": 2, "smell": 8, "habitat_tag": null,
+      "group": [100, 0, 0, 0], "source": "BESTIARY_LANDS 3.2 (snare, lure with a bone; the meat is not eaten); HUNT_FAMILIES 2, 3.5 (a snare at the bait) and 4; BEHAVIOUR 5.1.6"
+    }
+  ]
+}
