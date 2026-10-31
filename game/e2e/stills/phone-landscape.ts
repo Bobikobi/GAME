@@ -127,7 +127,7 @@ async function main(): Promise<void> {
     for (const name of ['plain', ...Object.keys(SKINS)]) {
       const page = await browser.newPage({ width: 800, height: 360, mobile: true, scale: 3 });
       try {
-        await page.goto(`${local.url}?debug&rich=none${seedQuery('core/west-bank')}`);
+        await page.goto(`${local.url}?debug&rich=all${seedQuery('core/west-bank')}`);
         await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 60_000);
         await page.tap('.title-screen button', 'New game');
         const choice = await page.waitFor<string>(
