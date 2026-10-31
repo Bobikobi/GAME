@@ -406,9 +406,12 @@ async function phone(page: Page, url: string): Promise<void> {
   const root = await nodeBox(page, facts.root);
   if (!root) throw new Error('the first root is not in view');
   await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: root.x, y: root.y }] });
-  await page.waitFor(`!!document.querySelector('.tree-card[data-card=${JSON.stringify(facts.root)}] .tree-number')`, 'the long press to show the number', 3000);
+  const held = `document.querySelector('.tree-card[data-card=${JSON.stringify(facts.root)}] .tree-number')`;
+  await page.waitFor(`!!${held}`, 'the long press to show the number', 3000);
+  // read while the finger is still down: the number goes when it lifts, so a read after the release races it
+  const number = await page.eval<string>(`${held}?.textContent ?? ''`);
   await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  const number = await page.eval<string>(`document.querySelector('.tree-number').textContent`);
+  if (number === '') throw new Error('the long press showed the number, but it was gone before it could be read');
   log(`a long press shows: ${number}`);
   await page.tap('.tree-card .tree-learn', 'Learn');
   await page.waitFor(`window.__game.session.state.player.nodes.includes(${JSON.stringify(facts.root)})`, 'the root learned');
