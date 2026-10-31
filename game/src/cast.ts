@@ -300,7 +300,7 @@ export function shadowBox(shadow: Shadow): { x: number; y: number; w: number; h:
  */
 export const FLAT_PROPS: ReadonlySet<string> = new Set([
   'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
-  'log_fallen', 'log_mossy', 'dig_spot', 'fog', 'fence', 'fence_post', 'campfire_lit', 'campfire_unlit', 'grass_tuft',
+  'log_fallen', 'log_mossy', 'dig_spot', 'fog', 'fence', 'fence_post', 'campfire_lit', 'campfire_unlit',
 ]);
 
 /** "props/grass_tall_b" -> "grass_tall": a drawn variant (_b, _c, _d) follows its base prop's rule, not its own. */

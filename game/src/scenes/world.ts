@@ -1026,14 +1026,14 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * The meadow's grass tufts (tufts.ts): low clumps over the ground, deep like a prop so a walker passes behind and in front,
+   * The meadow's grass tufts (tufts.ts): low clumps laid on the ground, under every prop and walker (a ground motif, never outlined),
    * each leaning with the wind wave. With motion off they hold frame 0.
    */
   private buildTufts(): void {
     for (const t of scatterTufts(this.b.map)) {
-      const ref = `core/base-kit:props/${LOOKS[t.look]}`;
+      const ref = `core/base-kit:tiles/${LOOKS[t.look]}`;
       if (!this.textures.exists(ref)) continue;
-      const spr = kitSprite(this, t.x, t.y, ref, 0).setOrigin(0.5, 1).setDepth(t.y);
+      const spr = kitSprite(this, t.x, t.y, ref, 0).setOrigin(0.5, 1).setDepth(DEPTH.ground + 0.5);
       this.tufts.push({ spr, t, frame: 0 });
     }
   }

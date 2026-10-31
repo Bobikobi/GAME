@@ -12,7 +12,7 @@ describe('grass tufts: the art', () => {
   const FOOT = 10;
   for (const look of LOOKS) {
     it(`${look}: at most a foot tall, root still, four frames of 64 px`, () => {
-      const png = PNG.sync.read(readFileSync(resolve(root, `content/kit/core/props/${look}.png`)));
+      const png = PNG.sync.read(readFileSync(resolve(root, `content/kit/core/tiles/${look}.png`)));
       expect([png.width, png.height]).toEqual([256, 64]);
       const roots: string[] = [];
       for (let k = 0; k < 4; k++) {

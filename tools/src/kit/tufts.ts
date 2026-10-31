@@ -1,14 +1,15 @@
 /**
- * The grass tufts (owner, 31.10: "the blades should be a whole cell, then scattered at random like the picture so that
- * they move ... really the height of a foot and no more"): three low clumps of blades, each four frames of a lean.
+ * The grass tufts, Route D (manager, 31.10): a ground motif, not a prop. The owner's ink rule (PR #305) puts a dark ring on
+ * every density 4 sprite outside `tiles/`; at tuft size the ring swallows the blade and a tuft reads darker than the grass,
+ * where the reference's tufts are lighter than it (measured on the reference clip: a tuft's pale pixels carry 1.36 times the
+ * luminance of the grass round them, mean of ten tufts). So the tufts are `tiles/` sprites (ground, never outlined), drawn
+ * in the moss ramp: a dark root pixel, a lit body, the lightest step on the upper blade.
  *
- * Drawn in code, in the moss ramp, then given the ink edge (ink.ts). A tuft is at most `MAX_H` native px tall, the height
- * of the human's foot from sole to ankle (measured on `chars/human_w_down` frame 0: rows 100 to 106, 7 px at density 4),
- * root on the canvas' bottom row, tips leaning 0, 0.5, 1 and 0.5 art px (4 native px = 1 art px; two would lay a 7 px blade flat) to the right over the four
- * frames while the root holds: the wind's lean, not a wobble. The moss ramp is used because its two lightest steps are
- * not the ones the screen's gust moves (richground.ts `MOVES`), so a tuft moves by its frames only.
+ * Each is at most `MAX_H` native px tall (the ankle, 0.16 of the character) and four frames of a lean: the tips move 0, 0.5,
+ * 1 and 0.5 art px (4 native px = 1 art px; two would lay a blade flat) to the right while the roots hold. The moss ramp is
+ * used because its two lightest steps are not the ones the screen's gust moves (richground.ts `MOVES`).
  *
- * `pnpm exec tsx tools/src/kit/tufts.ts` writes `props/grass_tuft{,_b,_c}.png` and their kit.json entries.
+ * `pnpm exec tsx tools/src/kit/tufts.ts` writes `tiles/grass_tuft{,_b,_c}.png` and their kit.json entries.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -16,7 +17,6 @@ import { fileURLToPath } from 'node:url';
 
 import { PNG } from 'pngjs';
 
-import { applyInk } from './ink.js';
 import { hexToRgb } from './palette.js';
 
 export const CANVAS = 64;
@@ -51,7 +51,7 @@ export const VARIANTS: Record<string, Blade[]> = {
   ],
 };
 
-/** One frame's picture of a tuft: blades of a 3 px body that taper to a point, over a solid root three rows deep. */
+/** One frame's picture of a tuft: thin blades, two px wide below 60% of their height and one above, a dark root pixel each. */
 function drawFrame(blades: Blade[], lean: number, rgba: Uint8Array, x0: number): void {
   const mid = x0 + CANVAS / 2;
   const put = (x: number, r: number, step: number): void => {
@@ -62,19 +62,13 @@ function drawFrame(blades: Blade[], lean: number, rgba: Uint8Array, x0: number):
     rgba[p + 2] = B;
     rgba[p + 3] = 255;
   };
-  const lo = Math.min(...blades.map((b) => b.at));
-  const hi = Math.max(...blades.map((b) => b.at));
-  // the root: one solid mass, the lean never touches it
-  for (let r = 0; r < 2; r++) for (let x = lo - 1; x <= hi + 1; x++) put(mid + x, r, r === 0 ? 1 : 2);
   for (const b of blades) {
-    for (let r = 2; r < b.h; r++) {
+    put(mid + b.at, 0, 1);
+    for (let r = 1; r < b.h; r++) {
       const f = r / Math.max(1, b.h - 1);
       const cx = mid + b.at + Math.round(b.fan * f + lean * f);
-      // 3 px wide while the blade is young, 2 above its middle, a point at the top
-      const half = r >= b.h - 1 ? 0 : f < 0.8 ? 1 : 0;
-      const step = f >= 0.6 ? 4 : f >= 0.3 ? 3 : 2;
-      for (let dx = -half; dx <= half; dx++) put(cx + dx, r, step);
-      if (half === 0 && r < b.h - 1) put(cx + 1, r, step);
+      put(cx, r, f >= 0.45 ? 4 : 3);
+      if (f < 0.6) put(cx + 1, r, f >= 0.3 ? 4 : 3);
     }
   }
 }
@@ -109,7 +103,7 @@ export function drawTuft(name: string): Buffer {
       }
     }
   }
-  return applyInk(PNG.sync.write(png), CANVAS);
+  return PNG.sync.write(png);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -117,8 +111,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const kitPath = join(kitDir, 'kit.json');
   const kit = JSON.parse(readFileSync(kitPath, 'utf8'));
   for (const name of Object.keys(VARIANTS)) {
-    writeFileSync(join(kitDir, 'props', `${name}.png`), drawTuft(name));
-    kit.kit.sprites[`props/${name}`] = { file: `props/${name}.png`, w: CANVAS, h: CANVAS, frames: FRAMES, density: 4, ramps: ['moss'] };
+    writeFileSync(join(kitDir, 'tiles', `${name}.png`), drawTuft(name));
+    kit.kit.sprites[`tiles/${name}`] = { file: `tiles/${name}.png`, w: CANVAS, h: CANVAS, frames: FRAMES, density: 4, ramps: ['moss'] };
   }
   writeFileSync(kitPath, `${JSON.stringify(kit, null, 2)}\n`);
   console.log('wrote', Object.keys(VARIANTS).join(', '));

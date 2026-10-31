@@ -2432,8 +2432,8 @@
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
         }
       },
-      "props/grass_tuft": {
-        "file": "props/grass_tuft.png",
+      "tiles/grass_tuft": {
+        "file": "tiles/grass_tuft.png",
         "w": 64,
         "h": 64,
         "frames": 4,
@@ -2442,8 +2442,8 @@
           "moss"
         ]
       },
-      "props/grass_tuft_b": {
-        "file": "props/grass_tuft_b.png",
+      "tiles/grass_tuft_b": {
+        "file": "tiles/grass_tuft_b.png",
         "w": 64,
         "h": 64,
         "frames": 4,
@@ -2452,8 +2452,8 @@
           "moss"
         ]
       },
-      "props/grass_tuft_c": {
-        "file": "props/grass_tuft_c.png",
+      "tiles/grass_tuft_c": {
+        "file": "tiles/grass_tuft_c.png",
         "w": 64,
         "h": 64,
         "frames": 4,

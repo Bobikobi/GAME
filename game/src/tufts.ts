@@ -1,5 +1,5 @@
 /**
- * The grass tufts (owner, 31.10: whole tufts of blades, scattered at random so they move, "really the height of a foot
+ * The grass tufts, a ground motif (tiles/ sprites, no ink; owner, 31.10: whole tufts of blades, scattered at random so they move, "really the height of a foot
  * and no more"): low clumps standing on the meadow, drawn in the prop pass over the ground.
  *
  * Where they stand is a sum of the map alone (no clock, no Math.random): the same tiles give the same tufts on every
