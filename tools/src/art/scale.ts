@@ -28,6 +28,19 @@ import { ADULT, NOT_WORLD, passes, scaleKindOf, type ScaleKind } from '../kit/sc
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const KITS_DIR = join(ROOT, 'content', 'kit');
+/** The sprites accepted short today, `<kit>:<name>` to the stream that owns the redraw. The list only shrinks. */
+export const KNOWN_SHORT_FILE = join(ROOT, 'docs', 'design', 'frames', 'scale-audit-2026-10-31', 'known-short.json');
+
+export function knownShort(): Record<string, string> {
+  return (JSON.parse(readFileSync(KNOWN_SHORT_FILE, 'utf8')) as { short: Record<string, string> }).short;
+}
+
+/** An issue of the check that the content tests may ignore: advisory counts, and a scale line of a known-short sprite. */
+export function isAdvisory(i: { where: string }): boolean {
+  if (i.where.startsWith('art.scale.')) return i.where.slice('art.scale.'.length) in knownShort();
+  return i.where.startsWith('map.richness') || i.where.startsWith('quests.hand.') || i.where.startsWith('art.');
+}
+
 export const REPORT = join(ROOT, 'docs', 'design', 'frames', 'scale-audit-2026-10-31', 'scale.md');
 
 /** The sprite the adult is measured on: the human's standing frames facing the camera, the base of the three races. */

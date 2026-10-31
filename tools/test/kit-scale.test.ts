@@ -119,7 +119,7 @@ describe('the check on today content', () => {
   test('what is left is a warning that names its sprite, its height and its floor', () => {
     for (const i of lines) {
       expect(i.level).toBe('warning');
-      expect(i.where).toMatch(/^kit\.sprites\./);
+      expect(i.where).toMatch(/^art\.scale\./);
       expect(i.message).toMatch(/^scale [\d.]+ is under the floor of a /);
     }
   });
@@ -142,13 +142,13 @@ describe('the check, end to end, on a kit that declares a height', () => {
   const issues = runCheck(root).issues;
 
   test('an oak declared at 2 characters is a warning from the check, under the floor of 3', () => {
-    const problem = issues.find((i) => i.where === 'kit.sprites.props/tree_oak');
+    const problem = issues.find((i) => i.where === 'art.scale.core/base-kit:props/tree_oak');
     expect(problem?.level).toBe('warning');
     expect(problem?.message).toContain('under the floor of a oak, 3 characters');
   });
 
   test('a house at 3.5 characters, over its floor, says nothing, and nothing new is an error', () => {
-    expect(issues.some((i) => i.where === 'kit.sprites.props/house_small')).toBe(false);
+    expect(issues.some((i) => i.where === 'art.scale.core/base-kit:props/house_small')).toBe(false);
     expect(issues.filter((i) => i.level === 'error')).toEqual([]);
   });
 });

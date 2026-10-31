@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { describe, expect, test } from 'vitest';
 
-import { ADULT_SPRITE, counts, declareScales, distanceOf, drawnHeight, measureKits, opaqueHeight, rangeOf, renderScale, verdictOf } from '../src/art/scale.js';
+import { runCheck } from '../src/check.js';
+import { ADULT_SPRITE, counts, declareScales, distanceOf, drawnHeight, isAdvisory, knownShort, measureKits, opaqueHeight, rangeOf, renderScale, verdictOf } from '../src/art/scale.js';
 import { scaleKindOf } from '../src/kit/scale.js';
 import { CONTENT_DIR } from '../src/load.js';
 
@@ -111,5 +112,25 @@ describe('declaring', () => {
     const after = JSON.parse(readFileSync(path, 'utf8')) as typeof kit;
     expect(after.kit.sprites['props/chest']!.scale).toBe(measureKits(root).rows.find((r) => r.name === 'props/chest')!.chars);
     expect(after.kit.sprites['props/fence']!.scale).toBe(9);
+  });
+});
+
+describe('the known-short list', () => {
+  const issues = runCheck().issues.filter((i) => i.where.startsWith('art.scale.'));
+
+  test('every sprite the check finds short is on the list, and every sprite on the list is still short', () => {
+    expect(issues.map((i) => i.where.slice('art.scale.'.length)).sort()).toEqual(Object.keys(knownShort()).sort());
+  });
+
+  test('a short sprite on the list is advisory; one that is not on it fails the content tests', () => {
+    expect(isAdvisory({ where: 'art.scale.core/base-kit:props/tree_oak' })).toBe(true);
+    expect(isAdvisory({ where: 'art.scale.core/base-kit:props/well_old' })).toBe(false);
+    expect(isAdvisory({ where: 'art.scale.core/base-kit:props/new_oak' })).toBe(false);
+    expect(isAdvisory({ where: 'kit.sprites.props/chest' })).toBe(false);
+    expect(isAdvisory({ where: 'art.ink16' })).toBe(true);
+  });
+
+  test('every entry names the stream that owns it', () => {
+    for (const [name, stream] of Object.entries(knownShort())) expect(stream.length, name).toBeGreaterThan(5);
   });
 });
