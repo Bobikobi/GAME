@@ -270,7 +270,7 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     const later = Date.UTC(2031, 0, 1);
     const before = await counts(later);
     const add = (email: string, name: string, openedAt: number, closedAt: number | null) =>
-      pool.query("insert into accounts (email, name, birth_band, created_at, closed_at) values ($1, $2, '18+', $3, $4)", [email, name, new Date(openedAt), closedAt === null ? null : new Date(closedAt)]);
+      pool.query("insert into accounts (email, name, country, created_at, closed_at) values ($1, $2, 'DE', $3, $4)", [email, name, new Date(openedAt), closedAt === null ? null : new Date(closedAt)]);
     await add('fresh@example.com', 'Fresh', later - 24 * 60 * MINUTE, null);
     await add('edge@example.com', 'Edge', later - NEW_ACCOUNT_WINDOW_MS, null);
     await add('settled@example.com', 'Settled', later - NEW_ACCOUNT_WINDOW_MS - MINUTE, null);
