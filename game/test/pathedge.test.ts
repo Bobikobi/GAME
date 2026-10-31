@@ -93,27 +93,30 @@ describe('where land meets water', () => {
     expect(land).toBeGreaterThan(0);
     expect(wet).toBeGreaterThan(40);
   });
-  test('the water steps from deep to mid to light toward the shore, flat in the middle, with a ring of stones on the line', () => {
+  test('the water steps from deep to mid to light toward the shore, flat in the middle, with runs of stones on the line', () => {
     const DEEP = [0x27, 0x5a, 0x99] as const;
-    const o = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
     // tile 2 is water with land to its left: its right half is more than a band away from the shore
-    blendEdgeTile(2, 0, at, 0, solid(...LAND), solid(...DEEP), o, WATER_EDGE);
-    const is = (i: number, c: readonly number[]): boolean => o[i] === c[0] && o[i + 1] === c[1] && o[i + 2] === c[2];
     let farOther = 0;
     let lighter = 0;
-    let stone = 0;
-    for (let py = 0; py < EDGE_PX; py++) {
-      for (let px = 0; px < EDGE_PX; px++) {
-        const i = (py * EDGE_PX + px) * 4;
-        if (px >= 44 && !is(i, DEEP)) farOther += 1;
-        if (is(i, [0x3f, 0x8f, 0xd1]) || is(i, [0x7c, 0xc4, 0xec])) lighter += 1;
-        if (is(i, [0x1b, 0x1a, 0x2e])) stone += 1;
+    let ink = 0;
+    for (let ty = 0; ty < 8; ty++) {
+      const o = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+      blendEdgeTile(2, ty, at, 0, solid(...LAND), solid(...DEEP), o, WATER_EDGE);
+      const is = (i: number, c: readonly number[]): boolean => o[i] === c[0] && o[i + 1] === c[1] && o[i + 2] === c[2];
+      for (let py = 0; py < EDGE_PX; py++) {
+        for (let px = 0; px < EDGE_PX; px++) {
+          const i = (py * EDGE_PX + px) * 4;
+          if (px >= 44 && !is(i, DEEP)) farOther += 1;
+          if (is(i, [0x3f, 0x8f, 0xd1]) || is(i, [0x7c, 0xc4, 0xec])) lighter += 1;
+          if (is(i, [0x1b, 0x1a, 0x2e])) ink += 1;
+        }
       }
     }
     expect(farOther).toBe(0);
-    expect(lighter).toBeGreaterThan(150);
-    // the 1 px ink round the stones
-    expect(stone).toBeGreaterThan(60);
+    expect(lighter).toBeGreaterThan(1000);
+    // the 1 px ink round the stones of the runs, but a stretch of bare shore too: not every row carries a stone
+    expect(ink).toBeGreaterThan(100);
+    expect(ink).toBeLessThan(EDGE_PX * 8 * 0.9);
   });
   test('it is fixed by the map', () => {
     const a = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);

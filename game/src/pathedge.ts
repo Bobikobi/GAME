@@ -14,7 +14,9 @@ export const EDGE_PX = 64;
 /** 1 for a path tile, 0 for a meadow tile, undefined for any other (cobble, sand, water, forest ...): the tile's own side. */
 export type PathAt = (tx: number, ty: number) => 0 | 1 | undefined;
 
-const STONE_CELL = 12;
+const STONE_CELL = 14;
+/** The lattice of the noise that cuts the shore into runs of stones and bare stretches. */
+const STONE_RUN = 46;
 /** A stone's gap to the next: stones nearer than this share of their two radii give way to the stronger one. */
 const STONE_TOUCH = 0.85;
 const STONE_SHADE: readonly [number, number, number] = [0x5d, 0x61, 0x77];
@@ -108,7 +110,7 @@ export function needsBlend(tx: number, ty: number, at: PathAt, own: 0 | 1): bool
  * `own` is the side the tile itself is on.
  */
 export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pathPx: Uint8ClampedArray, grassPx: Uint8ClampedArray, out: Uint8ClampedArray, look: EdgeLook = PATH_EDGE): void {
-  // the stones of a water's rim: rounded, 8 to 15 px across, one to a 12 px cell along the line, with gaps; each is judged
+  // the stones of a water's rim: rounded, 12 to 16 px across (a few small ones between), in runs along the line with bare stretches between; each is judged
   // from its own centre, so one stone is the same in every tile it crosses
   const rim = look.rim;
   const tAt = (gx: number, gy: number): number => {
@@ -130,10 +132,15 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
     const hit = rawStones.get(key);
     if (hit !== undefined) return hit;
     let out: Stone | null = null;
-    if (rim && hash(cx, cy + 61) % 100 < 92) {
+    if (rim) {
       const x0 = (cx + 0.5 + ((hash(cx, cy + 62) % 100) / 100 - 0.5) * 0.6) * STONE_CELL;
       const y0 = (cy + 0.5 + ((hash(cx, cy + 63) % 100) / 100 - 0.5) * 0.6) * STONE_CELL;
-      const target = look.threshold + 0.035;
+      const size = (hash(cx, cy + 64) % 100) / 100;
+      // mostly 12 to 16 px across; now and then a small one of 6 to 8, which only fits where the big ones leave a gap
+      const small = hash(cx, cy + 67) % 100 < 22;
+      const rx = small ? 3 + size : 6 + size * 2;
+      // the stone's centre sits far enough on the land side that its water edge just meets the line, none floats in the water
+      const target = look.threshold + (rx * 0.6) / EDGE_PX;
       let x = x0;
       let y = y0;
       let ok = false;
@@ -151,20 +158,19 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
         y += (gy * e) / g2;
         if (Math.hypot(x - x0, y - y0) > STONE_CELL * 1.2) break;
       }
-      if (ok || Math.abs(target - tAt(Math.round(x), Math.round(y))) < 0.02) {
-        const size = (hash(cx, cy + 64) % 100) / 100;
-        // mostly 8 to 12 px across, now and then a big one of 16
-        const rx = 3.6 + size * 3 + (size > 0.85 ? 1.6 : 0);
-        out = { x, y, rx, ry: rx * (0.74 + ((hash(cx, cy + 65) % 100) / 100) * 0.24), rank: hash(cx, cy + 66) };
+      // the stones come in runs along the shore with bare stretches between: a slow noise says where
+      if ((ok || Math.abs(target - tAt(Math.round(x), Math.round(y))) < 0.02) && valueNoise(x, y, 91, STONE_RUN) > 0.36) {
+        out = { x, y, rx, ry: rx * (0.76 + ((hash(cx, cy + 65) % 100) / 100) * 0.22), rank: small ? hash(cx, cy + 66) % 1000 : 1000 + (hash(cx, cy + 66) % 1000) };
       }
     }
     rawStones.set(key, out);
     return out;
   };
-  const cells = new Map<number, Stone | null>();
-  const cellOf = (cx: number, cy: number): Stone | null => {
+  // a stone that no stronger neighbour overlaps...
+  const standing = new Map<number, Stone | null>();
+  const standingOf = (cx: number, cy: number): Stone | null => {
     const key = cx * 100003 + cy;
-    const hit = cells.get(key);
+    const hit = standing.get(key);
     if (hit !== undefined) return hit;
     let out = rawOf(cx, cy);
     if (out) {
@@ -178,6 +184,28 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
           }
         }
       }
+    }
+    standing.set(key, out);
+    return out;
+  };
+  // ...and that has another standing one within a stone's reach: a run is three or more, none lies alone
+  const cells = new Map<number, Stone | null>();
+  const cellOf = (cx: number, cy: number): Stone | null => {
+    const key = cx * 100003 + cy;
+    const hit = cells.get(key);
+    if (hit !== undefined) return hit;
+    const me = standingOf(cx, cy);
+    let out: Stone | null = null;
+    if (me) {
+      let near = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nb = standingOf(cx + dx, cy + dy);
+          if (nb && Math.hypot(nb.x - me.x, nb.y - me.y) < 1.25 * (nb.rx + me.rx)) near += 1;
+        }
+      }
+      if (near >= 1) out = me;
     }
     cells.set(key, out);
     return out;
