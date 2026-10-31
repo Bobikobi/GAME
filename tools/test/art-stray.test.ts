@@ -73,4 +73,16 @@ describe('the stray art check', () => {
     expect(findStrays([a, b], indexedHashes([a, b]))).toEqual([]);
     expect(findStrays([a, b], indexedHashes([b]))).toHaveLength(2);
   });
+
+  test('build output and captures are skipped by directory name, a draft beside them is still counted', () => {
+    const wt = worktree('skip');
+    for (const dir of ['signin-dist', 'dist', 'dist-3d', 'e2e3d', 'shots-before']) {
+      mkdirSync(join(wt, '.scratch', dir), { recursive: true });
+      writeFileSync(join(wt, '.scratch', dir, 'out.png'), png(7));
+    }
+    mkdirSync(join(wt, '.scratch/nested/signin-dist'), { recursive: true });
+    writeFileSync(join(wt, '.scratch/nested/signin-dist/out.png'), png(7));
+    writeFileSync(join(wt, '.scratch/study/draft.png'), png(8));
+    expect(findStrays([wt], indexedHashes([wt])).map((s) => s.file)).toEqual(['.scratch/study/draft.png']);
+  });
 });

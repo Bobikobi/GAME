@@ -5,6 +5,11 @@
  *
  *   pnpm art:stray        lists the strays by worktree and folder with a count; exit 1 when there are any, 0 when none
  *
+ * Not strays, by directory name anywhere under a bench: `dist`, `dist-3d` and any name ending in `-dist` (built game output, such
+ * as `.scratch/signin-dist`), and any name starting with `e2e` or `shots` (e2e captures and before/after shots). A stray is a
+ * picture the pipeline made that nobody indexed; build output and captures are regenerable by a command and are not art the
+ * store should hold.
+ *
  * `art:drafts push` is what clears a stray: it adds the picture's hash to `tools/kit-gen/drafts.jsonl`. A picture counts
  * as indexed when any worktree's index holds its hash (the index only ever grows, so a worktree's own newer lines count).
  * `pnpm check` prints the count as a `!` line (warning, never an error).
@@ -21,6 +26,11 @@ const ART_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.glb']);
 /** The folders of a worktree where art is made and left; `art-drafts` is the fetched cache of indexed drafts. */
 export const WORKBENCHES = ['.scratch', 'assets/gen', 'tools/kit-gen/runs'] as const;
 const SKIP = new Set(['node_modules', '.git', 'art-drafts']);
+
+/** A directory of regenerable output: a build (`dist`, `dist-3d`, `*-dist`) or a capture (`e2e*`, `shots*`). */
+export function regenerable(name: string): boolean {
+  return name === 'dist' || name === 'dist-3d' || name.endsWith('-dist') || name.startsWith('e2e') || name.startsWith('shots');
+}
 
 export interface Stray {
   worktree: string;
@@ -58,8 +68,11 @@ function artFiles(dir: string): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (SKIP.has(entry.name)) continue;
     const path = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...artFiles(path));
-    else if (entry.isFile() && ART_EXT.has(extname(entry.name).toLowerCase())) out.push(path);
+    if (entry.isDirectory()) {
+      if (!regenerable(entry.name)) out.push(...artFiles(path));
+      continue;
+    }
+    if (entry.isFile() && ART_EXT.has(extname(entry.name).toLowerCase())) out.push(path);
   }
   return out;
 }
