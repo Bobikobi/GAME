@@ -62,7 +62,9 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
-import { BANK_EDGE, EDGE_PX, PATH_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
+import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
+import { deepTile } from '../waterbody';
+import { plantLook, TUFTS } from '../plantlook';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -812,6 +814,10 @@ export class WorldScene extends Phaser.Scene {
       ['grove', 'meadow', WOOD_EDGE],
       ['path', 'sand', BANK_EDGE],
       ['path', 'grove', WOOD_EDGE],
+      ['sand', 'water', WATER_EDGE],
+      ['meadow', 'water', WATER_EDGE],
+      ['grove', 'water', WATER_EDGE],
+      ['path', 'water', WATER_EDGE],
     ] as const).map(([a, b, look]) => ({
       a,
       b,
@@ -835,7 +841,10 @@ export class WorldScene extends Phaser.Scene {
           const picks = variants.get(tile.sprite);
           const h = hash(x, y);
           // about two tiles in five take a variant, always the same one for the same tile
-          const sprite = picks && picks.length > 0 && h % 100 < 40 ? picks[Math.floor(h / 100) % picks.length]! : tile.sprite;
+          const picked = picks && picks.length > 0 && h % 100 < 40 ? picks[Math.floor(h / 100) % picks.length]! : tile.sprite;
+          // the ruin floor's sand keeps the old darker sand; the river's bank was dried to a pale one
+          const dark = tile.tag === 'ruin' && baseName(tile.sprite) === 'sand' ? picked.replace(/tiles\/sand(?=_\d|$)/, 'tiles/sand_ruin') : picked;
+          const sprite = dark !== picked && this.has(dark) ? dark : picked;
           const info = this.b.sprites[sprite];
           if (!info) continue;
           // a shaded or sunlit meadow tile draws from a toned copy of its sprite
@@ -856,7 +865,7 @@ export class WorldScene extends Phaser.Scene {
               if (!near) continue;
               const mine = kind === 'meadow' ? key : sprite;
               const theirs = side === 'meadow' ? grassSprites : withVariants(near.sprite);
-              const next: Uint8ClampedArray | null = this.blendTile(x, y, kind === edge.a ? 1 : 0, cur ?? mine, edge, theirs);
+              const next: Uint8ClampedArray | null = this.blendTile(x, y, kind === edge.a ? 1 : 0, cur ?? mine, edge, theirs, frame);
               if (next) {
                 cur = next;
                 blended = true;
@@ -864,7 +873,14 @@ export class WorldScene extends Phaser.Scene {
             }
             if (cur) tex.putData(new ImageData(cur as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
           }
-          if (!blended) put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
+          // open water, and the water under a bridge's deck, is composed from the world's pixel (waterbody.ts): no tile of it repeats
+          const water = RICH.detail && gd === 4 && !blended && (isOpenWater(sprite) || baseName(sprite).startsWith('bridge'));
+          if (water) {
+            const px = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+            deepTile(x, y, frame, px, EDGE_PX);
+            tex.putData(new ImageData(px as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
+          }
+          if (!blended && !(water && isOpenWater(sprite))) put(tex, key, info.frames > 1 ? frame % info.frames : undefined, info.density, (x - tx0) * T, (y - ty0) * T);
           if (RICH.detail && this.drawEdges(put, tex, x - tx0, y - ty0, x, y, tile.sprite, tile.tag, frame, blended)) animated = true;
         }
       }
@@ -912,11 +928,14 @@ export class WorldScene extends Phaser.Scene {
 
   /** The pixels of the first frame of a ground sprite (or of a toned copy of it), cached. */
   private pixelCache = new Map<string, Uint8ClampedArray | null>();
-  private pixelsOf(ref: string): Uint8ClampedArray | null {
-    const hit = this.pixelCache.get(ref);
+  private pixelsOf(ref: string, frame = 0): Uint8ClampedArray | null {
+    const frames = this.b.sprites[ref]?.frames ?? 1;
+    const which = frames > 1 ? frame % frames : 0;
+    const cacheKey = `${ref}@${which}`;
+    const hit = this.pixelCache.get(cacheKey);
     if (hit !== undefined) return hit;
     let out: Uint8ClampedArray | null = null;
-    const f = this.textures.exists(ref) ? this.textures.getFrame(ref, this.b.sprites[ref]?.frames && this.b.sprites[ref]!.frames > 1 ? 0 : undefined) : null;
+    const f = this.textures.exists(ref) ? this.textures.getFrame(ref, frames > 1 ? which : undefined) : null;
     if (f && f.cutWidth === EDGE_PX && f.cutHeight === EDGE_PX) {
       const cut = f.canvasData as { x: number; y: number };
       const c = document.createElement('canvas');
@@ -929,7 +948,7 @@ export class WorldScene extends Phaser.Scene {
         out = ctx.getImageData(0, 0, EDGE_PX, EDGE_PX).data;
       }
     }
-    this.pixelCache.set(ref, out);
+    this.pixelCache.set(cacheKey, out);
     return out;
   }
 
@@ -938,12 +957,19 @@ export class WorldScene extends Phaser.Scene {
    * other kind's, cut along the smooth edge. Null when the tile needs none or a sprite is not a single 64 px frame,
    * so the caller draws it plain.
    */
-  private blendTile(x: number, y: number, own: 0 | 1, mine: Uint8ClampedArray | string, edge: { look: EdgeLook; at: PathAt }, others: readonly string[]): Uint8ClampedArray | null {
+  private blendTile(x: number, y: number, own: 0 | 1, mine: Uint8ClampedArray | string, edge: { look: EdgeLook; at: PathAt }, others: readonly string[], frame = 0): Uint8ClampedArray | null {
     if (!needsBlend(x, y, edge.at, own)) return null;
     const h = hash(x, y);
     const theirs = others.length === 0 ? undefined : others[(h >>> 3) % others.length];
-    const mineLocal = typeof mine === 'string' ? this.pixelsOf(mine) : mine;
-    const theirsLocal = theirs === undefined ? null : this.pixelsOf(theirs);
+    // open water is composed from the world's pixel (waterbody.ts), not read from a tile, so it never repeats
+    const pix = (ref: string): Uint8ClampedArray | null => {
+      if (!isOpenWater(ref)) return this.pixelsOf(ref, frame);
+      const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+      deepTile(x, y, frame, out, EDGE_PX);
+      return out;
+    };
+    const mineLocal = typeof mine === 'string' ? pix(mine) : mine;
+    const theirsLocal = theirs === undefined ? null : pix(theirs);
     if (!mineLocal || !theirsLocal) return null;
     const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
     // the field counts the ground (a) as 1: its pixels are the "path" side of the blend, the other's the grass side
@@ -981,7 +1007,7 @@ export class WorldScene extends Phaser.Scene {
       const near = m.legend[m.ground[y + dy]?.[x + dx] ?? ''];
       if (!near) continue;
       let ref: string | undefined;
-      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path'))) continue;
+      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path') || (kind === 'bank' && (near.tag === 'meadow' || near.tag === 'riverbank' || near.tag === 'grove' || near.tag === 'path')) || (tag === 'riverbank' && near.tag === 'water'))) continue;
       if (kind === 'bank' && near.tag !== 'water') ref = `${kit}tiles/bank_${side}`;
       else if (kind === 'fringe' && (near.tag === 'meadow' || near.tag === 'grove')) ref = `${kit}tiles/fringe_${side}`;
       else if (kind === 'worn' && near.tag === 'path') ref = `${kit}tiles/worn_${side}`;
@@ -1059,7 +1085,9 @@ export class WorldScene extends Phaser.Scene {
       if (p.fire === true && p.id !== undefined) {
         this.buildFire(p.id, p, cx, bottom);
       } else {
-        const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
+        const look = !p.solid && p.w === 1 && p.h === 1 && TUFTS.includes(name) ? plantLook(p.x, p.y) : undefined;
+        const img = this.standing(p.sprite, look ? cx + look.dx : cx, look ? bottom + look.dy : bottom, hash(p.x, p.y));
+        if (look) img.setFlipX(look.flip).setAngle(look.angle);
         img.setDepth(p.solid ? bottom : DEPTH.flat);
         // the lamp's pool lies at its foot; its head glows in the top 8 px of the post
         if (name === 'lantern_post') this.light?.add({ kind: 'lamp', x: cx, y: bottom, head: { x: cx, y: bottom - unit.h + 4 } });
@@ -1459,6 +1487,12 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** A restore's sprite on one row of its slot: a slot two rows tall or more takes `_n` on its first row and `_s` on its last when the kit has them (the old bridge, rails on the outer sides only). */
+  private restoreRef(ref: string, side: string): string {
+    const part = side === '' ? ref : `${ref}_${side}`;
+    return part !== ref && this.has(part) ? part : ref;
+  }
+
   private buildRestores(): void {
     for (const [id, r] of Object.entries(this.b.restores)) {
       const slot = findSlot(this.b.map, r.place.slot);
@@ -1468,7 +1502,8 @@ export class WorldScene extends Phaser.Scene {
       if (unit.w === T && unit.h === T) {
         for (let y = slot.y; y < slot.y + slot.h; y++) {
           for (let x = slot.x; x < slot.x + slot.w; x++) {
-            art.push(kitImage(this, x * T, y * T, r.before).setOrigin(0).setDepth(DEPTH.restore));
+            const side = slot.h > 1 ? (y === slot.y ? 'n' : y === slot.y + slot.h - 1 ? 's' : '') : '';
+            art.push(kitImage(this, x * T, y * T, this.restoreRef(r.before, side)).setOrigin(0).setDepth(DEPTH.restore).setData('side', side));
           }
         }
       } else {
@@ -2158,7 +2193,7 @@ export class WorldScene extends Phaser.Scene {
     for (const [id, art] of this.restoreArt) {
       const r = this.b.restores[id]!;
       const done = p.restored.includes(id);
-      for (const img of art) retex(img, done ? r.after : r.before);
+      for (const img of art) retex(img, this.restoreRef(done ? r.after : r.before, (img.getData('side') as string | undefined) ?? ''));
     }
     for (const [id, img] of this.campArt) {
       const built = p.camp.includes(id);
@@ -3788,6 +3823,11 @@ function spriteName(ref: string): string {
 /** "core/base-kit:props/standing_stone" -> "standing_stone" */
 function baseName(ref: string): string {
   return ref.split('/').pop() ?? ref;
+}
+
+/** The open water's tile, or one of its variants (`water`, `water_1`..): the world composes all of them from the pixel, none is drawn as a sprite. */
+function isOpenWater(ref: string): boolean {
+  return /^water(_\d+)?$/.test(baseName(ref));
 }
 
 /** "core/base-kit:props/standing_stone" -> "core/base-kit:" */
