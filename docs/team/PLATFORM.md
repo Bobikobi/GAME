@@ -497,6 +497,40 @@ too.
 exact files, the proving command, the decision it implements, the model and
 effort to run it. `docs/team/GRUNT.md` is a list of handoffs in that shape.
 
+### 9.6 What is secret and where it lives
+
+The owner asked (31.10, GRUNT CR-115) whether a developer can be kept from
+learning the game's shortcuts by reading the open code or asking an AI. They
+cannot, and the game does not try: open games (Minecraft servers, Veloren,
+Wesnoth, 0 A.D.) hide nothing in their repositories and put what must stay
+unknown on the server and in its dice. Here, the same:
+
+- **The repository is wiki knowledge.** Nothing in it is secret: the rules,
+  the content, the odds and the prices are what a wiki would print anyway. The
+  only secrets are the service keys of 9.3, and they never enter it.
+- **The server owns the state and every roll.** Gold, the bag, the position
+  and the clock are the server's copy (NEXT 18; DECISIONS 2026-10-10 "The
+  shared world"; 2026-10-20 "The world's hour is the server's clock"). Every
+  roll (a find, a drop, a predator's sight) is drawn from a seed only the
+  server holds (kernel review R4), so the code gives the odds and never the
+  result. A changed client changes nothing another player sees: the server
+  refuses what the kernel would refuse (NEXT 18, the refusal list).
+- **No solution is static where it matters.** The hunt's window is learned by
+  watching the eyes and never told (G47); the chart shows only the ground the
+  player walked (DECISIONS 2026-10-20 "The map: its own window, the ground you
+  walked"). The tangle is hand-made today and a riddle has one answer, so a
+  wiki can print both. **Retry when** mazes and riddles are content enough to
+  matter: a maze generated per attempt from the server's seed, and riddles
+  with variants drawn the same way.
+- **The economy is public by design.** Values live in
+  `content/values.lock.json` and no price is hardcoded, so "what pays most" is
+  a table anyone can read. It is bounded by the rarity budget (G42) and the
+  clocks that no skill shortens (DECISIONS 2026-10-10 "The world and its
+  clocks"), not by being hidden.
+- **A contributor's edge is accepted.** Knowing the content early is the edge
+  every game gives its wiki writers and speedrunners. A spoiler is the
+  player's own loss; a cheat on shared state is the server's to refuse.
+
 ## 10. Order of work, by milestone
 
 | Milestone | Items (GRUNT) | Size | Proven by |
