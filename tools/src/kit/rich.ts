@@ -115,7 +115,6 @@ export const SIXTEEN_PX_LEFT: readonly string[] = [
   'tiles/shore_n',
   'tiles/shore_s',
   'tiles/shore_w',
-  'tiles/water',
 ];
 
 const LEFT = new Set(SIXTEEN_PX_LEFT);

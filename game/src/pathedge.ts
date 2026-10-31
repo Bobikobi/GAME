@@ -14,6 +14,9 @@ export const EDGE_PX = 64;
 /** 1 for a path tile, 0 for a meadow tile, undefined for any other (cobble, sand, water, forest ...): the tile's own side. */
 export type PathAt = (tx: number, ty: number) => 0 | 1 | undefined;
 
+const STONE: readonly [number, number, number] = [0x8f, 0x94, 0xa8];
+const STONE_LIGHT: readonly [number, number, number] = [0xc6, 0xca, 0xd6];
+const STONE_DARK: readonly [number, number, number] = [0x3a, 0x35, 0x54];
 const WORN: readonly [number, number, number] = [0x9e, 0x6b, 0x3c];
 
 /** How one kind of edge is drawn. */
@@ -27,9 +30,13 @@ export interface EdgeLook {
   /** tufts of grass crossing into the other side, and a darker worn rim on it */
   tufts: boolean;
   worn: boolean;
+  /** a water's edge: the land side wets dark and carries small stones, the water side shades (the land is the field's 1 side) */
+  rim?: { wet: number; shade: number };
 }
 export const PATH_EDGE: EdgeLook = { threshold: 0.78, wander: 1, sparse: true, tufts: true, worn: true };
 export const BANK_EDGE: EdgeLook = { threshold: 0.5, wander: 1.6, sparse: false, tufts: true, worn: false };
+/** Where land meets water: a wandering line, a wet dark rim, chunky stones breaking it, a shaded water side. */
+export const WATER_EDGE: EdgeLook = { threshold: 0.5, wander: 1.5, sparse: false, tufts: false, worn: false, rim: { wet: 0.16, shade: 0.08 } };
 export const WOOD_EDGE: EdgeLook = { threshold: 0.5, wander: 1.3, sparse: false, tufts: false, worn: false };
 
 /** The blended path field at a point of tile (tx, ty), u and v in 0..1 across it. */
@@ -88,6 +95,31 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
       out[i + 1] = src[i + 1]!;
       out[i + 2] = src[i + 2]!;
       out[i + 3] = 255;
+      if (look.rim) {
+        const sideLand = !grass;
+        if (sideLand && t < edge + look.rim.wet) {
+          // a stone: a 4 x 4 cell along the rim that holds one, light on its top left, dark underneath
+          const cx = gx >> 2;
+          const cy = gy >> 2;
+          const stone = t < edge + look.rim.wet * 0.85 && hash(cx, cy + 41) % 100 < 62;
+          const lx = gx & 3;
+          const ly = gy & 3;
+          if (stone && !((lx === 0 || lx === 3) && (ly === 0 || ly === 3))) {
+            const c = ly === 3 ? STONE_DARK : lx === 0 || ly === 0 ? STONE_LIGHT : STONE;
+            out[i] = c[0];
+            out[i + 1] = c[1];
+            out[i + 2] = c[2];
+          } else {
+            out[i] = out[i]! * 0.62;
+            out[i + 1] = out[i + 1]! * 0.62;
+            out[i + 2] = out[i + 2]! * 0.62;
+          }
+        } else if (!sideLand && t > edge - look.rim.shade) {
+          out[i] = out[i]! * 0.8;
+          out[i + 1] = out[i + 1]! * 0.85;
+          out[i + 2] = out[i + 2]! * 0.92;
+        }
+      }
       if (look.worn && !grass && ((t < edge + 0.06 && hash(gx, gy + 5) % 100 < 45) || (t < edge + 0.14 && hash(gx, gy + 9) % 100 < 16))) {
         out[i] = WORN[0];
         out[i + 1] = WORN[1];

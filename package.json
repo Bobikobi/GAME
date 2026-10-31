@@ -25,6 +25,7 @@
     "art:wave": "tsx tools/src/art/wave-cli.ts",
     "art:measure": "tsx tools/src/art/measure-cli.ts",
     "art:edges": "tsx tools/src/art/edges-cli.ts",
+    "art:water": "tsx tools/src/art/water-cli.ts",
     "art:run": "tsx tools/src/art/run-cli.ts",
     "art:pick": "tsx tools/src/art/pick-cli.ts",
     "art:gallery": "tsx tools/src/art/gallery-cli.ts",

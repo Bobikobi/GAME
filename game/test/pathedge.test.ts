@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { EDGE_PX, PATH_EDGE, blendEdgeTile, needsBlend, pathField, type PathAt } from '../src/pathedge';
+import { EDGE_PX, PATH_EDGE, WATER_EDGE, blendEdgeTile, needsBlend, pathField, type PathAt } from '../src/pathedge';
 
 const grid = (rows: string[]): PathAt => (x, y) => {
   const c = rows[y]?.[x];
@@ -71,5 +71,33 @@ describe('the narrowed band', () => {
       return n / (EDGE_PX * EDGE_PX);
     };
     expect(share(PATH_EDGE)).toBeLessThan(share(PLAIN) - 0.05);
+  });
+});
+
+describe('where land meets water', () => {
+  const at: PathAt = (x, y) => (x < 2 ? 1 : 0);
+  const LAND = [200, 160, 100] as const;
+  const WATER = [60, 140, 210] as const;
+  test('the land side wets darker or carries stones, the water side shades, near the line only', () => {
+    const o = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+    blendEdgeTile(1, 0, at, 1, solid(...LAND), solid(...WATER), o, WATER_EDGE);
+    let wet = 0;
+    let land = 0;
+    for (let py = 0; py < EDGE_PX; py++) {
+      for (let px = 0; px < EDGE_PX; px++) {
+        const i = (py * EDGE_PX + px) * 4;
+        if (o[i]! > 150 && o[i + 1]! < 170 && o[i + 2]! < 120) land += 1;
+        else if (o[i]! < 190 && o[i + 2]! < 110 && o[i + 1]! < 120) wet += 1;
+      }
+    }
+    expect(land).toBeGreaterThan(0);
+    expect(wet).toBeGreaterThan(40);
+  });
+  test('it is fixed by the map', () => {
+    const a = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+    const b = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+    blendEdgeTile(1, 0, at, 1, solid(...LAND), solid(...WATER), a, WATER_EDGE);
+    blendEdgeTile(1, 0, at, 1, solid(...LAND), solid(...WATER), b, WATER_EDGE);
+    expect(a).toEqual(b);
   });
 });

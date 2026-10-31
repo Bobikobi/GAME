@@ -62,7 +62,7 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
-import { BANK_EDGE, EDGE_PX, PATH_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
+import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -812,6 +812,9 @@ export class WorldScene extends Phaser.Scene {
       ['grove', 'meadow', WOOD_EDGE],
       ['path', 'sand', BANK_EDGE],
       ['path', 'grove', WOOD_EDGE],
+      ['sand', 'water', WATER_EDGE],
+      ['meadow', 'water', WATER_EDGE],
+      ['grove', 'water', WATER_EDGE],
     ] as const).map(([a, b, look]) => ({
       a,
       b,
@@ -856,7 +859,7 @@ export class WorldScene extends Phaser.Scene {
               if (!near) continue;
               const mine = kind === 'meadow' ? key : sprite;
               const theirs = side === 'meadow' ? grassSprites : withVariants(near.sprite);
-              const next: Uint8ClampedArray | null = this.blendTile(x, y, kind === edge.a ? 1 : 0, cur ?? mine, edge, theirs);
+              const next: Uint8ClampedArray | null = this.blendTile(x, y, kind === edge.a ? 1 : 0, cur ?? mine, edge, theirs, frame);
               if (next) {
                 cur = next;
                 blended = true;
@@ -912,11 +915,14 @@ export class WorldScene extends Phaser.Scene {
 
   /** The pixels of the first frame of a ground sprite (or of a toned copy of it), cached. */
   private pixelCache = new Map<string, Uint8ClampedArray | null>();
-  private pixelsOf(ref: string): Uint8ClampedArray | null {
-    const hit = this.pixelCache.get(ref);
+  private pixelsOf(ref: string, frame = 0): Uint8ClampedArray | null {
+    const frames = this.b.sprites[ref]?.frames ?? 1;
+    const which = frames > 1 ? frame % frames : 0;
+    const cacheKey = `${ref}@${which}`;
+    const hit = this.pixelCache.get(cacheKey);
     if (hit !== undefined) return hit;
     let out: Uint8ClampedArray | null = null;
-    const f = this.textures.exists(ref) ? this.textures.getFrame(ref, this.b.sprites[ref]?.frames && this.b.sprites[ref]!.frames > 1 ? 0 : undefined) : null;
+    const f = this.textures.exists(ref) ? this.textures.getFrame(ref, frames > 1 ? which : undefined) : null;
     if (f && f.cutWidth === EDGE_PX && f.cutHeight === EDGE_PX) {
       const cut = f.canvasData as { x: number; y: number };
       const c = document.createElement('canvas');
@@ -929,7 +935,7 @@ export class WorldScene extends Phaser.Scene {
         out = ctx.getImageData(0, 0, EDGE_PX, EDGE_PX).data;
       }
     }
-    this.pixelCache.set(ref, out);
+    this.pixelCache.set(cacheKey, out);
     return out;
   }
 
@@ -938,12 +944,12 @@ export class WorldScene extends Phaser.Scene {
    * other kind's, cut along the smooth edge. Null when the tile needs none or a sprite is not a single 64 px frame,
    * so the caller draws it plain.
    */
-  private blendTile(x: number, y: number, own: 0 | 1, mine: Uint8ClampedArray | string, edge: { look: EdgeLook; at: PathAt }, others: readonly string[]): Uint8ClampedArray | null {
+  private blendTile(x: number, y: number, own: 0 | 1, mine: Uint8ClampedArray | string, edge: { look: EdgeLook; at: PathAt }, others: readonly string[], frame = 0): Uint8ClampedArray | null {
     if (!needsBlend(x, y, edge.at, own)) return null;
     const h = hash(x, y);
     const theirs = others.length === 0 ? undefined : others[(h >>> 3) % others.length];
-    const mineLocal = typeof mine === 'string' ? this.pixelsOf(mine) : mine;
-    const theirsLocal = theirs === undefined ? null : this.pixelsOf(theirs);
+    const mineLocal = typeof mine === 'string' ? this.pixelsOf(mine, frame) : mine;
+    const theirsLocal = theirs === undefined ? null : this.pixelsOf(theirs, frame);
     if (!mineLocal || !theirsLocal) return null;
     const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
     // the field counts the ground (a) as 1: its pixels are the "path" side of the blend, the other's the grass side
@@ -981,7 +987,7 @@ export class WorldScene extends Phaser.Scene {
       const near = m.legend[m.ground[y + dy]?.[x + dx] ?? ''];
       if (!near) continue;
       let ref: string | undefined;
-      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path'))) continue;
+      if (blended && ((kind === 'fringe' && (tag === 'path' || tag === 'riverbank')) || (kind === 'worn' && near.tag === 'path') || (kind === 'bank' && (near.tag === 'meadow' || near.tag === 'riverbank')) || (tag === 'riverbank' && near.tag === 'water'))) continue;
       if (kind === 'bank' && near.tag !== 'water') ref = `${kit}tiles/bank_${side}`;
       else if (kind === 'fringe' && (near.tag === 'meadow' || near.tag === 'grove')) ref = `${kit}tiles/fringe_${side}`;
       else if (kind === 'worn' && near.tag === 'path') ref = `${kit}tiles/worn_${side}`;
