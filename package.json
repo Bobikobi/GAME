@@ -24,6 +24,7 @@
     "art:status": "tsx tools/src/art/status-cli.ts",
     "art:wave": "tsx tools/src/art/wave-cli.ts",
     "art:measure": "tsx tools/src/art/measure-cli.ts",
+    "art:scale": "tsx tools/src/art/scale-cli.ts",
     "art:edges": "tsx tools/src/art/edges-cli.ts",
     "art:water": "tsx tools/src/art/water-cli.ts",
     "art:sand": "tsx tools/src/art/sand-cli.ts",
