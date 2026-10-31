@@ -2439,7 +2439,8 @@
         "frames": 4,
         "density": 4,
         "ramps": [
-          "moss"
+          "moss",
+          "fire"
         ]
       },
       "tiles/grass_tuft_b": {
@@ -2449,7 +2450,8 @@
         "frames": 4,
         "density": 4,
         "ramps": [
-          "moss"
+          "moss",
+          "fire"
         ]
       },
       "tiles/grass_tuft_c": {
@@ -2459,7 +2461,8 @@
         "frames": 4,
         "density": 4,
         "ramps": [
-          "moss"
+          "moss",
+          "fire"
         ]
       }
     }

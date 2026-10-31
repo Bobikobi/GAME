@@ -27,7 +27,7 @@ export const MAX_H = 12;
 export const LEAN = [0, 2, 4, 2] as const;
 
 /** The moss ramp, then the pale yellow-green the reference's tufts wear on their tips (31.10: one shade lighter than the meadow). */
-const MOSS = ['#2f4722', '#4a6a2c', '#6f8d36', '#9cb24c', '#cfd36e'].map(hexToRgb);
+const MOSS = ['#2f4722', '#4a6a2c', '#6f8d36', '#9cb24c', '#cfd36e', '#fff3a8'].map(hexToRgb);
 
 interface Blade {
   /** root column, px from the tuft's middle */
@@ -69,7 +69,7 @@ function drawFrame(blades: Blade[], lean: number, rgba: Uint8Array, x0: number):
     for (let r = 3; r < b.h; r++) {
       const f = r / Math.max(1, b.h - 1);
       const cx = mid + b.at + Math.round(b.fan * f + lean * f);
-      const step = f >= 0.3 ? 4 : 3;
+      const step = f >= 0.6 ? 5 : f >= 0.3 ? 4 : 3;
       put(cx, r, step);
       if (r < b.h - 1) put(cx + 1, r, step);
       if (f < 0.6 && b.at !== lo) put(cx - 1, r, 3);
@@ -116,7 +116,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const kit = JSON.parse(readFileSync(kitPath, 'utf8'));
   for (const name of Object.keys(VARIANTS)) {
     writeFileSync(join(kitDir, 'tiles', `${name}.png`), drawTuft(name));
-    kit.kit.sprites[`tiles/${name}`] = { file: `tiles/${name}.png`, w: CANVAS, h: CANVAS, frames: FRAMES, density: 4, ramps: ['moss'] };
+    kit.kit.sprites[`tiles/${name}`] = { file: `tiles/${name}.png`, w: CANVAS, h: CANVAS, frames: FRAMES, density: 4, ramps: ['moss', 'fire'] };
   }
   writeFileSync(kitPath, `${JSON.stringify(kit, null, 2)}\n`);
   console.log('wrote', Object.keys(VARIANTS).join(', '));
