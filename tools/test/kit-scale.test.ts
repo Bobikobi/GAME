@@ -29,6 +29,26 @@ describe('which kind a sprite is', () => {
     expect(scaleKindOf('chars/forager_w_work_left')?.floor).toBe(1);
   });
 
+  test('a sapling has its own floor and the glade fig is a tree', () => {
+    expect([scaleKindOf('props/sapling')?.kind, scaleKindOf('props/sapling')?.floor]).toEqual(['sapling', 1]);
+    expect(scaleKindOf('props/young_tree')?.kind).toBe('young tree');
+    expect(scaleKindOf('props/fig_bush')?.kind).toBe('oak');
+    expect(scaleKindOf('props/fig_bush_empty')?.floor).toBe(3);
+    expect(scaleKindOf('props/bush_berry')?.kind).toBe('bush');
+  });
+
+  test('a mat is no door and a head is no statue', () => {
+    expect(scaleKindOf('props/door_mat')).toBeUndefined();
+    expect(scaleKindOf('props/statue_head')).toBeUndefined();
+    expect(scaleKindOf('props/broken_statue')?.kind).toBe('standing stone');
+  });
+
+  test('NATURE gives a range to some kinds: a door 1.3 to 1.5, a boulder 0.5 to 1.5, an oak only a floor', () => {
+    expect([scaleKindOf('props/door_front')?.floor, scaleKindOf('props/door_front')?.ceil]).toEqual([1.3, 1.5]);
+    expect(scaleKindOf('props/boulder_big')?.ceil).toBe(1.5);
+    expect(scaleKindOf('props/tree_oak')?.ceil).toBeUndefined();
+  });
+
   test('a thing no floor speaks for has no kind', () => {
     expect(scaleKindOf('props/chest')).toBeUndefined();
     expect(scaleKindOf('items/log')).toBeUndefined();
@@ -39,8 +59,15 @@ describe('the scale warnings', () => {
   test('a kind with a scale under its floor is a warning', () => {
     const [problem] = scaleProblems('props/tree_oak', 2);
     expect(problem).toContain('under the floor of a oak, 3 characters');
-    expect(scaleProblems('props/hazard_wolf', 0.5)[0]).toContain('0.55');
-    expect(scaleProblems('chars/child_down', 0.6)[0]).toContain('child');
+    expect(scaleProblems('props/hazard_wolf', 0.4)[0]).toContain('0.55');
+    expect(scaleProblems('chars/child_down', 0.5)[0]).toContain('child');
+  });
+
+  test('a tenth under the floor still passes, more does not', () => {
+    expect(scaleProblems('props/house_small', 2.86)).toEqual([]);
+    expect(scaleProblems('props/house_small', 2.7)).toEqual([]);
+    expect(scaleProblems('props/house_small', 2.69)[0]).toContain('a tenth under still passes');
+    expect(scaleProblems('chars/human_left', 0.9)).toEqual([]);
   });
 
   test('a scale at or over its floor says nothing: bigger is open', () => {
@@ -50,10 +77,17 @@ describe('the scale warnings', () => {
     expect(scaleProblems('props/chest', 0.4)).toEqual([]);
   });
 
+  test('a world sprite with no scale is a warning; ground and inventory icons owe none', () => {
+    expect(scaleProblems('props/chest', undefined)[0]).toContain('pnpm art:scale --declare');
+    expect(scaleProblems('chars/human_down', undefined)).toHaveLength(1);
+    expect(scaleProblems('tiles/grass', undefined)).toEqual([]);
+    expect(scaleProblems('items/log', undefined)).toEqual([]);
+  });
+
   test('the floors STYLE 1b picked with two decimals hold as given', () => {
     expect(scaleProblems('props/dog', 0.45)).toEqual([]);
-    expect(scaleProblems('props/dog', 0.4)[0]).toContain('0.45');
-    expect(scaleProblems('props/horse', 1.2)[0]).toContain('1.25');
+    expect(scaleProblems('props/dog', 0.35)[0]).toContain('0.45');
+    expect(scaleProblems('props/horse', 1.1)[0]).toContain('1.25');
   });
 
   test('a creature with no scale is a warning', () => {
@@ -67,16 +101,27 @@ describe('the scale warnings', () => {
     expect(scaleProblems('creatures/hen', 0.2)).toEqual([]);
   });
 
-  test('any other sprite with no scale says nothing', () => {
-    expect(scaleProblems('props/tree_oak', undefined)).toEqual([]);
-    expect(scaleProblems('props/hazard_wolf', undefined)).toEqual([]);
+  test('any other world sprite with no scale is told to declare it', () => {
+    expect(scaleProblems('props/tree_oak', undefined)[0]).toContain('declare "scale"');
+    expect(scaleProblems('props/hazard_wolf', undefined)[0]).toContain('declare "scale"');
   });
 });
 
 describe('the check on today content', () => {
-  test('every kit of today passes with no scale line', () => {
-    const result = runCheck();
-    expect(result.issues.filter((i) => /scale|floor of a|creature declares/.test(i.message))).toEqual([]);
+  // The scale audit (31.10): every world sprite of the shipped kits declares its drawn height, so the floors hold
+  // all of them. The floor lines that remain are the open list of the audit; a redraw takes its line away.
+  const lines = runCheck().issues.filter((i) => /scale|floor of a|creature declares/.test(i.message));
+
+  test('no world sprite of the shipped kits lacks a scale', () => {
+    expect(lines.filter((i) => i.message.includes('declare "scale"'))).toEqual([]);
+  });
+
+  test('what is left is a warning that names its sprite, its height and its floor', () => {
+    for (const i of lines) {
+      expect(i.level).toBe('warning');
+      expect(i.where).toMatch(/^art\.scale\./);
+      expect(i.message).toMatch(/^scale [\d.]+ is under the floor of a /);
+    }
   });
 });
 
@@ -97,13 +142,13 @@ describe('the check, end to end, on a kit that declares a height', () => {
   const issues = runCheck(root).issues;
 
   test('an oak declared at 2 characters is a warning from the check, under the floor of 3', () => {
-    const problem = issues.find((i) => i.where === 'kit.sprites.props/tree_oak');
+    const problem = issues.find((i) => i.where === 'art.scale.core/base-kit:props/tree_oak');
     expect(problem?.level).toBe('warning');
     expect(problem?.message).toContain('under the floor of a oak, 3 characters');
   });
 
   test('a house at 3.5 characters, over its floor, says nothing, and nothing new is an error', () => {
-    expect(issues.some((i) => i.where === 'kit.sprites.props/house_small')).toBe(false);
+    expect(issues.some((i) => i.where === 'art.scale.core/base-kit:props/house_small')).toBe(false);
     expect(issues.filter((i) => i.level === 'error')).toEqual([]);
   });
 });

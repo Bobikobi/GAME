@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { runCheck } from '../src/check';
+import { isAdvisory } from '../src/art/scale';
 import { CONTENT_DIR } from '../src/load';
 import { OPENING_QUESTS, PLAY_LEVEL, RULES_PAGE, checkPlay, findableItems } from '../src/play';
 
@@ -22,7 +23,8 @@ describe('the core content', () => {
   it('passes the play rules with no line, and pnpm check with 0 errors and 0 warnings', () => {
     expect(checkPlay(result.assembled.bundle!, result.assembled.origin)).toEqual([]);
     // the richness, hand and colour lines are advisory counts (tools/src/richness.ts, tools/src/colors.ts), not defects of the content
-    expect(result.issues.filter((i) => !i.where.startsWith('map.richness') && !i.where.startsWith('quests.hand.') && !i.where.startsWith('art.'))).toEqual([]);
+    // the scale lines of the sprites in known-short.json are the audit's open list: that list only shrinks, a short sprite not on it fails here
+    expect(result.issues.filter((i) => !isAdvisory(i))).toEqual([]);
   });
 
   it('names a type on every quest, at least four of the palette, and never the same twice in a row', () => {

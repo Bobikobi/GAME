@@ -3990,3 +3990,8 @@ Wave 1 left the valley's ground flat and wave 2 gave the props their 64 px look,
 The queue row assumed a light + dusk grade took the grass from the tile's value to .37/.37 at noon. Tried: hiding every layer of a 390x844 noon frame in turn. The hour's shade (light-layer.ts, which already holds the old dusk rectangle) is alpha 0 from 06:00 to 15:30, so neither layer touches the meadow; only the dark frame (`fx-frame`, depth 9002) does.
 Result: meadow box (0 300 390 700) body as is 86/.42/.41 (hue/sat/val), frame hidden 82/.54/.55, bare ground tile 81/.54/.56. The premise was wrong, so no grade is left to choose: the olive grass is the owner's pick (30.10) and the frame's day edge the 31.10 decision.
 Added `?frame=off`, a debug flag that hides the frame for a still or a measurement; the default is unchanged. **Retry when:** the owner wants the noon meadow lighter (then the frame's `strengthDay` in light.ts is the lever, not the layers). Model: Claude Sonnet 5.5. Branch feat/noon-grade-flag.
+
+## 2026-10-31 ✅ Animals wear no outline: the creatures group leaves the ink rule
+**The owner's pick C of 31.10 for the animals' look is three-tone shading with no outline, so the `creatures/` group of the kit is outside the ink rule of 23.10 (PR #305): the check does not measure it and `kit:ink` does not paint it.** The rule stands for every other 64 px sprite. Found when the first creature sheet (the roe, 4 frames) failed `pnpm check` with "only 0% of its edge pixels are ink"; the pick had been made knowing A was the outlined still.
+**Retry when:** an animal's silhouette is lost on the ground at phone size (then that animal alone is outlined, as its own pick).
+Model: claude-sonnet-5-5.
