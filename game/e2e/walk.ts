@@ -7,7 +7,7 @@
  * The input is started from here and let go in the page: a frame can be a quarter of a second on a machine
  * rendering in software, and a release sent over the wire lands a frame late, which walks the body a tile further.
  */
-import { type Page, sleep } from './cdp';
+import { type Page, WALK_WARP, sleep, timed } from './cdp';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
 
@@ -174,7 +174,11 @@ export class FreeWalk {
    * the body walks a diagonal as a diagonal, and the page lets go on the frame the tile is reached. A window
    * opening under the walk ends it where it stands (the word in town stops the walk), and a timeout throws.
    */
-  async holdTo(tile: readonly number[], what: string, timeoutMs = 10_000): Promise<void> {
+  holdTo(tile: readonly number[], what: string, timeoutMs = 10_000): Promise<void> {
+    return timed('walk', () => (WALK_WARP > 1 ? this.page.warped(WALK_WARP, () => this.holdToTimed(tile, what, timeoutMs)) : this.holdToTimed(tile, what, timeoutMs)));
+  }
+
+  private async holdToTimed(tile: readonly number[], what: string, timeoutMs: number): Promise<void> {
     await this.install();
     await this.page.eval(`window.__walk.until([${tile[0]}, ${tile[1]}], ${this.touch})`);
     const [tx, ty] = middleOf(tile);
