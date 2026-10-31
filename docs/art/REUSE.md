@@ -88,6 +88,10 @@ store, `Bobikobi/GAME-art-drafts` (private, releases only) with its index
   on 2026-10-30 two worktrees went that way with 541 indexed drafts and came back
   only from a backup the owner had made. Nobody removes a worktree with art in it
   before `art:drafts verify` shows its drafts in the store.
+  `pnpm art:stray` lists every art file under a registered worktree's `.scratch`,
+  `assets/gen` or run folder whose hash is not in the index (exit 1 when any, 0 when
+  none), and `pnpm check` prints its count as a `!` line: run it before removing a
+  worktree, and push what it names.
 - **Review states are the sorting.** `keep` is the library of good material;
   `reuse-parts` names the part worth cutting out; `rework` and `archive` stay
   retrievable. A drawing that fails its brief but is clean keeps a tag for its
