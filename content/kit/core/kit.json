@@ -1013,7 +1013,7 @@
         "density": 4,
         "ramps": [
           "wood",
-          "water"
+          "teal"
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
@@ -1027,7 +1027,7 @@
         "density": 4,
         "ramps": [
           "wood",
-          "water"
+          "teal"
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
@@ -1433,15 +1433,16 @@
         "file": "tiles/water.png",
         "w": 64,
         "h": 64,
-        "frames": 4,
         "density": 4,
         "ramps": [
+          "teal",
           "water"
         ],
         "source": {
           "spec": "tools/src/art/water.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:154"
-        }
+        },
+        "frames": 4
       },
       "items/bandage": {
         "file": "items/bandage.png",
@@ -2470,43 +2471,46 @@
         "file": "tiles/water_1.png",
         "w": 64,
         "h": 64,
-        "frames": 4,
         "density": 4,
         "ramps": [
+          "teal",
           "water"
         ],
         "source": {
           "spec": "tools/src/art/water.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:155"
-        }
+        },
+        "frames": 4
       },
       "tiles/water_2": {
         "file": "tiles/water_2.png",
         "w": 64,
         "h": 64,
-        "frames": 4,
         "density": 4,
         "ramps": [
+          "teal",
           "water"
         ],
         "source": {
           "spec": "tools/src/art/water.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:156"
-        }
+        },
+        "frames": 4
       },
       "tiles/water_3": {
         "file": "tiles/water_3.png",
         "w": 64,
         "h": 64,
-        "frames": 4,
         "density": 4,
         "ramps": [
+          "teal",
           "water"
         ],
         "source": {
           "spec": "tools/src/art/water.ts",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:157"
-        }
+        },
+        "frames": 4
       },
       "tiles/sand_ruin": {
         "file": "tiles/sand_ruin.png",
@@ -2583,7 +2587,7 @@
         "density": 4,
         "ramps": [
           "wood",
-          "water"
+          "teal"
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
@@ -2597,7 +2601,7 @@
         "density": 4,
         "ramps": [
           "wood",
-          "water"
+          "teal"
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
@@ -2611,7 +2615,7 @@
         "density": 4,
         "ramps": [
           "wood",
-          "water"
+          "teal"
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",
@@ -2625,7 +2629,7 @@
         "density": 4,
         "ramps": [
           "wood",
-          "water"
+          "teal"
         ],
         "source": {
           "spec": "tools/src/art/bridge.ts",

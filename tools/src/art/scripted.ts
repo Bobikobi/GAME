@@ -14,6 +14,9 @@ import { ROOT } from './queue.js';
 
 export const TILE = 64;
 
+/** The shared teal ramp's six steps, dark to light, as letters the core legend lacks (the water's body and shallows). */
+export const TEAL_LETTERS: Readonly<Record<string, string>> = { h: '#122b2c', i: '#1c4a49', j: '#2a6c66', k: '#3f8f84', l: '#62b3a2', m: '#93d6c2' };
+
 /** A seeded hash of three integers, 0 up to 1. */
 export function hash3(seed: number, a: number, b: number): number {
   let x = Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(a + 7, 0xc2b2ae35) ^ Math.imul(b + 13, 0x27d4eb2f);
@@ -35,7 +38,7 @@ export function sheetPng(frames: readonly (readonly string[])[]): PNG {
     rows.forEach((row, y) => {
       [...row].forEach((ch, x) => {
         const index = PALETTE_LEGEND[ch];
-        const [r, g, b] = hexToRgb(LETTER_PALETTE[index ?? 0] ?? '#1b1a2e');
+        const [r, g, b] = hexToRgb(TEAL_LETTERS[ch] ?? LETTER_PALETTE[index ?? 0] ?? '#1b1a2e');
         png.data.set([r, g, b, 255], (y * TILE * frames.length + f * TILE + x) * 4);
       });
     });

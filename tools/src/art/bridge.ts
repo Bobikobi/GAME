@@ -2,7 +2,7 @@
  * The old bridge at 64 px (rich wave 3b), whole and broken, each in three tiles: the whole width (`bridge`, a rail each
  * side) and, for a bridge two tiles wide, its north half (`_n`, the rail and the water above, the deck running off the
  * bottom edge) and south half (`_s`); the world draws the halves on the first and last row of the slot. The water under
- * it is the river's deep blue (water.ts).
+ * it is the river's teal body (water.ts), the same on every variant, so it joins the water beside it.
  * The deck is eight upright boards a tile with a dark seam, a lit left edge and grain, nails at both ends; a rail beam
  * runs along each side with a post every 32 px, and the deck throws a shadow on the water. The broken one has two
  * boards gone, one snapped, a plank adrift and a post and a stretch of rail missing. `pnpm art:bridge` writes the PNGs.
@@ -39,7 +39,7 @@ function bridgeRows(o: Options): string[] {
   };
   // the shadow under the deck on the water, then the planks on top of it
   for (let y = RAIL_BOTTOM + 1; o.bottom && y < RAIL_BOTTOM + 6; y += 1) {
-    for (let x = 0; x < TILE; x += 1) if ((y - RAIL_BOTTOM < 4 || (x + y) % 2 === 0) && 'rsqt'.includes(g[y]![x]!)) set(x, y, 'q');
+    for (let x = 0; x < TILE; x += 1) if ((y - RAIL_BOTTOM < 4 || (x + y) % 2 === 0) && 'ijklm'.includes(g[y]![x]!)) set(x, y, 'h');
   }
   // the boards
   for (let b = 0; b < 8; b += 1) {
@@ -116,7 +116,7 @@ const BROKEN_S: Options = { ...BROKEN, top: false, snapped: [], gone: [1, 2, 5],
 
 /** Writes the six sprites, their kit.json entries and one manifest line each. */
 export function writeBridge(): string[] {
-  return writeScripted('tools/src/art/bridge.ts', 'the old bridge at 64 px over the river water', ['wood', 'water'], [
+  return writeScripted('tools/src/art/bridge.ts', 'the old bridge at 64 px over the river water', ['wood', 'teal'], [
     { name: 'bridge', frames: [bridgeRows(WHOLE)] },
     { name: 'bridge_n', frames: [bridgeRows(WHOLE_N)] },
     { name: 'bridge_s', frames: [bridgeRows(WHOLE_S)] },

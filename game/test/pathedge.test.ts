@@ -93,11 +93,12 @@ describe('where land meets water', () => {
     expect(land).toBeGreaterThan(0);
     expect(wet).toBeGreaterThan(40);
   });
-  test('the water steps from deep to mid to light toward the shore, flat in the middle, with runs of stones on the line', () => {
-    const DEEP = [0x27, 0x5a, 0x99] as const;
+  test('the water lightens toward the shore, flat in the middle, with flecks of foam and runs of stones on the line', () => {
+    const DEEP = [0x2a, 0x6c, 0x66] as const;
     // tile 2 is water with land to its left: its right half is more than a band away from the shore
     let farOther = 0;
     let lighter = 0;
+    let foam = 0;
     let ink = 0;
     for (let ty = 0; ty < 8; ty++) {
       const o = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
@@ -107,13 +108,17 @@ describe('where land meets water', () => {
         for (let px = 0; px < EDGE_PX; px++) {
           const i = (py * EDGE_PX + px) * 4;
           if (px >= 44 && !is(i, DEEP)) farOther += 1;
-          if (is(i, [0x3f, 0x8f, 0xd1]) || is(i, [0x7c, 0xc4, 0xec])) lighter += 1;
+          if (is(i, [0x3f, 0x8f, 0x84]) || is(i, [0x62, 0xb3, 0xa2])) lighter += 1;
+          if (is(i, [0xc6, 0xca, 0xd6]) || is(i, [0xf5, 0xf4, 0xef])) foam += 1;
           if (is(i, [0x1b, 0x1a, 0x2e])) ink += 1;
         }
       }
     }
     expect(farOther).toBe(0);
-    expect(lighter).toBeGreaterThan(1000);
+    expect(lighter).toBeGreaterThan(500);
+    // foam only in flecks, never a band
+    expect(foam).toBeGreaterThan(0);
+    expect(foam).toBeLessThan(EDGE_PX * 8 * 0.5);
     // the 1 px ink round the stones of the runs, but a stretch of bare shore too: not every row carries a stone
     expect(ink).toBeGreaterThan(100);
     expect(ink).toBeLessThan(EDGE_PX * 8 * 0.9);

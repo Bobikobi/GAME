@@ -1,4 +1,5 @@
 import { hash, valueNoise } from './richground';
+import { TEAL, bedAt, foamAt } from './waterbody';
 
 /**
  * Where a path meets the meadow, worked out per pixel and not per tile, so no 64 px step shows: the tiles' own
@@ -20,8 +21,13 @@ const STONE_RUN = 46;
 /** A stone's gap to the next: stones nearer than this share of their two radii give way to the stronger one. */
 const STONE_TOUCH = 0.85;
 const STONE_SHADE: readonly [number, number, number] = [0x5d, 0x61, 0x77];
-/** One step lighter on the blue ramp: the shallows. */
+/** One step lighter on the teal ramp (and the blue one): the shallows. */
 const LIGHTER = new Map<number, number>([
+  [TEAL.h, TEAL.i],
+  [TEAL.i, TEAL.j],
+  [TEAL.j, TEAL.k],
+  [TEAL.k, TEAL.l],
+  [TEAL.l, TEAL.m],
   [0x172a52, 0x275a99],
   [0x275a99, 0x3f8fd1],
   [0x3f8fd1, 0x7cc4ec],
@@ -40,22 +46,18 @@ const DARKER = new Map<number, number>([
 ]);
 /** The darkest water pixel below a stone or on the waterline. */
 const WET_LINE: readonly [number, number, number] = [0x3d, 0x26, 0x18];
-const LIGHT_WATER: readonly [number, number, number] = [0x7c, 0xc4, 0xec];
-const SPARK_WATER: readonly [number, number, number] = [0xc4, 0xec, 0xf8];
+/** The rim of a water's edge, on the land side: a pale line right at the water (the cove's), and the foam's white. */
+const RIM_PALE: readonly [number, number, number] = [0xeb, 0xd3, 0xa2];
+const RIM_LIGHT: readonly [number, number, number] = [0xf3, 0xc7, 0xa0];
+// (not the blue ramp's pale step: the sway shader (richground.ts MOVES) drifts that one, and a fleck of foam holds still)
+const FOAM_WHITE: readonly [number, number, number] = [0xc6, 0xca, 0xd6];
+const FOAM_ICE: readonly [number, number, number] = [0xf5, 0xf4, 0xef];
+/** The pale line's width on the land side, in art pixels. */
+const RIM_PX = 2.5;
 /** The ink of a stone's outline, the props' own. */
 const STONE_INK: readonly [number, number, number] = [0x1b, 0x1a, 0x2e];
 /** Ordered 2x2 thresholds, so two bands meet on a regular dither and not on noise. */
 const BAYER = [0.125, 0.625, 0.875, 0.375];
-/** A highlight dash on the water's light band: a cell of this side takes one at a set chance, so about one to two tiles of shore. */
-const DASH_CELL = 24;
-interface Dash {
-  x: number;
-  y: number;
-  tx: number;
-  ty: number;
-  half: number;
-}
-
 /** How one kind of edge is drawn. */
 export interface EdgeLook {
   /** where the sand's own side begins on the blended field: 0.5 is the tiles' own edge, above it narrows the drawn band */
@@ -67,13 +69,13 @@ export interface EdgeLook {
   /** tufts of grass crossing into the other side, and a darker worn rim on it */
   tufts: boolean;
   worn: boolean;
-  /** a water's edge: the land side wets dark and carries stones, the water side steps from deep to mid to light toward the shore, `light` and `mid` the field distances where the bands end (the land is the field's 1 side) */
-  rim?: { wet: number; light: number; mid: number };
+  /** a water's edge: the land side has a pale rim line and wets dark behind it and carries stones; the water side has shallows (the bed showing through) and flecks of foam; `wet`, `shallow` and `foam` are widths in field units (the land is the field's 1 side) */
+  rim?: { wet: number; shallow: number; foam: number };
 }
 export const PATH_EDGE: EdgeLook = { threshold: 0.78, wander: 1, sparse: true, tufts: true, worn: true };
 export const BANK_EDGE: EdgeLook = { threshold: 0.5, wander: 1.6, sparse: false, tufts: true, worn: false };
 /** Where land meets water: a wandering line, a wet dark rim, chunky stones breaking it, a shaded water side. */
-export const WATER_EDGE: EdgeLook = { threshold: 0.5, wander: 2.1, sparse: false, tufts: false, worn: false, rim: { wet: 0.16, light: 0.05, mid: 0.17 } };
+export const WATER_EDGE: EdgeLook = { threshold: 0.5, wander: 2.1, sparse: false, tufts: false, worn: false, rim: { wet: 0.16, shallow: 0.16, foam: 0.06 } };
 export const WOOD_EDGE: EdgeLook = { threshold: 0.5, wander: 1.3, sparse: false, tufts: false, worn: false };
 
 /** The blended path field at a point of tile (tx, ty), u and v in 0..1 across it. */
@@ -210,52 +212,6 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
     cells.set(key, out);
     return out;
   };
-  // the light band's highlights: a short dash on the shore line's water side, lying along the line, about one to two tiles apart
-  const dashes = new Map<number, Dash | null>();
-  const dashOf = (cx: number, cy: number): Dash | null => {
-    const key = cx * 100003 + cy;
-    const hit = dashes.get(key);
-    if (hit !== undefined) return hit;
-    let out: Dash | null = null;
-    if (rim && hash(cx, cy + 81) % 100 < 22) {
-      const x0 = (cx + 0.2 + ((hash(cx, cy + 82) % 100) / 100) * 0.6) * DASH_CELL;
-      const y0 = (cy + 0.2 + ((hash(cx, cy + 83) % 100) / 100) * 0.6) * DASH_CELL;
-      let x = x0;
-      let y = y0;
-      const target = look.threshold - rim.light * 0.5;
-      for (let k = 0; k < 6; k++) {
-        const e = target - tAt(Math.round(x), Math.round(y));
-        const gx = (tAt(Math.round(x) + 2, Math.round(y)) - tAt(Math.round(x) - 2, Math.round(y))) / 4;
-        const gy = (tAt(Math.round(x), Math.round(y) + 2) - tAt(Math.round(x), Math.round(y) - 2)) / 4;
-        const g2 = gx * gx + gy * gy;
-        if (g2 < 1e-5) break;
-        if (Math.abs(e) < 0.01) {
-          const g = Math.sqrt(g2);
-          out = { x, y, tx: -gy / g, ty: gx / g, half: 3 + ((hash(cx, cy + 84) % 100) / 100) * 3 };
-          break;
-        }
-        x += (gx * e) / g2;
-        y += (gy * e) / g2;
-        if (Math.hypot(x - x0, y - y0) > DASH_CELL * 1.3) break;
-      }
-    }
-    dashes.set(key, out);
-    return out;
-  };
-  const dashAt = (gx: number, gy: number): boolean => {
-    const bx = Math.floor(gx / DASH_CELL);
-    const by = Math.floor(gy / DASH_CELL);
-    for (let cy = by - 1; cy <= by + 1; cy++) {
-      for (let cx = bx - 1; cx <= bx + 1; cx++) {
-        const c = dashOf(cx, cy);
-        if (!c) continue;
-        const dx = gx + 0.5 - c.x;
-        const dy = gy + 0.5 - c.y;
-        if (Math.abs(dx * -c.ty + dy * c.tx) < 0.8 && Math.abs(dx * c.tx + dy * c.ty) < c.half) return true;
-      }
-    }
-    return false;
-  };
   const stoneAt = (gx: number, gy: number): readonly [number, number, number] | undefined => {
     const bx = Math.floor(gx / STONE_CELL);
     const by = Math.floor(gy / STONE_CELL);
@@ -308,35 +264,50 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
       if (look.rim) {
         const r = look.rim;
         if (grass) {
-          // three bands toward the shore: deep (the tile's own), mid, light; two bands meet on an ordered 2x2 dither, no stipple
-          // the light band hugs the shoreline itself; the mid band is measured from the smooth field, so it runs parallel
-          // and does not break into the blobs the shoreline's small wiggles would make of it
-          const ramp = (d: number, at: number): number => Math.min(1, Math.max(0, (d - (at - 0.012)) / 0.024));
-          const lit1 = 1 - ramp(edge - t, r.light);
-          const mid1 = 1 - ramp(edge - field - ((valueNoise(gx, gy, 31, 14) - 0.5) * 0.3) * look.wander, r.mid);
-          const level = Math.floor(Math.max(mid1, lit1) + lit1 + BAYER[(gx & 1) + 2 * (gy & 1)]!);
-          for (let n = 0; n < level; n++) {
-            const lit = LIGHTER.get((out[i]! << 16) | (out[i + 1]! << 8) | out[i + 2]!);
-            if (lit === undefined) break;
-            out[i] = lit >> 16;
-            out[i + 1] = (lit >> 8) & 255;
-            out[i + 2] = lit & 255;
+          // the water side: the shallows, where the bed shows through and the water lightens a step or two toward the line, in an
+          // ordered dither; and, only near the line, flecks of the study's foam where its holes let it through, in runs
+          const dpx = (edge - t) * EDGE_PX;
+          const shallowPx = r.shallow * EDGE_PX;
+          if (dpx < shallowPx) {
+            const near = 1 - Math.max(0, dpx) / shallowPx;
+            const bed = bedAt(gx, gy);
+            const bedLum = (bed[0] * 0.3 + bed[1] * 0.5 + bed[2] * 0.2) / 255;
+            const level = Math.floor(near * near * 2.2 + (bedLum - 0.42) * 1.4 + BAYER[(gx & 1) + 2 * (gy & 1)]!);
+            for (let n = 0; n < Math.min(2, level); n++) {
+              const lit = LIGHTER.get((out[i]! << 16) | (out[i + 1]! << 8) | out[i + 2]!);
+              if (lit === undefined) break;
+              out[i] = lit >> 16;
+              out[i + 1] = (lit >> 8) & 255;
+              out[i + 2] = lit & 255;
+            }
           }
-          if (dashAt(gx, gy)) {
-            const spark = hash(gx, gy + 31) % 100 < 45 ? SPARK_WATER : LIGHT_WATER;
-            out[i] = spark[0];
-            out[i + 1] = spark[1];
-            out[i + 2] = spark[2];
+          if (dpx < r.foam * EDGE_PX) {
+            const f = foamAt(gx, gy);
+            const run = valueNoise(gx, gy, 77, 38);
+            const reach = 1 - Math.max(0, dpx) / (r.foam * EDGE_PX);
+            if (run > 0.6 && f > 0.75 + (1 - reach) * 0.2) {
+              const white = f > 0.9 ? FOAM_ICE : FOAM_WHITE;
+              out[i] = white[0];
+              out[i + 1] = white[1];
+              out[i + 2] = white[2];
+            }
           }
         } else if (t < edge + r.wet) {
-          // the land's own pixels wet dark where no stone lies: a step darker, two right at the waterline
-          const near = t < edge + r.wet * 0.45;
-          for (let n = 0; n < (near ? 2 : 1); n++) {
-            const dark = DARKER.get((out[i]! << 16) | (out[i + 1]! << 8) | out[i + 2]!);
-            if (dark === undefined || hash(gx, gy + 41 + n) % 100 >= 90) break;
-            out[i] = dark >> 16;
-            out[i + 1] = (dark >> 8) & 255;
-            out[i + 2] = dark & 255;
+          // the land side: a pale line right at the water, and behind it the land's own pixels wet dark where no stone lies, a step darker, two next to the line
+          if (t < edge + RIM_PX / EDGE_PX) {
+            const pale = hash(gx, gy + 47) % 100 < 38 ? RIM_LIGHT : RIM_PALE;
+            out[i] = pale[0];
+            out[i + 1] = pale[1];
+            out[i + 2] = pale[2];
+          } else {
+            const near = t < edge + r.wet * 0.45;
+            for (let n = 0; n < (near ? 2 : 1); n++) {
+              const dark = DARKER.get((out[i]! << 16) | (out[i + 1]! << 8) | out[i + 2]!);
+              if (dark === undefined || hash(gx, gy + 41 + n) % 100 >= 90) break;
+              out[i] = dark >> 16;
+              out[i + 1] = (dark >> 8) & 255;
+              out[i + 2] = dark & 255;
+            }
           }
         }
         const st = stoneAt(gx, gy);

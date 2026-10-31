@@ -1,105 +1,145 @@
 /**
- * The water at 64 px (rich wave 3, part two): four variants of a four-frame sheet, 256 x 64 each.
- *
- * Open water is the shared blue ramp's deep step, flat, with three short mid-step ripple strokes that rock a pixel or two
- * from frame to frame and loop at the fourth, and a spark or two that flash in one frame each. The bands toward a shore
- * (mid, then light, with the light highlights) are the world's (pathedge.ts), so the middle of a river stays the darkest. Everything wraps, so the tile repeats without a seam; the variants differ by seed, so
- * a lake does not show one tile over and over. `pnpm art:water` writes the PNGs and their kit.json entries.
+ * The water at 64 px, from the owner's layered water of 25.10 (a Codex study, kept in tools/kit-gen/water-layers with its
+ * provenance): four variants of a four-frame sheet. The study composed its water at run time from four generated layers; this
+ * bakes the deep body the same way the study's compositor did, `base * .65 + body * .2 + body * .15`, with the body layer
+ * sampled at two scales, and lays the light layer's glints over it a frame at a time. The result is quantised onto the teal
+ * ramp so it stays inside the palette rule. The shallows, the bed showing through and the foam
+ * at a shore are the world's (pathedge.ts), cut per pixel along the shore. Everything wraps at 64, so the tile repeats without a
+ * seam; the variants differ by the part of the layers they read. `pnpm art:water` writes the PNGs and their kit.json entries.
  */
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { PNG } from 'pngjs';
 
-import { hexToRgb } from '../kit/palette.js';
-import { LETTER_PALETTE, PALETTE_LEGEND } from '../kit/sketches.js';
-import { KIT_JSON, withSprite } from './pick.js';
 import { ROOT } from './queue.js';
+import { TILE, hash3, writeScripted } from './scripted.js';
 
-const SIZE = 64;
 const FRAMES = 4;
+/** Radius of the box blur that softens the body, in pixels. */
+const BLUR = 5;
+const LAYER_DIR = 'tools/kit-gen/water-layers';
+/** The shares of a tile by the body's brightness, darkest first: deep patches, the body, lighter patches. The cove's deep water measures (50, 92, 87), between the ramp's second and third steps. */
+const SHARES = { deep: 0.74, light: 0.025 };
+/** 2x2 ordered dither, as a fraction of the body's spread: patches meet in a soft stipple, not a hard edge. */
+const BAYER = [0, 2, 3, 1].map((n) => (n + 0.5) / 4 - 0.5);
+const DITHER = 0.4;
 
-function h(seed: number, a: number, b: number): number {
-  let x = Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(a + 7, 0xc2b2ae35) ^ Math.imul(b + 13, 0x27d4eb2f);
-  x ^= x >>> 15;
-  x = Math.imul(x, 0x2c1b3c6d);
-  x ^= x >>> 12;
-  return (x >>> 0) / 4294967296;
-}
-
-/** One frame of one variant as rows of palette letters. */
-export function waterRows(seed: number, frame: number): string[] {
-  const rows = Array.from({ length: SIZE }, () => new Array<string>(SIZE).fill('r'));
-  const set = (x: number, y: number, c: string): void => {
-    const row = rows[((y % SIZE) + SIZE) % SIZE];
-    if (row) row[((x % SIZE) + SIZE) % SIZE] = c;
-  };
-  // the ripples: short wavy strokes, each rocking on its own phase
-  for (let i = 0; i < 3; i += 1) {
-    const x0 = Math.floor(h(seed + 20, i, 0) * SIZE);
-    const y0 = Math.floor(h(seed + 21, i, 0) * SIZE);
-    const len = 7 + Math.floor(h(seed + 22, i, 0) * 9);
-    const phase = h(seed + 23, i, 0) * Math.PI * 2;
-    const rock = Math.round(1.6 * Math.sin((frame / FRAMES) * Math.PI * 2 + phase));
-    const bob = Math.round(0.7 * Math.sin((frame / FRAMES) * Math.PI * 2 + phase + 1.3));
-    const shown = len - (((frame + i) % FRAMES) === 0 ? 2 : 0);
-    for (let k = 0; k < shown; k += 1) {
-      const wave = Math.round(Math.sin((k / len) * Math.PI * 2 + phase) * 0.8);
-      const x = x0 + k + rock;
-      const y = y0 + wave + bob;
-      set(x, y, k > 0 && k < shown - 1 && k % 4 === 2 ? 't' : 's');
-      if (k % 2 === 0) set(x + 1, y + 1, 'q');
-    }
-  }
-  // sparks: one pixel, one frame each
-  for (let i = 0; i < 2; i += 1) {
-    if ((i + seed) % FRAMES !== frame) continue;
-    set(Math.floor(h(seed + 30, i, 0) * SIZE), Math.floor(h(seed + 31, i, 0) * SIZE), 't');
-  }
-  return rows.map((r) => r.join(''));
-}
-
-/** The four-frame sheet of a variant, 256 x 64. */
-export function waterSheet(seed: number): PNG {
-  const png = new PNG({ width: SIZE * FRAMES, height: SIZE });
-  for (let f = 0; f < FRAMES; f += 1) {
-    waterRows(seed, f).forEach((row, y) => {
-      [...row].forEach((ch, x) => {
-        const index = PALETTE_LEGEND[ch];
-        const [r, g, b] = hexToRgb(LETTER_PALETTE[index ?? 18] ?? '#3f8fd1');
-        png.data.set([r, g, b, 255], (y * SIZE * FRAMES + f * SIZE + x) * 4);
-      });
-    });
+const layers = new Map<string, PNG>();
+function layer(name: string): PNG {
+  let png = layers.get(name);
+  if (!png) {
+    png = PNG.sync.read(readFileSync(join(ROOT, LAYER_DIR, `${name}.png`)));
+    layers.set(name, png);
   }
   return png;
+}
+const wrap = (v: number, n: number): number => ((Math.floor(v) % n) + n) % n;
+const texel = (png: PNG, x: number, y: number, c: number): number => png.data[(wrap(y, png.height) * png.width + wrap(x, png.width)) * 4 + c]!;
+
+/** One frame of one variant as rows of palette letters (the body's teal steps, the light's glints in the pale ones). */
+export function waterRows(seed: number, frame: number): string[] {
+  const body = layer('body');
+  const light = layer('light');
+  // the body is the same in every variant, so the tiles meet without a seam; the variants differ in where the light falls
+  const ox = 12;
+  const oy = 90;
+  const gox = Math.floor(hash3(seed, 1, 0) * 128);
+  const goy = Math.floor(hash3(seed, 2, 0) * 128);
+  // a gentle rock from frame to frame (the study's refraction wobble), looping at the fourth frame
+  const rockX = Math.round(2 * Math.sin((frame / FRAMES) * Math.PI * 2));
+  const rockY = Math.round(2 * Math.sin((frame / FRAMES) * Math.PI * 2 + 1.3));
+  // the study's body as a brightness, read every second texel so it repeats at 64 (the layer is 128)
+  const field: number[] = [];
+  for (let y = 0; y < TILE; y += 1) {
+    for (let x = 0; x < TILE; x += 1) {
+      const ax = (x + rockX) * 2 + ox;
+      const ay = (y + rockY) * 2 + oy;
+      const lum = (px: number, py: number): number => texel(body, px, py, 0) * 0.3 + texel(body, px, py, 1) * 0.5 + texel(body, px, py, 2) * 0.2;
+      field.push(lum(ax, ay));
+    }
+  }
+  // softened (a wrapped box blur), so the body reads as broad rounded patches, not the layer's fine net
+  const soft = field.map((_, n) => {
+    const x = n % TILE;
+    const y = Math.floor(n / TILE);
+    let sum = 0;
+    for (let dy = -BLUR; dy <= BLUR; dy += 1) for (let dx = -BLUR; dx <= BLUR; dx += 1) sum += field[wrap(y + dy, TILE) * TILE + wrap(x + dx, TILE)]!;
+    return sum / (2 * BLUR + 1) ** 2;
+  });
+  // the tile's own brightness decides which share a pixel falls in, so every variant and frame has the same balance of patches
+  const sorted = [...soft].sort((p, q) => p - q);
+  const lowCut = sorted[Math.floor(sorted.length * SHARES.deep)]!;
+  const highCut = sorted[Math.floor(sorted.length * (1 - SHARES.light))]!;
+  const spread = sorted[Math.floor(sorted.length * 0.9)]! - sorted[Math.floor(sorted.length * 0.1)]!;
+  const rows: string[] = [];
+  for (let y = 0; y < TILE; y += 1) {
+    let row = '';
+    for (let x = 0; x < TILE; x += 1) {
+      const v = soft[y * TILE + x]! + BAYER[(x & 1) + 2 * (y & 1)]! * spread * DITHER;
+      let ch = v < lowCut ? 'i' : v > highCut ? 'k' : 'j';
+      // the light layer's glints: where it is bright, and in the frame whose turn it is
+      const lx = x * 2 + gox + 17;
+      const ly = y * 2 + goy + 29;
+      const lv = (texel(light, lx, ly, 0) + texel(light, lx, ly, 1) + texel(light, lx, ly, 2)) / 765;
+      const pulse = 0.12 + 0.65 * Math.max(0, Math.sin((frame / FRAMES) * Math.PI * 2 + lx * 0.045 + ly * 0.018)) ** 6;
+      const glint = Math.min(1, Math.max(0, (lv - 0.42) * 2.5)) * pulse;
+      if (glint > 0.4) ch = glint > 0.62 ? 'm' : 'l';
+      row += ch;
+    }
+    rows.push(row);
+  }
+  return rows;
 }
 
 const NAMES = ['water', 'water_1', 'water_2', 'water_3'] as const;
 
 /** Writes the four sheets, their kit.json entries and one manifest line each. */
-export function writeWater(root = ROOT, today = new Date().toISOString().slice(0, 10)): string[] {
-  const kitPath = join(root, KIT_JSON);
-  const manifest = join(root, 'tools/kit-gen/rich-wave.manifest.jsonl');
-  let kit = readFileSync(kitPath, 'utf8');
-  const wrote: string[] = [];
-  NAMES.forEach((name, i) => {
-    const id = `tiles/${name}`;
-    const file = join(root, 'content/kit/core', `${id}.png`);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, PNG.sync.write(waterSheet(101 + i * 17)));
-    const before = existsSync(manifest) ? readFileSync(manifest, 'utf8') : '';
-    const lines = before.split('\n').filter((l) => l.trim() !== '');
-    // a rerun rewrites the sheet and keeps the line it already has
-    const own = lines.findIndex((l) => l.includes(`"sprite":"${id}"`) && l.includes('tools/src/art/water.ts'));
-    let number = own + 1;
-    if (own < 0) {
-      const lead = before === '' || before.endsWith('\n') ? '' : '\n';
-      number = lines.length + 1;
-      appendFileSync(manifest, `${lead}${JSON.stringify({ sprite: id, name, spec: 'tools/src/art/water.ts', drawer: 'script', ref: id, what: 'open water at 64 px, four frames of drifting ripples', ramps: ['water'], picked: `script, ${today}` })}\n`);
+export function writeWater(): string[] {
+  return writeScripted(
+    'tools/src/art/water.ts',
+    'open water at 64 px from the layered water study of 25.10, four frames',
+    ['teal', 'water'],
+    NAMES.map((name, i) => ({ name, frames: Array.from({ length: FRAMES }, (_, f) => waterRows(101 + i * 17, f)) })),
+  );
+}
+
+/** The four layers as a module the game reads (game/src/waterlayers.ts): each a palette of hex colours and 128 rows of palette indices in base 36. */
+export function layersModule(): string {
+  const out = [
+    '// Generated by `pnpm art:water` from tools/kit-gen/water-layers (the owner\'s layered water of 25.10, with its provenance there). Do not edit by hand.',
+    '/* eslint-disable */',
+    'export interface WaterLayerData {',
+    '  palette: readonly string[];',
+    '  rows: readonly string[];',
+    '}',
+    '',
+    'export const WATER_LAYERS: Readonly<Record<\'bed\' | \'body\' | \'foam\' | \'light\', WaterLayerData>> = {',
+  ];
+  for (const name of ['bed', 'body', 'foam', 'light']) {
+    const png = layer(name);
+    const palette: string[] = [];
+    const rows: string[] = [];
+    for (let y = 0; y < png.height; y += 1) {
+      let row = '';
+      for (let x = 0; x < png.width; x += 1) {
+        const i = (y * png.width + x) * 4;
+        const hex = [png.data[i]!, png.data[i + 1]!, png.data[i + 2]!].map((v) => v.toString(16).padStart(2, '0')).join('');
+        let at = palette.indexOf(hex);
+        if (at < 0) at = palette.push(hex) - 1;
+        row += at.toString(36);
+      }
+      rows.push(row);
     }
-    kit = withSprite(kit, id, { file: `${id}.png`, w: SIZE, h: SIZE, frames: FRAMES, density: 4, ramps: ['water'], source: { spec: 'tools/src/art/water.ts', manifest: `tools/kit-gen/rich-wave.manifest.jsonl:${number}` } });
-    wrote.push(id);
-  });
-  writeFileSync(kitPath, kit);
-  return wrote;
+    out.push(`  ${name}: {`, `    palette: ${JSON.stringify(palette)},`, '    rows: [', ...rows.map((r) => `      '${r}',`), '    ],', '  },');
+  }
+  out.push('};', '');
+  return out.join('\n');
+}
+
+/** Writes the module. */
+export function writeLayersModule(root = ROOT): string {
+  const path = join(root, 'game/src/waterlayers.ts');
+  writeFileSync(path, layersModule());
+  return 'game/src/waterlayers.ts';
 }
