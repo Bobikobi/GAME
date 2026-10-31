@@ -1,8 +1,10 @@
 ---
 // The project tree (the owner's pick of 31.10: the radial tree, in the site's theme, under the developer area). The
-// page is a frame: the browser reads the tree's file (web/src/data/tree.ts) every minute and draws the wheel and the
-// ledgers from it. Names of the agents, their last lines, the queue's notes and the owner's open asks travel sealed
-// in the same file; the gate opens them in this browser only, and nothing typed leaves it.
+// page is a frame: the browser reads the tree's file (web/src/data/tree.ts) every minute and draws the wheel from it.
+// At first sight the wheel shows the root and the plan's stages only, each a short name and one count; a tap (or a
+// hover with a mouse) opens one stage's card with its work, its pull requests and its agents. Names of the agents,
+// their last lines, the queue's notes and the owner's open asks travel sealed in the same file; the gate opens them
+// in this browser only, and nothing typed leaves it.
 import Site from '../../layouts/Site.astro';
 import '../../styles/hub.css';
 import '../../styles/tree.css';
@@ -18,48 +20,25 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     <header class="wrap tree-head">
       <p class="kicker">Developer area</p>
       <h1>The project tree</h1>
-      <p class="lead">
-        The plan grows from the root: each stage is a sector, its work items and pull requests are marks on it, and the
-        agents at work are the leaves on the rim. A leaf turns grey when its agent has been quiet for half an hour.
-      </p>
+      <p class="lead">Each branch is a stage of the plan, with its work done of its work planned. Tap a branch to open it.</p>
       <p class="tree-stamp" id="tree-stamp" aria-live="polite"></p>
-      <p class="tree-state" id="tree-state">Reading the tree.</p>
       <noscript><p class="tree-state">The tree is drawn in the browser; it needs JavaScript.</p></noscript>
     </header>
 
     <div class="wrap tree-main">
       <section aria-labelledby="wheel-h">
         <h2 id="wheel-h" class="vh">The wheel</h2>
-        <svg class="wheel" id="wheel" viewBox="0 0 600 600" role="img" aria-label="The project as a radial tree"></svg>
-        <p class="legend">
-          <span><i class="st-live"></i>live</span>
-          <span><i class="st-in-develop"></i>in develop</span>
-          <span><i class="st-building"></i>building</span>
-          <span><i class="st-planned"></i>planned</span>
-          <span><i class="lf-busy"></i>agent busy</span>
-          <span><i class="lf-idle"></i>idle</span>
-          <span><i class="lf-cloud"></i>in the cloud</span>
-          <span><i class="lf-faded"></i>quiet</span>
-          <span class="sap">▲ landed today</span>
-          <span><i class="lock"></i>sealed</span>
-        </p>
+        <svg class="wheel" id="wheel" role="group" aria-label="The plan's stages around the root"></svg>
+      </section>
+      <div class="tree-side">
+        <section class="tree-card" id="card" aria-live="polite" hidden></section>
         <form class="gate" id="gate">
           <label for="gate-pw">Sealed branches</label>
           <input id="gate-pw" type="password" autocomplete="off" />
           <button class="btn sm" type="submit">Open</button>
           <span class="said" id="gate-said" aria-live="polite"></span>
         </form>
-      </section>
-
-      <div class="tree-side">
-        <section aria-labelledby="stages-h">
-          <h2 id="stages-h">Stages</h2>
-          <ol class="stages" id="stages"></ol>
-        </section>
-        <section aria-labelledby="agents-h">
-          <h2 id="agents-h">Agents</h2>
-          <ol class="agents" id="agents"></ol>
-        </section>
+        <p class="tree-state" id="tree-state">Reading the tree.</p>
       </div>
     </div>
   </div>
@@ -121,12 +100,13 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
   const $ = (id: string): HTMLElement => document.getElementById(id)!;
   let tree: Tree | null = null;
   let opened: Open | null = null;
+  /** the stage whose card is open ('root' for the root), one at a time */
+  let open: string | null = null;
 
   const two = (n: number): string => String(n).padStart(2, '0');
   // the site's form for a time a person reads: DD.MM.YY HH:MM, in UTC
   const stamp = (d: Date): string =>
     `${two(d.getUTCDate())}.${two(d.getUTCMonth() + 1)}.${two(d.getUTCFullYear() % 100)} ${two(d.getUTCHours())}:${two(d.getUTCMinutes())}`;
-  const cls = (s: string): string => s.replace(/\s+/g, '-');
 
   function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
     const e = document.createElement(tag);
@@ -155,172 +135,203 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     return JSON.parse(new TextDecoder().decode(plain)) as Open;
   }
 
-  function leaves(t: Tree): Leaf[] {
-    return [...t.limbs.flatMap((l) => l.leaves), ...t.root, ...t.trunk];
+  // the wheel's name for each stage, two or three words; a stage the page does not know yet is cut from its title
+  const SHORT: Record<string, string> = {
+    opening: 'The opening',
+    v015: 'v0.1.5',
+    server: 'Accounts, server',
+    art: '64 px art',
+    content: 'World and play',
+    ui: 'The screen',
+    community: 'Community',
+    release: 'Release train',
+    tools: 'Tools and CI',
+    presence: 'Seeing others',
+    chat: 'Chat',
+  };
+  function short(l: Limb): string {
+    return SHORT[l.id] ?? l.title.split(/[,:]/)[0]!.split(/\s+/).slice(0, 3).join(' ');
   }
-  function leafClass(l: Leaf): string {
-    if (l.faded || (l.quiet_min ?? 0) > quietMin) return 'lf lf-faded';
-    if (l.manager) return 'lf lf-manager';
-    return `lf lf-${l.where === 'cloud' ? 'cloud' : l.status === 'busy' ? 'busy' : 'idle'}`;
+  const quiet = (lf: Leaf): boolean => lf.faded || (lf.quiet_min ?? 0) > quietMin;
+  // an agent at work right now: busy here or running in the cloud, and not quiet
+  const working = (lf: Leaf): boolean => !quiet(lf) && (lf.status === 'busy' || lf.where === 'cloud');
+  // alive now: an agent working on the stage, or a pull request of it in flight
+  const alive = (l: Limb): boolean => l.prs.length > 0 || l.leaves.some(working);
+
+  /** Splits a name into lines of at most `max` letters, at spaces. */
+  function lines(name: string, max: number): string[] {
+    const out: string[] = [];
+    for (const w of name.split(' ')) {
+      const last = out[out.length - 1];
+      if (last !== undefined && last.length + 1 + w.length <= max) out[out.length - 1] = `${last} ${w}`;
+      else out.push(w);
+    }
+    return out;
   }
 
+  function toggle(id: string): void {
+    open = open === id ? null : id;
+    draw();
+  }
+  function hoverOpen(id: string): void {
+    if (open === id) return;
+    open = id;
+    draw();
+  }
+
+  /**
+   * The wheel: the root in the middle and one branch per stage to a node that carries its count, with the stage's
+   * short name beside it. The stages go round clockwise from the top, the first half on the right; the wheel is as
+   * wide as its box and one unit is one CSS pixel, so every word stays at 16 px on a phone.
+   */
   function drawWheel(t: Tree): void {
     const svg = $('wheel');
     svg.replaceChildren();
-    const cx = 300;
-    const cy = 300;
+    const W = Math.max(320, Math.min(720, svg.clientWidth || 360));
     const n = t.limbs.length;
-    const pt = (r: number, a: number): [number, number] => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-    const arc = (r: number, a0: number, a1: number): string => {
-      const [x0, y0] = pt(r, a0);
-      const [x1, y1] = pt(r, a1);
-      return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+    const right = Math.ceil(n / 2);
+    const left = n - right;
+    const gap = 64;
+    const ry = (Math.max(right, left) * gap) / 2;
+    const H = 2 * ry + 72;
+    const cx = W / 2;
+    const cy = H / 2;
+    // the node's distance from the middle: never on the root, and wider at the waist so the wheel reads round
+    const dx0 = Math.max(48, W * 0.12);
+    const rx = Math.max(16, W * 0.06);
+    const max = Math.floor((W / 2 - dx0 - rx - 32) / 8.4);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('height', String(H));
+    const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const place = (i: number): { x: number; y: number; side: 1 | -1 } => {
+      const side = i < right ? 1 : -1;
+      const k = side === 1 ? i : n - 1 - i;
+      const of = side === 1 ? right : left;
+      const y = cy - ry + (2 * ry * (k + 0.5)) / of;
+      const u = (y - cy) / ry;
+      return { x: cx + side * (dx0 + rx * Math.sqrt(Math.max(0, 1 - u * u))), y, side };
     };
-    let num = 1;
+    const branch = (g: SVGElement, x: number, y: number, live: boolean): void => {
+      g.append(sv('path', { class: `limb${live ? ' alive' : ''}`, d: `M${cx} ${cy} Q${cx} ${y} ${x.toFixed(1)} ${y.toFixed(1)}` }));
+    };
+    const hit = (g: SVGElement, id: string, label: string): void => {
+      g.setAttribute('role', 'button');
+      g.setAttribute('tabindex', '0');
+      g.setAttribute('aria-label', label);
+      g.setAttribute('aria-expanded', String(open === id));
+      g.addEventListener('click', () => toggle(id));
+      g.addEventListener('keydown', (ev) => {
+        const k = (ev as KeyboardEvent).key;
+        if (k === 'Enter' || k === ' ') {
+          ev.preventDefault();
+          toggle(id);
+        }
+      });
+      if (fine) g.addEventListener('pointerenter', () => hoverOpen(id));
+    };
     t.limbs.forEach((l, i) => {
-      const a0 = -Math.PI / 2 + (2 * Math.PI * i) / n;
-      const a1 = a0 + (2 * Math.PI) / n;
-      const am = (a0 + a1) / 2;
-      const span = (k: number, of: number): number => a0 + ((a1 - a0) * (k + 1)) / (of + 1);
-      const g = sv('g', {});
-      const [sx, sy] = pt(62, a0);
-      const [ex, ey] = pt(288, a0);
-      g.append(sv('line', { class: 'sector', x1: sx, y1: sy, x2: ex, y2: ey }));
-      // the limb: from the root to the rim, where its leaves hang
-      const [lx0, ly0] = pt(60, am);
-      const [lx1, ly1] = pt(222, am);
-      g.append(sv('line', { class: 'limb', x1: lx0, y1: ly0, x2: lx1, y2: ly1 }));
-      // the stage ring: the share of its work items done, in its status colour
-      g.append(sv('path', { class: 'track', d: arc(100, a0 + 0.03, a1 - 0.03) }));
-      if (l.total > 0 && l.done > 0) {
-        g.append(sv('path', { class: `done st-${cls(l.status)}`, d: arc(100, a0 + 0.03, a0 + 0.03 + (a1 - a0 - 0.06) * (l.done / l.total)) }));
-      }
-      const [nx, ny] = pt(134, am);
-      g.append(sv('text', { class: 'num', x: nx, y: ny + 8, 'text-anchor': 'middle' }, String(i + 1)));
-      // the work items: one mark each, in two rows when there are many
-      const perRow = Math.max(1, Math.ceil(l.items.length / 2));
-      l.items.forEach((it, k) => {
-        const row = Math.floor(k / perRow);
-        const [x, y] = pt(162 + row * 14, span(k % perRow, perRow));
-        g.append(sv('rect', { class: `it-${it.state}`, x: x - 4, y: y - 4, width: 8, height: 8 }));
-      });
-      // the open pull requests, in their check's colour
-      l.prs.slice(0, 10).forEach((p, k) => {
-        const [x, y] = pt(200, span(k, Math.min(l.prs.length, 10)));
-        g.append(sv('rect', { class: `ci-${p.ci}`, x: x - 6, y: y - 6, width: 12, height: 12 }));
-      });
-      // sap: a pull request of this stage landed today
-      if (l.sap.length) {
-        const [x, y] = pt(78, am + 0.12);
-        g.append(sv('text', { class: 'sap', x, y: y + 6, 'text-anchor': 'middle', 'font-size': 16 }, '▲'));
-      }
-      if (l.sealed_asks) {
-        const [x, y] = pt(222, am + 0.16);
-        g.append(sv('rect', { class: 'lock', x: x - 6, y: y - 6, width: 12, height: 12, transform: `rotate(45 ${x.toFixed(1)} ${y.toFixed(1)})` }));
-      }
-      // the leaves on the rim
-      l.leaves.forEach((lf, k) => {
-        const [x, y] = pt(256, span(k, l.leaves.length));
-        g.append(sv('line', { class: 'twig', x1: lx1, y1: ly1, x2: x, y2: y }));
-        g.append(sv('circle', { class: leafClass(lf), cx: x, cy: y, r: 15 }));
-        g.append(sv('text', { class: 'leafnum', x, y: y + 5, 'text-anchor': 'middle' }, String(num++)));
-      });
+      const { x, y, side } = place(i);
+      const live = alive(l);
+      const g = sv('g', { class: `stage${open === l.id ? ' open' : ''}${l.status === 'planned' ? ' planned' : ''}` });
+      branch(g, x, y, live);
+      g.append(sv('circle', { class: `node${live ? ' alive' : ''}`, cx: x, cy: y, r: 23 }));
+      g.append(sv('text', { class: 'count', x, y: y + 6, 'text-anchor': 'middle' }, `${l.done}/${l.total}`));
+      const words = lines(short(l), max);
+      const tx = x + side * 32;
+      const ty = y + 6 - ((words.length - 1) * 22) / 2;
+      words.forEach((w, k) => g.append(sv('text', { class: 'name', x: tx, y: ty + k * 22, 'text-anchor': side === 1 ? 'start' : 'end' }, w)));
+      hit(g, l.id, `${l.title}: ${l.done} of ${l.total} done${live ? ', alive now' : ''}`);
       svg.append(g);
     });
-    svg.append(sv('circle', { class: 'root', cx, cy, r: 54 }));
-    svg.append(sv('text', { class: 'rootname', x: cx, y: cy - 4, 'text-anchor': 'middle' }, 'Loomvale'));
-    // the manager at the root, and the agents with no branch on the trunk
-    const near = [...t.root, ...t.trunk];
-    near.forEach((lf, k) => {
-      const x = cx + (k - (near.length - 1) / 2) * 22;
-      g2(svg, lf, x, cy + 26, num++);
-    });
-  }
-  function g2(svg: HTMLElement, lf: Leaf, x: number, y: number, num: number): void {
-    svg.append(sv('circle', { class: leafClass(lf), cx: x, cy: y, r: 10 }));
-    svg.append(sv('text', { class: 'leafnum', x, y: y + 5, 'text-anchor': 'middle', 'font-size': 12 }, String(num)));
+    const r = sv('g', { class: `rootg${open === 'root' ? ' open' : ''}` });
+    // the root carries no word: the page's title names it, and a name under it would run into the waist's nodes
+    r.append(sv('circle', { class: 'root', cx, cy, r: 22 }));
+    hit(r, 'root', 'Loomvale: the agents with no stage, and today’s landings');
+    svg.append(r);
   }
 
-  function chip(text: string, className: string): HTMLElement {
-    return el('span', `chip ${className}`, text);
+  /** One line of the card: a few parts side by side. */
+  function line(...parts: (string | HTMLElement | null)[]): HTMLElement {
+    const p = el('p', 'row');
+    for (const x of parts) if (x !== null) p.append(typeof x === 'string' ? el('span', '', x) : x);
+    return p;
   }
-
-  function drawStages(t: Tree): void {
-    const list = $('stages');
-    list.replaceChildren();
-    t.limbs.forEach((l, i) => {
-      const li = el('li');
-      li.append(el('span', 'n', String(i + 1)), el('h3', '', l.title));
-      const row = el('p', 'row');
-      row.append(chip(l.status, `st-${cls(l.status)}`), el('span', 'count', `${l.done}/${l.total}`));
-      if (!l.total) row.append(el('span', '', 'no work items yet'));
-      if (l.kind === 'side') row.append(el('span', '', 'beside the plan'));
-      li.append(row);
-      if (l.prs.length) {
-        const prs = el('p', 'row');
-        for (const p of l.prs) {
-          const c = chip(`#${p.n}`, `ci-${p.ci}`);
-          c.title = `${p.title}${p.draft ? ' (draft)' : ''}`;
-          prs.append(c);
-        }
-        li.append(prs);
-      }
-      if (l.sap.length) {
-        const sap = el('p', 'row sap');
-        sap.textContent = `▲ ${l.sap.map((s) => `#${s.n} at ${s.at}`).join(', ')} landed today`;
-        li.append(sap);
-      }
-      const asks = opened ? opened.asks.filter((a) => a.limb === l.id) : [];
-      if (l.sealed_asks) {
-        const r = el('p', 'row');
-        r.append(chip(opened ? `${asks.length} picture${asks.length === 1 ? '' : 's'} for the owner today` : 'sealed: the owner’s asks', 'lock'));
-        li.append(r);
-      }
-      if (l.items.length) {
-        const det = el('details');
-        det.append(el('summary', '', `${l.items.length} work item${l.items.length === 1 ? '' : 's'}`));
-        const ul = el('ul', 'items');
-        l.items.forEach((it, k) => {
-          const item = el('li', '', `${it.state}: ${it.title}`);
-          const extra = opened?.items[`${l.id}:${k}`];
-          if (extra) item.append(el('span', 'note', ` - ${extra.status}`));
-          ul.append(item);
-        });
-        det.append(ul);
-        li.append(det);
-      }
-      list.append(li);
-    });
-  }
-
-  function drawAgents(t: Tree): void {
-    const list = $('agents');
-    list.replaceChildren();
-    leaves(t).forEach((lf, i) => {
-      const faded = lf.faded || (lf.quiet_min ?? 0) > quietMin;
-      const li = el('li', faded ? 'faded' : '');
-      const open = opened?.leaves[lf.key];
-      const who = open ? `${open.name}${open.label ? ` (${open.label})` : ''}` : lf.manager ? 'The manager' : 'An agent';
-      li.append(el('span', 'n', String(i + 1)), el('h3', '', who));
-      const row = el('p', 'row');
-      row.append(
-        el('span', '', lf.stream),
-        el('span', '', lf.model ?? 'model unknown'),
-        el('span', '', lf.where === 'cloud' ? 'in the cloud' : lf.status),
+  function agentRows(list: Leaf[]): HTMLElement {
+    const ul = el('ul', 'card-list');
+    for (const lf of list) {
+      const o = opened?.leaves[lf.key];
+      const who = o ? `${o.name}${o.label ? ` (${o.label})` : ''}` : lf.manager ? 'The manager' : 'An agent';
+      const li = el('li', working(lf) ? 'alive' : quiet(lf) ? 'quiet' : '');
+      li.append(el('b', '', who));
+      li.append(
+        line(
+          working(lf) ? 'working now' : quiet(lf) ? 'quiet' : lf.status,
+          lf.model,
+          lf.where === 'cloud' ? 'in the cloud' : null,
+          lf.quiet_min !== null ? `last line ${lf.quiet_min} min ago` : null,
+          lf.pr ? `#${lf.pr.n}` : null,
+        ),
       );
-      if (lf.quiet_min !== null) row.append(el('span', '', `last line ${lf.quiet_min} min ago`));
-      li.append(row);
-      const br = el('p', 'row');
-      br.append(el('span', '', lf.branch ?? 'no branch'));
-      if (lf.pr) br.append(chip(`#${lf.pr.n}`, `ci-${lf.pr.ci}`));
-      if (open?.asking) br.append(chip('asks the owner', 'lock'));
-      li.append(br);
-      const last = el('p', 'row last');
-      last.dir = 'auto';
-      last.textContent = open ? open.last : 'Its name and last line are sealed.';
-      li.append(last);
-      list.append(li);
-    });
+      if (o?.last) {
+        const last = el('p', 'last', o.last);
+        last.dir = 'auto';
+        li.append(last);
+      }
+      ul.append(li);
+    }
+    return ul;
+  }
+  const head = (text: string): HTMLElement => el('h4', '', text);
+
+  /** The open stage's card: every word the wheel leaves out, at reading size. */
+  function drawCard(t: Tree): void {
+    const card = $('card');
+    card.replaceChildren();
+    const limb = t.limbs.find((l) => l.id === open);
+    if (open === 'root') {
+      card.append(el('h3', '', 'Loomvale'));
+      card.append(line(`${t.counts.landed_today} landed today`, `release ${t.release.live ?? 'unknown'}`));
+      const near = [...t.root, ...t.trunk];
+      if (near.length) card.append(head(`Agents with no stage (${near.length})`), agentRows(near));
+    } else if (limb) {
+      card.append(el('h3', '', limb.title));
+      card.append(line(`${limb.done} of ${limb.total} done`, alive(limb) ? el('span', 'alive-word', 'alive now') : null, limb.kind === 'side' ? 'beside the plan' : null));
+      if (limb.prs.length) {
+        card.append(head(`Pull requests (${limb.prs.length})`));
+        const ul = el('ul', 'card-list');
+        for (const p of limb.prs) {
+          const li = el('li', 'alive');
+          li.append(el('b', '', `#${p.n}`), document.createTextNode(` ${p.title}`));
+          li.append(line(`checks ${p.ci === 'none' ? 'not run' : p.ci}`, p.draft ? 'draft' : null));
+          ul.append(li);
+        }
+        card.append(ul);
+      }
+      if (limb.leaves.length) card.append(head(`Agents (${limb.leaves.length})`), agentRows(limb.leaves));
+      if (limb.sap.length) card.append(line(`Landed today: ${limb.sap.map((s) => `#${s.n} at ${s.at}`).join(', ')}`));
+      if (limb.sealed_asks) {
+        const asks = opened ? opened.asks.filter((a) => a.limb === limb.id) : [];
+        card.append(line(opened ? `${asks.length} picture${asks.length === 1 ? '' : 's'} for the owner today` : 'The owner’s asks are sealed.'));
+      }
+      if (limb.items.length) {
+        card.append(head(`Work items (${limb.items.length})`));
+        const ul = el('ul', 'card-list items');
+        limb.items.forEach((it, k) => {
+          const li = el('li', '', `${it.state}: ${it.title}`);
+          const extra = opened?.items[`${limb.id}:${k}`];
+          if (extra) li.append(el('span', 'note', ` - ${extra.status}`));
+          ul.append(li);
+        });
+        card.append(ul);
+      }
+    }
+    card.hidden = card.childElementCount === 0;
+    if (!card.hidden) {
+      const close = el('button', 'btn sm card-close', 'Close');
+      close.type = 'button';
+      close.addEventListener('click', () => toggle(open ?? ''));
+      card.append(close);
+    }
   }
 
   function draw(): void {
@@ -334,20 +345,13 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
       sp.append(el('b', '', b), document.createTextNode(` ${rest}`));
       return sp;
     };
-    s.append(
-      part(stamp(built), 'UTC, data built'),
-      part(t.release.live ?? 'unknown', 'live'),
-      part(String(t.counts.sessions), `agents, ${t.counts.busy} busy`),
-      part(String(t.counts.open_prs), 'open pull requests'),
-      part(String(t.counts.landed_today), 'landed today'),
-    );
+    s.append(part(String(t.counts.busy), `of ${t.counts.sessions} agents at work`), part(String(t.counts.open_prs), 'pull requests open'));
     const age = Math.round((Date.now() - built.getTime()) / 60000);
     $('tree-state').textContent =
-      `Read ${stamp(new Date())} UTC; the data is ${age} min old and is read again every ${refresh} s.` +
+      `Data built ${stamp(built)} UTC, ${age} min ago; read again every ${refresh} s.` +
       (t.notes.length ? ` Missing this time: ${t.notes.join('; ')}.` : '');
     drawWheel(t);
-    drawStages(t);
-    drawAgents(t);
+    drawCard(t);
   }
 
   async function read(): Promise<void> {
@@ -405,4 +409,11 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
 
   void read();
   setInterval(() => void read(), refresh * 1000);
+  // the wheel takes the width it is given, so it is drawn again when that changes
+  let lastWidth = 0;
+  new ResizeObserver(() => {
+    const w = $('wheel').clientWidth;
+    if (w !== lastWidth && tree) drawWheel(tree);
+    lastWidth = w;
+  }).observe($('wheel'));
 </script>

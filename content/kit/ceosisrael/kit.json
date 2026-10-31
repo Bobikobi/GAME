@@ -19,7 +19,8 @@
           "green",
           "plum",
           "bark"
-        ]
+        ],
+        "scale": 0.79
       },
       "props/fig_bush_empty": {
         "file": "props/fig_bush_empty.png",
@@ -29,7 +30,8 @@
         "ramps": [
           "green",
           "bark"
-        ]
+        ],
+        "scale": 0.79
       },
       "items/fig": {
         "file": "items/fig.png",

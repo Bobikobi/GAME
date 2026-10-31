@@ -79,6 +79,8 @@ const HARE = 'core/hare';
 const ROE = 'core/roe';
 const CROW = 'core/crow';
 const WOLF = 'core/wolf';
+const SPARROW = 'core/sparrow';
+const TROUT = 'core/trout';
 
 let core: CheckResult;
 beforeAll(() => {
@@ -86,18 +88,19 @@ beforeAll(() => {
 });
 
 describe('the shipped content', () => {
-  it('passes: the four wild kinds of the core (hare, roe, crow, wolf) carry behaviour and the check prints no wild line', () => {
+  it('passes: the six wild kinds of the core (hare, roe, crow, wolf, sparrow, trout) carry behaviour and the check prints no wild line', () => {
     expect(lines(core)).toEqual([]);
     expect(lines(core, 'warning')).toEqual([]);
     const kinds = core.assembled.bundle!.map.creatures!.kinds;
-    for (const id of [HARE, ROE, CROW, WOLF]) expect(kinds[id]!.behaviour, id).toBeDefined();
+    for (const id of [HARE, ROE, CROW, WOLF, SPARROW, TROUT]) expect(kinds[id]!.behaviour, id).toBeDefined();
     expect(kinds[WOLF]!.hours).toEqual([20, 5]);
     expect(core.assembled.bundle!.values['core/roe-sinew']).toBeGreaterThan(0);
   });
 
-  it('keeps a kind without behaviour cosmetic: no row reads the sparrow, though it sits by the square', () => {
-    expect(core.assembled.bundle!.map.creatures!.kinds['core/sparrow']!.behaviour).toBeUndefined();
-    expect(core.issues.filter((i) => i.message.includes('core/sparrow') || i.where.includes('core/sparrow'))).toEqual([]);
+  it('keeps the sparrow, a town kind, off the square\'s 12-tile rule while it sits by it', () => {
+    const be = core.assembled.bundle!.map.creatures!.kinds[SPARROW]!.behaviour!;
+    expect(be.town).toBe('town_kind');
+    expect(core.issues.filter((i) => (i.message.includes(SPARROW) || i.where.includes(SPARROW)) && i.level === 'error')).toEqual([]);
   });
 
   it('passes the white hart fixture, priced as a fifth source', () => {
@@ -245,11 +248,11 @@ describe('the line home (HUNT_FAMILIES 3.1 and 8)', () => {
 
 describe('the spots (HUNTING 8, CREATURE_BEHAVIOUR 4)', () => {
   it('refuses a spot for a kind at danger 2 until the fight', () => {
-    expect(has(world([spots((s) => s.push({ kind: WOLF, x: 44, y: 16 }))]), 'map.creatures.spots.17', 'hunts the player (danger 2)')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: WOLF, x: 44, y: 16 }))]), 'map.creatures.spots.34', 'hunts the player (danger 2)')).toBe(true);
   });
 
   it('refuses a wild spot within 12 tiles of the town square, or on safe ground', () => {
-    expect(has(world([spots((s) => s.push({ kind: HARE, x: 20, y: 15 }))]), 'map.creatures.spots.17', 'within 12 tiles of core/town-square')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: HARE, x: 20, y: 15 }))]), 'map.creatures.spots.34', 'within 12 tiles of core/town-square')).toBe(true);
     const safe = editCore<MapFile>('map.json', (m) => {
       m.map.slots.push({ id: 'core/test-safe', kind: 'area', x: 42, y: 14, w: 5, h: 5, safe: true } as MapFile['map']['slots'][number]);
     });
@@ -257,12 +260,12 @@ describe('the spots (HUNTING 8, CREATURE_BEHAVIOUR 4)', () => {
   });
 
   it('refuses a drinker with no water within its roam', () => {
-    expect(has(world([spots((s) => s.push({ kind: ROE, x: 44, y: 11 }))]), 'map.creatures.spots.17', 'drinks but no water')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: ROE, x: 44, y: 11 }))]), 'map.creatures.spots.34', 'drinks but no water')).toBe(true);
   });
 
   it('refuses a second anchor of one kind on one tile, since the anchor id keys every draw', () => {
     const r = world([spots((s) => s.push({ kind: HARE, x: 44, y: 16 }))]);
-    expect(has(r, 'map.creatures.spots.17', 'a second core/hare anchor on 44,16, after spot 14')).toBe(true);
+    expect(has(r, 'map.creatures.spots.34', 'a second core/hare anchor on 44,16, after spot 14')).toBe(true);
     expect(lines(r).some((l) => l.startsWith('map.creatures.spots.14: '))).toBe(false);
     // two kinds on one tile are two anchors with two ids
     expect(lines(world([spots((s) => s.push({ kind: ROE, x: 44, y: 16 }))])).some((l) => l.includes('a second'))).toBe(false);

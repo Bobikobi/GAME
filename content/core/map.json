@@ -3922,7 +3922,50 @@
           "hours": [
             5,
             20
-          ]
+          ],
+          "behaviour": {
+            "sight": 5,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 30,
+              "graze": 40,
+              "wander": 30
+            },
+            "roam": 6,
+            "flight": "fly",
+            "sleeps": "ground",
+            "alarm": 5,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "ignores",
+            "water": "crosses",
+            "weather": "roosts",
+            "town": "town_kind",
+            "habitat": [
+              "meadow",
+              "town"
+            ],
+            "group": {
+              "class": "flock",
+              "bands": [
+                0,
+                0,
+                20,
+                80
+              ],
+              "season": {
+                "winter": [
+                  0,
+                  0,
+                  10,
+                  90
+                ]
+              }
+            },
+            "family": "perching-birds"
+          }
         },
         "core/crow": {
           "look": "bird",
@@ -3985,7 +4028,41 @@
           "hours": [
             5,
             22
-          ]
+          ],
+          "behaviour": {
+            "sight": 2,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 50,
+              "graze": 30,
+              "wander": 20
+            },
+            "roam": 6,
+            "flight": "swim",
+            "sleeps": "water",
+            "alarm": 0,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "ignores",
+            "water": "lives_in",
+            "weather": "none",
+            "town": "town_kind",
+            "habitat": [
+              "water"
+            ],
+            "group": {
+              "class": "herd",
+              "bands": [
+                20,
+                40,
+                40,
+                0
+              ]
+            },
+            "family": "fish"
+          }
         },
         "core/hare": {
           "look": "rabbit",
@@ -4329,6 +4406,91 @@
           "kind": "core/roe",
           "x": 3,
           "y": 25
+        },
+        {
+          "kind": "core/hare",
+          "x": 11,
+          "y": 31
+        },
+        {
+          "kind": "core/hare",
+          "x": 3,
+          "y": 22
+        },
+        {
+          "kind": "core/hare",
+          "x": 10,
+          "y": 3
+        },
+        {
+          "kind": "core/hare",
+          "x": 28,
+          "y": 23
+        },
+        {
+          "kind": "core/hare",
+          "x": 18,
+          "y": 24
+        },
+        {
+          "kind": "core/hare",
+          "x": 42,
+          "y": 5
+        },
+        {
+          "kind": "core/roe",
+          "x": 8,
+          "y": 33
+        },
+        {
+          "kind": "core/roe",
+          "x": 3,
+          "y": 5
+        },
+        {
+          "kind": "core/roe",
+          "x": 20,
+          "y": 24
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 43,
+          "y": 17
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 25,
+          "y": 22
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 10,
+          "y": 29
+        },
+        {
+          "kind": "core/crow",
+          "x": 30,
+          "y": 26
+        },
+        {
+          "kind": "core/crow",
+          "x": 28,
+          "y": 48
+        },
+        {
+          "kind": "core/crow",
+          "x": 44,
+          "y": 48
+        },
+        {
+          "kind": "core/trout",
+          "x": 13,
+          "y": 14
+        },
+        {
+          "kind": "core/trout",
+          "x": 13,
+          "y": 3
         }
       ]
     },

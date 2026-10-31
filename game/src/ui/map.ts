@@ -171,19 +171,19 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
   const chunksDown = Math.ceil(H / MAP_CHUNK);
   if (o.chunks.size < chunksAcross * chunksDown) {
     parts.push(
-      `<g transform="translate(${W * S / 2} ${H * S * 0.8}) rotate(-6)" opacity=".32"><text text-anchor="middle" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="13" font-weight="700" letter-spacing="2" fill="#6e4226">NOT YET WALKED</text></g>`,
+      `<g transform="translate(${W * S / 2} ${H * S * 0.8}) rotate(-6)" opacity=".32"><text text-anchor="middle" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="30" font-weight="700" letter-spacing="2" fill="#6e4226">NOT YET WALKED</text></g>`,
     );
   }
 
   // the names the chart can fit; the list has the rest
   const boxes: Box[] = [];
   const placeLabel = (text: string, x: number, y: number, preferred: 'above' | 'below' = 'above'): boolean => {
-    const w = Math.min(150, text.length * 7.6 + 8);
-    const h = 16;
+    const w = Math.min(300, text.length * 15.4 + 8);
+    const h = 36;
     const spots: [number, number][] =
       preferred === 'above'
-        ? [[0, -14], [0, 20], [28, 4], [-28, 4], [0, -28], [0, 34]]
-        : [[0, 20], [0, -14], [28, 4], [-28, 4], [0, 34], [0, -28]];
+        ? [[0, -26], [0, 34], [60, 4], [-60, 4], [0, -54], [0, 62]]
+        : [[0, 34], [0, -26], [60, 4], [-60, 4], [0, 62], [0, -54]];
     for (const [dx, dy] of spots) {
       const bx = Math.max(w / 2 + 4, Math.min(W * S - w / 2 - 4, x + dx));
       const by = Math.max(h / 2 + 4, Math.min(H * S - h / 2 - 4, y + dy));
@@ -191,7 +191,7 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
       if (boxes.some((other) => overlaps(box, other))) continue;
       boxes.push(box);
       parts.push(
-        `<text x="${bx}" y="${by + 5}" text-anchor="middle" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="15" font-weight="700" fill="${INK}" stroke="${PAPER}" stroke-width="4" paint-order="stroke">${esc(text)}</text>`,
+        `<text x="${bx}" y="${by + 11}" text-anchor="middle" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="30" font-weight="700" fill="${INK}" stroke="${PAPER}" stroke-width="4" paint-order="stroke">${esc(text)}</text>`,
       );
       return true;
     }
@@ -235,7 +235,7 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
 
   // compass and frame
   parts.push(
-    `<g transform="translate(${W * S - 34} ${H * S - 38})" opacity=".9"><circle r="19" fill="${PAPER}" fill-opacity=".7" stroke="#6e4226" stroke-width="2"/><path d="M0 -17 L5 0 L0 17 L-5 0 Z" fill="${GOLD_DARK}" stroke="${INK}" stroke-width="1.2"/><path d="M-17 0 L0 -4 L17 0 L0 4 Z" fill="#6e4226" opacity=".5"/><text y="-24" text-anchor="middle" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="12" font-weight="700" fill="#6e4226">N</text></g>`,
+    `<g transform="translate(${W * S - 34} ${H * S - 38})" opacity=".9"><circle r="19" fill="${PAPER}" fill-opacity=".7" stroke="#6e4226" stroke-width="2"/><path d="M0 -17 L5 0 L0 17 L-5 0 Z" fill="${GOLD_DARK}" stroke="${INK}" stroke-width="1.2"/><path d="M-17 0 L0 -4 L17 0 L0 4 Z" fill="#6e4226" opacity=".5"/><text y="-34" text-anchor="middle" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="30" font-weight="700" fill="#6e4226">N</text></g>`,
     `<rect x="5" y="5" width="${W * S - 10}" height="${H * S - 10}" fill="none" stroke="#6e4226" stroke-width="2" stroke-opacity=".55"/>`,
   );
   parts.push('</svg>');
