@@ -86,7 +86,7 @@ import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagon
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
 import { adopt, baseOf, densityOf, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
-import { cameraZoom, pixelRatio, worldToPage } from '../view';
+import { cameraZoom, pixelRatio, wheelStep, wheelZoom, worldToPage } from '../view';
 import { ROOM, doorsOf, type RoomScene } from './room';
 
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
@@ -99,6 +99,9 @@ const NEIGHBOURS: readonly [number, number][] = [
 ];
 /** One swing of the arm while working. */
 const SWING_MS = 520;
+/** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
+const WHEEL_GLIDE_MS = 160;
+const WHEEL_GAP_MS = 180;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
 const PALETTE = {
@@ -354,6 +357,10 @@ export class WorldScene extends Phaser.Scene {
   /** the zoom the screen's size asks for, and whether the camera is held close on the returners' stone instead */
   private baseZoom = 2;
   private stoneHeld = false;
+  /** the wheel's whole steps in from the default view (view.ts wheelStep), and the glide between two of them */
+  private wheel = 0;
+  private wheelGlide: Phaser.Tweens.Tween | undefined;
+  private wheelAt = 0;
   private nodes = new Map<string, Phaser.GameObjects.Sprite>();
   private digs = new Map<string, Phaser.GameObjects.Image>();
   private restoreArt = new Map<string, Phaser.GameObjects.Image[]>();
@@ -551,6 +558,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.addFilters(cam);
     this.scale.on('resize', () => this.fit());
+    this.input.on('wheel', (_p: unknown, _over: unknown, _dx: number, dy: number) => this.onWheel(dy));
     this.fit();
     this.time.addEvent({ delay: 480, loop: true, callback: () => this.flipWater() });
     sound.installUnlock();
@@ -3674,10 +3682,49 @@ export class WorldScene extends Phaser.Scene {
     const zoom = cameraZoom(Math.min(w, h));
     this.baseZoom = zoom;
     // a hold on the stone keeps its own zoom through a resize
-    this.cameras.main.setZoom(this.stoneHeld ? this.heldZoom() : zoom);
+    this.wheelGlide?.stop();
+    this.cameras.main.setZoom(this.stoneHeld ? this.heldZoom() : wheelZoom(Math.min(w, h), this.wheel));
     this.shade.setSize(w, h);
     this.frameKey = '';
     this.drawFrame();
+  }
+
+  /**
+   * The mouse wheel: one whole step in (up to k + 2) or out (back to the default view and no further), in a short glide with the
+   * camera still on the player (CR-109). A trackpad's burst of events moves one step, not five; the stone's hold keeps its own zoom.
+   */
+  private onWheel(deltaY: number): void {
+    const now = this.time.now;
+    if (this.stoneHeld || now - this.wheelAt < WHEEL_GAP_MS) return;
+    const next = wheelStep(this.wheel, deltaY);
+    if (next === this.wheel) return;
+    this.wheelAt = now;
+    this.wheel = next;
+    const cam = this.cameras.main;
+    const to = wheelZoom(Math.min(this.scale.width, this.scale.height), next);
+    const sizeFrame = () => this.vignette?.setDisplaySize(this.scale.width / cam.zoom, this.scale.height / cam.zoom);
+    this.wheelGlide?.stop();
+    if (!RICH.motion) {
+      cam.setZoom(to);
+      sizeFrame();
+      return;
+    }
+    const from = { z: cam.zoom };
+    this.wheelGlide = this.tweens.add({
+      targets: from,
+      z: to,
+      duration: WHEEL_GLIDE_MS,
+      ease: 'Sine.easeInOut',
+      onUpdate: () => {
+        if (this.stoneHeld) return;
+        cam.setZoom(from.z);
+        sizeFrame();
+      },
+      onComplete: () => {
+        if (!this.stoneHeld) cam.setZoom(to);
+        sizeFrame();
+      },
+    });
   }
 
   /** Where a tile is on the page, for UI that points at the world. */
@@ -3708,6 +3755,7 @@ export class WorldScene extends Phaser.Scene {
     const ms = RICH.motion ? STONE_GLIDE_MS : 0;
     this.stoneHeld = true;
     cam.stopFollow();
+    this.wheelGlide?.stop();
     const from = { z: cam.zoom };
     const sizeFrame = () => this.vignette?.setDisplaySize(this.scale.width / cam.zoom, this.scale.height / cam.zoom);
     if (ms === 0) {
@@ -3743,7 +3791,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.stoneHeld) return;
     this.stoneHeld = false;
     const cam = this.cameras.main;
-    cam.setZoom(this.baseZoom);
+    cam.setZoom(wheelZoom(Math.min(this.scale.width, this.scale.height), this.wheel)); // the player's own step comes back
     this.vignette?.setDisplaySize(this.scale.width / cam.zoom, this.scale.height / cam.zoom);
     cam.startFollow(this.player, true, 0.12, 0.12);
     this.time.delayedCall(1200, () => cam.setLerp(1, 1));
