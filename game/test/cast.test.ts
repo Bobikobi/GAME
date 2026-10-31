@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { SUN_TODAY, downsampleAlpha, footRows, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey, sunTableOf } from '../src/cast.js';
+import { SUN_TODAY, castsShadow, downsampleAlpha, footRows, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey, sunTableOf, variantBase } from '../src/cast.js';
 
 /**
  * STYLE section 4, the shadow the owner picked on 18.10: the caster's silhouette laid on
@@ -265,5 +265,24 @@ describe("a moving caster's own texture", () => {
 
   test('an empty shadow is one clear pixel, never a zero-sized texture', () => {
     expect(shadowBox(shadowOf(maskOfAlpha(new Uint8Array(4), 2, 2), sun(0.5, 0.5)))).toEqual({ x: 0, y: 0, w: 1, h: 1 });
+  });
+});
+
+describe('what casts (wave 2b)', () => {
+  test('a plant casts its shadow, a thing lying flat does not', () => {
+    for (const name of ['flowers', 'flowers_white', 'flowers_blue', 'reeds', 'grass_tall', 'herb_plant', 'bush_berry']) {
+      expect(castsShadow(`core/base-kit:props/${name}`), name).toBe(true);
+    }
+    for (const name of ['pebbles', 'fallen_branches', 'fence', 'campfire_lit', 'fog']) {
+      expect(castsShadow(`core/base-kit:props/${name}`), name).toBe(false);
+    }
+  });
+
+  test('a drawn variant follows its base prop, not its own name', () => {
+    expect(variantBase('grass_tall_b')).toBe('grass_tall');
+    expect(variantBase('shop_sign_food')).toBe('shop_sign_food');
+    expect(castsShadow('core/base-kit:props/grass_tall_c')).toBe(true);
+    expect(castsShadow('core/base-kit:props/campfire_lit_b')).toBe(false);
+    expect(castsShadow('core/base-kit:props/campfire_unlit_c')).toBe(false);
   });
 });
