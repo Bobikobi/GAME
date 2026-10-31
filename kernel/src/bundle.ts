@@ -63,6 +63,18 @@ export type MapDef = Meta & GameMap;
 /** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
 export type ReactionDef = Meta & Reaction;
 
+/** A living fire's numbers (GRUNT CR-110), read by the client only. */
+export interface Flicker {
+  band_pct: number;
+  step_min_ms: number;
+  step_max_ms: number;
+  frame_jitter_pct: number;
+  start_spread_ms: number;
+  ember_per_s: number;
+  spark_gap_min_s: number;
+  spark_gap_max_s: number;
+}
+
 export interface Params {
   /** The hours the valley is washed in a colour and the sun's shear (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
   light?: {
@@ -110,7 +122,15 @@ export interface Params {
   /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
   hp_low_pct: number;
   /** safe_tiles: the ring of safe ground around the player's own fire while it burns; burn_pct_per_d: how much faster its logs burn for each step of the area's danger, in percent */
-  fire: { cap: number; log_ms: number; warn_min: number; safe_tiles: number; burn_pct_per_d: number };
+  fire: {
+    cap: number;
+    log_ms: number;
+    warn_min: number;
+    safe_tiles: number;
+    burn_pct_per_d: number;
+    /** how a burning fire moves, flickers and crackles (GRUNT CR-110): display only, the kernel never reads it */
+    flicker?: Flicker;
+  };
   hazard: {
     /** refill_bp: how high a hunt outrun to a safe place lifts health, in basis points of the cap: what its bites took comes back, up to this share */
     predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number; refill_bp: number };
