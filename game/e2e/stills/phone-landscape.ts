@@ -6,7 +6,8 @@
  *   tsx game/e2e/stills/phone-landscape.ts <out-dir> [date]
  *
  * The same frame for each: the valley by day, the player mid-walk under a held stick, a 2K phone on its side
- * (800 by 360 CSS px at 3x, so 2400 by 1080). Only the skin differs; the layout is the shipped one. The skins are
+ * (800 by 360 CSS px at 3x, so 2400 by 1080), shot from one paused moment. Only the skin differs; the layout is the
+ * shipped one. The skins are
  * laid over the shipped plain look here, in the page, and none of them ships until the owner picks one.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
@@ -14,6 +15,8 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser } from '../cdp';
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 import { TAKE_GROUND, carveIn, seedQuery } from '../wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -124,7 +127,7 @@ async function main(): Promise<void> {
   const local = await serve();
   const browser = await Browser.launch();
   try {
-    for (const name of ['plain', ...Object.keys(SKINS)]) {
+    {
       const page = await browser.newPage({ width: 800, height: 360, mobile: true, scale: 3 });
       try {
         await page.goto(`${local.url}?debug&rich=all${seedQuery('core/west-bank')}`);
@@ -143,17 +146,25 @@ async function main(): Promise<void> {
         for (let i = 0; i < 12 && (await page.eval<boolean>(`!!document.querySelector('#ui > .layer')`)); i++) await page.tap('.tbtn.a');
         await page.waitFor(`!document.querySelector('#ui > .layer')`, 'the waking lines to close', 20_000);
         await page.waitFor(`document.querySelectorAll('.toasts > *').length === 0`, 'the opening toasts to leave', 30_000);
-        const skin = SKINS[name];
-        if (skin) await page.eval(`(() => { const s = document.createElement('style'); s.textContent = ${JSON.stringify(skin)}; document.head.append(s); })()`);
         // mid-walk: the thumb holds the stick, pushed right and a little down
         const at = { x: 190, y: 250 };
         await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...at, id: 1 }] });
         await page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: at.x + 44, y: at.y + 10, id: 1 }] });
         await page.waitFor(`!!__game.world.body.moving`, 'the walk', 5000);
-        await page.screenshot(join(out, `${date}-phone-landscape-${name}.png`));
+        // one moment for every skin: the game holds still and only the skin's style changes between the shots
+        await sleep(400);
+        await page.eval('__game.world.game.loop.sleep()');
+        // a toast keeps its own clock while the game sleeps: the shots wait for it to leave, so none goes mid-set
+        await page.waitFor(`document.querySelectorAll('.toasts > *').length === 0`, 'the toasts to leave', 30_000);
+        await page.eval(`(() => { const s = document.createElement('style'); s.id = 'skin'; document.head.append(s); })()`);
+        for (const name of ['plain', ...Object.keys(SKINS)]) {
+          await page.eval(`document.getElementById('skin').textContent = ${JSON.stringify(SKINS[name] ?? '')}`);
+          await sleep(300);
+          await page.screenshot(join(out, `${date}-phone-landscape-${name}.png`));
+          console.log(`${name}: ${join(out, `${date}-phone-landscape-${name}.png`)}`);
+          if (name === 'plain') console.log(`density: ${JSON.stringify(await page.eval(DENSITY))}`);
+        }
         await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-        console.log(`${name}: ${join(out, `${date}-phone-landscape-${name}.png`)}`);
-        if (name === 'plain') console.log(`density: ${JSON.stringify(await page.eval(DENSITY))}`);
       } finally {
         page.close();
       }
