@@ -127,6 +127,7 @@ The thirty-one kinds of BESTIARY 1 and BESTIARY_LANDS 2 and 3 (#432), the carrio
 
 Readings the table makes:
 
+- **Today, two cells differ in the map's data.** The sparrow sleeps on the `ground`, not in a tree: the check lets a `tree` kind sit only on a forest tile ("a tree creature cannot sit on this tile"), and the sparrow's spots are on meadow, where it sits. The trout is a `town_kind`, not `N`: the river runs within 12 tiles of the town square and the check refuses a wild kind that near (HUNTING 8), so two of its seven spots would fail. Retry when the crowns of wave 3c give tree tiles near the sparrow's spots (it then sleeps in them), and when the river's spots can all stand 12 tiles from the square or the rule names water.
 - **The hare has no voice and no water:** it is turned against the bank or snared between its burrow and the meadow, and its only tell is the sit-up. The crow, with the sparrow and the fowl at 5, is the valley's sentinel for it.
 - **The deer looks back and drinks:** the two habits that make it the first real hunt, at the bank at dawn, after a stalk that freezes when the head lifts.
 - **Every hunter holds at the fire's edge (E)**, and the fire is already the rules' own answer (G30, G34). No hunter crosses water; the river is a wall to the player too, so it is this page's reading of the kernel's solid water, not an answer the rules name.

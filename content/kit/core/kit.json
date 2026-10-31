@@ -2594,6 +2594,20 @@
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
         },
         "scale": 0.88
+      },
+      "creatures/roe": {
+        "file": "creatures/roe.png",
+        "w": 96,
+        "h": 96,
+        "frames": 4,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark",
+          "skin",
+          "grey"
+        ],
+        "scale": 0.9
       }
     }
   }
