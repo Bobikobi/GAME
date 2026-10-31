@@ -1,8 +1,9 @@
-"""The first map's plan, drawn from code (NEXT 19 item 0). Run from the repo root: python3 .scratch/first-map/plan.py
+"""The first map's plan, drawn from code (NEXT 19 item 0). Run from the repo root: python3 docs/design/first-map/plan.py
 
-Builds a 192 x 192 raster of the plan for variant A (the proposal), B (a floor of 72 x 72) and C (two passes),
-measures it (walking distances, straight runs of paths, danger bands, the first bridge's view) and writes the images.
-Every number the plan page prints comes from here.
+Builds a 192 x 192 raster of the plan for variant A (the proposal), B (a floor of 72 x 72), C (two passes) and A2 (A re-laid
+to the site's key art, web/public/keyart/hero-poster.jpg, the owner's compass of 29.10), measures it (walking distances,
+straight runs of paths, danger bands, the first bridge's view) and writes the images. Every number the plan page prints comes
+from here; the working images go to .scratch/first-map/, the A2 frames to docs/design/frames/.
 """
 import json
 import math
@@ -14,13 +15,15 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 OUT = Path(__file__).resolve().parent
+WORK = ROOT / '.scratch/first-map'  # working images (not committed)
+FRAMES = ROOT / 'docs/design/frames'
 N = 192
 SHIFT = (66, 84)  # the old valley's block moves rigidly by this (content/core/map.json: x 0..47, y 0..63)
 FLOOR = (48, 48, 143, 143)  # x0, y0, x1, y1 inclusive: 96 x 96
 INNER = (60, 60, 131, 131)  # the 72 x 72 core, variant B's floor
-SOLID = set('T~^%AF')
+SOLID = set('T~^%AFPWROMD')  # A2 adds P pines, W wall, R roofs, O towers, M mossy stones, D the dark tower
 BAND_STEPS = 64  # G64: one danger level per 64 steps (the draft's default band, one chunk)
 
 OLD = json.loads((ROOT / 'content/core/map.json').read_text())['map']
@@ -31,6 +34,32 @@ STARTS = {'N': ('North meadow', (72, 68)), 'W': ('West bank', (67, 95)), 'S': ('
 BRIDGE = (80, 101)  # the old bridge's middle (old (13..15, 17..18) + shift)
 TOWN = (96, 92)  # the town square's middle (old (26..29, 7..10) + shift is (92..95, 91..94))
 AREA_R = 7  # pocket_grown in content/core/pockets
+
+# A2: the valley re-laid to the key art (FIRST_MAP.md "The picture is the map"), picked by the owner on 30.10. The picture looks
+# north from the south meadow: west is its left, the low sun its right (east). The walled town with the tall tower is a city of all
+# races on the river's west bank at the bend, on a ridge, reached by its own bridge; the wake town is the authored block.
+STARTS_A2 = {'N': ('North meadow', (106, 74)), 'W': ('West bank', (67, 95)), 'S': ('Slid bank', (68, 121))}
+CITY = (66, 72)  # the walled town's middle: walls x 58..75, y 64..80
+CITY_BOX = (58, 64, 75, 80)
+CITY_BRIDGE = (80, 78)  # the picture's arched bridge: the city's east gate to the east bank, rows 77..78
+PEAK = (30, 32)  # the one high peak, north-west (level 9; the rest of the ring tops out at 7)
+HILL = (55, 55)  # the ruins hill, level 2, above the city's ridge
+RIDGE_LV = 1  # the city's ridge: one level above the river meadow
+SHELF = (48, 68, 56, 92)  # the west heights, level 2; the falls drop off its east face at (57, 82)
+FALLS = (57, 82)
+LOOKOUT = (91, 151)  # the picture's eye: the south meadow where the three stand
+DARK_TOWER = (183, 123)
+RIVER_A2 = [(128, 50), (121, 55), (110, 61), (100, 64), (90, 68), (84, 71), (82, 75), (80, 79), (80, 84)]
+PATHS_A2 = {
+    'bank-road-N': [(106, 74), (103, 79), (98, 84)],
+    'city-bridge-road': [(83, 78), (88, 81), (94, 85)],
+    'city-south': [(67, 94), (66, 88), (66, 81)],
+    'north-track': [(66, 63), (68, 57), (71, 52), (72, 48)],
+    'ruins-climb': [(66, 63), (61, 61), (56, 57)],
+    'falls-climb': [(63, 87), (59, 89), (53, 88)],
+    'lookout-path': [(85, 146), (88, 149), (91, 151)],
+    'terrace-track': [(112, 74), (120, 72), (128, 70), (138, 68)],
+}
 
 
 def noise(x, y, k=0.0):
@@ -141,6 +170,8 @@ class Plan:
         self.marks = {}  # id -> dict(kind, at, label)
         self.passes = {}  # id -> dict(at, label, crossing)
         self.regions = []  # dict(id, rects, ...)
+        self.starts = STARTS
+        self.light = 'NW'  # the side the relief is lit from
 
     def rect(self, x0, y0, x1, y1, ch, lv=None):
         self.g[y0:y1 + 1, x0:x1 + 1] = ch
@@ -191,14 +222,43 @@ def mountain_level(x, y):
     return int(max(1, min(9, round(base + 1.3 * noise(x, y, 1.7)))))
 
 
+def mountain_level_a2(x, y):
+    """A2: the ring tops out at 7 (snow on the crests); one peak north-west rises above it to 9 (the picture's high mountain)."""
+    fx0, fy0, fx1, fy1 = FLOOR
+    r = max(fx0 - x, x - fx1, fy0 - y, y - fy1, 0)
+    if r == 0:
+        return 0
+    ring = int(max(1, min(7, round(1 + r / 5.2 + 1.3 * noise(x, y, 1.7)))))
+    peak = int(round(9.4 - math.hypot(x - PEAK[0], y - PEAK[1]) / 6.5))
+    return max(ring, min(9, peak))
+
+
+def line_tiles(points):
+    """A 4-connected line of tiles through the waypoints (x first, then y, in unit steps by the larger remaining axis)."""
+    out = [points[0]]
+    x, y = points[0]
+    for tx, ty in points[1:]:
+        while (x, y) != (tx, ty):
+            if abs(tx - x) >= abs(ty - y):
+                x += 1 if tx > x else -1
+            else:
+                y += 1 if ty > y else -1
+            out.append((x, y))
+    return out
+
+
 def build(variant='A'):
     p = Plan()
     rng = random.Random(11)
     fx0, fy0, fx1, fy1 = FLOOR
+    a2 = variant == 'A2'
+    if a2:
+        p.starts = STARTS_A2
+        p.light = 'E'
     # 1. mountains all round, the floor meadow
     for y in range(N):
         for x in range(N):
-            p.lv[y, x] = mountain_level(x, y)
+            p.lv[y, x] = mountain_level_a2(x, y) if a2 else mountain_level(x, y)
     p.rect(fx0, fy0, fx1, fy1, '.', 0)
 
     # 2. the old valley, moved rigidly: ground and heights; its own frame (west woods, north woods, east hills) is new land
@@ -221,13 +281,24 @@ def build(variant='A'):
                 p.lv[y, x] = 0 if y <= fy1 else mountain_level(x, y) * 0
 
     # 3. the river from its spring at the foot of the north range, down into the old river's top (old x 13..15 at y 0)
-    river = []
-    for y in range(52, 84):
-        cx = 80 + int(round(3 * math.sin((y - 84) / 6.5)))
-        river.append((cx, y))
-        for x in (cx - 1, cx, cx + 1):
-            p.g[y, x] = '~'
-    p.marks['spring'] = dict(kind='spring', at=(river[0][0], 51), label='Spring')
+    if not a2:
+        river = []
+        for y in range(52, 84):
+            cx = 80 + int(round(3 * math.sin((y - 84) / 6.5)))
+            river.append((cx, y))
+            for x in (cx - 1, cx, cx + 1):
+                p.g[y, x] = '~'
+        p.marks['spring'] = dict(kind='spring', at=(river[0][0], 51), label='Spring')
+    else:
+        # A2: the picture's river comes out of the north-east hills, past a mere with wooded islets, and bends south at the city
+        for x, y in line_tiles(RIVER_A2):
+            for yy in (y - 1, y, y + 1):
+                for xx in (x - 1, x, x + 1):
+                    p.g[yy, xx] = '~'
+        p.disc(114, 58, 5, 3, '~', 0)
+        p.g[58, 112:114] = '.'  # two islets; the pocket rule plants them
+        p.g[57, 116] = '.'
+        p.marks['spring'] = dict(kind='spring', at=(RIVER_A2[0][0], RIVER_A2[0][1] - 1), label='Spring')
 
     # 4. the bay: the old bay (x 66..81, y 118..147), widened west and south into the south-west frame
     p.disc(50, 150, 36, 24, '~', 0)
@@ -315,8 +386,13 @@ def build(variant='A'):
     p.marks['arch'] = dict(kind='arch', at=(75 + 66 - 5, 84 + 19), label='Night arch')  # old arch slot (36, 18..20)
     p.marks['hall'] = dict(kind='ruin', at=(100, 172), label='Sunken hall')
 
+    if a2:
+        picture_places(p)
+
     # 10. new land: forest clumps on the meadow of the north band, the east terraces and the west bank, kept clear of the starts
-    keep = [(STARTS[k][1][0], STARTS[k][1][1], 11) for k in STARTS] + [(BRIDGE[0], BRIDGE[1], 8)]
+    keep = [(p.starts[k][1][0], p.starts[k][1][1], 11) for k in p.starts] + [(BRIDGE[0], BRIDGE[1], 8)]
+    if a2:
+        keep += [(CITY[0], CITY[1], 13), (CITY_BRIDGE[0], CITY_BRIDGE[1], 6), (PATHS_A2['bank-road-N'][1][0], PATHS_A2['bank-road-N'][1][1], 4)]
     for i in range(95):
         cx, cy = rng.randint(48, 143), rng.randint(48, 143)
         old = (SHIFT[0] <= cx < SHIFT[0] + 46 and SHIFT[1] <= cy < SHIFT[1] + 60)
@@ -326,28 +402,42 @@ def build(variant='A'):
             continue
         if p.g[cy, cx] != '.':
             continue
-        p.disc(cx, cy, rng.randint(2, 4), rng.randint(2, 3), 'T', int(p.lv[cy, cx]), only='.')
-    # the west foot: a forest edge under the western range
-    for y in range(48, 144):
+        p.disc(cx, cy, rng.randint(2, 4), rng.randint(2, 3), 'P' if a2 and p.lv[cy, cx] > 0 else 'T', int(p.lv[cy, cx]), only='.')
+    # the west foot: a forest edge under the western range (A2: only south of the falls' shelf)
+    for y in range(93 if a2 else 48, 144):
         for x in range(48, 53):
             if p.g[y, x] == '.' and (x + y) % 3:
                 p.g[y, x] = 'T'
 
     # 11. the three starting areas: a cleared disc each
-    for key, (name, (x, y)) in STARTS.items():
+    for key, (name, (x, y)) in p.starts.items():
         p.disc(x, y, AREA_R, AREA_R, '.', 0, only=set('.T,"'))
         p.marks['start-' + key] = dict(kind='start', at=(x, y), label=name, key=key)
 
     # 12. authored paths on the new land (the old block carries its own, as imported)
-    p.paths['bank-road-N'] = wind([(72, 68), (74, 78), (74, 90), (76, 98), (78, 101)], 9)
+    if not a2:
+        p.paths['bank-road-N'] = wind([(72, 68), (74, 78), (74, 90), (76, 98), (78, 101)], 9)
     p.paths['bank-road-W'] = wind([(67, 95), (72, 98), (78, 101)], 10)
     p.paths['bank-road-S'] = wind([(68, 121), (70, 114), (72, 108), (76, 103), (78, 101)], 12)
-    p.paths['north-track'] = wind([(72, 68), (73, 58), (72, 52), (72, 48)], 13)
+    if not a2:
+        p.paths['north-track'] = wind([(72, 68), (73, 58), (72, 52), (72, 48)], 13)
     p.paths['shore-way-in'] = wind([(82, 118), (84, 126), (84, 135), (84, 144)], 14)
     p.paths['tangle-brook'] = wind([(104, 108), (110, 112), (112, 118)], 15)
     p.paths['town-east-road'] = wind([(104, 92), (108, 98), (112, 100)], 16)
     p.paths['west-foot'] = wind([(67, 95), (63, 104), (63, 112), (68, 121)], 17)
-    for key in ('bank-road-N', 'bank-road-W', 'bank-road-S', 'north-track', 'shore-way-in', 'tangle-brook', 'town-east-road', 'west-foot'):
+    keys = ['bank-road-N', 'bank-road-W', 'bank-road-S', 'north-track', 'shore-way-in', 'tangle-brook', 'town-east-road', 'west-foot']
+    if a2:
+        for i, (key, pts) in enumerate(PATHS_A2.items()):
+            p.paths[key] = wind(pts, 40 + i, maxrun=6)
+        keys = list(PATHS_A2) + keys[1:3] + keys[4:]
+        for key, how in (('ruins-climb', 'stair cut in the hill'), ('falls-climb', 'stair beside the falls'), ('terrace-track', 'cart ramp'),
+                         ('north-track', 'steps down from the ridge'), ('city-south', 'steps down from the ridge')):
+            p.crossings(p.paths[key], 1, how)
+        brook = set(p.brook)
+        for x, y in p.paths['city-south']:
+            if (x, y) in brook:
+                p.g[y, x] = 'j'  # a footbridge over the brook from the falls
+    for key in keys:
         p.lay(p.paths[key])
     for key in ('east-road',):
         p.lay(p.paths[key])
@@ -392,6 +482,103 @@ def build(variant='A'):
     fill_pockets(p)
     p.variant = variant
     return p
+
+
+def picture_places(p):
+    """A2's places taken from the picture: the city at the bend, its bridge and dock, the falls off the west heights, the ruins
+    hill, pines on the slopes, the south meadow, the dark tower on the east rim."""
+    rng = random.Random(29)
+    # the high peak: the ring's lower slopes (levels 1-2) on the north and west are pine forest; the rest stays rock and snow
+    for y in range(N):
+        for x in range(N):
+            if p.g[y, x] == '^' and p.lv[y, x] <= 2 and (x < 66 or (y < 66 and x < 128)):
+                p.g[y, x] = 'P'
+    # the ruins hill (level 2): the hall with arches, the wooden tower beside it, two broken towers down the ridge
+    p.disc(HILL[0], HILL[1], 8, 6, '.', 2, only='.')
+    p.rect(51, 51, 58, 55, '%', 2)
+    p.rect(52, 52, 57, 54, 'a', 2)
+    for x in (52, 54, 56):
+        p.g[55, x] = 'a'  # the arches: openings in the south wall
+    p.rect(60, 53, 60, 54, 'O', 2)
+    p.marks['ruins'] = dict(kind='hall', at=(54, 53), label='Ruins hall')
+    p.marks['woodtower'] = dict(kind='woodtower', at=(60, 53), label='Wooden tower')
+    for i, (x, y) in enumerate([(62, 58), (58, 60)]):
+        p.g[y, x] = 'O'
+        p.marks['broken%d' % i] = dict(kind='brokentower', at=(x, y), label='Broken tower')
+    for i in range(10):
+        cx, cy = rng.randint(48, 63), rng.randint(49, 61)
+        if math.hypot(cx - 55, cy - 53) > 6 and p.g[cy, cx] == '.':
+            p.disc(cx, cy, 1.5, 1.2, 'P', 2, only='.')
+    # the west heights and the falls; the brook runs east under the city's south wall into the river
+    x0, y0, x1, y1 = SHELF
+    p.rect(x0, y0, x1, y1, '.', 2)
+    for i in range(16):
+        cx, cy = rng.randint(x0, x1), rng.randint(y0, y1)
+        if math.hypot(cx - 53, cy - 88) > 6:  # the clearing at the top of the climb
+            p.disc(cx, cy, rng.randint(1, 2), rng.randint(1, 2), 'P', 2, only='.')
+    p.brook = [(x, 82 + ((x - 57) // 5) % 2) for x in range(FALLS[0], 79)]
+    for x, y in p.brook:
+        p.g[y, x] = '~'
+    p.g[80:85, 56] = '~'  # the falls' white water on the shelf's face
+    p.marks['falls'] = dict(kind='falls', at=FALLS, label='Falls')
+    # the city: a wall, red roofs on blocks between streets, the tall tower, three gates, the dock and its crane on the river
+    cx0, cy0, cx1, cy1 = CITY_BOX
+    p.rect(cx0, cy0, cx1, cy1, 'W', 0)
+    p.rect(cx0 + 1, cy0 + 1, cx1 - 1, cy1 - 1, 'c', 0)
+    for y in range(cy0 + 2, cy1 - 1):
+        for x in range(cx0 + 2, cx1 - 1):
+            if (x - cx0 - 2) % 4 in (0, 1) and (y - cy0 - 2) % 4 in (0, 1) and not (64 <= x <= 69 and 70 <= y <= 74):
+                p.g[y, x] = 'R'
+    p.rect(60, 66, 61, 67, 'O', 0)
+    p.marks['city'] = dict(kind='tower', at=(60, 66), label='The tall tower')
+    p.g[cy1, 66:68] = 'c'  # south gate
+    p.g[cy0, 66:68] = 'c'  # north gate
+    p.g[77:79, cx1] = 'c'  # east gate, onto the bridge
+    p.g[71:74, cx1] = 'c'  # the dock gate
+    for y in range(71, 74):
+        x = cx1 + 1
+        while p.g[y, x] != '~':
+            p.g[y, x] = 'd'
+            x += 1
+        p.g[y, x] = 'd'
+    p.marks['crane'] = dict(kind='crane', at=(77, 71), label='Dock crane')
+    p.g[59:61, 73] = 'O'  # the spire on the rise north of the city
+    p.marks['spire'] = dict(kind='spire', at=(73, 59), label='Spire')
+    for y in (77, 78):
+        for x in range(cx1 + 1, cx1 + 11):
+            if p.g[y, x] == '~':
+                p.g[y, x] = 'j'
+    # heights (owner, 30.10: "the city sits on a certain ridge and below and above it there are more places"): the city and the
+    # spire's rise stand on a ridge at level 1, one above the river meadow (0) and the dock; the ruins hill and the falls' heights
+    # (2) and the peak (9) stand above it. Every gate is a crossing (G68): steps down to the meadow, a ramp to the bridge, a stair
+    # to the dock.
+    for y in range(cy0 - 1, cy1 + 2):
+        for x in range(cx0 - 1, cx1 + 1):
+            p.lv[y, x] = RIDGE_LV
+    for y in range(56, 64):
+        for x in range(69, 77):
+            if math.hypot((x - 73) / 4, (y - 60) / 4) <= 1 and p.g[y, x] in '.O':
+                p.lv[y, x] = RIDGE_LV
+    for (x0, y0, x1, y1), how in (((66, 79, 67, 82), 'steps down from the south gate'), ((66, 62, 67, 65), 'steps down from the north gate'),
+                                  ((74, 77, 77, 78), 'ramp down to the bridge'), ((74, 71, 77, 73), 'stair down to the dock')):
+        for y in range(y0, y1 + 1):
+            for x in range(x0, x1 + 1):
+                p.stairs[(x, y)] = how
+    # the south meadow where the three stand: flowers, rocks, the mossy stones of an old wall on its north rim
+    p.disc(LOOKOUT[0], LOOKOUT[1], 6, 4, '.', 0, only=set('^P'))
+    for y in range(LOOKOUT[1] - 4, LOOKOUT[1] + 5):
+        for x in range(LOOKOUT[0] - 6, LOOKOUT[0] + 7):
+            if p.g[y, x] == '.' and (x * 7 + y * 3) % 4 == 0:
+                p.g[y, x] = 'w'
+    for x, y in [(86, 153), (96, 153), (95, 149)]:
+        p.g[y, x] = '%'
+    for x, y in [(88, 148), (89, 148), (93, 148)]:
+        p.g[y, x] = 'M'
+    p.marks['lookout'] = dict(kind='eye', at=LOOKOUT, label="The picture's eye")
+    # the lone dark tower on the highland's east rim, with its plume
+    p.rect(DARK_TOWER[0], DARK_TOWER[1], DARK_TOWER[0] + 1, DARK_TOWER[1] + 1, 'D', 3)
+    p.marks['darktower'] = dict(kind='darktower', at=DARK_TOWER, label='Dark tower')
+    p.marks['peak'] = dict(kind='peak', at=PEAK, label='High peak')
 
 
 def fill_pockets(p, small=60):
@@ -455,7 +642,7 @@ def nearest_walkable(p, x, y):
 
 def measure(p):
     m = {}
-    starts = {k: nearest_walkable(p, *v[1]) for k, v in STARTS.items()}
+    starts = {k: nearest_walkable(p, *v[1]) for k, v in p.starts.items()}
     br = nearest_walkable(p, BRIDGE[0] - 2, BRIDGE[1])  # the west bank end of the bridge
     d_br = bfs(p, [br])
     m['legs'] = {k: int(d_br[y, x]) for k, (x, y) in starts.items()}
@@ -486,7 +673,7 @@ def measure(p):
     m['d_levels'] = {str(i): int(((d_town >= 0) & (d_town // BAND_STEPS == i)).sum()) for i in range(0, 4)}
     m['unreachable_walkable'] = int((walkable(p) & (d_town < 0)).sum())
     # places: every authored mark and old slot is a pay for the G62 proxy; the worst walk from a floor tile to one
-    pays = [nearest_walkable(p, *mk['at']) for mk in p.marks.values() if mk['kind'] != 'start']
+    pays = [nearest_walkable(p, *mk['at']) for mk in p.marks.values() if mk['kind'] not in ('start', 'peak')]
     pays += [nearest_walkable(p, 66 + s['x'], 84 + s['y']) for s in OLD['slots'] if 66 + s['x'] < N and 84 + s['y'] < N]
     d_pay = bfs(p, pays)
     reach = walkable(p) & (d_pay >= 0)
@@ -504,7 +691,7 @@ def measure(p):
     for k, ps in p.passes.items():
         x, y = nearest_walkable(p, *ps['at'])
         m['pass_reach'][k] = int(d_town[y, x])
-    for k in ('boathouse', 'tarn', 'dock', 'hall', 'stall1', 'stall3'):
+    for k in ('boathouse', 'tarn', 'dock', 'hall', 'stall1', 'stall3', 'city', 'ruins', 'falls', 'lookout', 'darktower'):
         if k in p.marks:
             x, y = nearest_walkable(p, *p.marks[k]['at'])
             m['pass_reach'][k] = int(d_town[y, x])
@@ -519,7 +706,12 @@ PAL = {
     ':': (205, 170, 108), '=': (196, 190, 176), '#': (150, 140, 162), '%': (104, 98, 108), 'A': (104, 98, 108), 'j': (166, 112, 58),
     'a': (132, 122, 134), 'b': (206, 194, 152), 'S': (226, 208, 150), 'r': (150, 164, 88), 'f': (62, 136, 112), 'h': (156, 154, 100),
     'x': (112, 92, 132), 'k': (170, 160, 150), 'F': (112, 124, 156), '^': (128, 128, 134),
+    # A2
+    'P': (30, 78, 56), 'W': (214, 196, 160), 'R': (196, 78, 56), 'O': (230, 214, 178), 'M': (122, 132, 96), 'D': (24, 20, 30),
+    'c': (190, 170, 130), 'd': (150, 100, 60), 'w': (236, 232, 170),
 }
+CITY_RGB = (255, 170, 60)
+A2_KINDS = ('tower', 'spire', 'brokentower', 'crane', 'hall', 'woodtower', 'falls', 'peak', 'darktower', 'eye')
 FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
 
 
@@ -527,10 +719,21 @@ def font(sz):
     return ImageFont.truetype(FONT, sz)
 
 
-def mountain_rgb(level, x, y, lv):
+def mountain_rgb(level, x, y, lv, light='NW'):
     base = np.array([96 + level * 17, 98 + level * 17, 106 + level * 16], dtype=float)
     # a face is lit from the north-west: a drop to the north-west is darker, a rise lighter
     shade = 0
+    if light == 'E':  # A2: the picture's low sun stands in the east, so a rise to the east is in shadow
+        if x < N - 1 and lv[y, x + 1] > lv[y, x]:
+            shade -= 24
+        if x < N - 1 and lv[y, x + 1] < lv[y, x]:
+            shade += 20
+        if y > 0 and lv[y - 1, x] > lv[y, x]:
+            shade -= 8
+        if level >= 7:  # the ring's crests carry snow; the one peak above them is white
+            k = {7: 0.4, 8: 0.7, 9: 0.85}[level]
+            base = base * (1 - k) + np.array([250, 250, 255]) * k
+        return tuple(int(max(0, min(255, c + shade))) for c in base)
     if y > 0 and lv[y - 1, x] > lv[y, x]:
         shade -= 22
     if x > 0 and lv[y, x - 1] > lv[y, x]:
@@ -550,11 +753,19 @@ def tile_image(p):
         for x in range(N):
             ch = p.g[y, x]
             if ch == '^':
-                img[y, x] = mountain_rgb(int(p.lv[y, x]), x, y, p.lv)
+                img[y, x] = mountain_rgb(int(p.lv[y, x]), x, y, p.lv, p.light)
             else:
                 c = PAL.get(ch, (255, 0, 255))
                 if p.lv[y, x] > 0 and ch in 'kh.fT':
                     c = tuple(min(255, int(v + 6 * p.lv[y, x])) for v in c)
+                if getattr(p, 'variant', 'A') == 'A2':  # STYLE 6: a light lip on a top's edge, a dark foot under a face
+                    up = y > 0 and p.g[y - 1, x] not in '^P' and p.lv[y - 1, x] > p.lv[y, x]
+                    side = any(0 <= x + dx < N and p.g[y, x + dx] not in '^P' and p.lv[y, x + dx] > p.lv[y, x] for dx in (-1, 1))
+                    lip = y < N - 1 and p.g[y + 1, x] not in '^P' and p.lv[y + 1, x] < p.lv[y, x]
+                    if up or side:
+                        c = tuple(int(v * 0.55) for v in c)
+                    elif lip:
+                        c = tuple(min(255, int(v * 0.6 + 255 * 0.4)) for v in c)
                 img[y, x] = c
     return img
 
@@ -599,7 +810,7 @@ def draw_marks(d, p, s, ox, oy, crop=None, small=False):
             if crop is None:
                 d.line([x0, y0, x1, y1], fill=(255, 255, 255, 70), width=1)
     # starting areas
-    for key, (name, (x, y)) in STARTS.items():
+    for key, (name, (x, y)) in p.starts.items():
         px, py = P(x, y)
         r = AREA_R * s
         d.ellipse([px - r, py - r, px + r, py + r], outline=START_RGB[key] + (255,), width=2 if s >= 3 else 1)
@@ -608,6 +819,8 @@ def draw_marks(d, p, s, ox, oy, crop=None, small=False):
         x, y = mk['at']
         px, py = P(x, y)
         k = mk['kind']
+        if k in A2_KINDS and crop is not None and not (cx0 <= x < cx0 + 96 and cy0 <= y < cy0 + 96):
+            continue  # outside the valley panel
         if k == 'boathouse':
             d.rectangle([px - 3 * s / 2, py - s, px + 3 * s / 2, py + s], fill=(150, 70, 50), outline=(255, 230, 200))
             for i in range(4):
@@ -624,6 +837,41 @@ def draw_marks(d, p, s, ox, oy, crop=None, small=False):
             d.rectangle([px - 2 * s, py - s, px + 2 * s, py + s], outline=(190, 150, 220), width=1)
         elif k == 'spring':
             d.ellipse([px - s, py - s, px + s, py + s], outline=(200, 230, 255), width=1)
+        elif k in ('tower', 'spire', 'brokentower'):
+            h = {'tower': 4, 'spire': 3, 'brokentower': 2}[k] * s
+            d.rectangle([px - s / 2, py - h, px + s / 2, py + s / 2], fill=(236, 222, 186), outline=(60, 40, 30))
+            if k != 'brokentower':
+                d.polygon([(px - s, py - h), (px + s, py - h), (px, py - h - 1.5 * s)], fill=(200, 70, 50))
+        elif k == 'crane':
+            d.line([px, py + s, px, py - 2.5 * s, px + 1.5 * s, py - 2.5 * s], fill=(110, 70, 40), width=2 if s >= 3 else 1)
+        elif k == 'hall':
+            d.rectangle([px - 3 * s, py - 2 * s, px + 3 * s, py + 1.5 * s], outline=(240, 230, 210), width=1)
+            for i in (-2, 0, 2):
+                d.arc([px + (i - 0.6) * s, py - 0.5 * s, px + (i + 0.6) * s, py + 1.5 * s], 180, 360, fill=(240, 230, 210))
+        elif k == 'woodtower':
+            d.rectangle([px - s, py - 2 * s, px + s, py + s], outline=(150, 100, 60), width=1)
+            d.line([px - s, py - 2 * s, px + s, py + s], fill=(150, 100, 60))
+            d.line([px + s, py - 2 * s, px - s, py + s], fill=(150, 100, 60))
+        elif k == 'falls':
+            for i in range(3):
+                d.line([px - s + i * s, py - 2 * s, px - s + i * s, py + 2 * s], fill=(245, 250, 255), width=1)
+        elif k == 'peak':
+            d.polygon([(px, py - 5 * s), (px + 5 * s, py + 3 * s), (px - 5 * s, py + 3 * s)], outline=(70, 80, 110), width=1)
+        elif k == 'darktower':
+            d.rectangle([px - s, py - 2 * s, px + s, py + s], fill=(20, 16, 26), outline=(200, 190, 210))
+            for i in range(4):
+                d.ellipse([px - 2 * s + i * 0.6 * s, py - 3 * s - i * 2 * s, px + i * 0.6 * s, py - s - i * 2 * s], fill=(16, 14, 20, 190))
+        elif k == 'eye':
+            d.polygon([(px, py - 3 * s), (px + 2 * s, py + s), (px - 2 * s, py + s)], fill=(255, 236, 120), outline=(40, 30, 10))
+    if getattr(p, 'variant', 'A') == 'A2':
+        bx0, by0, bx1, by1 = CITY_BOX
+        (ax, ay), (bx, by) = P(bx0 - 0.5, by0 - 0.5), P(bx1 + 0.5, by1 + 0.5)
+        d.rectangle([ax, ay, bx, by], outline=CITY_RGB + (255,), width=2 if s >= 3 else 1)
+        bx, by = P(*CITY_BRIDGE)
+        d.rectangle([bx - 3 * s, by - 1.4 * s, bx + 3 * s, by + 1.4 * s], outline=(255, 255, 255), width=1)
+        if crop is None:  # the low sun on the east edge
+            sx, sy = P(N - 3, 30)
+            d.ellipse([sx - 6, sy - 6, sx + 6, sy + 6], fill=(255, 196, 90), outline=(255, 240, 200))
     # the town, the bridge
     tx, ty = P(*TOWN)
     d.rectangle([tx - 8 * s, ty - 6 * s, tx + 8 * s, ty + 5 * s], outline=(255, 90, 70), width=2 if s >= 3 else 1)
@@ -682,14 +930,17 @@ def compose(p, d_town, caption1, caption2, m, full=False):
     vox = (W - 384) // 2
     draw_marks(d, p, 4, vox, vtop, crop=(vx0, vy0))
     # labels on the valley panel
-    for text, (x, y) in VALLEY_LABELS.items():
+    a2 = getattr(p, 'variant', 'A') == 'A2'
+    for text, (x, y) in (VALLEY_LABELS_A2 if a2 else VALLEY_LABELS).items():
         label(d, (vox + (x - vx0) * 4, vtop + (y - vy0) * 4), text, 8)
     # labels on the whole map
-    for text, (x, y) in MAP_LABELS.items():
+    for text, (x, y) in (MAP_LABELS_A2 if a2 else MAP_LABELS).items():
         label(d, (ox + x * 2, top + y * 2), text, 8)
     # the key
     ky = vtop + 384 + 6
     items = [((255, 90, 70), 'town'), (START_RGB['N'], '1 north'), (START_RGB['W'], '2 west'), (START_RGB['S'], '3 slid'), ((255, 255, 255), 'pass'), ((255, 80, 200), 'danger step 64')]
+    if a2:
+        items = [((255, 90, 70), 'town'), (CITY_RGB, 'city'), (START_RGB['N'], '1'), (START_RGB['W'], '2'), (START_RGB['S'], '3'), ((255, 255, 255), 'pass'), ((255, 80, 200), 'danger 64')]
     xx = 8
     for col, text in items:
         d.rectangle([xx, ky + 2, xx + 8, ky + 10], outline=col + (255,), fill=col + (120,))
@@ -702,6 +953,15 @@ MAP_LABELS = {
     'ELF WOOD': (77, 17), 'HIGHLAND': (171, 76), 'TARN': (171, 95), 'THE BAY': (40, 148), 'FAR BANK': (11, 170), 'COAST': (66, 181),
     'UNDEAD SOUTH': (100, 172), 'VALLEY': (96, 56), 'N': (72, 50),
 }
+MAP_LABELS_A2 = {
+    'ELF WOOD': (77, 17), 'HIGH PEAK': (30, 46), 'HIGHLAND': (171, 76), 'TARN': (171, 95), 'THE BAY': (40, 148), 'FAR BANK': (11, 170),
+    'COAST': (60, 183), 'UNDEAD SOUTH': (112, 176), 'CITY': (66, 87), 'N': (72, 50), 'EYE': (91, 158), 'SUN': (178, 30),
+}
+VALLEY_LABELS_A2 = {
+    'CITY': (67, 70), 'TOWN': (96, 92), 'bridge': (80, 106), 'city bridge': (89, 76), 'dock': (86, 71), 'falls': (52, 79),
+    'ruins hall': (55, 48), 'mere': (114, 53), 'tangle': (96, 126), 'night ruins': (104, 110), 'east terraces': (128, 86),
+    'west bank': (58, 104), 'bay': (62, 138),
+}
 VALLEY_LABELS = {
     'TOWN': (96, 92), 'bridge': (80, 106), 'tangle': (96, 126), 'night ruins': (104, 110), 'camp': (92, 104), 'east terraces': (128, 86),
     'north meadows': (92, 62), 'west bank': (56, 104), 'bay': (62, 138),
@@ -712,6 +972,8 @@ def main():
     results = {}
     plans = {v: build(v) for v in 'ABC'}
     today = json.loads((OUT / 'today.json').read_text()) if (OUT / 'today.json').exists() else {}
+    plans['A2'] = build('A2')
+    WORK.mkdir(parents=True, exist_ok=True)
     for v, p in plans.items():
         m, d_town = measure(p)
         results[v] = m
@@ -719,26 +981,35 @@ def main():
             'A': ('A: the proposal as written', 'floor 96 x 96, 3 passes (E, N, SW), starts 1-3 well apart'),
             'B': ('B tests: the size of the valley floor', 'floor 72 x 72 (A\'s outer 12 tiles are foothill forest); all else as A'),
             'C': ('C tests: how many passes', '2 passes (E, N): the south-west pass is closed; all else as A'),
+            'A2': ('A2: the valley re-laid to the key art (picked 30.10)', 'city of all races on a ridge (level 1); wake town outside the picture'),
         }[v]
         img = compose(p, d_town, cap[0], cap[1], m)
-        img.save(OUT / f'still-{v}.png')
+        img.save(WORK / f'still-{v}.png')
         if v == 'A':
             full = compose(p, d_town, 'The first map: plan, 192 x 192 tiles', 'valley floor in the middle, mountains round it, three passes', m, full=True)
-            full.save(OUT / 'plan-map.png')
-        if v == 'A':
-            np.save(OUT / 'A-ground.npy', p.g)
-            np.save(OUT / 'A-levels.npy', p.lv)
-            Image.fromarray(tile_image(p)).save(OUT / 'A-raw.png')
-    # pixel difference of B and C from A inside the map panels
-    a = np.array(Image.open(OUT / 'still-A.png').convert('RGB')).astype(int)
-    for v in 'BC':
-        b = np.array(Image.open(OUT / f'still-{v}.png').convert('RGB')).astype(int)
+            full.save(WORK / 'plan-map.png')
+        if v in ('A', 'A2'):
+            np.save(WORK / f'{v}-ground.npy', p.g)
+            np.save(WORK / f'{v}-levels.npy', p.lv)
+            Image.fromarray(tile_image(p)).save(WORK / f'{v}-raw.png')
+    # A2's frames: the still, and A beside it
+    a_img, a2_img = Image.open(WORK / 'still-A.png'), Image.open(WORK / 'still-A2.png')
+    a2_img.save(FRAMES / '2026-10-29-first-map-A2.png')
+    pair = Image.new('RGB', (780, 844))
+    pair.paste(a_img, (0, 0))
+    pair.paste(a2_img, (390, 0))
+    ImageDraw.Draw(pair).line([390, 0, 390, 843], fill=(255, 255, 255), width=1)
+    pair.save(FRAMES / '2026-10-29-first-map-A-vs-A2.png')
+    # pixel difference of B, C and A2 from A inside the map panels
+    a = np.array(Image.open(WORK / 'still-A.png').convert('RGB')).astype(int)
+    for v in ('B', 'C', 'A2'):
+        b = np.array(Image.open(WORK / f'still-{v}.png').convert('RGB')).astype(int)
         diff = (np.abs(a - b).sum(axis=2) > 0)
         diff[:40, :] = False  # the caption band
         ys, xs = np.nonzero(diff)
         results[v]['pixels_differing_from_A'] = int(diff.sum())
         results[v]['diff_bbox'] = [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())] if len(xs) else None
-    (OUT / 'measure.json').write_text(json.dumps(results, indent=1))
+    (OUT / 'measure.json').write_text(json.dumps(results, indent=1) + '\n')
     print(json.dumps(results, indent=1))
 
 

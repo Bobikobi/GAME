@@ -158,7 +158,7 @@ window.__tend = (() => {
         const [cx, cy] = queue[i];
         for (const [dx, dy] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) {
           const nx = cx + dx, ny = cy + dy;
-          if (prev.has(key(nx, ny)) || !w.canWalk(s, nx, ny)) continue;
+          if (prev.has(key(nx, ny)) || !w.canWalk(s, nx, ny, [cx, cy])) continue;
           prev.set(key(nx, ny), [cx, cy]);
           if (nx === x && ny === y) { found = true; break; }
           queue.push([nx, ny]);

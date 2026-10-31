@@ -12,8 +12,9 @@ import { TAP, buzz } from './haptics';
 export function mountTouch(root: HTMLElement): void {
   const pad = h('div', { class: 'pad', 'aria-label': 'Direction pad' }, h('i', { class: 'up' }), h('i', { class: 'right' }), h('i', { class: 'down' }), h('i', { class: 'left' }));
   const a = h('button', { class: 'tbtn a', type: 'button', 'aria-label': 'A' }, 'A');
+  const sneak = h('button', { class: 'tbtn sneak', type: 'button', 'aria-pressed': 'false' }, 'Sneak');
   const b = h('button', { class: 'tbtn b', type: 'button', 'aria-label': 'B' }, 'B');
-  const el = h('div', { class: 'touch' }, pad, h('div', { class: 'tbtns' }, b, a));
+  const el = h('div', { class: 'touch' }, pad, h('div', { class: 'tbtns' }, sneak, b, a));
   root.append(el);
 
   const show = () => document.body.classList.add('touch-on');
@@ -60,7 +61,16 @@ export function mountTouch(root: HTMLElement): void {
   tap(a, 'a');
   tap(b, 'b');
 
+  // sneak is a toggle for the thumb that is steering: one tap on, one tap off
+  sneak.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const on = !app.controls.sneak;
+    app.controls.setSneak(on);
+    sneak.setAttribute('aria-pressed', String(on));
+    buzz(TAP);
+  });
+
   // A acts on pointerdown, so the browser's click that follows the finger
   // lifting would land on the window A just opened (and close it)
-  for (const el of [pad, a, b]) el.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+  for (const el of [pad, a, b, sneak]) el.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
 }

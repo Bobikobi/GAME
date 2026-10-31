@@ -34,7 +34,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; source?: { spec: string; manifest: string } }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -166,6 +166,42 @@ export function flattenParams(p: ParamsBody): Params {
       heavy_step_ms: p.load.heavy_step_ms.value,
       heavy_breath_permille: p.load.heavy_breath_permille.value,
     },
+    gait: {
+      run_div: p.gait.run_div.value,
+      sneak_mul: p.gait.sneak_mul.value,
+      noise_still: p.gait.noise_still.value,
+      noise_sneak: p.gait.noise_sneak.value,
+      noise_walk: p.gait.noise_walk.value,
+      noise_run: p.gait.noise_run.value,
+    },
+    hunt: {
+      dress_step_ms: p.hunt.dress_step_ms.value,
+      meat_spoil_d: p.hunt.meat_spoil_d.value,
+      hide_spoil_d: p.hunt.hide_spoil_d.value,
+      grade2_bp: p.hunt.grade2_bp.value,
+      grade3_bp: p.hunt.grade3_bp.value,
+    },
+    wild: {
+      tick_ms: p.wild.tick_ms.value,
+      think_ticks: p.wild.think_ticks.value,
+      wake_tiles: p.wild.wake_tiles.value,
+      awake_max: p.wild.awake_max.value,
+      catchup_max_steps: p.wild.catchup_max_steps.value,
+      flee_avoid_steps: p.wild.flee_avoid_steps.value,
+      refill_clear_tiles: p.wild.refill_clear_tiles.value,
+      spread_tiles: p.wild.spread_tiles.value,
+      print_ring: p.wild.print_ring.value,
+      print_fade_ms: p.wild.print_fade_ms.value,
+      den_stay_steps: p.wild.den_stay_steps.value,
+      bolt_min_tiles: p.wild.bolt_min_tiles.value,
+      bolt_max_tiles: p.wild.bolt_max_tiles.value,
+      throw_ms: p.wild.throw_ms.value,
+      strike_noise: p.wild.strike_noise.value,
+      fire_keep_day: p.wild.fire_keep_day.value,
+      fire_keep_night: p.wild.fire_keep_night.value,
+      town_keep_day: p.wild.town_keep_day.value,
+      town_keep_night: p.wild.town_keep_night.value,
+    },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
       might: p.per_point.might.value,
@@ -191,6 +227,7 @@ export function flattenParams(p: ParamsBody): Params {
     light: p.light
       ? {
           keys: p.light.keys.map((k) => ({ at: k.at, tint: k.tint, pct: k.pct })),
+          ...(p.light.read ? { read: { floor: p.light.read.floor, fog: p.light.read.fog } } : {}),
           ...(p.light.sun
             ? {
                 sun: {
@@ -310,6 +347,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               frames: s.frames ?? 1,
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
+              ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -330,7 +368,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const sprites: Record<string, SpriteInfo> = {};
   for (const [kitId, kit] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
-      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density };
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density, ...(s.stride ? { stride: s.stride } : {}) };
     }
   }
 
@@ -359,7 +397,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const content = { params, items, classes, ...r, map, sprites, verbs, stations, credits };
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
-  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes, reactions: r.reactions });
+  // the map goes in for the hunted kinds, the fifth source (docs/design/HUNTING.md section 9)
+  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes, reactions: r.reactions, map });
   const bundle: Bundle = { format: 1, tag, ...content, instances, values, made, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
@@ -402,7 +441,13 @@ function expandTemplates(
       if (!('class' in input)) return [input.item];
       const fit = ids.filter((id) => {
         const it = items[id]!;
-        return classFits(classes, it.class, input.class) && (input.family === undefined || it.family === input.family) && (it.tier ?? 1) >= input.min_tier;
+        return (
+          classFits(classes, it.class, input.class) &&
+          (input.family === undefined || it.family === input.family) &&
+          (it.tier ?? 1) >= input.min_tier &&
+          // a grade asked for takes that grade or finer (HUNTING section 5); a plain good is grade 1
+          (it.grade?.step ?? 1) >= (input.min_grade ?? 1)
+        );
       });
       if (fit.length === 0) {
         const family = input.family === undefined ? '' : ` and family "${input.family}"`;
@@ -699,7 +744,8 @@ function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): v
   if (m.creatures) {
     const kinds = m.creatures.kinds;
     for (const [id, k] of Object.entries(kinds)) {
-      if (k.hours && k.hours[0] >= k.hours[1]) err(`map.creatures.kinds.${id}.hours`, 'must run from an earlier hour to a later one');
+      // a night kind wraps midnight (the wolf's 20 to 5, CREATURE_BEHAVIOUR section 4): only an empty window is refused
+      if (k.hours && k.hours[0] === k.hours[1]) err(`map.creatures.kinds.${id}.hours`, 'an empty window: from and to are the same hour');
     }
     m.creatures.spots.forEach((c, i) => {
       const kind = kinds[c.kind];

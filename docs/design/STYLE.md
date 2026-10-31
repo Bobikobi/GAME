@@ -19,6 +19,7 @@ The look in one place, for creators and for every session that draws or renders 
   - The shadows, the night with the town's lights, and depth cues 1 to 5 come with or after that step, in one window of `game/src/scenes/world.ts`.
   - The layers above the sprite (the light module, ramps per material and region, motion, composition) and the ladder of stills that decides their look: [ART_SYSTEM.md](ART_SYSTEM.md) (2026-10-20).
   - The world's natural laws (scale in characters, a climate per region, the seasons, the weathers as a look, the light's laws) and their sheets of stills: [NATURE.md](NATURE.md) (2026-10-21, proposal).
+  - The movement set, the code feel layer and how a body is made to move: [ANIMATION.md](ANIMATION.md) (2026-10-29, proposal).
   - Grounds and height come with the open world's first ring ([OPEN_WORLD.md](OPEN_WORLD.md)).
 
 **Both doors (owner, 18.10).** The whole standard holds for the 3D game at `/play3d/` too, in its own means: the proportions as ratios to a character's height, the light and shadow, the night, height and the depth cues. Only the pixel numbers are 2D's alone. The pixel game is built first, and the 3D game follows it. The 3D game may be desktop-only where a phone would block a rule. How it is carried across: docs/team/NEXT.md section 8 e.
@@ -30,7 +31,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 | What | Size in art pixels |
 |---|---|
 | Ground tile, item | 64 x 64 |
-| Character frame | 64 x 96 |
+| Character frame | 128 x 128, the feet at (64, 90): the anim tool's one frame (`tools/anim/anim.json` `frame`), the size the kit check holds a character to |
 | Work pose | 128 x 128, two frames (tool raised, tool down) |
 | Prop | up to 384 x 384 (six tiles a side) |
 
@@ -82,6 +83,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
 ## 2. Pixels and colour
 
 - **Colours:** the 32 core colours plus the shared `CORE_RAMPS` a sprite names (`tools/src/kit/palette.ts`), and a kit's own ramps for materials the shared set lacks.
+- **The windows' colours** (`UI_PALETTE`, DECISIONS 2026-10-28, frame D): the 32 plus eight for the UI alone, the antique gold `#2a2114 #4d3c22 #7a5f33 #a6854a #c9a96a #e8d4a2` and the blacks `#0c0b12 #131220`. No sprite or ground tile draws in them; the sprites stay on the colours above.
 - **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels. This is the rule for a sprite and a ground tile. A layer the engine draws over them (a shadow, the night, a pool, the hour's wash, cloud shade, fog) is a blend at one alpha per step, and the result is still a fully solid pixel; such a layer never has more than four steps, and where two steps meet it may dither (ART_SYSTEM 2, NATURE 4 and 5).
 - **Ramps** run dark to light:
   - greys: `#1b1a2e #3a3554 #5d6177 #8f94a8 #c6cad6 #f5f4ef`

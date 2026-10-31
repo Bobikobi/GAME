@@ -10,6 +10,8 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { canonical } from '@game/kernel';
+import { readSettings } from './anim/clip';
+import { characterCredits } from './anim/sheets';
 import { boardIsCurrent, computeBoard, readCommits, readPoints, squashedCommits, writeBoard } from './board';
 import { formatIssues, runCheck, runRepoCheck } from './check';
 import { LOCK_FILE, REPO_ROOT } from './load';
@@ -140,6 +142,12 @@ function creditsText(credits: { title: string; type: string; creator: string; fi
     lines.push('');
   }
   lines.push(
+    '## Characters',
+    '',
+    'The bodies of the three races, posed and drawn to pixels by `tools/anim` (`pnpm anim sheets`); each line is the credit of the model it starts from.',
+    '',
+    ...characterCredits(readSettings()),
+    '',
     '## Libraries and fonts',
     '',
     '- [Phaser](https://phaser.io) game framework - MIT license.',

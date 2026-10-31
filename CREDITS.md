@@ -10,7 +10,9 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
 - Bags (items) - `content/core/items/bags.json`
+- Goods of the hunt (items) - `content/core/items/goods.json`
 - Healing (items) - `content/core/items/healing.json`
+- Maru's house key (items) - `content/core/items/maru-house-key.json`
 - Outfits (items) - `content/core/items/outfits.json`
 - Tools (items) - `content/core/items/tools.json`
 - The valley (map) - `content/core/map.json`
@@ -90,7 +92,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Foraging (school) - `content/core/schools/foraging.json`
 - Handcraft (school) - `content/core/schools/handcraft.json`
 - Woodcutting (school) - `content/core/schools/woodcutting.json`
-- Pell's stall (shop) - `content/core/shops/trader-shop.json`
+- Pell's shop (shop) - `content/core/shops/trader-shop.json`
 - Dyed cord (template) - `content/core/templates/dye-cord.json`
 - An axe on the bank (treasure) - `content/core/treasures/bank-axe.json`
 - A basket on the bank (treasure) - `content/core/treasures/bank-basket.json`
@@ -108,6 +110,23 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Base kit (kit) - `content/kit/core/kit.json`
 
 AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex image generation via kit:gen; Codex: text-grid sprites in tools/src/kit/sketches.ts; FLUX.1 schnell and Qwen-Image 2512 via kit:gen; Nano Banana (gemini-3.1-flash-image) via Antigravity; Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen.
+
+## [ceosisrael](https://github.com/ceosisrael)
+
+- Sunleaf is slow to open in the fog (reaction) - `content/extensions/ceosisrael/reactions/sunleaf-in-fog.json`
+- Glade fig bushes (resource) - `content/extensions/ceosisrael/resources/glade-figs.json`
+- Glade fig art (kit) - `content/kit/ceosisrael/kit.json`
+
+AI tools: Claude (Anthropic); Qwen-Image 2512 (kit:gen, kaggle drawer).
+
+## Characters
+
+The bodies of the three races, posed and drawn to pixels by `tools/anim` (`pnpm anim sheets`); each line is the credit of the model it starts from.
+
+- Elf: Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim.
+- Human: Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/ (game/public3d/models/README.md); modified: posed with library motion and rendered to pixels by tools/anim.
+- Human: Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.56 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 88,512 to 50,000 triangles and the maps cut from 2048 to 1024 px; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md).
+- Skeleton: Skeleton by Alexander Brodin (https://poly.pizza/m/frU5VxsCGZJ), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/); modified: cut into bone pieces, each fitted to a bone of the Quaternius Universal Base Characters skeleton, posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim.
 
 ## Libraries and fonts
 

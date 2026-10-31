@@ -13,9 +13,13 @@ keyed by hand. Props are built here from boxes, cones and spheres: a hand prop, 
 the body (a herb, a berry bush) and worn parts on the hips (a pouch); an IK point may name a worn part. Each view is
 rendered twice: lit (Cycles, flat albedo, one sun) and as a flat ID pass (blue body, red flame, green tool metal,
 yellow leaves) that tells the snap which ramp a pixel may use. Writes <name>_<view>_<ii>.png, <name>_<view>_<ii>_id.png and <name>_meta.json (the projected feet).
+
+A third kind of target is a race (target "ual"): its body is built here on the Universal Base Characters rig (blender/race.py), the
+very skeleton of the libraries, so a clip plays on it as it is: every bone takes the library bone's local pose, with no retarget.
 """
 import bpy, sys, json, os, math, time
 T0 = time.time()
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from mathutils import Vector, Matrix, Euler
 from bpy_extras.object_utils import world_to_camera_view
@@ -26,6 +30,8 @@ OUT = cfg["out"]; os.makedirs(OUT, exist_ok=True)
 FW, FH = cfg.get("frame", [64, 96]); SS = cfg.get("ss", 4); W, H = FW * SS, FH * SS
 TARGET = cfg.get("target", "forager")
 IS_RIG = TARGET.startswith("rig:")
+IS_UAL = TARGET == "ual"
+NATIVE = cfg.get("map") == "native"   # a body that carries its own actions (the four-legged wolf): played as they are, nothing retargeted
 ELEV = math.radians(cfg.get("elev", 50)); PXM = cfg.get("pxm", 10.0 if IS_RIG else 53.0)
 ANCHOR = tuple(cfg.get("anchor", [32, 84]))
 
@@ -38,6 +44,8 @@ else:
 sc = bpy.context.scene
 sc.frame_start, sc.frame_end = 0, 1000
 sc.render.fps = int(cfg.get("fps", 24))
+
+ROOT = bpy.data.objects.new("Root", None); sc.collection.objects.link(ROOT)
 
 def imp(path):
     before = set(bpy.data.objects)
@@ -57,7 +65,6 @@ RIG19 = {   # the 19-bone body rig: hips, spine, neck, head, upper_arm/forearm/h
     "arm": {"R": ["upper_arm.R", "forearm.R", "hand.R"], "L": ["upper_arm.L", "forearm.L", "hand.L"]},
     "contacts": {"Left": "foot.L", "Right": "foot.R"},
 }
-ROOT = bpy.data.objects.new("Root", None); sc.collection.objects.link(ROOT)
 if IS_RIG:
     tarm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
     tarm.animation_data_clear()
@@ -76,6 +83,14 @@ if IS_RIG:
             o.hide_render = True
     P = ""
     MAP = RIG19
+elif IS_UAL:
+    import race
+    TARMS, BODY, CLASS_PREFIX = race.build(cfg["race"], sc, ROOT, imp)
+    tarm = TARMS[0]
+    for a in TARMS: a.animation_data_clear()
+    P = ""
+    MAP = {"delta": {}, "aim": {}, "order": [], "hips": "pelvis", "thigh": "thigh_l", "arm": {"R": [], "L": []},
+           "contacts": {"Left": "ball_l", "Right": "ball_r"}}
 else:
     tobjs = imp(cfg["target_path"])
     tarm = next(o for o in tobjs if o.type == "ARMATURE")
@@ -85,10 +100,12 @@ else:
     for o in tobjs:
         if o.type == "MESH" and o is not tmesh:
             bpy.data.objects.remove(o, do_unlink=True)
+    if NATIVE:   # keep the model's own actions; the feet are the tails of the last bone of each leg
+        for ac in bpy.data.actions: ac.use_fake_user = True
     tarm.animation_data_clear()
     BODY = [tmesh]
-    P = "mixamorig:"
-    MAP = {
+    P = "" if NATIVE else "mixamorig:"
+    MAP = {"order": [], "contacts": cfg["contacts"]} if NATIVE else {
         "delta": {"Hips": "pelvis", "Spine": "spine_01", "Spine1": "spine_02", "Spine2": "spine_03",
                   "Neck": "neck_01", "Head": "Head", "LeftShoulder": "clavicle_l", "RightShoulder": "clavicle_r",
                   "LeftUpLeg": "thigh_l", "LeftLeg": "calf_l", "LeftFoot": "foot_l", "LeftToeBase": "ball_l",
@@ -123,7 +140,7 @@ if cfg.get("basket") and not IS_RIG:   # the repo's own basket (prop-basket.glb,
 
 # ------------------------------------------------------------------ source: both libraries on one armature
 sarm = None
-for g in cfg["libs"]:
+for g in ([] if NATIVE else cfg["libs"]):
     objs = imp(g)
     a = next(o for o in objs if o.type == "ARMATURE")
     for o in objs:
@@ -133,8 +150,10 @@ for g in cfg["libs"]:
     else:
         bpy.data.objects.remove(a, do_unlink=True)
 for ac in bpy.data.actions: ac.use_fake_user = True
-sarm.animation_data_create()
-smix = sarm.copy(); smix.animation_data_clear(); sc.collection.objects.link(smix)
+smix = None
+if not NATIVE:
+    sarm.animation_data_create()
+    smix = sarm.copy(); smix.animation_data_clear(); sc.collection.objects.link(smix)
 
 def act(name):
     a = bpy.data.actions.get(name)
@@ -222,13 +241,16 @@ def pose_rot(arm, name): return (arm.matrix_world @ arm.pose.bones[name].matrix)
 def pose_head(arm, name): return arm.matrix_world @ arm.pose.bones[name].head
 def pose_tail(arm, name): return arm.matrix_world @ arm.pose.bones[name].tail
 
-s_rest = {b: rest_rot(smix, b) for b in smix.data.bones.keys()}
-t_rest = {b: rest_rot(tarm, b) for b in tarm.data.bones.keys()}
-HIPS = P + MAP["hips"]
-t_hip_rest = rest_head(tarm, HIPS)
-s_hip_rest = rest_head(smix, "pelvis")
-SCALE_V = rest_head(tarm, P + MAP["thigh"]).z / rest_head(smix, "thigh_l").z
-SCALE_H = SCALE_V / cfg.get("kz", 1.0)
+if NATIVE:
+    SCALE_V = SCALE_H = 1.0
+else:
+    s_rest = {b: rest_rot(smix, b) for b in smix.data.bones.keys()}
+    t_rest = {b: rest_rot(tarm, b) for b in tarm.data.bones.keys()}
+    HIPS = P + MAP["hips"]
+    t_hip_rest = rest_head(tarm, HIPS)
+    s_hip_rest = rest_head(smix, "pelvis")
+    SCALE_V = rest_head(tarm, P + MAP["thigh"]).z / rest_head(smix, "thigh_l").z
+    SCALE_H = SCALE_V / cfg.get("kz", 1.0)
 TWIST_K = cfg.get("twist", 1.0)
 
 def set_world(pb, rot3, head_world):
@@ -247,7 +269,25 @@ def twist_of(sb):
     ang = 2 * math.atan2(qs.y, qs.w)
     return (ang + math.pi) % (2 * math.pi) - math.pi
 
+def native_pose(sample):
+    """The model's own action at a frame (seconds are frames at the render fps): the pose a library would have retargeted."""
+    name, fr = sample["base"]
+    a = act(name)
+    tarm.animation_data_create(); tarm.animation_data.action = a
+    if hasattr(tarm.animation_data, "action_slot") and a.slots:
+        tarm.animation_data.action_slot = a.slots[0]
+    sc.frame_set(int(math.floor(fr)), subframe=fr - math.floor(fr))
+    bpy.context.view_layer.update()
+
 def retarget():
+    if NATIVE: return
+    if IS_UAL:   # the race stands on the libraries' own skeleton: every bone takes the library bone's local pose
+        for a in TARMS:
+            for pb in a.pose.bones:
+                sb = smix.pose.bones.get(pb.name)
+                if sb is not None: pb.matrix_basis = sb.matrix_basis.copy()
+        bpy.context.view_layer.update()
+        return
     for pb in tarm.pose.bones:
         pb.rotation_mode = "QUATERNION"; pb.rotation_quaternion = (1, 0, 0, 0); pb.location = (0, 0, 0)
     bpy.context.view_layer.update()
@@ -324,6 +364,10 @@ def ik_overlay(ik, t):
 # ------------------------------------------------------------------ props (made here from boxes and a cone; no outside asset)
 PROP = None; PARTS = {}
 CLASS_OF = {}   # object name -> snap class (body / fire / cool), drawn by the ID pass
+if IS_UAL:
+    for o in BODY:
+        for pre, cl in CLASS_PREFIX.items():
+            if o.name.startswith(pre): CLASS_OF[o.name] = cl
 pc = cfg.get("prop")
 LEAF, LEAF_LIGHT, BERRY = (0.16, 0.40, 0.10), (0.40, 0.68, 0.20), (0.80, 0.08, 0.10)
 def part(name, dim, rgb, emit=0.0, loc=(0, 0, 0), cone=False, cls="body", parent=None, sphere=False, rot=(0, 0, 0), flat=1.0):
@@ -409,6 +453,7 @@ for j, wp in enumerate(cfg.get("worn", [])):
     WORN[wp["kind"]] = (e, wp)
 
 def place_worn():
+    if NATIVE: return
     nm = P + MAP["hips"]
     Rd = pose_rot(tarm, nm) @ t_rest[nm].inverted()
     for e, wp in WORN.values():
@@ -532,7 +577,7 @@ def feet_now():
     feet = {}
     for foot, nm in MAP["contacts"].items():
         pb = tarm.pose.bones[P + nm]
-        wp = tarm.matrix_world @ (pb.tail if IS_RIG else pb.head)
+        wp = tarm.matrix_world @ (pb.tail if (IS_RIG or NATIVE) else pb.head)
         feet[foot] = {"world": [round(c, 4) for c in wp], "px": to_px(wp)}
     return feet
 
@@ -541,17 +586,49 @@ def to_px(world):
     v = world_to_camera_view(sc, cam, world)
     return [round(v.x * FW, 2), round((1 - v.y) * FH, 2)]
 
+def px_height():
+    """The projected height of the whole body in frame pixels (feet to the top of the head, hair or hood)."""
+    dg = bpy.context.evaluated_depsgraph_get(); lo, hi = 1e9, -1e9
+    for o in BODY:
+        ev = o.evaluated_get(dg); me = ev.to_mesh()
+        for v in me.vertices:
+            y = to_px(ev.matrix_world @ v.co)[1]; lo = min(lo, y); hi = max(hi, y)
+        ev.to_mesh_clear()
+    return hi - lo
+
+RACE_K = 1.0
+if IS_UAL:   # a race's size: a given scale, or the height in frame pixels it is fitted to at the library's walk pose; slim narrows it across
+    rc = cfg["race"]; sx, sz = rc.get("slim", [1.0, 1.0])
+    if rc.get("k_force"): RACE_K = rc["k_force"]
+    elif rc.get("fit_px"):
+        fp = rc.get("fit_pose", {"action": "Walk_Loop", "frame": 0})
+        ROOT.scale = (sx, sx, sz); source_pose({"base": [fp["action"], fp.get("frame", 0)]}, {}); retarget()
+        RACE_K = rc["fit_px"] / px_height()
+    ROOT.scale = (RACE_K * sx, RACE_K * sx, RACE_K * sz); bpy.context.view_layer.update()
+    SCALE_V = rest_head(tarm, P + MAP["thigh"]).z / rest_head(smix, "thigh_l").z; SCALE_H = SCALE_V   # the foot-plant tolerance is in the body's own metres
+
 clip = cfg
 samples = cfg["samples"]
+CYCLE_Z = None
+if cfg.get("ground") == "cycle":   # an airborne gait: one floor for the whole cycle, its lowest point over every source frame
+    base_a = samples[0]["base"][0]; zs = []
+    for f in [float(k) for k in range(int(round(cfg.get("dense", {}).get("length", 0))) + 1)] + [s["base"][1] for s in samples]:
+        ROOT.rotation_euler = (0, 0, 0); ROOT.location = (0, 0, 0); bpy.context.view_layer.update()
+        if NATIVE: native_pose({"base": [base_a, f]})
+        else: source_pose({"base": [base_a, f]}, {}); retarget()
+        bpy.context.view_layer.update()
+        zs.append(ground_z())
+    CYCLE_Z = min(zs)
 meta = {"frame": [FW, FH], "anchor": list(ANCHOR), "pxm": PXM, "elev_deg": math.degrees(ELEV), "name": cfg["name"],
-        "target": TARGET, "scale_v": SCALE_V, "scale_h": SCALE_H, "samples": samples, "poses": []}
+        "target": TARGET, "race_scale": RACE_K, "scale_v": SCALE_V, "scale_h": SCALE_H, "samples": samples, "poses": []}
 for i, s in enumerate(samples):
     ROOT.rotation_euler = (0, 0, 0); ROOT.location = (0, 0, 0)
     if PROP is not None: PROP.parent = None
     if BASKET is not None: BASKET.parent = None
     bpy.context.view_layer.update()
     if SETP is not None: SETP.parent = None
-    source_pose(s, clip)
+    if NATIVE: native_pose(s)
+    else: source_pose(s, clip)
     retarget()
     place_worn()
     info = None
@@ -568,6 +645,7 @@ for i, s in enumerate(samples):
         mwp = ob.matrix_world.copy(); ob.parent = ROOT; ob.matrix_world = mwp
     bpy.context.view_layer.update()
     z = body_min_z() if not cfg.get("ground_from_feet") else min((tarm.matrix_world @ tarm.pose.bones[P + n].head).z for n in MAP["contacts"].values())
+    if CYCLE_Z is not None: z = CYCLE_Z
     ROOT.location = (0, 0, -z + cfg.get("ground_lift", 0.0)); bpy.context.view_layer.update()
     if SETP is not None:   # on the floor under the body, turning with it
         SETP.parent = ROOT; SETP.matrix_world = Matrix.Identity(4); bpy.context.view_layer.update()
@@ -579,7 +657,7 @@ for i, s in enumerate(samples):
         feet = {}
         for foot, nm in MAP["contacts"].items():
             pb = tarm.pose.bones[P + nm]
-            wp = tarm.matrix_world @ (pb.tail if IS_RIG else pb.head)
+            wp = tarm.matrix_world @ (pb.tail if (IS_RIG or NATIVE) else pb.head)
             feet[foot] = {"world": [round(c, 4) for c in wp], "px": to_px(wp)}
         sc.render.filepath = os.path.join(OUT, f"{cfg['name']}_{d}_{i:02d}.png")
         if cfg.get("render", True):
@@ -595,8 +673,10 @@ if dn:   # the feet at every source frame (no render): the travel fit needs more
         if PROP is not None: PROP.parent = None
         if BASKET is not None: BASKET.parent = None
         bpy.context.view_layer.update()
-        source_pose({"base": [base_a, f]}, {}); retarget(); bpy.context.view_layer.update()
-        ROOT.location = (0, 0, -ground_z() + cfg.get("ground_lift", 0.0)); bpy.context.view_layer.update()
+        if NATIVE: native_pose({"base": [base_a, f]})
+        else: source_pose({"base": [base_a, f]}, {}); retarget()
+        bpy.context.view_layer.update()
+        ROOT.location = (0, 0, -(ground_z() if CYCLE_Z is None else CYCLE_Z) + cfg.get("ground_lift", 0.0)); bpy.context.view_layer.update()
         rec = {"f": round(f, 3)}
         for d, ang in DIRS.items():
             ROOT.rotation_euler = (0, 0, ang); bpy.context.view_layer.update()

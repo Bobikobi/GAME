@@ -436,6 +436,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -1194,6 +1217,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -1918,6 +1964,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -2586,6 +2655,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -2840,6 +2932,12 @@
                         "minimum": 1,
                         "maximum": 20,
                         "description": "The lowest tier that fits.",
+                        "type": "integer"
+                      },
+                      "min_grade": {
+                        "minimum": 2,
+                        "maximum": 3,
+                        "description": "Only a good of this grade or finer (HUNTING section 5). Left out, any grade fits.",
                         "type": "integer"
                       },
                       "qty": {
@@ -3334,6 +3432,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -4274,6 +4395,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -5496,6 +5640,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -6179,6 +6346,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -6855,6 +7045,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -7488,6 +7701,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -8259,6 +8495,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -8793,6 +9052,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -9426,6 +9708,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -10370,6 +10675,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -10508,6 +10836,11 @@
             "buys": {
               "description": "Whether the shop buys anything that has a value.",
               "type": "boolean"
+            },
+            "interior": {
+              "description": "The room its keeper trades in (DECISIONS.md, 2026-10-11, the shop interior). With it, the keeper stands inside: their place is the door, the player walks in, and the trade opens by talking across the counter. `food`: worn planks, a runner to the counter, a lit stove in a brick chimney. Left out, the keeper trades in the open.",
+              "const": "food",
+              "type": "string"
             }
           }
         }
@@ -10944,6 +11277,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -11635,6 +11991,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -11768,6 +12147,9 @@
             "bag_base",
             "place_stack",
             "load",
+            "gait",
+            "hunt",
+            "wild",
             "starting_gold_mg",
             "per_point"
           ],
@@ -11808,7 +12190,7 @@
                 "keys": {
                   "minItems": 2,
                   "maxItems": 12,
-                  "description": "The hours the valley is washed in a colour (ART_SYSTEM section 2). Today's curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.",
+                  "description": "The hours the valley is washed in a colour (ART_SYSTEM section 2, LIGHTING.md section 5): one shade that the scene multiplies in, the dusk and the night alike. Its strength steps evenly between keys, in whole percent; its colour is the next key's, so every minute is a palette colour. The owner's pick of 30.10: 16:30 #eda83a 12%, 17:30 28%, 19:00 #e2533f 40%, the night #172a52 at STYLE 5's 92%.",
                   "type": "array",
                   "items": {
                     "additionalProperties": false,
@@ -11835,6 +12217,28 @@
                         "description": "How strong the wash is at that hour, in whole percent. The hours between two keys step evenly.",
                         "type": "integer"
                       }
+                    }
+                  }
+                },
+                "read": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "floor",
+                    "fog"
+                  ],
+                  "properties": {
+                    "floor": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "description": "The night kept readable (the owner, 30.10): inside a light's pool and in the ring of three tiles around the player, the meadow's middle green keeps at least this luma, in whole percent.",
+                      "type": "integer"
+                    },
+                    "fog": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "description": "The most a fog bank may cover at full night, in whole percent, so fog cannot stack on the night's shade past the floor.",
+                      "type": "integer"
                     }
                   }
                 },
@@ -13239,6 +13643,873 @@
                 }
               }
             },
+            "gait": {
+              "additionalProperties": false,
+              "description": "The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.",
+              "type": "object",
+              "required": [
+                "run_div",
+                "sneak_mul",
+                "noise_still",
+                "noise_sneak",
+                "noise_walk",
+                "noise_run"
+              ],
+              "properties": {
+                "run_div": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A run takes the pace the load allows divided by this: 2 is half the time a tile. Every pace divides evenly."
+                },
+                "sneak_mul": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A sneak takes the pace the load allows times this: 2 is twice the time a tile."
+                },
+                "noise_still": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles within which a creature that listens turns its head at a player standing still."
+                },
+                "noise_sneak": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a sneak."
+                },
+                "noise_walk": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a walk."
+                },
+                "noise_run": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a run."
+                }
+              }
+            },
+            "hunt": {
+              "additionalProperties": false,
+              "description": "Dressing a taken animal (docs/design/HUNTING.md sections 5-6): the time a step takes, how long a carcass keeps, and how often an animal is finer than plain. Nothing here prices a hunt: the hunt verb takes the effort weight of its tier like every verb (R6).",
+              "type": "object",
+              "required": [
+                "dress_step_ms",
+                "meat_spoil_d",
+                "hide_spoil_d",
+                "grade2_bp",
+                "grade3_bp"
+              ],
+              "properties": {
+                "dress_step_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check)."
+                },
+                "meat_spoil_d": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game days a carcass keeps its meat (its goods of kind \"food\"): dressed later, the meat is gone and the rest remains."
+                },
+                "hide_spoil_d": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game days a carcass keeps anything: dressed later, nothing is left of it."
+                },
+                "grade2_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Basis points of animals that appear fine (grade 2)."
+                },
+                "grade3_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain."
+                }
+              }
+            },
+            "wild": {
+              "additionalProperties": false,
+              "description": "The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1): the clock an animal thinks on, how far round a player animals are stepped, how long a flight, a den stay and a print last, where a den's bolt hole may lie, and the distances kept from a fire and the town. A kind's own character is its `behaviour`; these are the numbers every kind shares.",
+              "type": "object",
+              "required": [
+                "tick_ms",
+                "think_ticks",
+                "wake_tiles",
+                "awake_max",
+                "catchup_max_steps",
+                "flee_avoid_steps",
+                "refill_clear_tiles",
+                "spread_tiles",
+                "print_ring",
+                "print_fade_ms",
+                "den_stay_steps",
+                "bolt_min_tiles",
+                "bolt_max_tiles",
+                "throw_ms",
+                "strike_noise",
+                "fire_keep_day",
+                "fire_keep_night",
+                "town_keep_day",
+                "town_keep_night"
+              ],
+              "properties": {
+                "tick_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds of one world tick (COMBAT section 4.9). Fixed: every duration below is whole ticks or whole think steps."
+                },
+                "think_ticks": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks between two think steps of one animal, staggered by its id (HUNTING section 1): 8 ticks of 100 ms, a think step of 800 ms."
+                },
+                "wake_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "An animal is stepped only while a player is within this many tiles; beyond it its group is kept as an anchor and a count (HUNTING section 1)."
+                },
+                "awake_max": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The most animals stepped round one player at once (BESTIARY section 1)."
+                },
+                "catchup_max_steps": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A gap longer than this many think steps settles each animal to its rest pose at once instead of stepping it, so one action never pays for an hour of the wild."
+                },
+                "flee_avoid_steps": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Think steps a fled animal keeps away from the tile it fled (HUNTING section 2, FLEE); a flushed burrower comes back to its den after them (HUNT_FAMILIES section 3.1)."
+                },
+                "refill_clear_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A lost member comes back to its anchor only with no player within this many tiles (HUNTING section 8)."
+                },
+                "spread_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "ALERT spreads to the group members within this many tiles, and a member that sees one of its group in FLEE this close flees too (HUNTING section 2; CREATURE_BEHAVIOUR section 5.1.3)."
+                },
+                "print_ring": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles of fresh prints a fleeing animal leaves behind it on ground that holds prints, its last tiles, oldest first out (HUNT_FAMILIES section 3.1, the line home)."
+                },
+                "print_fade_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a fresh print stays readable (one game hour is day_length_ms / 24)."
+                },
+                "den_stay_steps": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Think steps a burrower stays in its den after a flight once no player is near the mouth, then WANDER (CREATURE_BEHAVIOUR section 1, flight burrow; HUNT_FAMILIES section 3.1, inside while watched)."
+                },
+                "bolt_min_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The nearest a den's bolt hole lies to its mouth, by the squared distance (HUNT_FAMILIES section 3.1: 64 <= d2 <= 100). Far enough that a flusher beside the mouth stands beyond a burrower's sight of the bolt hole (the check)."
+                },
+                "bolt_max_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The farthest a den's bolt hole lies from its mouth, by the squared distance."
+                },
+                "throw_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a thrown stone takes to leave the hand (HUNTING section 5, T0)."
+                },
+                "strike_noise": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles within which a strike is heard (HUNTING section 4; COMBAT section 4.9)."
+                },
+                "fire_keep_day": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles a prey kind keeps from a burning fire on the ground by day (CREATURE_BEHAVIOUR section 2)."
+                },
+                "fire_keep_night": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same by night: a lit circle nothing grazes in. At least the fire's safe ring and one tile more (the check)."
+                },
+                "town_keep_day": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles a wild kind keeps from the town's cobbles by day (CREATURE_BEHAVIOUR section 2)."
+                },
+                "town_keep_night": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same at night, when the lamps push the wall out; never under the day's (the check)."
+                }
+              }
+            },
             "starting_gold_mg": {
               "additionalProperties": false,
               "type": "object",
@@ -13949,7 +15220,7 @@
                       "type": "integer"
                     }
                   },
-                  "description": "The most a group member earns from another's work, in permille of the member's own (PROGRESSION 3.7, Q7)."
+                  "description": "The most a newcomer takes from the experience the other members already earned, in permille of the newcomer's own: a split, never new experience (PROGRESSION 3.7, Q7)."
                 },
                 "loop_profit_max_mg": {
                   "additionalProperties": false,
@@ -14040,7 +15311,7 @@
                     "sustain": {
                       "minItems": 5,
                       "maxItems": 5,
-                      "description": "Health back a game hour while a place drains, regen and food together, in percent of the cap.",
+                      "description": "Health back a game hour while a place drains, regen and food together, in points of the base cap of 100 (the drain's unit).",
                       "type": "array",
                       "items": {
                         "minimum": 0,
@@ -14465,7 +15736,7 @@
                 "grade_drain_pct": {
                   "minItems": 5,
                   "maxItems": 5,
-                  "description": "The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).",
+                  "description": "The drain of a remaining grade 0 to 4, in points of the base cap of 100 a game hour, the same for every cap (BODY_CLOCKS 5.2).",
                   "type": "array",
                   "items": {
                     "minimum": 0,
@@ -14914,6 +16185,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -15160,6 +16454,46 @@
                           "type": "number"
                         }
                       ]
+                    },
+                    "stride": {
+                      "additionalProperties": false,
+                      "description": "A walk cycle that follows the distance walked (tools/anim). Its frames are the poses of the cycle in order and, last, the standing pose; `frames` is the poses plus one. Left out for a sheet whose frames are time-based.",
+                      "type": "object",
+                      "required": [
+                        "travel_mpx",
+                        "anchor"
+                      ],
+                      "properties": {
+                        "travel_mpx": {
+                          "minimum": 1000,
+                          "maximum": 128000,
+                          "description": "Thousandths of an art pixel (64 per tile) the body walks for one pose of the cycle: the pose shown is the nearest to art pixels walked / (travel_mpx / 1000), so a planted foot is where the ground is.",
+                          "type": "integer"
+                        },
+                        "anchor": {
+                          "description": "The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body's feet.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        },
+                        "bob": {
+                          "description": "false when the sheet carries its own head travel and the feel layer's code bob is dropped for it (DECISIONS 2026-10-29: the bob is dropped for a clip that carries its own); left out, the bob plays on top of the poses.",
+                          "type": "boolean"
+                        }
+                      }
                     },
                     "scale": {
                       "minimum": 0.1,
@@ -15631,6 +16965,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -15768,7 +17125,7 @@
             },
             "creatures": {
               "additionalProperties": false,
-              "description": "Cosmetic ambient life (the client draws it behind ?rich= motion; the kernel never sees it): kinds, and the spots where each sits until the player comes close.",
+              "description": "Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A kind with \"hunt\" is the kernel's too: it dresses its carcasses and the value table prices its goods, with its spots as the source's capacity (HUNTING sections 5-9). A kind with \"behaviour\" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den's mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).",
               "type": "object",
               "required": [
                 "kinds",
@@ -15789,7 +17146,7 @@
                       ],
                       "properties": {
                         "look": {
-                          "description": "The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off.",
+                          "description": "The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off, a canid lopes away.",
                           "anyOf": [
                             {
                               "const": "bird",
@@ -15805,6 +17162,10 @@
                             },
                             {
                               "const": "deer",
+                              "type": "string"
+                            },
+                            {
+                              "const": "canid",
                               "type": "string"
                             }
                           ]
@@ -15839,7 +17200,7 @@
                           "type": "integer"
                         },
                         "hours": {
-                          "description": "The game hours it is out, from (inclusive) to (exclusive). Absent: all day, never at night.",
+                          "description": "The game hours it is out, from (inclusive) to (exclusive); a night kind wraps midnight, from after to (the wolf's 20 to 5). Outside them it has gone to ground (BESTIARY section 1). Absent: out at every hour, the night included, as the wild brain's `awake` reads it, so a day kind names its hours; every kind of the core does.",
                           "type": "array",
                           "items": [
                             {
@@ -15856,6 +17217,715 @@
                           "additionalItems": false,
                           "minItems": 2,
                           "maxItems": 2
+                        },
+                        "behaviour": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "sight",
+                            "ear",
+                            "weights",
+                            "roam",
+                            "flight",
+                            "sleeps",
+                            "alarm",
+                            "fire",
+                            "water",
+                            "weather",
+                            "town",
+                            "habitat",
+                            "group",
+                            "family"
+                          ],
+                          "properties": {
+                            "sight": {
+                              "minimum": 1,
+                              "maximum": 12,
+                              "description": "Tiles it sees in its cone, by the squared distance (HUNTING sections 3 and 8).",
+                              "type": "integer"
+                            },
+                            "ear": {
+                              "description": "HUNTING section 3's ear: -2 dull, 0 normal, +2 keen. A noise of radius n is heard within n + ear tiles.",
+                              "anyOf": [
+                                {
+                                  "const": -2,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 0,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 2,
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "smell": {
+                              "minimum": 0,
+                              "maximum": 12,
+                              "description": "Its nose (HUNTING section 8). Stored, read by nothing until the wind is built (HUNTING section 11, question 6).",
+                              "type": "integer"
+                            },
+                            "weights": {
+                              "additionalProperties": false,
+                              "description": "Shares of 100 for where a quiet state goes when it ends (CREATURE_BEHAVIOUR section 1): a heron stands (60/30/10), a fox ranges (10/20/70). For a hunter GRAZE is the rest at its den.",
+                              "type": "object",
+                              "required": [
+                                "idle",
+                                "graze",
+                                "wander"
+                              ],
+                              "properties": {
+                                "idle": {
+                                  "minimum": 0,
+                                  "maximum": 100,
+                                  "type": "integer"
+                                },
+                                "graze": {
+                                  "minimum": 0,
+                                  "maximum": 100,
+                                  "type": "integer"
+                                },
+                                "wander": {
+                                  "minimum": 0,
+                                  "maximum": 100,
+                                  "type": "integer"
+                                }
+                              }
+                            },
+                            "roam": {
+                              "minimum": 6,
+                              "maximum": 14,
+                              "description": "Tiles round its anchor WANDER picks in, and how far RETURN walks (HUNTING section 2).",
+                              "type": "integer"
+                            },
+                            "flight": {
+                              "description": "How FLEE runs and ends: ground runs the distance map, fly lands sight + 4 away, swim ends under water, climb up a tree or a rock, burrow into its anchor (CREATURE_BEHAVIOUR section 1).",
+                              "anyOf": [
+                                {
+                                  "const": "ground",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "fly",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "swim",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "climb",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "burrow",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "sleeps": {
+                              "description": "What its anchor stands on and where it goes to ground out of its hours: a form in the grass, a perch, the river bed, a warm rock, the reeds, a den, a roof beam. A day kind leaves the map there at night rather than sleeping in view, a few stragglers at most (DECISIONS 2026-10-30: the night empties the day kinds).",
+                              "anyOf": [
+                                {
+                                  "const": "ground",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "tree",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "water",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "rock",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "reeds",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "den",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "roof",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "alarm": {
+                              "minimum": 0,
+                              "maximum": 12,
+                              "description": "The noise its ALERT tell makes, in HUNTING section 4's table, so other animals hear it; 0 is a silent kind (CREATURE_BEHAVIOUR section 1).",
+                              "type": "integer"
+                            },
+                            "looks_back": {
+                              "description": "At FLEE's end it takes two steps of ALERT at sight + 2, facing the player, before WANDER: the deer's stop and turn. Absent: no.",
+                              "type": "boolean"
+                            },
+                            "drinks": {
+                              "description": "Twice a day its WANDER target is the nearest water or riverbank tile within roam, at dawn and at dusk (CREATURE_BEHAVIOUR section 4). Absent: no.",
+                              "type": "boolean"
+                            },
+                            "carrion": {
+                              "description": "It comes to a carcass within sight + 4 after 30 think steps (CREATURE_BEHAVIOUR section 2). Absent: no.",
+                              "type": "boolean"
+                            },
+                            "fire": {
+                              "description": "A fire on the ground: prey keeps away, a hunter holds at the edge of its safe ring, a moth is drawn to a lamp, or it ignores the fire (CREATURE_BEHAVIOUR section 2).",
+                              "anyOf": [
+                                {
+                                  "const": "keeps_away",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "holds_edge",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "drawn_to_lamp",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "ignores",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "water": {
+                              "description": "A water tile: a wall, crossed in the air, swum, lived in, or the edge it lives along (CREATURE_BEHAVIOUR section 1).",
+                              "anyOf": [
+                                {
+                                  "const": "wall",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "crosses",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "swims",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "lives_in",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "edge",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "weather": {
+                              "description": "Rain and storm: cover under the trees in rain, roost in a storm, stay in while it rains, or no change beyond the shorter hearing (CREATURE_BEHAVIOUR section 2).",
+                              "anyOf": [
+                                {
+                                  "const": "cover",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "roosts",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "stays_in",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "none",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "town": {
+                              "description": "The town: a wall it never crosses, its own ground (a town kind: the sparrow, the crow, the rat under a roof), or nothing (CREATURE_BEHAVIOUR sections 2 and 5).",
+                              "anyOf": [
+                                {
+                                  "const": "avoids",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "town_kind",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "none",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "habitat": {
+                              "minItems": 1,
+                              "maxItems": 8,
+                              "uniqueItems": true,
+                              "description": "The tile tags it lives on: where the spawner lays it and WANDER picks, and the tiles its spawn cap is read over (CREATURE_BEHAVIOUR section 3). A wild kind never names town.",
+                              "type": "array",
+                              "items": {
+                                "anyOf": [
+                                  {
+                                    "const": "grove",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "meadow",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "riverbank",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "ruin",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "town",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "water",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "path",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "interior",
+                                    "type": "string"
+                                  }
+                                ]
+                              }
+                            },
+                            "group": {
+                              "additionalProperties": false,
+                              "description": "Who goes with whom (CREATURE_BEHAVIOUR section 5.1): the class says how the group moves and flees, the bands how many stand at one anchor. The size is drawn on the server, once a group period, while nobody can see the group.",
+                              "type": "object",
+                              "required": [
+                                "class",
+                                "bands"
+                              ],
+                              "properties": {
+                                "class": {
+                                  "description": "solitary: one at its anchor; herd: scatters on FLEE and regroups at the anchor; flock: lifts and lands as one; pack: keeps within 2 of its leader on every move (CREATURE_BEHAVIOUR section 5.1.3).",
+                                  "anyOf": [
+                                    {
+                                      "const": "solitary",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "herd",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "flock",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "pack",
+                                      "type": "string"
+                                    }
+                                  ]
+                                },
+                                "bands": {
+                                  "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                  "type": "array",
+                                  "items": [
+                                    {
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "type": "integer"
+                                    },
+                                    {
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "type": "integer"
+                                    },
+                                    {
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "type": "integer"
+                                    },
+                                    {
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "type": "integer"
+                                    }
+                                  ],
+                                  "additionalItems": false,
+                                  "minItems": 4,
+                                  "maxItems": 4
+                                },
+                                "sentinel": {
+                                  "description": "Only on a herd or a flock: its leader never GRAZEs while the others do, and its ALERT is its alarm noise (CREATURE_BEHAVIOUR section 5.1.1). Absent: no.",
+                                  "type": "boolean"
+                                },
+                                "season": {
+                                  "additionalProperties": false,
+                                  "minProperties": 1,
+                                  "description": "Bands that replace the plain ones in one season: pairs in spring, larger groups in winter (CREATURE_BEHAVIOUR section 5.1.4). Read by nothing until seasons are built; the cap and the refill never move with it.",
+                                  "type": "object",
+                                  "properties": {
+                                    "spring": {
+                                      "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        }
+                                      ],
+                                      "additionalItems": false,
+                                      "minItems": 4,
+                                      "maxItems": 4
+                                    },
+                                    "summer": {
+                                      "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        }
+                                      ],
+                                      "additionalItems": false,
+                                      "minItems": 4,
+                                      "maxItems": 4
+                                    },
+                                    "autumn": {
+                                      "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        }
+                                      ],
+                                      "additionalItems": false,
+                                      "minItems": 4,
+                                      "maxItems": 4
+                                    },
+                                    "winter": {
+                                      "description": "Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.",
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        },
+                                        {
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "type": "integer"
+                                        }
+                                      ],
+                                      "additionalItems": false,
+                                      "minItems": 4,
+                                      "maxItems": 4
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "family": {
+                              "description": "Its hunt family (HUNT_FAMILIES section 2): one body, one hunting style, one shape of drops.",
+                              "anyOf": [
+                                {
+                                  "const": "burrowers",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "deer",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "wild-goats",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "pigs",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "canids",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "cats",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "bears",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "game-birds",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "perching-birds",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "waterfowl",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "raptors",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "mustelids",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "fish",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "reptiles",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "night-fliers",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "horned-beasts",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "spiders",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "drakes",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "flush": {
+                              "description": "Its found den may be flushed (HUNT_FAMILIES section 3.1, the line home): a smoke bundle at the mouth bolts it out of the bolt hole, a second tile 8 to 10 tiles away the server draws once per anchor and never moves. Only a burrower that sleeps in a den at danger 0. Absent: no.",
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "hunt": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "size",
+                            "tier",
+                            "danger",
+                            "take_s",
+                            "drops",
+                            "spawn"
+                          ],
+                          "properties": {
+                            "size": {
+                              "description": "Small dresses in 6 steps, medium in 12, large in 24: parts of six, one action a part, the goods with the last.",
+                              "anyOf": [
+                                {
+                                  "const": "small",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "medium",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "large",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "tier": {
+                              "minimum": 1,
+                              "maximum": 20,
+                              "description": "How far up the ladder it is. Every good it drops sits at this tier or below.",
+                              "type": "integer"
+                            },
+                            "danger": {
+                              "description": "What it does when the player comes close (HUNTING section 8): 0 flees, 1 stands and defends, 2 hunts the player. A danger 2 kind is medium or large.",
+                              "anyOf": [
+                                {
+                                  "const": 0,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 1,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 2,
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "take_s": {
+                              "minimum": 5,
+                              "maximum": 600,
+                              "description": "Real seconds a fair hunt of it takes, from first sight to the carcass: the active time the value table prices, before the dressing.",
+                              "type": "integer"
+                            },
+                            "drops": {
+                              "minItems": 1,
+                              "maxItems": 5,
+                              "description": "What dressing it gives: plain goods of the five goods classes, each class once.",
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "item",
+                                  "qty",
+                                  "share_pct"
+                                ],
+                                "properties": {
+                                  "item": {
+                                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                                    "maxLength": 80,
+                                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                                    "type": "string"
+                                  },
+                                  "qty": {
+                                    "minimum": 1,
+                                    "maximum": 20,
+                                    "description": "Units a carcass gives. A finer animal gives the same count of the finer grade.",
+                                    "type": "integer"
+                                  },
+                                  "share_pct": {
+                                    "minimum": 1,
+                                    "maximum": 100,
+                                    "description": "Part of the hunt its value carries. Shares of one kind sum to 100.",
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            },
+                            "ways": {
+                              "minItems": 1,
+                              "maxItems": 3,
+                              "uniqueItems": true,
+                              "description": "How it can be taken, for the client to show. Absent: the client decides.",
+                              "type": "array",
+                              "items": {
+                                "anyOf": [
+                                  {
+                                    "const": "stalk",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "snare",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "lure",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "fish",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "fight",
+                                    "type": "string"
+                                  }
+                                ]
+                              }
+                            },
+                            "spawn": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "cap_per_1000",
+                                "refill_d"
+                              ],
+                              "properties": {
+                                "cap_per_1000": {
+                                  "minimum": 1,
+                                  "maximum": 20,
+                                  "description": "The most of this kind alive per 1000 tiles of its habitat (HUNTING section 8: at most 12 at danger 0, 8 at 1, 5 at 2). The kind's danger stands for its region's band until a spot carries a region.",
+                                  "type": "integer"
+                                },
+                                "refill_d": {
+                                  "minimum": 1,
+                                  "maximum": 30,
+                                  "description": "Game days before a taken animal is replaced at its spot: the respawn the value table counts.",
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "protected": {
+                          "description": "A pet, a young animal or a person (HUNTING section 10): seen, never taken, never dressed. A protected kind carries no \"hunt\".",
+                          "type": "boolean"
                         }
                       }
                     }
@@ -17140,6 +19210,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -17761,6 +19854,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }

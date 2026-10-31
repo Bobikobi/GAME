@@ -67,7 +67,7 @@ the valley's, never the calendar's.
 | 0:00-0:15 | The player wakes in one of the wake pockets, drawn at random, and does that pocket's own first task: picks herbs on the west bank, digs the axe out of the slid bank, or follows the senses to the axe in the grass by the bridge from the north meadow. The pocket's tool lies on the ground by the wake tile, found, not worn. | Something in the bag at once, found the pocket's own way. | A lore screen, a naming wizard, more than one box of text. |
 | 0:15-1:00 | The first strike, at the bridge's keystone in the shallows. | The strike minigame, taught once; level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
 | 1-5 min | The bridge mends; a tree is felled with the axe each pocket gives; the fire is built. | A tile changes, a sign carries the player's name, a purse: the price of one tool, in gold only. | A build that only opens a panel. |
-| 5-8 min | The town: whom to help first, Maru or Pell; then Maru's coin; at dusk, the riddle. | A real choice: Maru pays with his old trowel, Pell with a recipe and coin, and the stall says what each tool opens. Both plants are open from noon until dark, so neither order waits. From 19:00 the hill lantern lights the tile to dig. | A fetch with a counter and nothing to notice. |
+| 5-8 min | The town: whom to help first, Maru or Pell; then Maru's coin; at dusk, the riddle. | A real choice: Maru pays with his old trowel, Pell with a recipe and coin, and Pell's shop says what each tool opens. Both plants are open from noon until dark, so neither order waits. From 19:00 the hill lantern lights the tile to dig. | A fetch with a counter and nothing to notice. |
 | 8-10 min | After dark, the broken arch at the edge of the ruins. | A way under the arch that rubble filled by day, to the threshold of the night ruins: a place that opens, the first sight of the expeditions (G36). | Something to fight or something that hunts (G35). |
 | Session end | A visible mark of the day. | The day summary: what was found, built, learned; one open door. | Stopping in the middle of nothing. |
 | Day 2 | The morning after the first night, slept or played through: something changed overnight. Away, the valley waits at the hour it was left (G28). | The morning toast, a respawned grove, a new line from an NPC, a bell at night. | The same valley as yesterday. |
@@ -227,9 +227,14 @@ characters.
   else waits behind a topic. A standing line is one box, two at most. A topic
   is at most four boxes. A new topic appears when the world changed (a quest
   done, a place mended), so coming back to a character pays.
-- **G22 Plain words, all ages, the valley's own names.** A child of eight
-  reads every line: no slang, no jokes about games, no brand names, no
-  irony at the player's expense. The valley's words (the mist, the bells, the
+- **G22 Plain words, the valley's own names.** Short sentences, concrete
+  nouns, the simplest exact word, so a reader whose English is their second
+  language follows every line: no slang, no jokes about games, no brand
+  names, no irony at the player's expense. Death is named death and blood is
+  named when it is in the scene, never to decorate; a character speaks hard
+  only as its voice sheet allows, and a slur or a sexual word is never said
+  ([TONE.md](TONE.md) section 2; the owner, 19.10, DECISIONS.md 2026-10-23
+  "The line is PEGI 16 and ESRB T"). The valley's words (the mist, the bells, the
   ruins, the hills, the grove) are the same in every mouth and on every sign.
   English only, the game and its files alike (owner, 8.10); a language field
   on content, never a copied folder, is the format decision for a day that
@@ -308,7 +313,7 @@ already handles that and the e2e run checks it.
 ### Danger and falling
 
 Added 2026-10-08 on the owner's word (DECISIONS.md, that day's falling entry).
-The valley has no combat; its danger is the hour, and what the player eats.
+The demo has no combat (G35); its danger is the hour, and what the player eats.
 
 - **G30 The town and a burning camp are safe; the night and the mist hunt.**
   The town and all ground at danger level 0 are safe at every hour, and a camp
@@ -352,17 +357,25 @@ The valley has no combat; its danger is the hour, and what the player eats.
   core content set the hunger drain to 0, in the same change that brought
   the first hazards; since kernel 0.19 the drain is gone and the bar is
   `player.hp`, its top `hp_cap` (DECISIONS.md, 10.10, 11.10 and 26.10).
-- **G33 A fall is clear, and it costs the outing.** At zero health the player
-  falls: crosses for eyes, the body sinks into the ground, one plain box says
-  what happened; no gravestone, nothing left in the world. The player reappears
+- **G33 A death is clear, and it costs the outing.** At zero health the
+  player dies: the body falls where it stood and lies in the grass a moment,
+  and the card says "You died." and "Your pack lies where you died." (TONE.md
+  section 4; the kernel's `fall` keeps its name in the code). The player wakes
   in the town they were last in, on a random tile inside its bounds (before the
   first town: where they started). An outing runs from leaving a safe place
-  (G30) to reaching one again, or to a fall. What was gathered on that outing
-  is lost, nothing spent on it comes back, each quest goes back to the step it
-  stood at when the outing began, and a place found on it counts only once
-  brought home; nothing marks where the fall was. The bag from before the
-  outing, the camp, the gold, the levels and the quests already done are
-  untouched. The cost is the lesson:
+  (G30) to reaching one again, or to a death. What was gathered on that outing
+  leaves the bag and lies where the body fell as a pack any player next to it
+  may take, first come, the dead player included, gone a game day later
+  (G81); the pack holds no more than the outing found, so a death never pays.
+  Nothing spent on the outing comes back, each quest goes back to the step it
+  stood at when the outing began, a place found on it counts only once
+  brought home, and nothing but the pack marks where the death was. The bag
+  from before the outing, the camp, the gold, the levels and the quests
+  already done are untouched. The card and the pack land with the combat
+  frame's first step ([COMBAT.md](COMBAT.md) section 6); until then the
+  demo's fall stays as built (the owner, 19.10: DECISIONS.md 2026-10-23 "The
+  line is PEGI 16 and ESRB T" and "Open ends of the world plan", answer 2).
+  The cost is the lesson:
   a bad fruit eaten on the way means the basket is gone and the walk is made
   again.
 - **G34 A hazard is a rule, not a roll, and the answer is a run, never gear.**
@@ -381,12 +394,15 @@ The valley has no combat; its danger is the hour, and what the player eats.
 - **G35 No fighting in the demo.** In the demo (stage 1) predators are hazards,
   not enemies: the answer is to run back to a safe place, never gear. Combat
   comes after the foundation, as a core part of the game (the owner, 19.10, in
-  DECISIONS.md). Where it is fought, and its frame, are the owner's to approve
-  before it is built. The road thieves of the boards entry wait for it.
+  DECISIONS.md). Its frame is the owner's and he answered it on 20.10 (the
+  five "Combat, round n" entries; [COMBAT.md](COMBAT.md)); G78, G81, G83, G84
+  and G86 carry his answers, and nothing of a fight is built before the
+  server and the presence relay. The start outfit carries no weapon (decision
+  42 of 22.10), and the road thieves of the boards entry wait for the fight.
 
 - **G47 A watched road is a rule the eyes can read.** A predator that rounds
-  after dark walks a closed loop at one pace, its place set by the clock
-  alone; it sees a cone ahead of it, half as wide as it is long, and smells
+  after dark walks a closed loop at one pace, its place set by the clock; it
+  sees a cone ahead of it, half as wide as it is long, and smells
   one tile around it; cover (reeds, tall grass) hides from the cone and never
   from the smell. Seen is the chase of G34, and the way out is the run back.
   The window to cross is learned by watching the eyes in the dark, never told
@@ -394,8 +410,12 @@ The valley has no combat; its danger is the hour, and what the player eats.
   a round's watch, with cover on the way (section 8). Added 2026-10-13
   (DECISIONS.md, the entry on the three frames). Fog shortens the cone, from
   weather's phase B: fog is drawn, so the shorter cone is still read by the
-  eyes. Noise never turns a predator's head in the demo (the owner, 19.10;
-  [REACTIONS.md](REACTIONS.md) section 9).
+  eyes. Noise turns its head: a noisy act within that act's radius turns its
+  heading toward the sound for a while, drawn so the eyes still read it,
+  while its place stays on the clock (G84; the owner, 20.10, round 4,
+  superseding his "never" of 19.10 in [REACTIONS.md](REACTIONS.md) section
+  9). It lands with the combat wave; in the demo the head stays on the clock
+  alone unless the owner pulls it forward.
 - **G48 A fire is kept by hand.** A fire holds a few logs and burns them on
   the game hour, only while the player is in the valley; feeding it by hand
   lights it or adds a log, a whole one or none (a fire with no room left for
@@ -484,7 +504,8 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   small bonus to gathering or crafting from the closed list of effects, a full
   set a little more, all through the one calculator under the level's power
   cap; nothing raises the output of a craft (R9). A look layer sits on the
-  same slots, apart. A weapon waits for combat (G35).
+  same slots, apart. A weapon waits for combat (G35); then the thing in the
+  hand slot is the strike, under the same power cap (G86).
 - **G45 New materials join old recipes.** Every item names a class and a
   tier, and a recipe template asks for a class, so a new herb works in an old
   recipe. Extensions add items, classes under a base class, recipes,
@@ -495,19 +516,64 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
 ### Menace
 
 Added 2026-10-10 by the sweep for holes, and changed the same day on the
-owner's word (DECISIONS.md, the entry on menace with a limit).
+owner's word (DECISIONS.md, the entry on menace with a limit); moved to the
+PEGI 16 line on his word of 19.10 (DECISIONS.md 2026-10-23, "The line is PEGI
+16 and ESRB T"; [TONE.md](TONE.md)).
 
-- **G46 Menace with a limit.** Danger shows through shape, sound and the dark,
-  and blood, a wound and a fallen body may show too, within a limit: nothing
-  lingers, nothing is shown close up, no gore is there for its own sake, and no
-  suffering is played for show. Blood and a wound show small and brief, at the
-  sprite's own size. A person, the player or a character of the valley, never
-  bleeds or shows a wound at the moment of harm: the hit shows the health it
-  takes, and a wound on a person shows only afterwards, as a bandage or a torn
-  sleeve. A fall keeps its look (crosses for eyes, a sinking into the ground,
-  G33). It is visual only and changes no rule, number or state. The text says
-  the player fell, never that they died or were killed, since the player wakes
-  again in town. The aim is ESRB E10+ and PEGI 12.
+- **G46 Menace at the line.** The line is PEGI 16 and ESRB T, and the tighter
+  one holds. Danger shows through shape, sound and the dark, and blood, a
+  wound and a body may show too: blood where a hit lands, a person's too, at
+  the sprite's own size, small and brief; a wound that stays afterwards as a
+  bandage, a torn sleeve or a scar; a predator drawn biting; a body that lies
+  a moment. Nothing close up, nothing dwelt on, no gore for its own sake, no
+  dismemberment, no torture played out, no suffering for show, no violence
+  against someone who cannot act, nothing sexual. It is visual only and
+  changes no rule, number or state. The text names a death as a death (G33).
+  A predator biting, a body in the grass and blood on a sleeve change sprite
+  sheets, so they are a direction: phone-size stills go to the owner before a
+  sprite is touched (TONE.md section 3).
+
+### Combat
+
+Added 2026-10-29 from the owner's five answers of 20.10 (DECISIONS.md
+2026-10-23, the "Combat, round n" entries; [COMBAT.md](COMBAT.md)). Only his
+answers are written here. G79, G80, G82 and G85 are held by the frame's
+proposals in COMBAT.md section 5, and G87 to G92 by GROWTH.md section 8,
+until the owner reads them. None of it is in the demo (G35), and none of it
+is built before the server and the presence relay. The numbers are COMBAT.md
+section 4.9.
+
+- **G78 A fight is real time, and the server runs it.** A fight runs on the
+  server's own tick, against a creature and between players alike; the phone
+  sends its inputs as it makes them over the live socket and draws what the
+  server says, predicting its own walk and nothing else. There is no fight
+  without the live connection, nothing is replayed from a batch, and no
+  phone holds a simulation of an outcome (the owner, 20.10, round 1).
+- **G81 A death leaves a pack, first come, everywhere.** The outing's finds
+  lie where the body fell as a pack any player next to it may take, first
+  come, the dead player included, in the marked zone as anywhere; it is gone
+  a game day later. Nothing more is taken: not a tool, not a worn thing, not
+  what the player made, not gold (G33; the owner, 20.10, round 2).
+- **G83 A fight shows its bars.** A foe carries its health and its breath as
+  two small bars over its head while it fights, and so does the other player
+  inside the marked zone, only there and only while the fight runs; no
+  number is printed on a bar, and the world still shows chance, level,
+  difficulty, danger and time. The bars add to the figure: a wind-up is
+  still drawn before a move lands, a hit still shows where it landed, a
+  weakness still opens as a pose (the owner, 20.10, round 3).
+- **G84 Noise turns every head.** A noisy act (felling, digging, running, a
+  strike that lands) turns the head of a foe and of a predator within that
+  act's radius, toward the sound, for a while; the turn is drawn, and cover
+  still hides from the cone and never from the smell. A predator's place on
+  its round is set by the clock; its heading by the clock and by noise. A
+  stealth quest's target stays reachable without a noisy act inside a watch
+  (G47; the owner, 20.10, round 4).
+- **G86 A fight reads the build, the attributes and the hand.** The
+  techniques a fight offers are the build's active slots; the attributes are
+  small keys in it; the thing in the hand slot is the strike; all of it under
+  the one power cap (G44, R9). Nothing reads the character level directly.
+  Which attribute keys what is redone with the combat wave, since the
+  attributes are six (the owner, 20.10, round 5; decision 45 of 22.10).
 
 ### The open world
 
@@ -522,7 +588,7 @@ Added 2026-10-18 on the owner's word (DECISIONS.md, "Height crossings and windin
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G49 and G68-G71. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace, combat | This page | Rules G1-G49, G68-G71, and G78, G81, G83, G84 and G86. |
 | Economy and balance | The kernel rules R1-R12, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |
@@ -549,7 +615,7 @@ Named so a review can point at one in two words.
 | Typed answer | A riddle solved in a text box. | G6 |
 | Same again | Two quests in a row of one type, or three items in a row got by the same motion. | G17, G18 |
 | Silent night | A fall with no countdown and no warning box before it. | G31 |
-| Breadcrumb | A fall that leaves a stash, a pin or a line saying where to go back to. | G33 |
+| Breadcrumb | A death that leaves more than its pack: a stash, a pin on the map, or a line beyond the death card's. | G33 |
 | Hunger clock | A bar that empties by the clock, awake or asleep (the drain is 0 since P-5c). | G32, G28 |
 | Gear answer | A thing bought or made as the answer to a hazard: oil, a torch, a rope, an antidote. | G34 |
 | Empty miss | A missed strike that gives nothing at all. | G15 |
@@ -568,7 +634,7 @@ one pull request); the "decision" column says how.
 | `core/three-fruits`: bring 3 redberries. `core/herbs-for-pell`: bring 4 herbs. Both are the gather verb repeated. | G1, G2 | Rewrite each around one thing to notice. Berries: Maru says they grew thickest where the bells rang; one bush near the bell ruin gives the three in one strike at the right time of day. Herbs: Pell says the best herbs stand where the mist is thin at noon; the herb that counts only yields at midday. Both need the `find` step (P-2). | Yes (owner, 7.10) to both rewrites, with the `find` step. Done 8.10 (P-3): "Where the bells rang" finds a bellberry in the garden behind the ruins (05:00 to 20:00), "Herbs for Pell" a sunleaf on the sun bank up the river (12:00 to 20:00 since 10.10, with a basket). Both are new timed plants with items of their own, since a find of what the stall sells or what grows in three places is a counter with a clue on it. |
 | `core/a-coin-for-maru`: dig in the ruins for an old coin. | G2 (borderline) | It is already a find with a hint. Add the catch: the coin is under the statue that faces the hills, and the first dig elsewhere gives a shard and a hint. | Yes (owner, 7.10). Keep, add the catch with P-3. Done 8.10 (P-3): "The coin under the lantern", a riddle over the marked stone and the two lantern statues, answered by a dig under the hill lantern; a dig elsewhere while it is open gives what that spot gives and "Not here. Read the stones again." |
 | The seven inscriptions (the carved marks, two lantern statues, the stone head, the scratched names, the cold arch, the totem with fresh grass). Reading any of them changes nothing. | G8, G9 | One riddle ties the three ruin stones: the marks name the order the town was restored in; at night the lantern of the statue facing the hills glows and lights the tile to dig. The other four are seeds of a later arc (someone was here recently): each stays only if P-3 names the arc it pays into, otherwise it is cut until that arc exists. Needs the `riddle` step and prop ids (P-2), then the content (P-3). | Yes (owner, 7.10). One riddle across the three ruin stones; the other four are cut until an arc names them. Done 8.10 (P-3): the three carry ids and clues of two lines; the four notes are cut, the props stay. |
-| `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | Yes (owner, 7.10). As proposed. Done 8.10 (P-3): herb stew for the herbs. The coin gives Maru's basket, the stand-in for a place: the schema has no place reward yet, and the quest needs a trowel, so the basket opens the grove to a player who chose the ruins first. |
+| `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | Yes (owner, 7.10). As proposed. Done 8.10 (P-3): herb stew for the herbs. The coin gives Maru's basket, the stand-in for a place: the schema has no place reward yet, and the quest needs a trowel, so the basket opens the grove to a player who chose the ruins first. Changed 23.10: now that a place can be a reward, the coin gives the herb tea recipe and the key to Maru's house, not gold (the place reward); the house's inside (a bed, a desk with an old map, a place to leave gear) follows after the sleep places land. |
 | Maru's first meeting is eight boxes, most over two phone lines; Pell's standing lines run to three boxes. | G14, G21 | Maru: three boxes at the first meeting (who he is, what he wants, where to go); the rest moves behind the three topics that already exist. Every box within two phone lines. Pell: two boxes per standing. | Yes (owner, 8.10). With P-3. Done 8.10: Maru three boxes, the rest behind his three topics; Pell two per standing; every box within 80 characters. |
 
 ## 6. When a request collides with a rule
@@ -634,9 +700,10 @@ names the rule and the pull request waits.
    and without colour? (G15, G29)
 10. Did the owner play the preview, or did the reviewer play it for him and say
     so in the pull request?
-11. Does any blood, wound or fallen body stay small, brief and never there
-    for show, with none on a person at the moment of harm, does it change no
-    rule or number, and does the text say the player fell, never died? (G46)
+11. Does any blood, wound or body stay small, brief, at the sprite's size and
+    never there for show, with nothing close up and no violence against
+    someone who cannot act, does it change no rule or number, and does the
+    text name a death as a death? (G46, G33, TONE.md section 3)
 12. Does the valley by day still go on without every expedition: does each
     item, place and quest it touches have a road by day as well, and is its
     place entered one way, through its exit? (G36, G37)

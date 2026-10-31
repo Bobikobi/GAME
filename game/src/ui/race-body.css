@@ -2,13 +2,13 @@
 .card.race p.race-body {
   margin: 8px 0 0;
   padding-top: 8px;
-  border-top: 1px dashed var(--ink2);
+  border-top: 1px dashed var(--ui-gold-2);
   max-width: 220px;
-  font-size: 14px;
+  font-size: var(--ui-group);
   line-height: 1.35;
-  color: var(--ink2);
+  color: var(--ui-paper-soft);
 }
 
 .card.race p.race-body b {
-  color: var(--ink);
+  color: var(--ui-paper);
 }
