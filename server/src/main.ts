@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { Pool } from 'pg';
 import type { Bundle } from '@game/kernel';
 
-import { authFromEnv, BootError, createGameApi, loadCountryDb, CLOSED_ACCOUNT_GRACE_MS, createPgAuthStore, createPgStore, createSignIn, googleProvider, listen, logMailer, pgAccountCounts, resendMailer, SIGN_IN_SWEEP_MS, type ApiOptions, type Auth } from './index';
+import { authFromEnv, BootError, createGameApi, loadCountryDb, CLOSED_ACCOUNT_GRACE_MS, createPgAuthStore, createPgStore, createSignIn, discordProvider, googleProvider, listen, logMailer, pgAccountCounts, resendMailer, SIGN_IN_SWEEP_MS, type ApiOptions, type Auth } from './index';
 import { databaseUrl, migrate } from './migrate';
 
 // the identity gate comes first: a refusal here has touched nothing
@@ -57,6 +57,7 @@ function identity(chosen: Auth): Pick<ApiOptions, 'resolvePlayerId' | 'signIn' |
     bundle,
     mailer: chosen.session.resend ? resendMailer(chosen.session.resend) : logMailer(),
     google: chosen.session.google && googleProvider(chosen.session.google),
+    discord: chosen.session.discord && discordProvider(chosen.session.discord),
     publicOrigin: chosen.session.publicOrigin,
     appOrigin: chosen.session.appOrigin,
     countryHeader: chosen.session.countryHeader,
