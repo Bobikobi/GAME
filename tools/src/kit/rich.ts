@@ -98,7 +98,6 @@ export const SIXTEEN_PX_LEFT: readonly string[] = [
   'props/ruin_wall',
   'props/statue_head',
   'props/totem',
-  'props/tree_oak',
   'props/young_tree',
   'tiles/bank_e',
   'tiles/bank_n',

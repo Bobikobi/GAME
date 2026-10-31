@@ -1030,10 +1030,15 @@
       },
       "props/tree_oak": {
         "file": "props/tree_oak.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
+        "w": 192,
+        "h": 224,
+        "density": 4,
+        "ramps": [
+          "green",
+          "wood",
+          "grey"
+        ],
+        "scale": 3.0
       },
       "props/well_old": {
         "file": "props/well_old.png",
