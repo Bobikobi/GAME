@@ -12,8 +12,8 @@ import { describe, expect, test } from 'vitest';
 const SRC = join(__dirname, '..', 'src');
 const MIN = 16;
 const DIALOGUE_MIN = 18;
-/** The chart is a 480-unit SVG shown about 352 px wide on a 390 px phone: 22 units is 16 px there. */
-const SVG_UNITS_MIN = 22;
+/** The core chart is a 640-unit SVG (64 tiles at 10) shown about 352 px wide on a 390 px phone: 16 px is 16 * 640 / 352 = 29.1 units, so 30. */
+const SVG_UNITS_MIN = 30;
 
 const walk = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => {
