@@ -13,6 +13,12 @@
  * active time at every grade (PROGRESSION 4.7, red line B), so no grade
  * speeds up levels.
  *
+ * Work that runs by itself (an axe, a trowel or a pick, or a mined node:
+ * kernel/src/work.ts) plays no minigame, so the kernel reads its grade as 3
+ * whatever the action says: it never misses and never writes a jackpot
+ * (QUARRYING 10). The grade is a parameter of a legal action, not state, so
+ * it is set aside, never refused (G102).
+ *
  * A craft can miss (G40): skill against the recipe's level sets the chance,
  * luck only tilts it, and a miss keeps something. The value table prices a
  * recipe at perfect execution, and nothing lifts a craft above it (R9).
@@ -26,6 +32,7 @@ import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermil
 import { GAITS, type Gait, foodFillPermille, gaitStepMs, itemWeight, loadMax, loadWeight, weightRoom } from './load';
 import { DRESS_PARTS, carcassGone, carcassGoods, dressPartMs, huntGoods, huntOf } from './hunt';
 import { drawBasisPoints, type Seed } from './rng';
+import { playsMinigame } from './work';
 import {
   ATTRIBUTES,
   type Attribute,
@@ -604,6 +611,8 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const r = resourceOf(b, nodeId)!;
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
+  // work that runs by itself plays no minigame: its grade is 3 whatever the action says (QUARRYING 10)
+  const g: Grade = playsMinigame(inst.kind, r) ? grade : 3;
   const waits = nodeWait(b, s, r);
   if (waits !== undefined) refuse(waits);
   const appear = appearSlot(b, nodeId);
@@ -625,8 +634,8 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
 
   const toolBonus = tool ? 150 * (toolTier(ctx, tool) - 1) : helper ? 150 * toolTier(ctx, helper) : 0;
   const ms = duration(ctx, r.active_ms, speedPermille(ctx, toolBonus + 10 * effectValue(b, s, 'gather_speed_pct')));
-  let qty = gradeYield(r.yield, grade);
-  if (grade === 0) {
+  let qty = gradeYield(r.yield, g);
+  if (g === 0) {
     if (drawBasisPoints(s.seed, nodeId, node.draws) < missKeepBp(b, s)) qty = 1;
     node.draws += 1;
   }
@@ -638,7 +647,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
   gainXp(ctx, verb, r.active_ms);
-  if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'gather' });
+  if (g === 4) ctx.events.push({ e: 'jackpot', verb: 'gather' });
 }
 
 function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
@@ -649,6 +658,8 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   if (d.pocket !== undefined && d.pocket !== s.player.pocket) refuse('There is nothing to dig here.');
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
+  // a trowel dig runs by itself and a find picked up by hand plays nothing: grade 3 (QUARRYING 10)
+  const g: Grade = playsMinigame(inst.kind, d) ? grade : 3;
   const wait = waitPermille(b, s, spotId, ctx.tick);
   const node = s.nodes[spotId] ?? { readyAt: 0, draws: 0 };
   if (!spotOpen(b, s, spotId)) refuse('There is nothing more here.');
@@ -669,7 +680,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   // a pocket's own spot always gives its one find, whatever the timing: no start ends at a wall
   let found: string | undefined = d.pocket !== undefined ? d.finds[0]?.item : undefined;
   for (const f of found ? [] : d.finds) {
-    let bp = mulDiv(f.chance_pct * 100, GRADE_PCT[grade], 100);
+    let bp = mulDiv(f.chance_pct * 100, GRADE_PCT[g], 100);
     if (rarityRank(b.items[f.item]?.rarity ?? 'common') >= 2) bp = mulDiv(bp, luck, 1000);
     edge = Math.min(10_000, edge + bp);
     if (roll < edge) {
@@ -684,7 +695,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   s.nodes[spotId] = node;
   busy(ctx, 'dig', ms);
   gainXp(ctx, 'dig', d.active_ms);
-  if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'dig' });
+  if (g === 4) ctx.events.push({ e: 'jackpot', verb: 'dig' });
   solveRiddles(ctx, { kind: 'dig', treasure: inst.source });
 }
 
@@ -1733,14 +1744,18 @@ function toolTier(ctx: Ctx, itemId: string): number {
 /** The tool kinds that help break a mined node; none is needed. */
 const MINE_TOOLS: readonly string[] = ['pick', 'hammer'];
 
-/** The highest-tier tool of these kinds in the bag (by id on a tie), or none. */
+/**
+ * The highest-tier tool of these kinds in the bag; on a tier tie a lasting one (no `uses`) wins, then the first id
+ * (QUARRYING 6), so a made tool never wears while a lasting one of its tier lies in the bag. None: undefined.
+ */
 function bestTool(ctx: Ctx, kinds: readonly string[]): string | undefined {
   const { b, s } = ctx;
   let best: string | undefined;
   for (const id of Object.keys(s.player.bag).sort()) {
     const tool = b.items[id]?.tool;
     if (!tool || !kinds.includes(tool.kind) || (s.player.bag[id] ?? 0) < 1) continue;
-    if (!best || tool.tier > toolTier(ctx, best)) best = id;
+    const held = best === undefined ? undefined : b.items[best]?.tool;
+    if (!held || tool.tier > held.tier || (tool.tier === held.tier && tool.uses === undefined && held.uses !== undefined)) best = id;
   }
   return best;
 }

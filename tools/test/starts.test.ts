@@ -211,7 +211,9 @@ describe('a fixture that breaks each rule', () => {
   });
 
   it('a tree and no shop that sells an axe', () => {
-    expect(text('no shop sells one')).toHaveLength(1);
+    expect(text('a tree needs an axe, and no shop sells one')).toHaveLength(1);
+    // the general row of the node tools names each axe node too (QUARRYING 2): no start-known recipe makes one either
+    expect(text('requires an axe, but no shop sells one').map((i) => i.message.split('"')[1]).sort()).toEqual(['core/fallen-logs', 'core/oak-trees']);
   });
 
   it('an opening that asks for more logs than the trees give', () => {

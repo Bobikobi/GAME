@@ -59,6 +59,8 @@ const CORE_WORKSHOP = [
   'camp/workbench.json',
   'camp/workshop.json',
   'recipes/stone-flakes.json',
+  'recipes/hammerstone.json',
+  'recipes/knapped-pick.json',
   'recipes/stone-blade.json',
   'recipes/flint-trowel.json',
   'recipes/stone-trowel.json',
@@ -617,5 +619,43 @@ describe('the made share the check refuses (CR-18)', () => {
       .map((i) => i.where)
       .sort();
     expect(where).toEqual(['params.k_craft_permille.max', 'params.k_permille.max']);
+  });
+});
+
+describe('node tools the check refuses (QUARRYING 2, 16)', () => {
+  const ore = item('ore', { class: 'stone' });
+  const mined = /^"tester\/nodes" names an? (pick|hammer) but not work: "mine"/;
+  const locked = (id: string, kind: string) => `"${id}" requires ${kind}, but no shop sells one and no start-known recipe makes one at tier 1`;
+  const core = messages(runCheck());
+
+  it('a node that names a pick or a hammer without work mine, and no core node', () => {
+    for (const tool of ['pick', 'hammer']) {
+      const said = messages(world({ 'resources/nodes.json': node(ore, { tool }) }));
+      expect(said.filter((m) => mined.test(m)), tool).toEqual([expect.stringContaining(`names a ${tool} but not work: "mine"`)]);
+    }
+    expect(core.filter((m) => m.includes('but not work: "mine"'))).toEqual([]);
+  });
+
+  it('a pick node passes once the knapped pick\'s recipe is in, and fails without it', () => {
+    const pickNode = { 'resources/nodes.json': node(ore, { tool: 'pick', work: 'mine' }) };
+    const said = messages(world(pickNode));
+    expect(said.filter((m) => m.includes('names a pick'))).toEqual([]);
+    expect(said.filter((m) => m.startsWith(locked('tester/nodes', 'a pick')))).toEqual([]);
+    const without = messages(world(pickNode, [removeCore('recipes/knapped-pick.json')]));
+    expect(without.filter((m) => m.startsWith(locked('tester/nodes', 'a pick')))).toHaveLength(1);
+  });
+
+  it('a node whose tool no shop sells and no start-known recipe makes', () => {
+    const said = messages(
+      world({}, [
+        editCore<ShopFile>('shops/trader-shop.json', (d) => {
+          d.shop.sells = d.shop.sells.filter((o) => o.item !== 'core/axe');
+        }),
+      ]),
+    );
+    const axe = said.filter((m) => m.includes('requires an axe'));
+    expect(axe).toContainEqual(expect.stringContaining(locked('core/oak-trees', 'an axe')));
+    expect(axe).toContainEqual(expect.stringContaining(locked('core/fallen-logs', 'an axe')));
+    expect(core.filter((m) => m.includes('no race may be locked out'))).toEqual([]);
   });
 });

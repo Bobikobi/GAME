@@ -57,6 +57,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkEconomy(b, assembled.origin));
     issues.push(...checkReactions(b, assembled.origin));
     issues.push(...checkCrafting(b, assembled.origin));
+    issues.push(...checkNodeTools(b, assembled.origin));
     issues.push(...checkWear(b));
     issues.push(...checkHunt(b, assembled.origin));
     issues.push(...checkWild(b, assembled.origin));
@@ -304,6 +305,50 @@ const GATED_TIER = 3;
  * from a gated source, and the world's rarity bonuses stay inside their
  * budget (kernel review 8.2).
  */
+/** The tools that mark a node as mined: it trains digging only when it says `work: "mine"` (kernel/src/state.ts nodeVerb). */
+const MINED_TOOLS: readonly string[] = ['pick', 'hammer', 'trowel'];
+
+/**
+ * The tools a node names (QUARRYING 2, 16 rows 1 and 2). A node that names a pick, a hammer or a trowel says
+ * `work: "mine"`, or it would be gathered and train Foraging. And a tool a node or a dig spot requires is one every
+ * race can reach: a shop sells one at tier 1, or a start-known recipe makes one; a race's outfit does not count,
+ * since only that race starts with it. The axe keeps its stricter row in starts.ts: a shop sells it, since a broken
+ * axe must be bought again before the first fire.
+ */
+export function checkNodeTools(b: Bundle, origin: Record<string, string>): Issue[] {
+  const issues: Issue[] = [];
+  const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
+  const firstTier = (item: string, kind: string) => {
+    const tool = b.items[item]?.tool;
+    return tool !== undefined && tool.kind === kind && tool.tier === 1;
+  };
+  const sold = Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item));
+  const made = Object.values(b.recipes)
+    .filter((r) => r.known === 'start')
+    .flatMap((r) => r.outputs.map((o) => o.item));
+  const reachable = (kind: string) => sold.some((item) => firstTier(item, kind)) || made.some((item) => firstTier(item, kind));
+  const a = (kind: string) => `${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}`;
+  const locked = (id: string, kind: string) =>
+    `"${id}" requires ${a(kind)}, but no shop sells one and no start-known recipe makes one at tier 1: no race may be locked out of a node (QUARRYING 2)`;
+
+  for (const [id, r] of Object.entries(b.resources)) {
+    const file = origin[id] ?? r.file;
+    if (r.tool === undefined) continue;
+    if (MINED_TOOLS.includes(r.tool) && r.work !== 'mine') {
+      err(file, 'node.tool', `"${id}" names ${a(r.tool)} but not work: "mine", so it would be gathered and train Foraging (kernel/src/state.ts nodeVerb): name work: "mine" (QUARRYING 2)`);
+    }
+    if (!reachable(r.tool)) err(file, 'node.tool', locked(id, r.tool));
+  }
+  for (const [id, x] of Object.entries(b.reactions)) {
+    const tool = 'appear' in x.then ? x.then.appear.tool : undefined;
+    if (tool !== undefined && !reachable(tool)) err(origin[id] ?? x.file, 'reaction.then.appear.tool', locked(id, tool));
+  }
+  for (const [id, d] of Object.entries(b.treasures)) {
+    if (d.tool !== undefined && !reachable(d.tool)) err(origin[id] ?? d.file, 'dig.tool', locked(id, d.tool));
+  }
+  return issues;
+}
+
 function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   const issues: Issue[] = [];
   const p = b.params;

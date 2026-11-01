@@ -37,12 +37,15 @@ import {
   npcTile,
   placedAt,
   predatorAt,
+  resourceKind,
   resourceOf,
   riddleSlots,
   sees,
   spotOpen,
   gaitStepMs,
+  treasureKind,
   windowOpen,
+  type AutoKind,
 } from '@game/kernel';
 import { app } from '../app';
 import { Piles, pileAt } from './piles';
@@ -84,7 +87,7 @@ import { FishingView } from './fishing-view';
 import type { FishPhase } from '../ui/games/shared';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import type { WorkKind } from '../ui/ui';
-import { STRIDE, type AutoKind, POSES, beatAt, blowsDue, poseFrame, resourceKind, standingFrame, strideFrame, treasureKind } from '../work';
+import { STRIDE, POSES, beatAt, blowsDue, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';

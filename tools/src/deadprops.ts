@@ -4,7 +4,9 @@
  * resource node, a restoration or a camp part wears - grown, empty or young -
  * is the look of something to work. A map prop wearing one of them is scenery
  * that lies about itself: make it a node (a resource slot, or `place.scatter`)
- * or give it a look that reads as scenery.
+ * or give it a look that reads as scenery. The map plan's cover line is read
+ * the same way (QUARRYING 12): the day a plan is baked into props, a cover
+ * sprite that wears a node's look would scatter things that cannot be worked.
  */
 import type { Bundle } from '@game/kernel';
 import type { Issue } from './load';
@@ -36,6 +38,19 @@ export function checkDeadProps(b: Bundle, origin: Record<string, string>): Issue
       message: `the prop at (${p.x}, ${p.y}) wears ${p.sprite}, the look of "${owner}", but nothing can be done with it: make it a node of "${owner}" (a resource slot or place.scatter) or give it a scenery sprite`,
       level: 'error',
     });
+  });
+  // the plan's cover line scatters small props: scenery only (QUARRYING 12)
+  b.map.plan?.regions?.forEach((r, i) => {
+    for (const sprite of Object.keys(r.cover ?? {})) {
+      const owner = usable.get(sprite);
+      if (owner === undefined) continue;
+      issues.push({
+        file,
+        where: `map.plan.regions.${i}.cover`,
+        message: `the plan region "${r.id}" scatters ${sprite}, the look of "${owner}", as cover: cover is scenery, so give it a scenery sprite, or place real nodes of "${owner}" with place.scatter (QUARRYING 12)`,
+        level: 'error',
+      });
+    }
   });
   // a scatter slot that finds no open tile would leave the prop gone and nothing in its place
   for (const [id, r] of Object.entries(b.resources)) {

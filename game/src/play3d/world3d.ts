@@ -22,9 +22,12 @@ import {
   makeWalkable,
   minuteOfDay,
   npcTile,
+  resourceKind,
   riddleSlots,
   spotOpen,
+  treasureKind,
   walkStepMs,
+  type AutoKind,
 } from '@game/kernel';
 import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
@@ -44,7 +47,7 @@ import { stoneView } from '../stone';
 import { heightOf, questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { beatAt, blowsDue, resourceKind, treasureKind, type AutoKind } from '../work';
+import { beatAt, blowsDue } from '../work';
 import { ART_PX, StandingReports, Walker, canEnter, facedTile, facingFor, landStep } from '../walking';
 import type { WorkKind } from '../ui/ui';
 

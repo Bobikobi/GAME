@@ -15,11 +15,14 @@ import {
   isNight,
   minuteOfDay,
   pickRemark,
+  playsMinigame,
+  resourceKind,
   resourceOf,
   rewardItem,
   hpCap,
   skillPoints,
   talkLines,
+  treasureKind,
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
@@ -41,7 +44,6 @@ import {
 } from '../text';
 import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
 import { localMapState } from '../places';
-import { resourceKind, treasureKind } from '../work';
 import { say, type Option } from './dialog';
 import { STONE_RESTORE, STONE_SPEAKER } from '../stone';
 import { carveName } from './carve';
@@ -662,15 +664,14 @@ export class UI {
     if (!s) return;
     const why = s.check({ t: 'dig', spot: spotId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    // a find picked up by hand has no timing window
+    // a find picked up by hand has no timing window (the kernel's rule: QUARRYING 10)
     const treasure = app.bundle.treasures[app.bundle.instances[spotId]?.source ?? ''];
-    const byHand = !treasure?.tool;
     if (treasure && treasureKind(treasure)) {
       // the trowel digs by itself; the catch (G6) is said once the hands stop
       app.world?.startWork(spotId, () => this.digCatch(spotId));
       return;
     }
-    const grade = byHand ? 3 : await this.play(timing, 'Dig', spotId, 'dig');
+    const grade = treasure && playsMinigame('treasure', treasure) ? await this.play(timing, 'Dig', spotId, 'dig') : 3;
     if (grade === null) return;
     const res = await s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
     if (!res.ok) return this.toast(res.error, 'bad');
