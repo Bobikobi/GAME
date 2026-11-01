@@ -1617,6 +1617,50 @@ export const ParamsBody = Type.Object(
           'The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1): the clock an animal thinks on, how far round a player animals are stepped, how long a flight, a den stay and a print last, where a den\'s bolt hole may lie, and the distances kept from a fire and the town. A kind\'s own character is its `behaviour`; these are the numbers every kind shares.',
       },
     ),
+    combat: Type.Object(
+      {
+        enabled: { ...Bounded, description: "Whether fights exist at all: 0 in the demo (G35). With 0 nothing engages and the wild brain keeps its bluff." },
+        swing_quick_t: { ...Bounded, description: "Ticks of a quick hand's whole swing, wind-up to the next strike (COMBAT 4.9, memo 4). Bare hands swing quick." },
+        swing_standard_t: { ...Bounded, description: "Ticks of a standard hand's swing." },
+        swing_heavy_t: { ...Bounded, description: "Ticks of a heavy hand's swing." },
+        swing_floor_t: { ...Bounded, description: "No hand swings faster than this, whatever its tier or a technique." },
+        bare_windup_t: { ...Bounded, description: "Ticks from a bare-handed strike's start to its landing." },
+        bare_base: { ...Bounded, description: "Points a strike of the bare hand takes from a foe; a foe's tier is counted in these (T1 falls in 2)." },
+        windup_min_t: { ...Bounded, description: "The shortest wind-up a foe's move may have (G31: nobody falls unwarned)." },
+        windup_max_t: { ...Bounded, description: "The longest wind-up a foe's move may have: no telegraph so slow that hard is easy." },
+        active_t: { ...Bounded, description: "Ticks a foe's move hits whoever stands in its reach, after its wind-up." },
+        rehit_t: { ...Bounded, description: "Ticks before one swing may hit the same target again; one swing hits one target once." },
+        bite_div: { ...Bounded, description: "A foe's default harm to a player is the health cap divided by this: six unanswered bites fell a player." },
+        behind_permille: { ...Bounded, description: "A strike from the side the target does not face does this share of its harm, against 1000." },
+        weak_permille: { ...Bounded, description: "A strike inside a foe's recovery after its weak move does this share of its harm, against 1000." },
+        mercy_t: { ...Bounded, description: "Ticks after a hit on a player in which nothing harms them." },
+        stun_t: { ...Bounded, description: "Ticks after a hit in which the one hit can do nothing." },
+        knockback_tiles: { ...Bounded, description: "Tiles a hit pushes the one hit away from its source, never into a solid tile or across a level change." },
+        dodge_tiles: { ...Bounded, description: "Tiles a dodge moves the body." },
+        dodge_t: { ...Bounded, description: "Ticks a dodge takes." },
+        dodge_cooldown_t: { ...Bounded, description: "Ticks after a dodge before the next." },
+        breath_base: { ...Bounded, description: "The breath bar's base top, in points; stamina adds breath_per_stamina each." },
+        breath_per_stamina: { ...Bounded, description: "Points of breath each point of stamina adds." },
+        breath_refill: { ...Bounded, description: "Points of breath standing still refills each tick." },
+        breath_hold_t: { ...Bounded, description: "Ticks after any verb but a move in which breath does not refill." },
+        attack_breath: { ...Bounded, description: "Breath a strike costs." },
+        guard_drain: { ...Bounded, description: "Breath a held guard costs each tick." },
+        guard_hit_breath: { ...Bounded, description: "Breath a blow into the guard costs the guard." },
+        dodge_breath: { ...Bounded, description: "Breath a dodge costs." },
+        breath_stagger_t: { ...Bounded, description: "Ticks a figure out of breath can neither strike nor guard." },
+        guard_stagger_t: { ...Bounded, description: "Ticks the striker is staggered after a strike into a guard." },
+        engage_tiles: { ...Bounded, description: "A foe heeds a player within this many tiles." },
+        leash_tiles: { ...Bounded, description: "A foe never goes farther than this from its spot; past it a chase ends and the foe goes home." },
+        give_up_t: { ...Bounded, description: "Ticks out of sense before a chase ends." },
+        claim_lock_t: { ...Bounded, description: "Ticks the first player whose strike lands holds a foe; each hit the holder deals or takes renews it." },
+        pay_per_s_mg: { ...Bounded, description: "Milli-gold a second of a foe's pattern may be worth in drops at the trader's price (HUNTING 9)." },
+      },
+      {
+        additionalProperties: false,
+        description:
+          'The fight (docs/design/COMBAT.md section 4.9): every duration a whole number of world ticks (wild.tick_ms). Nothing reads it while enabled is 0 (G35). Damage is exact: no chance decides a hit inside a fight (G79).',
+      },
+    ),
     starting_gold_mg: Bounded,
     per_point: Type.Object(
       { might: Bounded, senses: Bounded, agility_pct: Bounded, luck_permille: Bounded, stamina: Bounded, spirit: Bounded },
@@ -1971,6 +2015,47 @@ const Behaviour = Type.Object(
   { additionalProperties: false },
 );
 
+/** The hits of a starter hand that fell a foe, by tier (COMBAT 4.9: T1 2, T2 6 to 8, T3 20 and more). */
+export const FIGHT_TIER_HITS = { 1: [2, 2], 2: [6, 8], 3: [20, 30] } as const;
+
+const MoveName = Type.String({ pattern: '^[a-z][a-z0-9_-]{0,23}$' });
+
+/** One move of a foe: read before it lands (G31), then a window where it stands open. */
+const FightMove = Type.Object(
+  {
+    id: MoveName,
+    windup_t: Int(1, 20, 'Ticks the pose shows before the move lands. The check holds it to combat.windup_min_t and windup_max_t.'),
+    reach: Int(1, 3, 'Tiles in a line in front of the foe the move reaches.'),
+    harm_div: Type.Optional(Int(2, 24, 'The move takes the health cap divided by this. Absent: combat.bite_div.')),
+    breath: Int(0, 40, 'Breath the move costs the foe.'),
+    recover_t: Int(1, 20, 'Ticks the foe stands open after the move; a strike that lands then does extra if this is the weak move.'),
+    cooldown_t: Int(0, 200, 'Ticks before the same move may start again.'),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * What a creature is in a fight (COMBAT section 4.1 and 4.9), as data on the kind: a closed list of moves, patterns
+ * that order them, one weakness. Inert while combat.enabled is 0 (G35). A kind without it cannot fight. Its drops are
+ * the kind's `hunt` drops: a fallen foe lies as a carcass.
+ */
+const Fight = Type.Object(
+  {
+    tier: Type.Union([Type.Literal(1), Type.Literal(2), Type.Literal(3)], { description: 'How many hits of a starter hand fell it: T1 2, T2 6 to 8, T3 20 and more (the check counts hp against combat.bare_base).' }),
+    hp: Int(1, 2000, 'Points of health.'),
+    breath: Int(1, 200, 'Points of breath; its moves spend it and it refills like a player\'s.'),
+    pace_ms: Int(100, 2000, 'Game milliseconds a tile when it walks at a player. Never under the walk: a hunter is escaped by walking (HUNTING 2).'),
+    moves: Type.Array(FightMove, { minItems: 1, maxItems: 4 }),
+    patterns: Type.Array(Type.Array(MoveName, { minItems: 1, maxItems: 6 }), {
+      minItems: 1,
+      maxItems: 4,
+      description: 'Closed move orders. One is drawn when the foe appears (R4); its moves then repeat in that order. The fight is read, not rolled (G79).',
+    }),
+    weak: Type.Optional(Type.Object({ after: MoveName }, { additionalProperties: false, description: 'The move after whose recovery a strike lands weak_permille.' })),
+  },
+  { additionalProperties: false },
+);
+
 /** One kind of creature: how it looks, where it sits, how close the player may come, when it is out; with `hunt`, what it gives when taken. */
 const CreatureKind = Type.Object(
   {
@@ -1989,6 +2074,7 @@ const CreatureKind = Type.Object(
     ),
     behaviour: Type.Optional(Behaviour),
     hunt: Type.Optional(Hunt),
+    fight: Type.Optional(Fight),
     protected: Type.Optional(
       Type.Boolean({ description: 'A pet, a young animal or a person (HUNTING section 10): seen, never taken, never dressed. A protected kind carries no "hunt".' }),
     ),
