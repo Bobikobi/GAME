@@ -5,7 +5,7 @@
  */
 import type { ItemDef } from '@game/schema';
 
-/** The seven categories, in the order `itemCategory` reads them (EQUIPMENT 3.1; WEAPONS 10). */
+/** The seven categories, in the order `itemCategory` reads them (EQUIPMENT 3.1; WEAPONS 6, 13 and appendix). */
 export const ITEM_CATEGORIES = ['look', 'weapon', 'tool', 'wear', 'consumable', 'quest', 'material'] as const;
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 

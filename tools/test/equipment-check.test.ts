@@ -77,9 +77,13 @@ describe('the equipment foundations', () => {
   });
 
   it('a weapon-only hand gets the combat gate and not the missing-tool row', () => {
-    const r = world({ 'items.json': items(club()) });
+    const r = world({ 'items.json': items(club(), item('stick', { kind: 'tool', class: 'tool' })) });
     expect(at(r, 'items.tester/club.weapon').map((i) => i.message)).toEqual(['a weapon waits for combat: no weapon block yet (G35, G44)']);
-    expect(errors(r).filter((i) => i.message.includes('a tool item needs'))).toEqual([]);
+    // the relaxed row still holds for a tool with neither block, and only for it
+    const needs = errors(r).filter((i) => i.message.includes('a tool item needs'));
+    expect(needs.map((i) => [i.where, i.message, i.file.endsWith('extensions/tester/items.json')])).toEqual([
+      ['tool', 'a tool item needs "tool": { kind, tier }, and "uses" when it wears out', true],
+    ]);
   });
 
   it('a tool with a weapon block is refused by the gate alone', () => {
@@ -171,14 +175,15 @@ describe('the equipment foundations', () => {
     expect(at(r, 'items.tester/shawl.wear.trait').map((i) => i.message)).toContain('a look carries no trait');
   });
 
-  it('lets only a look, or a legendary unsold unmade find, bind', () => {
-    const power = 'only a look, or a legendary find no shop sells and no recipe makes, binds: power is made and traded (EQUIPMENT 3.6; DECISIONS.md, 2026-10-27)';
+  it('lets only a look bind; power is never bound', () => {
+    const power = 'only a look binds; power is never bound (EQUIPMENT 3.6)';
     const r = world(
       {
         'items.json': items(
           item('spade', { kind: 'tool', class: 'tool', tool: { kind: 'trowel', tier: 1, uses: 40 }, bind: 'character' }),
           garment('apron', { slot: 'top', effects: [{ effect: 'craft_speed_pct', value: 5 }] }, { bind: 'character' }),
           garment('crown', { slot: 'head', effects: [{ effect: 'rare_find_pct', value: 5 }] }, { bind: 'character', rarity: 'legendary' }),
+          garment('veil', { slot: 'head', look: true }, { bind: 'character' }),
           garment('scarf', { slot: 'head', look: true }, { bind: 'account' }),
           garment('ribbon', { slot: 'head', look: true }, { bind: 'account', premium_later: true }),
           garment('smock', { slot: 'top' }, { bind: 'account' }),
@@ -197,11 +202,13 @@ describe('the equipment foundations', () => {
     const bindRow = (name: string) => at(r, `items.tester/${name}.bind`).map((i) => i.message);
     expect(bindRow('spade')).toEqual([power]);
     expect(bindRow('apron')).toEqual([power]);
-    expect(bindRow('crown')).toEqual([]);
-    expect(r.assembled.bundle?.items['tester/crown']?.bind).toBe('character');
+    // a legendary find with an effect is power too: a ceiling raiser cannot be told apart yet (owner question, default never)
+    expect(bindRow('crown')).toEqual([power]);
+    expect(bindRow('veil')).toEqual([]);
+    expect(r.assembled.bundle?.items['tester/veil']?.bind).toBe('character');
     expect(bindRow('scarf')).toEqual(['the found copy trades (G39): a look bought with money is its own item, bound to the account; this one comes from the game']);
     expect(bindRow('ribbon')).toEqual(['the premium marker is on the copy found in the game, which trades (G39)']);
-    expect(bindRow('smock')).toEqual(['only a look bought with money binds to the account (G39)']);
+    expect(bindRow('smock')).toEqual([power]);
     for (const name of ['hat', 'reed', 'trowel']) {
       expect(bindRow(name)).toEqual([]);
       expect(r.assembled.bundle?.items[`tester/${name}`]?.bind).toBe('none');

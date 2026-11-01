@@ -37,11 +37,11 @@ beforeAll(() => {
     b.items[id] = { ...structuredClone(b.items['core/work-clothes']!), id, name: id, ...extra } as ItemInfo;
   };
   add('x/coat', { tier: 3, wear: { slot: 'top', req: { school: 'core/digging', level: 11 }, attrs: { might: 3 } } });
-  add('x/strong-coat', { tier: 3, wear: { slot: 'top', req: { school: 'core/digging', level: 11, attr: { might: 9 } }, attrs: { might: 3 } } });
+  add('x/strong-coat', { tier: 3, wear: { slot: 'top', req: { school: 'core/digging', level: 11, attr: { might: 2 } }, attrs: { might: 3 } } });
   add('x/odd-coat', { tier: 3, wear: { slot: 'top', req: { school: 'x/nowhere', level: 11 } } });
   add('x/look-cap', { tier: 1, wear: { slot: 'head', look: true, attrs: { might: 4 } } });
-  add('x/band', { tier: 1, wear: { slot: 'head', attrs: { might: 2 }, set: 'x/pair' } });
-  add('x/band-boots', { tier: 1, wear: { slot: 'feet', attrs: { might: 1 }, set: 'x/pair' } });
+  add('x/band', { tier: 1, wear: { slot: 'head', attrs: { might: 3 }, set: 'x/pair' } });
+  add('x/band-boots', { tier: 1, wear: { slot: 'feet', attrs: { might: 2 }, set: 'x/pair' } });
 });
 
 /** A fresh player at a digging level, wearing the given pieces on the work layer. */
@@ -101,7 +101,7 @@ describe('the wear requirement and the attribute bonuses (PROGRESSION 5.6)', () 
     expect([1, 2, 3, 4, 5, 6, 7].map((t) => attrBonusMax(b, t))).toEqual([1, 2, 3, 4, 6, 8, 10]);
   });
 
-  it("a piece above the wearer works at the wearer's own tier", () => {
+  it("a piece above the wearer counts up to one tier above the wearer's own", () => {
     const coat = b.items['x/coat']!;
     const at = (level: number) => {
       const s = wearer(level);
@@ -112,10 +112,11 @@ describe('the wear requirement and the attribute bonuses (PROGRESSION 5.6)', () 
     expect(at(11)).toEqual([3, 3]);
     // a requirement in a school that does not exist is never met
     expect(wearOwnTier(b, wearer(11), b.items['x/odd-coat']!)).toBe(1);
-    // the attribute threshold reads the base, never a worn bonus: might 9 is out of reach even at level 11
+    // the attribute threshold reads the base, never a worn bonus: the coat's +3 would lift might over 2, the base does not
     const strong = b.items['x/strong-coat']!;
     const s = wearer(11, 'x/coat');
-    expect(attrAt(b, s, 'might')).toBeLessThan(9);
+    expect(attrAt(b, s, 'might')).toBeLessThan(2);
+    expect(attrTotal(b, s, 'might')).toBeGreaterThanOrEqual(2);
     expect(wearOwnTier(b, s, strong)).toBe(2);
     // a piece with no requirement is at its own tier
     expect(wearOwnTier(b, wearer(1), b.items['core/work-clothes']!)).toBe(b.items['core/work-clothes']!.tier ?? 1);
@@ -141,12 +142,14 @@ describe('the wear requirement and the attribute bonuses (PROGRESSION 5.6)', () 
     look.player.looks.head = 'x/look-cap';
     look.player.worn.head = 'x/look-cap';
     expect(attrTotal(b, look, 'might')).toBe(attrAt(b, look, 'might'));
-    // a tier-1 work piece adds its bonus whole; two pieces of one set add no set bonus
+    // a tier-1 work piece adds its bonus whole; two pieces of one set add no set bonus (a sum of 5 at
+    // wear_set_bonus_pct 20 would add 1, so a set bonus copied from wornValue fails here)
+    expect(b.params.wear_set_bonus_pct * 5).toBeGreaterThanOrEqual(100);
     const one = wearer(1, 'x/band');
-    expect(attrTotal(b, one, 'might')).toBe(attrAt(b, one, 'might') + 2);
+    expect(attrTotal(b, one, 'might')).toBe(attrAt(b, one, 'might') + 3);
     const pair = wearer(1, 'x/band', 'x/band-boots');
     const total = attrTotal(b, pair, 'might');
-    expect(total).toBe(attrAt(b, pair, 'might') + 3);
+    expect(total).toBe(attrAt(b, pair, 'might') + 5);
     expect(Number.isInteger(total)).toBe(true);
   });
 });

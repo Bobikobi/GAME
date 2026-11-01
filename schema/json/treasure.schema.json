@@ -354,7 +354,7 @@
                 "type": "integer"
               },
               "ammo": {
-                "description": "The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with combat.",
+                "description": "The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with the first shot (WEAPONS 6).",
                 "anyOf": [
                   {
                     "const": "plant",
@@ -562,7 +562,7 @@
               },
               "req": {
                 "additionalProperties": false,
-                "description": "A soft requirement: below it the piece works at the wearer's own tier (PROGRESSION 5.6; CLOTHING 7.4). Read by nothing yet.",
+                "description": "A soft requirement: below it the piece counts up to what gear one tier above the wearer's own gives (PROGRESSION 5.6; CLOTHING 7.4). Read by nothing yet.",
                 "type": "object",
                 "required": [
                   "school",
@@ -714,7 +714,7 @@
             "type": "boolean"
           },
           "bind": {
-            "description": "Who may hold it: none trades, account never trades or sells, character never trades; left out, none (EQUIPMENT 3.6). Only a look, or a legendary find no shop sells and no recipe makes, binds. Read by nothing yet.",
+            "description": "Who may hold it: none trades, account never trades or sells, character never trades; left out, none (EQUIPMENT 3.6). Only a look binds; power is never bound. Read by nothing yet.",
             "anyOf": [
               {
                 "const": "none",

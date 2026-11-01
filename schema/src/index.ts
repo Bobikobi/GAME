@@ -200,7 +200,7 @@ export const WearReq = Type.Object(
   },
   {
     additionalProperties: false,
-    description: 'A soft requirement: below it the piece works at the wearer\'s own tier (PROGRESSION 5.6; CLOTHING 7.4). Read by nothing yet.',
+    description: 'A soft requirement: below it the piece counts up to what gear one tier above the wearer\'s own gives (PROGRESSION 5.6; CLOTHING 7.4). Read by nothing yet.',
   },
 );
 
@@ -234,7 +234,8 @@ export const Wear = Type.Object(
     ),
     load_bonus: Type.Optional(
       Int(1, 100, 'A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.'),
-    ),    req: Type.Optional(WearReq),
+    ),
+    req: Type.Optional(WearReq),
     attrs: Type.Optional({
       ...WornAttrs,
       description:
@@ -266,7 +267,7 @@ export const Weapon = Type.Object(
     range: Type.Optional(Int(2, 12, 'Tiles, only on a hand that throws or shoots (WEAPONS 3).')),
     ammo: Type.Optional({
       ...ItemClass,
-      description: 'The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with combat.',
+      description: 'The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with the first shot (WEAPONS 6).',
     }),
     noise: Type.Optional(Int(0, 12, 'Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).')),
     uses: Type.Optional(Int(1, 1000, 'Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).')),
@@ -349,7 +350,7 @@ export const ItemDef = Type.Object(
     bind: Type.Optional(
       Type.Union(BINDS.map((k) => Type.Literal(k)), {
         description:
-          'Who may hold it: none trades, account never trades or sells, character never trades; left out, none (EQUIPMENT 3.6). Only a look, or a legendary find no shop sells and no recipe makes, binds. Read by nothing yet.',
+          'Who may hold it: none trades, account never trades or sells, character never trades; left out, none (EQUIPMENT 3.6). Only a look binds; power is never bound. Read by nothing yet.',
       }),
     ),
   },

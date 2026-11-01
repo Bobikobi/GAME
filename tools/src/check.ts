@@ -606,14 +606,12 @@ function checkWear(b: Bundle): Issue[] {
 /**
  * The equipment foundations (EQUIPMENT 3.3, 3.6; CLOTHING 7.4, 7.5, 7.6, 11; DECISIONS.md, 2026-11-01): a worn
  * piece's soft requirement asks its tier's level, worn attributes and garment traits wait for their readers and
- * keep to their caps and places, and only a look, or a legendary find no shop sells and no recipe makes, binds.
+ * keep to their caps and places, and only a look binds: power is never bound (EQUIPMENT 3.6).
  */
 function checkEquipment(b: Bundle): Issue[] {
   const issues: Issue[] = [];
   const err = (file: string, where: string, message: string, level: Issue['level'] = 'error') => issues.push({ file, where, message, level });
   const fromGame = inGameSources(b);
-  const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
-  const made = new Set(Object.values(b.recipes).flatMap((c) => c.outputs.map((o) => o.item)));
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;
     const w = it.wear;
@@ -654,15 +652,12 @@ function checkEquipment(b: Bundle): Issue[] {
       err(it.file, `${where}.bind`, 'a weapon is never bound (WEAPONS 13; EQUIPMENT 3.6)');
       continue;
     }
-    const look = w?.look === true;
-    if (it.bind === 'character') {
-      const raiser = it.rarity === 'legendary' && !sold.has(id) && !made.has(id);
-      if (!look && !raiser) {
-        err(it.file, `${where}.bind`, 'only a look, or a legendary find no shop sells and no recipe makes, binds: power is made and traded (EQUIPMENT 3.6; DECISIONS.md, 2026-10-27)');
-      }
-    } else if (!look) {
-      err(it.file, `${where}.bind`, 'only a look bought with money binds to the account (G39)');
-    } else if (it.premium_later) {
+    if (w?.look !== true) {
+      err(it.file, `${where}.bind`, 'only a look binds; power is never bound (EQUIPMENT 3.6)');
+      continue;
+    }
+    if (it.bind === 'character') continue;
+    if (it.premium_later) {
       err(it.file, `${where}.bind`, 'the premium marker is on the copy found in the game, which trades (G39)');
     } else if (fromGame(id)) {
       err(it.file, `${where}.bind`, 'the found copy trades (G39): a look bought with money is its own item, bound to the account; this one comes from the game');
