@@ -12,8 +12,13 @@ import { findSlot, type Rect } from './world';
 
 /** The event a crossing draws: its place in the passage's table, by running sums of the integer weights. */
 export function seaEventIndex(passage: PassageDef, seed: Seed, crossings: number): number {
+  return seaPick(passage, drawBasisPoints(seed, `passage:${passage.id}`, crossings));
+}
+
+/** The event a draw of `bp` basis points (0..9999) picks: the first whose running sum of weights exceeds floor(bp * total / 10000). */
+export function seaPick(passage: PassageDef, bp: number): number {
   const total = passage.events.reduce((n, e) => n + e.weight, 0);
-  const r = idiv(drawBasisPoints(seed, `passage:${passage.id}`, crossings) * total, 10_000);
+  const r = idiv(bp * total, 10_000);
   let sum = 0;
   for (let i = 0; i < passage.events.length; i++) {
     sum += passage.events[i]!.weight;

@@ -6760,7 +6760,7 @@
                           "times": {
                             "minimum": 2,
                             "maximum": 4,
-                            "description": "Answers on that many segments in a row, one a segment, inside the window.",
+                            "description": "Answers on that many segments, one a segment, inside the window.",
                             "type": "integer"
                           }
                         }

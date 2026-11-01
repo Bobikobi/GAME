@@ -32,6 +32,7 @@ import { checkSchools } from './schools';
 import { checkHands } from './hands';
 import { checkRichness } from './richness';
 import { checkSearch } from './search';
+import { checkSea } from './sea';
 import { checkStarts } from './starts';
 import { checkLock } from './lock';
 import { checkBalance } from './balance/check';
@@ -75,6 +76,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkHazards(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
     issues.push(...checkSearch(b, assembled.origin));
+    issues.push(...checkSea(b, assembled.origin));
     issues.push(...checkMapPlan(b, assembled.origin));
     issues.push(...checkHands(b, assembled.origin));
     issues.push(...checkBalance(b, paramsFile?.type === 'params' ? paramsFile.params : undefined));

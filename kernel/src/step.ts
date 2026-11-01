@@ -998,7 +998,7 @@ function answer(ctx: Ctx, choice: number | undefined): void {
     s.ledger.minted += reward.gold_mg;
     ctx.events.push({ e: 'gold', delta: reward.gold_mg });
   }
-  for (const stack of reward.items ?? []) addItem(ctx, stack.item, stack.qty);
+  applyReward(ctx, { items: reward.items });
   ctx.events.push({ e: 'sea', passage: aboard.passage, event: now.event.id, outcome: 'met' });
 }
 

@@ -1,0 +1,89 @@
+{
+  "$schema": "../../../schema/json/passage.schema.json",
+  "format": 1,
+  "type": "passage",
+  "id": "core/bay-crossing",
+  "title": "Across the bay",
+  "creator": "core",
+  "passage": {
+    "from": "core/ferry",
+    "hours": [6, 19],
+    "segments": 8,
+    "segment_ms": 10000,
+    "board": ["The ferry pushes off. The jetty grows small behind you."],
+    "land": ["The far bank slides past, and the ferry swings round for home.", "The jetty again. Your legs take a moment to remember the ground."],
+    "back": ["The ferryman turns the bow for home without a word.", "The jetty again, sooner than you thought."],
+    "events": [
+      {
+        "id": "core/drifting-crate",
+        "title": "A drifting crate",
+        "type": "discovery",
+        "weight": 3,
+        "sign": ["Something knocks against the hull, low and hollow."],
+        "window": 2,
+        "act": { "kind": "find" },
+        "miss": "on",
+        "met": ["You hook the crate and haul it in. Rope, and dry cord inside."],
+        "missed": ["The crate turns once in the wake and is gone."],
+        "reward": { "items": [{ "item": "core/reed-cord", "qty": 2 }] }
+      },
+      {
+        "id": "core/passenger",
+        "title": "A passenger",
+        "type": "persuasion",
+        "weight": 3,
+        "sign": ["A traveller sits by the mast with a bundle on her knees."],
+        "window": 2,
+        "act": { "kind": "bring", "item": "core/herb", "qty": 1 },
+        "miss": "on",
+        "met": ["\"For the cough. Thank you.\" She presses a leaf into your hand."],
+        "missed": ["She looks at the water and says nothing more."],
+        "reward": { "gold_mg": 5000, "items": [{ "item": "core/sunleaf", "qty": 1 }] }
+      },
+      {
+        "id": "core/gulls-over-a-shoal",
+        "title": "Gulls over a shoal",
+        "type": "skill",
+        "weight": 2,
+        "sign": ["Gulls circle low ahead, and the water darkens under them."],
+        "window": 3,
+        "act": { "kind": "tend", "times": 2 },
+        "miss": "on",
+        "met": ["The line jerks twice. Two fish, silver and cold, flap in the boat."],
+        "missed": ["The gulls fall behind, still screaming over the shoal."],
+        "reward": { "items": [{ "item": "core/river-fish", "qty": 2 }] }
+      },
+      {
+        "id": "core/squall",
+        "title": "A squall",
+        "type": "tending",
+        "weight": 1,
+        "sign": ["The sky darkens in the west. The ferryman reefs the sail."],
+        "window": 4,
+        "act": { "kind": "tend", "times": 3 },
+        "miss": "back",
+        "met": ["You bail and trim until the rain moves on. The far bank shows, wet and grey."],
+        "missed": ["The water rises faster than you bail. The ferryman turns for home."],
+        "reward": { "gold_mg": 10000, "items": [{ "item": "core/reed", "qty": 2 }] }
+      },
+      {
+        "id": "core/fog-bell",
+        "title": "A bell in the fog",
+        "type": "riddle",
+        "weight": 1,
+        "sign": ["Fog closes over the bow. Somewhere, a bell."],
+        "window": 2,
+        "act": {
+          "kind": "riddle",
+          "clue": "The bell rings on the left, then again on the right, louder.",
+          "choices": ["Steer left", "Steer right", "Hold straight"],
+          "answer": 1
+        },
+        "miss": "back",
+        "met": ["The bell comes up out of the fog on a post. A reed is tied to it."],
+        "missed": ["The bell fades. The ferryman circles once, then turns for home."],
+        "reward": { "items": [{ "item": "core/moonreed", "qty": 1 }] }
+      }
+    ]
+  }
+}
