@@ -1,0 +1,107 @@
+{
+  "format": 1,
+  "note": "The world lock (G59): the opening's legs in steps and its pays. Re-anchored only with the owner's yes, by \"pnpm world:lock\".",
+  "legs": {
+    "core/north-meadow": {
+      "from": "core/north-meadow wake [7, 6]",
+      "to": "core/old-bridge",
+      "steps": 18
+    },
+    "core/slid-bank": {
+      "from": "core/slid-bank wake [9, 23]",
+      "to": "core/old-bridge",
+      "steps": 11
+    },
+    "core/west-bank": {
+      "from": "core/west-bank wake [6, 17]",
+      "to": "core/old-bridge",
+      "steps": 10
+    },
+    "core/first-fire": {
+      "from": "core/old-bridge",
+      "to": "core/campfire at the camp's fire",
+      "steps": 4
+    },
+    "core/into-town": {
+      "from": "core/campfire at the camp's fire",
+      "to": "core/town-square",
+      "steps": 16
+    },
+    "core/three-fruits": {
+      "from": "core/elder-house",
+      "to": "core/bell-bushes",
+      "steps": 24
+    },
+    "core/herbs-for-pell": {
+      "from": "core/trader-stall",
+      "to": "core/sun-herbs",
+      "steps": 43
+    },
+    "core/a-coin-for-maru": {
+      "from": "core/elder-house",
+      "to": "core/lantern-foot",
+      "steps": 91
+    },
+    "core/the-night-arch": {
+      "from": "core/lantern-foot",
+      "to": "core/arch-mouth",
+      "steps": 11
+    }
+  },
+  "pays": {
+    "core/a-coin-for-maru": {
+      "items": [
+        {
+          "item": "core/maru-house-key",
+          "qty": 1
+        }
+      ],
+      "recipes": [
+        "core/herb-tea"
+      ],
+      "rep": 20
+    },
+    "core/buried-axe": {
+      "rep": 0
+    },
+    "core/first-fire": {
+      "rep": 0
+    },
+    "core/first-pickings": {
+      "rep": 0
+    },
+    "core/fix-the-bridge": {
+      "gold_mg": 30000,
+      "rep": 0
+    },
+    "core/glint-by-the-bridge": {
+      "rep": 0
+    },
+    "core/herbs-for-pell": {
+      "gold_mg": 30000,
+      "recipes": [
+        "core/herb-stew"
+      ],
+      "rep": 15
+    },
+    "core/into-town": {
+      "rep": 0
+    },
+    "core/the-night-arch": {
+      "opens": [
+        "core/arch-way"
+      ],
+      "rep": 0
+    },
+    "core/three-fruits": {
+      "items": [
+        {
+          "instead": "core/walking-staff",
+          "item": "core/trowel",
+          "qty": 1
+        }
+      ],
+      "rep": 10
+    }
+  }
+}
