@@ -36,10 +36,10 @@ function lines(b: Bundle) {
 
 describe('the allowance', () => {
   it('is 241 steps at 190 ms a step, by the draft\'s numbers where the params are absent', () => {
-    const params = { ...base.params, walk_step_ms: 190 } as Bundle['params'] & { pay_gap_ms?: number; pay_sight_tiles?: number };
+    const params: Record<string, unknown> = { ...base.params, walk_step_ms: 190 };
     delete params.pay_gap_ms;
     delete params.pay_sight_tiles;
-    expect(payGapCap({ ...base, params })).toBe(CAP);
+    expect(payGapCap({ ...base, params: params as unknown as Bundle['params'] })).toBe(CAP);
   });
 
   it('reads the params when they carry their own', () => {
