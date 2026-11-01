@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../../schema/json/template.schema.json",
+  "format": 1,
+  "type": "template",
+  "id": "ceosisrael/dried-herbs",
+  "title": "Dried herbs",
+  "creator": "ceosisrael",
+  "ai_tools": ["Claude (Anthropic)"],
+  "items": [
+    {
+      "id": "ceosisrael/dried-herbs",
+      "name": "Dried herbs",
+      "description": "Hung in the smoke until they crackle. They weigh nothing in the bag, and the trader pays more for them than for fresh.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "plant",
+      "family": "seasoning",
+      "tags": ["dried"],
+      "tier": 1,
+      "sprite": "ceosisrael/kit:items/dried_herbs",
+      "weight": 0
+    }
+  ],
+  "template": {
+    "station": "fire",
+    "active_ms": 3000,
+    "level": 1,
+    "inputs": [
+      {
+        "class": "plant",
+        "family": "herb",
+        "min_tier": 1,
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "ceosisrael/dried-herbs",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ]
+  }
+}
