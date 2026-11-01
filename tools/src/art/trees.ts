@@ -88,6 +88,8 @@ const OAK = {
   ragged: 1,
   side: 0,
   rim: 0,
+  cap: 5,
+  floor: 1,
   roots: 1, // 0 drops the root flare: a column foot
   boxH: 180,
   ...(JSON.parse(process.env.OAK_TUNE ?? '{}') as Record<string, number>),
@@ -107,7 +109,7 @@ function oak(frame: number): PNG {
   const box = { oy: 52 + (180 - OAK.boxH) / 2, h: OAK.boxH };
   const L = OAK.lobe;
   const lobes = swayed(crownLobes(31, W, box.h, 96, OAK.cy, OAK.rx, OAK.ry, [[0.6, 9, 29 * L], [1, 13, 25 * L]], 38 * L), box.h, frame, 2.5);
-  drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 31, lobes, ramp: GREEN, clump: OAK.clump, tone: OAK.tone, contrast: OAK.contrast, glints: OAK.glints, ragged: OAK.ragged, side: OAK.side, rim: OAK.rim, shift: [frame * 3, frame * 2] });
+  drawMass(png, { ox: 0, oy: box.oy, w: W, h: box.h, seed: 31, lobes, ramp: GREEN, clump: OAK.clump, tone: OAK.tone, contrast: OAK.contrast, glints: OAK.glints, ragged: OAK.ragged, side: OAK.side, rim: OAK.rim, cap: OAK.cap, floor: OAK.floor, shift: [frame * 3, frame * 2] });
   return finish(png);
 }
 

@@ -82,6 +82,10 @@ export interface MassOptions {
   side?: number;
   /** Trial: a lit rim on each clump's upper left and a shaded underside on its lower right, in steps. */
   rim?: number;
+  /** Trial: the brightest ramp step the crown may use (5 is the whole ramp; 4 keeps the palest leaf off the ramp's top). */
+  cap?: number;
+  /** Trial: the darkest ramp step the crown may use (1 is the ramp's ink-side step; 2 lifts the body). */
+  floor?: number;
 }
 
 /**
@@ -166,12 +170,13 @@ export function drawMass(png: PNG, o: MassOptions): Uint8Array {
       if (above > height[y * w + x]! + 0.12) v -= 0.8;
       // the crevice between two clumps is darker
       if (second - near < 2.2) v -= 1.0;
-      let step = Math.max(1, Math.min(5, Math.round(v)));
+      const lo = o.floor ?? 1;
+      let step = Math.max(lo, Math.min(o.cap ?? 5, Math.round(v)));
       // a pale leaf glint on a lit clump
-      if (glints > 0 && step >= 4 && hash3(seed + 11, x, y) > 1 - 0.02 * glints) step = 5;
+      if (glints > 0 && step >= 4 && hash3(seed + 11, x, y) > 1 - 0.02 * glints) step = o.cap ?? 5;
       // the lower right is the darkest green, one step in from the ink
-      if (lowerRight(x, y)) step = Math.min(step, 1);
-      else if (!px(x + 2, y + 2) && step > 1) step -= 1;
+      if (lowerRight(x, y)) step = Math.min(step, lo);
+      else if (!px(x + 2, y + 2) && step > lo) step -= 1;
       put(png, o.ox + x, o.oy + y, o.ramp[step]!);
     }
   }
