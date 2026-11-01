@@ -900,8 +900,8 @@ body {
 /* ------------------------------------------------------------ touch, landscape */
 
 /* A phone on its side plays in the Wild Rift grammar (the owner, 30.10): a floating stick in the left half, the
-   buttons under the right thumb, the HUD in one band along the top edge. The look is frame D's plain base, the
-   lacquer black and one antique-gold rim; the owner picks the skin from three stills. */
+   buttons under the right thumb, the HUD in one band along the top edge. The skin is the owner's pick B (1.11): the
+   stick an open gold ring, the knob and the buttons gold-rimmed lacquer coins with an inset ring, the glyph cut in gold. */
 .touch-on.landscape {
   --prompt-lift: 10px;
   /* the landscape controls draw at 40% transparency, the whole control at once (lacquer, rim and glyph): the
@@ -941,8 +941,9 @@ body {
   height: var(--ring, 96px);
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: var(--ui-black);
-  border: 2px solid var(--ui-gold-4);
+  background: none;
+  border: 3px solid var(--ui-gold-5);
+  box-shadow: 0 0 0 1px var(--ui-gold-2), inset 0 0 0 1px var(--ui-gold-2);
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: none;
@@ -958,8 +959,8 @@ body {
   height: var(--knob, 38px);
   border-radius: 50%;
   background: var(--ui-black);
-  border: 2px solid var(--ui-gold-4);
-  box-shadow: 0 3px 0 rgb(12 11 18 / 0.5);
+  border: 3px solid var(--ui-gold-5);
+  box-shadow: inset 0 0 0 4px var(--ui-black), inset 0 0 0 5px var(--ui-gold-3), 0 3px 0 rgb(12 11 18 / 0.5);
 }
 
 /* the buttons stand on the screen's bottom-right corner, each placed by its center; their box covers the
@@ -988,9 +989,13 @@ body {
   transform: translate(50%, 50%);
   border-radius: 50%;
   background: var(--ui-black);
-  border: 2px solid var(--ui-gold-4);
-  color: var(--ui-paper);
-  box-shadow: 0 3px 0 rgb(12 11 18 / 0.5);
+  border: 3px solid var(--ui-gold-5);
+  color: var(--ui-gold-5);
+  box-shadow: inset 0 0 0 4px var(--ui-black), inset 0 0 0 5px var(--ui-gold-3), 0 3px 0 rgb(12 11 18 / 0.5);
+  /* the glyph cut in gold: a dark edge above, a light one below */
+  text-shadow: 0 -1px 0 var(--ui-gold-1), 0 1px 0 var(--ui-gold-6);
+  font-family: var(--ui-display);
+  font-weight: 700;
   line-height: 1;
   pointer-events: auto;
   opacity: var(--controls-alpha);
@@ -1022,6 +1027,13 @@ body {
 
 .touch-on.landscape .tbtn.sneak {
   font-size: max(16px, calc(var(--d) * 0.34));
+}
+
+/* a word and the line glyphs keep the body face */
+.touch-on.landscape .tbtn.sneak,
+.touch-on.landscape .tbtn.nav {
+  font-family: var(--font-body);
+  font-weight: 400;
 }
 
 /* the column at the right edge: a line glyph each, half the button across */

@@ -1,14 +1,11 @@
 /**
- * Makes the owner's three stills of the landscape controls' skin (the owner, 30.10: "design the joysticks to the
- * general theme and show me options for approval"). Not a test, and in no e2e group: run it by hand after
- * `pnpm build`.
+ * Makes the still of the landscape controls in the shipped skin, B (the owner's pick of 1.11 from three; DECISIONS
+ * 2026-11-01). Not a test, and in no e2e group: run it by hand after `pnpm build`.
  *
  *   tsx game/e2e/stills/phone-landscape.ts <out-dir> [date]
  *
- * The same frame for each: the valley by day, the player mid-walk under a held stick, a 2K phone on its side
- * (800 by 360 CSS px at 3x, so 2400 by 1080), shot from one paused moment. Only the skin differs; the layout is the
- * shipped one. The skins are
- * laid over the shipped plain look here, in the page, and none of them ships until the owner picks one.
+ * The frame: the valley by day, the player mid-walk under a held stick, a 2K phone on its side (800 by 360 CSS px
+ * at 3x, so 2400 by 1080), shot from one paused moment, with the density of the buttons as the page draws them.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -29,54 +26,6 @@ const TYPES: Record<string, string> = {
   '.webp': 'image/webp',
   '.woff2': 'font/woff2',
   '.json': 'application/json',
-};
-
-const L = 'body.touch-on.landscape';
-// the gold ramp and the blacks of theme.css, by name, so a skin is one of frame D's own colours
-const SVG = (body: string, size = 132) =>
-  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'>${body}</svg>`)}")`;
-
-/** A tick on the compass ring at each of the four ways, in the gold. */
-const TICKS = SVG(
-  [0, 90, 180, 270]
-    .map((a) => `<path transform='rotate(${a} 66 66)' d='M66 5 L72 17 L66 14 L60 17 Z' fill='#c9a96a' stroke='#4d3c22' stroke-width='1'/>`)
-    .join('') + `<circle cx='66' cy='66' r='44' fill='none' stroke='#4d3c22' stroke-width='1'/>`,
-);
-/** The lacquer gem: a cut stone on its point, gold-set, one facet lit. */
-const GEM = SVG(
-  `<path d='M28 4 L52 28 L28 52 L4 28 Z' fill='#131220' stroke='#c9a96a' stroke-width='3'/><path d='M28 14 L42 28 L28 42 L14 28 Z' fill='#1b1a2e' stroke='#7a5f33' stroke-width='1.5'/><path d='M28 14 L42 28 L28 28 Z' fill='#2a2114'/><circle cx='28' cy='28' r='3' fill='#e8d4a2'/>`,
-  56,
-);
-
-const SKINS: Record<string, string> = {
-  // A: lacquer disc with a thin antique-gold rim; the knob a smaller lacquer disc with a gold dot; gold glyphs
-  A: `
-    ${L} .stick { background: rgb(19 18 32 / 0.78); border: 1px solid var(--ui-gold-4); }
-    ${L} .stick-knob { width: calc(var(--knob) * 0.9); height: calc(var(--knob) * 0.9); background: var(--ui-black); border: 1px solid var(--ui-gold-4); display: grid; place-items: center; }
-    ${L} .stick-knob::after { content: ''; width: 26%; height: 26%; border-radius: 50%; background: var(--ui-gold-5); }
-    ${L} .tbtn { background: var(--ui-black); border: 1px solid var(--ui-gold-4); color: var(--ui-gold-5); }
-    ${L} .tbtn.a { color: var(--ui-gold-6); }
-  `,
-  // B: an open gold ring, no filled disc; the knob a gold-rimmed lacquer coin; buttons gold-rimmed coins, the glyph cut in gold
-  B: `
-    ${L} .stick { background: none; border: 3px solid var(--ui-gold-5); box-shadow: 0 0 0 1px var(--ui-gold-2), inset 0 0 0 1px var(--ui-gold-2); }
-    ${L} .stick-knob { background: var(--ui-black); border: 3px solid var(--ui-gold-5); box-shadow: inset 0 0 0 4px var(--ui-black), inset 0 0 0 5px var(--ui-gold-3), 0 3px 0 rgb(12 11 18 / 0.5); }
-    ${L} .tbtn { background: var(--ui-black); border: 3px solid var(--ui-gold-5); box-shadow: inset 0 0 0 4px var(--ui-black), inset 0 0 0 5px var(--ui-gold-3), 0 3px 0 rgb(12 11 18 / 0.5);
-      color: var(--ui-gold-5); text-shadow: 0 -1px 0 var(--ui-gold-1), 0 1px 0 var(--ui-gold-6); font-family: var(--ui-display); font-weight: 700; }
-    ${L} .tbtn.nav, ${L} .tbtn.sneak { font-family: var(--font-body); font-weight: 400; font-size: 16px; }
-  `,
-  // C: a compass-rose stick, four gold ticks on the ring; the knob a lacquer gem; buttons as frame D's corner ornament in miniature,
-  // drawn inside the round hit target so no two touch
-  C: `
-    ${L} .stick { background: ${TICKS} center / 100% no-repeat, rgb(19 18 32 / 0.72); border: 2px solid var(--ui-gold-4); }
-    ${L} .stick-knob { border: 0; border-radius: 0; background: ${GEM} center / 100% no-repeat; box-shadow: none; }
-    ${L} .tbtn { background: none; border: 0; box-shadow: none; color: var(--ui-paper); }
-    ${L} .tbtn::before { content: ''; position: absolute; z-index: -1; inset: 10%; border: 1px solid var(--ui-gold-4); box-shadow: 0 3px 0 rgb(12 11 18 / 0.5);
-      background: var(--ui-corner-tl) left top / 42% no-repeat, var(--ui-corner-tr) right top / 42% no-repeat,
-        var(--ui-corner-bl) left bottom / 42% no-repeat, var(--ui-corner-br) right bottom / 42% no-repeat, var(--ui-grain), var(--ui-black); }
-    ${L} .tbtn.sneak::before { inset: 4%; } /* the word stays on the lacquer, never on bare ground */
-    ${L} .tbtn.a { color: var(--ui-gold-6); }
-  `,
 };
 
 /**
@@ -151,19 +100,15 @@ async function main(): Promise<void> {
         await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...at, id: 1 }] });
         await page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: at.x + 44, y: at.y + 10, id: 1 }] });
         await page.waitFor(`!!__game.world.body.moving`, 'the walk', 5000);
-        // one moment for every skin: the game holds still and only the skin's style changes between the shots
+        // one paused moment: the game holds still for the shot
         await sleep(400);
         await page.eval('__game.world.game.loop.sleep()');
         // a toast keeps its own clock while the game sleeps: the shots wait for it to leave, so none goes mid-set
         await page.waitFor(`document.querySelectorAll('.toasts > *').length === 0`, 'the toasts to leave', 30_000);
-        await page.eval(`(() => { const s = document.createElement('style'); s.id = 'skin'; document.head.append(s); })()`);
-        for (const name of ['plain', ...Object.keys(SKINS)]) {
-          await page.eval(`document.getElementById('skin').textContent = ${JSON.stringify(SKINS[name] ?? '')}`);
-          await sleep(300);
-          await page.screenshot(join(out, `${date}-phone-landscape-${name}.png`));
-          console.log(`${name}: ${join(out, `${date}-phone-landscape-${name}.png`)}`);
-          if (name === 'plain') console.log(`density: ${JSON.stringify(await page.eval(DENSITY))}`);
-        }
+        const file = join(out, `${date}-phone-landscape-B.png`);
+        await page.screenshot(file);
+        console.log(`B: ${file}`);
+        console.log(`density: ${JSON.stringify(await page.eval(DENSITY))}`);
         await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       } finally {
         page.close();
