@@ -64,7 +64,7 @@ const hop = (b: Bundle, from: Tile, to: Tile) => step(b, standing(b, from), { t:
 
 describe('the kernel version', () => {
   test('rose to 0.21.0 with the height rule (0.21.1 since the gaits, 0.22.0 since the dress verb, 0.23.0 since the jackpot pays no extra experience)', () => {
-    expect(KERNEL_VERSION).toBe('0.23.0');
+    expect(KERNEL_VERSION).toBe('0.24.0');
   });
 });
 

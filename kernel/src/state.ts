@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.23.0';
+export const KERNEL_VERSION = '0.24.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -222,8 +222,26 @@ export interface Player {
   expeditions: Record<string, ExpeditionState>;
   /** falls so far: the draw counter of the tile they wake on (rule R4) */
   falls: number;
+  /** the boat the player is on, if any (docs/design/SEA_CROSSING.md); absent or null on land */
+  aboard?: Aboard | null;
+  /** boats boarded so far: the draw counter of each crossing's event (rule R4); absent before the first */
+  crossings?: number;
   /** tick of the last arrival: a position report, or an action at a tile */
   movedAt: number;
+}
+
+/** A crossing under way: the passage, how far it has come, and the one event drawn for it at boarding. */
+export interface Aboard {
+  passage: string;
+  /** segments sailed so far: 0 at the jetty, the passage's `segments` at the far end */
+  segment: number;
+  /** the drawn event, its place in the passage's table */
+  event: number;
+  /** answers given to it so far: a `tend` counts one a segment */
+  answers: number;
+  /** the segment of the last answer, -1 before any: one answer a segment */
+  answeredAt: number;
+  outcome: 'open' | 'met' | 'missed';
 }
 
 /**

@@ -202,6 +202,8 @@ export function fireArea(bundle: Bundle, at: Tile): Tile[] {
  * ends there. `tick` is the moment asked about, the state's own by default.
  */
 export function isSafe(bundle: Bundle, state: PublicState, at: Tile, tick: number = state.tick): boolean {
+  // a boat is a safe place (G30): its event is the only danger on it
+  if (state.player.aboard) return true;
   if (isSafeGround(bundle, at, state.player.camp.length > 0)) return true;
   const own = state.player.own;
   return own != null && fireBurns(state, OWN_FIRE, tick) && Math.max(Math.abs(at[0] - own.at[0]), Math.abs(at[1] - own.at[1])) <= bundle.params.fire.safe_tiles;

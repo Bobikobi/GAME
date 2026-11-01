@@ -10,6 +10,7 @@ export * from './patch';
 export * from './reactions';
 export * from './relocate';
 export * from './rng';
+export * from './sea';
 export * from './state';
 export * from './step';
 export * from './story';

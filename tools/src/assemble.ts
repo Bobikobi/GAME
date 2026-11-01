@@ -52,6 +52,7 @@ type RecordKey =
   | 'npcs'
   | 'quests'
   | 'expeditions'
+  | 'passages'
   | 'restores'
   | 'camps'
   | 'races'
@@ -67,6 +68,7 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   npc: 'npcs',
   quest: 'quests',
   expedition: 'expeditions',
+  passage: 'passages',
   restore: 'restores',
   camp: 'camps',
   race: 'races',
@@ -84,6 +86,7 @@ const BODY_OF: Record<string, string> = {
   npc: 'npc',
   quest: 'quest',
   expedition: 'expedition',
+  passage: 'passage',
   restore: 'restore',
   camp: 'camp',
   race: 'race',
@@ -262,6 +265,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     npcs: {},
     quests: {},
     expeditions: {},
+    passages: {},
     restores: {},
     camps: {},
     races: {},
@@ -677,6 +681,20 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     });
     (x.reward.opens ?? []).forEach((rid, i) => {
       if (!b.restores[rid]) err(id, `expedition.reward.opens.${i}`, `no restore "${rid}"`);
+    });
+  }
+  const exits = new Set((b.map.plan?.exits ?? []).map((x) => x.id));
+  for (const [id, p] of Object.entries(b.passages)) {
+    if (!exits.has(p.from)) err(id, 'passage.from', `no exit "${p.from}" in the map plan`);
+    if (p.to !== undefined && !exits.has(p.to)) err(id, 'passage.to', `no exit "${p.to}" in the map plan`);
+    if (p.fare) item(id, 'passage.fare.item', p.fare.item);
+    p.events.forEach((e, i) => {
+      const w = `passage.events.${i}`;
+      if (e.act.kind === 'bring') item(id, `${w}.act.item`, e.act.item);
+      (e.reward.items ?? []).forEach((s, k) => {
+        item(id, `${w}.reward.items.${k}`, s.item);
+        if (s.instead !== undefined) item(id, `${w}.reward.items.${k}.instead`, s.instead);
+      });
     });
   }
   const opened = new Set([
