@@ -18,6 +18,7 @@ import {
   type State,
   adaptState,
   appears,
+  dayOf,
   groundSpots,
   hourOf,
   isSeed,
@@ -27,8 +28,10 @@ import {
   inRect,
   placedAt,
   serialize,
+  skyAt,
   step,
 } from '@game/kernel';
+import type { WeatherName } from '@game/schema';
 import { LEGACY_SAVE_KEY, REVIEW_KEY, SAVE_KEY } from './config';
 import type { ActResult, Facing, GameSession, LogEntry, SessionEvents } from './session-surface';
 import { s1 } from './net/s1';
@@ -460,6 +463,11 @@ export class Session implements GameSession {
   /** A node a reaction raises stands when the kernel's own draw says so: this game holds its seed. */
   appears(id: string): boolean {
     return appears(this.bundle, this.state, id, this.tick);
+  }
+
+  /** The day's weather over the player's tile, by the kernel's own draw from this game's seed (issue 581). */
+  sky(): WeatherName {
+    return skyAt(this.bundle, this.state.seed, this.pos[0], this.pos[1], dayOf(this.bundle, this.tick));
   }
 
   /** Ask the kernel without changing anything: would this action be accepted? */
