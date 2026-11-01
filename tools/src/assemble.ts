@@ -12,6 +12,7 @@ import {
   type ItemInfo,
   type MapDef,
   type Meta,
+  type Flicker,
   type Params,
   type RecipeDef,
   type SpriteInfo,
@@ -142,6 +143,7 @@ export function flattenParams(p: ParamsBody): Params {
       warn_min: p.fire.warn_min.value,
       safe_tiles: p.fire.safe_tiles.value,
       burn_pct_per_d: p.fire.burn_pct_per_d.value,
+      ...(p.fire.flicker ? { flicker: Object.fromEntries(Object.entries(p.fire.flicker).map(([k, v]) => [k, v.value])) as unknown as Flicker } : {}),
     },
     hazard: {
       predator: {

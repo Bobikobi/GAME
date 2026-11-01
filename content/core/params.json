@@ -208,6 +208,56 @@
         "min": 0,
         "max": 200,
         "step": 10
+      },
+      "flicker": {
+        "band_pct": {
+          "value": 8,
+          "min": 2,
+          "max": 20,
+          "step": 2
+        },
+        "step_min_ms": {
+          "value": 100,
+          "min": 60,
+          "max": 300,
+          "step": 20
+        },
+        "step_max_ms": {
+          "value": 200,
+          "min": 100,
+          "max": 400,
+          "step": 20
+        },
+        "frame_jitter_pct": {
+          "value": 20,
+          "min": 5,
+          "max": 40,
+          "step": 5
+        },
+        "start_spread_ms": {
+          "value": 360,
+          "min": 120,
+          "max": 1000,
+          "step": 60
+        },
+        "ember_per_s": {
+          "value": 3,
+          "min": 1,
+          "max": 8,
+          "step": 1
+        },
+        "spark_gap_min_s": {
+          "value": 2,
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
+        "spark_gap_max_s": {
+          "value": 6,
+          "min": 2,
+          "max": 20,
+          "step": 1
+        }
       }
     },
     "hazard": {
