@@ -58,6 +58,14 @@ describe('the sea check', () => {
     expect(errors.some((m) => m.includes('at the trader\'s share'))).toBe(true);
   });
 
+  it('warns of a boat no quest opens', () => {
+    const { errors, warnings } = check((p) => {
+      delete p.requires;
+    });
+    expect(errors).toEqual([]);
+    expect(warnings.some((m) => m.startsWith('passage.requires:'))).toBe(true);
+  });
+
   it('warns of two events of one type, a box too long and a gold-only reward', () => {
     const { errors, warnings } = check((p) => {
       p.events[1]!.type = p.events[0]!.type;

@@ -2,7 +2,8 @@
 
 Written 2026-10-31 as gap M1 of [EXPERIENCE_AUDIT.md](EXPERIENCE_AUDIT.md). Built on 2026-11-01 as a round trip (issue #575): the
 boat leaves `core/ferry` and turns back, with no far jetty, while the owner's three questions in section 6 stay open. The events sit
-inline in the passage file, and `land` is not an act of its own: DECISIONS 2026-11-01 "The sea passage".
+inline in the passage file, `land` is not an act of its own, and the boat opens with Maru's coin (`requires`): DECISIONS 2026-11-01
+"The sea passage".
 
 **Research memo pending.** The sea memo commissioned on 29.10 never came (every outside research tool was down on 31.10). This page is
 designed from the first draft of 28.10, the explorer memo's section 5 (used as proposals, not facts), and the hooks already on

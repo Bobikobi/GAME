@@ -31,6 +31,8 @@ export function checkSea(b: Bundle, origin: Record<string, string>): Issue[] {
       warn('passage.from', `${p.from} declares no min_road_steps, and this boat lands at ${p.to}: measure that the crossing does not shorten the first day (${rule('G71', 'the first night is held by size')})`);
     }
     if (p.fare) valued('passage.fare.item', p.fare.item);
+    // the ladder holds the first minutes, and the crossing is part of an opening (DECISIONS 2026-10-22 "The opening pool and the region quests")
+    if (!p.requires?.length) warn('passage.requires', `no quest opens this boat, so a player can take it from the first minute: name the quest of the opening it belongs to (${RULES_PAGE} section 2, the ladder)`);
     lines('passage.board', p.board);
     lines('passage.land', p.land);
     lines('passage.back', p.back);

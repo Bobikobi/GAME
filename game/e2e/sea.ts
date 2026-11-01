@@ -1,5 +1,6 @@
 /**
- * Proves the crossing in a real phone-sized browser (docs/design/SEA_CROSSING.md): on the jetty A offers the boat, the
+ * Proves the crossing in a real phone-sized browser (docs/design/SEA_CROSSING.md): before Maru's coin the jetty offers
+ * nothing and a boarding is refused, after it A offers the boat, the
  * walk waits while aboard, the card names the event from its sign on, the clock runs under the card so a segment's
  * sailing ends, and a crossing takes eight acts and puts the player in at the jetty. A wrong riddle turns the boat back
  * with the bag as it was. A phone on its side shows the same card with
@@ -28,6 +29,7 @@ const TYPES: Record<string, string> = {
 
 const BAY = 'core/bay-crossing';
 const JETTY = [8, 35];
+const GATE = 'core/a-coin-for-maru';
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -73,6 +75,9 @@ async function start(page: Page, url: string): Promise<void> {
   })()`);
 }
 
+/** The town beat is behind the player: the boat is theirs from here. */
+const openBoat = (page: Page) => page.eval(`void (window.__game.session.state.player.quests[${JSON.stringify(GATE)}] = 'done')`);
+
 async function clearDialog(page: Page): Promise<void> {
   for (let i = 0; i < 30; i++) {
     const open = await page.eval<boolean>(`!!document.querySelector('.dialog')`);
@@ -113,6 +118,14 @@ async function sailOn(page: Page): Promise<void> {
 
 async function run(page: Page, url: string): Promise<void> {
   await start(page, url);
+
+  // ---- before Maru's coin the jetty offers nothing, and the kernel refuses a boarding sent anyway
+  await sleep(500);
+  if ((await page.eval<string>(`document.querySelector('.prompt')?.textContent ?? ''`)).includes('Board')) throw new Error('the boat is offered before Maru\'s coin');
+  const refused = await page.eval<{ ok: boolean; error?: string }>(`window.__game.session.act({ t: 'board', passage: ${JSON.stringify(BAY)}, at: [${JETTY[0]}, ${JETTY[1]}] })`);
+  if (refused.ok || refused.error !== 'Not yet.') throw new Error(`a boarding before Maru's coin was not refused: ${JSON.stringify(refused)}`);
+  await openBoat(page);
+
   const bagBefore = await page.eval<Record<string, number>>(`({ ...window.__game.session.state.player.bag })`);
 
   // ---- a full crossing: eight acts, a tend answered twice, in at the jetty
@@ -178,6 +191,7 @@ async function run(page: Page, url: string): Promise<void> {
 /** A phone on its side: the same card, its buttons clear of the controls. */
 async function runLandscape(page: Page, url: string): Promise<void> {
   await start(page, url);
+  await openBoat(page);
   await board(page);
   await draw(page, 'core/fog-bell');
   for (let i = 0; i < 8; i++) {

@@ -17,12 +17,20 @@ function aboard(id: string, segment: number): State {
 }
 
 describe('passageAt', () => {
+  const opened = newState(b, 1);
+  opened.player.quests['core/a-coin-for-maru'] = 'done';
+
   test('the boat is offered on and beside its jetty, and nowhere else', () => {
     const jetty = exitRect(b, p.from)!;
-    expect(passageAt(b, [jetty.x, jetty.y])).toBe(BAY);
-    expect(passageAt(b, [jetty.x - 1, jetty.y + jetty.h])).toBe(BAY);
-    expect(passageAt(b, [jetty.x + jetty.w + 1, jetty.y])).toBeUndefined();
-    expect(passageAt(b, [b.map.spawn.x, b.map.spawn.y])).toBeUndefined();
+    expect(passageAt(b, opened, [jetty.x, jetty.y])).toBe(BAY);
+    expect(passageAt(b, opened, [jetty.x - 1, jetty.y + jetty.h])).toBe(BAY);
+    expect(passageAt(b, opened, [jetty.x + jetty.w + 1, jetty.y])).toBeUndefined();
+    expect(passageAt(b, opened, [b.map.spawn.x, b.map.spawn.y])).toBeUndefined();
+  });
+
+  test('before Maru\'s coin the jetty offers nothing', () => {
+    const jetty = exitRect(b, p.from)!;
+    expect(passageAt(b, newState(b, 1), [jetty.x, jetty.y])).toBeUndefined();
   });
 });
 

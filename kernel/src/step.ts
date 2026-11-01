@@ -73,7 +73,7 @@ import {
 } from './state';
 import { rarityRank, payFor } from './values';
 import { campTile, findSlot, inRect, makeStepRule, makeWalkable, near, npcTile, placesAt, type Rect } from './world';
-import { exitRect, seaEventIndex, seaNow, seaWindow } from './sea';
+import { exitRect, passageOpen, seaEventIndex, seaNow, seaWindow } from './sea';
 
 export type Tile = [number, number];
 export type Grade = 0 | 1 | 2 | 3 | 4;
@@ -936,13 +936,14 @@ function kindle(ctx: Ctx, fire: Tile, at: Tile): void {
 
 // ------------------------------------------------------------------ the sea crossing
 
-/** Board a passage's boat: at its jetty, in its hours, the fare paid; the one keyed draw of the crossing picks its event (R4). */
+/** Board a passage's boat: at its jetty, its opening reached, in its hours, the fare paid; the one keyed draw of the crossing picks its event (R4). */
 function board(ctx: Ctx, passageId: string, at: Tile): void {
   const { b, s, tick } = ctx;
   const p = b.passages[passageId];
   const jetty = p && exitRect(b, p.from);
   if (!p || !jetty) refuse('No boat goes from here.');
   checkAt(ctx, at, jetty);
+  if (!passageOpen(p, s.player)) refuse('Not yet.');
   if (s.player.chase !== null) refuse('Not with the wolf at your heels.');
   if (!inHours(hourOf(b, tick), p.hours)) refuse('No boat leaves at this hour.');
   if (p.fare && (s.player.bag[p.fare.item] ?? 0) < p.fare.qty) refuse(`The fare is ${p.fare.qty} ${b.items[p.fare.item]?.name ?? p.fare.item}.`);

@@ -26,6 +26,7 @@ import {
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
 const BAY = 'core/bay-crossing';
+const GATE = 'core/a-coin-for-maru';
 let b: Bundle;
 let p: PassageDef;
 let jetty: [number, number];
@@ -39,9 +40,11 @@ const fail = (r: StepResult): string => {
   return r.error;
 };
 
-/** A started human; tick 0 is noon, inside the boat's hours. */
+/** A started human with the town beat behind, so the boat takes them; tick 0 is noon, inside the boat's hours. */
 function started(seed = 7): State {
-  return ok(step(b, newState(b, seed), { t: 'start', race: 'core/human', name: 'Sailor' }, 0)).state;
+  const s = ok(step(b, newState(b, seed), { t: 'start', race: 'core/human', name: 'Sailor' }, 0)).state;
+  s.player.quests[GATE] = 'done';
+  return s;
 }
 
 beforeAll(() => {
@@ -222,6 +225,19 @@ describe('a crossing', () => {
 });
 
 describe('refusals', () => {
+  test('no boat before the town beat of the opening: Maru\'s coin opens it, and nothing is drawn or counted before', () => {
+    expect(p.requires).toEqual([GATE]);
+    const s = readyFor('core/drifting-crate');
+    const crossings = s.player.crossings;
+    delete s.player.quests[GATE];
+    expect(fail(step(b, s, { t: 'board', passage: BAY, at: jetty }, 0))).toBe('Not yet.');
+    s.player.quests[GATE] = 'active';
+    expect(fail(step(b, s, { t: 'board', passage: BAY, at: jetty }, 0))).toBe('Not yet.');
+    expect(s.player.crossings).toBe(crossings);
+    s.player.quests[GATE] = 'done';
+    expect(ok(step(b, s, { t: 'board', passage: BAY, at: jetty }, 0)).state.player.aboard?.passage).toBe(BAY);
+  });
+
   test('no boat away from the jetty, out of hours, or for a passage that does not exist', () => {
     const s = readyFor('core/drifting-crate');
     expect(fail(step(b, s, { t: 'board', passage: 'core/nowhere', at: jetty }, 0))).toBe('No boat goes from here.');

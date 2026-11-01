@@ -7,8 +7,13 @@
 import type { Bundle, PassageDef, SeaEventDef } from './bundle';
 import { idiv } from './num';
 import { drawBasisPoints, type Seed } from './rng';
-import type { Aboard } from './state';
+import type { Aboard, Player } from './state';
 import { findSlot, type Rect } from './world';
+
+/** Whether this player's opening has reached the boat: every quest the passage requires is done. */
+export function passageOpen(passage: PassageDef, player: Pick<Player, 'quests'>): boolean {
+  return (passage.requires ?? []).every((q) => player.quests[q] === 'done');
+}
 
 /** The event a crossing draws: its place in the passage's table, by running sums of the integer weights. */
 export function seaEventIndex(passage: PassageDef, seed: Seed, crossings: number): number {

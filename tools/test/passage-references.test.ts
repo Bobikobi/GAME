@@ -62,6 +62,10 @@ describe('a passage\'s references', () => {
     expect(missing(errors(file({}, { ...event, reward: { items: [{ item: 'core/no-such-item', qty: 1 }] } })))).toHaveLength(1);
   });
 
+  it('refuses a quest gate that names no quest', () => {
+    expect(errors(file({ requires: ['core/no-such-quest'] }))).toContainEqual('passage.requires.0: no quest "core/no-such-quest"');
+  });
+
   it('refuses a weight of 0 and a step kind outside the closed list', () => {
     expect(errors(file({}, { ...event, weight: 0 })).length).toBeGreaterThan(0);
     expect(errors(file({}, { ...event, act: { kind: 'swim' } })).length).toBeGreaterThan(0);

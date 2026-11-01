@@ -8,6 +8,7 @@
   "passage": {
     "from": "core/ferry",
     "hours": [6, 19],
+    "requires": ["core/a-coin-for-maru"],
     "segments": 8,
     "segment_ms": 10000,
     "board": ["The ferry pushes off. The jetty grows small behind you."],

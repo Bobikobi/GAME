@@ -3,7 +3,7 @@
  * event strikes, and what the player can answer while it is open. Pure, so the rule can be tested without a page;
  * the kernel decides every answer, this only reads its state.
  */
-import { type Bundle, type PublicState, exitRect, near, seaNow } from '@game/kernel';
+import { type Bundle, type PublicState, exitRect, near, passageOpen, seaNow } from '@game/kernel';
 
 import { itemName } from './text';
 
@@ -30,9 +30,10 @@ export interface SeaView {
   held?: string;
 }
 
-/** The passage a player standing on `at` can board: one whose jetty is on or beside the tile. */
-export function passageAt(b: Bundle, at: readonly [number, number]): string | undefined {
+/** The passage a player standing on `at` can board: one whose jetty is on or beside the tile, once their opening has reached it. */
+export function passageAt(b: Bundle, st: PublicState, at: readonly [number, number]): string | undefined {
   for (const p of Object.values(b.passages)) {
+    if (!passageOpen(p, st.player)) continue;
     const jetty = exitRect(b, p.from);
     if (jetty && near(at, jetty)) return p.id;
   }
