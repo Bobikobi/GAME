@@ -77,9 +77,9 @@ const WARP = Number(process.env.E2E_WARP ?? 1);
 /**
  * How fast the game's clock runs while a script walks (walk.ts): the walk's own factor, lower than the wait's, because the body
  * crosses a tile in a few frames and the page lets go on the frame the feet are on the tile, so a frame must not carry it past.
- * E2E_WALK_WARP=1 walks at the game's pace.
+ * Default 1 (walks at the game's pace): at 2 the phone opening's collapsed-hall digs timed out on CI (issue #545). E2E_WALK_WARP=2 turns it on.
  */
-export const WALK_WARP = Math.min(WARP, Number(process.env.E2E_WALK_WARP ?? 2));
+export const WALK_WARP = Math.min(WARP, Number(process.env.E2E_WALK_WARP ?? 1));
 
 /** In the page: a clock that is continuous when its rate changes, and stays at 1 unless a wait asked and it is safe. */
 const WARP_CLOCK = `(() => {
