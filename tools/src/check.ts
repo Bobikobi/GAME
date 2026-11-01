@@ -627,7 +627,7 @@ function checkEquipment(b: Bundle): Issue[] {
         err(
           it.file,
           `${where}.wear.req.level`,
-          `level ${w.req.level} is above ${pr.name}'s top level ${pr.xp_levels.length + 1}: below it the piece counts as one tier above the wearer's own`,
+          `level ${w.req.level} is above ${pr.name}'s top level ${pr.xp_levels.length + 1}: below it the piece counts up to what a piece one tier above the wearer's own gives`,
           'warning',
         );
       }

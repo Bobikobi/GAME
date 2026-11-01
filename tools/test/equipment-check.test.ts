@@ -66,7 +66,13 @@ const garment = (name: string, wear: object, extra: object = {}) => item(name, {
 const club = (extra: object = {}) =>
   item('club', { kind: 'tool', class: 'tool', wear: { slot: 'hand' }, weapon: { tempo: 'standard', windup_t: 4, reach: 1, harm: 100 }, ...extra });
 
-const NEW_ROWS = ['waits for combat', 'a teacher', 'tier 1 only', 'wear requirement', 'attribute bonus', 'garment trait', 'binds', 'bind'];
+const NEW_ROWS = [
+  'waits for combat', 'a teacher', 'tier 1 only', 'wear requirement', 'attribute bonus', 'garment trait', 'binds', 'bind',
+  'asks level', 'asks its tier', 'top level', 'never falls with the tier', 'attr_bonus_max', 'goes on the', 'carries no trait',
+  'never bound', 'copy found in the game', 'found copy trades',
+];
+/** Where the new rows write, so a row whose wording the list misses is still caught. */
+const NEW_PLACE = /^params\.(wear_req_level|attr_bonus_max|attr_bonus_step)\b|\.wear\.(req|attrs|trait)\b|\.(weapon|bind|known)$/;
 
 describe('the equipment foundations', () => {
   it('the core raises none of the new rows (regression guard, passes before by design)', () => {
@@ -74,6 +80,7 @@ describe('the equipment foundations', () => {
     for (const m of r.issues.map((i) => i.message)) {
       for (const row of NEW_ROWS) expect(m).not.toContain(row);
     }
+    expect(r.issues.filter((i) => NEW_PLACE.test(i.where))).toEqual([]);
   });
 
   it('a weapon-only hand gets the combat gate and not the missing-tool row', () => {
@@ -87,7 +94,8 @@ describe('the equipment foundations', () => {
   });
 
   it('a tool with a weapon block is refused by the gate alone', () => {
-    const r = world({ 'items.json': items(club({ tool: { kind: 'staff', tier: 1, uses: 100 } })) });
+    // a dual hand states no uses (WEAPONS 7, owner question 7)
+    const r = world({ 'items.json': items(club({ tool: { kind: 'staff', tier: 1 } })) });
     expect(at(r, 'items.tester/club.weapon').map((i) => i.message)).toEqual(['a weapon waits for combat: no weapon block yet (G35, G44)']);
     expect(errors(r).filter((i) => i.message.includes('a tool item needs'))).toEqual([]);
   });
@@ -153,7 +161,7 @@ describe('the equipment foundations', () => {
     ]);
     const high = at(r, 'items.tester/coat.wear.req.level');
     expect(high.map((i) => [i.level, i.message])).toEqual([
-      ['warning', "level 11 is above Digging's top level 9: below it the piece counts as one tier above the wearer's own"],
+      ['warning', "level 11 is above Digging's top level 9: below it the piece counts up to what a piece one tier above the wearer's own gives"],
     ]);
     expect(at(r, 'items.tester/mask.wear.req').map((i) => i.message)).toEqual(['a look has no wear requirement']);
     expect(r.issues.filter((i) => i.where.startsWith('items.tester/cap.wear.req'))).toEqual([]);

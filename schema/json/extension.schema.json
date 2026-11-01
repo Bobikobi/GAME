@@ -654,10 +654,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -1699,10 +1699,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -2710,10 +2710,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -3665,10 +3665,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -4710,10 +4710,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -5937,10 +5937,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -7442,10 +7442,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -8412,10 +8412,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -9375,10 +9375,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -10299,10 +10299,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -11353,10 +11353,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -12178,10 +12178,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -13098,10 +13098,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -14325,10 +14325,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -15195,10 +15195,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -16169,10 +16169,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -21052,10 +21052,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -22096,10 +22096,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -24632,10 +24632,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",
@@ -25544,10 +25544,10 @@
                         "type": "integer"
                       }
                     },
-                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them."
+                    "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
                   },
                   "trait": {
-                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.",
+                    "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
                     "anyOf": [
                       {
                         "const": "cold_proof",

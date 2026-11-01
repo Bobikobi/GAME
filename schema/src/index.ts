@@ -168,7 +168,7 @@ export const WornEffect = Type.Union(WORN_EFFECTS.map((k) => Type.Literal(k)), {
  */
 export const TRAITS = ['cold_proof', 'snow_shod', 'storm_proof', 'ice_grip', 'heat_ward'] as const;
 export const GarmentTrait = Type.Union(TRAITS.map((k) => Type.Literal(k)), {
-  description: 'What the piece is worn against: a place\'s condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.',
+  description: 'What the piece is worn against: a place\'s condition (BODY_CLOCKS 6.1). Refused in content until G34\'s rewrite and the first place condition.',
 });
 export const TRAIT_SLOTS: Readonly<Record<(typeof TRAITS)[number], readonly (typeof WORN_SLOTS)[number][]>> = {
   cold_proof: ['top', 'back', 'head'],
@@ -239,7 +239,7 @@ export const Wear = Type.Object(
     attrs: Type.Optional({
       ...WornAttrs,
       description:
-        'Bonuses on top of the base attributes, each at most attr_bonus_max of the piece\'s tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them.',
+        'Bonuses on top of the base attributes, each at most attr_bonus_max of the piece\'s tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them.',
     }),
     trait: Type.Optional(GarmentTrait),
   },
