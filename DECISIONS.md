@@ -4141,6 +4141,11 @@ Result: page 0111f, 1.11 23:32. Ground: warm over green (hue 56, saturation 0.86
 Why: his 14 s video is the bar for ground and grass (2026-10-30), and "Rich wave 3" left the yellower field open as a palette change.
 **Retry when:** round 5 shows stalks on real warm ramps. This compass stands for the polish after it, and the filter does not ship. Model: claude-opus-5-5. Issue #541.
 
+## 2026-11-01 🔁 Codex draws on its lightest model at low effort, to see what comes out
+
+The owner, 1.11 23:50: next time Codex runs "the cheapest, the weakest, with a clear prompt, and we will see what comes out". `kit:gen` ran `codex exec` on the user's config: the heaviest model, the top effort, the priority tier, plus the repo's AGENTS.md, a median of 45k tokens and 159 s an image over 149 logged images. It now passes `--ignore-user-config`, `gpt-5.6-luna`, low effort and no project document.
+Result: not run. Every call answers "Your workspace is out of credits", so neither the saving nor the image tool on this model is proven. `gpt-5.6-luna` is the lightest by its description in the CLI's model list, which carries no prices.
+**Retry when:** credits return: draw a few sprites already drawn at the heavy setting, and compare the tokens and the pictures beside them. If the tool refuses the model or the pictures fall below Qwen's, `KIT_CODEX_MODEL` moves it up a step. Model: claude-opus-5-5. Issue #544.
 ## 2026-11-01 ✅ The warm ground is a summer morning's light: it changes with the place, the hour and the season
 
 The owner, 1.11 23:41, on the entry "The ground is warm" (now ⏸): the warmth is the lighting and the hour, "in effect a summer morning"; with a change of place, hour or season it changes too, as in his references. So `docs/design/frames/ground-warm-pick-0111.png` is the compass for a summer morning, and "for the whole game" and "the filter does not ship" no longer hold.
