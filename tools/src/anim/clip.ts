@@ -5,6 +5,8 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { INK_HEX } from '../kit/ink.js';
+import { coreRamp } from '../kit/palette.js';
 import { REPO_ROOT } from '../load.js';
 import { rampSteps } from './snap.js';
 
@@ -80,6 +82,22 @@ export interface Target {
   leaf?: string;
   credit?: string;
   colours?: Record<string, string>;
+  /** the coats one creature of this kind may wear, each by weight (game/src/coat.ts picks and draws them) */
+  coats?: CoatSpec[];
+}
+
+/**
+ * One coat of a kind: a pure step to step recolour of the sheets (a pixel at step i of a mapped ramp becomes step
+ * clamp(i + shift, 0, 5) of ramp `to`, or the "ramp:step" its `steps` list names, null keeping it), so every colour
+ * it writes is a palette colour; `body` names another target whose sheets it is drawn on, for a pattern a recolour
+ * cannot make.
+ */
+export interface CoatSpec {
+  id: string;
+  name: string;
+  weight: number;
+  map: Record<string, { to: string; shift?: number } | { steps: (string | null)[] }>;
+  body?: string;
 }
 
 export interface Limits {
@@ -181,6 +199,72 @@ export interface Sample {
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isInt = (v: unknown): v is number => Number.isInteger(v);
 
+/**
+ * The problems of a target's coats, in plain words; empty when they can be drawn: ids unique, a name, a positive whole
+ * weight, each mapped ramp a shared ramp that the target (or the coat's body) draws in, whole or as a span of it, each
+ * `to` a shared ramp and a whole shift from -5 to 5 (or six `steps`, each "ramp:step" of a shared ramp or null), no
+ * step that lands on the ink (a body pixel in the outline's colour melts into the outline), a body that is another
+ * target of anim.json.
+ */
+export function coatProblems(id: string, settings: Settings): string[] {
+  const out: string[] = [];
+  const target = settings.targets[id];
+  const coats = target?.coats;
+  if (target === undefined || coats === undefined) return out;
+  const say = (text: string) => out.push(`${id} coats: ${text}`);
+  if (!Array.isArray(coats) || coats.length === 0) {
+    say('"coats" is a list of one coat or more');
+    return out;
+  }
+  const ids = coats.map((c) => c.id);
+  if (new Set(ids).size !== ids.length) say('each coat id once');
+  for (const c of coats) {
+    const name = typeof c.id === 'string' && c.id.length > 0 ? c.id : '?';
+    if (name === '?') say('every coat has an id');
+    if (typeof c.name !== 'string' || c.name.length === 0) say(`${name}: a name`);
+    if (!Number.isSafeInteger(c.weight) || c.weight <= 0) say(`${name}: weight is a positive whole number`);
+    let ramps = target.ramps;
+    if (c.body !== undefined) {
+      const body = settings.targets[c.body];
+      if (body === undefined || c.body === id) say(`${name}: body "${c.body}" is not another target of anim.json`);
+      else ramps = body.ramps;
+    }
+    if (typeof c.map !== 'object' || c.map === null || Array.isArray(c.map)) {
+      say(`${name}: map is an object of ramp -> { to, shift }`);
+      continue;
+    }
+    for (const [from, step] of Object.entries(c.map)) {
+      const src = coreRamp(from);
+      if (src === undefined) say(`${name}: ramp "${from}" is not a shared ramp`);
+      else if (!ramps.some((r) => rampSteps(r)?.id === from)) say(`${name}: ramp "${from}" is not one the body draws in (${ramps.join(', ')})`);
+      const dest: (string | undefined)[] = [];
+      if (step !== null && typeof step === 'object' && 'steps' in step) {
+        if (!Array.isArray(step.steps) || step.steps.length !== 6) {
+          say(`${name}: ${from} steps names all six steps, each "ramp:step" or null`);
+          continue;
+        }
+        step.steps.forEach((entry, i) => {
+          if (entry === null) return dest.push(undefined);
+          const m = typeof entry === 'string' ? /^([a-z_]+):([0-5])$/.exec(entry) : null;
+          const to = m === null ? undefined : coreRamp(m[1]!);
+          if (m === null || to === undefined) say(`${name}: ${from} step ${i} goes to "${String(entry)}", not "ramp:step" of a shared ramp`);
+          dest.push(to?.steps[Number(m?.[2])]);
+        });
+      } else {
+        const to = typeof step?.to === 'string' ? coreRamp(step.to) : undefined;
+        if (to === undefined) say(`${name}: ${from} goes to "${String(step?.to)}", not a shared ramp`);
+        const shift = step?.shift ?? 0;
+        if (!isInt(shift) || Math.abs(shift) > 5) say(`${name}: ${from} shift is a whole number from -5 to 5`);
+        else for (let i = 0; i < 6; i += 1) dest.push(to?.steps[Math.min(5, Math.max(0, i + shift))]);
+      }
+      dest.forEach((hex, i) => {
+        if (src !== undefined && hex !== undefined && src.steps[i] !== INK_HEX && hex.toLowerCase() === INK_HEX.toLowerCase()) say(`${name}: ${from} step ${i} lands on the ink`);
+      });
+    }
+  }
+  return out;
+}
+
 /** The problems of one clip config, in plain words; empty when it can be rendered. */
 export function clipProblems(name: string, clip: Clip, libs: Record<string, Library>, settings: Settings): string[] {
   const out: string[] = [];
@@ -188,6 +272,7 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
   if (typeof clip.about !== 'string' || clip.about.length === 0) say('"about" says in one line what the clip is');
   const target = settings.targets[clip.target];
   if (target === undefined) say(`target "${clip.target}" is not one of ${Object.keys(settings.targets).join(', ')}`);
+  else out.push(...coatProblems(clip.target, settings));
   const length = (src: Source | undefined, what: string): number | undefined => {
     if (src === undefined) return undefined;
     const lib = libs[src.library];

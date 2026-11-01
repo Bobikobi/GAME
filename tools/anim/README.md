@@ -26,6 +26,8 @@ shows the pose nearest to the distance walked (`poseFrame`, game/src/work.ts), s
 half of one pose.
 
 A model whose skeleton lacks a bone its map drives is refused in one line before a frame is drawn.
+A native clip moved this way plays the same action of the other body's own (`self:<id>`), so a second body of one
+animal (the hare's pied body, `hare-pied`) renders every clip of the first.
 
 Blender 5.2 (any recent 4.x or 5.x with the glTF importer should do) is found by `BLENDER`, else
 `tools/.cache/anim/local.json` (`{"blender": "/path/to/blender"}`), else `blender` on the `PATH`. No add-on.
@@ -107,11 +109,36 @@ four, over four feet instead of two.
   the order and the gaps. Left off the Meshy `Walk` and `Run` on purpose: they are not four-beat, see below.
 - Four poses a loop is the owner's pick for a quadruped (DECISIONS 2026-10-29), so a planted foot slides up to about
   2 px between two poses; the wolf clips carry `limits: { "foot_slide_px": 2 }` for that.
+- A native glb ships with identity object transforms: its scale and turn are baked into the bones and the mesh
+  before export. The importer that poses the body guesses a bone's length from its child's distance in the
+  skeleton's own units, so a scaled armature object comes back with its contact-bone tails 1/scale too long and
+  the feet land off the body (the hare and crow Blender passes bake it for that reason). The wolf predates this
+  line: `quad_pass.py` does not bake yet, and at its object scale of 0.76 the error stays inside the 2 px slide
+  limit, so its glb and its clips are left as they are.
 
 The Meshy `Walk` measured (24 source frames, the feet as projected): the left feet lift together (the hind and the fore
 left swing at about 0.1 to 0.13 of the cycle) and the right feet together (about 0.54 to 0.62): a pacing walk, two beats,
 not four. Switched on, the four-beat measure fails it (each foot "plants 2 times a cycle", the right fore 3). Four poses of it read as a
 walk, which is what the owner approved; a true four-beat wolf walk needs its own motion.
+
+## Coats
+
+A target may list `coats`: the looks one creature of its kind may wear, each picked by weight. A coat is
+`{ "id", "name", "weight", "map": { "<ramp>": { "to": "<ramp>", "shift": n } }, "body": "<target>" }`. The map is
+pure step to step: a pixel at step i of a mapped ramp becomes step clamp(i + shift, 0, 5) of ramp `to` (shift
+optional, whole, -5 to 5), or, with `{ "steps": ["wood:1", ..., null] }` in place of `to` and `shift`, the step
+each of the six names ("ramp:step", null keeping it: a white or black coat that keeps its shading, or a coat that
+mixes two ramps). Only opaque pixels change, never from or to the ink, so every colour written is a palette colour,
+no body pixel melts into the outline, and the frames of a sheet do not swim. A ramp left out keeps its colours; an empty map is the sheet as drawn. A pattern a
+map cannot make (white patches) comes from `body`: another target whose model carries the pattern on its colour map
+(the hare's `hare-pied`, painted by `game/tools/blender/hare_pass.py --pied`), whose sheets the coat recolours.
+`clipProblems` refuses unknown ramps, a ramp the body does not draw in, a weight that is not a positive whole number,
+a repeated id, a step list that does not name six steps, a step that lands on the ink and a body that is not another
+target. The server picks a creature's coat from its keyed draw (`draw(seed, "coat:<id>", 0)`, never a roll on a
+client) and sends it with the creature; the client draws it with `remapCoat`. `coatOf` in `game/src/coat.ts` is that
+pick in the kernel's whole-number steps (`mulDiv`), so the pull request that steps animals moves it into the kernel as
+it stands, since the server does not import `game/`. A coat changes no value, weight or count, and the hide carries
+it. DECISIONS 2026-10-30 holds the coats and their weights.
 
 ## The four measures, and what fails
 

@@ -1,0 +1,33 @@
+{
+  "about": "The hare's run: four poses of the body's own Run (its bound, damped to 0.5 of the file's stretch and tuck so four poses keep a steadier silhouette), judged at 520 ms a tile (a placeholder inside the pose-rate cap: a stride of 17 to 22 px across the views, drawn in four poses, holds its feet only up to about 125 px/s; the hunting rules set the real pace). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop.",
+  "target": "hare",
+  "base": {
+    "library": "self:hare",
+    "action": "Run"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 520
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "foot_slide_px": 2
+  }
+}
