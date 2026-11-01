@@ -7,7 +7,7 @@ import { PNG } from 'pngjs';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import {
-  type Collected, type Draft, DraftIndex, type Gh, annotateWrongDraws, assetName, collectLine, collectPictures, draftId, fetchDrafts,
+  type Collected, type Draft, DraftIndex, FILE_KINDS, type Gh, annotateWrongDraws, assetName, collectLine, collectPictures, draftId, fetchDrafts,
   foldIndex, gpuSecondsSince, runCli, indexGrewOnly, noteDraft, parseIndex, parseRunLog, pacing, pngDims, pushCollected, sha256Hex, tagFor,
   verifyDrafts, verifyExitCode, verifyText, wrongDrawOrphans, wrongDrawsText,
 } from '../src/art/drafts.js';
@@ -92,7 +92,10 @@ function fakeGh(): { gh: Gh; store: Map<string, Map<string, Buffer>>; calls: str
     if (verb === 'upload') {
       const release = store.get(tag);
       if (release === undefined) return { status: 1, stdout: '', stderr: 'no release' };
-      for (const file of args.slice(5)) release.set(basename(file), readFileSync(file));
+      const files = args.slice(5);
+      // GitHub's cap: a release holds at most 1000 assets
+      if (release.size + files.filter((file) => !release.has(basename(file))).length > 1000) return { status: 1, stdout: '', stderr: 'HTTP 422: Validation Failed (file_count limited to 1000)' };
+      for (const file of files) release.set(basename(file), readFileSync(file));
       return ok();
     }
     if (verb === 'download') {
@@ -331,6 +334,47 @@ describe('the drafts repo: push, fetch, verify', () => {
     const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
     pushCollected([collected(runFolder({ seed: 1 })), collected(runFolder({ seed: 2, drawer: 'local' }))], index, { gh, tag: 'run-backfill-test' });
     expect([...store.keys()]).toEqual(['run-backfill-test']);
+  });
+
+  /** A release that already holds `count` assets from earlier pushes. */
+  function filled(store: Map<string, Map<string, Buffer>>, tag: string, count: number): void {
+    store.set(tag, new Map(Array.from({ length: count }, (_, i) => [`old-${i}.png`, Buffer.from('x')])));
+  }
+
+  test('a release near GitHub\'s 1000 assets is counted: the drafts that fit go in, the rest roll to tag-2', () => {
+    const { gh, store } = fakeGh();
+    filled(store, 'run-orphans', 994);
+    const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
+    const items = [1, 2, 3].map((seed) => collected(runFolder({ seed })));
+    const report = pushCollected(items, index, { gh, tag: 'run-orphans' });
+    expect(report.uploaded).toBe(3);
+    expect(report.tags).toEqual(['run-orphans', 'run-orphans-2']);
+    expect(store.get('run-orphans')?.size).toBe(1000);
+    expect(store.get('run-orphans-2')?.size).toBe(3);
+    expect(items.map((i) => index.drafts.get(i.record.id)?.stored?.tag)).toEqual(['run-orphans', 'run-orphans', 'run-orphans-2']);
+  });
+
+  test('a full release is never asked to take more, and a later push goes on filling the last one', () => {
+    const { gh, store, calls } = fakeGh();
+    filled(store, 'run-undated-unknown', 1000);
+    filled(store, 'run-undated-unknown-2', 998);
+    const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
+    const item = collected(runFolder({ seed: 4 }));
+    pushCollected([item], index, { gh, tag: 'run-undated-unknown' });
+    expect(index.drafts.get(item.record.id)?.stored?.tag).toBe('run-undated-unknown-3');
+    expect(calls.filter((c) => c[1] === 'upload').map((c) => c[2])).toEqual(['run-undated-unknown-3']);
+    expect(store.get('run-undated-unknown')?.size).toBe(1000);
+  });
+
+  test('a draft whose files a release already holds (a push stopped before the index) is cited there, not sent again', () => {
+    const { gh, store, calls } = fakeGh();
+    const item = collected(runFolder({ seed: 6 }));
+    filled(store, 'run-x', 1000);
+    store.set('run-x-2', new Map(FILE_KINDS.flatMap((kind) => (item.paths[kind] === null ? [] : [[assetName(item.record.id, kind, item.record.files[kind]?.ext), Buffer.from('y')] as const]))));
+    const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
+    pushCollected([item], index, { gh, tag: 'run-x' });
+    expect(index.drafts.get(item.record.id)?.stored?.tag).toBe('run-x-2');
+    expect(calls.filter((c) => c[1] === 'upload')).toHaveLength(0);
   });
 
   test('fetch fills the cache and verify exits 0 when every hash matches', () => {
