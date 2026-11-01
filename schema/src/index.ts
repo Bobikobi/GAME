@@ -1796,6 +1796,9 @@ const Slot = Type.Object(
     h: Int(1, 64),
     tag: Type.Optional(TileTag),
     label: Type.Optional(Name),
+    danger: Type.Optional(
+      Int(0, 9, "The area's danger level d (G64, CR-38): 0 in the town and upward with the walk from it. Only an `area` slot carries it; ground in no area stays at 1. The world shows it (tracks, bones, thicker mist), the screen never does."),
+    ),
     safe: Type.Optional(
       Type.Boolean({
         description:
