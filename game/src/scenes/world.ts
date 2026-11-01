@@ -66,7 +66,7 @@ import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, h
 import { emptySlots, slotContent } from '../places';
 import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
 import { deepTile } from '../waterbody';
-import { plantLook, TUFTS } from '../plantlook';
+import { mirroredAt, plantLook, TUFTS } from '../plantlook';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -1143,6 +1143,7 @@ export class WorldScene extends Phaser.Scene {
         const look = !p.solid && p.w === 1 && p.h === 1 && TUFTS.includes(name) ? plantLook(p.x, p.y) : undefined;
         const img = this.standing(p.sprite, look ? cx + look.dx : cx, look ? bottom + look.dy : bottom, hash(p.x, p.y));
         if (look) img.setFlipX(look.flip).setAngle(look.angle);
+        else img.setFlipX(mirroredAt(name, p.x, p.y));
         img.setDepth(p.solid ? bottom : DEPTH.flat);
         // the lamp's pool lies at its foot; its head glows in the top 8 px of the post
         if (name === 'lantern_post') this.light?.add({ kind: 'lamp', x: cx, y: bottom, head: { x: cx, y: bottom - unit.h + 4 } });
@@ -1539,7 +1540,8 @@ export class WorldScene extends Phaser.Scene {
       if (inst.kind === 'resource') {
         const r = this.b.resources[inst.source];
         if (!r) continue;
-        const spr = kitSprite(this, cx, bottom, r.sprite).setOrigin(0.5, 1).setDepth(bottom);
+        // the flip stays through its stages: a stump and a sapling stand the way the tree stood
+        const spr = kitSprite(this, cx, bottom, r.sprite).setOrigin(0.5, 1).setDepth(bottom).setFlipX(mirroredAt(baseName(r.sprite), inst.x, inst.y));
         this.nodes.set(id, spr);
         const animated = [r.sprite, r.sprite_empty].some((ref) => ref && (this.b.sprites[ref]?.frames ?? 1) > 1);
         if (RICH.motion && animated) this.cycles.push(this.sway(spr, hash(inst.x, inst.y)));
@@ -1556,7 +1558,7 @@ export class WorldScene extends Phaser.Scene {
     // a node a reaction makes appear stands hidden on its own tile until the condition holds
     for (const slot of appearSlots(this.b).values()) {
       const bottom = (slot.y + 1) * T;
-      const spr = kitSprite(this, slot.x * T + T / 2, bottom, slot.def.sprite).setOrigin(0.5, 1).setDepth(bottom).setAlpha(0);
+      const spr = kitSprite(this, slot.x * T + T / 2, bottom, slot.def.sprite).setOrigin(0.5, 1).setDepth(bottom).setFlipX(mirroredAt(baseName(slot.def.sprite), slot.x, slot.y)).setAlpha(0);
       this.nodes.set(slot.id, spr);
       this.appearing.add(slot.id);
       this.nodeAt.set(key(slot.x, slot.y), slot.id);
