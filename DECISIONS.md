@@ -4033,3 +4033,14 @@ The staging box moved from the API of 28.10 (60de13582, content c41e52839104112d
 - **Why (proven):** GitHub runs `pull_request_target` "in the context of the default branch of the base repository", and `issue_comment` and `schedule` only from the default branch; the workflow file used is `main`'s, and `main` held the old copy. The wrap of #587 is right per the reference but was not the cause of the observed runs.
 - **Fix:** #590 brings `develop`'s cla.yml to `main` as a hotfix, as #531 did for the deploy workflow; the next release carries the same file. AGENTS.md "How work moves" now says so for every such workflow.
 - **Retry when:** never: this is how GitHub reads these events. Model: claude-fable-5-1. PRs #584, #587, #590; issue #574.
+
+## 2026-11-01 ⏸ GPU art waves on Kaggle for the 16 px props: superseded by the 64 px direction (tag attempt/2026-10-art-wave-run)
+- **Tried (28-29.10):** `pnpm art:wave` cut the pool's missing props into Kaggle kernel jobs (qwen one seed, flux two) and `pnpm art:run` worked them one run at a time; the first props wave drew 15 pictures, read into `drafts.jsonl` (7f33cc32a).
+- **Result:** the tools themselves reached `develop` through other pull requests (#434, #441, #471), so the branch's four commits were left over; draft #585 closed. No further wave was queued: since 29.10 every art pick goes by the 64 px direction (the scatter route for ground, the `gemini-web` drawer for props), and the 15 first-wave lines are 16 px kit work, not wanted.
+- **Why (proven):** the size changed under the wave, not the runner: the runner worked, its output was for a look the owner left.
+- **Retry when:** a 64 px pool needs volume the browser drawer cannot give (one call at a time) and the Kaggle GPU budget is free: then `art:wave` on `develop` is the start, not this tag. Model: claude-opus-5-5. Issue #548; tag `attempt/2026-10-art-wave-run`.
+
+## 2026-11-01 ⏸ The feat/kit-gen-via-gemini branch is the unsquashed copy of #475 (tag attempt/2026-10-kit-gen-via-gemini)
+- The branch's three commits (29265f34a, b9cf49551, 37008cb85, 30.10) are the `gemini-web` drawer that landed squashed as #475; `tools/src/kit/drawers.ts` and `docs/art/DRAWERS.md` on `develop` equal the branch's. Nothing on it is unlanded; the tag keeps it so the branch can go.
+- The route is in use, not abandoned: it drew the four props the owner called "excellent" (rich wave 2, 30.10) and the base deer (31.10).
+- **Retry when:** n/a; build on `develop`'s drawer. Model: claude-opus-5-5. Issue #548.
