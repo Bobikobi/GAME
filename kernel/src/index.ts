@@ -2,6 +2,7 @@ export * from './adapt';
 export * from './bundle';
 export * from './canon';
 export * from './danger';
+export * from './equipment';
 export { bellTicks, bellsRung, inside, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 export * from './hunt';
 export * from './load';

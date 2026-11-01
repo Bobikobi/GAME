@@ -302,6 +302,129 @@
               }
             }
           },
+          "weapon": {
+            "additionalProperties": false,
+            "description": "A hand that strikes (WEAPONS 3). No class field: the class is the item's own. Every weapon block in content is refused until combat (G35, G44).",
+            "type": "object",
+            "required": [
+              "tempo",
+              "windup_t",
+              "reach",
+              "harm"
+            ],
+            "properties": {
+              "tempo": {
+                "description": "The swing, the hand's one cooldown: quick, standard or heavy, each a combat param in ticks (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.",
+                "anyOf": [
+                  {
+                    "const": "quick",
+                    "type": "string"
+                  },
+                  {
+                    "const": "standard",
+                    "type": "string"
+                  },
+                  {
+                    "const": "heavy",
+                    "type": "string"
+                  }
+                ]
+              },
+              "windup_t": {
+                "minimum": 2,
+                "maximum": 10,
+                "description": "Ticks from the press to the landing, inside the swing (WEAPONS 3).",
+                "type": "integer"
+              },
+              "reach": {
+                "minimum": 1,
+                "maximum": 2,
+                "description": "Tiles, no diagonal; 2 is a long hand (WEAPONS 3).",
+                "type": "integer"
+              },
+              "harm": {
+                "minimum": 0,
+                "maximum": 1000,
+                "description": "The hand's bonus in points, counted as harm + hand_offset (WEAPONS 3, 4).",
+                "type": "integer"
+              },
+              "range": {
+                "minimum": 2,
+                "maximum": 12,
+                "description": "Tiles, only on a hand that throws or shoots (WEAPONS 3).",
+                "type": "integer"
+              },
+              "ammo": {
+                "description": "The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with the first shot (WEAPONS 6).",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                ]
+              },
+              "noise": {
+                "minimum": 0,
+                "maximum": 12,
+                "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
+                "type": "integer"
+              }
+            }
+          },
           "fragment": {
             "additionalProperties": false,
             "description": "A found scrap that teaches a recipe.",
@@ -431,6 +554,130 @@
                 "maximum": 100,
                 "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
                 "type": "integer"
+              },
+              "req": {
+                "additionalProperties": false,
+                "description": "A soft requirement: below it the piece counts up to what gear one tier above the wearer's own gives (PROGRESSION 5.6; CLOTHING 7.4). Read by nothing yet.",
+                "type": "object",
+                "required": [
+                  "school",
+                  "level"
+                ],
+                "properties": {
+                  "school": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "The profession whose level the piece asks (CLOTHING 7.4).",
+                    "type": "string"
+                  },
+                  "level": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "The level asked: exactly wear_req_level of the piece's tier.",
+                    "type": "integer"
+                  },
+                  "attr": {
+                    "additionalProperties": false,
+                    "minProperties": 1,
+                    "type": "object",
+                    "properties": {
+                      "might": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "senses": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "agility": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "luck": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "stamina": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "spirit": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      }
+                    },
+                    "description": "Base attribute points the piece asks too; worn bonuses never count toward them."
+                  }
+                }
+              },
+              "attrs": {
+                "additionalProperties": false,
+                "minProperties": 1,
+                "type": "object",
+                "properties": {
+                  "might": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "senses": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "agility": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "luck": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "stamina": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "spirit": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  }
+                },
+                "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
+              },
+              "trait": {
+                "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
+                "anyOf": [
+                  {
+                    "const": "cold_proof",
+                    "type": "string"
+                  },
+                  {
+                    "const": "snow_shod",
+                    "type": "string"
+                  },
+                  {
+                    "const": "storm_proof",
+                    "type": "string"
+                  },
+                  {
+                    "const": "ice_grip",
+                    "type": "string"
+                  },
+                  {
+                    "const": "heat_ward",
+                    "type": "string"
+                  }
+                ]
               }
             }
           },
@@ -460,6 +707,23 @@
           "premium_later": {
             "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
             "type": "boolean"
+          },
+          "bind": {
+            "description": "Who may hold it: none trades, account never trades or sells, character never trades; left out, none (EQUIPMENT 3.6). Only a look binds; power is never bound. Read by nothing yet.",
+            "anyOf": [
+              {
+                "const": "none",
+                "type": "string"
+              },
+              {
+                "const": "account",
+                "type": "string"
+              },
+              {
+                "const": "character",
+                "type": "string"
+              }
+            ]
           }
         }
       }
@@ -579,6 +843,9 @@
         "craft_miss_keep_pct",
         "wear_effect_max_pct",
         "wear_set_bonus_pct",
+        "wear_req_level",
+        "attr_bonus_max",
+        "attr_bonus_step",
         "rarity_bonus_ms",
         "drift_budget_permille",
         "hp_cap",
@@ -1196,6 +1463,55 @@
             }
           },
           "description": "How much a full set adds to the effects of its pieces, in percent of their sum, rounded down."
+        },
+        "wear_req_level": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The level a worn piece of each tier asks in its `req`, from tier 1; the last entry holds for the tiers above it. Never falls with the tier (PROGRESSION 5.6; CLOTHING 7.4).",
+          "type": "array",
+          "items": {
+            "minimum": 1,
+            "maximum": 100,
+            "type": "integer"
+          }
+        },
+        "attr_bonus_max": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The largest attribute bonus a worn piece of each tier gives, from tier 1. Never falls with the tier (PROGRESSION 5.6).",
+          "type": "array",
+          "items": {
+            "minimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          }
+        },
+        "attr_bonus_step": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "Past the attr_bonus_max table, what each further tier adds to the largest attribute bonus (PROGRESSION 5.6: then +2 a tier)."
         },
         "rarity_bonus_ms": {
           "additionalProperties": false,

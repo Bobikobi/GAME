@@ -3,7 +3,7 @@
  * integers, strings, arrays and plain objects only, so its canonical text is
  * stable and a save is just that text.
  */
-import type { SchoolNodeDef } from '@game/schema';
+import type { ItemDef, SchoolNodeDef } from '@game/schema';
 import type { BodyEffectName, Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
@@ -390,6 +390,60 @@ export function gradeShift(bundle: Bundle, state: PublicState, attr: Attribute, 
  */
 export function attrAt(bundle: Bundle, state: PublicState, attr: Attribute): number {
   return Math.max(0, (state.player.attrs[attr] ?? 0) + gradeShift(bundle, state, attr));
+}
+
+/** The level a worn piece of this tier asks in its `req` (PROGRESSION 5.6; CLOTHING 7.4); past the table, its last entry. */
+export function wearReqLevel(bundle: Bundle, tier: number): number {
+  const table = bundle.params.wear_req_level;
+  return table[Math.min(Math.max(tier, 1), table.length) - 1] ?? 1;
+}
+
+/** The largest bonus a worn piece of this tier gives one attribute (PROGRESSION 5.6); past the table, its last entry plus attr_bonus_step a tier. */
+export function attrBonusMax(bundle: Bundle, tier: number): number {
+  const table = bundle.params.attr_bonus_max;
+  const n = table.length;
+  if (tier <= n) return table[Math.max(tier, 1) - 1] ?? 0;
+  return (table[n - 1] ?? 0) + (tier - n) * bundle.params.attr_bonus_step;
+}
+
+/**
+ * The tier a worn piece works at for this wearer (CLOTHING 7.4; PROGRESSION 5.6): its own when its `req` is met in
+ * full, else the highest tier whose wear_req_level the wearer's level in the piece's school meets. The attribute
+ * thresholds read the base (`attrAt`), never worn bonuses, so gear never lifts a wearer into the gear above it.
+ * Read by no step yet.
+ */
+export function wearOwnTier(bundle: Bundle, state: PublicState, piece: Pick<ItemDef, 'tier' | 'wear'>): number {
+  const tier = piece.tier ?? 1;
+  const req = piece.wear?.req;
+  if (!req) return tier;
+  const level = professionLevel(bundle, state, req.school);
+  const attrsMet = ATTRIBUTES.every((a) => attrAt(bundle, state, a) >= (req.attr?.[a] ?? 0));
+  if (level >= req.level && attrsMet) return tier;
+  for (let t = tier - 1; t > 1; t--) if (level >= wearReqLevel(bundle, t)) return t;
+  return 1;
+}
+
+/** The part of a worn attribute bonus that counts (PROGRESSION 5.6): all of it at the piece's own tier, else at most what one tier above the wearer's gives. */
+export function activeAttr(bundle: Bundle, state: PublicState, piece: Pick<ItemDef, 'tier' | 'wear'>, bonus: number): number {
+  const own = wearOwnTier(bundle, state, piece);
+  return own >= (piece.tier ?? 1) ? bonus : Math.min(bonus, attrBonusMax(bundle, own + 1));
+}
+
+/**
+ * An attribute with the work clothes' bonuses on top (CLOTHING 7.5): `attrAt` plus the active part of each worn work
+ * piece's `attrs`, slot by slot as `wornValue` reads effects. A look never counts and a set adds nothing to an attribute. Read by no verb yet:
+ * every rule still reads `attrAt`, and the check refuses `attrs` in content until a reader lands.
+ */
+export function attrTotal(bundle: Bundle, state: PublicState, attr: Attribute): number {
+  let total = attrAt(bundle, state, attr);
+  for (const slot of WEAR_SLOTS) {
+    const id = state.player.worn[slot];
+    const piece = id === undefined ? undefined : bundle.items[id];
+    const bonus = piece?.wear?.attrs?.[attr];
+    if (!piece || piece.wear?.look || bonus === undefined) continue;
+    total += activeAttr(bundle, state, piece, bonus);
+  }
+  return total;
 }
 
 /** The health bar's top, in milli-points: the base cap plus what stamina adds. */
