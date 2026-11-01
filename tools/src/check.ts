@@ -23,6 +23,7 @@ import { checkInk } from './ink-check';
 import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
+import { checkDanger } from './danger';
 import { checkReactions } from './reactions';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
@@ -75,6 +76,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
+    issues.push(...checkDanger(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
     issues.push(...checkSearch(b, assembled.origin));
     issues.push(...checkMapPlan(b, assembled.origin));
