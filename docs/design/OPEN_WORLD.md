@@ -223,7 +223,7 @@ Algorithm, move check (stage 2a):
 
 ### 1.5 Density
 
-**G62. Pillar 1 gets a static check.**
+**G62. Pillar 1 gets a static check.** *(Built: `tools/src/paygap.ts`, in `pnpm check`; a region pays only where a walker can come in from outside it.)*
 - Pillar 1 carries its own test: "time the gaps in a recording" (GAME_RULES.md:35). That test stays the measure.
 - This check is a proxy. It catches a map that cannot pass the recording test, before anyone records.
 - The rule: no walkable tile may lie farther than `floor(pay_gap_ms / (2 x walk_step_ms)) + sight` steps (4-way) from a pay.

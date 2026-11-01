@@ -26,6 +26,7 @@ import { checkReactions } from './reactions';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
+import { checkPayGap } from './paygap';
 import { checkMapPlan } from './mapplan';
 import { checkRaces } from './races';
 import { checkSchools } from './schools';
@@ -71,6 +72,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkLock(b, assembled.origin, root));
     issues.push(...checkReach(b, assembled.origin));
+    issues.push(...checkPayGap(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
