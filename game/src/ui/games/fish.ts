@@ -89,7 +89,7 @@ export const fish: Minigame = (ui, opts) =>
       if (since < 0) return finish(0, 'Too soon - it swam off', 'lost');
       const grade = fishGrade(since, window_);
       if (grade === 0) return finish(0, 'It let go - Miss', 'lost');
-      finish(grade, grade === 4 ? 'Jackpot! ×2 goods · ×3 xp' : GRADE_NAMES[grade], 'reel');
+      finish(grade, GRADE_NAMES[grade], 'reel');
     };
 
     const cancel = () => {

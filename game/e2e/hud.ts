@@ -245,7 +245,7 @@ async function run(page: Page, url: string, phone: boolean): Promise<void> {
   await page.eval('__hud.reset()');
   await page.eval(`(() => {
     const ui = __game.ui;
-    for (const line of ['+1 Moonreed', 'New in your journal: Moonreed', 'Carry is now 3', 'Jackpot! Three times the experience']) ui.toast(line, 'good');
+    for (const line of ['+1 Moonreed', 'New in your journal: Moonreed', 'Carry is now 3', 'Jackpot! Better than perfect']) ui.toast(line, 'good');
     setTimeout(() => ui.toast(${JSON.stringify(BITE)}, 'bad'), 100);
   })()`);
   await page.waitFor(`__hud.seen().shown.includes(${JSON.stringify(BITE)})`, 'the bite to go up', 10_000);
