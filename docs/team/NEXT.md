@@ -811,7 +811,7 @@ h) Past the wave, up to the first weapon content (no branch of this stream): BUI
 
 Measurable:
 1. Each pull request holds the rows BUILD_SET lists for it, each proven by the test its page's appendix names; `pnpm verify` exit 0 in each body.
-2. No pull request of the stream touches `content/values.lock.json`; after f) the world's rarity use is 97531 of 100000 ppm or less, as `rarityBudget` (kernel/src/values.ts:206) reads it and `pnpm check` holds it (tools/src/check.ts:459-468; QUARRYING 2.4).
+2. No pull request of the stream touches `content/values.lock.json`; after f) the world's rarity use is 97531 of 100000 ppm or less, as `rarityBudget` (kernel/src/values.ts:206) reads it and `pnpm check` holds it (tools/src/check.ts:461-470; QUARRYING 2.4).
 3. Since b) a grade-4 action pays the experience of grade 3 (kernel/test/grades.test.ts:62-71, met on 01.11); after e) a grade-4 action on a minigame node with finds draws one more find, and a replay draws the same one (QUARRYING 9).
 
 Not here: the take verb's rows (CLOTHING's hide pieces; WEAPONS' take tools and the hunters' cache), every weapon item and the `combat` params (G35), the first predator laid as a foe, a feather item and the arrows, metal and tiers 4 and 5, the quality roll and the `mend` mark, for tools only (BUILD_SET 7; GAP_RS_GEAR 11); rows 68 to 81 land in those pull requests (item h).
