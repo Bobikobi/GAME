@@ -172,6 +172,18 @@
       "max": 32,
       "step": 1
     },
+    "pay_gap_ms": {
+      "value": 90000,
+      "min": 60000,
+      "max": 120000,
+      "step": 5000
+    },
+    "pay_sight_tiles": {
+      "value": 5,
+      "min": 3,
+      "max": 8,
+      "step": 1
+    },
     "hp_low_pct": {
       "value": 25,
       "min": 0,
@@ -1067,6 +1079,218 @@
         60,
         100
       ]
+    },
+    "combat": {
+      "enabled": {
+        "value": 0,
+        "min": 0,
+        "max": 1,
+        "step": 1
+      },
+      "swing_quick_t": {
+        "value": 8,
+        "min": 6,
+        "max": 10,
+        "step": 1
+      },
+      "swing_standard_t": {
+        "value": 10,
+        "min": 8,
+        "max": 12,
+        "step": 1
+      },
+      "swing_heavy_t": {
+        "value": 12,
+        "min": 12,
+        "max": 15,
+        "step": 1
+      },
+      "swing_floor_t": {
+        "value": 6,
+        "min": 4,
+        "max": 8,
+        "step": 1
+      },
+      "bare_windup_t": {
+        "value": 3,
+        "min": 2,
+        "max": 5,
+        "step": 1
+      },
+      "bare_base": {
+        "value": 8,
+        "min": 4,
+        "max": 16,
+        "step": 1
+      },
+      "windup_min_t": {
+        "value": 2,
+        "min": 1,
+        "max": 4,
+        "step": 1
+      },
+      "windup_max_t": {
+        "value": 10,
+        "min": 6,
+        "max": 12,
+        "step": 1
+      },
+      "active_t": {
+        "value": 2,
+        "min": 1,
+        "max": 3,
+        "step": 1
+      },
+      "rehit_t": {
+        "value": 2,
+        "min": 1,
+        "max": 3,
+        "step": 1
+      },
+      "bite_div": {
+        "value": 6,
+        "min": 4,
+        "max": 8,
+        "step": 1
+      },
+      "behind_permille": {
+        "value": 2000,
+        "min": 1000,
+        "max": 3000,
+        "step": 250
+      },
+      "weak_permille": {
+        "value": 2000,
+        "min": 1000,
+        "max": 3000,
+        "step": 250
+      },
+      "mercy_t": {
+        "value": 8,
+        "min": 6,
+        "max": 10,
+        "step": 1
+      },
+      "stun_t": {
+        "value": 3,
+        "min": 2,
+        "max": 5,
+        "step": 1
+      },
+      "knockback_tiles": {
+        "value": 1,
+        "min": 0,
+        "max": 1,
+        "step": 1
+      },
+      "dodge_tiles": {
+        "value": 2,
+        "min": 1,
+        "max": 3,
+        "step": 1
+      },
+      "dodge_t": {
+        "value": 3,
+        "min": 2,
+        "max": 5,
+        "step": 1
+      },
+      "dodge_cooldown_t": {
+        "value": 15,
+        "min": 10,
+        "max": 20,
+        "step": 1
+      },
+      "breath_base": {
+        "value": 60,
+        "min": 40,
+        "max": 100,
+        "step": 5
+      },
+      "breath_per_stamina": {
+        "value": 8,
+        "min": 4,
+        "max": 12,
+        "step": 1
+      },
+      "breath_refill": {
+        "value": 2,
+        "min": 1,
+        "max": 4,
+        "step": 1
+      },
+      "breath_hold_t": {
+        "value": 6,
+        "min": 3,
+        "max": 10,
+        "step": 1
+      },
+      "attack_breath": {
+        "value": 15,
+        "min": 5,
+        "max": 30,
+        "step": 1
+      },
+      "guard_drain": {
+        "value": 1,
+        "min": 1,
+        "max": 3,
+        "step": 1
+      },
+      "guard_hit_breath": {
+        "value": 8,
+        "min": 4,
+        "max": 16,
+        "step": 1
+      },
+      "dodge_breath": {
+        "value": 12,
+        "min": 5,
+        "max": 24,
+        "step": 1
+      },
+      "breath_stagger_t": {
+        "value": 12,
+        "min": 8,
+        "max": 15,
+        "step": 1
+      },
+      "guard_stagger_t": {
+        "value": 6,
+        "min": 4,
+        "max": 8,
+        "step": 1
+      },
+      "engage_tiles": {
+        "value": 6,
+        "min": 4,
+        "max": 8,
+        "step": 1
+      },
+      "leash_tiles": {
+        "value": 7,
+        "min": 5,
+        "max": 10,
+        "step": 1
+      },
+      "give_up_t": {
+        "value": 50,
+        "min": 30,
+        "max": 80,
+        "step": 10
+      },
+      "claim_lock_t": {
+        "value": 48,
+        "min": 30,
+        "max": 60,
+        "step": 6
+      },
+      "pay_per_s_mg": {
+        "value": 50,
+        "min": 25,
+        "max": 100,
+        "step": 5
+      }
     }
   }
 }

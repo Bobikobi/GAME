@@ -5913,6 +5913,986 @@
     },
     {
       "additionalProperties": false,
+      "$id": "passage",
+      "type": "object",
+      "required": [
+        "format",
+        "id",
+        "title",
+        "creator",
+        "type",
+        "passage"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "format": {
+          "description": "Format version of this file.",
+          "const": 1,
+          "type": "number"
+        },
+        "id": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string"
+        },
+        "creator": {
+          "pattern": "^[a-z0-9_-]+$",
+          "maxLength": 39,
+          "description": "GitHub handle, lowercase.",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "maxLength": 240,
+          "type": "string"
+        },
+        "ai_tools": {
+          "maxItems": 8,
+          "description": "AI tools used to make this file or its art. Required when any were used.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 60,
+            "type": "string"
+          }
+        },
+        "items": {
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "rarity",
+              "sprite",
+              "weight"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "material",
+                    "type": "string"
+                  },
+                  {
+                    "const": "food",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fragment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "treasure",
+                    "type": "string"
+                  }
+                ]
+              },
+              "rarity": {
+                "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+                "anyOf": [
+                  {
+                    "const": "common",
+                    "type": "string"
+                  },
+                  {
+                    "const": "uncommon",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rare",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legendary",
+                    "type": "string"
+                  }
+                ]
+              },
+              "class": {
+                "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                ]
+              },
+              "family": {
+                "pattern": "^[a-z0-9_-]+$",
+                "maxLength": 24,
+                "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+                "type": "string"
+              },
+              "tags": {
+                "maxItems": 8,
+                "uniqueItems": true,
+                "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+                "type": "array",
+                "items": {
+                  "pattern": "^[a-z0-9_-]+$",
+                  "maxLength": 24,
+                  "description": "A lowercase word.",
+                  "type": "string"
+                }
+              },
+              "tier": {
+                "minimum": 1,
+                "maximum": 20,
+                "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+                "type": "integer"
+              },
+              "sprite": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                "maxLength": 120,
+                "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                "type": "string"
+              },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
+              "food": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "satiety"
+                ],
+                "properties": {
+                  "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "tool": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "kind",
+                  "tier"
+                ],
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "const": "basket",
+                        "type": "string"
+                      },
+                      {
+                        "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tier": {
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Better tools work faster. The calculator clamps the total.",
+                    "type": "integer"
+                  },
+                  "uses": {
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "fragment": {
+                "additionalProperties": false,
+                "description": "A found scrap that teaches a recipe.",
+                "type": "object",
+                "required": [
+                  "unlocks"
+                ],
+                "properties": {
+                  "unlocks": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                }
+              },
+              "wear": {
+                "additionalProperties": false,
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
+                "type": "object",
+                "required": [
+                  "slot"
+                ],
+                "properties": {
+                  "slot": {
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
+                    "anyOf": [
+                      {
+                        "const": "head",
+                        "type": "string"
+                      },
+                      {
+                        "const": "top",
+                        "type": "string"
+                      },
+                      {
+                        "const": "legs",
+                        "type": "string"
+                      },
+                      {
+                        "const": "outfit",
+                        "type": "string"
+                      },
+                      {
+                        "const": "feet",
+                        "type": "string"
+                      },
+                      {
+                        "const": "jewelry",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "look": {
+                    "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                    "type": "boolean"
+                  },
+                  "effects": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "effect",
+                        "value"
+                      ],
+                      "properties": {
+                        "effect": {
+                          "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                          "anyOf": [
+                            {
+                              "const": "gather_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "dig_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_chance_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "rare_find_pct",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "value": {
+                          "minimum": 1,
+                          "maximum": 100,
+                          "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "set": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                    "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "premium_later": {
+                "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "classes": {
+          "maxItems": 10,
+          "description": "Classes of your own, each under one base class.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "base"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "base": {
+                "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  }
+                ]
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "type": {
+          "const": "passage",
+          "type": "string"
+        },
+        "passage": {
+          "additionalProperties": false,
+          "description": "A way across water: board at a jetty, sail segment by segment, meet the one event drawn for this crossing, land (SEA_CROSSING.md).",
+          "type": "object",
+          "required": [
+            "from",
+            "hours",
+            "segments",
+            "segment_ms",
+            "board",
+            "land",
+            "back",
+            "events"
+          ],
+          "properties": {
+            "from": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "The exit of the map plan the boat leaves from: the jetty, the last tile a foot stands on.",
+              "type": "string"
+            },
+            "to": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "The exit of the map plan the boat lands at. Left out, the boat crosses and turns back to `from`: the far bank is scenery until its land is built (G55).",
+              "type": "string"
+            },
+            "hours": {
+              "description": "When a boat leaves: from (inclusive) to (exclusive), game hours; a later from than to runs over midnight.",
+              "type": "array",
+              "items": [
+                {
+                  "minimum": 0,
+                  "maximum": 23,
+                  "type": "integer"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 24,
+                  "type": "integer"
+                }
+              ],
+              "additionalItems": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "fare": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "item",
+                "qty"
+              ],
+              "properties": {
+                "item": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                  "maxLength": 80,
+                  "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                  "type": "string"
+                },
+                "qty": {
+                  "minimum": 1,
+                  "maximum": 999,
+                  "type": "integer"
+                }
+              },
+              "description": "What boarding takes from the bag. Its worth comes from the kernel, never a price written here."
+            },
+            "segments": {
+              "minimum": 4,
+              "maximum": 16,
+              "description": "The crossing's length: the boat moves one segment per player act, never by time alone.",
+              "type": "integer"
+            },
+            "segment_ms": {
+              "minimum": 3000,
+              "maximum": 20000,
+              "description": "How long one segment of sailing takes: the player is busy for it.",
+              "type": "integer"
+            },
+            "board": {
+              "minItems": 1,
+              "maxItems": 2,
+              "description": "The narrator's boxes as the boat pulls away.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            },
+            "land": {
+              "minItems": 1,
+              "maxItems": 2,
+              "description": "The narrator's boxes at the end of the crossing.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            },
+            "back": {
+              "minItems": 1,
+              "maxItems": 2,
+              "description": "The narrator's boxes when the boat turns back and puts in at the jetty it left.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            },
+            "events": {
+              "minItems": 1,
+              "maxItems": 8,
+              "description": "The table one keyed draw picks from at boarding, one event a crossing (SEA_CROSSING.md section 3).",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "title",
+                  "type",
+                  "weight",
+                  "sign",
+                  "window",
+                  "act",
+                  "miss",
+                  "met",
+                  "missed",
+                  "reward"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "title": {
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "type": "string"
+                  },
+                  "type": {
+                    "description": "The kind of question the quest asks: one of the fourteen in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional in the schema so an old file still reads; the check refuses a quest without one since the core content declared it (GRUNT P-3, 8.10).",
+                    "anyOf": [
+                      {
+                        "const": "investigation",
+                        "type": "string"
+                      },
+                      {
+                        "const": "discovery",
+                        "type": "string"
+                      },
+                      {
+                        "const": "fetch_twist",
+                        "type": "string"
+                      },
+                      {
+                        "const": "dilemma",
+                        "type": "string"
+                      },
+                      {
+                        "const": "skill",
+                        "type": "string"
+                      },
+                      {
+                        "const": "collection",
+                        "type": "string"
+                      },
+                      {
+                        "const": "tending",
+                        "type": "string"
+                      },
+                      {
+                        "const": "riddle",
+                        "type": "string"
+                      },
+                      {
+                        "const": "mastery",
+                        "type": "string"
+                      },
+                      {
+                        "const": "gamble",
+                        "type": "string"
+                      },
+                      {
+                        "const": "persuasion",
+                        "type": "string"
+                      },
+                      {
+                        "const": "errand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "maze",
+                        "type": "string"
+                      },
+                      {
+                        "const": "stealth",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "weight": {
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "Its share of the draw: weights are whole numbers and need not sum to anything.",
+                    "type": "integer"
+                  },
+                  "sign": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "description": "What the player sees or hears one segment before it strikes (warn, then strike).",
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 240,
+                      "type": "string"
+                    }
+                  },
+                  "window": {
+                    "minimum": 1,
+                    "maximum": 4,
+                    "description": "How many segments the event stays open to an answer.",
+                    "type": "integer"
+                  },
+                  "act": {
+                    "description": "What the player does about the event. A closed list: the step kinds of a quest, so the grammar does not grow for the sea.",
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "description": "Catch it as it passes: one answer while the event is open.",
+                        "type": "object",
+                        "required": [
+                          "kind"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "find",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "description": "Someone aboard asks for something the player carries: the answer gives it.",
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "item",
+                          "qty"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "bring",
+                            "type": "string"
+                          },
+                          "item": {
+                            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                            "maxLength": 80,
+                            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                            "type": "string"
+                          },
+                          "qty": {
+                            "minimum": 1,
+                            "maximum": 9,
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "description": "Hold on through it: bail, trim, keep the line.",
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "times"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "tend",
+                            "type": "string"
+                          },
+                          "times": {
+                            "minimum": 2,
+                            "maximum": 4,
+                            "description": "Answers on that many segments, one a segment, inside the window.",
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "description": "Work it out from the clue: steer by the sound, read the water.",
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "clue",
+                          "choices",
+                          "answer"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "riddle",
+                            "type": "string"
+                          },
+                          "clue": {
+                            "minLength": 1,
+                            "maxLength": 240,
+                            "type": "string"
+                          },
+                          "choices": {
+                            "minItems": 2,
+                            "maxItems": 3,
+                            "description": "The ways the player can answer, as buttons.",
+                            "type": "array",
+                            "items": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "type": "string"
+                            }
+                          },
+                          "answer": {
+                            "minimum": 0,
+                            "maximum": 2,
+                            "description": "The place in `choices` of the right one. A wrong answer is a miss.",
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "miss": {
+                    "description": "What an unanswered or wrongly answered event does: \"on\", the crossing goes on; \"back\", the boat turns back to the jetty it left. Never overboard, never a loss from the bag.",
+                    "anyOf": [
+                      {
+                        "const": "on",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "met": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "description": "The narrator's boxes when it is answered.",
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 240,
+                      "type": "string"
+                    }
+                  },
+                  "missed": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "description": "The narrator's boxes when it is missed.",
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 240,
+                      "type": "string"
+                    }
+                  },
+                  "reward": {
+                    "additionalProperties": false,
+                    "description": "What answering it pays, checked against the crossing's time like any pay.",
+                    "type": "object",
+                    "properties": {
+                      "gold_mg": {
+                        "minimum": 1,
+                        "maximum": 10000000,
+                        "type": "integer"
+                      },
+                      "items": {
+                        "maxItems": 3,
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "item",
+                            "qty"
+                          ],
+                          "properties": {
+                            "item": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            },
+                            "qty": {
+                              "minimum": 1,
+                              "maximum": 999,
+                              "type": "integer"
+                            },
+                            "instead": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "What a character whose wake pocket lays the item on the ground gets in its place: something that pocket lacks.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "additionalProperties": false,
       "$id": "restore",
       "type": "object",
       "required": [
@@ -12150,6 +13130,7 @@
             "gait",
             "hunt",
             "wild",
+            "combat",
             "starting_gold_mg",
             "per_point"
           ],
@@ -12910,6 +13891,60 @@
                 }
               },
               "description": "The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32."
+            },
+            "pay_gap_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Pillar 1's ceiling: the longest a walk may go without a pay, in game milliseconds. The pay-gap check (G62, docs/design/OPEN_WORLD.md 1.5) allows floor(pay_gap_ms / (2 x walk_step_ms)) + pay_sight_tiles steps from any walkable tile to the nearest pay. Defaults to 90000."
+            },
+            "pay_sight_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "How many tiles away a pay is already on screen, added to the pay-gap check's allowance (G62). Defaults to 5."
             },
             "hp_low_pct": {
               "additionalProperties": false,
@@ -15113,6 +16148,995 @@
                     }
                   },
                   "description": "The same at night, when the lamps push the wall out; never under the day's (the check)."
+                }
+              }
+            },
+            "combat": {
+              "additionalProperties": false,
+              "description": "The fight (docs/design/COMBAT.md section 4.9): every duration a whole number of world ticks (wild.tick_ms). Nothing reads it while enabled is 0 (G35). Damage is exact: no chance decides a hit inside a fight (G79).",
+              "type": "object",
+              "required": [
+                "enabled",
+                "swing_quick_t",
+                "swing_standard_t",
+                "swing_heavy_t",
+                "swing_floor_t",
+                "bare_windup_t",
+                "bare_base",
+                "windup_min_t",
+                "windup_max_t",
+                "active_t",
+                "rehit_t",
+                "bite_div",
+                "behind_permille",
+                "weak_permille",
+                "mercy_t",
+                "stun_t",
+                "knockback_tiles",
+                "dodge_tiles",
+                "dodge_t",
+                "dodge_cooldown_t",
+                "breath_base",
+                "breath_per_stamina",
+                "breath_refill",
+                "breath_hold_t",
+                "attack_breath",
+                "guard_drain",
+                "guard_hit_breath",
+                "dodge_breath",
+                "breath_stagger_t",
+                "guard_stagger_t",
+                "engage_tiles",
+                "leash_tiles",
+                "give_up_t",
+                "claim_lock_t",
+                "pay_per_s_mg"
+              ],
+              "properties": {
+                "enabled": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Whether fights exist at all: 0 in the demo (G35). With 0 nothing engages and the wild brain keeps its bluff."
+                },
+                "swing_quick_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks of a quick hand's whole swing, wind-up to the next strike (COMBAT 4.9, memo 4). Bare hands swing quick."
+                },
+                "swing_standard_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks of a standard hand's swing."
+                },
+                "swing_heavy_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks of a heavy hand's swing."
+                },
+                "swing_floor_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "No hand swings faster than this, whatever its tier or a technique."
+                },
+                "bare_windup_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks from a bare-handed strike's start to its landing."
+                },
+                "bare_base": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Points a strike of the bare hand takes from a foe; a foe's tier is counted in these (T1 falls in 2)."
+                },
+                "windup_min_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The shortest wind-up a foe's move may have (G31: nobody falls unwarned)."
+                },
+                "windup_max_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The longest wind-up a foe's move may have: no telegraph so slow that hard is easy."
+                },
+                "active_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks a foe's move hits whoever stands in its reach, after its wind-up."
+                },
+                "rehit_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks before one swing may hit the same target again; one swing hits one target once."
+                },
+                "bite_div": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A foe's default harm to a player is the health cap divided by this: six unanswered bites fell a player."
+                },
+                "behind_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A strike from the side the target does not face does this share of its harm, against 1000."
+                },
+                "weak_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A strike inside a foe's recovery after its weak move does this share of its harm, against 1000."
+                },
+                "mercy_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks after a hit on a player in which nothing harms them."
+                },
+                "stun_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks after a hit in which the one hit can do nothing."
+                },
+                "knockback_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles a hit pushes the one hit away from its source, never into a solid tile or across a level change."
+                },
+                "dodge_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles a dodge moves the body."
+                },
+                "dodge_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks a dodge takes."
+                },
+                "dodge_cooldown_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks after a dodge before the next."
+                },
+                "breath_base": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The breath bar's base top, in points; stamina adds breath_per_stamina each."
+                },
+                "breath_per_stamina": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Points of breath each point of stamina adds."
+                },
+                "breath_refill": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Points of breath standing still refills each tick."
+                },
+                "breath_hold_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks after any verb but a move in which breath does not refill."
+                },
+                "attack_breath": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Breath a strike costs."
+                },
+                "guard_drain": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Breath a held guard costs each tick."
+                },
+                "guard_hit_breath": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Breath a blow into the guard costs the guard."
+                },
+                "dodge_breath": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Breath a dodge costs."
+                },
+                "breath_stagger_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks a figure out of breath can neither strike nor guard."
+                },
+                "guard_stagger_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks the striker is staggered after a strike into a guard."
+                },
+                "engage_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A foe heeds a player within this many tiles."
+                },
+                "leash_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A foe never goes farther than this from its spot; past it a chase ends and the foe goes home."
+                },
+                "give_up_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks out of sense before a chase ends."
+                },
+                "claim_lock_t": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Ticks the first player whose strike lands holds a foe; each hit the holder deals or takes renews it."
+                },
+                "pay_per_s_mg": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Milli-gold a second of a foe's pattern may be worth in drops at the trader's price (HUNTING 9)."
                 }
               }
             },
@@ -18524,6 +20548,143 @@
                                   "maximum": 30,
                                   "description": "Game days before a taken animal is replaced at its spot: the respawn the value table counts.",
                                   "type": "integer"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "fight": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "tier",
+                            "hp",
+                            "breath",
+                            "pace_ms",
+                            "moves",
+                            "patterns"
+                          ],
+                          "properties": {
+                            "tier": {
+                              "description": "How many hits of a starter hand fell it: T1 2, T2 6 to 8, T3 20 and more (the check counts hp against combat.bare_base).",
+                              "anyOf": [
+                                {
+                                  "const": 1,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 2,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 3,
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "hp": {
+                              "minimum": 1,
+                              "maximum": 2000,
+                              "description": "Points of health.",
+                              "type": "integer"
+                            },
+                            "breath": {
+                              "minimum": 1,
+                              "maximum": 200,
+                              "description": "Points of breath; its moves spend it and it refills like a player's.",
+                              "type": "integer"
+                            },
+                            "pace_ms": {
+                              "minimum": 100,
+                              "maximum": 2000,
+                              "description": "Game milliseconds a tile when it walks at a player. Never under the walk: a hunter is escaped by walking (HUNTING 2).",
+                              "type": "integer"
+                            },
+                            "moves": {
+                              "minItems": 1,
+                              "maxItems": 4,
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "windup_t",
+                                  "reach",
+                                  "breath",
+                                  "recover_t",
+                                  "cooldown_t"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                                    "type": "string"
+                                  },
+                                  "windup_t": {
+                                    "minimum": 1,
+                                    "maximum": 20,
+                                    "description": "Ticks the pose shows before the move lands. The check holds it to combat.windup_min_t and windup_max_t.",
+                                    "type": "integer"
+                                  },
+                                  "reach": {
+                                    "minimum": 1,
+                                    "maximum": 3,
+                                    "description": "Tiles in a line in front of the foe the move reaches.",
+                                    "type": "integer"
+                                  },
+                                  "harm_div": {
+                                    "minimum": 2,
+                                    "maximum": 24,
+                                    "description": "The move takes the health cap divided by this. Absent: combat.bite_div.",
+                                    "type": "integer"
+                                  },
+                                  "breath": {
+                                    "minimum": 0,
+                                    "maximum": 40,
+                                    "description": "Breath the move costs the foe.",
+                                    "type": "integer"
+                                  },
+                                  "recover_t": {
+                                    "minimum": 1,
+                                    "maximum": 20,
+                                    "description": "Ticks the foe stands open after the move; a strike that lands then does extra if this is the weak move.",
+                                    "type": "integer"
+                                  },
+                                  "cooldown_t": {
+                                    "minimum": 0,
+                                    "maximum": 200,
+                                    "description": "Ticks before the same move may start again.",
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            },
+                            "patterns": {
+                              "minItems": 1,
+                              "maxItems": 4,
+                              "description": "Closed move orders. One is drawn when the foe appears (R4); its moves then repeat in that order. The fight is read, not rolled (G79).",
+                              "type": "array",
+                              "items": {
+                                "minItems": 1,
+                                "maxItems": 6,
+                                "type": "array",
+                                "items": {
+                                  "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "weak": {
+                              "additionalProperties": false,
+                              "description": "The move after whose recovery a strike lands weak_permille.",
+                              "type": "object",
+                              "required": [
+                                "after"
+                              ],
+                              "properties": {
+                                "after": {
+                                  "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                                  "type": "string"
                                 }
                               }
                             }

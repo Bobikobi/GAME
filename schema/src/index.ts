@@ -793,6 +793,84 @@ export const ExpeditionBody = Type.Object(
   },
 );
 
+/** The closed list of what a player does about a sea event: the quest grammar's own step kinds, read aboard (SEA_CROSSING.md section 3). */
+export const SEA_ACTS = ['find', 'bring', 'tend', 'riddle'] as const;
+
+const SeaAct = Type.Union(
+  [
+    Type.Object({ kind: Type.Literal('find') }, { additionalProperties: false, description: 'Catch it as it passes: one answer while the event is open.' }),
+    Type.Object(
+      { kind: Type.Literal('bring'), item: Id, qty: Int(1, 9) },
+      { additionalProperties: false, description: 'Someone aboard asks for something the player carries: the answer gives it.' },
+    ),
+    Type.Object(
+      { kind: Type.Literal('tend'), times: Int(2, 4, 'Answers on that many segments, one a segment, inside the window.') },
+      { additionalProperties: false, description: 'Hold on through it: bail, trim, keep the line.' },
+    ),
+    Type.Object(
+      {
+        kind: Type.Literal('riddle'),
+        clue: Text,
+        choices: Type.Array(Name, { minItems: 2, maxItems: 3, description: 'The ways the player can answer, as buttons.' }),
+        answer: Int(0, 2, 'The place in `choices` of the right one. A wrong answer is a miss.'),
+      },
+      { additionalProperties: false, description: 'Work it out from the clue: steer by the sound, read the water.' },
+    ),
+  ],
+  { description: 'What the player does about the event. A closed list: the step kinds of a quest, so the grammar does not grow for the sea.' },
+);
+
+const SeaEvent = Type.Object(
+  {
+    id: Id,
+    title: Name,
+    type: QuestType,
+    weight: Int(1, 1000, 'Its share of the draw: weights are whole numbers and need not sum to anything.'),
+    sign: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'What the player sees or hears one segment before it strikes (warn, then strike).' }),
+    window: Int(1, 4, 'How many segments the event stays open to an answer.'),
+    act: SeaAct,
+    miss: Type.Union([Type.Literal('on'), Type.Literal('back')], {
+      description: 'What an unanswered or wrongly answered event does: "on", the crossing goes on; "back", the boat turns back to the jetty it left. Never overboard, never a loss from the bag.',
+    }),
+    met: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes when it is answered.' }),
+    missed: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes when it is missed.' }),
+    reward: Type.Object(
+      {
+        gold_mg: Type.Optional(Int(1, 10_000_000)),
+        items: Type.Optional(Type.Array(RewardStack, { maxItems: 3 })),
+      },
+      { additionalProperties: false, description: 'What answering it pays, checked against the crossing\'s time like any pay.' },
+    ),
+  },
+  { additionalProperties: false },
+);
+
+export const PassageBody = Type.Object(
+  {
+    from: { ...Id, description: 'The exit of the map plan the boat leaves from: the jetty, the last tile a foot stands on.' },
+    to: Type.Optional({
+      ...Id,
+      description: 'The exit of the map plan the boat lands at. Left out, the boat crosses and turns back to `from`: the far bank is scenery until its land is built (G55).',
+    }),
+    hours: Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'When a boat leaves: from (inclusive) to (exclusive), game hours; a later from than to runs over midnight.' }),
+    fare: Type.Optional({ ...Stack, description: 'What boarding takes from the bag. Its worth comes from the kernel, never a price written here.' }),
+    segments: Int(4, 16, 'The crossing\'s length: the boat moves one segment per player act, never by time alone.'),
+    segment_ms: Int(3000, 20000, 'How long one segment of sailing takes: the player is busy for it.'),
+    board: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes as the boat pulls away.' }),
+    land: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes at the end of the crossing.' }),
+    back: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes when the boat turns back and puts in at the jetty it left.' }),
+    events: Type.Array(SeaEvent, {
+      minItems: 1,
+      maxItems: 8,
+      description: 'The table one keyed draw picks from at boarding, one event a crossing (SEA_CROSSING.md section 3).',
+    }),
+  },
+  {
+    additionalProperties: false,
+    description: 'A way across water: board at a jetty, sail segment by segment, meet the one event drawn for this crossing, land (SEA_CROSSING.md).',
+  },
+);
+
 export const RestoreBody = Type.Object(
   {
     place: Place,
@@ -1475,6 +1553,15 @@ export const ParamsBody = Type.Object(
       ...Bounded,
       description: 'The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32.',
     }),
+    pay_gap_ms: Type.Optional({
+      ...Bounded,
+      description:
+        'Pillar 1\'s ceiling: the longest a walk may go without a pay, in game milliseconds. The pay-gap check (G62, docs/design/OPEN_WORLD.md 1.5) allows floor(pay_gap_ms / (2 x walk_step_ms)) + pay_sight_tiles steps from any walkable tile to the nearest pay. Defaults to 90000.',
+    }),
+    pay_sight_tiles: Type.Optional({
+      ...Bounded,
+      description: 'How many tiles away a pay is already on screen, added to the pay-gap check\'s allowance (G62). Defaults to 5.',
+    }),
     hp_low_pct: {
       ...Bounded,
       description: 'Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32).',
@@ -1633,6 +1720,50 @@ export const ParamsBody = Type.Object(
         additionalProperties: false,
         description:
           'The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1): the clock an animal thinks on, how far round a player animals are stepped, how long a flight, a den stay and a print last, where a den\'s bolt hole may lie, and the distances kept from a fire and the town. A kind\'s own character is its `behaviour`; these are the numbers every kind shares.',
+      },
+    ),
+    combat: Type.Object(
+      {
+        enabled: { ...Bounded, description: "Whether fights exist at all: 0 in the demo (G35). With 0 nothing engages and the wild brain keeps its bluff." },
+        swing_quick_t: { ...Bounded, description: "Ticks of a quick hand's whole swing, wind-up to the next strike (COMBAT 4.9, memo 4). Bare hands swing quick." },
+        swing_standard_t: { ...Bounded, description: "Ticks of a standard hand's swing." },
+        swing_heavy_t: { ...Bounded, description: "Ticks of a heavy hand's swing." },
+        swing_floor_t: { ...Bounded, description: "No hand swings faster than this, whatever its tier or a technique." },
+        bare_windup_t: { ...Bounded, description: "Ticks from a bare-handed strike's start to its landing." },
+        bare_base: { ...Bounded, description: "Points a strike of the bare hand takes from a foe; a foe's tier is counted in these (T1 falls in 2)." },
+        windup_min_t: { ...Bounded, description: "The shortest wind-up a foe's move may have (G31: nobody falls unwarned)." },
+        windup_max_t: { ...Bounded, description: "The longest wind-up a foe's move may have: no telegraph so slow that hard is easy." },
+        active_t: { ...Bounded, description: "Ticks a foe's move hits whoever stands in its reach, after its wind-up." },
+        rehit_t: { ...Bounded, description: "Ticks before one swing may hit the same target again; one swing hits one target once." },
+        bite_div: { ...Bounded, description: "A foe's default harm to a player is the health cap divided by this: six unanswered bites fell a player." },
+        behind_permille: { ...Bounded, description: "A strike from the side the target does not face does this share of its harm, against 1000." },
+        weak_permille: { ...Bounded, description: "A strike inside a foe's recovery after its weak move does this share of its harm, against 1000." },
+        mercy_t: { ...Bounded, description: "Ticks after a hit on a player in which nothing harms them." },
+        stun_t: { ...Bounded, description: "Ticks after a hit in which the one hit can do nothing." },
+        knockback_tiles: { ...Bounded, description: "Tiles a hit pushes the one hit away from its source, never into a solid tile or across a level change." },
+        dodge_tiles: { ...Bounded, description: "Tiles a dodge moves the body." },
+        dodge_t: { ...Bounded, description: "Ticks a dodge takes." },
+        dodge_cooldown_t: { ...Bounded, description: "Ticks after a dodge before the next." },
+        breath_base: { ...Bounded, description: "The breath bar's base top, in points; stamina adds breath_per_stamina each." },
+        breath_per_stamina: { ...Bounded, description: "Points of breath each point of stamina adds." },
+        breath_refill: { ...Bounded, description: "Points of breath standing still refills each tick." },
+        breath_hold_t: { ...Bounded, description: "Ticks after any verb but a move in which breath does not refill." },
+        attack_breath: { ...Bounded, description: "Breath a strike costs." },
+        guard_drain: { ...Bounded, description: "Breath a held guard costs each tick." },
+        guard_hit_breath: { ...Bounded, description: "Breath a blow into the guard costs the guard." },
+        dodge_breath: { ...Bounded, description: "Breath a dodge costs." },
+        breath_stagger_t: { ...Bounded, description: "Ticks a figure out of breath can neither strike nor guard." },
+        guard_stagger_t: { ...Bounded, description: "Ticks the striker is staggered after a strike into a guard." },
+        engage_tiles: { ...Bounded, description: "A foe heeds a player within this many tiles." },
+        leash_tiles: { ...Bounded, description: "A foe never goes farther than this from its spot; past it a chase ends and the foe goes home." },
+        give_up_t: { ...Bounded, description: "Ticks out of sense before a chase ends." },
+        claim_lock_t: { ...Bounded, description: "Ticks the first player whose strike lands holds a foe; each hit the holder deals or takes renews it." },
+        pay_per_s_mg: { ...Bounded, description: "Milli-gold a second of a foe's pattern may be worth in drops at the trader's price (HUNTING 9)." },
+      },
+      {
+        additionalProperties: false,
+        description:
+          'The fight (docs/design/COMBAT.md section 4.9): every duration a whole number of world ticks (wild.tick_ms). Nothing reads it while enabled is 0 (G35). Damage is exact: no chance decides a hit inside a fight (G79).',
       },
     ),
     starting_gold_mg: Bounded,
@@ -1992,6 +2123,47 @@ const Behaviour = Type.Object(
   { additionalProperties: false },
 );
 
+/** The hits of a starter hand that fell a foe, by tier (COMBAT 4.9: T1 2, T2 6 to 8, T3 20 and more). */
+export const FIGHT_TIER_HITS = { 1: [2, 2], 2: [6, 8], 3: [20, 30] } as const;
+
+const MoveName = Type.String({ pattern: '^[a-z][a-z0-9_-]{0,23}$' });
+
+/** One move of a foe: read before it lands (G31), then a window where it stands open. */
+const FightMove = Type.Object(
+  {
+    id: MoveName,
+    windup_t: Int(1, 20, 'Ticks the pose shows before the move lands. The check holds it to combat.windup_min_t and windup_max_t.'),
+    reach: Int(1, 3, 'Tiles in a line in front of the foe the move reaches.'),
+    harm_div: Type.Optional(Int(2, 24, 'The move takes the health cap divided by this. Absent: combat.bite_div.')),
+    breath: Int(0, 40, 'Breath the move costs the foe.'),
+    recover_t: Int(1, 20, 'Ticks the foe stands open after the move; a strike that lands then does extra if this is the weak move.'),
+    cooldown_t: Int(0, 200, 'Ticks before the same move may start again.'),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * What a creature is in a fight (COMBAT section 4.1 and 4.9), as data on the kind: a closed list of moves, patterns
+ * that order them, one weakness. Inert while combat.enabled is 0 (G35). A kind without it cannot fight. Its drops are
+ * the kind's `hunt` drops: a fallen foe lies as a carcass.
+ */
+const Fight = Type.Object(
+  {
+    tier: Type.Union([Type.Literal(1), Type.Literal(2), Type.Literal(3)], { description: 'How many hits of a starter hand fell it: T1 2, T2 6 to 8, T3 20 and more (the check counts hp against combat.bare_base).' }),
+    hp: Int(1, 2000, 'Points of health.'),
+    breath: Int(1, 200, 'Points of breath; its moves spend it and it refills like a player\'s.'),
+    pace_ms: Int(100, 2000, 'Game milliseconds a tile when it walks at a player. Never under the walk: a hunter is escaped by walking (HUNTING 2).'),
+    moves: Type.Array(FightMove, { minItems: 1, maxItems: 4 }),
+    patterns: Type.Array(Type.Array(MoveName, { minItems: 1, maxItems: 6 }), {
+      minItems: 1,
+      maxItems: 4,
+      description: 'Closed move orders. One is drawn when the foe appears (R4); its moves then repeat in that order. The fight is read, not rolled (G79).',
+    }),
+    weak: Type.Optional(Type.Object({ after: MoveName }, { additionalProperties: false, description: 'The move after whose recovery a strike lands weak_permille.' })),
+  },
+  { additionalProperties: false },
+);
+
 /** One kind of creature: how it looks, where it sits, how close the player may come, when it is out; with `hunt`, what it gives when taken. */
 const CreatureKind = Type.Object(
   {
@@ -2010,6 +2182,7 @@ const CreatureKind = Type.Object(
     ),
     behaviour: Type.Optional(Behaviour),
     hunt: Type.Optional(Hunt),
+    fight: Type.Optional(Fight),
     protected: Type.Optional(
       Type.Boolean({ description: 'A pet, a young animal or a person (HUNTING section 10): seen, never taken, never dressed. A protected kind carries no "hunt".' }),
     ),
@@ -2391,6 +2564,7 @@ export const TemplateFile = record('template', 'template', TemplateBody);
 export const NpcFile = record('npc', 'npc', NpcBody);
 export const QuestFile = record('quest', 'quest', QuestBody);
 export const ExpeditionFile = record('expedition', 'expedition', ExpeditionBody);
+export const PassageFile = record('passage', 'passage', PassageBody);
 export const RestoreFile = record('restore', 'restore', RestoreBody);
 export const CampFile = record('camp', 'camp', CampBody);
 export const RaceFile = record('race', 'race', RaceBody);
@@ -2407,7 +2581,7 @@ export const ChunkFile = record('chunk', 'chunk', ChunkBody);
 export const PocketFile = record('pocket', 'pocket', PocketBody);
 export const SchoolFile = record('school', 'school', SchoolBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
 export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
 
 export const ExtensionFile = Type.Union([
@@ -2418,6 +2592,7 @@ export const ExtensionFile = Type.Union([
   NpcFile,
   QuestFile,
   ExpeditionFile,
+  PassageFile,
   RestoreFile,
   CampFile,
   RaceFile,
@@ -2447,6 +2622,7 @@ export type TemplateFile = Static<typeof TemplateFile>;
 export type NpcFile = Static<typeof NpcFile>;
 export type QuestFile = Static<typeof QuestFile>;
 export type ExpeditionFile = Static<typeof ExpeditionFile>;
+export type PassageFile = Static<typeof PassageFile>;
 export type QuestStep = Static<typeof QuestStep>;
 export type QuestType = (typeof QUEST_TYPES)[number];
 export type RiddleAnswer = Static<typeof RiddleAnswer>;
@@ -2479,6 +2655,9 @@ export type WhenDef = Static<typeof When>;
 export type RemarkDef = Static<typeof Remark>;
 export type Quest = Static<typeof QuestBody>;
 export type Expedition = Static<typeof ExpeditionBody>;
+export type Passage = Static<typeof PassageBody>;
+export type SeaEventDef = Static<typeof SeaEvent>;
+export type SeaActDef = Static<typeof SeaAct>;
 export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;
 export type Race = Static<typeof RaceBody>;
@@ -2518,6 +2697,7 @@ export const SCHEMAS = {
   npc: NpcFile,
   quest: QuestFile,
   expedition: ExpeditionFile,
+  passage: PassageFile,
   restore: RestoreFile,
   camp: CampFile,
   race: RaceFile,
