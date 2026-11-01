@@ -510,6 +510,21 @@ async function run(page: Page, url: string): Promise<void> {
   if ((await me.feedFitting()) !== 2) throw new Error('the embers did not take the two logs that fit');
   await me.setHour(21);
   await page.waitFor(`__tend.look() && __tend.look().burning`, 'the topped-up fire at 21:00', 5000);
+  // a living fire (CR-110), muted: the fire's breath moves and the crackle heard follows it while nothing leaves the speakers
+  await page.eval('__game.sound.setMuted(true)');
+  const breaths = new Set<string>();
+  const crackles = new Set<string>();
+  for (let i = 0; i < 12; i++) {
+    const b = await page.eval<{ gain: number } | null>("__game.world.fireBreath('own') ?? null");
+    if (b) breaths.add(b.gain.toFixed(3));
+    crackles.add((await page.eval<number>('__game.sound.state().crackle')).toFixed(3));
+    await sleep(100);
+  }
+  const quiet = await page.eval<number>('__game.sound.level()');
+  console.log(`living fire: ${breaths.size} breaths and ${crackles.size} crackle levels in 1.2 s, muted output ${quiet}`);
+  if (breaths.size < 3 || crackles.size < 3) throw new Error(`the fire did not breathe: ${breaths.size} breaths, ${crackles.size} crackle levels in 1.2 s`);
+  if (quiet !== 0) throw new Error(`muted, the output is ${quiet}, not 0`);
+  await page.eval('__game.sound.setMuted(false)');
 
   // a build during a chase is refused and keeps the logs; a chase that reaches the ring ends there.
   // Stepping out of the fire's light after dark opens the night's one warning (G31): the player closes it.
