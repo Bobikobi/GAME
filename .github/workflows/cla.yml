@@ -52,8 +52,10 @@ jobs:
           path-to-signatures: signatures/v1/cla.json
           path-to-document: https://github.com/Bobikobi/GAME/blob/develop/CLA.md
           branch: cla-signatures
-          # the owner and the secondary account, whose commits are the owner's own agents' work, and every
-          # bot (the community loop, the dependency updates). The action reads each commit's GitHub login.
-          allowlist: Bobikobi,JustArandomGuyFromTheInternet,*[bot]
+          # the owner and the secondary account, whose commits are the owner's own agents' work, the `claude`
+          # login that GitHub gives commits authored as Claude <noreply@anthropic.com> (the owner's own agent, under
+          # the owner's accounts; his word of 1.11.2026 on #535), and every bot (the community loop, the dependency
+          # updates). The action reads each commit's GitHub login.
+          allowlist: Bobikobi,JustArandomGuyFromTheInternet,claude,*[bot]
           # locking a merged pull request would also lock the owner's own; the signatures are in the file
           lock-pullrequest-aftermerge: 'false'
