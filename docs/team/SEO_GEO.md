@@ -124,3 +124,25 @@ None of these is done. Each changes something public or registers the project wi
 ## 10. After the pull request
 
 Measure before adding more: Search Console impressions per query after four weeks; ask three assistants the developer queries of section 2 and note whether the project is named. The result goes in `DECISIONS.md` as a choice or a retry.
+
+## 11. Where it stands (1.11, issue #570)
+
+Checked on the live site and the repository on 1.11.
+
+**Built and live.** Sections 3 to 8 are all in: every page has a title, a description, a canonical link, Open Graph and a Twitter card; the card image answers; the home page carries its two JSON-LD blocks; `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt` answer 200; `web/test/seo.test.ts` holds them.
+
+**Outward, done (section 9).** 1, the ten topics, are set. 2, the description, carries the added line.
+
+**Found broken.** The repository still names the game Openfold, and its homepage link points at the old address, which answers 404. Both date from before the rename (#363) and the move to `loomvale.vercel.app` (#376). A visitor who arrives at the repository from search, or an assistant that reads its card, gets a dead link and the old name.
+- Proposal 14, for the owner's yes: the description becomes "Loomvale: a free pixel-art browser game that its players build together. Add quests, items and places as JSON; AGPL code, CC BY-SA content.", and the homepage becomes the site's address. It goes before any other outward step, since every one of them sends people to the repository.
+- When the game has its own public address, the homepage moves to it, by its own yes.
+
+**Still waiting for the owner's word.**
+- 3, the social preview image: not set.
+- 10, Discussions: off.
+- 12, Search Console and Bing: no verification yet, so section 10's measuring has no numbers. This is the first to ask after 14.
+- 13, the crawler policy: the default, all welcome, stands.
+- 4 to 9 (Show HN, Reddit, itch.io, the lists and directories, a developers' post) now belong to the community plan (`docs/team/COMMUNITY.md`, CR-110), which holds their voice and order, each with its own yes.
+- 11, the short video, is a look: stills first.
+
+**Retry when:** proposal 14 is answered (then fix the repository and check that its homepage answers 200), or Search Console has four weeks of numbers (then section 10's measuring runs and the result goes in `DECISIONS.md`).
