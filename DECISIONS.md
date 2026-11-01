@@ -4147,3 +4147,9 @@ The owner, 1.11 23:41, on the entry "The ground is warm" (now ⏸): the warmth i
 Built from this: the art draws the stalks; the hue is a data layer on the ground, keyed by hour beside `params.light.keys`, with room for a region and a season key. Round 5 of #541 builds the hour key and shows one spot at morning, noon and evening beside the references. How close a layer gets to the reference is not measured yet.
 Why: his word. The layer over the art is the builder's plan, a hypothesis until the stills.
 **Retry when:** the stills show a layer cannot reach the reference (then ramps per hour or per season); NATURE's seasons or the regions' palettes are built, then they fill their keys. Model: claude-opus-5-5. Issue #541.
+## 2026-11-01 ✅ Image tools, best to worst: Codex, Gemini, Qwen; the others need the owner's word
+
+The owner, 1.11 23:35, after looking through all 2,735 drafts by tool: this is the order, from the best down. SD 1.5, SDXL, FLUX and the local model are poor, most of their drafts do not pass; no time goes on them, and a specific need is asked first.
+Result: the trees' route C (#544) moved from SD 1.5 to Qwen on Kaggle. On this date Codex is out of credits and Gemini's browser rig waits on the Google check (#533).
+Why: his judgement of the pictures, by eye. No measure was taken.
+**Retry when:** the owner asks for one of the others, or a new model beats Qwen beside the references. Model: claude-opus-5-5. Issue #544.
