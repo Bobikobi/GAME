@@ -72,7 +72,7 @@ import {
   type PublicState,
 } from './state';
 import { rarityRank, payFor } from './values';
-import { campTile, findSlot, inRect, makeStepRule, makeWalkable, near, npcTile, type Rect } from './world';
+import { campTile, findSlot, inRect, makeStepRule, makeWalkable, near, npcTile, placesAt, type Rect } from './world';
 
 export type Tile = [number, number];
 export type Grade = 0 | 1 | 2 | 3 | 4;
@@ -147,6 +147,8 @@ export type GameEvent =
   | { e: 'jackpot'; verb: string }
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
+  /** the player entered a place for the first time (G63, G66): a map region or a named area, by id; the banner shows its name (`placeName`) */
+  | { e: 'place'; id: string }
   | { e: 'attr'; attr: Attribute; value: number }
   /** a node of the tree was learned, for `cost` skill points */
   | { e: 'node'; node: string; cost: number }
@@ -1534,6 +1536,8 @@ function arrive(ctx: Ctx, at: Tile, gait: Gait = 'walk'): boolean {
     // past an expedition's last bell the mist walks the player out: nothing wakes under this tile (G49)
     if (ctx.walkOut === undefined) strike(ctx, before, at, gait);
   }
+  // a tile that took the last of the health is not entered: the fall below wakes the player elsewhere
+  if (!ctx.hurt || p.hp > 0) enterPlaces(ctx, at);
   // the signs this step raised, told here so a phone that holds no seed can show them too (REACTIONS 5)
   if (before[0] !== at[0] || before[1] !== at[1]) {
     for (const hit of cuesOnStep(b, s, tick, before, at)) {
@@ -1607,11 +1611,31 @@ function markBitten(ctx: Ctx): void {
   else p.bitten = joined(p.bitten, open);
 }
 
-/** The outing ends without a fall, on safe ground or at a walk-out: the bites it carried join the record. */
+/** The outing ends without a fall, on safe ground or at a walk-out: the bites it carried join the record, and the places it found count. */
 function closeOuting(ctx: Ctx): void {
   const p = ctx.s.player;
   if (p.outing?.bitten?.length) p.bitten = joined(p.bitten, p.outing.bitten);
+  if (p.outing?.found?.length) p.explored = joined(p.explored ?? [], p.outing.found);
   p.outing = null;
+}
+
+/**
+ * Entering pays (G63): a place the player stands in for the first time is seen, told once and never
+ * again, a fall or not (G66). It counts for the exploration board only once it is brought home, like
+ * every find (G33): an outing carries it until it ends safe, and a fall drops it, so the next entry
+ * finds it again, silently. A place entered on safe ground is home already and counts at once.
+ */
+function enterPlaces(ctx: Ctx, at: Tile): void {
+  const p = ctx.s.player;
+  for (const id of placesAt(ctx.b.map, at[0], at[1])) {
+    if (!(p.seen ?? []).includes(id)) {
+      p.seen = joined(p.seen ?? [], [id]);
+      ctx.events.push({ e: 'place', id });
+    }
+    if ((p.explored ?? []).includes(id)) continue;
+    if (p.outing === null) p.explored = joined(p.explored ?? [], [id]);
+    else if (!(p.outing.found ?? []).includes(id)) p.outing.found = [...(p.outing.found ?? []), id];
+  }
 }
 
 /**
