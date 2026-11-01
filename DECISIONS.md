@@ -4027,3 +4027,9 @@ The staging box moved from the API of 28.10 (60de13582, content c41e52839104112d
 - On the box: every step OK. The box runs `AUTH_MODE=session` (two briefs disagreed on this; step 1 read it), and the API's own `/stats` answers its two counts. The name still serves `/stats` from the static files (404) until the one `location = /stats` line goes into the installed nginx file (certbot edited that file, so it is never re-derived from the repo); that line is the owner's, with sudo.
 - Kept on the box for the way back: the old image, the pre-roll and pre-restart dumps, the old compose file, `.env` and page.
 **Retry when:** a roll needs a step the script does not hold (a migration, a db image move): then that step is written into the script and proven on the laptop copy first. Model: claude-opus-5-5. Issue #557.
+
+## 2026-11-01 ✅ A workflow on pull_request_target or issue_comment runs from main: a fix to it takes effect only on main
+- **Tried:** #584 (the CLA job skips the owner's own pull requests) and #587 (the `${{ }}` wrap) landed on `develop`; the job kept running: #459's run 41280102452 failed on a commit authored as Claude, and #589's run 41282345328 still ran after both merges.
+- **Why (proven):** GitHub runs `pull_request_target` "in the context of the default branch of the base repository", and `issue_comment` and `schedule` only from the default branch; the workflow file used is `main`'s, and `main` held the old copy. The wrap of #587 is right per the reference but was not the cause of the observed runs.
+- **Fix:** #590 brings `develop`'s cla.yml to `main` as a hotfix, as #531 did for the deploy workflow; the next release carries the same file. AGENTS.md "How work moves" now says so for every such workflow.
+- **Retry when:** never: this is how GitHub reads these events. Model: claude-fable-5-1. PRs #584, #587, #590; issue #574.
