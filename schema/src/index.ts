@@ -854,6 +854,9 @@ export const PassageBody = Type.Object(
     }),
     hours: Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'When a boat leaves: from (inclusive) to (exclusive), game hours; a later from than to runs over midnight.' }),
     fare: Type.Optional({ ...Stack, description: 'What boarding takes from the bag. Its worth comes from the kernel, never a price written here.' }),
+    requires: Type.Optional(
+      Type.Array(Id, { maxItems: 4, description: 'The quests that must be done before this boat takes the player: the crossing is part of an opening, never a gate by level. Until then there is no prompt, and the kernel refuses a boarding.' }),
+    ),
     segments: Int(4, 16, 'The crossing\'s length: the boat moves one segment per player act, never by time alone.'),
     segment_ms: Int(3000, 20000, 'How long one segment of sailing takes: the player is busy for it.'),
     board: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes as the boat pulls away.' }),

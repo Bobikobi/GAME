@@ -693,6 +693,15 @@ describe('the move carries its gait to the server (DECISIONS 2026-10-29, the gai
     expect(isAction({ t: 'move', at })).toBe(true);
     expect(isAction({ t: 'move', at, gait: 'crawl' })).toBe(false);
     expect(isAction({ t: 'move', at, gait: 1 })).toBe(false);
+
+    // the crossing's three acts: the board names its passage and tile, the sail holds nothing, a riddle's answer is a whole number
+    expect(isAction({ t: 'board', passage: 'core/bay-crossing', at })).toBe(true);
+    expect(isAction({ t: 'board', passage: 'core/bay-crossing' })).toBe(false);
+    expect(isAction({ t: 'sail' })).toBe(true);
+    expect(isAction({ t: 'sail', segments: 3 })).toBe(false);
+    expect(isAction({ t: 'answer' })).toBe(true);
+    expect(isAction({ t: 'answer', choice: 1 })).toBe(true);
+    expect(isAction({ t: 'answer', choice: 'left' })).toBe(false);
   });
 
   test('the credit pays a tile at the gait\'s pace: a run buys twice the tiles of a walk, a sneak half', async () => {

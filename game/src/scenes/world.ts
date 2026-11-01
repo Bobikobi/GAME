@@ -80,6 +80,7 @@ import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
 import { questTargets } from '../targets';
+import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
 import { peekOnStep, type Tile } from '../peek';
@@ -3851,6 +3852,9 @@ export class WorldScene extends Phaser.Scene {
       const t = this.targetAt(s, tx, ty);
       if (t) return t;
     }
+    // on the jetty a passage leaves from, once the opening has reached it, the boat is offered (SEA_CROSSING.md); its hours and fare are the kernel's to refuse
+    const passage = passageAt(this.b, s.state, s.pos);
+    if (passage) return { label: `Board: ${this.b.passages[passage]!.title}`, run: () => void app.ui.board(passage), tile: [s.pos[0], s.pos[1]], top: T };
     // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
     // It comes after every other target, so a fire never hides a thing the player already faces.
     return this.kindleTarget(s);

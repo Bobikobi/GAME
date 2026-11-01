@@ -4,7 +4,7 @@
  *   `Quest review:` the one-line verdict of the quest-designer skill, owed when a quest file changes (its reward and
  *                   its timing live in the quest file);
  *   `Story review:` the one-line verdict of the story-keeper skill, owed when a file a player reads as story changes
- *                   (a quest, an NPC's lines, a pocket's waking lines, the stone, a find, a race, the story pages);
+ *                   (a quest, an NPC's lines, a pocket's waking lines, the stone, a find, a race, a passage's boxes, the story pages);
  *   `Source:`       where a picture added under content/kit/ came from (docs/art/PROP_FROM_REF.md). Nothing else
  *                   checks that: `pnpm check` tests a sprite's size and palette, not where it came from.
  *   `Tree:`         where the work sits in the skill tree, owed by every pull request (AGENTS.md, "Tree first, both
@@ -24,7 +24,7 @@ export const QUEST_PATHS = /^content\/(?:core|extensions\/[^/]+)\/quests\/.+\.js
 
 /** The files whose text a player reads as the story, core's and an extension's, and the story pages. */
 export const STORY_PATHS =
-  /^(?:content\/(?:core|extensions\/[^/]+)\/(?:quests|npcs|pockets|restores|reactions|treasures|races)\/.+\.json|docs\/design\/STORY\.md|docs\/design\/story\/.+\.md)$/;
+  /^(?:content\/(?:core|extensions\/[^/]+)\/(?:quests|npcs|pockets|restores|reactions|treasures|races|passages)\/.+\.json|docs\/design\/STORY\.md|docs\/design\/story\/.+\.md)$/;
 
 /** A picture under a kit folder. */
 export const KIT_PICTURES = /^content\/kit\/.+\.png$/;
