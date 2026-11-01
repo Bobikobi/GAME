@@ -297,23 +297,17 @@ const PARAMS_FILE = 'content/core/params.json';
 /** From this tier up an item comes only from a gated source (DECISIONS.md, 2026-10-09). */
 const GATED_TIER = 3;
 
-/**
- * The material grammar and the two ladders (DECISIONS.md, 2026-10-09: the
- * grammar, the ladders, one craft verb, metal): every item has a class and a
- * tier, every tier a level band, a recipe climbs one tier at a time at a
- * station of its tier and is gated by one craft profession, a high tier comes
- * from a gated source, and the world's rarity bonuses stay inside their
- * budget (kernel review 8.2).
- */
 /** The tools that mark a node as mined: it trains digging only when it says `work: "mine"` (kernel/src/state.ts nodeVerb). */
 const MINED_TOOLS: readonly string[] = ['pick', 'hammer', 'trowel'];
 
 /**
  * The tools a node names (QUARRYING 2, 16 rows 1 and 2). A node that names a pick, a hammer or a trowel says
- * `work: "mine"`, or it would be gathered and train Foraging. And a tool a node or a dig spot requires is one every
- * race can reach: a shop sells one at tier 1, or a start-known recipe makes one; a race's outfit does not count,
- * since only that race starts with it. The axe keeps its stricter row in starts.ts: a shop sells it, since a broken
- * axe must be bought again before the first fire.
+ * `work: "mine"`, or it would be gathered and train Foraging; this row alone reads a pick or a hammer on a resource
+ * node (starts.ts keeps only the staff off one). A node a reaction makes appear has no `work` field, so it names none
+ * of the three: it would train Foraging, and with a pick or a trowel it would also run by itself. And a tool a node
+ * or a dig spot requires is one every race can reach: a shop sells one at tier 1, or a start-known recipe makes one;
+ * a race's outfit does not count, since only that race starts with it. The axe keeps its stricter row in starts.ts: a
+ * shop sells it, since a broken axe must be bought again before the first fire.
  */
 export function checkNodeTools(b: Bundle, origin: Record<string, string>): Issue[] {
   const issues: Issue[] = [];
@@ -341,7 +335,12 @@ export function checkNodeTools(b: Bundle, origin: Record<string, string>): Issue
   }
   for (const [id, x] of Object.entries(b.reactions)) {
     const tool = 'appear' in x.then ? x.then.appear.tool : undefined;
-    if (tool !== undefined && !reachable(tool)) err(origin[id] ?? x.file, 'reaction.then.appear.tool', locked(id, tool));
+    if (tool === undefined) continue;
+    const file = origin[id] ?? x.file;
+    if (MINED_TOOLS.includes(tool)) {
+      err(file, 'reaction.then.appear.tool', `"${id}" makes a node appear that names ${a(tool)}, but an appearing node cannot say work: "mine", so it would train Foraging (kernel/src/state.ts nodeVerb): name a basket, an axe or a rod, or none (QUARRYING 2)`);
+    }
+    if (!reachable(tool)) err(file, 'reaction.then.appear.tool', locked(id, tool));
   }
   for (const [id, d] of Object.entries(b.treasures)) {
     if (d.tool !== undefined && !reachable(d.tool)) err(origin[id] ?? d.file, 'dig.tool', locked(id, d.tool));
@@ -349,6 +348,14 @@ export function checkNodeTools(b: Bundle, origin: Record<string, string>): Issue
   return issues;
 }
 
+/**
+ * The material grammar and the two ladders (DECISIONS.md, 2026-10-09: the
+ * grammar, the ladders, one craft verb, metal): every item has a class and a
+ * tier, every tier a level band, a recipe climbs one tier at a time at a
+ * station of its tier and is gated by one craft profession, a high tier comes
+ * from a gated source, and the world's rarity bonuses stay inside their
+ * budget (kernel review 8.2).
+ */
 function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   const issues: Issue[] = [];
   const p = b.params;

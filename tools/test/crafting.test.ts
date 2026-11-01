@@ -8,7 +8,7 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { CampFile, ParamsFile, ProfessionFile, ShopFile } from '@game/schema';
+import type { CampFile, ParamsFile, ProfessionFile, ReactionFile, ShopFile } from '@game/schema';
 import { missOutcome, recipeProfession, recipeTier } from '@game/kernel';
 import { afterAll, describe, expect, it } from 'vitest';
 import { classFits } from '../src/assemble';
@@ -628,21 +628,40 @@ describe('node tools the check refuses (QUARRYING 2, 16)', () => {
   const locked = (id: string, kind: string) => `"${id}" requires ${kind}, but no shop sells one and no start-known recipe makes one at tier 1`;
   const core = messages(runCheck());
 
-  it('a node that names a pick or a hammer without work mine, and no core node', () => {
+  /** The errors of the tester's files: the fixture node and its output. */
+  const testers = (r: CheckResult) => errors(r).filter((i) => i.file.includes('tester'));
+
+  it('a node that names a pick or a hammer without work mine fails only this row, and no core node does', () => {
     for (const tool of ['pick', 'hammer']) {
-      const said = messages(world({ 'resources/nodes.json': node(ore, { tool }) }));
-      expect(said.filter((m) => mined.test(m)), tool).toEqual([expect.stringContaining(`names a ${tool} but not work: "mine"`)]);
+      const own = testers(world({ 'resources/nodes.json': node(ore, { tool }) })).map((i) => i.message);
+      expect(own, tool).toEqual([expect.stringMatching(mined)]);
+      expect(own[0], tool).toContain(`names a ${tool} but not work: "mine"`);
     }
     expect(core.filter((m) => m.includes('but not work: "mine"'))).toEqual([]);
   });
 
-  it('a pick node passes once the knapped pick\'s recipe is in, and fails without it', () => {
+  it('a pick or a hammer node with work mine passes once a tier-1 tool of its kind is in, and a pick fails without the recipe', () => {
+    for (const tool of ['pick', 'hammer']) {
+      const r = world({ 'resources/nodes.json': node(ore, { tool, work: 'mine' }) });
+      expect(testers(r), tool).toEqual([]);
+      expect(messages(r).filter((m) => m.includes('tester/nodes') || m.includes(`no work asks for a ${tool}`)), tool).toEqual([]);
+    }
     const pickNode = { 'resources/nodes.json': node(ore, { tool: 'pick', work: 'mine' }) };
-    const said = messages(world(pickNode));
-    expect(said.filter((m) => m.includes('names a pick'))).toEqual([]);
-    expect(said.filter((m) => m.startsWith(locked('tester/nodes', 'a pick')))).toEqual([]);
-    const without = messages(world(pickNode, [removeCore('recipes/knapped-pick.json')]));
-    expect(without.filter((m) => m.startsWith(locked('tester/nodes', 'a pick')))).toHaveLength(1);
+    const without = testers(world(pickNode, [removeCore('recipes/knapped-pick.json')])).map((i) => i.message);
+    expect(without).toEqual([expect.stringContaining(locked('tester/nodes', 'a pick'))]);
+  });
+
+  it('a node a reaction makes appear may not name a trowel, since it cannot say work mine', () => {
+    const r = world({}, [
+      editCore<ReactionFile>('reactions/mushrooms-after-rain.json', (d) => {
+        if ('appear' in d.reaction.then) d.reaction.then.appear.tool = 'trowel';
+      }),
+    ]);
+    const own = errors(r).filter((i) => i.message.includes('core/mushrooms-after-rain') || i.file.includes('mushrooms-after-rain'));
+    expect(own.map((i) => [i.where, i.message])).toEqual([
+      ['reaction.then.appear.tool', expect.stringContaining('"core/mushrooms-after-rain" makes a node appear that names a trowel, but an appearing node cannot say work: "mine"')],
+    ]);
+    expect(core.filter((m) => m.includes('makes a node appear that names'))).toEqual([]);
   });
 
   it('a node whose tool no shop sells and no start-known recipe makes', () => {

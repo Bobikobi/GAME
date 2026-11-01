@@ -17,7 +17,7 @@
         "level": 1,
         "game": "pick",
         "sprite": "core/base-kit:items/berry",
-        "at": "below"
+        "at": "left"
       }
     }
   }

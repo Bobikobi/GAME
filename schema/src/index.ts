@@ -47,7 +47,8 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
 });
 
 /**
- * A staff, a hammer and a pick are worn in the hand for what they help; no work asks for one yet.
+ * A staff, a hammer and a pick are worn in the hand for what they help. No work asks for a staff; a mined node
+ * (`work: "mine"`) may require a hammer or a pick, a dig spot never (QUARRYING 2).
  * The hammer and the pick are the human's and the skeleton's outfit tools (DECISIONS.md, 2026-10-22).
  */
 export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick', 'rod'] as const;
