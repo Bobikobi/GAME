@@ -4695,7 +4695,7 @@
         "id": "core/lone-mushrooms-1",
         "kind": "resource",
         "x": 45,
-        "y": 20,
+        "y": 16,
         "w": 1,
         "h": 1,
         "tag": "meadow"
@@ -4703,11 +4703,11 @@
       {
         "id": "core/lone-mushrooms-2",
         "kind": "resource",
-        "x": 45,
-        "y": 32,
+        "x": 44,
+        "y": 31,
         "w": 1,
         "h": 1,
-        "tag": "meadow"
+        "tag": "ruin"
       },
       {
         "id": "core/lone-mushrooms-3",
