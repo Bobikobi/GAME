@@ -2217,6 +2217,25 @@ export const MapBody = Type.Object(
     plan: Type.Optional(MapPlan),
     props: Type.Array(Prop(1023)),
     spawn: Type.Object({ x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
+    frame: Type.Optional(
+      Type.Integer({
+        minimum: 1,
+        maximum: 99,
+        description: 'The frame of the map\'s tiles: 1 until a change moves the authored ground inside a larger map (docs/design/EXPERIENCE_AUDIT.md, gap M5). A save made in an earlier frame is shifted by `moved` when it is adapted. Left out: 1.',
+      }),
+    ),
+    moved: Type.Optional(
+      Type.Object(
+        {
+          dx: Int(-1023, 1023),
+          dy: Int(-1023, 1023),
+        },
+        {
+          additionalProperties: false,
+          description: 'How far the previous frame\'s tiles moved to reach this frame\'s, in tiles: a saved tile (x, y) of the frame before is (x + dx, y + dy) now. Owed when `frame` is above 1, and holds the whole step from the frame just before it.',
+        },
+      ),
+    ),
     world: Type.Optional({
       ...WorldId,
       description: 'The world this map belongs to, for a race\'s grade. Left out: "valley", neutral to every race.',
