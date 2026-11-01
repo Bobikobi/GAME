@@ -126,30 +126,25 @@ export function localMapState(s: unknown): LocalMapState | undefined {
     : undefined;
 }
 
-/** A map region the player has entered (G66): drawn as its whole footprint, never as the tiles walked. */
+/** A region of the map on the chart: its whole rect, and a name only once the player has entered it (G66). */
 export interface MapRegion {
   /** the place id, `${map.id}/${region.id}` */
   id: string;
-  title: string;
-  cells: readonly (readonly [number, number, number, number])[];
-  /** the centre of the first cell, in tiles: where the name stands */
+  /** undefined until entered: the chart shows where a region lies, never what it is called */
+  title?: string;
   x: number;
   y: number;
+  w: number;
+  h: number;
   current: boolean;
 }
 
-/** The regions of the map named in the player's seen list, in map order; ids that are no region are skipped. */
-export function seenRegions(b: Bundle, seen: readonly string[] | undefined, at: readonly [number, number]): MapRegion[] {
-  const out: MapRegion[] = [];
-  if (!seen?.length) return out;
+/** Every region of the map in map order, named only where the player's seen list holds it. */
+export function mapRegions(b: Bundle, seen: readonly string[] | undefined, at: readonly [number, number]): MapRegion[] {
   const known = new Set(seen);
   const here = regionAt(b.map, at[0], at[1]);
-  for (const region of b.map.regions ?? []) {
+  return (b.map.regions ?? []).map((region) => {
     const id = `${b.map.id}/${region.id}`;
-    const title = placeName(b.map, id);
-    if (!known.has(id) || title === undefined) continue;
-    const [cx, cy, cw, ch] = region.cells[0]!;
-    out.push({ id, title, cells: region.cells, x: cx + cw / 2, y: cy + ch / 2, current: here === region });
-  }
-  return out;
+    return { id, title: known.has(id) ? placeName(b.map, id) : undefined, x: region.x, y: region.y, w: region.w, h: region.h, current: here === region };
+  });
 }

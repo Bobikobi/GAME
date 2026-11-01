@@ -1,9 +1,10 @@
 /**
- * The chart: only the ground the player has walked and the places they have
- * stood in (G5, G8). Drawn as SVG so it scales from a pocket chart to the
- * window; the list beside it carries the names a small screen cannot fit.
+ * The chart: the whole map's sheet, with only the ground the player has walked,
+ * the regions and areas they have entered (G66) and the places they have stood
+ * in. Drawn as SVG so it scales from a pocket chart to the window; the list
+ * beside it carries the names a small screen cannot fit.
  */
-import { tagAt, type Bundle, type Slot } from '@game/kernel';
+import { inRect, tagAt, type Bundle, type Slot } from '@game/kernel';
 import { MAP_CHUNK, PLACE_KIND, STALL_SLOT, chunkKey, mapPlaces, type MapPlace, type MapRegion } from '../places';
 
 const INK = '#1b1a2e';
@@ -40,7 +41,7 @@ export interface MapDraw {
   stall?: string;
   selected?: string;
   compact?: boolean;
-  /** the map regions entered (M3): each drawn whole, with its name, however little of it was walked */
+  /** the map's regions (M3): an entered one drawn whole with its name, however little of it was walked; the rest an empty outline */
   regions?: readonly MapRegion[];
 }
 
@@ -48,6 +49,30 @@ export interface MapDraw {
 const CHART = 640;
 function scaleOf(b: Bundle): number {
   return CHART / Math.max(b.map.width, b.map.height);
+}
+
+/** The ground the chart may show, one path per colour, so a whole 192 by 192 sheet stays a handful of elements. */
+function groundPaths(b: Bundle, S: number, lit: (x: number, y: number) => boolean): string {
+  const W = b.map.width;
+  const n = (v: number) => Math.round(v * 100) / 100;
+  const byFill = new Map<string, string[]>();
+  for (let y = 0; y < b.map.height; y++) {
+    let runStart = -1;
+    let runFill = '';
+    for (let x = 0; x <= W; x++) {
+      const tag = x < W && lit(x, y) ? tagAt(b.map, x, y) : undefined;
+      const fill = tag ? (TERRAIN[tag] ?? '#c99a5e') : '';
+      if (fill === runFill) continue;
+      if (runFill) {
+        const d = byFill.get(runFill) ?? [];
+        d.push(`M${n(runStart * S)} ${n(y * S)}H${n(x * S)}V${n((y + 1) * S)}H${n(runStart * S)}Z`);
+        byFill.set(runFill, d);
+      }
+      runStart = x;
+      runFill = fill;
+    }
+  }
+  return [...byFill].map(([fill, d]) => `<path d="${d.join('')}" fill="${fill}" opacity=".42"/>`).join('');
 }
 
 function esc(text: string): string {
@@ -117,42 +142,24 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
   const places = mapPlaces(b, o.seen, o.at, o.stall);
   const named = places.filter((p) => p.label !== undefined).sort((a, c) => rank(a) - rank(c));
   const regions = o.regions ?? [];
-  const names = [...regions.map((r) => r.title), ...named.map((p) => (p.stall ? 'your stall' : p.label!))];
+  const entered = regions.filter((r) => r.title !== undefined).sort((a, c) => Number(c.current) - Number(a.current));
+  const names = [...entered.map((r) => r.title!), ...named.map((p) => (p.stall ? 'your stall' : p.label!))];
   const parts: string[] = [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W * S} ${H * S}" role="img" aria-label="${esc(
       `A chart of the valley: ${names.length ? names.join(', ') : 'nothing walked yet'}${o.stall ? ', with your stall at the empty corner' : ''}.`,
     )}">`,
   ];
 
-  // the walked ground: 8x8 chunks, drawn tile by tile so rivers and roads keep their shape
-  parts.push('<g shape-rendering="crispEdges">');
-  for (const key of o.chunks) {
-    const at = chunkAt(key);
-    if (!at) continue;
-    const [cx, cy] = at;
-    if (cx < 0 || cy < 0 || cx * MAP_CHUNK >= W || cy * MAP_CHUNK >= H) continue;
-    const end = Math.min(W, (cx + 1) * MAP_CHUNK);
-    for (let y = cy * MAP_CHUNK; y < Math.min(H, (cy + 1) * MAP_CHUNK); y++) {
-      let runStart = -1;
-      let runFill = '';
-      for (let x = cx * MAP_CHUNK; x <= end; x++) {
-        const tag = x < end ? tagAt(b.map, x, y) : undefined;
-        const fill = tag ? (TERRAIN[tag] ?? '#c99a5e') : '';
-        if (fill !== runFill) {
-          if (runStart >= 0 && runFill) parts.push(`<rect x="${runStart * S}" y="${y * S}" width="${(x - runStart) * S}" height="${S}" fill="${runFill}" opacity=".42"/>`);
-          runStart = x;
-          runFill = fill;
-        }
-      }
-    }
-  }
-  parts.push('</g>');
+  // the ground shown: the 8x8 chunks walked, and the whole of every region and named area entered (G66)
+  const areas = b.map.slots.filter((slot) => slot.kind === 'area' && slot.label !== undefined && o.seen.has(slot.id));
+  const lit = (x: number, y: number) => o.chunks.has(chunkKey(x, y)) || entered.some((r) => inRect(x, y, r)) || areas.some((slot) => inRect(x, y, slot));
+  parts.push(`<g shape-rendering="crispEdges">${groundPaths(b, S, lit)}</g>`);
 
   // the few built things a chart would mark: a roof, a well, a trader's awning
   for (const prop of b.map.props) {
     const cx = prop.x + prop.w / 2;
     const cy = prop.y + prop.h / 2;
-    if (!o.chunks.has(chunkKey(cx, cy))) continue;
+    if (!lit(cx, cy)) continue;
     const ref = prop.sprite.split(':').pop() ?? '';
     const x = cx * S;
     const y = cy * S;
@@ -171,23 +178,20 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
     }
   }
 
-  // the regions entered: the whole footprint and its name, not the tiles that were walked (M3, G66)
-  for (const r of regions) {
-    for (const [cx, cy, cw, ch] of r.cells) {
-      parts.push(
-        `<rect x="${cx * S}" y="${cy * S}" width="${cw * S}" height="${ch * S}" fill="${GOLD_DARK}" fill-opacity="${r.current ? 0.3 : 0.18}" stroke="#6e4226" stroke-width="2" stroke-dasharray="6 5" stroke-opacity=".6"/>`,
-      );
-    }
-  }
-
   // one wash of paper over the whole chart: the ground is drawn in the core colours, then
   // faded into the sheet, so the pins and names are what the eye reads first
   parts.push(`<rect width="${W * S}" height="${H * S}" fill="${PAPER}" opacity=".24"/>`);
 
-  // a quiet mark on the paper the walk has not reached yet
+  // the regions, over the wash: a solid line round one entered, a quiet dashed one round the rest, never a tile of it (M3, G66)
+  for (const r of regions) {
+    const line = r.title === undefined ? 'stroke-width="2" stroke-dasharray="6 5" stroke-opacity=".6"' : `stroke-width="${r.current ? 4 : 2}" stroke-opacity=".9"`;
+    parts.push(`<rect x="${r.x * S}" y="${r.y * S}" width="${r.w * S}" height="${r.h * S}" fill="none" stroke="${GOLD_DARK}" ${line}/>`);
+  }
+
+  // a quiet mark on the paper the walk has not reached yet; a map of regions says that with its empty outlines
   const chunksAcross = Math.ceil(W / MAP_CHUNK);
   const chunksDown = Math.ceil(H / MAP_CHUNK);
-  if (o.chunks.size < chunksAcross * chunksDown) {
+  if (!regions.length && o.chunks.size < chunksAcross * chunksDown) {
     parts.push(
       `<g transform="translate(${W * S / 2} ${H * S * 0.8}) rotate(-6)" opacity=".32"><text text-anchor="middle" font-family="Atkinson Hyperlegible Next, sans-serif" font-size="30" font-weight="700" letter-spacing="2" fill="#6e4226">NOT YET WALKED</text></g>`,
     );
@@ -195,11 +199,14 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
 
   // the names the chart can fit; the list has the rest
   const boxes: Box[] = [];
-  const placeLabel = (text: string, x: number, y: number, preferred: 'above' | 'below' = 'above'): boolean => {
+  // `preferred` as a number is a region's half height: its name tries the middle, then just inside its top and bottom edges
+  const placeLabel = (text: string, x: number, y: number, preferred: 'above' | 'below' | number = 'above'): boolean => {
     const w = Math.min(300, text.length * 15.4 + 8);
     const h = 36;
     const spots: [number, number][] =
-      preferred === 'above'
+      typeof preferred === 'number'
+        ? [[0, 0], [0, 24 - preferred], [0, preferred - 24], [60, 4], [-60, 4]]
+        : preferred === 'above'
         ? [[0, -26], [0, 34], [60, 4], [-60, 4], [0, -54], [0, 62]]
         : [[0, 34], [0, -26], [60, 4], [-60, 4], [0, 62], [0, -54]];
     for (const [dx, dy] of spots) {
@@ -236,8 +243,7 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
     `<g transform="translate(${px} ${py})"><path d="M0 0 C-10 -12 -14 -19 -14 -25 A14 14 0 1 1 14 -25 C14 -19 10 -12 0 0 Z" fill="${RED}" stroke="${INK}" stroke-width="2.2"/><circle cx="0" cy="-25" r="5" fill="${CREAM}" stroke="${INK}" stroke-width="1.6"/></g>`,
   );
 
-  // names: the stall and the place under the player first, then the rest
-  for (const p of named) {
+  const namePlace = (p: MapPlace) => {
     const isStall = p.stall || p.id === STALL_SLOT;
     const dx = isStall && p.current ? 20 : 0;
     const dy = isStall && p.current ? 14 : 0;
@@ -245,8 +251,13 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
     const lx = p.stall && p.current ? p.x * S + 20 : p.x * S + dx;
     const ly = p.stall && p.current ? p.y * S + 18 : p.y * S + dy;
     placeLabel(text, lx, ly, p.stall || p.current ? 'below' : 'above');
-  }
-  for (const r of regions) placeLabel(r.title, r.x * S, r.y * S, 'below');
+  };
+
+  // names: the stall and the place under the player first, then the regions, then the rest
+  const first = named.filter((p) => p.stall || p.id === STALL_SLOT || p.current);
+  first.forEach(namePlace);
+  for (const r of entered) placeLabel(r.title!, (r.x + r.w / 2) * S, (r.y + r.h / 2) * S, (r.h / 2) * S);
+  named.filter((p) => !first.includes(p)).forEach(namePlace);
   if (!named.some((p) => p.current)) {
     // the pin has no place name: it is on the road
     placeLabel('You', px, py, 'below');

@@ -45,7 +45,7 @@ import type { ActResult } from '../session-surface';
 import { SEARCH_EMPTY, SEARCH_LUCK_LINE, searchRows, ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
 import { shopGroups } from '../shopstock';
-import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces, seenRegions } from '../places';
+import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces, mapRegions } from '../places';
 import { say } from './dialog';
 import { standingFrame } from '../work';
 import { button, h, sprite } from './dom';
@@ -979,7 +979,9 @@ export function openMap(ui: UI): void {
 
   const render = () => {
     const local = localMapState(s);
-    const seen = local?.seen ?? new Set<string>();
+    // M2's list joins the save's: a place entered stays on the chart after a fall, and on a server session
+    const entered = s.state.player.seen ?? [];
+    const seen = new Set<string>([...(local?.seen ?? []), ...entered]);
     const chunks = local?.seenChunks ?? new Set<string>();
     const stall = local?.stall;
     const places = mapPlaces(b, seen, s.pos, stall)
@@ -992,7 +994,7 @@ export function openMap(ui: UI): void {
     const day = Math.floor(s.tick / b.params.day_length_ms) + 1;
 
     const chart = h('div', { class: 'map-chart' });
-    const regions = seenRegions(b, s.state.player.seen, s.pos);
+    const regions = mapRegions(b, entered, s.pos);
     chart.innerHTML = mapSvg(b, { seen, chunks, at: s.pos, stall, selected, regions });
 
     const rows = places.map((place) => {
@@ -1025,15 +1027,18 @@ export function openMap(ui: UI): void {
       );
     });
 
-    // the regions entered (M3): named in the list beside the chart, whole, with a direction from here
-    const regionRows = regions.map((r) =>
-      h(
-        'div',
-        { class: 'map-row region', 'aria-current': r.current ? 'true' : undefined },
-        h('span', { class: 'map-ico kind-area' }, '▦'),
-        h('span', { class: 'map-txt' }, h('span', { class: 'map-nm' }, r.title), h('span', { class: 'map-sub' }, r.current ? 'Region · you are here' : `Region · ${directionOf(s.pos, [r.x, r.y])}`)),
-      ),
-    );
+    // the regions entered (M3): named in the list beside the chart, with a direction from here
+    const regionRows = regions
+      .filter((r) => r.title !== undefined)
+      .sort((a, c) => Number(c.current) - Number(a.current))
+      .map((r) =>
+        h(
+          'div',
+          { class: 'map-row region', 'aria-current': r.current ? 'true' : undefined },
+          h('span', { class: 'map-ico kind-area' }, '▦'),
+          h('span', { class: 'map-txt' }, h('span', { class: 'map-nm' }, r.title!), h('span', { class: 'map-sub' }, r.current ? 'Region · you are here' : `Region · ${directionOf(s.pos, [r.x + r.w / 2, r.y + r.h / 2])}`)),
+        ),
+      );
 
     let note: string;
     let action: HTMLElement | undefined;

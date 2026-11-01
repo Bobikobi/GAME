@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import type { Bundle } from '@game/kernel';
-import { STALL_SLOT, canPlaceStall, chunkKey, directionOf, mapPlaces, seenRegions } from '../src/places';
+import { STALL_SLOT, canPlaceStall, chunkKey, directionOf, mapPlaces, mapRegions } from '../src/places';
 import { mapSvg } from '../src/ui/map';
 import { loadBundle } from '../../tools/test/helpers/world';
 
@@ -72,29 +72,44 @@ describe('the chart on the first map (M3)', () => {
     const b = structuredClone(bundle);
     b.map.width = 192;
     b.map.height = 192;
+    const row = (b.map.ground[0]![0] ?? ' ').repeat(192);
+    b.map.ground = Array.from({ length: 192 }, () => row);
     b.map.regions = [
-      { id: 'old_north-wood', purpose: 'wild', cells: [[70, 20, 40, 30]] },
-      { id: 'salt-shore', purpose: 'wild', title: 'The salt shore', cells: [[10, 150, 50, 20]] },
-    ] as NonNullable<Bundle['map']['regions']>;
+      { id: 'old_north-wood', x: 70, y: 20, w: 40, h: 30 },
+      { id: 'salt-shore', title: 'The salt shore', x: 10, y: 150, w: 50, h: 20 },
+    ];
     return b;
   }
 
-  test('a region entered is drawn whole with its name, and a region not entered is not', () => {
+  test('every region is on the chart, and only one entered is named', () => {
     const b = wide();
-    const seen = [`${b.map.id}/old_north-wood`];
-    const regions = seenRegions(b, seen, [80, 30]);
-    expect(regions).toHaveLength(1);
+    const regions = mapRegions(b, [`${b.map.id}/old_north-wood`], [80, 30]);
+    expect(regions).toHaveLength(2);
     expect(regions[0]).toMatchObject({ title: 'Old north wood', current: true });
+    expect(regions[1]).toMatchObject({ title: undefined, current: false, x: 10, y: 150, w: 50, h: 20 });
     const svg = mapSvg(b, { seen: new Set(), chunks: new Set(), at: [80, 30], regions });
     expect(svg).toContain('Old north wood');
     expect(svg).not.toContain('The salt shore');
     expect(svg).toContain('stroke-dasharray="6 5"');
   });
 
-  test('an id that is no region, and a region the map lost, are skipped', () => {
+  test('an entered region shows its ground whole; one not entered shows none', () => {
     const b = wide();
-    expect(seenRegions(b, ['core/town-square', `${b.map.id}/gone`], [0, 0])).toEqual([]);
-    expect(seenRegions(b, undefined, [0, 0])).toEqual([]);
+    const none = mapSvg(b, { seen: new Set(), chunks: new Set(), at: [80, 30], regions: mapRegions(b, [], [80, 30]) });
+    expect(none).not.toContain('opacity=".42"');
+    const svg = mapSvg(b, { seen: new Set(), chunks: new Set(), at: [80, 30], regions: mapRegions(b, [`${b.map.id}/salt-shore`], [80, 30]) });
+    expect(svg).toContain('The salt shore');
+    const d = /<path d="([^"]+)"[^>]*opacity="\.42"/.exec(svg)?.[1] ?? '';
+    // 20 rows of the region, one run each, and not one row outside it
+    expect(d.match(/M/g)).toHaveLength(20);
+    expect(d.startsWith(`M${Math.round((10 * 640 / 192) * 100) / 100} 500H`)).toBe(true);
+  });
+
+  test('an id that is no region, and a region the map lost, name nothing', () => {
+    const b = wide();
+    expect(mapRegions(b, ['core/town-square', `${b.map.id}/gone`], [0, 0]).filter((r) => r.title)).toEqual([]);
+    expect(mapRegions(b, undefined, [0, 0]).filter((r) => r.title)).toEqual([]);
+    expect(mapRegions(bundle, [], [0, 0])).toEqual([]);
   });
 
   test('the chart is 640 units across at 64 tiles and at 192, so a name reads the same', () => {
@@ -104,10 +119,9 @@ describe('the chart on the first map (M3)', () => {
     expect(big).toContain('viewBox="0 0 640 640"');
   });
 
-  test('a walked chunk shows no tile of an unwalked region', () => {
-    const b = wide();
-    const svg = mapSvg(b, { seen: new Set(), chunks: new Set(['9,2']), at: [80, 30], regions: [] });
-    expect(svg).not.toContain('Old north wood');
+  test('a named area entered shows its ground with no chunk walked, as on a server session', () => {
+    const svg = mapSvg(bundle, { seen: new Set(['core/town-square']), chunks: new Set(), at: [0, 0] });
+    expect(svg).toContain('Town square');
+    expect(svg).toContain('opacity=".42"');
   });
 });
-
