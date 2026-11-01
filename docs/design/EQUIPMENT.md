@@ -1,6 +1,6 @@
 # The equipment model: categories, slots, tools against weapons, and what separates a weapon from clothing (2026-10-31)
 
-Status: a proposal for the owner. Nothing here is built. The owner's word of 28.10 asked to characterise the equipment (items, weapons, clothing, and whether to separate them). Most of the model already exists as decisions and as a proposal in [PROGRESSION.md](PROGRESSION.md) section 5; this page does not compete with it. It does three things the other pages do not: it names the **categories** as one closed list, it draws the line between a **tool and a weapon**, and it compares the model with five games. Anything new is marked "new"; the questions only the owner can answer are at the end (at most four, each with a default).
+Status: a proposal for the owner. Nothing here is built. The owner's word of 28.10 asked to characterise the equipment (items, weapons, clothing, and whether to separate them). Most of the model already exists as decisions and as a proposal in [PROGRESSION.md](PROGRESSION.md) section 5; this page does not compete with it. It does three things the other pages do not: it names the **categories** as one closed list, it draws the line between a **tool and a weapon**, and it compares the model with five games. Anything new is marked "new"; the questions only the owner can answer are at the end (at most four, each with a default). The 3.1 category (`itemCategory`), the 3.3 fields (`weapon`, `wear.req`, `wear.attrs`, `wear.trait`) and 3.6's `bind` landed on 01.11 as checked fields that wait for their readers (DECISIONS.md, 2026-11-01).
 
 ## 1. The answer to the owner's question first
 
@@ -79,6 +79,8 @@ Item
   bind    'none' | 'account' | 'character'             new: section 3.6
   quality 'plain' | 'fine' | 'true' | 'master'         new, rolled at the craft (PROGRESSION.md 5.2); storage undecided, see 3.3b
 ```
+
+Superseded in part (01.11): the block as built is WEAPONS 3's: `tempo`, `windup_t`, `reach`, `harm`, `range?`, `ammo?`, `noise?`, `uses?`; no class field. `wear.trait` is one name of BODY_CLOCKS 6.1's five, not an object; `wear.req`, `wear.attrs` and `bind` landed as sketched. Every field that carries power is refused in content until its reader lands (DECISIONS.md, 2026-11-01).
 
 The three keys a fight reads from an item are the weapon block (reach, wind-up, cooldown, harm), the wear block's `attrs` (the six attributes as small keys, decision 45) and its `effects` (the five rates, which a fight does not read). Armour adds `guard_pct` and `quiet_wear` from PROGRESSION.md 4.2, as worn effects with a minus allowed inside the cap (CR-21).
 

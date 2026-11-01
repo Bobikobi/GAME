@@ -130,6 +130,9 @@ export function flattenParams(p: ParamsBody): Params {
     craft_miss_keep_pct: p.craft_miss_keep_pct.value,
     wear_effect_max_pct: [...p.wear_effect_max_pct],
     wear_set_bonus_pct: p.wear_set_bonus_pct.value,
+    wear_req_level: [...p.wear_req_level],
+    attr_bonus_max: [...p.attr_bonus_max],
+    attr_bonus_step: p.attr_bonus_step.value,
     drift_budget_permille: p.drift_budget_permille.value,
     hp_cap: p.hp_cap.value,
     day_length_ms: p.day_length_ms.value,
@@ -531,7 +534,9 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (it.fragment && !b.recipes[it.fragment.unlocks]) err(id, 'fragment.unlocks', `no recipe "${it.fragment.unlocks}"`);
     if (it.kind === 'food' && !it.food) err(id, 'food', 'a food item needs "food": { "satiety": n }');
     if (it.food && it.food.satiety === 0 && it.food.hurt === undefined) err(id, 'food', 'a food feeds ("satiety" above 0) or hurts ("hurt"): this one does neither');
-    if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier }, and "uses" when it wears out');
+    // a weapon-only hand is an item of kind "tool" with a weapon block in place of the tool block (WEAPONS 1)
+    if (it.kind === 'tool' && !it.tool && !it.weapon) err(id, 'tool', 'a tool item needs "tool": { kind, tier }, and "uses" when it wears out');
+    if (it.wear?.req && !b.professions[it.wear.req.school]) err(id, 'wear.req.school', `no profession "${it.wear.req.school}"`);
     if (it.kind === 'fragment' && !it.fragment) err(id, 'fragment', 'a fragment item needs "fragment": { "unlocks": recipe id }');
   }
   for (const [id, res] of Object.entries(b.resources)) {

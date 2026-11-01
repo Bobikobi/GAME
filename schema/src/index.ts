@@ -162,6 +162,48 @@ export const WornEffect = Type.Union(WORN_EFFECTS.map((k) => Type.Literal(k)), {
   description: 'What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.',
 });
 
+/**
+ * The garment traits (BODY_CLOCKS 6.1): what a piece is worn against, each on the places the table names.
+ * `ice_grip` sits on the feet only while no hands place exists (CLOTHING question 1).
+ */
+export const TRAITS = ['cold_proof', 'snow_shod', 'storm_proof', 'ice_grip', 'heat_ward'] as const;
+export const GarmentTrait = Type.Union(TRAITS.map((k) => Type.Literal(k)), {
+  description: 'What the piece is worn against: a place\'s condition (BODY_CLOCKS 6.1). Refused in content until the first place condition.',
+});
+export const TRAIT_SLOTS: Readonly<Record<(typeof TRAITS)[number], readonly (typeof WORN_SLOTS)[number][]>> = {
+  cold_proof: ['top', 'back', 'head'],
+  snow_shod: ['feet'],
+  storm_proof: ['back', 'top'],
+  ice_grip: ['feet'],
+  heat_ward: ['head', 'top'],
+};
+
+/** Attribute points a worn piece asks or gives, each key at most once (PROGRESSION 5.6; CLOTHING 7.4, 7.5). */
+export const WornAttrs = Type.Object(
+  {
+    might: Type.Optional(Int(1, 100)),
+    senses: Type.Optional(Int(1, 100)),
+    agility: Type.Optional(Int(1, 100)),
+    luck: Type.Optional(Int(1, 100)),
+    stamina: Type.Optional(Int(1, 100)),
+    spirit: Type.Optional(Int(1, 100)),
+  },
+  { additionalProperties: false, minProperties: 1 },
+);
+
+/** A soft requirement on a worn piece (PROGRESSION 5.6; CLOTHING 7.4; EQUIPMENT 3.3). */
+export const WearReq = Type.Object(
+  {
+    school: { ...Id, description: 'The profession whose level the piece asks (CLOTHING 7.4).' },
+    level: Int(1, 100, 'The level asked: exactly wear_req_level of the piece\'s tier.'),
+    attr: Type.Optional({ ...WornAttrs, description: 'Base attribute points the piece asks too; worn bonuses never count toward them.' }),
+  },
+  {
+    additionalProperties: false,
+    description: 'A soft requirement: below it the piece works at the wearer\'s own tier (PROGRESSION 5.6; CLOTHING 7.4). Read by nothing yet.',
+  },
+);
+
 export const Wear = Type.Object(
   {
     slot: WornSlot,
@@ -192,7 +234,13 @@ export const Wear = Type.Object(
     ),
     load_bonus: Type.Optional(
       Int(1, 100, 'A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.'),
-    ),
+    ),    req: Type.Optional(WearReq),
+    attrs: Type.Optional({
+      ...WornAttrs,
+      description:
+        'Bonuses on top of the base attributes, each at most attr_bonus_max of the piece\'s tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb reads them.',
+    }),
+    trait: Type.Optional(GarmentTrait),
   },
   {
     additionalProperties: false,
@@ -200,6 +248,37 @@ export const Wear = Type.Object(
       'Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).',
   },
 );
+
+/** The swing of a hand that strikes: quick, standard or heavy, each a combat param in ticks (WEAPONS 3; COMBAT 4.9). */
+export const WEAPON_TEMPOS = ['quick', 'standard', 'heavy'] as const;
+/**
+ * A hand that strikes (WEAPONS 3). Closed, like the `tool` block, and with no class field: the class is the item's own.
+ * Every weapon block in content is refused until combat (G35, G44); the grammar lands first.
+ */
+export const Weapon = Type.Object(
+  {
+    tempo: Type.Union(WEAPON_TEMPOS.map((t) => Type.Literal(t)), {
+      description: 'The swing, the hand\'s one cooldown: quick, standard or heavy, each a combat param in ticks (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.',
+    }),
+    windup_t: Int(2, 10, 'Ticks from the press to the landing, inside the swing (WEAPONS 3).'),
+    reach: Int(1, 2, 'Tiles, no diagonal; 2 is a long hand (WEAPONS 3).'),
+    harm: Int(0, 1000, 'The hand\'s bonus in points, counted as harm + hand_offset (WEAPONS 3, 4).'),
+    range: Type.Optional(Int(2, 12, 'Tiles, only on a hand that throws or shoots (WEAPONS 3).')),
+    ammo: Type.Optional({
+      ...ItemClass,
+      description: 'The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with combat.',
+    }),
+    noise: Type.Optional(Int(0, 12, 'Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).')),
+    uses: Type.Optional(Int(1, 1000, 'Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).')),
+  },
+  {
+    additionalProperties: false,
+    description: 'A hand that strikes (WEAPONS 3). No class field: the class is the item\'s own. Every weapon block in content is refused until combat (G35, G44).',
+  },
+);
+
+/** Who may hold an item (EQUIPMENT 3.6). */
+export const BINDS = ['none', 'account', 'character'] as const;
 
 export const ItemDef = Type.Object(
   {
@@ -243,6 +322,7 @@ export const ItemDef = Type.Object(
         { additionalProperties: false },
       ),
     ),
+    weapon: Type.Optional(Weapon),
     fragment: Type.Optional(
       Type.Object({ unlocks: Id }, { additionalProperties: false, description: 'A found scrap that teaches a recipe.' }),
     ),
@@ -264,6 +344,12 @@ export const ItemDef = Type.Object(
       Type.Boolean({
         description:
           'Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).',
+      }),
+    ),
+    bind: Type.Optional(
+      Type.Union(BINDS.map((k) => Type.Literal(k)), {
+        description:
+          'Who may hold it: none trades, account never trades or sells, character never trades; left out, none (EQUIPMENT 3.6). Only a look, or a legendary find no shop sells and no recipe makes, binds. Read by nothing yet.',
       }),
     ),
   },
@@ -1457,6 +1543,21 @@ export const ParamsBody = Type.Object(
       ...Bounded,
       description: 'How much a full set adds to the effects of its pieces, in percent of their sum, rounded down.',
     },
+    wear_req_level: Type.Array(Type.Integer({ minimum: 1, maximum: 100 }), {
+      minItems: 1,
+      maxItems: 20,
+      description:
+        'The level a worn piece of each tier asks in its `req`, from tier 1; the last entry holds for the tiers above it. Never falls with the tier (PROGRESSION 5.6; CLOTHING 7.4).',
+    }),
+    attr_bonus_max: Type.Array(Type.Integer({ minimum: 0, maximum: 100 }), {
+      minItems: 1,
+      maxItems: 20,
+      description: 'The largest attribute bonus a worn piece of each tier gives, from tier 1. Never falls with the tier (PROGRESSION 5.6).',
+    }),
+    attr_bonus_step: {
+      ...Bounded,
+      description: 'Past the attr_bonus_max table, what each further tier adds to the largest attribute bonus (PROGRESSION 5.6: then +2 a tier).',
+    },
     rarity_bonus_ms: Type.Object(
       { common: Type.Integer(), uncommon: Type.Integer(), rare: Type.Integer(), legendary: Type.Integer() },
       { additionalProperties: false },
@@ -2480,6 +2581,12 @@ export type WornEffectName = (typeof WORN_EFFECTS)[number];
 export type WornSlotName = (typeof WORN_SLOTS)[number];
 export type BodyEffectName = (typeof BODY_EFFECTS)[number];
 export type WearDef = Static<typeof Wear>;
+export type WeaponDef = Static<typeof Weapon>;
+export type WeaponTempo = (typeof WEAPON_TEMPOS)[number];
+export type WornAttrsDef = Static<typeof WornAttrs>;
+export type WearReqDef = Static<typeof WearReq>;
+export type Trait = (typeof TRAITS)[number];
+export type Bind = (typeof BINDS)[number];
 export type ToolKind = (typeof TOOL_KINDS)[number];
 export type StationKind = (typeof STATIONS)[number];
 export type RarityName = (typeof RARITIES)[number];

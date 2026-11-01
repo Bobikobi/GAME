@@ -136,6 +136,26 @@
       "max": 50,
       "step": 5
     },
+    "wear_req_level": [
+      1,
+      6,
+      11,
+      16,
+      21
+    ],
+    "attr_bonus_max": [
+      1,
+      2,
+      3,
+      4,
+      6
+    ],
+    "attr_bonus_step": {
+      "value": 2,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
     "rarity_bonus_ms": {
       "common": 0,
       "uncommon": 150,

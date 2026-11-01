@@ -116,6 +116,12 @@ export interface Params {
   wear_effect_max_pct: number[];
   /** what a full set adds to its pieces' effects, in percent */
   wear_set_bonus_pct: number;
+  /** the level a worn piece's `req` asks, by item tier from tier 1 (the last entry holds above; PROGRESSION 5.6) */
+  wear_req_level: number[];
+  /** the largest bonus a worn piece gives one attribute, by item tier from tier 1 (PROGRESSION 5.6) */
+  attr_bonus_max: number[];
+  /** past the attr_bonus_max table, what each further tier adds */
+  attr_bonus_step: number;
   drift_budget_permille: number;
   /** the health bar's base top, in whole points (stamina adds to it) */
   hp_cap: number;
