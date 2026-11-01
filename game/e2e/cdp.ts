@@ -386,6 +386,11 @@ export class Page {
     await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
   }
 
+  /** One notch of the mouse wheel over the page (negative deltaY is away from the user, the way in). */
+  async wheel(x: number, y: number, deltaY: number): Promise<void> {
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY });
+  }
+
   /** Taps the first visible element matching the selector whose text contains `text`. */
   async tap(selector: string, text = ''): Promise<void> {
     await this.tapWhere(byText(selector, text), `${selector} "${text}"`);

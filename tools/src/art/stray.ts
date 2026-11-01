@@ -6,7 +6,8 @@
  *   pnpm art:stray        lists the strays by worktree and folder with a count; exit 1 when there are any, 0 when none
  *
  * Not strays, by directory name anywhere under a bench: `dist`, `dist-3d` and any name ending in `-dist` (built game output, such
- * as `.scratch/signin-dist`), and any name starting with `e2e` or `shots` (e2e captures and before/after shots). A stray is a
+ * as `.scratch/signin-dist`), any name starting with `e2e` or `shots` (e2e captures and before/after shots), and the captures taken
+ * for a pick or a review: `refs`, a name starting with `ref-`, `stills` or `owner-`, or ending in `-pick`. A stray is a
  * picture the pipeline made that nobody indexed; build output and captures are regenerable by a command and are not art the
  * store should hold.
  *
@@ -27,9 +28,10 @@ const ART_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.glb']);
 export const WORKBENCHES = ['.scratch', 'assets/gen', 'tools/kit-gen/runs'] as const;
 const SKIP = new Set(['node_modules', '.git', 'art-drafts']);
 
-/** A directory of regenerable output: a build (`dist`, `dist-3d`, `*-dist`) or a capture (`e2e*`, `shots*`). */
+/** A directory of regenerable output: a build (`dist`, `dist-3d`, `*-dist`) or a capture (`e2e*`, `shots*`, `refs`, `ref-*`, `stills*`, `owner-*`, `*-pick`). */
 export function regenerable(name: string): boolean {
-  return name === 'dist' || name === 'dist-3d' || name.endsWith('-dist') || name.startsWith('e2e') || name.startsWith('shots');
+  return name === 'dist' || name === 'dist-3d' || name.endsWith('-dist') || name.startsWith('e2e') || name.startsWith('shots')
+    || name === 'refs' || name.startsWith('ref-') || name.startsWith('stills') || name.startsWith('owner-') || name.endsWith('-pick');
 }
 
 export interface Stray {

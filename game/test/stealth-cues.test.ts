@@ -265,7 +265,7 @@ describe('the wolf drawn on a hunt', () => {
     expect(firstStep([0, 0], [4, 0], 1, () => false)).toBeUndefined();
   });
 
-  test('it holds where it saw the player, runs at its pace over open ground, and waits beside them; when the hunt ends it goes back to its round', () => {
+  test('it holds where it saw the player, runs over open ground fast enough to stand beside them by the first bite, and waits there; when the hunt ends it goes back to its round', () => {
     expect(predatorAt(base, wolf, t0)).toEqual([11, 25]);
     expect(headingOf(base, wolf, t0)).toEqual([0, 1]);
     expect(sees(base, wolf, t0, PLAYER)).toBe(true);
@@ -284,14 +284,17 @@ describe('the wolf drawn on a hunt', () => {
       run = drawn.run;
       expect(run).toBeDefined();
       if (tick <= t0 + SEEN.hold) expect(drawn.at).toEqual([11, 25]);
-      if (prev) expect(Math.abs(drawn.at[0] - prev[0]) + Math.abs(drawn.at[1] - prev[1])).toBeLessThanOrEqual(FRAME / wolf.pace + 1e-9);
+      // never faster than the telegraph's dash (NEXT.md 12 c)
+      if (prev) expect(Math.abs(drawn.at[0] - prev[0]) + Math.abs(drawn.at[1] - prev[1])).toBeLessThanOrEqual(FRAME / base.params.hazard.predator.telegraph!.dash_ms + 1e-9);
       addStep(ran, run);
       if (arrived === undefined && drawn.at[0] === 11 && drawn.at[1] === 29) arrived = tick;
       prev = drawn.at;
     }
-    // straight down the meadow, four tiles at its pace once the moment it saw the player is over, and then it waits beside them
+    // straight down the meadow, four tiles once the moment it saw the player is over: at its pace, or faster when that
+    // pace would bring it after the first bite (the threat telegraph's act), and then it waits beside them
     expect(ran).toEqual(['11,26', '11,27', '11,28', '11,29']);
-    expect(Math.abs(arrived! - (t0 + SEEN.hold + 4 * wolf.pace))).toBeLessThanOrEqual(FRAME);
+    const bite = t0 + base.params.hazard.predator.catch_ms;
+    expect(Math.abs(arrived! - Math.min(t0 + SEEN.hold + 4 * wolf.pace, bite))).toBeLessThanOrEqual(FRAME);
     expect(prev).toEqual([11, 29]);
     expect(run?.to).toBeUndefined();
     expect(wolfDrawn(base, wolf, chased.state, end, run, walk).heading).toEqual([0, 1]);
