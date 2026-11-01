@@ -12,6 +12,7 @@ import type {
   ItemDef,
   NodeSizeName,
   Npc,
+  Passage,
   Pocket,
   Profession,
   Quest,
@@ -23,6 +24,7 @@ import type {
   Restore,
   School,
   Search,
+  SeaEventDef as SeaEventBody,
   Shop,
   Treasure,
 } from '@game/schema';
@@ -49,6 +51,9 @@ export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
 export type QuestDef = Meta & Quest;
 export type ExpeditionDef = Meta & Expedition;
+/** A way across water (docs/design/SEA_CROSSING.md): board at a jetty, sail, meet the one event drawn, land. */
+export type PassageDef = Meta & Passage;
+export type SeaEventDef = SeaEventBody;
 export type RestoreDef = Meta & Restore;
 export type CampDef = Meta & Camp;
 /** A race the player picks at the title (DECISIONS.md, 2026-10-22). */
@@ -279,6 +284,7 @@ export interface Bundle {
   npcs: Record<string, NpcDef>;
   quests: Record<string, QuestDef>;
   expeditions: Record<string, ExpeditionDef>;
+  passages: Record<string, PassageDef>;
   restores: Record<string, RestoreDef>;
   camps: Record<string, CampDef>;
   races: Record<string, RaceDef>;

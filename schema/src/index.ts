@@ -793,6 +793,84 @@ export const ExpeditionBody = Type.Object(
   },
 );
 
+/** The closed list of what a player does about a sea event: the quest grammar's own step kinds, read aboard (SEA_CROSSING.md section 3). */
+export const SEA_ACTS = ['find', 'bring', 'tend', 'riddle'] as const;
+
+const SeaAct = Type.Union(
+  [
+    Type.Object({ kind: Type.Literal('find') }, { additionalProperties: false, description: 'Catch it as it passes: one answer while the event is open.' }),
+    Type.Object(
+      { kind: Type.Literal('bring'), item: Id, qty: Int(1, 9) },
+      { additionalProperties: false, description: 'Someone aboard asks for something the player carries: the answer gives it.' },
+    ),
+    Type.Object(
+      { kind: Type.Literal('tend'), times: Int(2, 4, 'Answers on that many segments, one a segment, inside the window.') },
+      { additionalProperties: false, description: 'Hold on through it: bail, trim, keep the line.' },
+    ),
+    Type.Object(
+      {
+        kind: Type.Literal('riddle'),
+        clue: Text,
+        choices: Type.Array(Name, { minItems: 2, maxItems: 3, description: 'The ways the player can answer, as buttons.' }),
+        answer: Int(0, 2, 'The place in `choices` of the right one. A wrong answer is a miss.'),
+      },
+      { additionalProperties: false, description: 'Work it out from the clue: steer by the sound, read the water.' },
+    ),
+  ],
+  { description: 'What the player does about the event. A closed list: the step kinds of a quest, so the grammar does not grow for the sea.' },
+);
+
+const SeaEvent = Type.Object(
+  {
+    id: Id,
+    title: Name,
+    type: QuestType,
+    weight: Int(1, 1000, 'Its share of the draw: weights are whole numbers and need not sum to anything.'),
+    sign: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'What the player sees or hears one segment before it strikes (warn, then strike).' }),
+    window: Int(1, 4, 'How many segments the event stays open to an answer.'),
+    act: SeaAct,
+    miss: Type.Union([Type.Literal('on'), Type.Literal('back')], {
+      description: 'What an unanswered or wrongly answered event does: "on", the crossing goes on; "back", the boat turns back to the jetty it left. Never overboard, never a loss from the bag.',
+    }),
+    met: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes when it is answered.' }),
+    missed: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes when it is missed.' }),
+    reward: Type.Object(
+      {
+        gold_mg: Type.Optional(Int(1, 10_000_000)),
+        items: Type.Optional(Type.Array(RewardStack, { maxItems: 3 })),
+      },
+      { additionalProperties: false, description: 'What answering it pays, checked against the crossing\'s time like any pay.' },
+    ),
+  },
+  { additionalProperties: false },
+);
+
+export const PassageBody = Type.Object(
+  {
+    from: { ...Id, description: 'The exit of the map plan the boat leaves from: the jetty, the last tile a foot stands on.' },
+    to: Type.Optional({
+      ...Id,
+      description: 'The exit of the map plan the boat lands at. Left out, the boat crosses and turns back to `from`: the far bank is scenery until its land is built (G55).',
+    }),
+    hours: Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'When a boat leaves: from (inclusive) to (exclusive), game hours; a later from than to runs over midnight.' }),
+    fare: Type.Optional({ ...Stack, description: 'What boarding takes from the bag. Its worth comes from the kernel, never a price written here.' }),
+    segments: Int(4, 16, 'The crossing\'s length: the boat moves one segment per player act, never by time alone.'),
+    segment_ms: Int(3000, 20000, 'How long one segment of sailing takes: the player is busy for it.'),
+    board: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes as the boat pulls away.' }),
+    land: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes at the end of the crossing.' }),
+    back: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The narrator\'s boxes when the boat turns back and puts in at the jetty it left.' }),
+    events: Type.Array(SeaEvent, {
+      minItems: 1,
+      maxItems: 8,
+      description: 'The table one keyed draw picks from at boarding, one event a crossing (SEA_CROSSING.md section 3).',
+    }),
+  },
+  {
+    additionalProperties: false,
+    description: 'A way across water: board at a jetty, sail segment by segment, meet the one event drawn for this crossing, land (SEA_CROSSING.md).',
+  },
+);
+
 export const RestoreBody = Type.Object(
   {
     place: Place,
@@ -2387,6 +2465,7 @@ export const TemplateFile = record('template', 'template', TemplateBody);
 export const NpcFile = record('npc', 'npc', NpcBody);
 export const QuestFile = record('quest', 'quest', QuestBody);
 export const ExpeditionFile = record('expedition', 'expedition', ExpeditionBody);
+export const PassageFile = record('passage', 'passage', PassageBody);
 export const RestoreFile = record('restore', 'restore', RestoreBody);
 export const CampFile = record('camp', 'camp', CampBody);
 export const RaceFile = record('race', 'race', RaceBody);
@@ -2403,7 +2482,7 @@ export const ChunkFile = record('chunk', 'chunk', ChunkBody);
 export const PocketFile = record('pocket', 'pocket', PocketBody);
 export const SchoolFile = record('school', 'school', SchoolBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
 export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
 
 export const ExtensionFile = Type.Union([
@@ -2414,6 +2493,7 @@ export const ExtensionFile = Type.Union([
   NpcFile,
   QuestFile,
   ExpeditionFile,
+  PassageFile,
   RestoreFile,
   CampFile,
   RaceFile,
@@ -2443,6 +2523,7 @@ export type TemplateFile = Static<typeof TemplateFile>;
 export type NpcFile = Static<typeof NpcFile>;
 export type QuestFile = Static<typeof QuestFile>;
 export type ExpeditionFile = Static<typeof ExpeditionFile>;
+export type PassageFile = Static<typeof PassageFile>;
 export type QuestStep = Static<typeof QuestStep>;
 export type QuestType = (typeof QUEST_TYPES)[number];
 export type RiddleAnswer = Static<typeof RiddleAnswer>;
@@ -2475,6 +2556,9 @@ export type WhenDef = Static<typeof When>;
 export type RemarkDef = Static<typeof Remark>;
 export type Quest = Static<typeof QuestBody>;
 export type Expedition = Static<typeof ExpeditionBody>;
+export type Passage = Static<typeof PassageBody>;
+export type SeaEventDef = Static<typeof SeaEvent>;
+export type SeaActDef = Static<typeof SeaAct>;
 export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;
 export type Race = Static<typeof RaceBody>;
@@ -2514,6 +2598,7 @@ export const SCHEMAS = {
   npc: NpcFile,
   quest: QuestFile,
   expedition: ExpeditionFile,
+  passage: PassageFile,
   restore: RestoreFile,
   camp: CampFile,
   race: RaceFile,
