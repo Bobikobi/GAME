@@ -71,7 +71,8 @@ export function checkFight(b: Bundle, origin: Record<string, string>): Issue[] {
     // the cost gate (HUNTING 9, G85) as written: what it leaves never passes pay_per_s_mg for each second its slowest
     // pattern needs. A warning, not an error: the hunt ladder (balance/hunt-ladder.ts payCap) shows the param in mg is
     // hundreds of times too small to cap payFor for any kind, the hare included, so the unit is the owner's call.
-    if (k.hunt && f.patterns.every((p) => p.every((n) => names.has(n)))) {
+    // Silent while combat.enabled is 0: the unit of pay_per_s_mg waits on the owner (issue #600), so the shipped content stays quiet.
+    if (c.enabled && k.hunt && f.patterns.every((p) => p.every((n) => names.has(n)))) {
       const slowest = Math.max(...f.patterns.map((p) => feltMs(b.params, f, p)));
       if (Number.isFinite(slowest)) {
         const capMg = mulDiv(c.pay_per_s_mg, slowest, 1000);

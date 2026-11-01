@@ -25,7 +25,7 @@ function rows(edit: (f: Fight, b: Bundle) => void): string[] {
 
 describe('the fight rows', () => {
   it('pass for the core, where the wolf is ready and not switched on', () => {
-    expect(checkFight(core, {}).filter((i) => i.level === 'error')).toEqual([]);
+    expect(checkFight(core, {})).toEqual([]);
     expect(core.params.combat.enabled).toBe(0);
   });
 
@@ -75,11 +75,14 @@ describe('the fight rows', () => {
     expect(checkFight(c, {}).map((i) => i.message).join('\n')).toMatch(/carries hunt fields/);
   });
 
-  it('warn, with the two numbers, when drops pass pay_per_s_mg times the pattern seconds', () => {
+  it('stay silent while combat is off, and warn with the two numbers when it is on and drops pass pay_per_s_mg times the pattern seconds', () => {
     const wolf = core.map.creatures!.kinds['core/wolf']!;
     expect(dropsPay(core, 'core/wolf')).toBeGreaterThan(0);
     expect(feltMs(core.params, wolf.fight!, wolf.fight!.patterns[0]!)).toBeGreaterThan(0);
-    const w = checkFight(core, {}).filter((i) => i.level === 'warning');
+    expect(checkFight(core, {})).toEqual([]);
+    const on = structuredClone(core);
+    on.params.combat.enabled = 1;
+    const w = checkFight(on, {}).filter((i) => i.level === 'warning');
     expect(w.map((i) => i.message).join('\n')).toMatch(/cap of \d+ mg/);
   });
 
