@@ -255,7 +255,7 @@ Algorithm:
 
 **G64. Danger rises with distance from town, area by area.**
 - Each area carries `d` in 0..9: "Every area of the map carries a danger level `d`, from 0 in the town upward, set in the content and checked by the checker against the area's distance from town and the levels its nodes ask" (SETTLEMENT 70; scale at dec 590-598).
-- No area carries one yet (GRUNT 1142, CR-38).
+- Every area of the valley carries one since issue 578, set from the difficulty reckoning (`pnpm map:difficulty`): the town square and the night ruins' doorstep at 0, the other areas at 1. `pnpm check` runs the order check below and the border cues as warnings (`tools/src/danger.ts`).
 - A region only groups areas. Where d is stored is CR-38's build. This draft assumes an optional `danger` on `area` slots (G67), with ground in no area slot at level 1, wild (kernel-review 237).
 - Level 0 holds the town, the opening's ground and the night ruins' entrance (dec 1141; SETTLEMENT 66). On level 0:
   - it is safe at every hour (G30, GAME_RULES.md:301);
