@@ -129,6 +129,14 @@
       "cross_cutting": true
     },
     {
+      "id": "hunt-and-materials",
+      "title": "The hunt's foundations (the dress verb, drops and grades on a kind, hunt as a value source), the materials atlas, the three lands' animals, the first animal loops",
+      "plan": ["outside the original plan (asked 30.10)", "docs/design/HUNTING.md (#420) sections 5-10", "docs/design/PROGRESSION.md (#333) section 5", "DECISIONS 2026-10-30 the hunt foundations", "GAME_RULES G35, G45"],
+      "branches": ["feat/hunt-foundations", "docs/hunt-materials", "art/hare-crow-loops"],
+      "owner": null,
+      "cross_cutting": true
+    },
+    {
       "id": "gear-and-stone",
       "title": "The gear wave: clothing, weapons and quarrying at tiers 1 to 3, the jackpot's experience and the docs first, then the equipment foundations, the stone chain and the clothing chain",
       "plan": ["DECISIONS 2026-11-01 the gear wave", "docs/design/GAP_RS_GEAR.md section 11 (the order)", "docs/design/BUILD_SET.md (the 67 rows, and rows 68 to 81 past the wave, section 7.1)", "docs/design/WEAPONS.md section 17 (questions 7 to 12, the 01.11 revision)", "DECISIONS 2026-10-25 balance prover finding 3", "GAME_RULES G35, G40, G41, G44, G45 and G102", "docs/team/NEXT.md section gear-and-stone"],
