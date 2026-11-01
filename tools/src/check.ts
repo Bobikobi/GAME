@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { type Bundle, DRESS_PART_STEPS, computeValues, huntGoods, idiv, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
 import { GOODS, RARITIES, type ParamsBody } from '@game/schema';
+import { checkFight } from './fight';
 import { checkWild } from './wild';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
@@ -60,6 +61,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkWear(b));
     issues.push(...checkHunt(b, assembled.origin));
     issues.push(...checkWild(b, assembled.origin));
+    issues.push(...checkFight(b, assembled.origin));
     issues.push(...checkDrift(b));
     issues.push(...checkRetiredWords());
     issues.push(...checkKits(assembled));
