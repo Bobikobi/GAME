@@ -63,8 +63,8 @@ const split = (a: number, b: number): string[] => Array.from({ length: 5 }, () =
 const hop = (b: Bundle, from: Tile, to: Tile) => step(b, standing(b, from), { t: 'move', at: to }, b.params.walk_step_ms * 2, { validateTravel: true });
 
 describe('the kernel version', () => {
-  test('rose to 0.21.0 with the height rule (0.21.1 since the gaits, 0.22.0 since the dress verb, 0.23.0 since the jackpot pays no extra experience)', () => {
-    expect(KERNEL_VERSION).toBe('0.24.0');
+  test('rose to 0.21.0 with the height rule (0.21.1 since the gaits, 0.22.0 since the dress verb, 0.23.0 since the jackpot pays no extra experience, 0.24.0 since entering a place pays, 0.25.0 since the sea crossing)', () => {
+    expect(KERNEL_VERSION).toBe('0.25.0');
   });
 });
 

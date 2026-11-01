@@ -7,6 +7,7 @@
 import type { Bundle } from './bundle';
 import { appearSlots } from './reactions';
 import { relocationOf } from './relocate';
+import { placeName } from './world';
 import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, type State } from './state';
 
 /**
@@ -52,6 +53,9 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  // a place that left the map is no place any more: it is neither seen nor counted (G63, G66)
+  if (p.seen) p.seen = p.seen.filter((id) => placeName(bundle.map, id) !== undefined);
+  if (p.explored) p.explored = p.explored.filter((id) => placeName(bundle.map, id) !== undefined);
   // what a searchable holds goes with it, and a row whose item left the content is dropped
   state.searched = Object.fromEntries(
     Object.entries(keepKeys(state.searched ?? {}, bundle.searchables)).map(([id, held]) => [id, { ...held, rows: held.rows.filter((item) => item in bundle.items) }]),

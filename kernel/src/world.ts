@@ -75,6 +75,29 @@ export function worldAt(map: MapDef, x: number, y: number): string {
   return regionAt(map, x, y)?.world ?? map.world ?? HOME_WORLD;
 }
 
+/**
+ * The places tile (x, y) lies in (G63, G66): its map region, under the id `regionOf` gives it, then every
+ * area slot with a label that holds it. A place is found by id, never by tile; ground in no region and in
+ * no named area is no place.
+ */
+export function placesAt(map: MapDef, x: number, y: number): string[] {
+  const region = regionAt(map, x, y);
+  const out = region === undefined ? [] : [`${map.id}/${region.id}`];
+  for (const slot of map.slots) if (slot.kind === 'area' && slot.label !== undefined && inRect(x, y, slot)) out.push(slot.id);
+  return out;
+}
+
+/** The name a place shows on its first entry: an area's label, a region's title, else the region's id made readable. */
+export function placeName(map: MapDef, id: string): string | undefined {
+  const slot = findSlot(map, id);
+  if (slot) return slot.kind === 'area' ? slot.label : undefined;
+  const region = map.regions?.find((r) => `${map.id}/${r.id}` === id);
+  if (!region) return undefined;
+  if (region.title !== undefined) return region.title;
+  const words = region.id.replace(/[-_]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 /** Tile tag of the ground at (x, y). */
 export function tagAt(map: MapDef, x: number, y: number): string | undefined {
   const row = map.ground[y];
