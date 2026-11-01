@@ -4141,9 +4141,22 @@ Result: recorded as CR-116, nothing built for it. The working reading treats his
 Why: DECISIONS 2026-10-22 already opens a region by its quest and never by level; this adds that the gate must not show as a lock.
 **Retry when:** hunting stands (then the boat may take his example), or the owner corrects the reading. Model: claude-opus-5-5. Issue #575.
 
-## 2026-11-01 ✅ The ground is warm: the owner picks the video's yellow-olive for the whole game (#541)
+## 2026-11-01 ⏸ The ground is warm: the owner picks the video's yellow-olive for the whole game (#541)
 
 Frame: `docs/design/frames/ground-warm-pick-0111.png`, the warm panel of round 4 (commit bcfb7b4e2 on `trial/grass-clumps`); it is a draw-time filter, and its beds were refused. The direction picked is the ground's colour only.
 Result: page 0111f, 1.11 23:32. Ground: warm over green (hue 56, saturation 0.86, luminance 155 against the reference's 56, 0.84, 157). Beds: no. His note: "יש פסים קטנים בהירים לא ברורים, ויש עדיין צורה עגולה לשיחים במקום שיהיו שיבולים קטנים" (small pale stripes that make no sense; a round shape where there should be small stalks).
 Why: his 14 s video is the bar for ground and grass (2026-10-30), and "Rich wave 3" left the yellower field open as a palette change.
 **Retry when:** round 5 shows stalks on real warm ramps. This compass stands for the polish after it, and the filter does not ship. Model: claude-opus-5-5. Issue #541.
+
+## 2026-11-01 ✅ The warm ground is a summer morning's light: it changes with the place, the hour and the season
+
+The owner, 1.11 23:41, on the entry "The ground is warm" (now ⏸): the warmth is the lighting and the hour, "in effect a summer morning"; with a change of place, hour or season it changes too, as in his references. So `docs/design/frames/ground-warm-pick-0111.png` is the compass for a summer morning, and "for the whole game" and "the filter does not ship" no longer hold.
+Built from this: the art draws the stalks; the hue is a data layer on the ground, keyed by hour beside `params.light.keys`, with room for a region and a season key. Round 5 of #541 builds the hour key and shows one spot at morning, noon and evening beside the references. How close a layer gets to the reference is not measured yet.
+Why: his word. The layer over the art is the builder's plan, a hypothesis until the stills.
+**Retry when:** the stills show a layer cannot reach the reference (then ramps per hour or per season); NATURE's seasons or the regions' palettes are built, then they fill their keys. Model: claude-opus-5-5. Issue #541.
+## 2026-11-01 ✅ Image tools, best to worst: Codex, Gemini, Qwen; the others need the owner's word
+
+The owner, 1.11 23:35, after looking through all 2,735 drafts by tool: this is the order, from the best down. SD 1.5, SDXL, FLUX and the local model are poor, most of their drafts do not pass; no time goes on them, and a specific need is asked first.
+Result: the trees' route C (#544) moved from SD 1.5 to Qwen on Kaggle. On this date Codex is out of credits and Gemini's browser rig waits on the Google check (#533).
+Why: his judgement of the pictures, by eye. No measure was taken.
+**Retry when:** the owner asks for one of the others, or a new model beats Qwen beside the references. Model: claude-opus-5-5. Issue #544.
