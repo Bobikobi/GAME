@@ -172,6 +172,18 @@
       "max": 32,
       "step": 1
     },
+    "pay_gap_ms": {
+      "value": 90000,
+      "min": 60000,
+      "max": 120000,
+      "step": 5000
+    },
+    "pay_sight_tiles": {
+      "value": 5,
+      "min": 3,
+      "max": 8,
+      "step": 1
+    },
     "hp_low_pct": {
       "value": 25,
       "min": 0,

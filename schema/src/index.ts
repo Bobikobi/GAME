@@ -1475,6 +1475,15 @@ export const ParamsBody = Type.Object(
       ...Bounded,
       description: 'The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32.',
     }),
+    pay_gap_ms: Type.Optional({
+      ...Bounded,
+      description:
+        'Pillar 1\'s ceiling: the longest a walk may go without a pay, in game milliseconds. The pay-gap check (G62, docs/design/OPEN_WORLD.md 1.5) allows floor(pay_gap_ms / (2 x walk_step_ms)) + pay_sight_tiles steps from any walkable tile to the nearest pay. Defaults to 90000.',
+    }),
+    pay_sight_tiles: Type.Optional({
+      ...Bounded,
+      description: 'How many tiles away a pay is already on screen, added to the pay-gap check\'s allowance (G62). Defaults to 5.',
+    }),
     hp_low_pct: {
       ...Bounded,
       description: 'Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32).',
