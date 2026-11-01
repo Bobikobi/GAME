@@ -30,9 +30,6 @@ export const LANDING_PER_DROP = 0.25;
 export const RAIN_WASH = { rgb: 0x275a99, alpha: 0.15, dim: 0.3 } as const;
 /** A fog day keeps the banks across the view all day (NATURE 4, the Fog row), at least this share of their dawn weight. */
 export const FOG_DAY_FLOOR = 0.35;
-/** The heaviest of the four skies sky.ts bakes: a rain day is full cloud, a fog day at least a few. */
-export const RAIN_CLOUD = 3;
-export const FOG_CLOUD = 2;
 
 /** What a drop leaves where it lands (Rain B): stone a ring and a crown, water a flat ripple, grass a drop, sand a dimple. */
 export type Landing = 'ring' | 'ripple' | 'drop' | 'dimple';
@@ -52,8 +49,8 @@ export const LANDING: Readonly<Partial<Record<string, Landing>>> = {
 };
 
 export interface SkyLook {
-  /** the least cloud bucket the day shows; the day's own clouds stand when they are heavier */
-  cloud: number;
+  /** the sun is behind the weather: no shafts, and the day's cloud patches give way to one even light (21.10: 112 to 86 over the frame, no patches) */
+  overcast: boolean;
   /** the rain's share of the decided look, 0 on a dry day */
   rain: number;
   /** the share of their dawn weight the banks keep all day, and how much of their weight the card gives them */
@@ -65,9 +62,9 @@ export interface SkyLook {
 
 /** The look of a day's sky over a region. No sky (an old server) and a clear day are the valley as it was. */
 export function skyLook(sky: WeatherName | undefined, card: RegionCardDef | undefined): SkyLook {
-  if (sky === 'rain') return { cloud: RAIN_CLOUD, rain: (card?.look.rain ?? 1000) / 1000, fogFloor: 0, fogScale: 1, wash: true };
-  if (sky === 'fog') return { cloud: FOG_CLOUD, rain: 0, fogFloor: FOG_DAY_FLOOR, fogScale: (card?.look.fog ?? 1000) / 1000, wash: false };
-  return { cloud: 0, rain: 0, fogFloor: 0, fogScale: 1, wash: false };
+  if (sky === 'rain') return { overcast: true, rain: (card?.look.rain ?? 1000) / 1000, fogFloor: 0, fogScale: 1, wash: true };
+  if (sky === 'fog') return { overcast: true, rain: 0, fogFloor: FOG_DAY_FLOOR, fogScale: (card?.look.fog ?? 1000) / 1000, wash: false };
+  return { overcast: false, rain: 0, fogFloor: 0, fogScale: 1, wash: false };
 }
 
 /** The banks' strength for the hour's fog curve under the day's look, 0 to 1. */
@@ -87,12 +84,15 @@ export function landingsPerSecond(alive: number, tiles: number, viewTiles: numbe
 }
 
 /**
- * The colour a multiply layer draws the rain's light with: white dimmed by `dim` after `rgb` is laid over it at
- * `alpha`. Multiplied over the scene it is the day minus 30%, leaning cool.
+ * The colour a multiply layer draws the rain's light with: `rgb` laid over white at `alpha` for the lean, then
+ * scaled so its luminance is the day less `dim`. Multiplied over the scene it is the day minus 30%, leaning cool;
+ * the tint alone must not dim it further (measured: 65% of a clear noon before the scaling, 70% after).
  */
 export function washRgb(w: { rgb: number; alpha: number; dim: number } = RAIN_WASH): number {
-  const ch = (shift: number) => Math.round((1 - w.dim) * (255 * (1 - w.alpha) + ((w.rgb >> shift) & 0xff) * w.alpha));
-  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+  const ch = (shift: number) => 255 * (1 - w.alpha) + ((w.rgb >> shift) & 0xff) * w.alpha;
+  const scale = (255 * (1 - w.dim)) / (0.299 * ch(16) + 0.587 * ch(8) + 0.114 * ch(0));
+  const out = (shift: number) => Math.round(ch(shift) * scale);
+  return (out(16) << 16) | (out(8) << 8) | out(0);
 }
 
 export interface MarkPixel {

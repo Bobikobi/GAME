@@ -2563,7 +2563,6 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.motion) this.flyBirds(time);
   }
 
-  /** The emit zones follow the camera, and an emitter whose patch left the screen rests. */
   /**
    * The rain as the owner picked it on 21.10 (DECISIONS "Rain: the drops fall and land"): streaks over the view
    * and each drop's mark on the ground it lands on, behind `RICH.motion`; the day's cool, dimmed light behind
@@ -2619,17 +2618,19 @@ export class WorldScene extends Phaser.Scene {
     if (!this.rainDrops) return;
     const view = this.cameras.main.worldView;
     const alive = dropsAlive(view.width * view.height, Math.max(0, this.rainNow));
-    this.setEmitting(this.rainDrops, alive > 0);
+    // the rate first: start() counts down from it, so a rain day does not begin a second late
     if (alive > 0) this.rainDrops.frequency = RAIN_LIFE / alive;
+    this.setEmitting(this.rainDrops, alive > 0);
     const viewTiles = (view.width / T) * (view.height / T);
     for (const m of this.rainMarks) {
       m.zone.refresh(view);
       const perSecond = landingsPerSecond(alive, m.zone.count, viewTiles);
-      this.setEmitting(m.emitter, perSecond > 0);
       if (perSecond > 0) m.emitter.frequency = 1000 / perSecond;
+      this.setEmitting(m.emitter, perSecond > 0);
     }
   }
 
+  /** The emit zones follow the camera, and an emitter whose patch left the screen rests. */
   private refreshZones(): void {
     const view = this.cameras.main.worldView;
     this.viewRect.setTo(view.x - 8, view.y - 8, view.width + 16, view.height + 16);
@@ -3049,17 +3050,17 @@ export class WorldScene extends Phaser.Scene {
     const fog = fogStrength(minute);
     // the day's own sky: clear on some days, one cloud on others, heavy on a few
     const day = Math.floor(s.tick / this.b.params.day_length_ms);
-    // and the region's weather over it (issue 581): rain is full cloud, a fog day at least a few
+    // and the region's weather over it (issue 581): under rain or fog the whole sky is cloud, drawn as one even light
     const card = cardAt(this.b, s.pos[0], s.pos[1]);
     const look = skyLook(this.skyForce ?? s.sky(), card);
-    const k = this.cloudForce ?? Math.max(look.cloud, cloudBucket(cloudCover(day)));
+    const k = this.cloudForce ?? (look.overcast ? CLOUD_BUCKETS.length - 1 : cloudBucket(cloudCover(day)));
     if (k !== this.cloudDay) {
       this.cloudDay = k;
       for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
     }
     // the night kept readable (the owner, 30.10): the cloud shade is gone by 20:00, so it never stacks on the night
     const clear = k === 0 ? 0 : cloudAt(this.night);
-    for (const c of this.clouds) c.setAlpha(clear);
+    for (const c of this.clouds) c.setAlpha(look.overcast ? 0 : clear);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
     // and a bank cannot stack on it past the fog's cap at night (light.read)
     const fogCap = (this.b.params.light?.read?.fog ?? READ.fog) / 100;

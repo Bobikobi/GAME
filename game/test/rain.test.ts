@@ -31,18 +31,19 @@ const card = (rain: number, fog: number): RegionCardDef => ({
 describe('the look of a day\'s sky', () => {
   test('a clear day and no sky at all leave the valley as it was', () => {
     for (const look of [skyLook('clear', card(1200, 1400)), skyLook(undefined, undefined)]) {
-      expect(look).toEqual({ cloud: 0, rain: 0, fogFloor: 0, fogScale: 1, wash: false });
+      expect(look).toEqual({ overcast: false, rain: 0, fogFloor: 0, fogScale: 1, wash: false });
       for (const fog of [0, 0.3, 1]) expect(bankFog(fog, look)).toBe(fog);
     }
   });
 
-  test('rain is full cloud and the cool light, at the card\'s share of the decided drops', () => {
-    expect(skyLook('rain', card(1200, 1000))).toEqual({ cloud: 3, rain: 1.2, fogFloor: 0, fogScale: 1, wash: true });
+  test('rain is the whole sky\'s cloud and the cool light, at the card\'s share of the decided drops', () => {
+    expect(skyLook('rain', card(1200, 1000))).toEqual({ overcast: true, rain: 1.2, fogFloor: 0, fogScale: 1, wash: true });
     expect(skyLook('rain', undefined).rain).toBe(1);
   });
 
   test('a fog day keeps the banks all day, at the card\'s weight, and draws nothing new', () => {
     const look = skyLook('fog', card(1000, 1300));
+    expect(look.overcast).toBe(true);
     expect(look.wash).toBe(false);
     expect(look.rain).toBe(0);
     expect(bankFog(0, look)).toBeCloseTo(FOG_DAY_FLOOR * 1.3);
@@ -87,8 +88,9 @@ describe('the rain of 21.10', () => {
   test('the rain\'s light is the day minus 30%, leaning cool', () => {
     const rgb = washRgb();
     const r = rgb >> 16;
+    const g = (rgb >> 8) & 0xff;
     const b = rgb & 0xff;
     expect(b).toBeGreaterThan(r);
-    expect(Math.max(r, (rgb >> 8) & 0xff, b)).toBeLessThanOrEqual(Math.round(0.7 * 255));
+    expect((0.299 * r + 0.587 * g + 0.114 * b) / 255).toBeCloseTo(0.7, 2);
   });
 });
