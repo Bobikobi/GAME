@@ -4123,3 +4123,10 @@ The owner, 1.11 23:20, on the boat's gate: no quest is locked in plain sight beh
 Result: recorded as CR-116, nothing built for it. The working reading treats his example as an allowed condition; he has been asked to confirm it. #627's gate is the opening's town beat, checked by the kernel with no lock on show, because hunting is held by the 1.11 focus.
 Why: DECISIONS 2026-10-22 already opens a region by its quest and never by level; this adds that the gate must not show as a lock.
 **Retry when:** hunting stands (then the boat may take his example), or the owner corrects the reading. Model: claude-opus-5-5. Issue #575.
+
+## 2026-11-01 ✅ Image tools, best to worst: Codex, Gemini, Qwen; the others need the owner's word
+
+The owner, 1.11 23:35, after looking through all 2,735 drafts by tool: this is the order, from the best down. SD 1.5, SDXL, FLUX and the local model are poor, most of their drafts do not pass; no time goes on them, and a specific need is asked first.
+Result: the trees' route C (#544) moved from SD 1.5 to Qwen on Kaggle. On this date Codex is out of credits and Gemini's browser rig waits on the Google check (#533).
+Why: his judgement of the pictures, by eye. No measure was taken.
+**Retry when:** the owner asks for one of the others, or a new model beats Qwen beside the references. Model: claude-opus-5-5. Issue #544.
