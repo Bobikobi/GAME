@@ -6,7 +6,7 @@
  *
  * The runs below are played through the real API, over HTTP, one request at a time (see
  * `support/phone.ts`): a start, the start's own task, the keystone, the bridge, a felled oak, the
- * trader's stall for one payment and one sale, and one careless strike whose one log is the seed's.
+ * trader's stall for one payment and one sale, and one careless pull at the reeds whose one reed is the seed's.
  * Nothing is placed by hand and no state is written directly, so the log these tests replay is a log
  * the server itself accepted.
  */
@@ -137,7 +137,7 @@ describe('the ledger and the replay (NEXT 18 f)', () => {
     expect(replayed.join(' ')).toMatch(/does not (land on the stored state|play again)/);
   });
 
-  test("the luck is the secret seed's: a careless strike falls on the seed's own draw", async () => {
+  test("the luck is the secret seed's: a careless pull falls on the seed's own draw", async () => {
     const run = await scriptedRun(STARTS[0]);
     // the kernel's rule, read here: a careless gather pays nothing by itself, and one unit falls when
     // drawBasisPoints(seed, node, draws) stands under the miss-keeps line

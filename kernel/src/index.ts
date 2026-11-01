@@ -14,5 +14,6 @@ export * from './state';
 export * from './step';
 export * from './story';
 export * from './values';
+export * from './work';
 export * from './world';
 export * from './wild/den';

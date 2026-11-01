@@ -47,6 +47,25 @@ describe('dead props', () => {
     expect(checkDeadProps(b, {})).toEqual([]);
   });
 
+  it('a plan region whose cover wears a node\'s look is named (QUARRYING 12)', () => {
+    const b = structuredClone(base);
+    const region = b.map.plan!.regions![0]!;
+    region.cover = { ...region.cover, 'core/base-kit:props/rock_stones': 10 };
+    const issues = checkDeadProps(b, {});
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.where).toBe('map.plan.regions.0.cover');
+    expect(issues[0]!.message).toContain('core/base-kit:props/rock_stones');
+    expect(issues[0]!.message).toContain('"core/river-stones"');
+    expect(issues[0]!.message).toContain(region.id);
+  });
+
+  it('a plan region whose cover is scenery passes', () => {
+    const b = structuredClone(base);
+    const region = b.map.plan!.regions![0]!;
+    region.cover = { ...region.cover, 'core/base-kit:props/pebbles': 10 };
+    expect(checkDeadProps(b, {})).toEqual([]);
+  });
+
   it('a scatter slot with no node is named', () => {
     const b = structuredClone(base);
     const slot = b.map.slots.find((s) => s.id === 'core/lone-oak-1')!;

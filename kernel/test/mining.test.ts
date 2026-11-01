@@ -111,3 +111,70 @@ describe('mining', () => {
     expect(mine(first.state, first.state.player.busyUntil)).toEqual({ ok: false, error: 'It has not grown back yet.' });
   });
 });
+
+describe('the tie rule: a lasting tool before a worn one (QUARRYING 6)', () => {
+  test('a human with the work hammer and a hammerstone mines the river stones and wears nothing', () => {
+    const s = race(b, 'core/human');
+    expect(s.player.bag['core/work-hammer']).toBe(1);
+    s.player.bag['core/hammerstone'] = 1;
+    const r = mine(s);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.state.player.wear['core/hammerstone']).toBeUndefined();
+    expect(r.state.player.bag['core/hammerstone']).toBe(1);
+  });
+
+  test('a skeleton with the rust pick and a knapped pick, at a node that requires a pick, uses the rust pick', () => {
+    const picky = structuredClone(b);
+    picky.resources['core/river-stones']!.tool = 'pick';
+    const s = race(picky, 'core/skeleton');
+    expect(s.player.bag['core/rust-pick']).toBe(1);
+    s.player.bag['core/knapped-pick'] = 1;
+    const r = step(picky, s, { t: 'gather', node: stones, grade: 3, at: beside(picky, s, stones) }, 1000);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.state.player.wear['core/knapped-pick']).toBeUndefined();
+  });
+
+  test('a higher tier still wins over a lasting tool', () => {
+    const better = structuredClone(b);
+    better.items['test/pick-2'] = { ...better.items['core/knapped-pick']!, id: 'test/pick-2', tier: 2, tool: { kind: 'pick', tier: 2, uses: 10 } };
+    const s = race(better, 'core/skeleton');
+    s.player.bag['test/pick-2'] = 1;
+    const r = step(better, s, { t: 'gather', node: stones, grade: 3, at: beside(better, s, stones) }, 1000);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.state.player.wear['test/pick-2']).toBe(1);
+  });
+});
+
+describe('the hammerstone and the knapped pick (QUARRYING 6)', () => {
+  /** The character at level 1, 2 or 3, raised by cooking so the digging speed is untouched, and wearing nothing that speeds a gather. */
+  function atLevel(s: State, level: 1 | 2 | 3): State {
+    const t = structuredClone(s);
+    t.player.worn = {};
+    const levels = b.professions['core/cooking']!.xp_levels;
+    if (level > 1) t.player.xp['core/cooking'] = levels[level - 2]! * 1000;
+    return t;
+  }
+
+  for (const tool of ['core/hammerstone', 'core/knapped-pick']) {
+    test(`${tool} gives nothing at character level 1, +100 at level 2 and +150 from level 3, and wears`, () => {
+      const bare = emptyHanded(race(b, 'core/elf'));
+      const armed = structuredClone(bare);
+      armed.player.bag[tool] = 1;
+      // 2500 ms at 1000, 1100 and 1150 permille: the power cap holds the bonus at 1000, then 1100, then 1200
+      const busy = ([1, 2, 3] as const).map((level) => busyMs(mine(atLevel(armed, level))));
+      expect(busy).toEqual([2500, 2273, 2174]);
+      const r = mine(armed);
+      if (!r.ok) throw new Error(r.error);
+      expect(r.state.player.wear[tool]).toBe(1);
+    });
+  }
+
+  test('both are known from the start and made at the work stone', () => {
+    const s = race(b, 'core/elf');
+    expect(s.player.recipes).toContain('core/hammerstone');
+    expect(s.player.recipes).toContain('core/knapped-pick');
+    expect(b.recipes['core/hammerstone']!.station).toBe('workshop');
+    expect(b.recipes['core/knapped-pick']!.station).toBe('workshop');
+    expect(b.stations.workshop).toBe('core/handcraft');
+  });
+});

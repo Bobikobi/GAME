@@ -240,9 +240,9 @@ export type Start = (typeof STARTS)[number];
 
 /** What one played run leaves behind besides its books. */
 export interface PlayedRun {
-  /** the oak the careless strike fell on: its draw is the one number the seed decides alone */
+  /** the reeds the careless pull fell on: its draw is the one number the seed decides alone */
   careless: string;
-  /** the logs that strike paid, one or none */
+  /** the reeds that pull paid, one or none */
   drawn: number;
 }
 
@@ -262,9 +262,10 @@ function required<T>(value: T | undefined, message: string): T {
  * reward, one felled oak, and at the stall one payment and one sale. Every request is a phone's, in a
  * phone's order, so the log it leaves is a log the server accepted.
  *
- * The last action is one careless strike at a second oak: grade 0 pays nothing by itself, and the draw
- * under it decides whether a log falls. It comes last so that the luck shows in the books without
- * changing what the rest of the run costs.
+ * The last action is one careless pull at the reeds: grade 0 pays nothing by itself, and the draw
+ * under it decides whether a reed comes home. It comes last so that the luck shows in the books without
+ * changing what the rest of the run costs. The reeds play a minigame; an oak is felled by itself, which
+ * reads every grade as 3 and never misses (QUARRYING 10).
  */
 export async function playOpening(wire: Player, start: Start): Promise<PlayedRun> {
   const { bundle } = wire;
@@ -294,8 +295,8 @@ export async function playOpening(wire: Player, start: Start): Promise<PlayedRun
   required(salePrice(bundle, wire.state, 'core/log', 1), 'The trader does not buy a log.');
   await wire.act({ t: 'sell', npc: 'core/trader', item: 'core/log', qty: 1, at });
 
-  const careless = required(oaks[1], 'The map has a single oak.')[0];
-  const before = wire.state.player.bag['core/log'] ?? 0;
+  const careless = required(instancesOf(bundle, 'core/reed-bank')[0], 'The map has no reeds.')[0];
+  const before = wire.state.player.bag['core/reed'] ?? 0;
   await wire.gather(careless, 0);
-  return { careless, drawn: (wire.state.player.bag['core/log'] ?? 0) - before };
+  return { careless, drawn: (wire.state.player.bag['core/reed'] ?? 0) - before };
 }

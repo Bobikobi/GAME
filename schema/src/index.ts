@@ -47,7 +47,8 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
 });
 
 /**
- * A staff, a hammer and a pick are worn in the hand for what they help; no work asks for one yet.
+ * A staff, a hammer and a pick are worn in the hand for what they help. No work asks for a staff; a mined node
+ * (`work: "mine"`) may require a hammer or a pick, a dig spot never (QUARRYING 2).
  * The hammer and the pick are the human's and the skeleton's outfit tools (DECISIONS.md, 2026-10-22).
  */
 export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick', 'rod'] as const;
@@ -334,7 +335,7 @@ export const ResourceBody = Type.Object(
     work: Type.Optional(
       Type.Literal('mine', {
         description:
-          'How the node is worked when it needs no tool. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.',
+          'How the node is worked. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging. With no tool, bare hands do it and a pick or a hammer in the bag makes it faster (the best one, worn a little each time); with a tool (a pick, a hammer or a trowel) that tool is required, and the check refuses such a tool without "mine" (a hammer node still plays the minigame of `game`: only a pick or a trowel runs by itself). Left out: gathered by hand with the minigame of `game`.',
       }),
     ),
     level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.'),

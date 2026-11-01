@@ -1,9 +1,9 @@
-/** Misses, jackpots, luck and the character's look: the rules around the minigame grade. */
+/** Misses, jackpots, luck and the character's look: the rules around the minigame grade, and work that plays none. */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type Grade, type State, MISS_KEEP_BP, MISS_KEEP_MAX_BP, newState, step } from '@game/kernel';
+import { type Bundle, type Grade, type State, type StepResult, MISS_KEEP_BP, MISS_KEEP_MAX_BP, makeWalkable, newState, step } from '@game/kernel';
 
-import { bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
+import { loadBundle } from '../../tools/test/helpers/world.js';
 
 let bundle: Bundle;
 
@@ -24,23 +24,34 @@ function raced(seed: number, race: string, look?: number): State {
   return result.state;
 }
 
-/** Gather the first river stone with a grade; returns the new state. */
-function gatherStone(state: State, grade: Grade): State {
-  const [nodeId, instance] = Object.entries(bundle.instances).find(([, i]) => i.source === 'core/river-stones')!;
-  const path = bfsNear(bundle, state.player, state.player.at, { x: instance.x, y: instance.y, w: 1, h: 1 });
-  const result = step(bundle, state, { t: 'gather', node: nodeId, grade, at: path!.at(-1)! }, 0);
+/** The first node of a source, worked with a grade from a tile beside it (the kernel checks the tile, not the walk). */
+function work(state: State, source: string, grade: Grade, t: 'gather' | 'dig' = 'gather'): StepResult {
+  const [nodeId, instance] = Object.entries(bundle.instances).find(([, i]) => i.source === source)!;
+  const walkable = makeWalkable(bundle);
+  const at = ([[0, 1], [1, 0], [0, -1], [-1, 0]] as const)
+    .map(([dx, dy]): [number, number] => [instance.x + dx, instance.y + dy])
+    .find(([x, y]) => walkable(x, y, state.player))!;
+  return step(bundle, state, t === 'gather' ? { t, node: nodeId, grade, at } : { t, spot: nodeId, grade, at }, 0);
+}
+
+function ok(result: StepResult): Extract<StepResult, { ok: true }> {
   if (!result.ok) throw new Error(result.error);
-  return result.state;
+  return result;
+}
+
+/** Pull the first reeds with a grade: a node with a minigame (QUARRYING 10), so a miss and a jackpot are still told. */
+function gatherReeds(state: State, grade: Grade): State {
+  return ok(work(state, 'core/reed-bank', grade)).state;
 }
 
 describe('a missed gather', () => {
   test('brings one unit home about half the time, the same way for the same seed', () => {
     let kept = 0;
-    for (let seed = 1; seed <= 400; seed += 1) kept += gatherStone(started(seed), 0).player.bag['core/stone'] ?? 0;
+    for (let seed = 1; seed <= 400; seed += 1) kept += gatherReeds(started(seed), 0).player.bag['core/reed'] ?? 0;
     expect(kept / 400).toBeGreaterThan(MISS_KEEP_BP / 10_000 - 0.08);
     expect(kept / 400).toBeLessThan(MISS_KEEP_BP / 10_000 + 0.08);
-    const again = gatherStone(started(7), 0).player.bag['core/stone'];
-    expect(gatherStone(started(7), 0).player.bag['core/stone']).toBe(again);
+    const again = gatherReeds(started(7), 0).player.bag['core/reed'];
+    expect(gatherReeds(started(7), 0).player.bag['core/reed']).toBe(again);
   });
 
   test('keeps more often with luck, but never always', () => {
@@ -49,7 +60,7 @@ describe('a missed gather', () => {
       for (let seed = 1; seed <= 400; seed += 1) {
         const state = started(seed);
         state.player.attrs.luck = luck;
-        kept += gatherStone(state, 0).player.bag['core/stone'] ?? 0;
+        kept += gatherReeds(state, 0).player.bag['core/reed'] ?? 0;
       }
       return kept / 400;
     };
@@ -61,20 +72,56 @@ describe('a missed gather', () => {
 
 describe('a jackpot', () => {
   test('gives the goods and the experience of a perfect strike: luck pays no experience (PROGRESSION 4.7 b)', () => {
-    const perfect = gatherStone(started(3), 3);
-    const jackpot = gatherStone(started(3), 4);
+    const perfect = gatherReeds(started(3), 3);
+    const jackpot = gatherReeds(started(3), 4);
     expect(jackpot.player.bag).toEqual(perfect.player.bag);
-    // the river stones are mined, which trains digging (DECISIONS.md, 2026-10-25)
-    const profession = bundle.verbs.dig;
+    // reeds are pulled by hand, which trains foraging
+    const profession = bundle.verbs.gather;
     expect(perfect.player.xp[profession]).toBeGreaterThan(0);
     expect(jackpot.player.xp).toEqual(perfect.player.xp);
   });
 
+  // the range is checked before anything else, on the river stones too, whose work runs by itself
   test('refuses a grade above the jackpot', () => {
     const state = started(3);
     const [nodeId] = Object.entries(bundle.instances).find(([, i]) => i.source === 'core/river-stones')!;
     const result = step(bundle, state, { t: 'gather', node: nodeId, grade: 5 as Grade, at: [...state.player.at] }, 0);
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('work that runs by itself (QUARRYING 10)', () => {
+  test('a grade 4 sent to the river stones is read as 3: the same stone, the same experience, no jackpot', () => {
+    const perfect = ok(work(started(3), 'core/river-stones', 3));
+    const claimed = ok(work(started(3), 'core/river-stones', 4));
+    expect(claimed.state).toEqual(perfect.state);
+    expect(claimed.events).toEqual(perfect.events);
+    expect(claimed.events.some((e) => e.e === 'jackpot')).toBe(false);
+  });
+
+  test('a grade 0 sent to the river stones never misses and draws nothing', () => {
+    const [nodeId] = Object.entries(bundle.instances).find(([, i]) => i.source === 'core/river-stones')!;
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const careless = ok(work(started(seed), 'core/river-stones', 0)).state;
+      expect(careless.player.bag['core/stone']).toBe(1);
+      expect(careless.nodes[nodeId]!.draws).toBe(0);
+    }
+  });
+
+  test('a grade 4 on the reeds still writes the jackpot', () => {
+    expect(ok(work(started(3), 'core/reed-bank', 4)).events).toContainEqual({ e: 'jackpot', verb: 'gather' });
+  });
+
+  test('a dig spot dug by itself reads grade 3 too', () => {
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const state = started(seed);
+      state.player.bag['core/trowel'] = 1;
+      const perfect = ok(work(structuredClone(state), 'core/ruins-hall', 3, 'dig'));
+      expect(ok(work(structuredClone(state), 'core/ruins-hall', 0, 'dig')).state).toEqual(perfect.state);
+      const claimed = ok(work(structuredClone(state), 'core/ruins-hall', 4, 'dig'));
+      expect(claimed.state).toEqual(perfect.state);
+      expect(claimed.events.some((e) => e.e === 'jackpot')).toBe(false);
+    }
   });
 });
 
