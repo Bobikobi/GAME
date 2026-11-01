@@ -2052,6 +2052,52 @@ body {
   text-shadow: 2px 2px 0 var(--green);
 }
 
+/* a place names itself on its first entry (G63): a plaque of frame D high on the screen, read, not cheered */
+.banner.place {
+  top: 22%;
+  animation-name: place-banner;
+  animation-duration: 3.2s;
+}
+
+.banner.place span {
+  padding: 8px 28px;
+  font-family: var(--ui-display);
+  font-size: var(--ui-big);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  /* a long name wraps inside the screen's gutter rather than running off a phone */
+  white-space: normal;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+  color: var(--ui-gold-6);
+  background: var(--ui-black);
+  border: 3px solid var(--ui-gold-5);
+  box-shadow:
+    inset 0 0 0 4px var(--ui-black),
+    inset 0 0 0 5px var(--ui-gold-3),
+    0 3px 0 rgb(12 11 18 / 0.5);
+  text-shadow:
+    0 -1px 0 var(--ui-gold-1),
+    0 1px 0 var(--ui-gold-2);
+}
+
+@keyframes place-banner {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15% {
+    opacity: 1;
+    transform: none;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 .banner .burst {
   width: 240px;
   height: 240px;
