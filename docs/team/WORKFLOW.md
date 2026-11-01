@@ -1,6 +1,8 @@
 # How the team works
 
-This page is for the people who build the game itself: developers, artists, and the AI agents working beside them. If you want to add a townsperson, a fruit, a quest or a ruin to the valley, you want [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [creator guide](../creators/README.md) instead.
+This page is the core team's: the people who build the game itself with write access to the repository (developers, artists, and the AI agents working beside them). A developer outside the core team, working from a fork with their own account, follows [Your first code pull request](ONBOARDING.md) instead; the rules here about branches, owners and reviews hold for them too. If you want to add a townsperson, a fruit, a quest or a ruin to the valley, you want [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [creator guide](../creators/README.md) instead.
+
+"The owner", "the lead" and "a core maintainer" on this page are today all one GitHub account, `Bobikobi`.
 
 ## Branches
 
@@ -10,6 +12,7 @@ This page is for the people who build the game itself: developers, artists, and 
 | `develop` | Integration. Its preview is "the latest version". | Reviewed pull requests, each merged by the session that made it once the owner has approved it. |
 | `feat/<topic>`, `fix/<topic>`, `chore/<topic>`, `docs/<topic>` | One task each. | The person or agent doing that task. |
 
+- These branch names are the one convention for every branch, a creator's and an outside developer's included: a townsperson goes on `feat/<topic>` too.
 - Start every task from the newest `origin/develop` and open the pull request into `develop`.
 - One concern per pull request. A refactor, a feature and a content change are three pull requests.
 - Never push to `main` or `develop` directly. Never force-push a branch someone else is reviewing.
@@ -66,13 +69,13 @@ The reviewer checks four things:
 3. Tests come with the change.
 4. It does one thing.
 
-The session that made a pull request merges it into `develop` once the owner has approved it. It never merges another session's pull request, and never touches `main`. Pull requests are merged with squash, so the history of `develop` reads one line per task.
+The session that made a pull request merges it into `develop` once the owner has approved it; a pull request from a fork is merged by the owner. It never merges another session's pull request, and never touches `main`. Pull requests are merged with squash, so the history of `develop` reads one line per task.
 
 ## Releasing
 
 1. `develop` is green, and the owner has played its preview. The release's prep pull request into `develop` bumps `kernel/package.json`, writes the CHANGELOG entry and reruns `pnpm credits` and `pnpm board --base origin/develop`: `main` takes no direct pushes, so no bot writes CREDITS.md there.
-2. The lead asks the owner for a yes, then merges `develop` into `main`.
-3. Vercel deploys `main`. The lead opens the live game and checks the opening.
+2. The lead asks the owner for a yes, checks that the repository setting "automatically delete head branches" is off (`gh api repos/Bobikobi/GAME --jq .delete_branch_on_merge` prints `false`; on 31.10.2026 it was on, and the v0.1.11 merge deleted `develop`, closed four pull requests and retargeted thirteen to `main`), then merges `develop` into `main` with a merge commit.
+3. Vercel deploys `main`. The lead opens the live game and checks the opening. When the day's deployment quota is spent (the Hobby plan allows 100 a day, counted over the last 24 hours, skipped builds included) the deploy goes from a checkout of `main` with `vercel --prod --build-env VERCEL_GIT_COMMIT_SHA=<the merge's full sha>`; without that variable `pnpm hub:data` fails inside the build. `vercel inspect loomvale.vercel.app` proves which deployment the alias serves.
 4. The release gets a tag, `v0.<stage>.<n>`, and a short note of what players will notice.
 
 To roll back, promote the previous production deployment in Vercel, then revert the merge on `main` with a new pull request.

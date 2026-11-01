@@ -79,10 +79,50 @@ window.__e2e = (() => {
   const inRect = (x, y, r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
   // inside a shop the room scene walks the player on its own tiles; the valley's session waits on the doorstep
   const room = () => { const r = g().world.room; return r && r.ready && !r.leaving ? r : null; };
+  // open(x, y, from) asks whether the step from the tile "from" into (x, y) is open: a rock face is crossed only at a crossing (G68), so a
+  // search hands on the tile it expands, and with no "from" it is the player's own tile. A shop's room is one level and takes no such tile.
   const walker = () => {
     const r = room(), s = g().session, w = g().world;
     return r ? { pos: r.pos, facing: r.facing, moving: r.moving, open: (x, y) => r.canWalk(x, y) }
-      : { pos: s.pos, facing: s.facing, moving: !!w.body.moving, open: (x, y) => w.canWalk(s, x, y) };
+      : { pos: s.pos, facing: s.facing, moving: !!w.body.moving, open: (x, y, from) => w.canWalk(s, x, y, from) };
+  };
+  // The shortest walk to a tile from which a tile of rect is the one in front. canWalk(x, y, from) says whether the step from the tile "from"
+  // into (x, y) is open; every step is asked from the tile the search leaves, and a goal tile on its own (from = itself). The walk ends where
+  // the last turn can be made (FreeWalk.turnTo): into a closed tile the held input only turns the body, onto an open one (a dig spot is one)
+  // the body steps back and returns, which takes the tile behind. A goal with neither would throw, so it is taken only when no walk reaches another.
+  const search = (rect, pos, canWalk) => {
+    const goals = new Map(), turns = new Map();
+    for (let x = rect.x; x < rect.x + rect.w; x++) for (let y = rect.y; y < rect.y + rect.h; y++) {
+      for (const [d, [dx, dy]] of Object.entries(DIRS)) {
+        const sx = x - dx, sy = y - dy;
+        if (inRect(sx, sy, rect)) continue;
+        const here = sx === pos[0] && sy === pos[1];
+        if (!here && !canWalk(sx, sy, [sx, sy])) continue;
+        goals.set(sx + ',' + sy, d);
+        if (!canWalk(x, y, [sx, sy]) || canWalk(sx - dx, sy - dy, [sx, sy])) turns.set(sx + ',' + sy, d);
+      }
+    }
+    const reach = (ends) => {
+      const prev = new Map([[pos[0] + ',' + pos[1], null]]);
+      const queue = [[pos[0], pos[1]]];
+      while (queue.length) {
+        const [x, y] = queue.shift();
+        const k = x + ',' + y;
+        if (ends.has(k)) {
+          const path = [];
+          for (let cur = k; prev.get(cur); cur = prev.get(cur)[0]) path.unshift(prev.get(cur)[1]);
+          return { path, face: ends.get(k), goal: [x, y] };
+        }
+        for (const [d, [dx, dy]] of Object.entries(DIRS)) {
+          const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
+          if (prev.has(nk) || !canWalk(nx, ny, [x, y])) continue;
+          prev.set(nk, [k, d]);
+          queue.push([nx, ny]);
+        }
+      }
+      return null;
+    };
+    return reach(turns) || reach(goals);
   };
   return {
     state() {
@@ -92,7 +132,7 @@ window.__e2e = (() => {
       return { pos: [...me.pos], facing: me.facing, busy: s.busy, moving: me.moving || door, blocking: g().ui.blocking,
         inside: !!room(), prompt: p && !p.hidden ? p.textContent.slice(1).trim() : '' };
     },
-    open(x, y) { return walker().open(x, y); },
+    open(x, y, from) { return walker().open(x, y, from); },
     player() { return g().session.state.player; },
     hour() {
       // tick 0 is noon (the kernel's hourOf)
@@ -149,35 +189,30 @@ window.__e2e = (() => {
       return Object.entries(g().bundle.instances).filter(([, i]) => i.source === source)
         .map(([id, i]) => ({ id, x: i.x, y: i.y, ready: (s.state.nodes[id]?.readyAt ?? 0) <= s.tick }));
     },
-    /** Shortest walk to a tile from which a tile of rect is the one in front. */
+    /** Shortest walk to a tile from which a tile of rect is the one in front; each step is asked from the tile it leaves, so a rock face is crossed only at a crossing (G68). */
     plan(rect) {
-      const me = walker(), s = { pos: me.pos }, w = { canWalk: (_, x, y) => me.open(x, y) };
-      const goals = new Map();
-      for (let x = rect.x; x < rect.x + rect.w; x++) for (let y = rect.y; y < rect.y + rect.h; y++) {
-        for (const [d, [dx, dy]] of Object.entries(DIRS)) {
-          const sx = x - dx, sy = y - dy;
-          if (inRect(sx, sy, rect)) continue;
-          const here = sx === s.pos[0] && sy === s.pos[1];
-          if (here || w.canWalk(s, sx, sy)) goals.set(sx + ',' + sy, d);
-        }
-      }
-      const start = s.pos[0] + ',' + s.pos[1];
-      const prev = new Map([[start, null]]);
-      const queue = [[s.pos[0], s.pos[1]]];
-      while (queue.length) {
-        const [x, y] = queue.shift();
-        const k = x + ',' + y;
-        if (goals.has(k)) {
-          const path = [];
-          for (let cur = k; prev.get(cur); cur = prev.get(cur)[0]) path.unshift(prev.get(cur)[1]);
-          return { path, face: goals.get(k), goal: [x, y] };
-        }
-        for (const [d, [dx, dy]] of Object.entries(DIRS)) {
-          const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
-          if (prev.has(nk) || !w.canWalk(s, nx, ny)) continue;
-          prev.set(nk, [k, d]);
-          queue.push([nx, ny]);
-        }
+      const me = walker();
+      return search(rect, me.pos, (x, y, from) => me.open(x, y, from));
+    },
+    /**
+     * What shuts the way to rect when plan finds none: a plant, stone or log that is ready stands in the way as a wall does, and its tile opens
+     * once it is taken. The shortest walk that may pass ready nodes, and the first node on it ({ id, source, x, y }); null when no walk of
+     * that kind gets there either, and inside a shop.
+     */
+    blocker(rect) {
+      if (room()) return null;
+      const s = g().session, w = g().world, b = g().bundle;
+      // the same player with every node taken: the one thing this search forgets
+      const taken = { pos: s.pos, tick: s.tick, state: { ...s.state, nodes: Object.fromEntries(Object.keys(b.instances).map((id) => [id, { readyAt: Infinity, draws: 0 }])) } };
+      const found = search(rect, s.pos, (x, y, from) => w.canWalk(taken, x, y, from));
+      if (!found) return null;
+      let at = [s.pos[0], s.pos[1]];
+      for (const d of found.path) {
+        const from = at;
+        at = [at[0] + DIRS[d][0], at[1] + DIRS[d][1]];
+        if (w.canWalk(s, at[0], at[1], from)) continue;
+        const hit = Object.entries(b.instances).find(([, i]) => i.kind === 'resource' && i.x === at[0] && i.y === at[1]);
+        if (hit) return { id: hit[0], source: hit[1].source, x: at[0], y: at[1] };
       }
       return null;
     },
@@ -218,6 +253,7 @@ window.__e2e = (() => {
       if (!d) return null;
       const o = d.querySelector('.dialog-options');
       return { text: d.querySelector('.dialog-text')?.textContent ?? '',
+        typed: !d.querySelector('.dialog-arrow')?.hidden || !!(o && !o.hidden),
         options: o && !o.hidden ? [...o.querySelectorAll('button')].map((b) => b.textContent) : [] };
     },
   };
@@ -252,6 +288,13 @@ interface Plan {
   path: Dir[];
   face: Dir;
   goal: [number, number];
+}
+/** A ready plant, stone or log that shuts the way (__e2e.blocker). */
+interface Blocker {
+  id: string;
+  source: string;
+  x: number;
+  y: number;
 }
 
 /** Thrown by snap() right after the screenshot E2E_UNTIL names: the run ends there, as a pass. */
@@ -348,9 +391,35 @@ class Player {
   }
 
   private async planTo(rect: Rect, what: string): Promise<Plan> {
-    const plan = await this.page.eval<Plan | null>(`__e2e.plan(${JSON.stringify(rect)})`);
-    if (!plan) throw new Error(`no way to reach ${what}`);
-    return plan;
+    for (let cleared = 0; ; cleared++) {
+      const plan = await this.page.eval<Plan | null>(`__e2e.plan(${JSON.stringify(rect)})`);
+      if (plan) return plan;
+      // a ready plant, stone or log stands in the way as a wall does and opens its tile once it is taken (the road to the collapsed hall
+      // runs down the east side of the night ruins past the lone log at 45,25): the player takes what shuts the road, as a player does
+      const block = cleared < 3 ? await this.page.eval<Blocker | null>(`__e2e.blocker(${JSON.stringify(rect)})`) : null;
+      if (!block) throw new Error(`no way to reach ${what}`);
+      await this.clear(block);
+    }
+  }
+
+  /** Takes the one node that shuts the way, walking up to it as `gather` does; a log or tree is felled, anything else gathered or mined. */
+  private async clear(node: Blocker): Promise<void> {
+    const deadline = Date.now() + 150_000;
+    while (Date.now() < deadline) {
+      const now = (await this.page.eval<{ id: string; ready: boolean }[]>(`__e2e.nodes(${JSON.stringify(node.source)})`)).find((n) => n.id === node.id);
+      if (!now?.ready) {
+        console.log(`[${this.name}] took ${node.id} at ${node.x},${node.y}: it stood in the way`);
+        return;
+      }
+      await this.walkTo({ x: node.x, y: node.y, w: 1, h: 1 }, node.id);
+      await this.expectPrompt(/^(Fell tree|Gather |Mine )/, node.id);
+      await this.a();
+      // a node worked with a tool runs by itself after the press; one picked by hand plays a minigame
+      const mode = await this.page.waitFor<string>(`(() => (document.querySelector('.minigame[data-game]') ? 'play' : __e2e.working() ? 'work' : null))()`, `${node.id} to start`, 3000);
+      if (mode === 'play') await this.solveMinigame();
+      await this.idle(`taking ${node.id}`);
+    }
+    throw new Error(`${node.id} at ${node.x},${node.y} still stands in the way`);
   }
 
   /** Walks a planned path; false at the first step that does not move the player. */
@@ -484,11 +553,11 @@ class Player {
   async talkThrough(pick?: string): Promise<string[]> {
     const seen: string[] = [];
     for (let i = 0; i < 80; i++) {
-      let d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+      let d = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
       if (!d) {
         for (let wait = 0; !d && wait < 20; wait++) {
           await sleep(150);
-          d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+          d = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
         }
       }
       if (!d) {
@@ -496,6 +565,14 @@ class Player {
         await sleep(200);
         if (!(await this.page.eval('__e2e.dialog()'))) return seen;
         continue;
+      }
+      // the box types its line out; a slow runner reads it half typed ("Not tonigh", "gathered nothing out").
+      // The box shows its arrow (or its options) only when the line is whole: wait for that, no tap, then record.
+      for (let k = 0; k < 100 && !d.typed; k++) {
+        await sleep(80);
+        const again = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
+        if (!again) break;
+        d = again;
       }
       if (d.text && seen[seen.length - 1] !== d.text) seen.push(d.text);
       if (d.options.length > 0) {
@@ -678,14 +755,18 @@ const DAY_MINUTE = '(() => { const s = __game.session, day = __game.bundle.param
  */
 const LATEST_HILL_MINUTE = 19 * 60 + 10;
 
-/** OPENING_REVIEW criterion 8: the longest stretch of play clock between two pays, the clock's own jumps counted as waiting. */
+/**
+ * OPENING_REVIEW criterion 8: the longest stretch of play clock between two pays. A jump the run itself made (the wait for the
+ * next dusk after a late stew, `__e2e.setHour`) is not play: it is taken out of the stretch it falls in, and logged as skipped.
+ */
 const LONGEST_STRETCH_MS = 90_000;
 async function stretches(page: Page, log: (msg: string) => void, who: string, until: string): Promise<{ ms: number; from: string; to: string }[]> {
   const r = await page.eval<{ list: { t: number; k: string }[]; jumps: { from: number; to: number }[]; end: number }>('__e2e.paysOff()');
   const gaps: { ms: number; from: string; to: string }[] = [];
-  for (let i = 1; i < r.list.length; i++) gaps.push({ ms: r.list[i]!.t - r.list[i - 1]!.t, from: r.list[i - 1]!.k, to: r.list[i]!.k });
+  const played = (a: number, b: number) => b - a - r.jumps.reduce((n, j) => n + Math.max(0, Math.min(b, j.to) - Math.max(a, j.from)), 0);
+  for (let i = 1; i < r.list.length; i++) gaps.push({ ms: played(r.list[i - 1]!.t, r.list[i]!.t), from: r.list[i - 1]!.k, to: r.list[i]!.k });
   const last = r.list[r.list.length - 1]!;
-  gaps.push({ ms: r.end - last.t, from: last.k, to: until });
+  gaps.push({ ms: played(last.t, r.end), from: last.k, to: until });
   gaps.sort((a, b) => b.ms - a.ms);
   const skipped = r.jumps.reduce((n, j) => n + (j.to - j.from), 0);
   log(`${who}: ${r.list.length} pays to ${until} in ${Math.round(r.end / 1000)} s of play clock, ${Math.round(skipped / 1000)} s of it skipped by the run`);
@@ -1216,7 +1297,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const stewAt = await page.eval<number>(DAY_MINUTE);
       if (stewAt >= LATEST_HILL_MINUTE || stewAt < 5 * 60) {
         await page.eval('__e2e.setHour(19)');
-        log(`the stew came at ${Math.floor(stewAt / 60)}:${String(stewAt % 60).padStart(2, '0')}, too late to dig before dark: the player waits in town for the next dusk`);
+        log(`WARN the stew came at ${Math.floor(stewAt / 60)}:${String(stewAt % 60).padStart(2, '0')}, too late to dig before dark: the player waits in town for the next dusk`);
       }
       // at dusk the hill lantern lights the tile to dig: the player waits beside it, and the wait counts.
       // From the stew on, every step that can meet 20:00 on a slow machine reads the lantern warning where it opens (pastDusk)
@@ -1245,9 +1326,10 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const coin = await me.talkThrough();
       await me.idle('handing in the coin');
       if ((await me.quest('core/a-coin-for-maru')) !== 'done') throw new Error('a-coin-for-maru is not done');
-      // the coin pays gold and the herb tea, and no basket: every start holds one by now
+      // the coin pays the herb tea and the key to Maru's house, no gold and no basket: every start holds one by now
       const coinPaid = (await page.eval<number>('__e2e.player().gold')) - unpaid;
-      if (coinPaid !== 20_000) throw new Error(`the coin paid ${coinPaid} mg, not 20000`);
+      if (coinPaid !== 0) throw new Error(`the coin paid ${coinPaid} mg, not the key alone`);
+      if ((await me.bag('core/maru-house-key')) !== 1) throw new Error('no key to Maru\'s house after the coin');
       if ((await me.bag('core/basket')) !== 1) throw new Error('a second basket after the coin');
       if (!(await page.eval<string[]>('__e2e.player().recipes')).includes('core/herb-tea')) throw new Error('the herb-tea recipe was not learned');
       if (!coin.some((l) => l.includes('arch'))) throw new Error(`the elder never mentions the arch: ${coin.join(' / ')}`);

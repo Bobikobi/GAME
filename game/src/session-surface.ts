@@ -7,7 +7,7 @@
  * The state a screen may read is the public one: the seed is the server's and never reaches the phone
  * (kernel-review R4), and a screen cannot tell the two apart.
  */
-import type { Action, Bundle, FireState, GameEvent, PublicState } from '@game/kernel';
+import type { Action, Bundle, FireState, Gait, GameEvent, PublicState } from '@game/kernel';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 
@@ -25,6 +25,8 @@ export interface SessionEvents {
   events: GameEvent[];
   /** the state changed: redraw what depends on it */
   change: undefined;
+  /** the server brought the state to newer content while the game was open (a session on the server only) */
+  updated: undefined;
 }
 
 export interface GameSession {
@@ -60,7 +62,7 @@ export interface GameSession {
   /** Ask whether an action would be accepted, when the caller can ask. The phone alone cannot. */
   check(action: Action): string | undefined;
   /** Tell the kernel which tile the player stands on. */
-  report(at: readonly [number, number], again?: boolean): void;
+  report(at: readonly [number, number], again?: boolean, gait?: Gait): void;
   act(action: Action): ActResult | Promise<ActResult>;
   /** Walk away from work under way, when the session can still take it back. */
   cancelWork(): boolean;

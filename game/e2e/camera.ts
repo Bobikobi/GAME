@@ -64,6 +64,43 @@ async function main(): Promise<void> {
       } finally {
         page.close();
       }
+      // the wheel on a 1440 x 900 desktop (CR-109): k = 1, the default view 8, in to 12 and 16, back to 8 and no further
+      const desk = await browser.newPage({ width: 1440, height: 900, mobile: false, scale: 1 });
+      try {
+        await desk.goto(`${remote ?? local?.url ?? ''}?debug&rich=none`);
+        await desk.waitFor(`!!document.querySelector('#game canvas') && !!window.__game && !!window.__game.world`, 'the world scene', 30_000);
+        // the wheel works in the world, so the character wakes first (the title screen covers the canvas)
+        await desk.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
+        await desk.tap('.title-screen button', 'New game');
+        const choice = await desk.waitFor<string>(
+          `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+          'the race cards',
+        );
+        if (choice === 'ask') await desk.tap('.title-screen button', 'Start a new game');
+        await desk.tap('.card.race', 'Elf');
+        await desk.tap('.title-screen button', 'Wake up');
+        await desk.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+        await new Promise((r) => setTimeout(r, 1500)); // the opening's camera settles on the player
+        const read = () =>
+          desk.eval<{ zoom: number; dx: number; dy: number }>(
+            `(() => { const w = __game.world, c = w.cameras.main, p = w.player; return { zoom: c.zoom, dx: Math.abs(c.worldView.centerX - p.x), dy: Math.abs(c.worldView.centerY - p.y) }; })()`,
+          );
+        const zooms: number[] = [];
+        if (process.env.WHEEL_STILLS) await desk.screenshot(`${process.env.WHEEL_STILLS}/wheel-8.png`);
+        for (const dy of [-100, -100, -100, 100, 100, 100]) {
+          await desk.wheel(720, 450, dy);
+          await new Promise((r) => setTimeout(r, 600)); // the glide and the pause between two notches
+          const z = await read();
+          zooms.push(z.zoom);
+          if (z.dx > 2 || z.dy > 2) throw new Error(`the player is ${z.dx.toFixed(1)}, ${z.dy.toFixed(1)} units off the middle at zoom ${z.zoom}`);
+          if (process.env.WHEEL_STILLS && z.zoom > 8 === (dy < 0) && zooms.length <= 3) await desk.screenshot(`${process.env.WHEEL_STILLS}/wheel-${z.zoom}.png`);
+        }
+        if (zooms.join() !== '12,16,16,12,8,8') throw new Error(`the wheel went ${zooms.join(', ')}, expected 12, 16, 16, 12, 8, 8`);
+        console.log(`camera: desktop wheel ${zooms.join(' > ')}, the player centred`);
+        if (desk.errors.length > 0) throw new Error(`page errors:\n${desk.errors.join('\n')}`);
+      } finally {
+        desk.close();
+      }
     } finally {
       await browser.close();
     }

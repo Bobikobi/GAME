@@ -1,15 +1,19 @@
 ---
-// The desktop first screen (DECISIONS.md, 2026-10-23): the valley at dawn with the three opening characters (the
-// elf, the human, the skeleton) as a living video, quiet words over it, and an opaque band at its foot. Shown from
-// 1024px; the phone keeps its own first screen and fetches neither the video nor its still: every source here
-// carries the desktop media query, and the still's fallback is a one-pixel image.
+// The home's first screen (DECISIONS.md, 2026-10-23 and 2026-10-30): the valley at dawn with the three opening
+// characters (the elf, the human, the skeleton), quiet words over it, and an opaque band at its foot. From 1024px it
+// is a living video with its still; a phone gets only its own portrait still and never the video: the video's sources
+// carry the desktop media query, each still source carries its own, and the fallback is a one-pixel image.
 const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 const DESK = '(min-width: 1024px)';
+const PHONE = '(max-width: 1023px)';
+import { PLAY } from '../data/site';
 ---
 
 <section class="keyart" data-keyart aria-labelledby="ka-h">
   <div class="ka-art" aria-hidden="true">
     <picture>
+      <source media={PHONE} type="image/webp" srcset="/keyart/hero-phone.webp" />
+      <source media={PHONE} srcset="/keyart/hero-phone.jpg" />
       <source media={DESK} type="image/webp" srcset="/keyart/hero-poster.webp" />
       <source media={DESK} srcset="/keyart/hero-poster.jpg" />
       <img class="ka-still" src={PIXEL} alt="" width="1920" height="1080" fetchpriority="high" />
@@ -26,7 +30,7 @@ const DESK = '(min-width: 1024px)';
     <h1 id="ka-h">Write the valley <em>back</em></h1>
     <p class="ka-lead">An elf, a human and a skeleton wake in a valley its players write in code.</p>
     <div class="ka-acts">
-      <a class="ka-btn go" href="/play/">Play free</a>
+      <a class="ka-btn go" href={PLAY}>Play free</a>
       <a class="ka-btn line" href="/hub/">Build a place</a>
     </div>
   </div>

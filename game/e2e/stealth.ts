@@ -128,7 +128,7 @@ window.__stealth = (() => {
         }
         for (const [d, [dx, dy]] of Object.entries(DIRS)) {
           const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
-          if (prev.has(nk) || !w.canWalk(s, nx, ny)) continue;
+          if (prev.has(nk) || !w.canWalk(s, nx, ny, [x, y])) continue;
           prev.set(nk, [k, d]);
           queue.push([nx, ny]);
         }
@@ -282,6 +282,15 @@ async function run(page: Page, url: string): Promise<void> {
   if (!(await page.eval<boolean>('__stealth.cover(12, 33)'))) throw new Error('the waiting tile is not cover');
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the wolf began a chase on the covered approach');
 
+  // The threat telegraph's near beat, muted (NEXT.md 12 c): near the wolf the prowl is asked for, and nothing leaves
+  // the speakers; from here on every visual cue is checked with the sound off.
+  await page.eval('__game.sound.setMuted(true)');
+  const prowl = await page.waitFor<number>('(() => { const st = __game.sound.state(); return st.beds.prowl > 0 ? st.beds.prowl : 0; })()', 'the prowl near the wolf', 5000);
+  await sleep(300);
+  const level = await page.eval<number>('__game.sound.level()');
+  console.log(`telegraph: prowl asked at ${prowl.toFixed(3)} beside the bank road, muted output ${level}`);
+  if (level !== 0) throw new Error(`muted, the output is ${level}, not 0`);
+
   // Wait for the wolf on the west edge, looking north: its eyes face away
   // from the one-tile crossing to the moonreed.
   await page.waitFor<Predator>(`(() => {
@@ -312,9 +321,22 @@ async function run(page: Page, url: string): Promise<void> {
     throw new Error(`${error instanceof Error ? error.message : error}: ${JSON.stringify(debug)}`);
   });
   const before = await page.eval<Health>('__stealth.health()');
+  // count the predator's hurts the kernel tells, and the meter's reactions to them
+  await page.eval(`(() => {
+    window.__bites = { hurts: 0, hits: 0 };
+    __game.session.on('events', (es) => { for (const e of es) if (e.e === 'hurt' && e.by === 'predator') window.__bites.hurts++; });
+    const meter = document.querySelector('.meter');
+    new MutationObserver((ms) => { for (const m of ms) if (m.attributeName === 'data-hit' && meter.hasAttribute('data-hit')) window.__bites.hits++; })
+      .observe(meter, { attributes: true, attributeFilter: ['data-hit'] });
+    // the "!" lasts 1.2 game s, and the clock runs fast while a script waits: it is watched every frame
+    window.__bang = false;
+    const watch = () => { if (__game.world.bang.visible) window.__bang = true; requestAnimationFrame(watch); };
+    watch();
+  })()`);
   await me.step('left');
   await me.step('up');
   await page.waitFor('!!__game.session.state.player.chase', 'the wolf chase to start', 3000);
+  await page.waitFor('window.__bang', 'muted, the "!" over the wolf at the chase', 3000);
   const chased = await page.eval<Health>('__stealth.health()');
   const chasedAt = Date.now();
   await me.snap('chase');
@@ -329,6 +351,10 @@ async function run(page: Page, url: string): Promise<void> {
   );
   if (home.falls !== before.falls) throw new Error(`the chase ended in a fall: falls ${before.falls} -> ${home.falls}`);
   if (before.hp - home.hp < health.bite) throw new Error(`the chase never bit: health ${before.hp} -> ${home.hp}`);
+  // one drawn bite per hurt, and the meter shows each (the telegraph's act)
+  const bites = await page.eval<{ hurts: number; hits: number; drawn: number }>('({ ...window.__bites, drawn: __game.world.bites.count })');
+  console.log(`telegraph: ${bites.hurts} predator hurts, ${bites.drawn} bites drawn, ${bites.hits} meter reactions`);
+  if (bites.hurts < 1 || bites.drawn !== bites.hurts || bites.hits !== bites.hurts) throw new Error(`bites drawn do not match the hurts: ${JSON.stringify(bites)}`);
   await me.snap('camp-safe');
   if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
 }

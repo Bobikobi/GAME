@@ -5,6 +5,7 @@
  *   pnpm anim fetch [--lib <id>] [--from <zip>] download each library by URL, check its sha256, unpack the glb
  *   pnpm anim render <clip ...> | --all         Blender, then snap, strips and the four measures; exit 1 on a failure
  *   pnpm anim check [<clip ...>]                the four measures of clips already rendered; exit 1 on a failure
+ *   pnpm anim sheets                            the rendered walks of the targets that ship into content/kit/core/chars (+ kit.json, feet.json)
  *   ... --target <id>                           render or check the clips on another target of anim.json (the cast):
  *                                               written under tools/.cache/anim/cast/<id>/<clip>/
  *
@@ -19,9 +20,10 @@ import { pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 import { INK_HEX } from '../kit/ink.js';
 import { CONTENT_DIR } from '../load.js';
-import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipProblems, job, type Library, modelPath, paces, poseMs, readClip, readLibraries, readSettings, type Settings, stepFrames, type View } from './clip.js';
-import { archiveProblems, itchDownload, libraryGlb, unpack } from './fetch.js';
+import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipPaces, clipProblems, frameOf, job, type Library, type ModelPack, missingModels, modelPath, paces, raceSpec, poseMs, readClip, readLibraries, readModels, readSettings, type Settings, stepFrames, type View, withNative } from './clip.js';
+import { archiveProblems, itchDownload, libraryGlb, MODEL_DIR, modelDir, packProblems, unpack, unpackModel, urlDownload } from './fetch.js';
 import { type ClipMeasures, measureClip, type RenderMeta, type ViewMeasures } from './measure.js';
+import { buildSheets } from './sheets.js';
 import { classPalettes, flipX, type Picture, sheetRamps, snap } from './snap.js';
 
 const say = (line: string) => process.stdout.write(`${line}\n`);
@@ -46,14 +48,15 @@ const writePng = (path: string, p: Picture) => {
   writeFileSync(path, PNG.sync.write(png));
 };
 
+/** The libraries a clip loads into Blender: a native body's own actions (`self:`) are not a file. */
 function libsOf(clip: Clip): string[] {
-  return [...new Set([clip.base.library, ...(clip.layer ? [clip.layer.library] : [])])];
+  return [...new Set([clip.base.library, ...(clip.layer ? [clip.layer.library] : [])])].filter((id) => !id.startsWith('self:'));
 }
 
 async function fetchLibraries(libs: Record<string, Library>, only: string | undefined, from: string | undefined): Promise<number> {
   let failed = 0;
   for (const [id, lib] of Object.entries(libs)) {
-    if (only !== undefined && id !== only) continue;
+    if (id.startsWith('self:') || (only !== undefined && id !== only)) continue;
     if (libraryGlb(id, lib).ready && from === undefined) {
       say(`${id}: already fetched and checked`);
       continue;
@@ -79,6 +82,35 @@ async function fetchLibraries(libs: Record<string, Library>, only: string | unde
   return failed;
 }
 
+/** The body packs of the races (libraries.json `models`), downloaded by URL, refused unless the bytes and sha256 match. */
+async function fetchModels(models: Record<string, ModelPack>, only: string | undefined): Promise<number> {
+  let failed = 0;
+  for (const [id, pack] of Object.entries(models)) {
+    if (only !== undefined && id !== only) continue;
+    if (modelDir(id, pack).ready) {
+      say(`${id}: already fetched and checked`);
+      continue;
+    }
+    const cached = join(CACHE_DIR, 'models', `${id}.download`);
+    let buf: Buffer;
+    if (existsSync(cached) && packProblems(readFileSync(cached), pack).length === 0) buf = readFileSync(cached);
+    else {
+      say(`${id}: downloading ${pack.upload ?? pack.url} (${pack.page})`);
+      buf = pack.upload !== undefined ? await itchDownload(pack.page, pack.upload) : await urlDownload(pack.url ?? '');
+    }
+    const problems = packProblems(buf, pack);
+    if (problems.length > 0) {
+      say(`${id}: REFUSED, not the pack in libraries.json: ${problems.join('; ')}`);
+      failed += 1;
+      continue;
+    }
+    mkdirSync(MODEL_DIR, { recursive: true });
+    writeFileSync(cached, buf);
+    say(`${id}: sha256 ${pack.sha256} matches, unpacked ${unpackModel(id, pack, buf)}`);
+  }
+  return failed;
+}
+
 interface Context {
   settings: Settings;
   libs: Record<string, Library>;
@@ -88,7 +120,7 @@ interface Context {
 function context(): Context {
   const settings = readSettings();
   const params = JSON.parse(readFileSync(join(CONTENT_DIR, 'core', 'params.json'), 'utf8')) as unknown;
-  return { settings, libs: readLibraries(), paces: paces(settings, params) };
+  return { settings, libs: withNative(readLibraries(), settings), paces: paces(settings, params) };
 }
 
 /** Where a clip's output goes: out/<clip>/ on its own target, cast/<target>/<clip>/ when --target moves it. */
@@ -122,7 +154,7 @@ function measure(name: string, clip: Clip, ctx: Context, cast?: string): ClipMea
     locomotion: clip.locomotion,
     poseStep: stepFrames(clip, ctx.libs),
     ms: poseMs(clip, ctx.libs),
-    paces: ctx.paces,
+    paces: clipPaces(clip, ctx.settings, ctx.paces),
   });
   writeFileSync(join(out, 'measures.json'), `${JSON.stringify(m, null, 1)}\n`);
   return m;
@@ -133,6 +165,7 @@ function summary(name: string, m: ClipMeasures): string {
   for (const [view, v] of Object.entries(m.views)) {
     let s = `${view}: outline ${v.outlined}/${v.frames}, silhouette ${v.silhouette.maxDevPct}%`;
     if (v.stride && v.paces) s += `, cycle ${v.stride.cyclePx} px, slide ${v.paces.steady.slidePx} px, ${v.paces.steady.lockedPoseRate} poses/s at steady`;
+    if (v.footfalls) s += `, footfalls ${v.footfalls.order.join(' ')} (gaps ${v.footfalls.gaps.join(' ')})`;
     parts.push(s);
   }
   return `${m.problems.length === 0 ? 'PASS' : 'FAIL'} ${name}: ${parts.join(' | ')}`;
@@ -145,8 +178,14 @@ function render(name: string, ctx: Context, cast?: string): ClipMeasures {
   if (problems.length > 0) throw new Error(problems.join('\n'));
   const target = ctx.settings.targets[clip.target];
   if (target === undefined) throw new Error(`${name}: no target`);
-  const model = modelPath(target.model, process.env);
-  if (model === undefined || !existsSync(model)) throw new Error(`${name}: the ${clip.target} model is missing (${target.model}${target.model.startsWith('$') ? ' is not set' : ''})`);
+  let model: string | undefined;
+  if (target.map === 'ual') {
+    const absent = missingModels(raceSpec(target.race ?? '', target.body));
+    if (absent.length > 0) throw new Error(`${name}: the ${clip.target} body is not fetched (${absent.length} files missing, first ${absent[0]}); run pnpm anim fetch`);
+  } else {
+    model = target.model === undefined ? undefined : modelPath(target.model, process.env);
+    if (model === undefined || !existsSync(model)) throw new Error(`${name}: the ${clip.target} model is missing (${target.model}${target.model?.startsWith('$') ? ' is not set' : ''})`);
+  }
   const libs = libsOf(clip).map((id) => {
     const lib = ctx.libs[id];
     const glb = lib ? libraryGlb(id, lib) : undefined;
@@ -170,7 +209,7 @@ function render(name: string, ctx: Context, cast?: string): ClipMeasures {
   const blenderS = (Date.now() - t0) / 1000;
   const pal = classPalettes(clip.ramps ?? target.ramps, target.metal, target.leaf);
   const ms = poseMs(clip, ctx.libs);
-  const [fw, fh] = clip.frame.size;
+  const [fw, fh] = frameOf(clip, ctx.settings).size;
   for (const view of clip.views) {
     const strip: Picture = { width: fw * ms.length, height: fh, data: new Uint8Array(fw * ms.length * fh * 4) };
     ms.forEach((_, i) => {
@@ -196,7 +235,7 @@ function render(name: string, ctx: Context, cast?: string): ClipMeasures {
     : {};
   writeFileSync(
     join(out, `${name}.json`),
-    `${JSON.stringify({ clip: name, frame: clip.frame.size, anchor: clip.frame.anchor, poses: ms.length, ms, views: clip.views, ...playback, right: 'the left strip mirrored', target: clip.target, ramps: sheetRamps(clip.ramps ?? target.ramps, target.metal, target.leaf), credit: target.credit ?? null })}\n`,
+    `${JSON.stringify({ clip: name, frame: frameOf(clip, ctx.settings).size, anchor: frameOf(clip, ctx.settings).anchor, poses: ms.length, ms, views: clip.views, ...playback, right: 'the left strip mirrored', target: clip.target, ramps: sheetRamps(clip.ramps ?? target.ramps, target.metal, target.leaf), credit: target.credit ?? null })}\n`,
   );
   say(`${summary(cast === undefined ? name : `${name} on ${cast}`, m)}  (Blender ${blenderS.toFixed(0)} s, all ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   return m;
@@ -218,7 +257,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   const rendered = clipNames().filter((n) => existsSync(join(outDir(n, cast), `${n}.json`)));
   const names = rest.includes('--all') ? clipNames() : cmd === 'check' && named.length === 0 ? rendered : named;
   if (cmd === 'list') {
-    for (const [id, lib] of Object.entries(ctx.libs)) say(`library ${id}: ${lib.title}, ${lib.licence}; ${libraryGlb(id, lib).ready ? 'fetched' : 'not fetched (pnpm anim fetch)'}`);
+    for (const [id, lib] of Object.entries(ctx.libs)) if (!id.startsWith('self:')) say(`library ${id}: ${lib.title}, ${lib.licence}; ${libraryGlb(id, lib).ready ? 'fetched' : 'not fetched (pnpm anim fetch)'}`);
     for (const name of clipNames()) {
       const c = readClip(name);
       const bad = clipProblems(name, c, ctx.libs, ctx.settings);
@@ -226,7 +265,19 @@ export async function main(argv: readonly string[]): Promise<number> {
     }
     return 0;
   }
-  if (cmd === 'fetch') return (await fetchLibraries(ctx.libs, flag('--lib'), flag('--from'))) > 0 ? 1 : 0;
+  if (cmd === 'fetch') {
+    const only = flag('--lib');
+    const models = readModels();
+    const bad = (only === undefined || only in ctx.libs ? await fetchLibraries(ctx.libs, only, flag('--from')) : 0) + (only === undefined || only in models ? await fetchModels(models, only) : 0);
+    return bad > 0 ? 1 : 0;
+  }
+  if (cmd === 'sheets') {
+    const r = buildSheets(ctx.settings);
+    for (const [name, w] of Object.entries(r.widths)) say(`${name}: ${w} px wide at its broadest, the median of the walk`);
+    for (const p of r.problems) say(`  ${p}`);
+    say(r.problems.length === 0 ? `${r.written.length} sheets written to content/kit/core/chars, kit.json and tools/anim/feet.json updated` : 'nothing written');
+    return r.problems.length > 0 ? 1 : 0;
+  }
   if (cmd === 'render' || cmd === 'check') {
     if (names.length === 0) {
       say('name the clips, or --all');
@@ -247,7 +298,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     say(`${names.length - failed} of ${names.length} clips pass`);
     return failed > 0 ? 1 : 0;
   }
-  say('usage: pnpm anim list | fetch [--lib <id>] [--from <zip>] | render <clip ...>|--all [--target <id>] | check [<clip ...>] [--target <id>]');
+  say('usage: pnpm anim list | fetch [--lib <id>] [--from <zip>] | render <clip ...>|--all [--target <id>] | check [<clip ...>] [--target <id>] | sheets');
   return 2;
 }
 

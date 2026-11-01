@@ -484,6 +484,7 @@ the repository; this list is names and places only.
 | Upstash Redis `upstash-kv-amber-zebra` | Vercel project > Storage (Vercel Marketplace, Upstash, Free plan: 500K commands a month, region `iad1`) | the S-1 store: counters, stops and reports | linked to the Production and Preview environments; the integration sets `KV_REST_API_URL`, `KV_REST_API_TOKEN`, `KV_REST_API_READ_ONLY_TOKEN`, `KV_URL`, `REDIS_URL` (the code reads the first two, or the URL and the read-only token) |
 | Vercel Web Analytics | Vercel project > Analytics | page views, visitors, referrers, countries and devices for the site and the game | enabled in the project; the snippet loading `/_vercel/insights/script.js` sits in `web/src/layouts/Site.astro` (every page, the home page included, section 5.5) and `game/index.html` |
 | Stage-1 usage | `hub-data.json` > `usage`, the creator pages `/hub/creators/<handle>/` | per-record visits, pickups and reports, where players stop in the opening | `pnpm hub:data` reads Redis when the `KV_` pair is in the environment; without it `usage` stays `null` |
+| Players counter | `hub-data.json` > `accounts`, the boards page `/hub/boards/` | open accounts and the ones opened in the last 7 days, from the game server's `GET /stats` | `pnpm hub:data` reads it when `GAME_SERVER_ORIGIN` names the server (a repository variable for the hourly refresh); unset, unreachable, an error or over 5 s, `accounts` stays `null` and the page says unknown |
 
 Rename the database or move the region in the Upstash console; the env names
 do not change. A database linked by hand (outside the Marketplace) exposes
@@ -495,6 +496,40 @@ too.
 `docs/team/HANDOFF_TEMPLATE.md` (this branch): one goal in a sentence, the
 exact files, the proving command, the decision it implements, the model and
 effort to run it. `docs/team/GRUNT.md` is a list of handoffs in that shape.
+
+### 9.6 What is secret and where it lives
+
+The owner asked (31.10, GRUNT CR-115) whether a developer can be kept from
+learning the game's shortcuts by reading the open code or asking an AI. They
+cannot, and the game does not try: open games (Minecraft servers, Veloren,
+Wesnoth, 0 A.D.) hide nothing in their repositories and put what must stay
+unknown on the server and in its dice. Here, the same:
+
+- **The repository is wiki knowledge.** Nothing in it is secret: the rules,
+  the content, the odds and the prices are what a wiki would print anyway. The
+  only secrets are the service keys of 9.3, and they never enter it.
+- **The server owns the state and every roll.** Gold, the bag, the position
+  and the clock are the server's copy (NEXT 18; DECISIONS 2026-10-10 "The
+  shared world"; 2026-10-20 "The world's hour is the server's clock"). Every
+  roll (a find, a drop, a predator's sight) is drawn from a seed only the
+  server holds (kernel review R4), so the code gives the odds and never the
+  result. A changed client changes nothing another player sees: the server
+  refuses what the kernel would refuse (NEXT 18, the refusal list).
+- **No solution is static where it matters.** The hunt's window is learned by
+  watching the eyes and never told (G47); the chart shows only the ground the
+  player walked (DECISIONS 2026-10-20 "The map: its own window, the ground you
+  walked"). The tangle is hand-made today and a riddle has one answer, so a
+  wiki can print both. **Retry when** mazes and riddles are content enough to
+  matter: a maze generated per attempt from the server's seed, and riddles
+  with variants drawn the same way.
+- **The economy is public by design.** Values live in
+  `content/values.lock.json` and no price is hardcoded, so "what pays most" is
+  a table anyone can read. It is bounded by the rarity budget (G42) and the
+  clocks that no skill shortens (DECISIONS 2026-10-10 "The world and its
+  clocks"), not by being hidden.
+- **A contributor's edge is accepted.** Knowing the content early is the edge
+  every game gives its wiki writers and speedrunners. A spoiler is the
+  player's own loss; a cheat on shared state is the server's to refuse.
 
 ## 10. Order of work, by milestone
 

@@ -71,7 +71,7 @@ export function offerSignup(ui: UI): void {
   const server = gameServer();
   if (server === undefined) return;
   const layer: Layer = { el: h('div', { class: 'layer panel-layer' }) };
-  const box = h('div', { class: 'panel signup', role: 'dialog', 'aria-label': 'Make an account' });
+  const box = h('div', { class: 'panel signup ui-window', role: 'dialog', 'aria-label': 'Make an account' });
   layer.el.append(box);
   ui.push(layer);
   const close = () => ui.pop(layer);
@@ -81,9 +81,10 @@ export function offerSignup(ui: UI): void {
   const providers = () => {
     const email = h('input', { type: 'email', placeholder: 'Your email', autocomplete: 'email', class: 'name' });
     say(
-      h('h2', null, 'Keep this game with an account'),
+      h('h2', { class: 'ui-plaque' }, 'Keep this game with an account'),
       h('p', null, 'Make an account and your valley comes with you.'),
       button('Continue with Google', () => (window.location.href = `${server}/auth/google/start`), 'big'),
+      button('Continue with Discord', () => (window.location.href = `${server}/auth/discord/start`), 'big'),
       h('label', { class: 'name-row' }, 'Or by email ', email),
       button('Send me a link', () => {
         void post(server, '/auth/email/start', { email: email.value.trim() }).then(() => (note.textContent = 'If that address can sign in, a link is on its way.'));
@@ -111,7 +112,7 @@ export function offerSignup(ui: UI): void {
       void post(server, '/auth/signup', body)
         .then((reply) => {
           if (reply.status === 201) {
-            say(h('h2', null, `Welcome, ${reply.body.name ?? ''}`), h('p', { role: 'status' }, reply.body.opening === 'kept' ? KEPT_NOTICE : FRESH_NOTICE), button('Continue', () => window.location.assign('/'), 'big'));
+            say(h('h2', { class: 'ui-plaque' }, `Welcome, ${reply.body.name ?? ''}`), h('p', { role: 'status' }, reply.body.opening === 'kept' ? KEPT_NOTICE : FRESH_NOTICE), button('Continue', () => window.location.assign('/'), 'big'));
             return;
           }
           if (reply.body.reason === 'under-age') {
@@ -128,7 +129,7 @@ export function offerSignup(ui: UI): void {
         });
     });
     say(
-      h('h2', null, 'One more step'),
+      h('h2', { class: 'ui-plaque' }, 'One more step'),
       h('label', { class: 'name-row' }, 'Name ', name),
       h('fieldset', null, h('legend', null, 'Date of birth'), day, month, year),
       h('label', null, agree, ' One person, one account in a world.'),

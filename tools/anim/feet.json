@@ -1,0 +1,528 @@
+{
+ "about": "The planted feet of every walk sheet in content/kit/core/chars, written by `pnpm anim sheets` from the render (never by hand). The game test plays the real walker and the real pose rule against it and measures how far a planted foot is from the ground.",
+ "sheets": {
+  "human": {
+   "down": {
+    "poses": 10,
+    "travel": 14.428,
+    "slope": -14.428,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1,
+       2
+      ],
+      "ys": [
+       89,
+       74
+      ],
+      "icpt": 88.764
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       6,
+       7
+      ],
+      "ys": [
+       89,
+       74
+      ],
+      "icpt": 88.249
+     }
+    ]
+   },
+   "up": {
+    "poses": 10,
+    "travel": 14.53,
+    "slope": 14.53,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1,
+       2
+      ],
+      "ys": [
+       89,
+       104
+      ],
+      "icpt": 89.585
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       6,
+       7
+      ],
+      "ys": [
+       90,
+       104
+      ],
+      "icpt": 89.71
+     }
+    ]
+   },
+   "left": {
+    "poses": 10,
+    "travel": 18.901,
+    "slope": 18.901,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1,
+       2
+      ],
+      "ys": [
+       64,
+       84
+      ],
+      "icpt": 64.539
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       6,
+       7
+      ],
+      "ys": [
+       65,
+       84
+      ],
+      "icpt": 64.954
+     }
+    ]
+   }
+  },
+  "human_w": {
+   "down": {
+    "poses": 10,
+    "travel": 15.049,
+    "slope": -15.049,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1
+      ],
+      "ys": [
+       88
+      ],
+      "icpt": 87.97
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       6
+      ],
+      "ys": [
+       90
+      ],
+      "icpt": 89.54
+     }
+    ]
+   },
+   "up": {
+    "poses": 10,
+    "travel": 15.025,
+    "slope": 15.025,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1
+      ],
+      "ys": [
+       90
+      ],
+      "icpt": 89.9
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       6
+      ],
+      "ys": [
+       90
+      ],
+      "icpt": 89.74
+     }
+    ]
+   },
+   "left": {
+    "poses": 10,
+    "travel": 19.629,
+    "slope": 19.629,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1
+      ],
+      "ys": [
+       65
+      ],
+      "icpt": 65.26
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       6
+      ],
+      "ys": [
+       64
+      ],
+      "icpt": 64.13
+     }
+    ]
+   }
+  },
+  "elf": {
+   "down": {
+    "poses": 15,
+    "travel": 14.239,
+    "slope": -14.239,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       2,
+       3
+      ],
+      "ys": [
+       82,
+       68
+      ],
+      "icpt": 82.204
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       8,
+       9,
+       10
+      ],
+      "ys": [
+       105,
+       90,
+       76
+      ],
+      "icpt": 104.259
+     }
+    ]
+   },
+   "up": {
+    "poses": 15,
+    "travel": 15.135,
+    "slope": 15.135,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       2,
+       3
+      ],
+      "ys": [
+       95,
+       109
+      ],
+      "icpt": 94.583
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       8,
+       9,
+       10
+      ],
+      "ys": [
+       74,
+       89,
+       103
+      ],
+      "icpt": 73.405
+     }
+    ]
+   },
+   "left": {
+    "poses": 15,
+    "travel": 19.167,
+    "slope": 19.167,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       2,
+       3
+      ],
+      "ys": [
+       72,
+       91
+      ],
+      "icpt": 72.082
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       8,
+       9,
+       10
+      ],
+      "ys": [
+       44,
+       63,
+       82
+      ],
+      "icpt": 43.863
+     }
+    ]
+   }
+  },
+  "elf_w": {
+   "down": {
+    "poses": 15,
+    "travel": 14.527,
+    "slope": -14.527,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       2
+      ],
+      "ys": [
+       83
+      ],
+      "icpt": 82.68
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       8,
+       9,
+       10
+      ],
+      "ys": [
+       105,
+       90,
+       75
+      ],
+      "icpt": 104.491
+     }
+    ]
+   },
+   "up": {
+    "poses": 15,
+    "travel": 14.557,
+    "slope": 14.557,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       2
+      ],
+      "ys": [
+       96
+      ],
+      "icpt": 95.93
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       8,
+       9,
+       10
+      ],
+      "ys": [
+       74,
+       89,
+       103
+      ],
+      "icpt": 74.129
+     }
+    ]
+   },
+   "left": {
+    "poses": 15,
+    "travel": 18.984,
+    "slope": 18.984,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       2
+      ],
+      "ys": [
+       73
+      ],
+      "icpt": 72.65
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       8,
+       9,
+       10
+      ],
+      "ys": [
+       44,
+       64,
+       82
+      ],
+      "icpt": 44.186
+     }
+    ]
+   }
+  },
+  "skeleton": {
+   "down": {
+    "poses": 12,
+    "travel": 13.617,
+    "slope": -13.617,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1
+      ],
+      "ys": [
+       93
+      ],
+      "icpt": 92.62
+     },
+     {
+      "foot": "Left",
+      "poses": [
+       11
+      ],
+      "ys": [
+       106
+      ],
+      "icpt": 105.94
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       5
+      ],
+      "ys": [
+       106
+      ],
+      "icpt": 105.91
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       7,
+       8
+      ],
+      "ys": [
+       93,
+       79
+      ],
+      "icpt": 92.819
+     }
+    ]
+   },
+   "up": {
+    "poses": 12,
+    "travel": 12.675,
+    "slope": 12.675,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1
+      ],
+      "ys": [
+       86
+      ],
+      "icpt": 86.34
+     },
+     {
+      "foot": "Left",
+      "poses": [
+       11
+      ],
+      "ys": [
+       72
+      ],
+      "icpt": 72.32
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       5
+      ],
+      "ys": [
+       73
+      ],
+      "icpt": 72.73
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       7,
+       8
+      ],
+      "ys": [
+       86,
+       99
+      ],
+      "icpt": 86.323
+     }
+    ]
+   },
+   "left": {
+    "poses": 12,
+    "travel": 17.164,
+    "slope": 17.164,
+    "plants": [
+     {
+      "foot": "Left",
+      "poses": [
+       1
+      ],
+      "ys": [
+       60
+      ],
+      "icpt": 59.9
+     },
+     {
+      "foot": "Left",
+      "poses": [
+       11
+      ],
+      "ys": [
+       42
+      ],
+      "icpt": 42.05
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       5
+      ],
+      "ys": [
+       42
+      ],
+      "icpt": 42.34
+     },
+     {
+      "foot": "Right",
+      "poses": [
+       7,
+       8
+      ],
+      "ys": [
+       60,
+       77
+      ],
+      "icpt": 59.758
+     }
+    ]
+   }
+  }
+ }
+}

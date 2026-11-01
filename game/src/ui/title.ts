@@ -7,6 +7,7 @@ import type { GameSession } from '../session-surface';
 import { ATTRIBUTE_LABEL, ATTRIBUTE_TEXT } from '../text';
 import { say } from './dialog';
 import { gameServer, offerSignup } from './signup';
+import { standingFrame } from '../work';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
 import './race-body.css';
@@ -82,7 +83,7 @@ export function showTitle(ui: UI): Promise<void> {
       el.replaceChildren(
         h(
           'div',
-          { class: 'title-box' },
+          { class: 'title-box ui-window' },
           h('h1', { class: 'logo' }, GAME_TITLE),
           h('p', { class: 'tagline' }, 'A valley the players rebuild together'),
           h(
@@ -164,7 +165,7 @@ export function showTitle(ui: UI): Promise<void> {
       el.replaceChildren(
         h(
           'div',
-          { class: 'title-box' },
+          { class: 'title-box ui-window' },
           h('p', null, 'A new game replaces the one saved in this browser.'),
           h('div', { class: 'title-actions' }, button('Start a new game', () => choose(), 'danger'), button('Back', () => home())),
         ),
@@ -208,7 +209,7 @@ export function showTitle(ui: UI): Promise<void> {
                 'data-race': id,
                 onclick: () => ((picked = id), drawToggle(), drawCards()),
               },
-              sprite(b, spr, 3, 1),
+              sprite(b, spr, 3, standingFrame(spr ? b.sprites[spr] : undefined, 1)),
               h('b', null, st.name),
               h('p', null, st.about),
               h(
@@ -266,7 +267,7 @@ export function showTitle(ui: UI): Promise<void> {
       el.replaceChildren(
         h(
           'div',
-          { class: 'title-box wide' },
+          { class: 'title-box wide ui-window' },
           h('h2', null, 'Who wakes up by the river?'),
           lookToggle,
           cards,

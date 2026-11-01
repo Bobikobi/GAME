@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { playDoor } from '../../tools/src/site/door';
 
 /** The page without the Vercel Web Analytics pair (its queue stub and its loader), the only scripts the home page may carry; a JSON-LD block is data, not script, and is removed too. */
 const withoutAnalytics = (page: string): string =>
@@ -28,14 +29,17 @@ describe('the home page', () => {
     expect(html).not.toMatch(/\sstyle="/);
   });
 
-  it('opens the classic game at /play/ with the primary button', () => {
-    expect(html).toMatch(/<a class="btn primary stretch" href="\/play\/">Play<\/a>/);
+  it('opens the classic game at its door with the primary button and the header: /play/, or the game SITE_GAME_URL names', () => {
+    const door = playDoor();
+    expect(html).toContain(`<a class="btn primary stretch" href="${door}">Play</a>`);
+    expect(html).toContain(`<a class="ka-btn go" href="${door}">Play free</a>`);
+    expect(html).toContain(`<a href="${door}" data-play>Play</a>`);
   });
 
-  it('shows the 3D door exactly when its loop ships, and always when a 3D build ships', () => {
+  it('hides the 3D door while 3D is paused, unless a screenshot forces it, and ships its loop only with the door', () => {
     const door = html.includes('href="/play3d/"');
+    expect(door).toBe(process.env['SITE_3D_DOOR'] === 'force');
     expect(door).toBe(existsSync(join(DIST, 'media/camp-loop.mp4')));
-    if (existsSync(join(DIST, 'play3d/index.html'))) expect(door).toBe(true);
   });
 
   it('puts the builder with the most points first on the board', () => {
@@ -46,15 +50,17 @@ describe('the home page', () => {
     expect(html).toContain(`.rows li:nth-child(1) .count { --to: ${first![1].points}; }`);
   });
 
-  it('weighs under 300KB with its stylesheets, faces, scene and loop', () => {
+  it('weighs under 450KB on a phone with its stylesheets, faces, key-art still, scene and loop', () => {
     const css = [...html.matchAll(/href="(\/_astro\/[^"]+\.css)"/g)].map((m) => m[1]!.slice(1));
     const faces = [...html.matchAll(/<link rel="preload" href="\/([^"]+\.woff2)"/g)].map((m) => m[1]!);
-    const parts = ['index.html', ...css, ...faces, ...files('scene'), ...files('media')];
+    // 298 KB before the phone still (DECISIONS.md, 2026-10-30), so the budget moves from 300 KB to 450 KB
+    // the phone's own still and the one extra face its headline signs in (DECISIONS.md, 2026-10-30)
+    const parts = ['index.html', ...css, ...faces, 'keyart/hero-phone.webp', 'fonts/cinzel/cinzel-latin.woff2', ...files('scene'), ...files('media')];
     const total = parts.reduce((sum, path) => sum + size(path), 0);
     console.log(`home page weight: ${total} bytes in ${parts.length} files`);
     expect(faces).toHaveLength(2);
     expect(files('scene').length).toBeGreaterThan(0);
-    expect(total).toBeLessThan(300_000);
+    expect(total).toBeLessThan(450_000);
   });
 
   it('shows the desktop key art from 1024px only: a looping video and its still, nothing on the phone', () => {
@@ -65,6 +71,17 @@ describe('the home page', () => {
     // webm first, then mp4, both for the desktop only
     expect(video).toMatch(/<source media="\(min-width: 1024px\)" src="\/keyart\/hero\.webm" type="video\/webm"[^>]*>\s*<source media="\(min-width: 1024px\)" src="\/keyart\/hero\.mp4"/);
     expect(html).toMatch(/<img class="ka-still"[^>]*src="data:image\/gif;base64,/);
+  });
+
+  it('gives a phone its own still and no video: every video source and desktop still source carries the desktop query', () => {
+    const art = html.match(/<picture>[\s\S]*?<\/picture>/)?.[0] ?? '';
+    expect(art).toMatch(/<source media="\(max-width: 1023px\)" type="image\/webp" srcset="\/keyart\/hero-phone\.webp"[^>]*>\s*<source media="\(max-width: 1023px\)" srcset="\/keyart\/hero-phone\.jpg"/);
+    for (const m of art.matchAll(/<source media="\(min-width: 1024px\)"[^>]*>/g)) expect(m[0]).toMatch(/hero-poster/);
+    const video = html.match(/<video[^>]*>[\s\S]*?<\/video>/)?.[0] ?? '';
+    for (const m of video.matchAll(/<source\b[^>]*>/g)) expect(m[0]).toContain('media="(min-width: 1024px)"');
+    for (const f of ['hero-phone.webp', 'hero-phone.jpg']) expect(existsSync(join(DIST, `keyart/${f}`)), f).toBe(true);
+    expect(size('keyart/hero-phone.webp')).toBeLessThan(150_000);
+    expect(html).not.toMatch(/Openfold/);
   });
 
   it('keeps the desktop key art light: the still and faces under 600KB, each video under 12MB', () => {

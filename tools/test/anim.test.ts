@@ -7,12 +7,12 @@ import { join } from 'node:path';
 import { crc32, deflateRawSync } from 'node:zlib';
 import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
-import { type Clip, clipNames, clipProblems, job, type Library, paces, poseMs, readClip, readLibraries, readSettings, samples, stepFrames } from '../src/anim/clip';
+import { type Clip, clipNames, clipPaces, clipProblems, job, type Library, paces, poseMs, readClip, readLibraries, readSettings, samples, stepFrames, withNative } from '../src/anim/clip';
 import { onTarget, outDir } from '../src/anim/cli';
 import { archiveProblems, itchUploads, sha256, unpack } from '../src/anim/fetch';
-import { measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
-import { classPalettes, flipX, type Picture, rampColours, sheetRamps, snap } from '../src/anim/snap';
-import { CORE_PALETTE, CORE_RAMPS } from '../src/kit/palette';
+import { fourBeatProblems, footfalls, measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
+import { classPalettes, flipX, type Picture, rampColours, rampSteps, sheetRamps, snap } from '../src/anim/snap';
+import { CORE_PALETTE, CORE_RAMPS, coreRamp } from '../src/kit/palette';
 import { allowedColors } from '../src/kit/ramps';
 import { CORE_KIT, richProblem } from '../src/kit/rich';
 import { applyInk, INK_HEX, inkShare } from '../src/kit/ink';
@@ -20,7 +20,8 @@ import { zipEntries, zipFile, zipRead } from '../src/anim/zip';
 import { CONTENT_DIR, REPO_ROOT } from '../src/load';
 
 const settings = readSettings();
-const libs = readLibraries();
+const rawLibs = readLibraries();
+const libs = withNative(rawLibs, settings);
 const OUTLINE = INK_HEX;
 
 function picture(width: number, height: number, fill?: (x: number, y: number) => readonly [number, number, number, number] | undefined): Picture {
@@ -42,13 +43,35 @@ describe('clip configs', () => {
   });
 
   it('every target of the cast has its model in the repo, shared ramps and a credit line naming its licence', () => {
-    const cast = Object.entries(settings.targets).filter(([, t]) => !t.model.startsWith('$'));
+    const cast = Object.entries(settings.targets).filter(([, t]) => t.model !== undefined && !t.model.startsWith('$'));
     expect(cast.length).toBeGreaterThan(1);
     for (const [id, t] of cast) {
-      expect(existsSync(join(REPO_ROOT, t.model)), id).toBe(true);
+      expect(existsSync(join(REPO_ROOT, t.model ?? '')), id).toBe(true);
       expect(() => classPalettes(t.ramps, t.metal, t.leaf), id).not.toThrow();
       expect(rampColours(t.ramps).length, id).toBeGreaterThan(0);
       expect(t.credit ?? '', id).toMatch(/CC BY 4\.0|CC0/);
+    }
+  });
+
+  it('a native target declares each action at the length its glb plays it', () => {
+    /** The animations of a glb by name, each with its length in seconds (the largest time of its keyframe inputs). */
+    const glbAnimations = (path: string): Map<string, number> => {
+      const bin = readFileSync(path);
+      const json = JSON.parse(bin.subarray(20, 20 + bin.readUInt32LE(12)).toString('utf8')) as {
+        animations?: { name?: string; samplers: { input: number }[] }[];
+        accessors: { max?: number[] }[];
+      };
+      return new Map((json.animations ?? []).map((a) => [a.name ?? '', Math.max(...a.samplers.map((sm) => json.accessors[sm.input]?.max?.[0] ?? 0))]));
+    };
+    const natives = Object.entries(settings.targets).filter(([, t]) => t.map === 'native');
+    expect(natives.length).toBeGreaterThan(0);
+    for (const [id, t] of natives) {
+      expect(t.model, id).toBeDefined();
+      const played = glbAnimations(join(REPO_ROOT, t.model ?? ''));
+      for (const [action, frames] of Object.entries(t.actions ?? {})) {
+        expect(played.has(action), `${id} ${action}`).toBe(true);
+        expect((played.get(action) ?? 0) * (t.fps ?? 24), `${id} ${action}`).toBeCloseTo(frames, 1);
+      }
     }
   });
 
@@ -86,6 +109,46 @@ describe('clip configs', () => {
     expect(problems).toMatch(/ik.t is 2 numbers/);
     expect(problems).toMatch(/spreads its poses evenly/);
     expect(problems).toMatch(/ramp "velvet"/);
+  });
+
+  it('a native body is played by its own actions, four poses a loop (the lying pose held, until the owner answers), and a sheet stays inside the budget of 69 frames', () => {
+    const wolf = settings.targets.wolf;
+    expect(wolf?.map).toBe('native');
+    expect(Object.keys(wolf?.contacts ?? {}).sort()).toEqual(['LB', 'LF', 'RB', 'RF']);
+    const clips = clipNames().filter((n) => readClip(n).target === 'wolf');
+    expect(clips.sort()).toEqual(['wolf_alert', 'wolf_graze', 'wolf_idle', 'wolf_lie', 'wolf_run', 'wolf_walk']);
+    let frames = 0;
+    for (const n of clips) {
+      const c = readClip(n);
+      expect(clipProblems(n, c, libs, settings)).toEqual([]);
+      expect(c.base.library).toBe('self:wolf');
+      const poses = poseMs(c, libs).length;
+      // Four poses a loop is the owner's rule (DECISIONS 2026-10-29, answer C). wolf_lie, one held pose, is the only
+      // exception, until the owner answers question 5 of DECISIONS 2026-10-30; the exception goes with that answer.
+      expect(poses, n).toBe(n === 'wolf_lie' ? 1 : 4);
+      frames += poses * c.views.length;
+    }
+    expect(frames).toBeLessThanOrEqual(69);
+    const j = job('wolf_walk', readClip('wolf_walk'), libs, settings, { out: '/o', libs: [], model: '/m.glb', threads: 1 });
+    expect(j).toMatchObject({ map: 'native', libs: [], contacts: wolf?.contacts, samples: [{ base: ['Walk', 0] }, { base: ['Walk', 6] }, { base: ['Walk', 12] }, { base: ['Walk', 18] }] });
+  });
+
+  it('refuses a native clip that takes a library, a layer or a prop, a human target given the wolf\'s own actions, and a four-beat claim off a native body', () => {
+    const walk = readClip('wolf_walk');
+    const human = readClip('jog');
+    expect(clipProblems('w', { ...walk, base: { library: 'ual1', action: 'Walk_Loop' } }, libs, settings).join(' ')).toMatch(/takes its own actions/);
+    expect(clipProblems('w', { ...walk, prop: { kind: 'torch' } }, libs, settings).join(' ')).toMatch(/no prop/);
+    expect(clipProblems('j', { ...human, base: { library: 'self:wolf', action: 'Walk' } }, libs, settings).join(' ')).toMatch(/belongs to a native target/);
+    expect(clipProblems('j', { ...human, locomotion: { playback: 'distance', gait: 'four-beat' } }, libs, settings).join(' ')).toMatch(/only a native/);
+    expect(clipProblems('w', { ...walk, locomotion: { playback: 'distance', pace_ms: 0 } }, libs, settings).join(' ')).toMatch(/pace_ms/);
+  });
+
+  it('a clip with its own pace is judged at that pace in place of the player\'s three', () => {
+    const players = { light: 376, steady: 337, heavy: 278 };
+    expect(clipPaces(readClip('jog'), settings, players)).toBe(players);
+    const own = clipPaces(readClip('wolf_walk'), settings, players);
+    expect(own.steady).toBeCloseTo(64000 / 600, 6);
+    expect(own).toEqual({ light: own.steady, steady: own.steady, heavy: own.steady });
   });
 
   it('refuses a set piece or a worn part the renderer cannot build, and a named IK point without a body anchor', () => {
@@ -220,7 +283,7 @@ describe('library fetch', () => {
   });
 
   it('every library names its archive by sha256 and its licence', () => {
-    for (const l of Object.values(libs)) {
+    for (const l of Object.values(rawLibs)) {
       expect(l.sha256).toMatch(/^[0-9a-f]{64}$/);
       expect(l.licence).toMatch(/CC0/);
       expect(l.page).toMatch(/^https:\/\//);
@@ -288,6 +351,22 @@ describe('snap', () => {
 
 describe('a sheet and the rich rule', () => {
   const core = CORE_PALETTE.map((h) => h.toLowerCase());
+  it('a body ramp may be a span of one shared ramp, the sheet naming the whole ramp; a bad span is refused', () => {
+    const wood = coreRamp('wood')?.steps ?? [];
+    const bark = coreRamp('bark')?.steps ?? [];
+    expect(rampSteps('wood')).toEqual({ id: 'wood', steps: wood });
+    expect(rampColours(['wood:2-5'])).toEqual(wood.slice(2));
+    expect(rampColours(['bark', 'wood:2-5'])).toEqual([...bark, ...wood.slice(2)]);
+    expect(classPalettes(['bark', 'wood:2-5'], 'grey').body).not.toContain(wood[0]);
+    expect(sheetRamps(['bark', 'wood:2-5'], 'grey')).toEqual(['bark', 'wood', 'fire', 'grey', 'green']);
+    for (const bad of ['wood:4-2', 'wood:2-6', 'wood:2', 'wood:2-', 'velvet:0-1', 'wood:0-1:2', '']) {
+      expect(rampSteps(bad), bad).toBeUndefined();
+      expect(() => rampColours([bad]), bad).toThrow(/not a shared ramp/);
+    }
+    const lie = readClip('boar_lie');
+    expect(clipProblems('boar_lie', { ...lie, ramps: ['bark', 'wood:2-5'] }, libs, settings)).toEqual([]);
+    expect(clipProblems('boar_lie', { ...lie, ramps: ['wood:3-9'] }, libs, settings).join(' ')).toMatch(/ramp "wood:3-9"/);
+  });
   it('names shared ramps that hold every colour a target can draw, and the core kit takes it at density 4', () => {
     for (const [id, t] of Object.entries(settings.targets)) {
       const ramps = sheetRamps(t.ramps, t.metal, t.leaf);
@@ -332,6 +411,42 @@ describe('measures', () => {
     return { down: { Left: foot(leftDown, i % 4), Right: foot(!leftDown, i % 4) } };
   };
   const meta: RenderMeta = { frame: [64, 96], scale_v: 1, poses: Array.from({ length: 8 }, (_, i) => feet(i)) };
+
+  // a four-legged walk of 8 poses: each foot is planted for six poses and lifted for two, landing at the given poses
+  const beats = (land: Record<string, number>): RenderMeta => ({
+    frame: [128, 96],
+    scale_v: 1,
+    poses: Array.from({ length: 8 }, (_, i) => ({
+      left: Object.fromEntries(Object.entries(land).map(([foot, at]) => [foot, { px: [60, 60], world: [0, 0, (((i - at + 8) % 8) >= 6 ? 0.1 : 0)] as [number, number, number] }])),
+    })),
+  });
+
+  it('footfalls: the order the feet land in and the gaps between landings', () => {
+    const f = footfalls(beats({ LB: 0, LF: 2, RB: 4, RF: 6 }), 'left');
+    expect(f.order).toEqual(['LB', 'LF', 'RB', 'RF']);
+    expect(f.gaps).toEqual([0.25, 0.25, 0.25, 0.25]);
+    expect(f.bad).toEqual([]);
+    expect(fourBeatProblems(f, 'left')).toEqual([]);
+  });
+
+  it('a four-beat walk fails when two feet land together, when the beats bunch up, or when hind feet follow each other', () => {
+    expect(fourBeatProblems(footfalls(beats({ LB: 0, RF: 0, RB: 4, LF: 4 }), 'left'), 'left').join(' ')).toMatch(/not four even beats/);
+    expect(fourBeatProblems(footfalls(beats({ LB: 0, LF: 1, RB: 4, RF: 5 }), 'left'), 'left').join(' ')).toMatch(/not four even beats/);
+    expect(fourBeatProblems(footfalls(beats({ LB: 0, RB: 2, LF: 4, RF: 6 }), 'left'), 'left').join(' ')).toMatch(/hind and fore should take turns/);
+  });
+
+  it('a foot that plants twice a cycle is named, and a clip marked four-beat reports its footfalls', () => {
+    const twice: RenderMeta = { frame: [128, 96], scale_v: 1, poses: Array.from({ length: 8 }, (_, i) => ({ left: { LB: { px: [0, 0] as [number, number], world: [0, 0, i % 4 < 2 ? 0 : 0.1] as [number, number, number] } } })) };
+    expect(fourBeatProblems(footfalls(twice, 'left'), 'left').join(' ')).toMatch(/LB plants 2 times a cycle/);
+    const ok = beats({ LB: 0, LF: 2, RB: 4, RF: 6 });
+    const frames = { left: Array.from({ length: 8 }, () => picture(5, 5, (x, y) => (x > 0 && x < 4 && y > 0 && y < 4 ? (x === 2 && y === 2 ? [0x9e, 0x6b, 0x3c, 255] : [0x1b, 0x1a, 0x2e, 255]) : undefined))) };
+    const base = { frames, allowed: new Set(['#9e6b3c', OUTLINE]), limits: { ...settings.limits, foot_slide_px: 99, poses_per_s_max: 999 }, poseStep: 3, ms: Array(8).fill(100), paces: { light: 100, steady: 100, heavy: 100 } };
+    const m = measureClip({ ...base, meta: ok, locomotion: { playback: 'distance', gait: 'four-beat' } });
+    expect(m.views.left?.footfalls?.order).toEqual(['LB', 'LF', 'RB', 'RF']);
+    const trot = measureClip({ ...base, meta: beats({ LB: 0, RF: 0, RB: 4, LF: 4 }), locomotion: { playback: 'distance', gait: 'four-beat' } });
+    expect(trot.problems.join(' ')).toMatch(/not four even beats/);
+    expect(measureClip({ ...base, meta: beats({ LB: 0, RF: 0, RB: 4, LF: 4 }), locomotion: { playback: 'distance' } }).views.left?.footfalls).toBeUndefined();
+  });
 
   it('foot slide: a planted foot that moves with the ground holds; the stride is fitted from it', () => {
     const s = stride(meta, 'down', 4);
