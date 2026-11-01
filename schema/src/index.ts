@@ -1564,6 +1564,24 @@ export const ParamsBody = Type.Object(
         warn_min: { ...Bounded, description: 'Game minutes before a burning fire goes out when its warning is shown.' },
         safe_tiles: { ...Bounded, description: "How far from the player's own fire, in tiles, the ground is safe while it burns: 1 is its tile and the ring around it (G30)." },
         burn_pct_per_d: { ...Bounded, description: "How much faster a log of the player's own fire burns for each step of the area's danger d, in percent (G30, G48)." },
+        flicker: Type.Optional(
+          Type.Object(
+            {
+              band_pct: { ...Bounded, description: "How far a fire's light moves around the lighting ladder's value, in percent: its strength by this much either way, its pool's radius by half of it." },
+              step_min_ms: { ...Bounded, description: "The shortest wait before a fire's flicker takes a new value, in milliseconds of the wall clock." },
+              step_max_ms: { ...Bounded, description: "The longest wait before a fire's flicker takes a new value, in milliseconds of the wall clock." },
+              frame_jitter_pct: { ...Bounded, description: "How far each of a flame's frame times moves around its base, in percent, drawn per frame from the fire's own seed." },
+              start_spread_ms: { ...Bounded, description: "The longest delay before a fire's first frame step, drawn from its own seed, so two fires never start as one." },
+              ember_per_s: { ...Bounded, description: 'Embers a full fire lets drift up a second; a settled or low fire fewer.' },
+              spark_gap_min_s: { ...Bounded, description: 'The shortest wait between two sparks that pop from a burning fire, in seconds.' },
+              spark_gap_max_s: { ...Bounded, description: 'The longest wait between two sparks that pop from a burning fire, in seconds.' },
+            },
+            {
+              additionalProperties: false,
+              description: 'A living fire (GRUNT CR-110): how a burning fire moves, flickers and crackles. Read by the client only; the kernel decides every burn.',
+            },
+          ),
+        ),
       },
       { additionalProperties: false, description: 'A tended fire uses the game tick, which pauses while the player is away.' },
     ),
@@ -1856,6 +1874,9 @@ const Slot = Type.Object(
     h: Int(1, 64),
     tag: Type.Optional(TileTag),
     label: Type.Optional(Name),
+    danger: Type.Optional(
+      Int(0, 9, "The area's danger level d (G64, CR-38): 0 in the town and upward with the walk from it. Only an `area` slot carries it; ground in no area stays at 1. The world shows it (tracks, bones, thicker mist), the screen never does."),
+    ),
     safe: Type.Optional(
       Type.Boolean({
         description:

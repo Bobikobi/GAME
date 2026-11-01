@@ -18,7 +18,8 @@ export interface Scape {
   fire: { level: number; pan: number };
   stream: { level: number; pan: number };
   dread: { level: number; pan: number };
-  crackle: { level: number; pan: number };
+  /** the nearest burning fire heard, and its id, so the scene can breathe it with the fire's flicker */
+  crackle: { level: number; pan: number; id?: string };
 }
 
 interface Spot {
@@ -98,14 +99,14 @@ export function soundscape(b: Bundle, state: PublicState, tick: number, x: numbe
     if (p.fire !== true || p.id === undefined || !fireBurns(state, p.id, tick)) continue;
     const [cx, cy] = [p.x + p.w / 2, p.y + p.h / 2];
     const level = falloff(Math.hypot(cx - x, cy - y), CRACKLE_RANGE[0], CRACKLE_RANGE[1]);
-    if (level > scape.crackle.level) scape.crackle = { level, pan: panFor(cx - x, CRACKLE_RANGE[1]) };
+    if (level > scape.crackle.level) scape.crackle = { level, pan: panFor(cx - x, CRACKLE_RANGE[1]), id: p.id };
   }
   // and the one the player kindled, on its own tile (NEXT 21b)
   const own = state.player.own;
   if (own !== null && fireBurns(state, OWN_FIRE, tick)) {
     const [cx, cy] = [own.at[0] + 0.5, own.at[1] + 0.5];
     const level = falloff(Math.hypot(cx - x, cy - y), CRACKLE_RANGE[0], CRACKLE_RANGE[1]);
-    if (level > scape.crackle.level) scape.crackle = { level, pan: panFor(cx - x, CRACKLE_RANGE[1]) };
+    if (level > scape.crackle.level) scape.crackle = { level, pan: panFor(cx - x, CRACKLE_RANGE[1]), id: OWN_FIRE };
   }
   return scape;
 }
