@@ -7,7 +7,7 @@
 import type { Bundle } from './bundle';
 import { appearSlots } from './reactions';
 import { relocationOf } from './relocate';
-import { KERNEL_VERSION, fitWorn, type State } from './state';
+import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, type State } from './state';
 
 /**
  * The state as today's content can play it: what still exists is kept, what left the content is dropped,
@@ -56,6 +56,8 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   state.searched = Object.fromEntries(
     Object.entries(keepKeys(state.searched ?? {}, bundle.searchables)).map(([id, held]) => [id, { ...held, rows: held.rows.filter((item) => item in bundle.items) }]),
   );
+  // the authored ground moved inside a larger map (gap M5): every saved tile moves with it, before the reach check below
+  moveTiles(bundle, state);
   // a height layer may have walled the old tile off from every wake (G68): stand on the nearest tile a foot can reach, never a fall
   const stand = relocationOf(bundle, state);
   if (stand) p.at = stand;
@@ -69,4 +71,40 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   state.content = bundle.tag;
   state.kernel = KERNEL_VERSION;
   return state;
+}
+
+/**
+ * A state of an earlier map frame has its tiles shifted by the map's `moved`, once: the player, the fire they
+ * kindled, the carcasses and what lies dropped on the ground. A tile that falls outside the map is pulled to its
+ * nearest edge (the reach check after it puts the character on the nearest foot-reachable tile). The state then
+ * takes the map's frame, so a later change of content never shifts it again. A state of a later frame than the
+ * map's (a server rolled back) is left as it is.
+ */
+function moveTiles(bundle: Bundle, state: State): void {
+  const frame = mapFrame(bundle);
+  if (frame <= 1) return;
+  const from = state.frame ?? 1;
+  if (from >= frame) return;
+  const moved = bundle.map.moved;
+  state.frame = frame;
+  if (!moved) return;
+  const { width, height } = bundle.map;
+  const shift = (at: [number, number]): [number, number] => [
+    Math.min(width - 1, Math.max(0, at[0] + moved.dx)),
+    Math.min(height - 1, Math.max(0, at[1] + moved.dy)),
+  ];
+  const p = state.player;
+  p.at = shift(p.at);
+  if (p.own) p.own.at = shift(p.own.at);
+  for (const carcass of p.carcasses ?? []) carcass.at = shift(carcass.at);
+  if (p.ground) {
+    const dropped: Record<string, Record<string, number>> = {};
+    for (const [key, items] of Object.entries(p.ground)) {
+      const [x, y] = key.split(',').map(Number) as [number, number];
+      const key2 = groundKey(shift([x, y]));
+      dropped[key2] = { ...dropped[key2] };
+      for (const [item, qty] of Object.entries(items)) dropped[key2][item] = (dropped[key2][item] ?? 0) + qty;
+    }
+    p.ground = dropped;
+  }
 }
