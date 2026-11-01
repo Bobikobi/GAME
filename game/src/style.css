@@ -761,7 +761,7 @@ body {
   width: min(380px, calc(100vw - 24px));
   /* clear of frame D's corner pieces */
   padding: 14px 20px;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .sea-head b,
