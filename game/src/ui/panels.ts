@@ -1360,7 +1360,7 @@ function openCredits(ui: UI): void {
       h(
         'div',
         { class: 'muted' },
-        'Engine: Phaser (MIT). Font: Pixelify Sans by Stefie Justprince (SIL Open Font License). The age limit of an account uses the country file ',
+        'Engine: Phaser (MIT). Font: Pixelify Sans by Stefie Justprince (SIL Open Font License). Music: our own tunes played on the FluidR3_GM soundfont by Frank Wen (CC BY 3.0). The age limit of an account uses the country file ',
         h('a', { href: 'https://db-ip.com', target: '_blank', rel: 'noopener' }, 'IP Geolocation by DB-IP'),
         ' (CC BY 4.0).',
       ),

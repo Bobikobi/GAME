@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Every script, in the order `pnpm e2e` plays them. A new script goes here and into one group below. */
-const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree'];
+const ALL = ['opening', 'stealth', 'tending', 'hud', 'music', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree'];
 
 interface Entry {
   name: string;
@@ -45,7 +45,7 @@ const GROUPS: Record<string, Group> = {
   'opening-phone': { entries: [{ name: 'opening-phone', script: 'opening', env: { E2E_ONLY: 'phone' } }], minutes: 30 },
   // every other opening run, so a run added to opening.ts is played here without a change to this file
   'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 11 },
-  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree'].map(plain), minutes: 12 },
+  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree', 'music'].map(plain), minutes: 12 },
   // the only scripts that serve game/dist-3d: play3d, and load for its bag button
   '3d-and-load': { entries: ['play3d', 'load', 'camera'].map(plain), minutes: 14, build3d: true },
   'map-and-shop': { entries: ['map', 'shop', 'fishing'].map(plain), minutes: 10 },

@@ -1,0 +1,16 @@
+The music by state: routine.ogg, night.ogg, hunting.ogg, combat.ogg, near-death.ogg
+
+The tunes and their scores are the game's own (game/src/audio/pieces.ts), released under the
+repository's code licence (AGPL-3.0-only).
+
+They are played on sampled instruments from the FluidR3_GM soundfont by Frank Wen, as
+prerendered by gleitz/midi-js-soundfonts (https://github.com/gleitz/midi-js-soundfonts),
+released under the Creative Commons Attribution 3.0 licence:
+https://creativecommons.org/licenses/by/3.0/
+
+Instruments used: recorder, flute, French horn, nylon guitar, pizzicato strings, orchestral
+harp, string ensemble 1, acoustic bass, celesta, taiko drum, woodblock.
+
+Rendered on 30.10 (docs/design/SOUND.md section 5): each piece laid twice end to end in an
+OfflineAudioContext at 44.1 kHz with the second pass kept, so the loop has no seam, then
+encoded as Ogg Vorbis (the routine at 80 kbps, the loops at 96 kbps).

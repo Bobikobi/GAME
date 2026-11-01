@@ -1,12 +1,14 @@
 /**
  * The body of the Settings window (theme D): sections with a heading, each row a label and either a segmented
  * control or a switch. Every press goes through SettingsApplier (settings-apply.ts), so it is applied and kept at
- * once; the window only draws the record and what Auto resolved to. Sound is the mute alone: the audio buses
- * keep their levels inside the graph (audio/index.ts) and the sound API offers no gain per bus.
+ * once; the window only draws the record and what Auto resolved to. Sound is the mute and the music's instruments
+ * (the player's own choice, DECISIONS.md 2026-10-30, kept on the device by audio/source.ts): the audio buses keep
+ * their levels inside the graph (audio/index.ts) and the sound API offers no gain per bus.
  * There is no Controls section: the touch pad and buttons have no side or size to choose today.
  */
 import type { SettingsApplier } from '../settings-apply';
 import { TEXT_SIZES, type FrameCap, type Quality, type Settings, type TextSize } from '../settings';
+import { SOURCE_LABEL, type MusicSource } from '../audio/source';
 import { button, h } from './dom';
 
 interface Choice<T> {
@@ -49,7 +51,11 @@ const CAPS: readonly Choice<FrameCap>[] = [
 export interface SoundSwitch {
   muted: boolean;
   setMuted(muted: boolean): void;
+  readonly source: MusicSource;
+  setSource(source: MusicSource): void;
 }
+
+const SOURCES: readonly Choice<MusicSource>[] = (['real', 'synth'] as const).map((value) => ({ value, label: SOURCE_LABEL[value] }));
 
 /** Draws the window's body, and draws it again after every change. */
 export function settingsBody(apply: SettingsApplier, sound: SoundSwitch | undefined, onClose?: () => void): HTMLElement {
@@ -67,6 +73,9 @@ export function settingsBody(apply: SettingsApplier, sound: SoundSwitch | undefi
       ...(sound
         ? [h('h3', null, 'Sound'), row('Sound', null, toggle('Sound', !sound.muted, (on) => {
           sound.setMuted(!on);
+          draw();
+        })), row('Music', null, segmented('Music', SOURCES, sound.source, (source) => {
+          sound.setSource(source);
           draw();
         }))]
         : []),

@@ -46,7 +46,7 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { Piles, pileAt } from './piles';
-import { sound, type Heard, type Owner, type SfxId, type SongId } from '../audio';
+import { sound, type Heard, type Owner, type SfxId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
@@ -70,7 +70,8 @@ import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
 import type { GameSession } from '../session-surface';
-import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
+import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, wolfDrawn, wolfDrawnAt } from '../predator';
+import { SONG_OF, crossfadeMs, musicState, signalsOf, type MusicState } from '../audio/state';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
@@ -498,8 +499,8 @@ export class WorldScene extends Phaser.Scene {
   private bang!: Phaser.GameObjects.Image;
   /** the ground a drawn wolf runs on, and the mends and camp it was worked out for */
   private wolfGround: { key: string; walk: (x: number, y: number) => boolean } | undefined;
-  /** the song asked for last */
-  private song: SongId | undefined;
+  /** the music's state asked for last (audio/state.ts) */
+  private musicNow: MusicState | undefined;
 
   constructor() {
     super('world');
@@ -2047,7 +2048,7 @@ export class WorldScene extends Phaser.Scene {
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
-    this.song = undefined;
+    this.musicNow = undefined;
     this.lanternFor = undefined;
     this.hinted.clear();
     this.inside.clear();
@@ -3213,16 +3214,17 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * The music follows the hunt and the hour (`huntSong`): the hunt's own the moment the kernel's
-   * hunt begins, and back when it ends, however it ends. The hour is the shade's, so the song waits
-   * for the shade's first look at this session's hour.
+   * The music follows the state (audio/state.ts): near death, a fight, a hunt, night outside the town, else
+   * the routine, crossfaded within two seconds and back to the routine when a state ends. The hour is the
+   * shade's, so the music waits for the shade's first look at this session's hour.
    */
   private playSong(s: GameSession): void {
     if (this.wasNight === undefined) return;
-    const song = huntSong(s.state.player.chase !== null, this.wasNight);
-    if (song === this.song) return;
-    sound.music(song, songFade(this.song, song));
-    this.song = song;
+    const state = musicState(signalsOf(this.b, s.state, this.wasNight));
+    if (state === this.musicNow) return;
+    const from = this.musicNow;
+    this.musicNow = state;
+    sound.music(SONG_OF[state], crossfadeMs(from, state));
   }
 
   /** Reeds and tall grass marked as cover soften the player, then release them at the next tile. */

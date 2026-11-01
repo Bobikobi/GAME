@@ -11,11 +11,19 @@ import { gapAllows, hearing } from './heard';
 import type { Heard } from './heard';
 import type { SfxId, SfxOptions } from './sfx';
 import { readMuted, writeMuted } from './storage';
+import { PiecePlayer } from './pieces-player';
+import { readSource, writeSource, type MusicSource } from './source';
+import { SONG_OF, type MusicState } from './state';
 import type { SoundStorage } from './storage';
 
-export type SongId = 'valley' | 'night' | 'chase';
+/** The music by state's pieces, by their song ids: the valley's tune is the routine, the chase is a fight (state.ts). */
+export type SongId = 'valley' | 'night' | 'hunting' | 'chase' | 'near-death';
 export type { JingleId, Heard, Owner } from './heard';
 import type { JingleId } from './heard';
+export type { MusicSource } from './source';
+export type { MusicState } from './state';
+
+const STATE_OF = Object.fromEntries(Object.entries(SONG_OF).map(([state, song]) => [song, state])) as Record<SongId, MusicState>;
 export type { SfxId } from './sfx';
 export type { BedId } from './beds';
 
@@ -23,6 +31,11 @@ export interface SoundState {
   unlocked: boolean;
   muted: boolean;
   song: SongId | null;
+  /** which instruments play the music, the player's choice, and what plays now (its source after any fallback) */
+  source: MusicSource;
+  playing: { state: MusicState; source: MusicSource } | null;
+  /** every music file fetched so far, in order */
+  fetched: string[];
   ambience: AmbienceKind | null;
   sfxCount: number;
   lastSfx: string | null;
@@ -43,6 +56,7 @@ interface AudioGraph {
   effects: GainNode;
   ambience: GainNode;
   player: MusicPlayer;
+  pieces: PiecePlayer;
   ambiencePlayer: AmbiencePlayer;
   beds: BedPlayer;
   crackle: Crackle;
@@ -53,6 +67,9 @@ export interface SoundApi {
   unlock(): void;
   installUnlock(target?: EventTarget): void;
   music(id: SongId | null, fadeMs?: number): void;
+  /** Which instruments play the music: kept on the device, and a change crossfades without a reload. */
+  readonly source: MusicSource;
+  setSource(source: MusicSource): void;
   jingle(id: JingleId): void;
   /** Plays an effect; `heard` says whose cause it is and how far, and the level follows (SOUND.md section 1.4). */
   sfx(id: SfxId, opts?: SfxOptions & { heard?: Heard }): void;
@@ -66,7 +83,7 @@ export interface SoundApi {
   readonly muted: boolean;
   setMuted(muted: boolean): void;
   state(): SoundState;
-  measure(id: SongId, seconds: number): Promise<{ rms: number; peak: number }>;
+  measure(id: keyof typeof songs, seconds: number): Promise<{ rms: number; peak: number }>;
 }
 
 let context: ReturnType<typeof createContext> | null = null;
@@ -78,6 +95,8 @@ let visibilityInstalled = false;
 let requestedSong: SongId | null = null;
 let requestedFade = 1_000;
 let appliedSong: SongId | null = null;
+let musicSource: MusicSource = 'real';
+let appliedSource: MusicSource | null = null;
 let requestedAmbience: AmbienceKind | null = null;
 let appliedAmbience: AmbienceKind | null = null;
 let playedCount = 0;
@@ -117,6 +136,7 @@ function storage(): SoundStorage | undefined {
 function loadPreference(): void {
   if (preferenceLoaded) return;
   isMuted = readMuted(storage());
+  musicSource = readSource(storage());
   preferenceLoaded = true;
 }
 
@@ -138,6 +158,7 @@ function ensureGraph(): AudioGraph {
   music.connect(master);
   effects.connect(master);
   ambience.connect(master);
+  const player = new MusicPlayer(audio, music, effects);
   const analyser = audio.createAnalyser();
   analyser.fftSize = 2048;
   master.connect(compressor).connect(audio.destination);
@@ -147,7 +168,8 @@ function ensureGraph(): AudioGraph {
     music,
     effects,
     ambience,
-    player: new MusicPlayer(audio, music, effects),
+    player,
+    pieces: new PiecePlayer(audio, player.input),
     ambiencePlayer: new AmbiencePlayer(audio, ambience),
     beds: new BedPlayer(audio, ambience),
     crackle: new Crackle(audio, ambience),
@@ -170,12 +192,20 @@ function installVisibility(): void {
 }
 
 function syncRequests(): void {
+  // the music is asked for (and its file fetched) once the first gesture made the graph, even while the
+  // context is still waking: a suspended context holds it still until it runs
+  if (graph && (appliedSong !== requestedSong || appliedSource !== musicSource)) {
+    appliedSong = requestedSong;
+    appliedSource = musicSource;
+    try {
+      graph.pieces.play(requestedSong ? STATE_OF[requestedSong] : null, musicSource, requestedFade);
+    } catch (error) {
+      // the music is never worth a frame: a browser that refuses it plays on without it (G27)
+      console.warn('the music could not start', error);
+    }
+  }
   if (!context || context.state !== 'running') return;
   const audio = ensureGraph();
-  if (appliedSong !== requestedSong) {
-    audio.player.play(requestedSong ? songs[requestedSong] : null, requestedFade);
-    appliedSong = requestedSong;
-  }
   if (appliedAmbience !== requestedAmbience) {
     audio.ambiencePlayer.play(requestedAmbience);
     appliedAmbience = requestedAmbience;
@@ -188,6 +218,7 @@ function unlock(): void {
   loadPreference();
   ensureGraph();
   wasUnlocked = true;
+  syncRequests();
   const page = typeof document === 'undefined' ? undefined : document;
   if (page?.hidden) {
     if (context?.state === 'running') void context.suspend();
@@ -206,6 +237,15 @@ function installUnlock(target?: EventTarget): void {
   unlockTargets.add(actual);
   actual.addEventListener('pointerdown', unlock, { once: true });
   actual.addEventListener('keydown', unlock, { once: true });
+}
+
+function setSource(source: MusicSource): void {
+  loadPreference();
+  musicSource = source;
+  writeSource(storage(), source);
+  // the same piece from the other instruments, crossfaded over the longest a change of music takes
+  requestedFade = 2_000;
+  syncRequests();
 }
 
 function music(id: SongId | null, fadeMs = 1_000): void {
@@ -293,6 +333,9 @@ function state(): SoundState {
     unlocked: context?.state === 'running',
     muted: isMuted,
     song: requestedSong,
+    source: musicSource,
+    playing: graph?.pieces.now() ?? null,
+    fetched: graph ? [...graph.pieces.fetched] : [],
     ambience: requestedAmbience,
     sfxCount: playedCount,
     lastSfx: lastPlayed,
@@ -304,7 +347,7 @@ function state(): SoundState {
   };
 }
 
-async function measure(id: SongId, seconds: number): Promise<{ rms: number; peak: number }> {
+async function measure(id: keyof typeof songs, seconds: number): Promise<{ rms: number; peak: number }> {
   if (!Number.isFinite(seconds) || seconds <= 0) throw new Error('seconds must be positive');
   const browser = globalThis as unknown as {
     OfflineAudioContext?: new (channels: number, length: number, sampleRate: number) => OfflineAudioContext;
@@ -349,6 +392,11 @@ export const sound: SoundApi = {
     return isMuted;
   },
   setMuted,
+  get source() {
+    loadPreference();
+    return musicSource;
+  },
+  setSource,
   state,
   measure,
 };

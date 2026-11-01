@@ -30,6 +30,7 @@ import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
 import { sound, type Heard, type SfxId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
+import { SONG_OF, crossfadeMs, musicState, signalsOf, type MusicState } from '../audio/state';
 import { DIG_SPOT_SPRITE } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, pickOf } from '../lore';
@@ -243,6 +244,8 @@ export class World3D implements WorldView {
   private readonly stillReports = new StandingReports();
   private fell = false;
   private wasNight: boolean | undefined;
+  /** the music's state asked for last */
+  private musicNow: MusicState | undefined;
   private readonly hazards: { id: string; kind: string; art: THREE.Object3D; frames: number; wolf?: { idle: THREE.AnimationAction | null; body: THREE.Object3D; eyes: THREE.Object3D } }[] = [];
   private prompt = '';
   private hinted = new Set<string>();
@@ -956,8 +959,14 @@ export class World3D implements WorldView {
         this.inside.clear();
         this.arrive(s);
       }
-      sound.music(dark ? 'night' : 'valley', 4000);
       sound.ambience(dark ? 'night' : 'day');
+    }
+    // the music follows the state as in the pixel game (audio/state.ts): night outside the town, a fight, near death
+    const state = musicState(signalsOf(this.b, s.state, dark));
+    if (state !== this.musicNow) {
+      const from = this.musicNow;
+      this.musicNow = state;
+      sound.music(SONG_OF[state], crossfadeMs(from, state));
     }
     this.showHazards(s);
     this.placeLantern(s);
