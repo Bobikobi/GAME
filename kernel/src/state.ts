@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.22.0';
+export const KERNEL_VERSION = '0.23.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -242,6 +242,8 @@ export interface State {
   content: string;
   /** the world's secret key (rule R4): every draw is keyed by it. Never on a screen or in a reply (`PublicState`) */
   seed: Seed;
+  /** the map frame the tiles of this state are in (`map.frame`); absent reads as 1, and `adaptState` shifts a state of an earlier frame */
+  frame?: number;
   tick: number;
   player: Player;
   nodes: Record<string, NodeState>;
@@ -265,6 +267,7 @@ export function newState(bundle: Bundle, seed: Seed | number): State {
     kernel: KERNEL_VERSION,
     content: bundle.tag,
     seed: typeof seed === 'number' ? widenSeed(seed) : [seed[0], seed[1], seed[2], seed[3]],
+    ...(mapFrame(bundle) > 1 ? { frame: mapFrame(bundle) } : {}),
     tick: 0,
     player: {
       name: '',
@@ -435,6 +438,11 @@ export function placeRoom(bundle: Bundle, state: PublicState, itemId: string): n
     else hi = mid - 1;
   }
   return lo;
+}
+
+/** The frame of the bundle's map: 1 unless a change moved the authored ground (`map.frame`). */
+export function mapFrame(bundle: Bundle): number {
+  return bundle.map.frame ?? 1;
 }
 
 /** The key of a tile in `player.ground`. */

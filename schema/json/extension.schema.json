@@ -20092,6 +20092,33 @@
                 }
               }
             },
+            "frame": {
+              "minimum": 1,
+              "maximum": 99,
+              "description": "The frame of the map's tiles: 1 until a change moves the authored ground inside a larger map (docs/design/EXPERIENCE_AUDIT.md, gap M5). A save made in an earlier frame is shifted by `moved` when it is adapted. Left out: 1.",
+              "type": "integer"
+            },
+            "moved": {
+              "additionalProperties": false,
+              "description": "How far the previous frame's tiles moved to reach this frame's, in tiles: a saved tile (x, y) of the frame before is (x + dx, y + dy) now. Owed when `frame` is above 1, and holds the whole step from the frame just before it.",
+              "type": "object",
+              "required": [
+                "dx",
+                "dy"
+              ],
+              "properties": {
+                "dx": {
+                  "minimum": -1023,
+                  "maximum": 1023,
+                  "type": "integer"
+                },
+                "dy": {
+                  "minimum": -1023,
+                  "maximum": 1023,
+                  "type": "integer"
+                }
+              }
+            },
             "world": {
               "pattern": "^[a-z0-9_-]+$",
               "minLength": 1,

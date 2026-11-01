@@ -38,12 +38,20 @@ jobs:
     name: CLA signed
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    # a comment counts only on a pull request, and only the signing words or "recheck"
+    # The owner's own pull requests, opened from his two accounts, carry only his and his agents' work and need no
+    # signature, so the job is skipped on them (the owner's word of 1.11.2026, #535). The opener's login is the test,
+    # never a commit's author: a commit authored as Claude <noreply@anthropic.com> maps to the login `claude`, and
+    # allowlisting that login would let anyone pass the check by setting git's author (security review, 1.11.2026).
+    # On every other pull request a comment counts only on a pull request, and only the signing words or "recheck".
+    # The ${{ }} is required: an `if` that starts with `!` is read as a plain string without it (GitHub's documented
+    # exception), and a non-empty string is true, which is why run 41280102452 ran and failed on the owner's own #459.
     if: >-
-      github.event_name == 'pull_request_target' ||
-      (github.event.issue.pull_request &&
-        (github.event.comment.body == 'recheck' ||
-         github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA'))
+      ${{ !contains(fromJSON('["Bobikobi","JustArandomGuyFromTheInternet"]'),
+                    github.event.pull_request.user.login || github.event.issue.user.login) &&
+          (github.event_name == 'pull_request_target' ||
+           (github.event.issue.pull_request &&
+             (github.event.comment.body == 'recheck' ||
+              github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA'))) }}
     steps:
       - uses: contributor-assistant/github-action@ca4a40a7d1004f18d9960b404b97e5f30a505a08 # v2.6.1
         env:
