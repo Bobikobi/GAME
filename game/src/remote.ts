@@ -20,6 +20,7 @@ import {
   hourOf,
 } from '@game/kernel';
 
+import { SEEN_CONTENT_KEY } from './config';
 import { LONGEST_FRAME_MS } from './session';
 import { type ActResult, type Facing, type GameSession, type LogEntry, type SessionEvents, burnEnded } from './session-surface';
 
@@ -63,29 +64,57 @@ export class WireRefusal extends Error {
 /** The line is gone: the game pauses until a resume answers. Nothing was sent. */
 export class WireGap extends Error {}
 
+function wireObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Transport envelope checks; a truncated/proxy response must never replace known state. */
+function completeReply(value: unknown, snapshot: boolean): boolean {
+  if (!wireObject(value) || !Number.isSafeInteger(value.version) || (value.version as number) < 1
+    || !Array.isArray(value.appears) || !value.appears.every(id => typeof id === 'string')) return false;
+  if (snapshot) return wireObject(value.state) && Number.isSafeInteger(value.state.tick) && wireObject(value.state.player);
+  return wireObject(value.patch) && Array.isArray(value.events)
+    && value.events.every(event => wireObject(event) && typeof event.e === 'string');
+}
+
 /**
  * The wire over `fetch`, with the session cookie a signed-in player carries. Same-origin by default, so
  * the cookie is `httpOnly`, `secure` and `same-site` without the script ever touching it (NEXT 18 e).
  */
-export function fetchWire(base = '', send: typeof fetch = fetch): Wire {
+export function fetchWire(base = '', send: typeof fetch = fetch, timeoutMs = 15_000): Wire {
   const call = async (path: string, method: 'GET' | 'POST', body?: unknown): Promise<StateReply | ChangeReply> => {
-    let response: Response;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      response = await send(`${base}${path}`, {
-        method,
-        credentials: 'same-origin',
-        headers: body === undefined ? { accept: 'application/json' } : { accept: 'application/json', 'content-type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
-    } catch {
-      throw new WireGap('Waiting for the connection');
-    }
-    if (response.status === 401) throw new WireRefusal('Sign in to continue.', 401);
-    const answer = await response.json().catch(() => ({})) as { error?: string; reason?: string };
-    if (!response.ok) {
-      throw new WireRefusal(answer.error ?? 'The game server could not complete the request.', response.status, answer.reason);
-    }
-    return answer as StateReply | ChangeReply;
+      let response: Response;
+      try {
+        response = await send(`${base}${path}`, {
+          method,
+          signal: controller.signal,
+          credentials: 'same-origin',
+          headers: body === undefined ? { accept: 'application/json' } : { accept: 'application/json', 'content-type': 'application/json' },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+      } catch {
+        throw new WireGap('Waiting for the connection');
+      }
+      if (response.status === 401) throw new WireRefusal('Sign in to continue.', 401);
+      // A gateway may fail after the server committed. Pause and read state; never retry the action here.
+      if (response.status === 408 || response.status === 429 || response.status >= 500) {
+        await response.body?.cancel().catch(() => undefined);
+        throw new WireGap('Waiting for the connection');
+      }
+      let answer: unknown;
+      try { answer = await response.json(); }
+      catch { throw new WireGap('Waiting for the connection'); }
+      if (!response.ok) {
+        const error = wireObject(answer) && typeof answer.error === 'string' ? answer.error : 'The game server could not complete the request.';
+        const reason = wireObject(answer) && typeof answer.reason === 'string' ? answer.reason : undefined;
+        throw new WireRefusal(error, response.status, reason);
+      }
+      if (!completeReply(answer, path === '/session' || path === '/state')) throw new WireGap('Waiting for the connection');
+      return answer as StateReply | ChangeReply;
+    } finally { clearTimeout(timeout); }
   };
   function post(path: '/session', body: unknown): Promise<StateReply>;
   function post(path: '/action' | '/moves', body: unknown): Promise<ChangeReply>;
@@ -107,7 +136,19 @@ function isStale(refusal: WireRefusal): boolean {
   return refusal.reason === undefined ? refusal.message === STALE : refusal.reason === STALE_REASON;
 }
 
+/** Where the content last shown is kept: the browser's storage, or nothing where it is blocked or absent. */
+export type SeenStore = Pick<Storage, 'getItem' | 'setItem'> | null;
+
+function browserStorage(): SeenStore {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const TAIL = 40;
+const RECHECK_ACTION = 'The game state changed; try the action again.';
 /** How many movement reports one batch carries at most: the server's own cap (NEXT 18 a). */
 const MOVE_BATCH = 256;
 
@@ -123,8 +164,11 @@ export class RemoteSession implements GameSession {
   tail: LogEntry[] = [];
   /** the appear nodes the server says stand now: drawn on the phone, never drawn from a seed here */
   private appearing = new Set<string>();
-  /** The server keeps the state: nothing is ever fitted to this content on the phone. */
-  readonly adapted = false;
+  /**
+   * The server keeps the state and fits it to new content itself (`adaptState`); this says that it did since
+   * this browser last showed the world, so the game can say the valley was updated, as it does for a save.
+   */
+  readonly adapted: boolean;
   /** the state version the next write names: two requests cannot both win on the server */
   version: number;
   /** actions that wait for their reply; more than one when a second act queues behind the first */
@@ -132,19 +176,31 @@ export class RemoteSession implements GameSession {
   private open = true;
   /** the end of the last call queued for the wire: the next call starts only after this one landed */
   private queue: Promise<unknown> = Promise.resolve();
+  private resuming: Promise<void> | undefined;
   /** the tick up to which burns that ran out were asked about (`tellOuts`) */
   private outSeen = 0;
   private pauses = 0;
   private deferred: GameEvent[] = [];
-  private moves: { kind: 'move'; at: Tile; tick: number }[] = [];
+  private moves: { kind: 'move'; at: Tile; tick: number; gait?: Gait }[] = [];
+  /** A removed batch is still owed until its reply arrives. */
+  private sendingMoves = false;
+  /** Inputs queued before a server correction must not act at the corrected location. */
+  private positionRevision = 0;
   private listeners = new Map<keyof SessionEvents, Set<(payload: never) => void>>();
   private wire: Wire;
   /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
   private hour = -1;
+  private seen: SeenStore;
+  /** the content tag last written to `seen`: a frame writes only when it changes */
+  private noted: string | null;
 
-  private constructor(bundle: Bundle, wire: Wire, state: PublicState, version: number) {
+  private constructor(bundle: Bundle, wire: Wire, state: PublicState, version: number, seen: SeenStore) {
     this.bundle = bundle;
     this.wire = wire;
+    this.seen = seen;
+    this.noted = read(seen);
+    // a browser that never showed this server's world has nothing to compare: a first visit is not an update
+    this.adapted = this.noted !== null && this.noted !== state.content;
     this.state = state;
     this.version = version;
     // the clock starts where the server's state stands: a returning player who sent less would be refused as
@@ -159,9 +215,9 @@ export class RemoteSession implements GameSession {
    * Resume: `POST /session` with nothing in it answers the state the server keeps. The phone sends no state
    * of its own, and the game never runs a tick the player did not ask for.
    */
-  static async join(bundle: Bundle, wire: Wire): Promise<RemoteSession> {
+  static async join(bundle: Bundle, wire: Wire, seen: SeenStore = browserStorage()): Promise<RemoteSession> {
     const reply = await wire.post('/session', {}) as StateReply;
-    return new RemoteSession(bundle, wire, reply.state, reply.version);
+    return new RemoteSession(bundle, wire, reply.state, reply.version, seen);
   }
 
   /** true while an action waits for its reply: input is held, so nothing is sent twice */
@@ -227,6 +283,8 @@ export class RemoteSession implements GameSession {
   /** Called every frame with real elapsed ms, as the local session is. */
   advance(dt: number): void {
     if (!this.started || this.paused) return;
+    // the world is on screen: this browser has now shown this content (the title's probe joins without showing it)
+    if (this.noted !== this.state.content) this.note();
     this.tick += Math.max(0, Math.min(LONGEST_FRAME_MS, Math.round(dt)));
     this.tellOuts();
     if (this.deferred.length > 0 && !this.busy) {
@@ -266,12 +324,13 @@ export class RemoteSession implements GameSession {
   }
 
   /** Report the tile the player stands on. Reports batch, and go out with the next action or on their own. */
-  // the wire's move report carries no gait yet: the server checks every step at the walk's pace
-  report(at: readonly [number, number], again = false, _gait?: Gait): void {
+  // a run or a sneak names its gait, so the server hears the step as the phone took it; a walk leaves it out, as the save does
+  report(at: readonly [number, number], again = false, gait: Gait = 'walk'): void {
     if (!this.started || !this.open) return;
     const p = this.state.player;
-    if (!again && p.at[0] === at[0] && p.at[1] === at[1]) return;
-    this.moves.push({ kind: 'move', at: [at[0], at[1]], tick: this.tick });
+    if (!again && !this.sendingMoves && this.moves.length === 0 && p.at[0] === at[0] && p.at[1] === at[1]) return;
+    const tile: Tile = [at[0], at[1]];
+    this.moves.push(gait === 'walk' ? { kind: 'move', at: tile, tick: this.tick } : { kind: 'move', at: tile, tick: this.tick, gait });
     if (this.moves.length >= MOVE_BATCH) void this.flushMoves().catch(() => undefined);
   }
 
@@ -296,6 +355,7 @@ export class RemoteSession implements GameSession {
     while (this.moves.length > 0) {
       const batch = this.moves.splice(0, MOVE_BATCH);
       let reply: ChangeReply | undefined;
+      this.sendingMoves = true;
       try {
         reply = await this.call('/moves', { version: this.version, moves: batch });
       } catch (error) {
@@ -306,6 +366,8 @@ export class RemoteSession implements GameSession {
           return;
         }
         throw error;
+      } finally {
+        this.sendingMoves = false;
       }
       if (!reply) {
         this.moves.unshift(...batch);
@@ -325,17 +387,20 @@ export class RemoteSession implements GameSession {
    * events until the player is free, as the local session does, so an animation and its yield stay in step.
    */
   async act(action: Action): Promise<ActResult> {
+    const positionRevision = this.positionRevision;
     this.acting += 1;
     try {
-      return await this.enqueue(() => this.sendAction(action));
+      return await this.enqueue(() => this.sendAction(action, positionRevision));
     } finally {
       this.acting -= 1;
     }
   }
 
-  private async sendAction(action: Action): Promise<ActResult> {
+  private async sendAction(action: Action, positionRevision: number): Promise<ActResult> {
+    if (positionRevision !== this.positionRevision) return { ok: false, error: RECHECK_ACTION };
     await this.sendMoves();
     if (!this.open) return { ok: false, error: 'Waiting for the connection' };
+    if (positionRevision !== this.positionRevision) return { ok: false, error: RECHECK_ACTION };
     let reply: ChangeReply | undefined;
     try {
       reply = await this.call('/action', { version: this.version, tick: this.tick, action });
@@ -385,10 +450,12 @@ export class RemoteSession implements GameSession {
    * session stays closed and says so (`change`), and the error reaches the caller: it never pretends to have resumed.
    */
   resumeFromServer(): Promise<void> {
-    return this.enqueue(() => this.resync());
+    this.resuming ??= this.enqueue(() => this.resync()).finally(() => { this.resuming = undefined; });
+    return this.resuming;
   }
 
   private async resync(): Promise<void> {
+    const before = this.state.content;
     let reply: StateReply;
     try {
       reply = await this.wire.get('/state');
@@ -404,11 +471,23 @@ export class RemoteSession implements GameSession {
     this.pos = [this.state.player.at[0], this.state.player.at[1]];
     this.moves = [];
     this.deferred = [];
+    this.positionRevision++;
     // a burn that ran out since the server's last step is asked about again, once: a report lost to a refusal
     // or a dropped line would otherwise never tell it to a player who stands still
     this.outSeen = 0;
     this.open = true;
+    // a state read again under other content: the server was updated while the game was open
+    if (this.state.content !== before) this.emit('updated', undefined);
     this.emit('change', undefined);
+  }
+
+  private note(): void {
+    this.noted = this.state.content;
+    try {
+      this.seen?.setItem(SEEN_CONTENT_KEY, this.noted);
+    } catch {
+      // storage may be full or blocked: the next visit then says nothing, which is never wrong
+    }
   }
 
   /** The line dropped: the game pauses at once and takes no input until a resume answers. */
@@ -443,7 +522,16 @@ export class RemoteSession implements GameSession {
   private wake(events: readonly GameEvent[]): void {
     const fall = events.find((e) => e.e === 'fall');
     if (fall?.e !== 'fall') return;
+    this.positionRevision++;
     this.pos = [fall.at[0], fall.at[1]];
     this.deferred = [];
+  }
+}
+
+function read(seen: SeenStore): string | null {
+  try {
+    return seen?.getItem(SEEN_CONTENT_KEY) ?? null;
+  } catch {
+    return null;
   }
 }

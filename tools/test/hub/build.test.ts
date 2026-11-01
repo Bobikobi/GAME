@@ -259,3 +259,25 @@ describe('buildHubData usage (docs/team/GRUNT.md, item 17)', () => {
     expect(doc.usage).toBeNull();
   });
 });
+
+describe('buildHubData accounts, the players counter (DECISIONS.md, 2026-10-31)', () => {
+  it('leaves the count null without a reader, so the hub says unknown', async () => {
+    const doc = await buildHubData({ client: null, now: NOW, previews: false, repository: REPO });
+    expect([doc.accounts, doc.sources.accounts]).toEqual([null, null]);
+  });
+
+  it('fills the count and its source from the server', async () => {
+    const doc = await buildHubData({ client: null, now: NOW, previews: false, repository: REPO, accounts: async () => ({ open: 12, new_7d: 3 }) });
+    expect(validateHubData(doc)).toEqual([]);
+    expect(doc.accounts).toEqual({ open: 12, new_7d: 3 });
+    expect(doc.sources.accounts).toEqual({ fetched_at: NOW.toISOString() });
+  });
+
+  it('keeps the count null, never 0, when the server cannot be read, and says why', async () => {
+    const lines: string[] = [];
+    const doc = await buildHubData({ client: null, now: NOW, previews: false, repository: REPO, accounts: () => Promise.reject(new Error('down')), log: (l) => lines.push(l) });
+    expect([doc.accounts, doc.sources.accounts]).toEqual([null, null]);
+    expect(validateHubData(doc)).toEqual([]);
+    expect(lines.join('\n')).toContain('players counter could not be read');
+  });
+});

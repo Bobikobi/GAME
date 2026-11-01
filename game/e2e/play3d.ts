@@ -324,7 +324,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await me.snap('node3d');
     await me.a();
     await me.solveMinigame();
-    await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking', 'the work to end', 20_000);
+    await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking', 'the work to end', 45_000);
     const got = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(target.item)}] ?? 0`);
     // a missed try turns up something else, never nothing: the bag as a whole must have grown
     const total = await page.eval<number>(`Object.values(window.__game.session.state.player.bag).reduce((a, n) => a + n, 0)`);

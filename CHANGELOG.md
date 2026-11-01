@@ -2,6 +2,46 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.11 - 2026-10-31
+
+What players notice
+- The valley floor is drawn in the rich 64 px art: one continuous olive meadow varied by tone, tufts and seed heads, flowers sparse, and soft wandering joins where the grass meets a path (wave 1, the owner's pick after two passes). The plants, stones and small things of the first ten minutes follow at 64 px, 21 pictures (wave 2).
+- The opening's bank path is two to three tiles wide, uneven and rounded, instead of one straight tile.
+- The grass and the paths are drawn in the rich 64 px art too (wave 3): calm olive grass with leaning blades and soft lighter drifts, a worn ribbon of path inside its band, a darker damp sand on the bank, and the places where two kinds of ground meet cut per pixel instead of by tile blocks. The tall things of the opening and the town follow at 64 px: the lantern post, the broken statue, the market stall and the small house (wave 2c, the owner's yes on every draft).
+- The small props stand in groups instead of single scatter: flowers in threes and more, drifts of tall grass, berry bushes, and the second well in one home near a path. Plants cast shadows now, and flat things (rubble, pebbles, logs, fences, fires) still do not.
+- Flower clusters stand at half a berry bush (32 px) and are drawn again at that size, four blooms each, so the order of sizes holds: tuft, flower cluster, bush, tree.
+- Light follows the hour: from 17:00 lamps and fires cast pools of light, the figure is lit by what it stands near, clouds drift their shade over the ground, and dusk and night take the tint the owner picked.
+- The dark frame around the phone's view is an edge by day, not a veil: at noon the grass shows its own colour to the middle of the screen; the veil returns with the night.
+- The top bar wears frame D on phone, desktop and landscape: lacquer black with a hairline of lit gold on the meter, the chips, the tracker, the toasts, the buttons and the pocket map.
+- A Settings window, opened from the menu: quality (Auto, Low, Medium, High), frame rate (Auto, 30, 60, 120), mute and the accessibility switches, each change applied at once. While a row is on Auto it shows what Auto chose on this device.
+- Sounds are re-levelled so a jingle no longer peaks loud, and every effect fades with its distance from your character, with other players in mind.
+- The three races walk with their own looks (human, elf, skeleton), and the walk is picked by the distance covered, so a planted foot never skates when the pace changes. The elf's cloak is green.
+- A content update hands out a race's outfit piece once: a piece you sold or dropped does not come back at the next update.
+- Handing Maru the coin under the lantern pays a key to his house, not 20 gold.
+- The Quiet glade grows glade figs, and sunleaf is slow to open in the fog.
+- The Traveller's cap: a plaited reed cap with a cord tie, made at the workshop from reed and reed cord, the first thing worn on the head (CeosIsrael).
+- The home page no longer shows the 3D door while 3D is paused.
+
+What creators notice
+- A creature kind can carry its behaviour (sight, ear, smell, the quiet-state weights, roam, flight, sleep, alarm), its group and its den; the hare, the crow, the roe deer and the wolf are written in those fields, and `pnpm check` gains the wild rows (weights that sum to 100, habitats the map has, no pack at danger 0, a bolt hole the den can reach).
+- The hunt's foundations: a kind may say what it drops, an item may be a finer grade of a good, the kernel can dress a carcass, and the value solver prices a hunted kind like any other source. Ten hunt goods are in the core items.
+- The wild brain is written as pure, integer-only functions (senses, the noticing count, the states, flee maps, groups), tested before anything steps an animal.
+- The balance playtest, `pnpm map:playtest`: the simulated player plays the scripted opening, first outing and first sale on the kernel, one run per start, and prints its level against the difficulty reckoning's at every place it reaches (CeosIsrael, NEXT 19 b).
+- The hunt ladder calculators and their generated page: tools by tier, value per catch, difficulty and rarity, counted on the real map at every run.
+- Animals as native bodies for the hunt stream, each a CC0 model passed through Blender with pick pages for the owner: the roe deer and the white hart from one body, the wild boar, the ground fowl, and the wolf's Alert, Graze and Lie.
+- The art production line grows: `pnpm art:pick` applies the owner's pick and `pnpm art:gallery` is the page he picks on; `art:wave --redo` draws again an entry he liked and asked for more of; `kit:gen --drawer gemini-web` draws a prop through Gemini's image tool on the owner's subscription; `art:measure` ranks drafts by size, a clear corner, one body, a foot, colours, palette and detail, as a filter only. The restored pool is triaged (764 drafts with review states and contact sheets) and every draft lives in a release store (`pnpm art:drafts fetch|verify|push`); `pnpm art:stray` finds unindexed art before a worktree is removed. REUSE.md: reuse first, then open and free assets, then draw.
+- NEXT.md gains the presence section: players who see each other without chat, its wire shape and its proof in CI.
+- The developer area's boards show the number of open accounts and of those opened in the last 7 days, counted by the game server and read at most once a minute; when the server cannot be read the board says unknown, never 0.
+- New design pages: creature behaviour, hunt families and the content ladder; the lighting ladder's stills; the progression map; the first map's plan A2. Decisions recorded: music by sampled instruments by default, the home page's door as a live window on the town later, the animals' brain approved.
+- The kit density test reads every kit, not only the core's, so a creator kit at 64 px no longer turns CI red.
+- CI: the browser checks lose their dead time (9 min 56 s to 8 min 42 s), and the opening's criterion 8 measures play, not the run's own day skip, so a slow runner no longer fails it.
+
+What changed underneath
+- kernel 0.1.11 (simulation 0.22.0): the `dress` action and the carcass, the hunt and grade fields on kinds and items, the den's bolt hole drawn on the server only. The save format is unchanged; a v0.1.10 save loads as it is.
+- The schemas gain the creature behaviour, group, den and hunt fields; nothing under `content/` steps an animal yet.
+- The site shows the 3D door only with `SITE_3D_DOOR=force`; `/play3d/` still builds and plays.
+
+
 ## v0.1.10 - 2026-10-30 - Loomvale
 
 What players notice

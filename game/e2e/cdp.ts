@@ -24,6 +24,56 @@ function findChrome(): string {
 
 export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/**
+ * E2E_WARP=<k> (k > 1) lets the game's clock run k times faster than the wall's while a script only waits on it
+ * (`Page.waitFor`): a dig, a felling or a cooking that holds the player for N game seconds, the wait for dusk.
+ * Walks, taps, minigames and every sleep stay at the real pace, and game durations are unchanged (the tick is
+ * the game's own, so a dig still takes its game seconds); what shrinks is only the wall time spent looking at
+ * the clock. Set by the runner (run.ts) for the scripts that wait on the clock; unset, nothing is wrapped.
+ * The wrap is in the page's performance.now(), which Phaser's loop reads for its delta; the frame cap on the
+ * game's own side (LONGEST_FRAME_MS) bounds the gain on a slow machine, and the end-of-run report says how much.
+ */
+const WARP = Number(process.env.E2E_WARP ?? 1);
+
+/** In the page: a clock that is continuous when its rate changes, and stays at 1 unless a wait asked and it is safe. */
+const WARP_CLOCK = `(() => {
+  const real = performance.now.bind(performance);
+  let virt = real(), last = virt, gain = 0, since = 0, safe = false;
+  window.__warp = 1;
+  // safe when the world has run long enough for the device settings to settle (120 frames, about 10 s of play clock
+  // even on a slow runner; cached per 50 ms) and no minigame is open (asked at every call: a minigame times its
+  // frames on this clock, and a press is timed in real ms from its ring, so it must see one clock from its start)
+  const settled = (r) => {
+    if (r - since > 50) {
+      since = r;
+      const g = window.__game;
+      safe = !!(g && g.session && g.session.tick > 10000);
+    }
+    return safe;
+  };
+  performance.now = () => {
+    const r = real();
+    const k = window.__warp > 1 && settled(r) && !document.querySelector('.minigame-layer') ? window.__warp : 1;
+    virt += (r - last) * k;
+    gain += (r - last) * (k - 1);
+    last = r;
+    return virt;
+  };
+  // Phaser's loop and the games take the frame's time from the rAF argument: it must be this clock, not the browser's
+  const raf = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = (cb) => raf(() => cb(performance.now()));
+  window.__warpGain = () => gain;
+})();`;
+
+/** What the warp gained over the run, summed over pages, for the line at the end. */
+let warpedMs = 0;
+let warpWaitMs = 0;
+if (WARP > 1) {
+  process.on('exit', () => {
+    if (warpWaitMs > 0) console.log(`e2e warp x${WARP}: ${(warpWaitMs / 1000).toFixed(0)} s of waiting on the game clock ran ${((warpWaitMs + warpedMs) / 1000).toFixed(0)} s of it`);
+  });
+}
+
 /** An in-page expression for `Page.tapWhere`: the first shown element matching the selector whose text holds `text`, enabled unless `disabledToo`. */
 export function byText(selector: string, text = '', disabledToo = false): string {
   return `(() => {
@@ -134,6 +184,8 @@ export class Page {
   /** uncaught exceptions and console errors from the page */
   readonly errors: string[] = [];
   private mobile = false;
+  /** the warp's gain in this page's clock so far, ms (WARP) */
+  private gainSeen = 0;
 
   private constructor(private readonly ws: WebSocket) {
     ws.addEventListener('message', (ev) => {
@@ -197,6 +249,7 @@ export class Page {
       mobile: viewport.mobile,
     });
     if (viewport.mobile) await this.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    if (WARP > 1) await this.send('Page.addScriptToEvaluateOnNewDocument', { source: WARP_CLOCK });
     // E2E_CPU_SLOWDOWN=4 makes a fast machine render as slowly as CI does
     const slowdown = Number(process.env.E2E_CPU_SLOWDOWN ?? 1);
     if (slowdown > 1) await this.send('Emulation.setCPUThrottlingRate', { rate: slowdown });
@@ -218,14 +271,30 @@ export class Page {
     return r.result.value as T;
   }
 
-  /** Polls until the expression is truthy and returns its value. */
-  async waitFor<T = unknown>(expression: string, what: string, timeoutMs = 15_000): Promise<T> {
+  /**
+   * Polls until the expression is truthy and returns its value. With E2E_WARP the game's clock runs faster while it
+   * polls (see WARP); a wait that holds a walk or a push passes `warp: false`, so the body moves at the real pace.
+   */
+  async waitFor<T = unknown>(expression: string, what: string, timeoutMs = 15_000, warp = true): Promise<T> {
     const end = Date.now() + timeoutMs;
-    for (;;) {
-      const v = await this.eval<T>(expression);
-      if (v) return v;
-      if (Date.now() > end) throw new Error(`timed out waiting for ${what}`);
-      await sleep(40);
+    const warping = WARP > 1 && warp;
+    const t0 = Date.now();
+    if (warping) await this.eval(`(window.__warp = ${WARP})`);
+    try {
+      for (;;) {
+        const v = await this.eval<T>(expression);
+        if (v) return v;
+        if (Date.now() > end) throw new Error(`timed out waiting for ${what}`);
+        await sleep(40);
+      }
+    } finally {
+      if (warping) {
+        warpWaitMs += Date.now() - t0;
+        // the clock is put back at once; the page can be gone (a crash or a reload), which the caller sees on its own
+        const gain = await this.eval<number>('(window.__warp = 1, window.__warpGain ? window.__warpGain() : 0)').catch(() => this.gainSeen);
+        warpedMs += gain - this.gainSeen;
+        this.gainSeen = gain;
+      }
     }
   }
 
@@ -261,6 +330,11 @@ export class Page {
     await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
     await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+  }
+
+  /** One notch of the mouse wheel over the page (negative deltaY is away from the user, the way in). */
+  async wheel(x: number, y: number, deltaY: number): Promise<void> {
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY });
   }
 
   /** Taps the first visible element matching the selector whose text contains `text`. */

@@ -247,6 +247,19 @@ export const ItemDef = Type.Object(
       Type.Object({ unlocks: Id }, { additionalProperties: false, description: 'A found scrap that teaches a recipe.' }),
     ),
     wear: Type.Optional(Wear),
+    grade: Type.Optional(
+      Type.Object(
+        {
+          of: Id,
+          step: Int(2, 3, '2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).'),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item\'s class, kind, tier and value, and a recipe asks for it with "min_grade".',
+        },
+      ),
+    ),
     premium_later: Type.Optional(
       Type.Boolean({
         description:
@@ -449,6 +462,7 @@ export const ClassInput = Type.Object(
     class: ItemClass,
     family: Type.Optional(Word('Only items of this family.')),
     min_tier: Int(1, 20, 'The lowest tier that fits.'),
+    min_grade: Type.Optional(Int(2, 3, 'Only a good of this grade or finer (HUNTING section 5). Left out, any grade fits.')),
     qty: Int(1, 999),
   },
   {
@@ -1247,8 +1261,17 @@ export const LightParams = Type.Object(
       minItems: 2,
       maxItems: 12,
       description:
-        'The hours the valley is washed in a colour (ART_SYSTEM section 2). Today\'s curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.',
+        'The hours the valley is washed in a colour (ART_SYSTEM section 2, LIGHTING.md section 5): one shade that the scene multiplies in, the dusk and the night alike. Its strength steps evenly between keys, in whole percent; its colour is the next key\'s, so every minute is a palette colour. The owner\'s pick of 30.10: 16:30 #eda83a 12%, 17:30 28%, 19:00 #e2533f 40%, the night #172a52 at STYLE 5\'s 92%.',
     }),
+    read: Type.Optional(
+      Type.Object(
+        {
+          floor: Int(0, 100, 'The night kept readable (the owner, 30.10): inside a light\'s pool and in the ring of three tiles around the player, the meadow\'s middle green keeps at least this luma, in whole percent.'),
+          fog: Int(0, 100, 'The most a fog bank may cover at full night, in whole percent, so fog cannot stack on the night\'s shade past the floor.'),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     sun: Type.Optional(
       Type.Object(
         {
@@ -1481,6 +1504,30 @@ export const ParamsBody = Type.Object(
               description:
                 'How high a hunt outrun to a safe place lifts health, in basis points of the health cap: it gives back what its bites took, up to this share. It never lowers health.',
             },
+            telegraph: Type.Optional(
+              Type.Object(
+                {
+                  howl_tiles: { ...Bounded, description: 'From this many tiles on, a predator\'s far howl is not heard; nearer it is louder, and above 0 at 12 tiles.' },
+                  howl_pct: { ...Bounded, description: 'The far howl\'s level beside its cause, in percent of the effect\'s whole level.' },
+                  howl_gap_min_s: { ...Bounded, description: 'The shortest wait between two far howls, in seconds of the wall clock.' },
+                  howl_gap_max_s: { ...Bounded, description: 'The longest wait between two far howls, in seconds of the wall clock.' },
+                  near_tiles: { ...Bounded, description: 'Inside this many tiles of a predator the rising layer (breath, a twig, a padding) is heard; 0 beyond.' },
+                  near_pct: { ...Bounded, description: 'The rising layer\'s level beside the predator, in percent of the bed\'s whole level.' },
+                  near_curve: { ...Bounded, description: 'How steeply the rising layer grows as the player comes closer: its level is the share of `near_tiles` closed, to this power.' },
+                  dash_ms: { ...Bounded, description: 'The fastest a drawn predator runs to stand beside the player by the next bite, in game milliseconds a tile.' },
+                  lunge_ms: { ...Bounded, description: 'How long a drawn bite\'s lunge lasts, in milliseconds.' },
+                  lunge_px: { ...Bounded, description: 'How far the predator lunges at the player, in game pixels.' },
+                  flinch_ms: { ...Bounded, description: 'How long the player\'s flinch at a bite lasts, in milliseconds.' },
+                  flinch_px: { ...Bounded, description: 'How far the player flinches back, in game pixels.' },
+                  hit_ms: { ...Bounded, description: 'How long the health meter shows a bite, in milliseconds.' },
+                },
+                {
+                  additionalProperties: false,
+                  description:
+                    'The threat telegraph (NEXT.md 12 c): how a predator is heard far off and near, and how its bite is drawn. Read by the client only; the kernel decides every sight, bite and safe place.',
+                },
+              ),
+            ),
           },
           { additionalProperties: false },
         ),
@@ -1526,6 +1573,48 @@ export const ParamsBody = Type.Object(
         additionalProperties: false,
         description:
           'The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.',
+      },
+    ),
+    hunt: Type.Object(
+      {
+        dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
+        meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
+        hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },
+        grade2_bp: { ...Bounded, description: 'Basis points of animals that appear fine (grade 2).' },
+        grade3_bp: { ...Bounded, description: 'Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain.' },
+      },
+      {
+        additionalProperties: false,
+        description:
+          'Dressing a taken animal (docs/design/HUNTING.md sections 5-6): the time a step takes, how long a carcass keeps, and how often an animal is finer than plain. Nothing here prices a hunt: the hunt verb takes the effort weight of its tier like every verb (R6).',
+      },
+    ),
+    wild: Type.Object(
+      {
+        tick_ms: { ...Bounded, description: 'Game milliseconds of one world tick (COMBAT section 4.9). Fixed: every duration below is whole ticks or whole think steps.' },
+        think_ticks: { ...Bounded, description: 'Ticks between two think steps of one animal, staggered by its id (HUNTING section 1): 8 ticks of 100 ms, a think step of 800 ms.' },
+        wake_tiles: { ...Bounded, description: 'An animal is stepped only while a player is within this many tiles; beyond it its group is kept as an anchor and a count (HUNTING section 1).' },
+        awake_max: { ...Bounded, description: 'The most animals stepped round one player at once (BESTIARY section 1).' },
+        catchup_max_steps: { ...Bounded, description: 'A gap longer than this many think steps settles each animal to its rest pose at once instead of stepping it, so one action never pays for an hour of the wild.' },
+        flee_avoid_steps: { ...Bounded, description: 'Think steps a fled animal keeps away from the tile it fled (HUNTING section 2, FLEE); a flushed burrower comes back to its den after them (HUNT_FAMILIES section 3.1).' },
+        refill_clear_tiles: { ...Bounded, description: 'A lost member comes back to its anchor only with no player within this many tiles (HUNTING section 8).' },
+        spread_tiles: { ...Bounded, description: 'ALERT spreads to the group members within this many tiles, and a member that sees one of its group in FLEE this close flees too (HUNTING section 2; CREATURE_BEHAVIOUR section 5.1.3).' },
+        print_ring: { ...Bounded, description: 'Tiles of fresh prints a fleeing animal leaves behind it on ground that holds prints, its last tiles, oldest first out (HUNT_FAMILIES section 3.1, the line home).' },
+        print_fade_ms: { ...Bounded, description: 'Game milliseconds a fresh print stays readable (one game hour is day_length_ms / 24).' },
+        den_stay_steps: { ...Bounded, description: 'Think steps a burrower stays in its den after a flight once no player is near the mouth, then WANDER (CREATURE_BEHAVIOUR section 1, flight burrow; HUNT_FAMILIES section 3.1, inside while watched).' },
+        bolt_min_tiles: { ...Bounded, description: 'The nearest a den\'s bolt hole lies to its mouth, by the squared distance (HUNT_FAMILIES section 3.1: 64 <= d2 <= 100). Far enough that a flusher beside the mouth stands beyond a burrower\'s sight of the bolt hole (the check).' },
+        bolt_max_tiles: { ...Bounded, description: 'The farthest a den\'s bolt hole lies from its mouth, by the squared distance.' },
+        throw_ms: { ...Bounded, description: 'Game milliseconds a thrown stone takes to leave the hand (HUNTING section 5, T0).' },
+        strike_noise: { ...Bounded, description: 'Tiles within which a strike is heard (HUNTING section 4; COMBAT section 4.9).' },
+        fire_keep_day: { ...Bounded, description: 'Tiles a prey kind keeps from a burning fire on the ground by day (CREATURE_BEHAVIOUR section 2).' },
+        fire_keep_night: { ...Bounded, description: 'The same by night: a lit circle nothing grazes in. At least the fire\'s safe ring and one tile more (the check).' },
+        town_keep_day: { ...Bounded, description: 'Tiles a wild kind keeps from the town\'s cobbles by day (CREATURE_BEHAVIOUR section 2).' },
+        town_keep_night: { ...Bounded, description: 'The same at night, when the lamps push the wall out; never under the day\'s (the check).' },
+      },
+      {
+        additionalProperties: false,
+        description:
+          'The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1): the clock an animal thinks on, how far round a player animals are stepped, how long a flight, a den stay and a print last, where a den\'s bolt hole may lie, and the distances kept from a fire and the town. A kind\'s own character is its `behaviour`; these are the numbers every kind shares.',
       },
     ),
     starting_gold_mg: Bounded,
@@ -1699,14 +1788,194 @@ const Slot = Type.Object(
   { additionalProperties: false },
 );
 
-export const CREATURE_LOOKS = ['bird', 'fish', 'rabbit', 'deer'] as const;
+export const CREATURE_LOOKS = ['bird', 'fish', 'rabbit', 'deer', 'canid'] as const;
 export const CREATURE_PERCHES = ['ground', 'tree', 'water'] as const;
+/** How much of an animal there is to dress (docs/design/HUNTING.md section 6): 6, 12 or 24 steps, in parts of six, one action a part. */
+export const CREATURE_SIZES = ['small', 'medium', 'large'] as const;
+/** The ways an animal is taken, the client's hunting styles. The kernel reads none of them yet (G35). */
+export const HUNT_WAYS = ['stalk', 'snare', 'lure', 'fish', 'fight'] as const;
+/** The five goods of the hunt (HUNTING section 6), one class each, declared once in content/core/items/goods.json as `core/<good>`. */
+export const GOODS = ['meat', 'hide', 'bone', 'sinew', 'feather'] as const;
 
-/** One kind of ambient creature: how it looks, where it sits, how close the player may come, when it is out. */
+/**
+ * What a creature gives when it is dressed, and how it is taken (HUNTING sections 5-9). Optional on a kind: without it
+ * the kind is ambient only. Nothing here spawns an animal or lets a player strike one; that waits for the combat rules
+ * (G35). The fields say what a carcass of this kind yields, how long a fair hunt and the dressing take (the time the
+ * value table prices), and the spawn cap the balance check holds.
+ */
+const Hunt = Type.Object(
+  {
+    size: Type.Union(CREATURE_SIZES.map((k) => Type.Literal(k)), { description: 'Small dresses in 6 steps, medium in 12, large in 24: parts of six, one action a part, the goods with the last.' }),
+    tier: Int(1, 20, 'How far up the ladder it is. Every good it drops sits at this tier or below.'),
+    danger: Type.Union([Type.Literal(0), Type.Literal(1), Type.Literal(2)], {
+      description: 'What it does when the player comes close (HUNTING section 8): 0 flees, 1 stands and defends, 2 hunts the player. A danger 2 kind is medium or large.',
+    }),
+    take_s: Int(5, 600, 'Real seconds a fair hunt of it takes, from first sight to the carcass: the active time the value table prices, before the dressing.'),
+    drops: Type.Array(
+      Type.Object(
+        {
+          item: Id,
+          qty: Int(1, 20, 'Units a carcass gives. A finer animal gives the same count of the finer grade.'),
+          share_pct: Int(1, 100, 'Part of the hunt its value carries. Shares of one kind sum to 100.'),
+        },
+        { additionalProperties: false },
+      ),
+      { minItems: 1, maxItems: 5, description: 'What dressing it gives: plain goods of the five goods classes, each class once.' },
+    ),
+    ways: Type.Optional(
+      Type.Array(Type.Union(HUNT_WAYS.map((k) => Type.Literal(k))), {
+        minItems: 1,
+        maxItems: 3,
+        uniqueItems: true,
+        description: 'How it can be taken, for the client to show. Absent: the client decides.',
+      }),
+    ),
+    spawn: Type.Object(
+      {
+        cap_per_1000: Int(1, 20, 'The most of this kind alive per 1000 tiles of its habitat (HUNTING section 8: at most 12 at danger 0, 8 at 1, 5 at 2). The kind\'s danger stands for its region\'s band until a spot carries a region.'),
+        refill_d: Int(1, 30, 'Game days before a taken animal is replaced at its spot: the respawn the value table counts.'),
+      },
+      { additionalProperties: false },
+    ),
+  },
+  { additionalProperties: false },
+);
+
+/** The ear on HUNTING section 3's scale: a noise of radius n is heard within n + ear tiles (dull -2, normal 0, keen +2). */
+export const CREATURE_EARS = [-2, 0, 2] as const;
+/** How FLEE runs and where it ends (CREATURE_BEHAVIOUR section 1): on the ground, in the air, into water, up a tree or a rock, into the anchor. */
+export const CREATURE_FLIGHTS = ['ground', 'fly', 'swim', 'climb', 'burrow'] as const;
+/** What an anchor stands on and where the kind goes to ground out of its hours (CREATURE_BEHAVIOUR section 1); the perch list grown. */
+export const CREATURE_SLEEPS = ['ground', 'tree', 'water', 'rock', 'reeds', 'den', 'roof'] as const;
+/** How a group moves and flees (CREATURE_BEHAVIOUR section 5.1.1). */
+export const GROUP_CLASSES = ['solitary', 'herd', 'flock', 'pack'] as const;
+/** The four group bands in order, and the members each stands for (CREATURE_BEHAVIOUR section 5.1.1): nothing above 12. */
+export const GROUP_BANDS = ['solo', 'pair', 'small', 'large'] as const;
+export const GROUP_BAND_SIZES = [
+  [1, 1],
+  [2, 2],
+  [3, 4],
+  [5, 12],
+] as const;
+/** The real year's seasons (NATURE section 3); a group's season row is read by the spawner once seasons are built. */
+export const SEASONS = ['spring', 'summer', 'autumn', 'winter'] as const;
+/** A kind's answer to a fire on the ground (CREATURE_BEHAVIOUR section 2). */
+export const FIRE_CODES = ['keeps_away', 'holds_edge', 'drawn_to_lamp', 'ignores'] as const;
+/** What a water tile is to the kind (CREATURE_BEHAVIOUR section 1). */
+export const WATER_CODES = ['wall', 'crosses', 'swims', 'lives_in', 'edge'] as const;
+/** A kind's answer to rain and storm (CREATURE_BEHAVIOUR section 2): cover in rain, roosts in a storm, stays in while it rains, none. */
+export const WEATHER_CODES = ['cover', 'roosts', 'stays_in', 'none'] as const;
+/** What the town is to the kind (CREATURE_BEHAVIOUR sections 2 and 5): a wall it avoids, its own ground, or nothing. */
+export const TOWN_CODES = ['avoids', 'town_kind', 'none'] as const;
+/** The eighteen hunt families (HUNT_FAMILIES section 2): one body, one hunting style, one shape of drops each. */
+export const HUNT_FAMILIES = [
+  'burrowers',
+  'deer',
+  'wild-goats',
+  'pigs',
+  'canids',
+  'cats',
+  'bears',
+  'game-birds',
+  'perching-birds',
+  'waterfowl',
+  'raptors',
+  'mustelids',
+  'fish',
+  'reptiles',
+  'night-fliers',
+  'horned-beasts',
+  'spiders',
+  'drakes',
+] as const;
+
+const literals = <T extends string>(list: readonly T[], description: string) => Type.Union(list.map((k) => Type.Literal(k)), { description });
+
+const Bands = Type.Tuple([Int(0, 100), Int(0, 100), Int(0, 100), Int(0, 100)], {
+  description: 'Weights over the bands solo (1), pair (2), small (3 to 4) and large (5 to 12) that sum to 100: how many stand at one anchor, drawn once a group period.',
+});
+
+/**
+ * A kind's character (docs/design/HUNTING.md sections 2-4 and 8; CREATURE_BEHAVIOUR sections 1-5.1; HUNT_FAMILIES
+ * sections 2 and 3.1): its senses, where a quiet state goes, how far it roams, how it flees and where it sleeps, its
+ * voice, its group, and what fire, water, rain and the town are to it. Content only: two animals in the same state move
+ * differently by these numbers, never by a branch in the code. Optional on a kind; without it the kind stays cosmetic:
+ * no row reads it, and no client draws a kind yet.
+ */
+const Behaviour = Type.Object(
+  {
+    sight: Int(1, 12, 'Tiles it sees in its cone, by the squared distance (HUNTING sections 3 and 8).'),
+    ear: Type.Union(
+      CREATURE_EARS.map((k) => Type.Literal(k)),
+      { description: 'HUNTING section 3\'s ear: -2 dull, 0 normal, +2 keen. A noise of radius n is heard within n + ear tiles.' },
+    ),
+    smell: Type.Optional(Int(0, 12, 'Its nose (HUNTING section 8). Stored, read by nothing until the wind is built (HUNTING section 11, question 6).')),
+    weights: Type.Object(
+      { idle: Int(0, 100), graze: Int(0, 100), wander: Int(0, 100) },
+      {
+        additionalProperties: false,
+        description: 'Shares of 100 for where a quiet state goes when it ends (CREATURE_BEHAVIOUR section 1): a heron stands (60/30/10), a fox ranges (10/20/70). For a hunter GRAZE is the rest at its den.',
+      },
+    ),
+    roam: Int(6, 14, 'Tiles round its anchor WANDER picks in, and how far RETURN walks (HUNTING section 2).'),
+    flight: literals(CREATURE_FLIGHTS, 'How FLEE runs and ends: ground runs the distance map, fly lands sight + 4 away, swim ends under water, climb up a tree or a rock, burrow into its anchor (CREATURE_BEHAVIOUR section 1).'),
+    sleeps: literals(
+      CREATURE_SLEEPS,
+      'What its anchor stands on and where it goes to ground out of its hours: a form in the grass, a perch, the river bed, a warm rock, the reeds, a den, a roof beam. A day kind leaves the map there at night rather than sleeping in view, a few stragglers at most (DECISIONS 2026-10-30: the night empties the day kinds).',
+    ),
+    alarm: Int(0, 12, 'The noise its ALERT tell makes, in HUNTING section 4\'s table, so other animals hear it; 0 is a silent kind (CREATURE_BEHAVIOUR section 1).'),
+    looks_back: Type.Optional(Type.Boolean({ description: 'At FLEE\'s end it takes two steps of ALERT at sight + 2, facing the player, before WANDER: the deer\'s stop and turn. Absent: no.' })),
+    drinks: Type.Optional(Type.Boolean({ description: 'Twice a day its WANDER target is the nearest water or riverbank tile within roam, at dawn and at dusk (CREATURE_BEHAVIOUR section 4). Absent: no.' })),
+    carrion: Type.Optional(Type.Boolean({ description: 'It comes to a carcass within sight + 4 after 30 think steps (CREATURE_BEHAVIOUR section 2). Absent: no.' })),
+    fire: literals(FIRE_CODES, 'A fire on the ground: prey keeps away, a hunter holds at the edge of its safe ring, a moth is drawn to a lamp, or it ignores the fire (CREATURE_BEHAVIOUR section 2).'),
+    water: literals(WATER_CODES, 'A water tile: a wall, crossed in the air, swum, lived in, or the edge it lives along (CREATURE_BEHAVIOUR section 1).'),
+    weather: literals(WEATHER_CODES, 'Rain and storm: cover under the trees in rain, roost in a storm, stay in while it rains, or no change beyond the shorter hearing (CREATURE_BEHAVIOUR section 2).'),
+    town: literals(TOWN_CODES, 'The town: a wall it never crosses, its own ground (a town kind: the sparrow, the crow, the rat under a roof), or nothing (CREATURE_BEHAVIOUR sections 2 and 5).'),
+    habitat: Type.Array(TileTag, {
+      minItems: 1,
+      maxItems: 8,
+      uniqueItems: true,
+      description: 'The tile tags it lives on: where the spawner lays it and WANDER picks, and the tiles its spawn cap is read over (CREATURE_BEHAVIOUR section 3). A wild kind never names town.',
+    }),
+    group: Type.Object(
+      {
+        class: literals(GROUP_CLASSES, 'solitary: one at its anchor; herd: scatters on FLEE and regroups at the anchor; flock: lifts and lands as one; pack: keeps within 2 of its leader on every move (CREATURE_BEHAVIOUR section 5.1.3).'),
+        bands: Bands,
+        sentinel: Type.Optional(
+          Type.Boolean({ description: 'Only on a herd or a flock: its leader never GRAZEs while the others do, and its ALERT is its alarm noise (CREATURE_BEHAVIOUR section 5.1.1). Absent: no.' }),
+        ),
+        season: Type.Optional(
+          Type.Object(
+            { spring: Type.Optional(Bands), summer: Type.Optional(Bands), autumn: Type.Optional(Bands), winter: Type.Optional(Bands) },
+            {
+              additionalProperties: false,
+              minProperties: 1,
+              description: 'Bands that replace the plain ones in one season: pairs in spring, larger groups in winter (CREATURE_BEHAVIOUR section 5.1.4). Read by nothing until seasons are built; the cap and the refill never move with it.',
+            },
+          ),
+        ),
+      },
+      {
+        additionalProperties: false,
+        description: 'Who goes with whom (CREATURE_BEHAVIOUR section 5.1): the class says how the group moves and flees, the bands how many stand at one anchor. The size is drawn on the server, once a group period, while nobody can see the group.',
+      },
+    ),
+    family: literals(HUNT_FAMILIES, 'Its hunt family (HUNT_FAMILIES section 2): one body, one hunting style, one shape of drops.'),
+    flush: Type.Optional(
+      Type.Boolean({
+        description:
+          'Its found den may be flushed (HUNT_FAMILIES section 3.1, the line home): a smoke bundle at the mouth bolts it out of the bolt hole, a second tile 8 to 10 tiles away the server draws once per anchor and never moves. Only a burrower that sleeps in a den at danger 0. Absent: no.',
+      }),
+    ),
+  },
+  { additionalProperties: false },
+);
+
+/** One kind of creature: how it looks, where it sits, how close the player may come, when it is out; with `hunt`, what it gives when taken. */
 const CreatureKind = Type.Object(
   {
     look: Type.Union(CREATURE_LOOKS.map((k) => Type.Literal(k)), {
-      description: 'The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off.',
+      description: 'The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off, a canid lopes away.',
     }),
     perch: Type.Union(CREATURE_PERCHES.map((k) => Type.Literal(k)), {
       description: 'What its spots stand on: a non-solid ground tile, a forest tile, or a water tile.',
@@ -1715,8 +1984,13 @@ const CreatureKind = Type.Object(
     return_s: Int(5, 600, 'Real seconds before it comes back to its spot once the player is away.'),
     hours: Type.Optional(
       Type.Tuple([Int(0, 23), Int(1, 24)], {
-        description: 'The game hours it is out, from (inclusive) to (exclusive). Absent: all day, never at night.',
+        description: 'The game hours it is out, from (inclusive) to (exclusive); a night kind wraps midnight, from after to (the wolf\'s 20 to 5). Outside them it has gone to ground (BESTIARY section 1). Absent: out at every hour, the night included, as the wild brain\'s `awake` reads it, so a day kind names its hours; every kind of the core does.',
       }),
+    ),
+    behaviour: Type.Optional(Behaviour),
+    hunt: Type.Optional(Hunt),
+    protected: Type.Optional(
+      Type.Boolean({ description: 'A pet, a young animal or a person (HUNTING section 10): seen, never taken, never dressed. A protected kind carries no "hunt".' }),
     ),
   },
   { additionalProperties: false },
@@ -1905,7 +2179,7 @@ export const MapBody = Type.Object(
         },
         {
           additionalProperties: false,
-          description: 'Cosmetic ambient life (the client draws it behind ?rich= motion; the kernel never sees it): kinds, and the spots where each sits until the player comes close.',
+          description: 'Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A kind with "hunt" is the kernel\'s too: it dresses its carcasses and the value table prices its goods, with its spots as the source\'s capacity (HUNTING sections 5-9). A kind with "behaviour" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den\'s mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).',
         },
       ),
     ),
@@ -2176,6 +2450,9 @@ export type Kit = Static<typeof KitBody>;
 export type Ramp = Static<typeof RampBody>;
 export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
+export type CreatureKindDef = Static<typeof CreatureKind>;
+export type HuntDef = Static<typeof Hunt>;
+export type BehaviourDef = Static<typeof Behaviour>;
 export type ChunkFile = Static<typeof ChunkFile>;
 export type Chunk = Static<typeof ChunkBody>;
 export type Stamp = Static<typeof Stamp>;

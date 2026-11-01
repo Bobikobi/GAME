@@ -95,6 +95,11 @@ export const HubSources = Type.Object(
       [Type.Object({ fetched_at: Iso, window_days: Type.Integer({ minimum: 1, maximum: 90 }) }, { additionalProperties: false }), Type.Null()],
       { description: 'null until the stage-1 service (spec S-1) exists.' },
     ),
+    accounts: Type.Optional(
+      Type.Union([Fetched, Type.Null()], {
+        description: "null when the game server's counter could not be read (not named, unreachable, an error or too slow); accounts is then null. Absent in documents built before the counter.",
+      }),
+    ),
   },
   { additionalProperties: false, description: 'Provenance. A section with a null source is empty, never guessed.' },
 );
@@ -315,6 +320,18 @@ export const HubPlayers = Type.Object(
   { additionalProperties: false, description: 'Verified player boards (spec A-3), computed by the server only. null until stage 2a.' },
 );
 
+export const HubAccounts = Type.Object(
+  {
+    open: Count,
+    new_7d: Count,
+  },
+  {
+    additionalProperties: false,
+    description:
+      "The players counter (DECISIONS.md, 2026-10-31): open accounts on the game server, and how many of them were opened in the last 7 days, as its GET /stats counts them. Two counts and nothing about any account.",
+  },
+);
+
 export const HubUsage = Type.Object(
   {
     since: Iso,
@@ -349,6 +366,7 @@ export const HubData = Type.Object(
     summary: Type.Union([HubSummary, Type.Null()]),
     parameters: HubParameters,
     players: Type.Union([HubPlayers, Type.Null()]),
+    accounts: Type.Optional(Type.Union([HubAccounts, Type.Null()], { description: 'null when the count is unknown, never a guessed 0.' })),
     usage: Type.Union([HubUsage, Type.Null()]),
   },
   { additionalProperties: false },
@@ -368,6 +386,7 @@ export type HubVote = Static<typeof HubVote>;
 export type HubSummary = Static<typeof HubSummary>;
 export type HubParameters = Static<typeof HubParameters>;
 export type HubPlayers = Static<typeof HubPlayers>;
+export type HubAccounts = Static<typeof HubAccounts>;
 export type HubUsage = Static<typeof HubUsage>;
 export type MergeStateName = (typeof MERGE_STATES)[number];
 export type ProposalStateName = (typeof PROPOSAL_STATES)[number];
@@ -425,6 +444,8 @@ export function hubInvariants(doc: HubData): SchemaIssue[] {
     issues.push({ path: '/sources/vercel', message: 'built without Vercel: no proposal may carry a preview' });
   }
   if (doc.sources.usage === null && doc.usage !== null) issues.push({ path: '/usage', message: 'no usage source, so usage must be null' });
+  if ((doc.sources.accounts ?? null) === null && (doc.accounts ?? null) !== null) issues.push({ path: '/accounts', message: 'no accounts source, so accounts must be null' });
+  if (doc.accounts && doc.accounts.new_7d > doc.accounts.open) issues.push({ path: '/accounts/new_7d', message: 'cannot be more than open' });
   if (doc.players !== null && doc.players.verified_at > doc.built_at) {
     issues.push({ path: '/players/verified_at', message: 'cannot be later than built_at' });
   }

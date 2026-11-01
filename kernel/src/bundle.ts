@@ -63,10 +63,29 @@ export type MapDef = Meta & GameMap;
 /** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
 export type ReactionDef = Meta & Reaction;
 
+/** How a predator is heard far off and near, and how its bite is drawn (NEXT.md 12 c). Display only: no rule reads it. */
+export interface Telegraph {
+  howl_tiles: number;
+  howl_pct: number;
+  howl_gap_min_s: number;
+  howl_gap_max_s: number;
+  near_tiles: number;
+  near_pct: number;
+  near_curve: number;
+  dash_ms: number;
+  lunge_ms: number;
+  lunge_px: number;
+  flinch_ms: number;
+  flinch_px: number;
+  hit_ms: number;
+}
+
 export interface Params {
   /** The hours the valley is washed in a colour and the sun's shear (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
   light?: {
     keys: { at: string; tint: string; pct: number }[];
+    /** the night kept readable: the floor's luma and the fog's cap at night, whole percent */
+    read?: { floor: number; fog: number };
     sun?: { alpha: number; cap: number; keys: { at: string; right: number; down: number }[] };
   };
   k_permille: number;
@@ -111,7 +130,17 @@ export interface Params {
   fire: { cap: number; log_ms: number; warn_min: number; safe_tiles: number; burn_pct_per_d: number };
   hazard: {
     /** refill_bp: how high a hunt outrun to a safe place lifts health, in basis points of the cap: what its bites took comes back, up to this share */
-    predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number; refill_bp: number };
+    predator: {
+      reach: number;
+      pace_ms: number;
+      eyes: number;
+      catch_ms: number;
+      bite_ms: number;
+      bite_pct: number;
+      refill_bp: number;
+      /** the threat telegraph (NEXT.md 12 c): read by the client only, never by a rule */
+      telegraph?: Telegraph;
+    };
     pit: { harm_pct: number };
     trap: { harm_pct: number };
     deep_water: { harm_pct: number };
@@ -131,6 +160,36 @@ export interface Params {
    * (whole milliseconds, checked), and each gait is heard at its own radius in tiles (`noise_*`, still to run).
    */
   gait: { run_div: number; sneak_mul: number; noise_still: number; noise_sneak: number; noise_walk: number; noise_run: number };
+  /**
+   * Dressing a taken animal (docs/design/HUNTING.md sections 5-6): what one step takes, how many game days a carcass
+   * keeps its meat and then anything, and how often an animal appears fine or true (basis points).
+   */
+  hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; grade2_bp: number; grade3_bp: number };
+  /**
+   * The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1):
+   * the numbers every kind shares, its own character being the kind's `behaviour`. Ticks, think steps, tiles and game ms.
+   */
+  wild: {
+    tick_ms: number;
+    think_ticks: number;
+    wake_tiles: number;
+    awake_max: number;
+    catchup_max_steps: number;
+    flee_avoid_steps: number;
+    refill_clear_tiles: number;
+    spread_tiles: number;
+    print_ring: number;
+    print_fade_ms: number;
+    den_stay_steps: number;
+    bolt_min_tiles: number;
+    bolt_max_tiles: number;
+    throw_ms: number;
+    strike_noise: number;
+    fire_keep_day: number;
+    fire_keep_night: number;
+    town_keep_day: number;
+    town_keep_night: number;
+  };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };

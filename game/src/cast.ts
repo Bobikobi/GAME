@@ -292,3 +292,24 @@ export function shadowBox(shadow: Shadow): { x: number; y: number; w: number; h:
   }
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
+
+/**
+ * Props that lie on the ground and cast no shadow, by sprite name. Plants are not here: a flower, a reed bed, a tuft
+ * of tall grass and a herb stand up from the ground and carry their shadow like a stone does (wave 2b; the
+ * ground-level volume wave 1 lacked, DECISIONS 2026-10-30).
+ */
+export const FLAT_PROPS: ReadonlySet<string> = new Set([
+  'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
+  'log_fallen', 'log_mossy', 'dig_spot', 'fog', 'fence', 'fence_post', 'campfire_lit', 'campfire_unlit',
+]);
+
+/** "props/grass_tall_b" -> "grass_tall": a drawn variant (_b, _c, _d) follows its base prop's rule, not its own. */
+export function variantBase(name: string): string {
+  return name.replace(/_[b-d]$/, '');
+}
+
+/** Whether the sprite behind a texture key casts a shadow: its base name, variant letter stripped, is not flat. */
+export function castsShadow(key: string): boolean {
+  const name = key.split('/').pop() ?? key;
+  return !FLAT_PROPS.has(variantBase(name));
+}

@@ -1,0 +1,419 @@
+---
+// The project tree (the owner's pick of 31.10: the radial tree, in the site's theme, under the developer area). The
+// page is a frame: the browser reads the tree's file (web/src/data/tree.ts) every minute and draws the wheel from it.
+// At first sight the wheel shows the root and the plan's stages only, each a short name and one count; a tap (or a
+// hover with a mouse) opens one stage's card with its work, its pull requests and its agents. Names of the agents,
+// their last lines, the queue's notes and the owner's open asks travel sealed in the same file; the gate opens them
+// in this browser only, and nothing typed leaves it.
+import Site from '../../layouts/Site.astro';
+import '../../styles/hub.css';
+import '../../styles/tree.css';
+import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
+---
+
+<Site
+  title="The project tree: the plan, its pull requests and the agents at work - Loomvale"
+  description="How Loomvale is being built right now: every stage of the plan with its progress, the open pull requests and their checks, and the agents at work on each branch, refreshed every minute."
+  section="developers"
+>
+  <div class="hub tree" data-src={TREE_URL} data-refresh={TREE_REFRESH_S} data-quiet={TREE_QUIET_MIN}>
+    <header class="wrap tree-head">
+      <p class="kicker">Developer area</p>
+      <h1>The project tree</h1>
+      <p class="lead">Each branch is a stage of the plan, with its work done of its work planned. Tap a branch to open it.</p>
+      <p class="tree-stamp" id="tree-stamp" aria-live="polite"></p>
+      <noscript><p class="tree-state">The tree is drawn in the browser; it needs JavaScript.</p></noscript>
+    </header>
+
+    <div class="wrap tree-main">
+      <section aria-labelledby="wheel-h">
+        <h2 id="wheel-h" class="vh">The wheel</h2>
+        <svg class="wheel" id="wheel" role="group" aria-label="The plan's stages around the root"></svg>
+      </section>
+      <div class="tree-side">
+        <section class="tree-card" id="card" aria-live="polite" hidden></section>
+        <form class="gate" id="gate">
+          <label for="gate-pw">Sealed branches</label>
+          <input id="gate-pw" type="password" autocomplete="off" />
+          <button class="btn sm" type="submit">Open</button>
+          <span class="said" id="gate-said" aria-live="polite"></span>
+        </form>
+        <p class="tree-state" id="tree-state">Reading the tree.</p>
+      </div>
+    </div>
+  </div>
+</Site>
+
+<script>
+  type Leaf = {
+    key: string;
+    stream: string;
+    model: string | null;
+    status: string;
+    where: string;
+    branch: string | null;
+    pr: { n: number; ci: string; draft: boolean } | null;
+    quiet_min: number | null;
+    faded: boolean;
+    manager: boolean;
+  };
+  type Item = { id: string | null; title: string; state: string; src: string };
+  type Limb = {
+    id: string;
+    title: string;
+    kind: string;
+    status: string;
+    done: number;
+    total: number;
+    items: Item[];
+    prs: { n: number; title: string; ci: string; draft: boolean }[];
+    sap: { n: number; title: string; at: string }[];
+    sealed_asks: boolean;
+    leaves: Leaf[];
+  };
+  type Sealed = { kdf: string; iter: number; salt: string; iv: string; alg: string; ct: string };
+  type Tree = {
+    v: number;
+    built: string;
+    release: { live: string | null; ahead: number | null };
+    counts: { sessions: number; busy: number; open_prs: number; landed_today: number };
+    notes: string[];
+    limbs: Limb[];
+    root: Leaf[];
+    trunk: Leaf[];
+    sealed: Sealed | null;
+  };
+  type Open = {
+    leaves: Record<string, { name: string; label: string; last: string; asking: boolean }>;
+    items: Record<string, { title: string; status: string }>;
+    asks: { file: string; at: string; limb: string }[];
+  };
+
+  const root = document.querySelector<HTMLElement>('.tree')!;
+  const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+  // a local preview may point the page at a file of its own; the site reads only its constant
+  const src = (local && new URLSearchParams(location.search).get('src')) || root.dataset['src'] || '';
+  const refresh = Number(root.dataset['refresh'] ?? 60);
+  const quietMin = Number(root.dataset['quiet'] ?? 30);
+  const KEY = 'loomvale-tree-gate';
+  const SVG = 'http://www.w3.org/2000/svg';
+  const $ = (id: string): HTMLElement => document.getElementById(id)!;
+  let tree: Tree | null = null;
+  let opened: Open | null = null;
+  /** the stage whose card is open ('root' for the root), one at a time */
+  let open: string | null = null;
+
+  const two = (n: number): string => String(n).padStart(2, '0');
+  // the site's form for a time a person reads: DD.MM.YY HH:MM, in UTC
+  const stamp = (d: Date): string =>
+    `${two(d.getUTCDate())}.${two(d.getUTCMonth() + 1)}.${two(d.getUTCFullYear() % 100)} ${two(d.getUTCHours())}:${two(d.getUTCMinutes())}`;
+
+  function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function sv(tag: string, attrs: Record<string, string | number>, text?: string): SVGElement {
+    const e = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  const b64 = (s: string): Uint8Array<ArrayBuffer> => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function unseal(sealed: Sealed, password: string): Promise<Open> {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: b64(sealed.salt), iterations: sealed.iter },
+      base,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt'],
+    );
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(sealed.iv) }, key, b64(sealed.ct));
+    return JSON.parse(new TextDecoder().decode(plain)) as Open;
+  }
+
+  // the wheel's name for each stage, two or three words; a stage the page does not know yet is cut from its title
+  const SHORT: Record<string, string> = {
+    opening: 'The opening',
+    v015: 'v0.1.5',
+    server: 'Accounts, server',
+    art: '64 px art',
+    content: 'World and play',
+    ui: 'The screen',
+    community: 'Community',
+    release: 'Release train',
+    tools: 'Tools and CI',
+    presence: 'Seeing others',
+    chat: 'Chat',
+  };
+  function short(l: Limb): string {
+    return SHORT[l.id] ?? l.title.split(/[,:]/)[0]!.split(/\s+/).slice(0, 3).join(' ');
+  }
+  const quiet = (lf: Leaf): boolean => lf.faded || (lf.quiet_min ?? 0) > quietMin;
+  // an agent at work right now: busy here or running in the cloud, and not quiet
+  const working = (lf: Leaf): boolean => !quiet(lf) && (lf.status === 'busy' || lf.where === 'cloud');
+  // alive now: an agent working on the stage, or a pull request of it in flight
+  const alive = (l: Limb): boolean => l.prs.length > 0 || l.leaves.some(working);
+
+  /** Splits a name into lines of at most `max` letters, at spaces. */
+  function lines(name: string, max: number): string[] {
+    const out: string[] = [];
+    for (const w of name.split(' ')) {
+      const last = out[out.length - 1];
+      if (last !== undefined && last.length + 1 + w.length <= max) out[out.length - 1] = `${last} ${w}`;
+      else out.push(w);
+    }
+    return out;
+  }
+
+  function toggle(id: string): void {
+    open = open === id ? null : id;
+    draw();
+  }
+  function hoverOpen(id: string): void {
+    if (open === id) return;
+    open = id;
+    draw();
+  }
+
+  /**
+   * The wheel: the root in the middle and one branch per stage to a node that carries its count, with the stage's
+   * short name beside it. The stages go round clockwise from the top, the first half on the right; the wheel is as
+   * wide as its box and one unit is one CSS pixel, so every word stays at 16 px on a phone.
+   */
+  function drawWheel(t: Tree): void {
+    const svg = $('wheel');
+    svg.replaceChildren();
+    const W = Math.max(320, Math.min(720, svg.clientWidth || 360));
+    const n = t.limbs.length;
+    const right = Math.ceil(n / 2);
+    const left = n - right;
+    const gap = 64;
+    const ry = (Math.max(right, left) * gap) / 2;
+    const H = 2 * ry + 72;
+    const cx = W / 2;
+    const cy = H / 2;
+    // the node's distance from the middle: never on the root, and wider at the waist so the wheel reads round
+    const dx0 = Math.max(48, W * 0.12);
+    const rx = Math.max(16, W * 0.06);
+    const max = Math.floor((W / 2 - dx0 - rx - 32) / 8.4);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('height', String(H));
+    const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const place = (i: number): { x: number; y: number; side: 1 | -1 } => {
+      const side = i < right ? 1 : -1;
+      const k = side === 1 ? i : n - 1 - i;
+      const of = side === 1 ? right : left;
+      const y = cy - ry + (2 * ry * (k + 0.5)) / of;
+      const u = (y - cy) / ry;
+      return { x: cx + side * (dx0 + rx * Math.sqrt(Math.max(0, 1 - u * u))), y, side };
+    };
+    const branch = (g: SVGElement, x: number, y: number, live: boolean): void => {
+      g.append(sv('path', { class: `limb${live ? ' alive' : ''}`, d: `M${cx} ${cy} Q${cx} ${y} ${x.toFixed(1)} ${y.toFixed(1)}` }));
+    };
+    const hit = (g: SVGElement, id: string, label: string): void => {
+      g.setAttribute('role', 'button');
+      g.setAttribute('tabindex', '0');
+      g.setAttribute('aria-label', label);
+      g.setAttribute('aria-expanded', String(open === id));
+      g.addEventListener('click', () => toggle(id));
+      g.addEventListener('keydown', (ev) => {
+        const k = (ev as KeyboardEvent).key;
+        if (k === 'Enter' || k === ' ') {
+          ev.preventDefault();
+          toggle(id);
+        }
+      });
+      if (fine) g.addEventListener('pointerenter', () => hoverOpen(id));
+    };
+    t.limbs.forEach((l, i) => {
+      const { x, y, side } = place(i);
+      const live = alive(l);
+      const g = sv('g', { class: `stage${open === l.id ? ' open' : ''}${l.status === 'planned' ? ' planned' : ''}` });
+      branch(g, x, y, live);
+      g.append(sv('circle', { class: `node${live ? ' alive' : ''}`, cx: x, cy: y, r: 23 }));
+      g.append(sv('text', { class: 'count', x, y: y + 6, 'text-anchor': 'middle' }, `${l.done}/${l.total}`));
+      const words = lines(short(l), max);
+      const tx = x + side * 32;
+      const ty = y + 6 - ((words.length - 1) * 22) / 2;
+      words.forEach((w, k) => g.append(sv('text', { class: 'name', x: tx, y: ty + k * 22, 'text-anchor': side === 1 ? 'start' : 'end' }, w)));
+      hit(g, l.id, `${l.title}: ${l.done} of ${l.total} done${live ? ', alive now' : ''}`);
+      svg.append(g);
+    });
+    const r = sv('g', { class: `rootg${open === 'root' ? ' open' : ''}` });
+    // the root carries no word: the page's title names it, and a name under it would run into the waist's nodes
+    r.append(sv('circle', { class: 'root', cx, cy, r: 22 }));
+    hit(r, 'root', 'Loomvale: the agents with no stage, and today’s landings');
+    svg.append(r);
+  }
+
+  /** One line of the card: a few parts side by side. */
+  function line(...parts: (string | HTMLElement | null)[]): HTMLElement {
+    const p = el('p', 'row');
+    for (const x of parts) if (x !== null) p.append(typeof x === 'string' ? el('span', '', x) : x);
+    return p;
+  }
+  function agentRows(list: Leaf[]): HTMLElement {
+    const ul = el('ul', 'card-list');
+    for (const lf of list) {
+      const o = opened?.leaves[lf.key];
+      const who = o ? `${o.name}${o.label ? ` (${o.label})` : ''}` : lf.manager ? 'The manager' : 'An agent';
+      const li = el('li', working(lf) ? 'alive' : quiet(lf) ? 'quiet' : '');
+      li.append(el('b', '', who));
+      li.append(
+        line(
+          working(lf) ? 'working now' : quiet(lf) ? 'quiet' : lf.status,
+          lf.model,
+          lf.where === 'cloud' ? 'in the cloud' : null,
+          lf.quiet_min !== null ? `last line ${lf.quiet_min} min ago` : null,
+          lf.pr ? `#${lf.pr.n}` : null,
+        ),
+      );
+      if (o?.last) {
+        const last = el('p', 'last', o.last);
+        last.dir = 'auto';
+        li.append(last);
+      }
+      ul.append(li);
+    }
+    return ul;
+  }
+  const head = (text: string): HTMLElement => el('h4', '', text);
+
+  /** The open stage's card: every word the wheel leaves out, at reading size. */
+  function drawCard(t: Tree): void {
+    const card = $('card');
+    card.replaceChildren();
+    const limb = t.limbs.find((l) => l.id === open);
+    if (open === 'root') {
+      card.append(el('h3', '', 'Loomvale'));
+      card.append(line(`${t.counts.landed_today} landed today`, `release ${t.release.live ?? 'unknown'}`));
+      const near = [...t.root, ...t.trunk];
+      if (near.length) card.append(head(`Agents with no stage (${near.length})`), agentRows(near));
+    } else if (limb) {
+      card.append(el('h3', '', limb.title));
+      card.append(line(`${limb.done} of ${limb.total} done`, alive(limb) ? el('span', 'alive-word', 'alive now') : null, limb.kind === 'side' ? 'beside the plan' : null));
+      if (limb.prs.length) {
+        card.append(head(`Pull requests (${limb.prs.length})`));
+        const ul = el('ul', 'card-list');
+        for (const p of limb.prs) {
+          const li = el('li', 'alive');
+          li.append(el('b', '', `#${p.n}`), document.createTextNode(` ${p.title}`));
+          li.append(line(`checks ${p.ci === 'none' ? 'not run' : p.ci}`, p.draft ? 'draft' : null));
+          ul.append(li);
+        }
+        card.append(ul);
+      }
+      if (limb.leaves.length) card.append(head(`Agents (${limb.leaves.length})`), agentRows(limb.leaves));
+      if (limb.sap.length) card.append(line(`Landed today: ${limb.sap.map((s) => `#${s.n} at ${s.at}`).join(', ')}`));
+      if (limb.sealed_asks) {
+        const asks = opened ? opened.asks.filter((a) => a.limb === limb.id) : [];
+        card.append(line(opened ? `${asks.length} picture${asks.length === 1 ? '' : 's'} for the owner today` : 'The owner’s asks are sealed.'));
+      }
+      if (limb.items.length) {
+        card.append(head(`Work items (${limb.items.length})`));
+        const ul = el('ul', 'card-list items');
+        limb.items.forEach((it, k) => {
+          const li = el('li', '', `${it.state}: ${it.title}`);
+          const extra = opened?.items[`${limb.id}:${k}`];
+          if (extra) li.append(el('span', 'note', ` - ${extra.status}`));
+          ul.append(li);
+        });
+        card.append(ul);
+      }
+    }
+    card.hidden = card.childElementCount === 0;
+    if (!card.hidden) {
+      const close = el('button', 'btn sm card-close', 'Close');
+      close.type = 'button';
+      close.addEventListener('click', () => toggle(open ?? ''));
+      card.append(close);
+    }
+  }
+
+  function draw(): void {
+    if (!tree) return;
+    const t = tree;
+    const built = new Date(t.built);
+    const s = $('tree-stamp');
+    s.replaceChildren();
+    const part = (b: string, rest: string): HTMLElement => {
+      const sp = el('span');
+      sp.append(el('b', '', b), document.createTextNode(` ${rest}`));
+      return sp;
+    };
+    s.append(part(String(t.counts.busy), `of ${t.counts.sessions} agents at work`), part(String(t.counts.open_prs), 'pull requests open'));
+    const age = Math.round((Date.now() - built.getTime()) / 60000);
+    $('tree-state').textContent =
+      `Data built ${stamp(built)} UTC, ${age} min ago; read again every ${refresh} s.` +
+      (t.notes.length ? ` Missing this time: ${t.notes.join('; ')}.` : '');
+    drawWheel(t);
+    drawCard(t);
+  }
+
+  async function read(): Promise<void> {
+    if (!src) {
+      $('tree-state').textContent = 'No data yet: the tree’s channel is not connected.';
+      return;
+    }
+    try {
+      const url = `${src}${src.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(String(res.status));
+      tree = (await res.json()) as Tree;
+      if (tree.v !== 1) throw new Error('version');
+      const pw = sessionStorage.getItem(KEY);
+      opened = null;
+      if (pw && tree.sealed) {
+        try {
+          opened = await unseal(tree.sealed, pw);
+        } catch {
+          sessionStorage.removeItem(KEY);
+        }
+      }
+      draw();
+    } catch {
+      $('tree-state').textContent = tree
+        ? `The last read failed; showing the tree read before. Trying again in ${refresh} s.`
+        : 'No data yet: the tree could not be read. Trying again in a minute.';
+    }
+  }
+
+  $('gate').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const input = $('gate-pw') as HTMLInputElement;
+    const said = $('gate-said');
+    if (!tree?.sealed) {
+      said.textContent = 'There is nothing sealed to open yet.';
+      return;
+    }
+    try {
+      opened = await unseal(tree.sealed, input.value);
+      try {
+        sessionStorage.setItem(KEY, input.value);
+      } catch {
+        // private windows may refuse storage: the branches stay open until the page reloads
+      }
+      said.textContent = 'Open in this browser until the tab closes.';
+      draw();
+    } catch {
+      opened = null;
+      said.textContent = 'That password opens nothing.';
+      draw();
+    }
+    input.value = '';
+  });
+
+  void read();
+  setInterval(() => void read(), refresh * 1000);
+  // the wheel takes the width it is given, so it is drawn again when that changes
+  let lastWidth = 0;
+  new ResizeObserver(() => {
+    const w = $('wheel').clientWidth;
+    if (w !== lastWidth && tree) drawWheel(tree);
+    lastWidth = w;
+  }).observe($('wheel'));
+</script>

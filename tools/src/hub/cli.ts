@@ -4,6 +4,7 @@
  * Builds the hub-data document from the checkout and GitHub, validates it and writes it (default
  * web/public/api/hub-data.json, which the site publishes at /api/hub-data.json). The token comes from
  * HUB_GITHUB_TOKEN, else GITHUB_TOKEN; without one the GitHub sections are empty and sources.github is null.
+ * The players count comes from the game server GAME_SERVER_ORIGIN names; without it `accounts` is null.
  * `--from` downloads a published document instead of building one, validates it and writes it.
  * Exits 1 when the document does not validate, with the issues printed.
  */
@@ -12,6 +13,7 @@ import { dirname, isAbsolute, join } from 'node:path';
 import { validateHubData } from '@game/schema/hub';
 import { REPO_ROOT } from '../load';
 import { GitHubClient } from '../loop/github';
+import { accountsReader } from './accounts';
 import { buildHubData, buildTarget } from './build';
 import { upstashReader } from './usage';
 
@@ -41,6 +43,7 @@ async function main(): Promise<number> {
       now: new Date(),
       previews: true,
       usage: upstashReader(),
+      accounts: accountsReader(),
       ...target,
     });
   }
