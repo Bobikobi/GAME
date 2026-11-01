@@ -747,6 +747,74 @@ body {
   font-size: 16px;
 }
 
+/* ------------------------------------------------------------ the crossing card (SEA_CROSSING.md): frame D, where the prompt sits */
+
+#ui > .sea-card {
+  pointer-events: auto;
+}
+
+.sea-card {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--prompt-lift));
+  transform: translateX(-50%);
+  width: min(380px, calc(100vw - 24px));
+  /* clear of frame D's corner pieces */
+  padding: 14px 20px;
+  font-size: 16px;
+}
+
+.sea-head b,
+.sea-event b {
+  font-family: var(--ui-display);
+  font-weight: 600;
+  color: var(--ui-gold-5);
+}
+
+.sea-event b {
+  display: block;
+}
+
+.sea-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.sea-track {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.sea-track i {
+  flex: 1;
+  height: 6px;
+  border: 1px solid var(--ui-gold-5);
+}
+
+.sea-track i.on {
+  background: var(--ui-gold-5);
+}
+
+.sea-event,
+.sea-clue,
+.sea-held {
+  margin: 4px 0;
+}
+
+.sea-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.sea-acts .btn {
+  flex: 1 1 auto;
+}
+
 /* ------------------------------------------------------------ touch */
 
 .touch {

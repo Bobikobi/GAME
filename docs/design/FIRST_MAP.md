@@ -3,6 +3,7 @@
 **Picked by the owner, 28.10: A** (DECISIONS 2026-10-28 "The first map: frame A"). The owner's notes with the pick:
 - The mountains around the valley are snowy, and crossing them is close to impossible: hard routes that cannot be seen, found the way a player explores an open world, with heavy snow, ice pits and monsters. The three passes are the ways out; the mountains between them are not a wall but a trial.
 - The human city is reached by sailing: it stands on the far bank, the south-west corner across the bay, as the plan draws it (scenery only on the first map, G55). The tarn in the east highland is a small mountain lake with the boathouse and its keeper, not the city.
+- Corrected by the owner, 2026-11-01 (SEA_CROSSING section 6): a human may also walk round to the far bank, as a significant detour, not only by boat. **Open requirement of this map's drawing (NEXT 19 e): the route is not yet drawn.**
 - Later, a mechanism that lets creators change a mountain in a way that makes sense to players (a route opened, a pass cut); it is written when the open world's creator rules (item h) are built.
 - Paths outside the opening: faint, worn, with small weathered signs (the paragraph below).
 
@@ -105,8 +106,8 @@ The owner picked A2 and turned down both readings drawn on 29.10 (the picture's 
 
 So A2's geography stands: the picture's walled town at the bend, with its own bridge and dock, is a city of all three races, its
 townspeople and vendors drawn at random from them; it is not the human city. The player wakes in the small town of the authored block,
-outside the picture, as A2 already lays it. G55 (the human city across the bay, scenery on the first map) is not changed by this pick; where
-the human city stands now that the valley has a city of all races is an open question for STORY.
+outside the picture, as A2 already lays it. G55 (the human city across the bay, scenery on the first map) is not changed by this pick; the human
+city stands on the far bank, across the bay (the owner, 2026-11-01; SEA_CROSSING section 6).
 
 **Heights.** The picture's vertical structure is in the plan's height layer and shows in the still (STYLE 6: a light lip on a top's edge,
 a dark foot under a face). The city and the spire's rise stand on a ridge at level 1 (x 57-75, y 63-81, and round (73,60)), one level above

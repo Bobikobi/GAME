@@ -6538,6 +6538,17 @@
               },
               "description": "What boarding takes from the bag. Its worth comes from the kernel, never a price written here."
             },
+            "requires": {
+              "maxItems": 4,
+              "description": "The quests that must be done before this boat takes the player: the crossing is part of an opening, never a gate by level. Until then there is no prompt, and the kernel refuses a boarding.",
+              "type": "array",
+              "items": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            },
             "segments": {
               "minimum": 4,
               "maximum": 16,

@@ -729,6 +729,9 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (!exits.has(p.from)) err(id, 'passage.from', `no exit "${p.from}" in the map plan`);
     if (p.to !== undefined && !exits.has(p.to)) err(id, 'passage.to', `no exit "${p.to}" in the map plan`);
     if (p.fare) item(id, 'passage.fare.item', p.fare.item);
+    (p.requires ?? []).forEach((r, i) => {
+      if (!b.quests[r]) err(id, `passage.requires.${i}`, `no quest "${r}"`);
+    });
     p.events.forEach((e, i) => {
       const w = `passage.events.${i}`;
       if (e.act.kind === 'bring') item(id, `${w}.act.item`, e.act.item);
