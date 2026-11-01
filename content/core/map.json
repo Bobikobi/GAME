@@ -4334,6 +4334,45 @@
               "cap_per_1000": 5,
               "refill_d": 3
             }
+          },
+          "fight": {
+            "tier": 1,
+            "hp": 16,
+            "breath": 80,
+            "pace_ms": 190,
+            "moves": [
+              {
+                "id": "bite",
+                "windup_t": 5,
+                "reach": 1,
+                "breath": 15,
+                "recover_t": 8,
+                "cooldown_t": 10
+              },
+              {
+                "id": "lunge",
+                "windup_t": 7,
+                "reach": 2,
+                "harm_div": 4,
+                "breath": 20,
+                "recover_t": 10,
+                "cooldown_t": 40
+              }
+            ],
+            "patterns": [
+              [
+                "bite",
+                "bite",
+                "lunge"
+              ],
+              [
+                "lunge",
+                "bite"
+              ]
+            ],
+            "weak": {
+              "after": "lunge"
+            }
           }
         }
       },
