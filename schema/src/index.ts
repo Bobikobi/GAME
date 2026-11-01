@@ -2289,6 +2289,10 @@ export const MapBody = Type.Object(
             h: Int(1, 1024),
             world: Type.Optional({ ...WorldId, description: "The world the region belongs to. Left out: the map's world." }),
             card: Type.Optional({ ...WorldId, description: 'The region card (`cards`) it weathers and sounds by. Left out: the map\'s own card.' }),
+            title: Type.Optional({
+              ...Name,
+              description: 'The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable.',
+            }),
           },
           { additionalProperties: false },
         ),

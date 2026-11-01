@@ -2150,6 +2150,12 @@
                 "maxLength": 40,
                 "type": "string",
                 "description": "The region card (`cards`) it weathers and sounds by. Left out: the map's own card."
+              },
+              "title": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string",
+                "description": "The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable."
               }
             }
           }

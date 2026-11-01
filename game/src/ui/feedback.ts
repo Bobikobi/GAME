@@ -3,7 +3,7 @@
  * rings a jingle and flashes a banner, a skill point lights up. Display only:
  * it reads events after the kernel made them and changes nothing.
  */
-import type { GameEvent } from '@game/kernel';
+import { type GameEvent, placeName } from '@game/kernel';
 import { app } from '../app';
 import { sound } from '../audio';
 import { planBatch, type Cue } from '../audio/heard';
@@ -99,6 +99,12 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
         add({ sfx: 'perfect', detune: 500 });
         banner(root, 'Jackpot!', 'jackpot');
         break;
+      case 'place': {
+        // a place names itself once, on its first entry (G63): a plaque of frame D, quiet, and no cheer
+        const name = placeName(app.bundle.map, e.id);
+        if (name) banner(root, name, 'place');
+        break;
+      }
     }
   }
   // one gold, one coin: when coins fly to the purse, their landing is the batch's coin
@@ -115,11 +121,16 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
 }
 
 /** A word across the middle of the screen that rises and fades. */
-export function banner(root: HTMLElement, text: string, kind: 'level' | 'jackpot' | 'point'): void {
-  const el = h('div', { class: `banner ${kind}` }, h('span', null, text), h('i', { class: 'burst' }));
+export function banner(root: HTMLElement, text: string, kind: 'level' | 'jackpot' | 'point' | 'place'): void {
+  // a place's name is read, not cheered: no burst behind it, and it stands longest
+  root.querySelector('.banner.place')?.remove();
+  const el = h('div', { class: `banner ${kind}` }, h('span', null, text), kind === 'place' ? null : h('i', { class: 'burst' }));
   root.append(el);
-  window.setTimeout(() => el.remove(), kind === 'level' ? 2400 : 1600);
+  window.setTimeout(() => el.remove(), BANNER_MS[kind]);
 }
+
+/** How long each banner stands, in ms: its CSS animation runs as long. */
+const BANNER_MS = { level: 2400, jackpot: 1600, point: 1600, place: 3200 } as const;
 
 function purse(): DOMRect | undefined {
   return document.querySelector('.hud .chip.gold')?.getBoundingClientRect();
