@@ -1,7 +1,7 @@
 /** Misses, jackpots, luck and the character's look: the rules around the minigame grade. */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type Grade, type State, JACKPOT_XP, MISS_KEEP_BP, MISS_KEEP_MAX_BP, newState, step } from '@game/kernel';
+import { type Bundle, type Grade, type State, MISS_KEEP_BP, MISS_KEEP_MAX_BP, newState, step } from '@game/kernel';
 
 import { bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -60,14 +60,14 @@ describe('a missed gather', () => {
 });
 
 describe('a jackpot', () => {
-  test('gives the goods of a perfect strike and three times the experience', () => {
+  test('gives the goods and the experience of a perfect strike: luck pays no experience (PROGRESSION 4.7 b)', () => {
     const perfect = gatherStone(started(3), 3);
     const jackpot = gatherStone(started(3), 4);
     expect(jackpot.player.bag).toEqual(perfect.player.bag);
     // the river stones are mined, which trains digging (DECISIONS.md, 2026-10-25)
     const profession = bundle.verbs.dig;
     expect(perfect.player.xp[profession]).toBeGreaterThan(0);
-    expect(jackpot.player.xp[profession]).toBe(perfect.player.xp[profession]! * JACKPOT_XP);
+    expect(jackpot.player.xp).toEqual(perfect.player.xp);
   });
 
   test('refuses a grade above the jackpot', () => {
