@@ -490,6 +490,18 @@ function codexVersion(): string {
   return run.status === 0 ? run.stdout.trim() : 'unknown';
 }
 
+/**
+ * The Codex call, on its cheapest footing: the user's config (the heaviest model, the top effort, the priority
+ * tier) and the repo's AGENTS.md stay out, since a drawing needs neither. `KIT_CODEX_MODEL` changes the model.
+ */
+export function codexArgs(prompt: string, images: readonly string[], model = process.env.KIT_CODEX_MODEL ?? ''): string[] {
+  return [
+    'exec', '--ignore-user-config', '-m', model === '' ? 'gpt-5.6-luna' : model,
+    '-c', 'model_reasoning_effort=low', '-c', 'project_doc_max_bytes=0',
+    '--sandbox', 'workspace-write', '--skip-git-repo-check', prompt, ...images,
+  ];
+}
+
 /** Run Codex once in the work folder and find the file it wrote. The prompt goes before -i: -i takes every path that follows it. */
 function askCodex(
   options: Options, version: string, name: string, stamp: string, prompt: string, images: readonly string[], expect: string,
@@ -497,7 +509,7 @@ function askCodex(
   const workdir = join(options.out, 'work');
   const logPath = join(options.out, 'log', `${name}-${stamp}.txt`);
   const since = Date.now();
-  const run = spawnSync('codex', ['exec', '--sandbox', 'workspace-write', '--skip-git-repo-check', prompt, ...images], {
+  const run = spawnSync('codex', codexArgs(prompt, images), {
     cwd: workdir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
     timeout: options.timeoutSeconds * 1000, maxBuffer: 64 * 1024 * 1024,
   });

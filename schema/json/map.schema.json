@@ -2281,11 +2281,158 @@
                 "type": "string",
                 "description": "The world the region belongs to. Left out: the map's world."
               },
+              "card": {
+                "pattern": "^[a-z0-9_-]+$",
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string",
+                "description": "The region card (`cards`) it weathers and sounds by. Left out: the map's own card."
+              },
               "title": {
                 "minLength": 1,
                 "maxLength": 40,
                 "type": "string",
                 "description": "The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable."
+              }
+            }
+          }
+        },
+        "card": {
+          "pattern": "^[a-z0-9_-]+$",
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string",
+          "description": "The region card (`cards`) of the tiles in no region. Left out: the kernel's fixed odds and the default beds."
+        },
+        "cards": {
+          "maxItems": 32,
+          "description": "How each region of the map weathers and sounds (FIRST_MAP's table, one card a row).",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "title",
+              "weather",
+              "look",
+              "ambience"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+$",
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string",
+                "description": "The card's name, unique on the map; a region (or the map itself) names it in `card`."
+              },
+              "title": {
+                "minLength": 1,
+                "maxLength": 60,
+                "description": "The region as docs/design/FIRST_MAP.md names it in its table, word for word.",
+                "type": "string"
+              },
+              "climate": {
+                "description": "The region's climate (NATURE section 2). Left out: temperate.",
+                "anyOf": [
+                  {
+                    "const": "temperate",
+                    "type": "string"
+                  },
+                  {
+                    "const": "dry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "cold",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wet",
+                    "type": "string"
+                  }
+                ]
+              },
+              "weather": {
+                "additionalProperties": false,
+                "description": "The odds of each day's sky, drawn per region from the world's seed (REACTIONS phase B).",
+                "type": "object",
+                "required": [
+                  "rain",
+                  "fog"
+                ],
+                "properties": {
+                  "rain": {
+                    "minimum": 0,
+                    "maximum": 5000,
+                    "description": "Days of rain, in basis points of the days.",
+                    "type": "integer"
+                  },
+                  "fog": {
+                    "minimum": 0,
+                    "maximum": 5000,
+                    "description": "Days of fog, in basis points of the days. The rest are clear.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "look": {
+                "additionalProperties": false,
+                "description": "How the region's weather looks: more or less of the drawn rain and mist, never a new kind.",
+                "type": "object",
+                "required": [
+                  "rain",
+                  "fog"
+                ],
+                "properties": {
+                  "rain": {
+                    "minimum": 0,
+                    "maximum": 2000,
+                    "description": "How much rain is drawn on a rain day, in permille of the decided look (DECISIONS 2026-10-21, \"Rain\").",
+                    "type": "integer"
+                  },
+                  "fog": {
+                    "minimum": 0,
+                    "maximum": 2000,
+                    "description": "How thick the banks lie on a fog day, in permille of the day's own banks.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "ambience": {
+                "additionalProperties": false,
+                "description": "The sound bed by day and by night; the existing beds until the owner's sound pick (#464).",
+                "type": "object",
+                "required": [
+                  "day",
+                  "night"
+                ],
+                "properties": {
+                  "day": {
+                    "anyOf": [
+                      {
+                        "const": "day",
+                        "type": "string"
+                      },
+                      {
+                        "const": "night",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "night": {
+                    "anyOf": [
+                      {
+                        "const": "day",
+                        "type": "string"
+                      },
+                      {
+                        "const": "night",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
               }
             }
           }

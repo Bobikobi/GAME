@@ -8,6 +8,7 @@
  * (kernel-review R4), and a screen cannot tell the two apart.
  */
 import type { Action, Bundle, FireState, Gait, GameEvent, PublicState } from '@game/kernel';
+import type { WeatherName } from '@game/schema';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 
@@ -59,6 +60,8 @@ export interface GameSession {
   advance(dt: number): void;
   /** Does a node a reaction can raise stand now? The server says; the game that holds a seed works it out. */
   appears(id: string): boolean;
+  /** The day's weather over the player, as their region's card draws it (issue 581). The server says; the game that holds a seed works it out; an old server says nothing. */
+  sky(): WeatherName | undefined;
   /** Ask whether an action would be accepted, when the caller can ask. The phone alone cannot. */
   check(action: Action): string | undefined;
   /** Tell the kernel which tile the player stands on. */

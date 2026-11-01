@@ -108,7 +108,9 @@ export function bankPixels(w: number, h: number, seed: number, crest = true, per
       // the band's own centre line rises and falls along its length, so neither edge is a straight line
       const centre = 0.5 + 0.09 * Math.sin(3 * u + s) + 0.05 * Math.sin(7 * u + s * 2.3);
       const fy = Math.max(0, 1 - Math.abs((y + 0.5) / h - centre) * 2);
-      const wob = 0.72 + 0.28 * Math.sin(2 * u + s) * Math.cos(5 * u + s * 1.7);
+      // soft shapes that vary down the band as well as along it, wider than tall: a pattern of x alone stands in columns
+      const v2 = step * y;
+      const wob = 0.6 + 0.2 * Math.sin(u + 2.1 * v2 + s) + 0.15 * Math.sin(2 * u - 3.1 * v2 + s * 1.7) + 0.1 * Math.sin(3 * u + 5.3 * v2 + s * 2.9);
       // a window at each edge, so a band whose middle wanders up still leaves the rows above it clear
       const win = Math.min(1, (y + 0.5) / (h * 0.12), (h - y - 0.5) / (h * 0.12));
       const v = Math.pow(fy, 0.55) * wob * Math.max(0, win);

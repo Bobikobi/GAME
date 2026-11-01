@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
-import { appearSlots, appears, gaitStepMs, makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type Gait, type State, type Tile } from '@game/kernel';
+import { appearSlots, appears, dayOf, gaitStepMs, skyAt, makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type Gait, type State, type Tile } from '@game/kernel';
 import type { IncomingMessage, Server } from 'node:http';
 
 import { createGameApi, createPlayerRecord, isAction, listen, replayAccount, type Books, type PlayerRecord, type PlayerStore } from '../src';
@@ -81,6 +81,11 @@ function started(): State {
 /** The appear nodes the state's key makes stand now, as the kernel draws them: what a reply must list. */
 function standing(state: State): string[] {
   return [...appearSlots(bundle).keys()].filter((id) => appears(bundle, state, id, state.tick)).sort();
+}
+
+/** The day's sky over the player's tile, as the server draws it (issue 581). */
+function skyOf(state: State): string {
+  return skyAt(bundle, state.seed, state.player.at[0], state.player.at[1], dayOf(bundle, state.tick));
 }
 
 function move(at: Tile, tick: number): { kind: 'move'; at: Tile; tick: number } {
@@ -329,7 +334,7 @@ describe('Stage 2a server protocol', () => {
     const response = await post(base, '/session', {});
     expect(response.status).toBe(200);
     const resumed = await response.json() as { state: Record<string, unknown>; version: number };
-    expect(resumed).toEqual({ state: publicState(store.record.state), version: 1, appears: standing(store.record.state) });
+    expect(resumed).toEqual({ state: publicState(store.record.state), version: 1, appears: standing(store.record.state), sky: skyOf(store.record.state) });
     expect(resumed.state).not.toHaveProperty('seed');
     const forged = await post(base, '/session', { state: newState(bundle, 1) });
     expect(forged.status).toBe(400);
@@ -341,7 +346,7 @@ describe('Stage 2a server protocol', () => {
     const response = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
     expect(response.status).toBe(200);
     const body = await response.json() as { state: Record<string, unknown>; version: number };
-    expect(body).toEqual({ state: publicState(state), version: 1, appears: standing(state) });
+    expect(body).toEqual({ state: publicState(state), version: 1, appears: standing(state), sky: skyOf(state) });
     expect(body.state).not.toHaveProperty('seed');
   });
 

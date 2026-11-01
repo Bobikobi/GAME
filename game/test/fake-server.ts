@@ -6,7 +6,7 @@
  * movement credit, so a client that cheats on distance would not be caught here (that check has its own
  * tests on the server).
  */
-import { type Action, type Bundle, type Gait, type GameEvent, type State, appearSlots, appears, publicState, statePatch, step } from '@game/kernel';
+import { type Action, type Bundle, type Gait, type GameEvent, type State, appearSlots, appears, dayOf, publicState, skyAt, statePatch, step } from '@game/kernel';
 
 import type { ChangeReply, StateReply, Wire } from '../src/remote';
 import { WireGap, WireRefusal } from '../src/remote';
@@ -26,6 +26,8 @@ export class FakeServer implements Wire {
   gap = false;
   /** while true the server is one older than the reason code: a 409 carries the words only */
   noReasons = false;
+  /** while true the server is one older than the region's weather: no reply carries a sky */
+  noSky = false;
 
   constructor(bundle: Bundle, state: State, now = () => 0) {
     this.bundle = bundle;
@@ -67,8 +69,14 @@ export class FakeServer implements Wire {
     return [...appearSlots(this.bundle).keys()].filter((id) => appears(this.bundle, this.state, id, this.state.tick)).sort();
   }
 
+  /** the day's sky over the player, as the real server draws it (issue 581); a server that predates it sends none */
+  private skyNow(): string | undefined {
+    if (this.noSky) return undefined;
+    return skyAt(this.bundle, this.state.seed, this.state.player.at[0], this.state.player.at[1], dayOf(this.bundle, this.state.tick));
+  }
+
   private snapshot(): StateReply {
-    return { state: publicState(this.state), version: this.version, appears: this.appearIds() };
+    return { state: publicState(this.state), version: this.version, appears: this.appearIds(), sky: this.skyNow() };
   }
 
   private checkClock(tick: number): void {
@@ -117,6 +125,6 @@ export class FakeServer implements Wire {
     this.version += 1;
     // the clock is anchored to the state tick, as the real server's is: game time, not wall time
     this.acceptedAt += state.tick - before.tick;
-    return { events, patch, version: this.version, appears: this.appearIds() };
+    return { events, patch, version: this.version, appears: this.appearIds(), sky: this.skyNow() };
   }
 }
