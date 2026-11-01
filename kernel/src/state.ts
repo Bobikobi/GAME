@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.23.0';
+export const KERNEL_VERSION = '0.24.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -87,6 +87,8 @@ export interface Outing {
   visited: string[];
   /** quests open when a predator bit on this outing, sorted: they join `Player.bitten` when it ends safe, and a fall drops them */
   bitten?: string[];
+  /** places first found on this outing and not yet counted (G63): they join `Player.explored` when it ends safe, and a fall drops them */
+  found?: string[];
 }
 
 /** A hunt in progress: the predator that has the player's scent. It bites by the clock until a safe place or dawn. */
@@ -188,6 +190,10 @@ export interface Player {
   journal: string[];
   made: Record<string, number>;
   visited: string[];
+  /** places entered, sorted (G66): the regions and named areas whose name the banner showed once; a fall never takes one back. Absent until the first */
+  seen?: string[];
+  /** places found and brought home, sorted (G63): the exploration board counts these. Absent until the first */
+  explored?: string[];
   restored: string[];
   camp: string[];
   rep: Record<string, number>;
