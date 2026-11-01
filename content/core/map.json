@@ -4475,6 +4475,31 @@
           "kind": "core/trout",
           "x": 13,
           "y": 3
+        },
+        {
+          "kind": "core/hare",
+          "x": 45,
+          "y": 27
+        },
+        {
+          "kind": "core/hare",
+          "x": 35,
+          "y": 33
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 43,
+          "y": 33
+        },
+        {
+          "kind": "core/crow",
+          "x": 46,
+          "y": 32
+        },
+        {
+          "kind": "core/crow",
+          "x": 28,
+          "y": 32
         }
       ]
     },
@@ -4591,6 +4616,33 @@
         "y": 27,
         "w": 5,
         "h": 4,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-1",
+        "kind": "resource",
+        "x": 45,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/lone-mushrooms-2",
+        "kind": "resource",
+        "x": 45,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/lone-mushrooms-3",
+        "kind": "resource",
+        "x": 23,
+        "y": 32,
+        "w": 1,
+        "h": 1,
         "tag": "grove"
       },
       {
@@ -4892,6 +4944,15 @@
         "tag": "meadow"
       },
       {
+        "id": "core/lone-oak-9",
+        "kind": "resource",
+        "x": 42,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
         "id": "core/fallen-logs",
         "kind": "resource",
         "x": 28,
@@ -4926,6 +4987,15 @@
         "w": 1,
         "h": 1,
         "tag": "grove"
+      },
+      {
+        "id": "core/lone-log-4",
+        "kind": "resource",
+        "x": 43,
+        "y": 11,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
       },
       {
         "id": "core/north-gate",
