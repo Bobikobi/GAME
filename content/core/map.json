@@ -4571,6 +4571,16 @@
           "kind": "core/crow",
           "x": 28,
           "y": 32
+        },
+        {
+          "kind": "core/crow",
+          "x": 28,
+          "y": 38
+        },
+        {
+          "kind": "core/crow",
+          "x": 44,
+          "y": 38
         }
       ]
     },
@@ -4714,6 +4724,60 @@
         "kind": "resource",
         "x": 23,
         "y": 32,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-4",
+        "kind": "resource",
+        "x": 27,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-5",
+        "kind": "resource",
+        "x": 33,
+        "y": 40,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-6",
+        "kind": "resource",
+        "x": 43,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-7",
+        "kind": "resource",
+        "x": 34,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-8",
+        "kind": "resource",
+        "x": 43,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-9",
+        "kind": "resource",
+        "x": 23,
+        "y": 46,
         "w": 1,
         "h": 1,
         "tag": "grove"
@@ -5027,6 +5091,60 @@
         "w": 1,
         "h": 1,
         "tag": "meadow"
+      },
+      {
+        "id": "core/lone-oak-10",
+        "kind": "resource",
+        "x": 27,
+        "y": 37,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-11",
+        "kind": "resource",
+        "x": 33,
+        "y": 39,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-12",
+        "kind": "resource",
+        "x": 43,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-13",
+        "kind": "resource",
+        "x": 27,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-14",
+        "kind": "resource",
+        "x": 33,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-15",
+        "kind": "resource",
+        "x": 43,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
       },
       {
         "id": "core/fallen-logs",
