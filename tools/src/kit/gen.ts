@@ -5,7 +5,7 @@
  * sprite it redraws, what it is, the grid, and the detail to spell out. The prompt's house style
  * lives here, so the spec is the only thing that changes between waves.
  *
- *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle] [--picks manifest.jsonl | --no-picks]
+ *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle|gemini-web] [--picks manifest.jsonl | --no-picks]
  *
  * For each entry: the reference is enlarged onto flat magenta (a white ground keys out a white
  * beard), Codex's image generation redraws it on the subscription, and the importer brings the
@@ -60,7 +60,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
-import { type DrawerId, type Drawn, type KaggleRecipe, detailWithNotes, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
+import { wrapTile } from './wrap.js';
+import { type DrawerId, type Drawn, type KaggleRecipe, detailWithNotes, drawWaveWithKaggle, drawWithGemini, drawWithGeminiWeb, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { applyInk } from './ink.js';
 import { CORE_PALETTE, CORE_RAMPS, type Rgb, hexToRgb, paletteWithRamps } from './palette.js';
@@ -144,6 +145,8 @@ export interface ManifestLine {
   motifs?: string[];
   /** The shared ramps the sprite was imported in, for its kit entry's `ramps`. */
   ramps?: string[];
+  /** The kaggle route's recipe and seed that drew it, so a gallery of a wave tells its draws apart. */
+  kaggle?: { recipe: KaggleRecipe; seed: number };
 }
 
 export function parseSpec(text: string): GenEntry[] {
@@ -449,7 +452,7 @@ interface Options {
 export function parseArgs(args: readonly string[], env: NodeJS.ProcessEnv = process.env): Options {
   const spec = args[0];
   if (spec === undefined || spec.startsWith('--')) {
-    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle] [--picks manifest.jsonl | --no-picks]');
+    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle|gemini-web] [--picks manifest.jsonl | --no-picks]');
   }
   const value = (flag: string): string | undefined => {
     const at = args.indexOf(flag);
@@ -575,12 +578,13 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       out: options.out, name: entry.name, stamp, prompt: line.prompt, images: [refPath, ...(entry.style_refs ?? []).map((p) => join(ROOT, p))], expect: file, timeoutSeconds: options.timeoutSeconds,
       ...(plan?.seed === undefined ? {} : { seed: plan.seed }),
     };
-    const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'local' ? drawWithLocal(call)
+    const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'gemini-web' ? drawWithGeminiWeb(call) : route === 'local' ? drawWithLocal(call)
       : route === 'kaggle' ? options.predrawn?.get(entry.name) ?? drawWithKaggle({ ...call, subject: kaggleSubject(entry.ref), grid: { width: entry.width, height: entry.height }, env: kaggleEnv }) : null;
     const asked = drawn === null
       ? askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file)
       : { codex: { version: drawn.version, exit: drawn.exit, seconds: drawn.seconds, tokens: drawn.tokens, log: drawn.log }, saved: drawn.saved, error: drawn.error };
     line.drawer = route;
+    if (route === 'kaggle') line.kaggle = { recipe, seed: plan?.seed ?? kaggleSettings(kaggleEnv).seed };
     line.codex = asked.codex;
     const saved = asked.saved;
     if (saved === null) {
@@ -604,7 +608,8 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       line.warnings.push(...seamWarnings(rows));
     } else if (kind === 'tile') {
       const result = importTile(raw, entry.width, entry.height, importPalette(entry));
-      writeFileSync(outPath, result.png);
+      // a picture drawn by a model does not tile: the kaggle route's fills are made to wrap (kit/wrap.ts)
+      writeFileSync(outPath, options.drawer === 'kaggle' ? wrapTile(result.png) : result.png);
       line.logical = result.logical;
       line.colors = result.colors;
       line.warnings.push(...gridWarnings(result.logical, entry));
@@ -647,6 +652,9 @@ export function entryMatches(entry: GenEntry, only: ReadonlySet<string> | null):
   return (entry.motifs ?? []).some((m) => only.has(`${entry.name}_${m.name}`));
 }
 
+/** Motifs written by hand or by an agent, named `<entry>_<motif>.txt`; one here is used instead of a Codex call. */
+const MOTIF_DIR = 'tools/kit-gen/motifs';
+
 /** The frame of the measure in STYLE.md section 3: a 1440x3120 phone at 64 px per tile. */
 const PHONE_FRAME = { x: 23, y: 49 };
 
@@ -674,7 +682,14 @@ function generateScatter(entry: GenEntry, options: Options, version: string, ear
     lines.push(line);
     if (options.dry) continue;
     const redraw = !options.reimport && (options.only === null || options.only.has(entry.name) || options.only.has(name));
-    if (redraw) {
+    // a motif written by hand or by an agent other than Codex lives in tools/kit-gen/motifs/<name>.txt and is used as it is
+    const authoredName = `${entry.motifs_from ?? entry.name}_${m.name}`;
+    const authored = join(ROOT, MOTIF_DIR, `${authoredName}.txt`);
+    if (existsSync(authored)) {
+      line.raw = `raw/${name}-${stamp}.txt`;
+      writeFileSync(join(options.out, line.raw), readFileSync(authored));
+      line.prompt = `authored: ${MOTIF_DIR}/${authoredName}.txt`;
+    } else if (redraw) {
       const asked = askCodex(options, version, name, stamp, line.prompt, [], `${name}.txt`);
       line.codex = asked.codex;
       if (asked.saved === null) {
@@ -700,7 +715,7 @@ function generateScatter(entry: GenEntry, options: Options, version: string, ear
       line.logical = [m.width, m.height];
       line.colors = new Set([...grid.join('')].filter((ch) => ch !== '.')).size;
       line.warnings.push(...motifWarnings(grid));
-      motifs.push({ name: m.name, weight: m.weight ?? 1, grid });
+      motifs.push({ name: m.name, weight: m.weight ?? 1, grid, ...(m.fine === true ? { fine: true } : {}) });
       sources.push(line.raw ?? '');
     } catch (error) {
       line.error = `import: ${(error as Error).message}`;
@@ -709,14 +724,14 @@ function generateScatter(entry: GenEntry, options: Options, version: string, ear
   if (options.dry || motifs.length !== (entry.motifs ?? []).length) return lines;
 
   const ground = {
-    base, cell: entry.cell ?? 16, chance: entry.chance ?? 0.85, speckles: entry.speckles ?? [], tile: entry.width, motifs, seed: entry.name,
+    base, cell: entry.cell ?? 16, chance: entry.chance ?? 0.85, ...(entry.fine_cell !== undefined ? { fineCell: entry.fine_cell } : {}), ...(entry.fine_chance !== undefined ? { fineChance: entry.fine_chance } : {}), speckles: entry.speckles ?? [], tile: entry.width, motifs, seed: entry.name,
   };
   const variants = entry.variants ?? 4;
   const throws = variantsOf(ground, variants);
   const grids = throws.map(scatterTile);
   const warnings = tileWarnings(ground, variants, PHONE_FRAME);
   grids.forEach((grid, i) => {
-    const name = `${entry.name}_${i + 1}`;
+    const name = entry.names?.[i] ?? `${entry.name}_${i + 1}`;
     const line = blank(name, 'tile', 'scatter', entry.width, entry.height, `scattered from ${sources.join(', ')}`);
     const own = `out/${name}-${stamp}.png`;
     writeFileSync(join(options.out, own), PNG.sync.write(renderGrid(grid)));
@@ -740,13 +755,14 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * The latest image of each name beside its reference. CSS pixels are device pixels on a desktop
+ * Every draw of the run beside its reference, a name's draws together (a wave draws an entry on more than one recipe
+ * and seed, and a run folder keeps its rounds). CSS pixels are device pixels on a desktop
  * screen, so the reference at 6 per art pixel and the result at 3 are both their size on a 3x phone.
  */
 export function galleryHtml(lines: readonly ManifestLine[]): string {
-  const latest = new Map<string, ManifestLine>();
-  for (const line of lines) latest.set(line.name, line);
-  const rows = [...latest.values()].map((line) => {
+  const byName = new Map<string, ManifestLine[]>();
+  for (const line of lines) byName.set(line.name, [...(byName.get(line.name) ?? []), line]);
+  const rows = [...byName.values()].flatMap((draws) => draws.map((line, at) => ({ line, at, of: draws.length }))).map(({ line, at, of }) => {
     const refImg = `<img src="ref/${line.name}-1x.png" alt="" style="width:${line.refSize[0] * 6}px">`;
     const result = line.out === null
       ? `<p class="bad">${escapeHtml(line.error ?? 'not generated yet')}</p>`
@@ -759,10 +775,12 @@ export function galleryHtml(lines: readonly ManifestLine[]): string {
       line.grid === null ? null : `grid ${line.grid}`,
       line.colors === null ? null : `${line.colors} colours`,
       line.codex === null ? null : `${line.drawer ?? 'codex'} ${line.codex.seconds} s, ${line.codex.tokens ?? '?'} tokens`,
+      line.kaggle === undefined ? null : `${line.kaggle.recipe} seed ${line.kaggle.seed}`,
     ].filter((fact) => fact !== null).join(' · ');
     const warnings = line.warnings.map((w) => `<p class="warn">${escapeHtml(w)}</p>`).join('');
     const raw = line.raw === null ? '' : line.raw.endsWith('.txt') ? `<a href="${line.raw}">letters</a>` : `<a href="${line.raw}"><img class="raw" src="${line.raw}" alt="raw"></a>`;
-    return `<section><h2>${escapeHtml(line.name)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
+    const title = of === 1 ? line.name : `${line.name} (${at + 1} of ${of}, ${line.at})`;
+    return `<section><h2>${escapeHtml(title)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
   });
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>kit:gen gallery</title>

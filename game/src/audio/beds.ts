@@ -1,15 +1,16 @@
 /**
- * Three position-driven beds on the ambience bus (so the mute covers them): the campfire's
- * crackle, the stream's water and the dread of the ruins. Each runs quietly all the time and
+ * Four position-driven beds on the ambience bus (so the mute covers them): the campfire's
+ * crackle, the stream's water, the dread of the ruins and the prowl of a predator near (the
+ * threat telegraph's near beat, NEXT.md 12 c). Each runs quietly all the time and
  * only its gain follows the player's distance; sources are never restarted by walking about.
  */
 import { noiseBuffer, wavePeriodic } from './synth';
 
-export type BedId = 'fire' | 'stream' | 'dread';
-export const BED_IDS: readonly BedId[] = ['fire', 'stream', 'dread'];
+export type BedId = 'fire' | 'stream' | 'dread' | 'prowl';
+export const BED_IDS: readonly BedId[] = ['fire', 'stream', 'dread', 'prowl'];
 
 /** The loudest each bed gets at level 1, under the ambience bus. */
-const TOP: Record<BedId, number> = { fire: 0.9, stream: 0.7, dread: 0.8 };
+const TOP: Record<BedId, number> = { fire: 0.9, stream: 0.7, dread: 0.8, prowl: 0.9 };
 
 export interface BedLevel {
   level: number;
@@ -20,7 +21,8 @@ export class BedPlayer {
   private readonly gains = new Map<BedId, GainNode>();
   private readonly pans = new Map<BedId, StereoPannerNode>();
   private pops: ReturnType<typeof setTimeout> | null = null;
-  private level: Record<BedId, number> = { fire: 0, stream: 0, dread: 0 };
+  private prowls: ReturnType<typeof setTimeout> | null = null;
+  private level: Record<BedId, number> = { fire: 0, stream: 0, dread: 0, prowl: 0 };
 
   constructor(
     private readonly context: AudioContext,
@@ -37,7 +39,9 @@ export class BedPlayer {
     this.buildFire(this.gains.get('fire')!);
     this.buildStream(this.gains.get('stream')!);
     this.buildDread(this.gains.get('dread')!);
+    this.buildProwl(this.gains.get('prowl')!);
     this.schedulePop();
+    this.scheduleProwl();
   }
 
   set(id: BedId, level: number, pan = 0): void {
@@ -148,8 +152,50 @@ export class BedPlayer {
     this.noise().connect(breath).connect(air).connect(out);
   }
 
+  /** A slow breath: dark noise through a low band, swelling and easing about every three seconds. */
+  private buildProwl(out: AudioNode): void {
+    const band = this.context.createBiquadFilter();
+    const breath = this.context.createGain();
+    const lfo = this.context.createOscillator();
+    const amount = this.context.createGain();
+    band.type = 'bandpass';
+    band.frequency.value = 340;
+    band.Q.value = 2.2;
+    breath.gain.value = 0.18;
+    lfo.frequency.value = 0.33;
+    amount.gain.value = 0.16;
+    lfo.connect(amount).connect(breath.gain);
+    lfo.start(this.context.currentTime);
+    this.noise().connect(band).connect(breath).connect(out);
+  }
+
+  /** Now and then over the breath: a twig snapping (a bright tick) or a pad on the ground (a soft low knock). */
+  private scheduleProwl(): void {
+    const next = (): void => {
+      this.prowls = setTimeout(next, 700 + Math.random() * 1_600);
+      if (this.context.state !== 'running' || this.level.prowl < 0.02) return;
+      const at = this.context.currentTime + 0.01;
+      const twig = Math.random() < 0.3;
+      const length = twig ? 0.025 : 0.09;
+      const filter = this.context.createBiquadFilter();
+      const envelope = this.context.createGain();
+      const source = this.context.createBufferSource();
+      filter.type = twig ? 'highpass' : 'lowpass';
+      filter.frequency.value = twig ? 2_400 : 220;
+      envelope.gain.setValueAtTime(twig ? 0.5 : 0.8, at);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, at + length);
+      source.buffer = noiseBuffer(this.context);
+      source.connect(filter).connect(envelope).connect(this.gains.get('prowl')!);
+      source.start(at, Math.random() * 0.8);
+      source.stop(at + length);
+    };
+    next();
+  }
+
   dispose(): void {
     if (this.pops) clearTimeout(this.pops);
     this.pops = null;
+    if (this.prowls) clearTimeout(this.prowls);
+    this.prowls = null;
   }
 }

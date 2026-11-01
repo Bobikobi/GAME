@@ -434,6 +434,29 @@
               }
             }
           },
+          "grade": {
+            "additionalProperties": false,
+            "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+            "type": "object",
+            "required": [
+              "of",
+              "step"
+            ],
+            "properties": {
+              "of": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "step": {
+                "minimum": 2,
+                "maximum": 3,
+                "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                "type": "integer"
+              }
+            }
+          },
           "premium_later": {
             "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
             "type": "boolean"
@@ -567,6 +590,9 @@
         "bag_base",
         "place_stack",
         "load",
+        "gait",
+        "hunt",
+        "wild",
         "starting_gold_mg",
         "per_point"
       ],
@@ -607,7 +633,7 @@
             "keys": {
               "minItems": 2,
               "maxItems": 12,
-              "description": "The hours the valley is washed in a colour (ART_SYSTEM section 2). Today's curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.",
+              "description": "The hours the valley is washed in a colour (ART_SYSTEM section 2, LIGHTING.md section 5): one shade that the scene multiplies in, the dusk and the night alike. Its strength steps evenly between keys, in whole percent; its colour is the next key's, so every minute is a palette colour. The owner's pick of 30.10: 16:30 #eda83a 12%, 17:30 28%, 19:00 #e2533f 40%, the night #172a52 at STYLE 5's 92%.",
               "type": "array",
               "items": {
                 "additionalProperties": false,
@@ -634,6 +660,28 @@
                     "description": "How strong the wash is at that hour, in whole percent. The hours between two keys step evenly.",
                     "type": "integer"
                   }
+                }
+              }
+            },
+            "read": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "floor",
+                "fog"
+              ],
+              "properties": {
+                "floor": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "The night kept readable (the owner, 30.10): inside a light's pool and in the ring of three tiles around the player, the meadow's middle green keeps at least this luma, in whole percent.",
+                  "type": "integer"
+                },
+                "fog": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "The most a fog bank may cover at full night, in whole percent, so fog cannot stack on the night's shade past the floor.",
+                  "type": "integer"
                 }
               }
             },
@@ -1694,6 +1742,379 @@
                     }
                   },
                   "description": "How high a hunt outrun to a safe place lifts health, in basis points of the health cap: it gives back what its bites took, up to this share. It never lowers health."
+                },
+                "telegraph": {
+                  "additionalProperties": false,
+                  "description": "The threat telegraph (NEXT.md 12 c): how a predator is heard far off and near, and how its bite is drawn. Read by the client only; the kernel decides every sight, bite and safe place.",
+                  "type": "object",
+                  "required": [
+                    "howl_tiles",
+                    "howl_pct",
+                    "howl_gap_min_s",
+                    "howl_gap_max_s",
+                    "near_tiles",
+                    "near_pct",
+                    "near_curve",
+                    "dash_ms",
+                    "lunge_ms",
+                    "lunge_px",
+                    "flinch_ms",
+                    "flinch_px",
+                    "hit_ms"
+                  ],
+                  "properties": {
+                    "howl_tiles": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "From this many tiles on, a predator's far howl is not heard; nearer it is louder, and above 0 at 12 tiles."
+                    },
+                    "howl_pct": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The far howl's level beside its cause, in percent of the effect's whole level."
+                    },
+                    "howl_gap_min_s": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The shortest wait between two far howls, in seconds of the wall clock."
+                    },
+                    "howl_gap_max_s": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The longest wait between two far howls, in seconds of the wall clock."
+                    },
+                    "near_tiles": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "Inside this many tiles of a predator the rising layer (breath, a twig, a padding) is heard; 0 beyond."
+                    },
+                    "near_pct": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The rising layer's level beside the predator, in percent of the bed's whole level."
+                    },
+                    "near_curve": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How steeply the rising layer grows as the player comes closer: its level is the share of `near_tiles` closed, to this power."
+                    },
+                    "dash_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "The fastest a drawn predator runs to stand beside the player by the next bite, in game milliseconds a tile."
+                    },
+                    "lunge_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How long a drawn bite's lunge lasts, in milliseconds."
+                    },
+                    "lunge_px": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How far the predator lunges at the player, in game pixels."
+                    },
+                    "flinch_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How long the player's flinch at a bite lasts, in milliseconds."
+                    },
+                    "flinch_px": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How far the player flinches back, in game pixels."
+                    },
+                    "hit_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "How long the health meter shows a bite, in milliseconds."
+                    }
+                  }
                 }
               }
             },
@@ -2035,6 +2456,873 @@
                 }
               },
               "description": "How fast breath (stamina) refills in a fight while heavy, against 1000."
+            }
+          }
+        },
+        "gait": {
+          "additionalProperties": false,
+          "description": "The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.",
+          "type": "object",
+          "required": [
+            "run_div",
+            "sneak_mul",
+            "noise_still",
+            "noise_sneak",
+            "noise_walk",
+            "noise_run"
+          ],
+          "properties": {
+            "run_div": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A run takes the pace the load allows divided by this: 2 is half the time a tile. Every pace divides evenly."
+            },
+            "sneak_mul": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A sneak takes the pace the load allows times this: 2 is twice the time a tile."
+            },
+            "noise_still": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Tiles within which a creature that listens turns its head at a player standing still."
+            },
+            "noise_sneak": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The same, at a sneak."
+            },
+            "noise_walk": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The same, at a walk."
+            },
+            "noise_run": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The same, at a run."
+            }
+          }
+        },
+        "hunt": {
+          "additionalProperties": false,
+          "description": "Dressing a taken animal (docs/design/HUNTING.md sections 5-6): the time a step takes, how long a carcass keeps, and how often an animal is finer than plain. Nothing here prices a hunt: the hunt verb takes the effort weight of its tier like every verb (R6).",
+          "type": "object",
+          "required": [
+            "dress_step_ms",
+            "meat_spoil_d",
+            "hide_spoil_d",
+            "grade2_bp",
+            "grade3_bp"
+          ],
+          "properties": {
+            "dress_step_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check)."
+            },
+            "meat_spoil_d": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game days a carcass keeps its meat (its goods of kind \"food\"): dressed later, the meat is gone and the rest remains."
+            },
+            "hide_spoil_d": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game days a carcass keeps anything: dressed later, nothing is left of it."
+            },
+            "grade2_bp": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Basis points of animals that appear fine (grade 2)."
+            },
+            "grade3_bp": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain."
+            }
+          }
+        },
+        "wild": {
+          "additionalProperties": false,
+          "description": "The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1): the clock an animal thinks on, how far round a player animals are stepped, how long a flight, a den stay and a print last, where a den's bolt hole may lie, and the distances kept from a fire and the town. A kind's own character is its `behaviour`; these are the numbers every kind shares.",
+          "type": "object",
+          "required": [
+            "tick_ms",
+            "think_ticks",
+            "wake_tiles",
+            "awake_max",
+            "catchup_max_steps",
+            "flee_avoid_steps",
+            "refill_clear_tiles",
+            "spread_tiles",
+            "print_ring",
+            "print_fade_ms",
+            "den_stay_steps",
+            "bolt_min_tiles",
+            "bolt_max_tiles",
+            "throw_ms",
+            "strike_noise",
+            "fire_keep_day",
+            "fire_keep_night",
+            "town_keep_day",
+            "town_keep_night"
+          ],
+          "properties": {
+            "tick_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds of one world tick (COMBAT section 4.9). Fixed: every duration below is whole ticks or whole think steps."
+            },
+            "think_ticks": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Ticks between two think steps of one animal, staggered by its id (HUNTING section 1): 8 ticks of 100 ms, a think step of 800 ms."
+            },
+            "wake_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "An animal is stepped only while a player is within this many tiles; beyond it its group is kept as an anchor and a count (HUNTING section 1)."
+            },
+            "awake_max": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The most animals stepped round one player at once (BESTIARY section 1)."
+            },
+            "catchup_max_steps": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A gap longer than this many think steps settles each animal to its rest pose at once instead of stepping it, so one action never pays for an hour of the wild."
+            },
+            "flee_avoid_steps": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Think steps a fled animal keeps away from the tile it fled (HUNTING section 2, FLEE); a flushed burrower comes back to its den after them (HUNT_FAMILIES section 3.1)."
+            },
+            "refill_clear_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A lost member comes back to its anchor only with no player within this many tiles (HUNTING section 8)."
+            },
+            "spread_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "ALERT spreads to the group members within this many tiles, and a member that sees one of its group in FLEE this close flees too (HUNTING section 2; CREATURE_BEHAVIOUR section 5.1.3)."
+            },
+            "print_ring": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Tiles of fresh prints a fleeing animal leaves behind it on ground that holds prints, its last tiles, oldest first out (HUNT_FAMILIES section 3.1, the line home)."
+            },
+            "print_fade_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds a fresh print stays readable (one game hour is day_length_ms / 24)."
+            },
+            "den_stay_steps": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Think steps a burrower stays in its den after a flight once no player is near the mouth, then WANDER (CREATURE_BEHAVIOUR section 1, flight burrow; HUNT_FAMILIES section 3.1, inside while watched)."
+            },
+            "bolt_min_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The nearest a den's bolt hole lies to its mouth, by the squared distance (HUNT_FAMILIES section 3.1: 64 <= d2 <= 100). Far enough that a flusher beside the mouth stands beyond a burrower's sight of the bolt hole (the check)."
+            },
+            "bolt_max_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The farthest a den's bolt hole lies from its mouth, by the squared distance."
+            },
+            "throw_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds a thrown stone takes to leave the hand (HUNTING section 5, T0)."
+            },
+            "strike_noise": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Tiles within which a strike is heard (HUNTING section 4; COMBAT section 4.9)."
+            },
+            "fire_keep_day": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Tiles a prey kind keeps from a burning fire on the ground by day (CREATURE_BEHAVIOUR section 2)."
+            },
+            "fire_keep_night": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The same by night: a lit circle nothing grazes in. At least the fire's safe ring and one tile more (the check)."
+            },
+            "town_keep_day": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Tiles a wild kind keeps from the town's cobbles by day (CREATURE_BEHAVIOUR section 2)."
+            },
+            "town_keep_night": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The same at night, when the lamps push the wall out; never under the day's (the check)."
             }
           }
         },
@@ -2748,7 +4036,7 @@
                   "type": "integer"
                 }
               },
-              "description": "The most a group member earns from another's work, in permille of the member's own (PROGRESSION 3.7, Q7)."
+              "description": "The most a newcomer takes from the experience the other members already earned, in permille of the newcomer's own: a split, never new experience (PROGRESSION 3.7, Q7)."
             },
             "loop_profit_max_mg": {
               "additionalProperties": false,
@@ -2839,7 +4127,7 @@
                 "sustain": {
                   "minItems": 5,
                   "maxItems": 5,
-                  "description": "Health back a game hour while a place drains, regen and food together, in percent of the cap.",
+                  "description": "Health back a game hour while a place drains, regen and food together, in points of the base cap of 100 (the drain's unit).",
                   "type": "array",
                   "items": {
                     "minimum": 0,
@@ -3264,7 +4552,7 @@
             "grade_drain_pct": {
               "minItems": 5,
               "maxItems": 5,
-              "description": "The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).",
+              "description": "The drain of a remaining grade 0 to 4, in points of the base cap of 100 a game hour, the same for every cap (BODY_CLOCKS 5.2).",
               "type": "array",
               "items": {
                 "minimum": 0,

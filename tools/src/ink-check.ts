@@ -1,7 +1,8 @@
 /**
  * The ink edge, measured. The owner decided on 23.10 (PR #305) that "the outline is the one-pixel ink line
  * #1b1a2e, on every sprite", and that a check which measures ink on the edge follows, so the mix of edges
- * cannot come back. Every density 4 sprite outside `tiles/` (ground is seamless and never outlined) must
+ * cannot come back. Every density 4 sprite outside `tiles/` (ground is seamless and never outlined) and `creatures/`
+ * (animals wear no outline: the owner's pick C of 31.10) must
  * carry ink on at least INK_MIN_SHARE of its edge pixels, else an error names it. The 16 px (density 1)
  * sprites got their outline from the 18.10 rule: they are reported as one summary warning, never failed.
  */
@@ -21,7 +22,7 @@ export function checkInk(a: Assembled): Issue[] {
   let thinUnder = 0;
   for (const [kitId, kit] of Object.entries(a.kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
-      if (name.startsWith('tiles/')) continue;
+      if (name.startsWith('tiles/') || name.startsWith('creatures/')) continue; // ground is seamless; animals wear no outline (pick C, 31.10)
       let share: number;
       try {
         share = inkShare(readFileSync(join(kit.dir, s.file)), s.w);

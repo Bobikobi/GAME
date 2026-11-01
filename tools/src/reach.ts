@@ -4,7 +4,7 @@
  * player can walk up to without the trees must still be reachable with them,
  * from wherever a character wakes, with every passable restoration mended.
  */
-import { type Bundle, type Rect, makeWalkable, near } from '@game/kernel';
+import { type Bundle, type Rect, makeStepRule, makeWalkable, near } from '@game/kernel';
 import type { Issue } from './load';
 
 const STEPS: readonly (readonly [number, number])[] = [
@@ -33,6 +33,8 @@ export function walkBitmap(b: Bundle): Uint8Array {
 /** The slots the player can stand next to, walking four ways from where a character wakes. */
 function reachable(b: Bundle, from: [number, number]): Set<string> {
   const walkable = makeWalkable(b);
+  // the height rule of a step (G68), the kernel's own, so this reach and the walk cannot disagree
+  const stepOpen = makeStepRule(b);
   const view = { restored: Object.values(b.restores).filter((r) => r.passable).map((r) => r.id), camp: [] as string[] };
   const { width, height } = b.map;
   const seen = new Set<number>([from[1] * width + from[0]]);
@@ -42,7 +44,7 @@ function reachable(b: Bundle, from: [number, number]): Set<string> {
     for (const [dx, dy] of STEPS) {
       const nx = x + dx;
       const ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= width || ny >= height || seen.has(ny * width + nx) || !walkable(nx, ny, view)) continue;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height || seen.has(ny * width + nx) || !walkable(nx, ny, view) || !stepOpen(x, y, nx, ny)) continue;
       seen.add(ny * width + nx);
       queue.push([nx, ny]);
     }

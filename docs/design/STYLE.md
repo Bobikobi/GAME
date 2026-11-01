@@ -19,6 +19,7 @@ The look in one place, for creators and for every session that draws or renders 
   - The shadows, the night with the town's lights, and depth cues 1 to 5 come with or after that step, in one window of `game/src/scenes/world.ts`.
   - The layers above the sprite (the light module, ramps per material and region, motion, composition) and the ladder of stills that decides their look: [ART_SYSTEM.md](ART_SYSTEM.md) (2026-10-20).
   - The world's natural laws (scale in characters, a climate per region, the seasons, the weathers as a look, the light's laws) and their sheets of stills: [NATURE.md](NATURE.md) (2026-10-21, proposal).
+  - The movement set, the code feel layer and how a body is made to move: [ANIMATION.md](ANIMATION.md) (2026-10-29, proposal).
   - Grounds and height come with the open world's first ring ([OPEN_WORLD.md](OPEN_WORLD.md)).
 
 **Both doors (owner, 18.10).** The whole standard holds for the 3D game at `/play3d/` too, in its own means: the proportions as ratios to a character's height, the light and shadow, the night, height and the depth cues. Only the pixel numbers are 2D's alone. The pixel game is built first, and the 3D game follows it. The 3D game may be desktop-only where a phone would block a rule. How it is carried across: docs/team/NEXT.md section 8 e.
@@ -30,7 +31,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 | What | Size in art pixels |
 |---|---|
 | Ground tile, item | 64 x 64 |
-| Character frame | 64 x 96 |
+| Character frame | 128 x 128, the feet at (64, 90): the anim tool's one frame (`tools/anim/anim.json` `frame`), the size the kit check holds a character to |
 | Work pose | 128 x 128, two frames (tool raised, tool down) |
 | Prop | up to 384 x 384 (six tiles a side) |
 
@@ -93,7 +94,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
   - fire: `#b8661f #eda83a #f8de62`
   - skin: `#d38c66 #f3c7a0`
   - purples: `#5b3373 #9a5bb0`
-- **Outline:** the one-pixel ink line `#1b1a2e` on every sprite (owner's decision of 23.10, PR #305): characters, items and props, at both densities. An outline is the sprite's own edge pixels recoloured to ink (`pnpm kit:ink`), not a ring added outside it. Ground tiles have none. `pnpm check` measures it: a 64 px sprite needs ink on at least 95% of its edge pixels, and the 16 px sprites are reported in one summary line.
+- **Outline:** the one-pixel ink line `#1b1a2e` on every sprite (owner's decision of 23.10, PR #305): characters, items and props, at both densities. An outline is the sprite's own edge pixels recoloured to ink (`pnpm kit:ink`), not a ring added outside it. Ground tiles have none, and animals wear no outline (the owner's pick C of 31.10; the `creatures/` group is not measured). `pnpm check` measures it: a 64 px sprite needs ink on at least 95% of its edge pixels, and the 16 px sprites are reported in one summary line.
 - **Baked light comes from above.** Tops are lightest and undersides darkest, with left and right even. Light from the side is added while the game runs (section 4), and side light baked into the art would fight it.
 - **Never draw a shadow into a sprite.** The engine casts it from the sprite's own shape, starting at the lowest solid row: that row is where the thing touches the ground.
 

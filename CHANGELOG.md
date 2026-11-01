@@ -2,6 +2,110 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.11 - 2026-10-31
+
+What players notice
+- The valley floor is drawn in the rich 64 px art: one continuous olive meadow varied by tone, tufts and seed heads, flowers sparse, and soft wandering joins where the grass meets a path (wave 1, the owner's pick after two passes). The plants, stones and small things of the first ten minutes follow at 64 px, 21 pictures (wave 2).
+- The opening's bank path is two to three tiles wide, uneven and rounded, instead of one straight tile.
+- The grass and the paths are drawn in the rich 64 px art too (wave 3): calm olive grass with leaning blades and soft lighter drifts, a worn ribbon of path inside its band, a darker damp sand on the bank, and the places where two kinds of ground meet cut per pixel instead of by tile blocks. The tall things of the opening and the town follow at 64 px: the lantern post, the broken statue, the market stall and the small house (wave 2c, the owner's yes on every draft).
+- The small props stand in groups instead of single scatter: flowers in threes and more, drifts of tall grass, berry bushes, and the second well in one home near a path. Plants cast shadows now, and flat things (rubble, pebbles, logs, fences, fires) still do not.
+- Flower clusters stand at half a berry bush (32 px) and are drawn again at that size, four blooms each, so the order of sizes holds: tuft, flower cluster, bush, tree.
+- Light follows the hour: from 17:00 lamps and fires cast pools of light, the figure is lit by what it stands near, clouds drift their shade over the ground, and dusk and night take the tint the owner picked.
+- The dark frame around the phone's view is an edge by day, not a veil: at noon the grass shows its own colour to the middle of the screen; the veil returns with the night.
+- The top bar wears frame D on phone, desktop and landscape: lacquer black with a hairline of lit gold on the meter, the chips, the tracker, the toasts, the buttons and the pocket map.
+- A Settings window, opened from the menu: quality (Auto, Low, Medium, High), frame rate (Auto, 30, 60, 120), mute and the accessibility switches, each change applied at once. While a row is on Auto it shows what Auto chose on this device.
+- Sounds are re-levelled so a jingle no longer peaks loud, and every effect fades with its distance from your character, with other players in mind.
+- The three races walk with their own looks (human, elf, skeleton), and the walk is picked by the distance covered, so a planted foot never skates when the pace changes. The elf's cloak is green.
+- A content update hands out a race's outfit piece once: a piece you sold or dropped does not come back at the next update.
+- Handing Maru the coin under the lantern pays a key to his house, not 20 gold.
+- The Quiet glade grows glade figs, and sunleaf is slow to open in the fog.
+- The Traveller's cap: a plaited reed cap with a cord tie, made at the workshop from reed and reed cord, the first thing worn on the head (CeosIsrael).
+- The home page no longer shows the 3D door while 3D is paused.
+
+What creators notice
+- A creature kind can carry its behaviour (sight, ear, smell, the quiet-state weights, roam, flight, sleep, alarm), its group and its den; the hare, the crow, the roe deer and the wolf are written in those fields, and `pnpm check` gains the wild rows (weights that sum to 100, habitats the map has, no pack at danger 0, a bolt hole the den can reach).
+- The hunt's foundations: a kind may say what it drops, an item may be a finer grade of a good, the kernel can dress a carcass, and the value solver prices a hunted kind like any other source. Ten hunt goods are in the core items.
+- The wild brain is written as pure, integer-only functions (senses, the noticing count, the states, flee maps, groups), tested before anything steps an animal.
+- The balance playtest, `pnpm map:playtest`: the simulated player plays the scripted opening, first outing and first sale on the kernel, one run per start, and prints its level against the difficulty reckoning's at every place it reaches (CeosIsrael, NEXT 19 b).
+- The hunt ladder calculators and their generated page: tools by tier, value per catch, difficulty and rarity, counted on the real map at every run.
+- Animals as native bodies for the hunt stream, each a CC0 model passed through Blender with pick pages for the owner: the roe deer and the white hart from one body, the wild boar, the ground fowl, and the wolf's Alert, Graze and Lie.
+- The art production line grows: `pnpm art:pick` applies the owner's pick and `pnpm art:gallery` is the page he picks on; `art:wave --redo` draws again an entry he liked and asked for more of; `kit:gen --drawer gemini-web` draws a prop through Gemini's image tool on the owner's subscription; `art:measure` ranks drafts by size, a clear corner, one body, a foot, colours, palette and detail, as a filter only. The restored pool is triaged (764 drafts with review states and contact sheets) and every draft lives in a release store (`pnpm art:drafts fetch|verify|push`); `pnpm art:stray` finds unindexed art before a worktree is removed. REUSE.md: reuse first, then open and free assets, then draw.
+- NEXT.md gains the presence section: players who see each other without chat, its wire shape and its proof in CI.
+- The developer area's boards show the number of open accounts and of those opened in the last 7 days, counted by the game server and read at most once a minute; when the server cannot be read the board says unknown, never 0.
+- New design pages: creature behaviour, hunt families and the content ladder; the lighting ladder's stills; the progression map; the first map's plan A2. Decisions recorded: music by sampled instruments by default, the home page's door as a live window on the town later, the animals' brain approved.
+- The kit density test reads every kit, not only the core's, so a creator kit at 64 px no longer turns CI red.
+- CI: the browser checks lose their dead time (9 min 56 s to 8 min 42 s), and the opening's criterion 8 measures play, not the run's own day skip, so a slow runner no longer fails it.
+
+What changed underneath
+- kernel 0.1.11 (simulation 0.22.0): the `dress` action and the carcass, the hunt and grade fields on kinds and items, the den's bolt hole drawn on the server only. The save format is unchanged; a v0.1.10 save loads as it is.
+- The schemas gain the creature behaviour, group, den and hunt fields; nothing under `content/` steps an animal yet.
+- The site shows the 3D door only with `SITE_3D_DOOR=force`; `/play3d/` still builds and plays.
+
+
+## v0.1.10 - 2026-10-30 - Loomvale
+
+What players notice
+- The game is called Loomvale, and it lives at loomvale.vercel.app.
+- The valley is redrawn as a larger map at 64 pixels a tile, with new paths, rocks and banks, and more of the world in the rich art style, each sprite with its own ink edge.
+- The forager's first task is now "What holds the keystone": herbs grow thick around the bridge's missing stone, and picking them frees it.
+- The name is chosen in one place for every race: the title screen has no name field, and you carve your name on the returners' stone after the bridge.
+- Bags go on your back. You carry 12 things with nothing there, 24 with a satchel (made at the workshop or bought from Pell) and 36 with a frame pack. Weight sets one of three walking paces, and you can put things down and pick them up again.
+- Press A beside a hollow log, a hollow tree or a heap of branches to search it. What you find is drawn once a day, and it refills at dawn.
+- Fishing: make a rod, find the fish in the river and cast. River stones are mined the way trees are felled, and mining trains digging.
+- The health bar is your health: no hunger clock drains it.
+- A new player's starting gold shows beside the purse as "starter gold", spent first and only at the shop.
+- Pell's counter is sorted into named groups instead of one long list.
+- The game's interface has its new look: a wooden frame, canvas panels and the Jersey 15 face.
+- The skill tree screen pans and zooms over a tree of any size: drag or the wheel on a computer, one finger and a pinch on a phone.
+- The camera comes closer: a phone shows about 6 by 13 tiles instead of 9 by 20, and a computer screen about 11 by 7 instead of 22 by 14. The character keeps its size, so the world around you is the part that grows.
+- Pell's shop is a room you walk into. Her stall is now a small house: step into its door, talk to her across the counter, buy or sell there, and walk down to go back out to the valley.
+- The ground has height now: you cannot step off a rock face. A climb of one to three levels is open only at a crossing, and a mountain band of more than three levels is never walked.
+- The walk has a bob, one step lifts the figure a little, and the townspeople breathe and blink on their own beat. Nothing of it moves with reduced motion.
+- You can run and sneak: hold the thumb on the stick (Shift on a keyboard) to run at twice the pace, or tap Sneak beside A and B to creep at half. The wolf hears you by your gait: a run is noticed at 8 tiles, a walk at 5 and a sneak at 3.
+- Every window wears a new frame: black lacquer with antique gold, a gold plaque for the name, and the Cinzel face for titles. Choices in a dialogue are a list.
+- The home page on a phone gets its pass: it opens on the key art as a portrait still with the navbar as a night band above it, the headline "Write the valley back", and Play free and Build a place stacked low where a thumb reaches. A phone still downloads no video.
+- Rocks, signs, trees, houses and people sit on their tiles: a cast shadow laid one row too low made them look lifted off the ground, and it now falls up-screen behind them.
+- The game picks its quality and its frame rate from the device (low, medium or high; 30, 60, 120 or the screen's own). There is no settings screen yet; `?stats=1` on the address shows the frame times.
+
+What creators notice
+- New art is drawn at 64 pixels a tile: the check refuses a new 16 px sprite, and every rich sprite gets an ink edge the check measures.
+- Every pull request names its place in the skill tree (the `Tree:` line) and, for story text, a `Story review:` line; CI asks for both.
+- The skill tree is content: schools, nodes, keystones and prices in bands, held by `pnpm check`; `pnpm tree:coverage` shows the tree's thin spots.
+- `pnpm` gains the difficulty reckoning and the balance prover, the map's plan block with its first-night check, and the art production line (`pnpm art:status`, pools, waves and every draft kept). `pnpm art:status` reads what is drafted, and the GPU time used in the last week, from the drafts index, so it is right on any checkout.
+- The creators guide starts with a townsperson of your own, with lines for the four standings, and the template quest is given by her.
+- The creators board and the credits are regenerated by each release; a pull request that changes the board to anything but what the history gives is refused, and a vote option counts only when the loop wrote it.
+- A developer with their own GitHub account and no write access has a numbered path to a first code pull request (`docs/team/ONBOARDING.md`: fork, branch from `upstream/develop`, checks, the CLA, review), and CONTRIBUTING points to it.
+- New design pages: the animation set and the feel layer (`ANIMATION.md`), the bestiary of the first twelve animals, the hunting and combat numbers in one table, the first map's plan, the sea crossing memo, and the community and launch plan.
+- The art production line gains `pnpm art:wave` (cuts a pool's missing entries into Kaggle jobs within the weekly GPU budget, `--unheld` leaves out entries an owner call holds) and `pnpm art:run` (works the jobs, one retry, pauses if Kaggle is down). A pool entry marked `creature: true` goes into its own kernels, which draw with a negative prompt that does not forbid animals (`KAGGLE_NEGATIVE_KIND=creature`); a wave with no creature entry plans the jobs it always did. The first map's ground and props are in the pools, and 54 drafts wait for the owner's pick.
+- The UI palette gains an antique-gold ramp and two blacks (40 colours, for windows only); the 32-colour core palette for sprites is unchanged.
+- The clip tool can play a native four-legged body, and the wolf has a walk, a run and an idle.
+- `content/core/params.json` gains a `gait` group (run is half the step, sneak twice, and the noise radius by gait); `pnpm check` refuses a pace that does not divide by it.
+
+What changed underneath
+- kernel 0.1.10 (simulation 0.21.1). Saves from v0.1.8 load: a saved hunger value becomes health, and the luck seed is widened to a 128-bit key the same way wherever the save loads.
+- The draw behind every random outcome is keyed with SipHash-2-4 over a 128-bit secret.
+- The game server (not live yet) gains the review's fixes: the email link completes in a real browser, one origin for the game and its API, the account name is the character's name, sign-in limits and timeouts, and the boards accept a kept opening. The sign-in link can now be mailed for real: `MAILER=resend` sends it through Resend, and the server refuses to start in that mode without a key and a sender address. `log` stays for a laptop or a staging box. The deploy runbook names the box's public name in one place (`PUBLIC_ORIGIN`) and records the staging run.
+- Docs-only pull requests skip the browser tests, the browser tests run in parallel jobs, and a flaky script retries once.
+- One step rule (`makeStepRule`) decides every step between two tiles; the walk's search, the server's travel check and the reach and difficulty tools all read it, so they cannot disagree. A test guards that the hall's road stays open after its log is felled.
+- The classic client streams the world in 64 by 64 tile chunks, three by three around the player, baking ground pages while idle; the valley is one chunk, so it plays as before.
+- The game server looks the sign-up's country up itself from a country file inside its image (`COUNTRY_DB`), so the age limit no longer needs a module on the host; a miss holds the sign-up to the highest age.
+- The phone home's weight budget moves from 300 KB to 450 KB, because the key art still alone cannot fit under the old one; a test reads the markup to hold that a phone is given no video source.
+- The feel layer is a pure module (`game/src/feel.ts`), tested and cheap per frame.
+
+## v0.1.9 - 2026-10-23 - the new desktop home
+
+A site-only release: the game is unchanged and stays at v0.1.8.
+
+What players notice
+- On a computer, the home page now opens on the painted valley at dawn: the elf, the human and the skeleton in a quiet looping video, with Play free and Build a place over it. With reduced motion turned on, the still picture shows instead.
+- The bar over it leads to the Leaderboard, Developers, the Guide and GitHub, and Play is the one gold button.
+- Every page ends in a new footer with Play, Build and Community links.
+- On a phone the home page is unchanged and downloads no video.
+
+What changed underneath
+- The site self-hosts two OFL faces (Cinzel, Manrope) for the desktop home.
+- Tests guard the phone home weight (under 300 KB), the desktop first paint (under 600 KB) and each video (under 12 MB).
+
 ## v0.1.8 - 2026-10-23
 
 What players notice

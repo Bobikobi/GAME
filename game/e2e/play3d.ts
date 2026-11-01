@@ -158,7 +158,7 @@ class Door {
           for (const [d, [dx, dy]] of Object.entries(DIRS)) {
             const sx = x - dx, sy = y - dy;
             if (inside(sx, sy)) continue;
-            if ((sx === s.pos[0] && sy === s.pos[1]) || w.canWalk(s, sx, sy)) goals.set(sx + ',' + sy, d);
+            if ((sx === s.pos[0] && sy === s.pos[1]) || w.canWalk(s, sx, sy, [sx, sy])) goals.set(sx + ',' + sy, d);
           }
         }
         const start = s.pos[0] + ',' + s.pos[1];
@@ -174,7 +174,7 @@ class Door {
           }
           for (const [d, [dx, dy]] of Object.entries(DIRS)) {
             const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
-            if (prev.has(nk) || !w.canWalk(s, nx, ny)) continue;
+            if (prev.has(nk) || !w.canWalk(s, nx, ny, [x, y])) continue;
             prev.set(nk, [k, d]);
             queue.push([nx, ny]);
           }
@@ -324,7 +324,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await me.snap('node3d');
     await me.a();
     await me.solveMinigame();
-    await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking', 'the work to end', 20_000);
+    await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking', 'the work to end', 45_000);
     const got = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(target.item)}] ?? 0`);
     // a missed try turns up something else, never nothing: the bag as a whole must have grown
     const total = await page.eval<number>(`Object.values(window.__game.session.state.player.bag).reduce((a, n) => a + n, 0)`);

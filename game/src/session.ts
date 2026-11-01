@@ -7,6 +7,7 @@
  * stops while a menu or a dialogue is open, so reading never costs game time.
  */
 import {
+  type Gait,
   type Action,
   type Bundle,
   type GameEvent,
@@ -15,9 +16,8 @@ import {
   type OpeningUpload,
   type Seed,
   type State,
-  appearSlots,
+  adaptState,
   appears,
-  fitWorn,
   groundSpots,
   hourOf,
   isSeed,
@@ -301,13 +301,17 @@ export class Session implements GameSession {
     if (before < 2 && state.player.pocket !== '') {
       for (const id of groundSpots(bundle, state.player.pocket)) state.nodes[id] ??= { readyAt: 0, draws: 1 };
     }
-    const session = new Session(bundle, state);
     stampDemo();
-    if (state.content !== bundle.tag) {
+    const stoodAt = state.player.at.join();
+    const adapted = state.content !== bundle.tag;
+    if (adapted) {
       // a new version of the world was published: keep what still exists
-      if (!adapt(bundle, state)) return undefined;
-      session.adapted = true;
+      const kept = adaptState(bundle, state);
+      if (!kept) return undefined;
+      state = kept;
     }
+    const session = new Session(bundle, state);
+    session.adapted = adapted;
     session.tick = Math.max(file.tick, state.tick, state.player.busyUntil);
     session.facing = file.facing;
     if (Array.isArray(file.met)) {
@@ -325,7 +329,7 @@ export class Session implements GameSession {
     }
     const walkable = makeWalkable(bundle);
     const [x, y] = file.pos;
-    session.pos = walkable(x, y, state.player) ? [x, y] : [state.player.at[0], state.player.at[1]];
+    session.pos = walkable(x, y, state.player) && state.player.at.join() === stoodAt ? [x, y] : [state.player.at[0], state.player.at[1]];
     if (!walkable(session.pos[0], session.pos[1], state.player)) session.pos = [bundle.map.spawn.x, bundle.map.spawn.y];
     // the map: what an older save remembers of places, plus what it has walked since; the
     // slots it visited are places it has stood in, so they are named too
@@ -471,15 +475,17 @@ export class Session implements GameSession {
    * once a burn has run out (`tellOuts`); a refusal is dropped and walking goes
    * on. What it brings (a hurt, a fall, a fire out) is shown like any other event.
    */
-  report(at: readonly [number, number], again = false): void {
+  report(at: readonly [number, number], again = false, gait: Gait = 'walk'): void {
     // a step that was under way when a menu opened still lands: the kernel hears of every tile
     if (!this.started) return;
     const p = this.state.player;
     if (!again && p.at[0] === at[0] && p.at[1] === at[1]) return;
-    const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
+    // a walk is the default and stays out of the log, so an old log and a walked one read alike
+    const action: Action = gait === 'walk' ? { t: 'move', at: [at[0], at[1]] } : { t: 'move', at: [at[0], at[1]], gait };
+    const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return;
     this.state = r.state;
-    this.keep({ t: 'move', at: [at[0], at[1]] }, this.tick, r.state.seed);
+    this.keep(action, this.tick, r.state.seed);
     // a hunt heard during work changes the world under it: that work can no longer be taken back
     this.undo = null;
     if (r.events.length === 0) return;
@@ -639,60 +645,4 @@ function readStallDraft(raw: unknown, bundle: Bundle, bag: Readonly<Record<strin
     draft[i] = { item, qty: Math.min(qty as number, can), price: price as number };
   });
   return draft;
-}
-
-/**
- * Fit a save made with older content to the current bundle: drop what no
- * longer exists and keep the rest. Returns false when the character itself
- * is gone and the save cannot be used.
- */
-function adapt(bundle: Bundle, state: State): boolean {
-  const p = state.player;
-  if (p.race !== '' && !bundle.races[p.race]) return false;
-  // a wake pocket that left the content: the mist and the first task fall back to the map's spawn
-  if (p.pocket !== '' && !bundle.pockets[p.pocket]) p.pocket = '';
-  // saves from kernel 0.1 have no look, and a look can be withdrawn with its sprite
-  if (typeof p.look !== 'number' || (p.look === 1 && p.race !== '' && !bundle.races[p.race]?.sprite_alt)) p.look = 0;
-  const keepKeys = <T>(record: Record<string, T>, known: Record<string, unknown>): Record<string, T> =>
-    Object.fromEntries(Object.entries(record).filter(([k]) => k in known));
-  p.bag = keepKeys(p.bag, bundle.items);
-  p.wear = keepKeys(p.wear, bundle.items);
-  p.made = keepKeys(p.made, bundle.recipes);
-  p.quests = keepKeys(p.quests, bundle.quests);
-  p.rep = keepKeys(p.rep, bundle.npcs);
-  p.xp = keepKeys(p.xp, bundle.professions);
-  p.journal = p.journal.filter((id) => id in bundle.items);
-  p.recipes = p.recipes.filter((id) => id in bundle.recipes);
-  // a recipe everyone starts with that came with this version is known at once
-  if (p.race !== '') {
-    const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
-    if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
-  }
-  // a race whose outfit came with this version: a save that holds none of an outfit piece gets it once
-  // (the pocket's tools are never granted here: they lie on the ground by the wake)
-  if (p.race !== '') {
-    for (const stack of bundle.races[p.race]!.outfit ?? []) {
-      if ((p.bag[stack.item] ?? 0) > 0) continue;
-      p.bag[stack.item] = stack.qty;
-      if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();
-    }
-  }
-  p.tries = keepKeys(p.tries, bundle.recipes);
-  p.restored = p.restored.filter((id) => id in bundle.restores);
-  p.camp = p.camp.filter((id) => id in bundle.camps);
-  p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
-  // what a searchable holds goes with it, and a row whose item left the content is dropped
-  state.searched = Object.fromEntries(
-    Object.entries(keepKeys(state.searched ?? {}, bundle.searchables)).map(([id, held]) => [id, { ...held, rows: held.rows.filter((item) => item in bundle.items) }]),
-  );
-  // a world that changed may have moved the hazards and the safe ground: nothing carries over
-  p.outing = null;
-  p.chase = null;
-  // a node a reaction makes appear keeps its state under its own id, as long as the reaction stays
-  state.nodes = keepKeys(state.nodes, { ...bundle.instances, ...Object.fromEntries(appearSlots(bundle)) });
-  // a worn item that is gone, or no longer fits its place, comes off
-  fitWorn(bundle, state);
-  state.content = bundle.tag;
-  state.kernel = KERNEL_VERSION;
-  return true;
 }

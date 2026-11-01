@@ -1,7 +1,9 @@
 /*
- * The desktop first screen: the painted key art (DECISIONS.md, 2026-10-23). This page, from 1024px, is the one
- * place that bends the 2026-10-10 frame: a painted video, its own two faces (Cinzel signs, Manrope explains),
- * soft scrims. Colours stay tokens; transparency is color-mix over a token, never rgba.
+ * The home's first screen: the painted key art (DECISIONS.md, 2026-10-23). This page is the one place that bends
+ * the 2026-10-10 frame: a painted picture, soft scrims. From 1024px it is a video with its own two faces (Cinzel
+ * signs, Manrope explains). Below 1024px (DECISIONS.md, 2026-10-30) it is a portrait still, no video, Cinzel for
+ * the headline and the site's reading face for the rest. Colours stay tokens; transparency is color-mix over a
+ * token, never rgba.
  */
 @font-face {
   font-family: 'Cinzel';
@@ -18,8 +20,153 @@
   src: url('/fonts/manrope/manrope-latin.woff2') format('woff2');
 }
 
-.keyart {
-  display: none;
+/* the phone: the still on top, fading into the night ground; the words, the two doors and the news band below it,
+   the words low where a thumb reaches. The art is as tall as 52% of the screen, never less than the still's own
+   shape needs, and drawn with cover from the bottom, so the three characters stay whole. */
+@media (max-width: 1023px) {
+  :root {
+    --ka-night: color-mix(in srgb, var(--ink) 70%, black);
+    --ka-line: color-mix(in srgb, var(--paper) 16%, transparent);
+    --ka-sign: 'Cinzel', var(--font-display);
+    /* the art's height: 52% of the screen, at least the still's own shape across the width, never over 72% of the
+       screen, so a landscape phone keeps the characters inside the section */
+    --ka-h: min(max(52svh, 92vw), 72svh);
+  }
+  body[data-section='home'] {
+    background: var(--ka-night);
+  }
+  .keyart {
+    /* the words start inside the art's lowest fifth, whatever the art's height */
+    padding-top: calc(var(--ka-h) * 0.78);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: calc(100vh - 56px);
+    min-height: calc(100svh - 56px);
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--ka-night);
+  }
+  .ka-art,
+  .ka-scrim {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--ka-h);
+  }
+  .ka-art img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 70% 15%;
+  }
+  .ka-video {
+    display: none;
+  }
+  .ka-scrim {
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ka-night) 78%, transparent) 0%, transparent 20%),
+      linear-gradient(0deg, var(--ka-night) 0%, color-mix(in srgb, var(--ka-night) 85%, transparent) 22%, transparent 55%);
+  }
+  .ka-copy {
+    position: relative;
+    z-index: 4;
+    padding: var(--s-6) var(--s-4) var(--s-6);
+  }
+  .ka-kick {
+    font: 700 var(--text-s) / 22px ui-monospace, monospace;
+    color: var(--green3);
+  }
+  .keyart h1 {
+    margin-top: var(--s-2);
+    font: 800 42px / 1.02 var(--ka-sign);
+    letter-spacing: 0.01em;
+  }
+  .keyart h1 em {
+    font-style: normal;
+    color: var(--gold);
+  }
+  .ka-lead {
+    margin-top: var(--s-3);
+    font-size: var(--text-m);
+    line-height: 26px;
+    color: var(--paper2);
+  }
+  .ka-acts {
+    margin-top: var(--s-6);
+    display: grid;
+    gap: var(--s-3);
+  }
+  .ka-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 var(--s-6);
+    font: 800 16px / 1 var(--font-reading);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .ka-btn.go {
+    background: var(--gold);
+    color: var(--ka-night);
+  }
+  .ka-btn.line {
+    border: var(--px) solid var(--paper);
+    color: var(--paper);
+  }
+  .ka-btn:active {
+    transform: translateY(var(--px));
+  }
+  .ka-band {
+    position: relative;
+    z-index: 4;
+    padding: var(--s-3) var(--s-4);
+    background: var(--ka-night);
+    border-top: 1px solid var(--ka-line);
+  }
+  .ka-news {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 44px;
+    text-decoration: none;
+  }
+  .ka-tag {
+    padding: var(--s-1) var(--s-2);
+    background: var(--green3);
+    color: var(--ka-night);
+    font: 700 13px / 1 ui-monospace, monospace;
+  }
+  .ka-news b {
+    flex: 1;
+    font: 700 var(--text-s) / 20px var(--font-reading);
+  }
+  .ka-arr {
+    color: var(--gold);
+    font-weight: 800;
+  }
+  /* the bar is a night band above the art, so the wordmark never sits on the picture; it signs in Cinzel as on the desktop */
+  body[data-section='home'] .top {
+    background: var(--ka-night);
+  }
+  body[data-section='home'] .wordmark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font: 800 24px / 1 var(--ka-sign);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  body[data-section='home'] .foot {
+    margin-top: 0;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -200,10 +347,10 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  body[data-section='home'] .nav a[href^='http'] {
+  body[data-section='home'] .nav a[href^='http']:not([data-play]) {
     margin-left: auto;
   }
-  body[data-section='home'] .nav a[href='/play/'] {
+  body[data-section='home'] .nav a[data-play] {
     order: 9;
     padding: 0 22px;
     line-height: 44px;

@@ -1,0 +1,32 @@
+{
+  "about": "The ground fowl's short low flight (BESTIARY: it runs, then flutters up): four poses of the body's own Fly (the wings up, level, down, level; the body level and the legs tucked), played by time at 120 ms a pose, since no foot touches the ground in it and the distance lock has nothing to hold. The renderer stands every pose on its lowest point, here the belly (the tucked feet are above it), so the strip draws the flutter on the ground: the client draws it raised above the creature's tile by the height of a low flight, about 6 px for 0.15 m (0.15 m x pxm 66 x cos 50, the camera's elevation).",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Fly"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    120,
+    120,
+    120,
+    120
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

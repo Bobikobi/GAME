@@ -6,6 +6,7 @@
  */
 import type { Bundle, ExpeditionDef } from './bundle';
 import { windowOpen as expeditionWindowOpen } from './expedition';
+import { type Gait, noiseRadius } from './load';
 import { idiv, mulDiv } from './num';
 import { draw } from './rng';
 import { OWN_FIRE, type State, fireBurns, isNight, lastDusk, nightEnds , type PublicState } from './state';
@@ -130,8 +131,16 @@ export function headingOf(bundle: Bundle, hazard: Hazard, tick: number): Tile {
   return [Math.sign(next[0] - here[0]), Math.sign(next[1] - here[1])];
 }
 
+/**
+ * How far ahead a predator turns its head at a player moving at a gait: its own eyes (the walk radius, 5 by default)
+ * moved by what the gait adds to or takes from the shared noise table, so a run is heard at 8 and a sneak at 3.
+ */
+export function hearingOf(bundle: Bundle, hazard: Hazard, gait: Gait): number {
+  return Math.max(1, hazard.eyes + noiseRadius(bundle, gait) - noiseRadius(bundle, 'walk'));
+}
+
 /** Whether a predator on its round sees a tile in its forward cone. Adjacent tiles are too close for cover. */
-export function sees(bundle: Bundle, hazard: Hazard, tick: number, at: Tile): boolean {
+export function sees(bundle: Bundle, hazard: Hazard, tick: number, at: Tile, gait: Gait = 'walk'): boolean {
   const pos = predatorAt(bundle, hazard, tick);
   const dx = at[0] - pos[0];
   const dy = at[1] - pos[1];
@@ -140,7 +149,7 @@ export function sees(bundle: Bundle, hazard: Hazard, tick: number, at: Tile): bo
   const [hx, hy] = headingOf(bundle, hazard, tick);
   const ahead = hx === 0 ? dy * hy : dx * hx;
   const side = Math.abs(hx === 0 ? dx : dy);
-  return ahead >= 1 && ahead <= hazard.eyes && 2 * side <= ahead;
+  return ahead >= 1 && ahead <= hearingOf(bundle, hazard, gait) && 2 * side <= ahead;
 }
 
 /** Whether a hazard acts or an expedition is open at this tick. */

@@ -1,0 +1,193 @@
+/*
+ * The project tree (the owner's pick of 31.10, the radial tree; simplified on his word of the same day): the root in
+ * the middle, one branch per stage of the plan with its count, the stage's short name beside it. One colour family
+ * for the tree (the wood and the cream) and one accent for what is alive now. Every word on the wheel is 16 px; the
+ * detail lives in the open stage's card. Tokens only.
+ */
+.tree-head {
+  padding-top: var(--s-6);
+}
+.tree-head .lead {
+  max-width: 40em;
+}
+.tree-stamp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-6);
+  margin-top: var(--s-4);
+  color: var(--fg2);
+}
+.tree-stamp b {
+  font-family: var(--font-display);
+  font-weight: var(--w-display);
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.tree-state {
+  margin-top: var(--s-4);
+  color: var(--muted);
+}
+.tree-main {
+  display: grid;
+  gap: var(--s-6);
+  margin-top: var(--s-6);
+}
+.tree-main > * {
+  min-width: 0;
+}
+
+/* the wheel: one unit is one CSS pixel (the page sets its viewBox to its width) */
+.wheel {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.wheel text {
+  font-size: 16px;
+  fill: var(--fg);
+}
+.wheel .limb {
+  fill: none;
+  stroke: var(--wood2);
+  stroke-width: 4;
+}
+.wheel .node {
+  fill: var(--cream);
+  stroke: var(--wood2);
+  stroke-width: 3;
+}
+.wheel .count {
+  font-family: var(--font-display);
+  font-weight: var(--w-display);
+  fill: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.wheel .name {
+  fill: var(--fg);
+}
+.wheel .planned .limb {
+  stroke: var(--wood);
+}
+.wheel .planned .node {
+  fill: var(--ink2);
+  stroke: var(--wood);
+}
+.wheel .planned .count,
+.wheel .planned .name {
+  fill: var(--fg2);
+}
+/* the one accent: an agent at work or a pull request in flight */
+.wheel .limb.alive,
+.wheel .node.alive {
+  stroke: var(--accent);
+}
+.wheel .root {
+  fill: var(--cream);
+  stroke: var(--wood2);
+  stroke-width: 3;
+}
+.wheel [role='button'] {
+  cursor: pointer;
+}
+.wheel [role='button']:focus {
+  outline: none;
+}
+.wheel [role='button']:focus-visible .node,
+.wheel [role='button']:focus-visible .root,
+.wheel .open .node,
+.wheel .open .root {
+  stroke: var(--fg);
+  stroke-width: 4;
+}
+.wheel .open .name {
+  text-decoration: underline;
+}
+
+/* the open stage's card */
+.tree-side {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+}
+.tree-card {
+  padding: var(--s-4);
+  border: var(--px) solid var(--wood2);
+  background: var(--raise);
+}
+.tree-card h3 {
+  font-size: 20px;
+  line-height: 26px;
+  overflow-wrap: anywhere;
+}
+.tree-card h4 {
+  margin-top: var(--s-4);
+  font-size: 16px;
+  color: var(--fg);
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-1) var(--s-3);
+  margin-top: var(--s-1);
+  color: var(--fg2);
+  overflow-wrap: anywhere;
+}
+.alive-word {
+  color: var(--accent);
+}
+.card-list {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--s-1);
+}
+.card-list > li {
+  padding: var(--s-2) 0 var(--s-2) var(--s-3);
+  border-left: 4px solid var(--wood);
+  margin-top: var(--s-1);
+  color: var(--fg2);
+  overflow-wrap: anywhere;
+}
+.card-list > li.alive {
+  border-left-color: var(--accent);
+}
+.card-list > li.quiet {
+  color: var(--muted);
+}
+.card-list b {
+  color: var(--fg);
+}
+.card-list .note,
+.card-list .last {
+  color: var(--muted);
+}
+.card-close {
+  margin-top: var(--s-4);
+}
+
+/* the gate */
+.gate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+.gate input {
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  border: var(--frame);
+  background: var(--raise);
+  color: var(--fg);
+  font: inherit;
+}
+.gate .said {
+  color: var(--fg2);
+}
+
+@media (min-width: 1024px) {
+  .tree-main {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: start;
+  }
+}

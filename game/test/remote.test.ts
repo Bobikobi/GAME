@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { OWN_FIRE, canonical, lastDusk, publicState, type Action, type Bundle, type GameEvent, type Tile } from '@game/kernel';
+import { OWN_FIRE, canonical, lastDusk, publicState, type Action, type Bundle, type Gait, type GameEvent, type Tile } from '@game/kernel';
 
 import { Session } from '../src/session';
 import { RemoteSession, fetchWire, type ActResult, type ChangeReply, type StateReply, type Wire, WireGap, WireRefusal } from '../src/remote';
@@ -107,6 +107,27 @@ describe('the remote session (NEXT 18 c)', () => {
     const body = call!.body as { version: number; moves: { kind: string; at: Tile; tick: number }[] };
     expect(body.moves.map((move) => move.kind)).toEqual(path.map(() => 'move'));
     expect(body.moves.map((move) => move.at)).toEqual(path);
+    expect(canonical(remote.state)).toBe(canonical(publicState(server.state)));
+  });
+
+  test('a run or a sneak names its gait on the wire, a walk leaves it out (DECISIONS 2026-10-29)', async () => {
+    const local = Session.fresh(bundle);
+    const server = new FakeServer(bundle, local.state);
+    const remote = await RemoteSession.join(bundle, server);
+    await remote.act({ t: 'start', starter: 'core/forager', name: 'Tess' });
+    server.calls.length = 0;
+
+    const path = workNearby(local).route.slice(0, 3);
+    const gaits: Gait[] = ['run', 'walk', 'sneak'];
+    for (const [i, at] of path.entries()) remote.report(at, false, gaits[i]);
+    await remote.flushMoves();
+
+    const call = server.calls.find((entry) => entry.path === '/moves');
+    const body = call!.body as { moves: { kind: string; at: Tile; tick: number; gait?: Gait }[] };
+    expect(path).toHaveLength(3);
+    expect(body.moves.map((move) => move.gait)).toEqual(['run', undefined, 'sneak']);
+    // a walk carries no gait key at all, so a walked report reads as one from before the gaits
+    expect(body.moves.filter((move) => move.gait === undefined).every((move) => !('gait' in move))).toBe(true);
     expect(canonical(remote.state)).toBe(canonical(publicState(server.state)));
   });
 
@@ -525,5 +546,69 @@ describe('the remote session: a fire going out is told', () => {
     }
     await remote.flushMoves();
     expect(server.calls.filter((c) => c.path === '/moves').length).toBe(1);
+  });
+});
+
+describe('the remote session: the valley was updated (the server adapts a stored state, #490)', () => {
+  class Seen {
+    readonly values = new Map<string, string>();
+    getItem(key: string): string | null {
+      return this.values.get(key) ?? null;
+    }
+    setItem(key: string, value: string): void {
+      this.values.set(key, value);
+    }
+  }
+
+  async function joined(seen: Seen) {
+    const local = Session.fresh(bundle);
+    const server = new FakeServer(bundle, local.state);
+    expect((await (await RemoteSession.join(bundle, server, seen)).act({ t: 'start', starter: 'core/forager', name: 'Tess' })).ok).toBe(true);
+    return server;
+  }
+
+  test('says so once when the server answers other content than this browser last showed, and never on a first visit', async () => {
+    const seen = new Seen();
+    const server = await joined(seen);
+    const first = await RemoteSession.join(bundle, server, seen);
+    expect(first.adapted).toBe(false);
+    // the title's probe joins without showing the world: nothing is noted until a frame runs
+    expect(seen.values.size).toBe(0);
+    first.advance(16);
+    expect([...seen.values.values()]).toEqual([server.state.content]);
+
+    // the server was updated and brought the state to its content
+    server.state.content = 'a-newer-world';
+    const back = await RemoteSession.join(bundle, server, seen);
+    expect(back.adapted).toBe(true);
+    back.advance(16);
+    expect((await RemoteSession.join(bundle, server, seen)).adapted).toBe(false);
+  });
+
+  test('says so while the game is open when a state read again comes under other content', async () => {
+    const seen = new Seen();
+    const server = await joined(seen);
+    const remote = await RemoteSession.join(bundle, server, seen);
+    let updated = 0;
+    remote.on('updated', () => updated++);
+    // the server restarted on new content and adapted the state: the walk names the old version and is read again
+    server.state.content = 'a-newer-world';
+    server.version += 1;
+    const [x, y] = remote.state.player.at;
+    remote.report([x + 1, y]);
+    await remote.flushMoves();
+    expect(remote.state.content).toBe('a-newer-world');
+    expect(updated).toBe(1);
+    // a re-read under the same content says nothing
+    await remote.resumeFromServer();
+    expect(updated).toBe(1);
+  });
+
+  test('a browser whose storage is blocked plays on and says nothing', async () => {
+    const blocked = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
+    const server = await joined(new Seen());
+    const remote = await RemoteSession.join(bundle, server, blocked);
+    expect(remote.adapted).toBe(false);
+    expect(() => remote.advance(16)).not.toThrow();
   });
 });

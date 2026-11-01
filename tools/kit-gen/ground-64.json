@@ -1,25 +1,1019 @@
 {
-  "note": "The ground at 64 px per tile by the motif-scatter route (DECISIONS 2026-10-18, the retry of the text-grid route): Codex draws only the small motifs of docs/design/STYLE.md section 3 as grids, and tools/src/kit/scatter.ts scatters them by a seeded hash across tile edges and bakes the variants as wrapping tiles. One motif at a time: pnpm kit:gen tools/kit-gen/ground-64.json --only meadow_tuft; the whole ground: --only meadow; bake again with no Codex call: --only meadow --reimport. Output in .scratch/kit-gen/ground-64/, nothing goes into content/.",
+  "note": "The ground at 64 px per tile by the motif-scatter route (DECISIONS 2026-10-18): small motifs as grids of palette letters, which tools/src/kit/scatter.ts scatters by a seeded hash across tile edges and bakes as wrapping tiles. The motifs live in tools/kit-gen/motifs/<entry>_<motif>.txt; the ones of the 2026-10-30 rich 64 wave were authored by the Claude Sonnet 5.5 builder session because Codex had no credits (the 2026-10-18 route is otherwise unchanged). One entry: pnpm kit:gen tools/kit-gen/ground-64.json --only meadow; output in .scratch/kit-gen/ground-64/, nothing goes into content/.",
   "entries": [
     {
-      "name": "meadow", "ref": "tiles/grass", "kind": "tile", "route": "scatter", "width": 64, "height": 64, "what": "meadow grass ground",
-      "base": "c", "variants": 4, "cell": 16, "chance": 0.85,
-      "speckles": [{ "letter": "b", "per_tile": 30 }, { "letter": "e", "per_tile": 12 }],
+      "names": [
+        "grass"
+      ],
+      "name": "meadow",
+      "ref": "tiles/grass",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "the calm base of the meadow: a flat bright field with one small soft patch",
+      "base": "c",
+      "variants": 1,
+      "cell": 32,
+      "chance": 1.0,
+      "speckles": [
+        {
+          "letter": "b",
+          "per_tile": 3
+        },
+        {
+          "letter": "e",
+          "per_tile": 5
+        },
+        {
+          "letter": "f",
+          "per_tile": 1
+        },
+        {
+          "letter": "4",
+          "per_tile": 3
+        },
+        {
+          "letter": "3",
+          "per_tile": 2
+        }
+      ],
       "motifs": [
-        { "name": "tuft", "weight": 6, "width": 9, "height": 11, "what": "a tuft of grass", "detail": "3 to 5 blades 6 to 11 pixels tall, leaning a little different ways, in the two lighter greens #84c450 and #c8e88a, over a darker root of #2e6b3b at the bottom" },
-        { "name": "clover", "weight": 2, "width": 7, "height": 6, "what": "a small clover of three round leaves", "detail": "leaves of #84c450 with a lit top of #c8e88a and a dark #1f3d2b pixel between them" },
-        { "name": "leaf", "weight": 1, "width": 6, "height": 5, "what": "a single fallen leaf lying on the grass", "detail": "a body of #9e6b3c with one light edge of #c99a5e and a dark vein of #6e4226" },
-        { "name": "flower", "weight": 1.5, "width": 7, "height": 8, "what": "a small wildflower", "detail": "a stem of #2e6b3b with one leaf, and a head of 5 to 9 pixels, white #f5f4ef with a yellow #f8de62 middle" }
+        {
+          "name": "patchlt",
+          "weight": 3,
+          "width": 30,
+          "height": 18,
+          "what": "a drift of light blades"
+        },
+        {
+          "name": "patchlt2",
+          "weight": 2,
+          "width": 22,
+          "height": 14,
+          "what": "a smaller drift of light blades"
+        },
+        {
+          "name": "patchdk2",
+          "weight": 1.2,
+          "width": 22,
+          "height": 13,
+          "what": "a drift of dark blades"
+        },
+        {
+          "name": "clump",
+          "weight": 1.2,
+          "width": 12,
+          "height": 7,
+          "what": "a dark clump"
+        },
+        {
+          "name": "sprig",
+          "weight": 0.5,
+          "width": 5,
+          "height": 4,
+          "what": "sprig"
+        },
+        {
+          "name": "bud",
+          "weight": 0.2,
+          "width": 3,
+          "height": 3,
+          "what": "bud"
+        },
+        {
+          "name": "dflw",
+          "weight": 0.15,
+          "width": 3,
+          "height": 3,
+          "what": "dflw"
+        }
       ]
     },
     {
-      "name": "sand", "ref": "tiles/sand", "kind": "tile", "route": "scatter", "width": 64, "height": 64, "what": "sand ground",
-      "base": "y", "variants": 4, "cell": 16, "chance": 0.6,
-      "speckles": [{ "letter": "x", "per_tile": 24 }],
+      "names": [
+        "grass_1"
+      ],
+      "name": "meadow_cluster",
+      "ref": "tiles/grass_1",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "a meadow tile with one large leaf cluster",
+      "base": "c",
+      "variants": 1,
+      "cell": 32,
+      "chance": 1.0,
+      "speckles": [
+        {
+          "letter": "b",
+          "per_tile": 3
+        },
+        {
+          "letter": "e",
+          "per_tile": 5
+        },
+        {
+          "letter": "f",
+          "per_tile": 1
+        },
+        {
+          "letter": "4",
+          "per_tile": 3
+        },
+        {
+          "letter": "3",
+          "per_tile": 2
+        }
+      ],
       "motifs": [
-        { "name": "ripple", "weight": 6, "width": 10, "height": 3, "what": "a short wind ripple in the sand", "detail": "a dash of 6 to 10 pixels in #c99a5e, broken once, with a lighter #f5f4ef pixel on its crest" },
-        { "name": "pebble", "weight": 2, "width": 6, "height": 5, "what": "a pebble lying in the sand", "detail": "a body of #9e6b3c with a lit top of #c99a5e and a dark underside of #6e4226" },
-        { "name": "glint", "weight": 0.4, "width": 3, "height": 3, "what": "a glint of light on the sand", "detail": "a plus of 5 pixels of #f5f4ef with a #ebd3a2 middle" }
+        {
+          "name": "patchlt",
+          "weight": 3,
+          "width": 30,
+          "height": 18,
+          "what": "patchlt"
+        },
+        {
+          "name": "patchlt2",
+          "weight": 2,
+          "width": 22,
+          "height": 14,
+          "what": "patchlt2"
+        },
+        {
+          "name": "patchdk2",
+          "weight": 1,
+          "width": 22,
+          "height": 13,
+          "what": "patchdk2"
+        },
+        {
+          "name": "cluster",
+          "weight": 3,
+          "width": 16,
+          "height": 10,
+          "what": "cluster",
+          "fine": true
+        },
+        {
+          "name": "cluster2",
+          "weight": 3,
+          "width": 14,
+          "height": 9,
+          "what": "cluster2",
+          "fine": true
+        },
+        {
+          "name": "tuflt",
+          "weight": 1,
+          "width": 12,
+          "height": 8,
+          "what": "tuflt",
+          "fine": true
+        },
+        {
+          "name": "tufdk",
+          "weight": 1,
+          "width": 9,
+          "height": 6,
+          "what": "tufdk",
+          "fine": true
+        }
+      ],
+      "fine_cell": 16,
+      "fine_chance": 0.6,
+      "motifs_from": "meadow"
+    },
+    {
+      "names": [
+        "grass_2"
+      ],
+      "name": "meadow_dry",
+      "ref": "tiles/grass_2",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "a lighter, yellower tone of the meadow",
+      "base": "c",
+      "variants": 1,
+      "cell": 32,
+      "chance": 1.0,
+      "speckles": [
+        {
+          "letter": "b",
+          "per_tile": 3
+        },
+        {
+          "letter": "e",
+          "per_tile": 10
+        },
+        {
+          "letter": "f",
+          "per_tile": 1
+        },
+        {
+          "letter": "4",
+          "per_tile": 3
+        },
+        {
+          "letter": "3",
+          "per_tile": 2
+        }
+      ],
+      "motifs": [
+        {
+          "name": "patchlt",
+          "weight": 5,
+          "width": 30,
+          "height": 18,
+          "what": "patchlt"
+        },
+        {
+          "name": "patchlt2",
+          "weight": 3,
+          "width": 22,
+          "height": 14,
+          "what": "patchlt2"
+        },
+        {
+          "name": "tuflt",
+          "weight": 1,
+          "width": 12,
+          "height": 8,
+          "what": "tuflt"
+        },
+        {
+          "name": "seed",
+          "weight": 0.8,
+          "width": 5,
+          "height": 9,
+          "what": "seed"
+        },
+        {
+          "name": "seed2",
+          "weight": 0.5,
+          "width": 3,
+          "height": 7,
+          "what": "seed2"
+        }
+      ],
+      "motifs_from": "meadow"
+    },
+    {
+      "names": [
+        "grass_3"
+      ],
+      "name": "meadow_lush",
+      "ref": "tiles/grass_3",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "a darker, deeper tone of the meadow",
+      "base": "c",
+      "variants": 1,
+      "cell": 32,
+      "chance": 1.0,
+      "speckles": [
+        {
+          "letter": "b",
+          "per_tile": 8
+        },
+        {
+          "letter": "e",
+          "per_tile": 5
+        },
+        {
+          "letter": "f",
+          "per_tile": 1
+        },
+        {
+          "letter": "4",
+          "per_tile": 3
+        },
+        {
+          "letter": "3",
+          "per_tile": 2
+        }
+      ],
+      "motifs": [
+        {
+          "name": "patchdk",
+          "weight": 5,
+          "width": 30,
+          "height": 18,
+          "what": "patchdk"
+        },
+        {
+          "name": "patchdk2",
+          "weight": 3,
+          "width": 22,
+          "height": 13,
+          "what": "patchdk2"
+        },
+        {
+          "name": "tufdk",
+          "weight": 1,
+          "width": 9,
+          "height": 6,
+          "what": "tufdk"
+        },
+        {
+          "name": "clump",
+          "weight": 1,
+          "width": 12,
+          "height": 7,
+          "what": "clump"
+        },
+        {
+          "name": "clover",
+          "weight": 0.5,
+          "width": 7,
+          "height": 6,
+          "what": "clover"
+        },
+        {
+          "name": "bud",
+          "weight": 0.4,
+          "width": 3,
+          "height": 3,
+          "what": "bud"
+        },
+        {
+          "name": "dflw",
+          "weight": 0.4,
+          "width": 3,
+          "height": 3,
+          "what": "dflw"
+        },
+        {
+          "name": "flower",
+          "weight": 0.4,
+          "width": 7,
+          "height": 6,
+          "what": "flower"
+        }
+      ],
+      "motifs_from": "meadow"
+    },
+    {
+      "names": [
+        "grass_flowers",
+        "flowers_2"
+      ],
+      "name": "flowers",
+      "ref": "tiles/grass_flowers",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "meadow with a few wildflowers",
+      "base": "c",
+      "variants": 2,
+      "cell": 32,
+      "chance": 1.0,
+      "speckles": [
+        {
+          "letter": "b",
+          "per_tile": 3
+        },
+        {
+          "letter": "e",
+          "per_tile": 5
+        },
+        {
+          "letter": "f",
+          "per_tile": 1
+        },
+        {
+          "letter": "4",
+          "per_tile": 3
+        },
+        {
+          "letter": "3",
+          "per_tile": 2
+        }
+      ],
+      "motifs": [
+        {
+          "name": "white",
+          "weight": 2,
+          "width": 7,
+          "height": 6,
+          "what": "a white wildflower"
+        },
+        {
+          "name": "yellow",
+          "weight": 2,
+          "width": 5,
+          "height": 6,
+          "what": "a yellow wildflower"
+        },
+        {
+          "name": "purple",
+          "weight": 1.5,
+          "width": 7,
+          "height": 6,
+          "what": "a purple wildflower"
+        },
+        {
+          "name": "red",
+          "weight": 0.8,
+          "width": 5,
+          "height": 6,
+          "what": "a red wildflower"
+        },
+        {
+          "name": "tuflt",
+          "weight": 1,
+          "width": 12,
+          "height": 8,
+          "what": "a lime tuft"
+        },
+        {
+          "name": "tufdk",
+          "weight": 1,
+          "width": 9,
+          "height": 6,
+          "what": "a dark tuft"
+        },
+        {
+          "name": "patchlt2",
+          "weight": 2,
+          "width": 22,
+          "height": 14,
+          "what": "patchlt2"
+        },
+        {
+          "name": "patchdk2",
+          "weight": 1,
+          "width": 22,
+          "height": 13,
+          "what": "patchdk2"
+        }
+      ]
+    },
+    {
+      "names": [
+        "sand",
+        "sand_1",
+        "sand_2"
+      ],
+      "name": "sand",
+      "ref": "tiles/sand",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "the riverbank: damp, darker and greyer sand with pebbles, not the path's dry warm sand",
+      "base": "w",
+      "variants": 3,
+      "cell": 16,
+      "chance": 0.9,
+      "speckles": [
+        {
+          "letter": "x",
+          "per_tile": 1000
+        },
+        {
+          "letter": "u",
+          "per_tile": 90
+        },
+        {
+          "letter": "g",
+          "per_tile": 40
+        },
+        {
+          "letter": "G",
+          "per_tile": 20
+        },
+        {
+          "letter": "y",
+          "per_tile": 30
+        }
+      ],
+      "motifs": [
+        {
+          "name": "shade",
+          "weight": 4,
+          "width": 16,
+          "height": 8,
+          "what": "a soft shade"
+        },
+        {
+          "name": "shade2",
+          "weight": 3,
+          "width": 12,
+          "height": 6,
+          "what": "a darker patch"
+        },
+        {
+          "name": "shadel",
+          "weight": 1.5,
+          "width": 10,
+          "height": 4,
+          "what": "a light patch"
+        },
+        {
+          "name": "ripple",
+          "weight": 5,
+          "width": 10,
+          "height": 3,
+          "what": "a wind ripple"
+        },
+        {
+          "name": "ripple2",
+          "weight": 4,
+          "width": 14,
+          "height": 3,
+          "what": "a long wind ripple"
+        },
+        {
+          "name": "ripple3",
+          "weight": 4,
+          "width": 9,
+          "height": 3,
+          "what": "a short wind ripple"
+        },
+        {
+          "name": "pebble",
+          "weight": 1.5,
+          "width": 6,
+          "height": 4,
+          "what": "a pebble"
+        },
+        {
+          "name": "pebble2",
+          "weight": 1.5,
+          "width": 4,
+          "height": 3,
+          "what": "a small pebble"
+        },
+        {
+          "name": "glint",
+          "weight": 0.3,
+          "width": 3,
+          "height": 3,
+          "what": "a glint"
+        },
+        {
+          "name": "sprig",
+          "weight": 0.5,
+          "width": 7,
+          "height": 5,
+          "what": "a dry sprig"
+        },
+        {
+          "name": "shell",
+          "weight": 0.25,
+          "width": 5,
+          "height": 3,
+          "what": "a shell"
+        }
+      ]
+    },
+    {
+      "names": [
+        "path",
+        "path_1",
+        "path_2"
+      ],
+      "name": "path",
+      "ref": "tiles/path",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "pale warm sand path, worn by feet, with a few earth wear spots",
+      "base": "x",
+      "variants": 3,
+      "cell": 32,
+      "chance": 0.5,
+      "speckles": [
+        {
+          "letter": "y",
+          "per_tile": 380
+        },
+        {
+          "letter": "w",
+          "per_tile": 70
+        },
+        {
+          "letter": "I",
+          "per_tile": 18
+        },
+        {
+          "letter": "f",
+          "per_tile": 3
+        },
+        {
+          "letter": "g",
+          "per_tile": 2
+        }
+      ],
+      "motifs": [
+        {
+          "name": "pebble",
+          "weight": 2,
+          "width": 5,
+          "height": 4,
+          "what": "a pebble"
+        },
+        {
+          "name": "stone",
+          "weight": 1.5,
+          "width": 4,
+          "height": 3,
+          "what": "a small stone"
+        },
+        {
+          "name": "sprig",
+          "weight": 1.2,
+          "width": 5,
+          "height": 5,
+          "what": "a sprig of grass"
+        },
+        {
+          "name": "tuft",
+          "weight": 0.8,
+          "width": 7,
+          "height": 5,
+          "what": "a tuft of grass"
+        },
+        {
+          "name": "wear",
+          "weight": 1.2,
+          "width": 11,
+          "height": 5,
+          "what": "an earth wear spot"
+        },
+        {
+          "name": "grit",
+          "weight": 2,
+          "width": 7,
+          "height": 3,
+          "what": "a patch of grit"
+        }
+      ]
+    },
+    {
+      "names": [
+        "cobble",
+        "cobble_1",
+        "cobble_2"
+      ],
+      "name": "cobble",
+      "ref": "tiles/cobble",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "cobblestone paving",
+      "base": "d",
+      "variants": 3,
+      "cell": 8,
+      "chance": 1.0,
+      "speckles": [
+        {
+          "letter": "o",
+          "per_tile": 16
+        },
+        {
+          "letter": "g",
+          "per_tile": 8
+        }
+      ],
+      "motifs": [
+        {
+          "name": "a",
+          "weight": 3,
+          "width": 8,
+          "height": 7,
+          "what": "a cobble"
+        },
+        {
+          "name": "b",
+          "weight": 3,
+          "width": 7,
+          "height": 6,
+          "what": "a small cobble"
+        },
+        {
+          "name": "c",
+          "weight": 3,
+          "width": 8,
+          "height": 8,
+          "what": "a large cobble"
+        },
+        {
+          "name": "d",
+          "weight": 2,
+          "width": 7,
+          "height": 7,
+          "what": "a pale cobble"
+        },
+        {
+          "name": "moss",
+          "weight": 0.3,
+          "width": 6,
+          "height": 3,
+          "what": "moss in a joint"
+        },
+        {
+          "name": "chip",
+          "weight": 0.5,
+          "width": 4,
+          "height": 2,
+          "what": "a chip of stone"
+        }
+      ]
+    },
+    {
+      "names": [
+        "ruin_floor"
+      ],
+      "name": "ruin_floor",
+      "ref": "tiles/ruin_floor",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "ruin floor of grey slabs",
+      "base": "g",
+      "variants": 1,
+      "cell": 16,
+      "chance": 1.0,
+      "speckles": [
+        {
+          "letter": "o",
+          "per_tile": 14
+        },
+        {
+          "letter": "g",
+          "per_tile": 10
+        }
+      ],
+      "motifs": [
+        {
+          "name": "slab",
+          "weight": 3,
+          "width": 14,
+          "height": 12,
+          "what": "a flagstone"
+        },
+        {
+          "name": "slab2",
+          "weight": 3,
+          "width": 12,
+          "height": 14,
+          "what": "a tall flagstone"
+        },
+        {
+          "name": "slab3",
+          "weight": 3,
+          "width": 15,
+          "height": 10,
+          "what": "a wide flagstone"
+        },
+        {
+          "name": "crack",
+          "weight": 1.2,
+          "width": 14,
+          "height": 4,
+          "what": "a crack"
+        },
+        {
+          "name": "crack2",
+          "weight": 1.2,
+          "width": 8,
+          "height": 7,
+          "what": "a vertical crack"
+        },
+        {
+          "name": "crack3",
+          "weight": 1.2,
+          "width": 10,
+          "height": 6,
+          "what": "a branching crack"
+        },
+        {
+          "name": "moss",
+          "weight": 0.8,
+          "width": 7,
+          "height": 4,
+          "what": "moss"
+        },
+        {
+          "name": "chip",
+          "weight": 0.8,
+          "width": 4,
+          "height": 3,
+          "what": "a chip of stone"
+        },
+        {
+          "name": "weed",
+          "weight": 0.4,
+          "width": 6,
+          "height": 4,
+          "what": "a weed"
+        }
+      ]
+    },
+    {
+      "names": [
+        "forest",
+        "forest_1",
+        "forest_2"
+      ],
+      "name": "forest",
+      "ref": "tiles/forest",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "forest floor under trees",
+      "base": "b",
+      "variants": 3,
+      "cell": 16,
+      "chance": 0.9,
+      "speckles": [
+        {
+          "letter": "a",
+          "per_tile": 40
+        },
+        {
+          "letter": "c",
+          "per_tile": 16
+        },
+        {
+          "letter": "u",
+          "per_tile": 6
+        }
+      ],
+      "motifs": [
+        {
+          "name": "shade",
+          "weight": 4,
+          "width": 16,
+          "height": 9,
+          "what": "a dark patch"
+        },
+        {
+          "name": "shade2",
+          "weight": 3,
+          "width": 14,
+          "height": 7,
+          "what": "a light patch"
+        },
+        {
+          "name": "litter",
+          "weight": 3,
+          "width": 9,
+          "height": 5,
+          "what": "a drift of fallen leaves"
+        },
+        {
+          "name": "moss",
+          "weight": 2,
+          "width": 9,
+          "height": 5,
+          "what": "moss"
+        },
+        {
+          "name": "root",
+          "weight": 1.2,
+          "width": 10,
+          "height": 4,
+          "what": "a root"
+        },
+        {
+          "name": "leaf",
+          "weight": 3,
+          "width": 5,
+          "height": 4,
+          "what": "a fallen leaf"
+        },
+        {
+          "name": "twig",
+          "weight": 2,
+          "width": 9,
+          "height": 3,
+          "what": "a twig"
+        },
+        {
+          "name": "tuft",
+          "weight": 2,
+          "width": 7,
+          "height": 6,
+          "what": "a dark tuft of grass"
+        },
+        {
+          "name": "fern",
+          "weight": 1,
+          "width": 11,
+          "height": 7,
+          "what": "a fern"
+        },
+        {
+          "name": "mushroom",
+          "weight": 0.4,
+          "width": 5,
+          "height": 4,
+          "what": "a red mushroom"
+        },
+        {
+          "name": "rock",
+          "weight": 0.4,
+          "width": 4,
+          "height": 3,
+          "what": "a stone"
+        }
+      ]
+    },
+    {
+      "names": [
+        "grove",
+        "grove_1",
+        "grove_2"
+      ],
+      "name": "grove",
+      "ref": "tiles/grove",
+      "kind": "tile",
+      "route": "scatter",
+      "width": 64,
+      "height": 64,
+      "what": "grove floor",
+      "base": "b",
+      "variants": 3,
+      "cell": 16,
+      "chance": 0.9,
+      "speckles": [
+        {
+          "letter": "a",
+          "per_tile": 20
+        },
+        {
+          "letter": "c",
+          "per_tile": 16
+        },
+        {
+          "letter": "e",
+          "per_tile": 4
+        }
+      ],
+      "motifs": [
+        {
+          "name": "shade",
+          "weight": 3,
+          "width": 16,
+          "height": 9,
+          "what": "a dark patch"
+        },
+        {
+          "name": "shade2",
+          "weight": 2,
+          "width": 14,
+          "height": 7,
+          "what": "a light patch"
+        },
+        {
+          "name": "tuft",
+          "weight": 4,
+          "width": 9,
+          "height": 11,
+          "what": "a tuft of grass"
+        },
+        {
+          "name": "violet",
+          "weight": 1,
+          "width": 7,
+          "height": 6,
+          "what": "a violet"
+        },
+        {
+          "name": "leaf",
+          "weight": 2,
+          "width": 5,
+          "height": 4,
+          "what": "a fallen leaf"
+        },
+        {
+          "name": "fern",
+          "weight": 1,
+          "width": 11,
+          "height": 7,
+          "what": "a fern"
+        },
+        {
+          "name": "mushroom",
+          "weight": 0.5,
+          "width": 5,
+          "height": 4,
+          "what": "a red mushroom"
+        }
       ]
     }
   ]

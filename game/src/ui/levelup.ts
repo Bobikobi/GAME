@@ -17,7 +17,7 @@ export function openLevelUp(ui: UI, profession?: string): Promise<void> {
     const b = app.bundle;
     if (!s || skillPoints(b, s.state) <= 0) return resolve();
     const body = h('div', { class: 'levelup-body' });
-    const box = h('div', { class: 'panel levelup', role: 'dialog', 'aria-label': 'Level up' }, h('i', { class: 'burst' }), body);
+    const box = h('div', { class: 'panel levelup ui-window', role: 'dialog', 'aria-label': 'Level up' }, h('i', { class: 'burst' }), body);
     const el = h('div', { class: 'layer panel-layer levelup-layer' }, box);
     let closing = false;
 

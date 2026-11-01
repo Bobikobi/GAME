@@ -21,7 +21,7 @@ export interface Option {
 
 const CHARS_PER_SECOND = 70;
 /** one gibberish syllable per this many typed characters */
-const VOICE_EVERY = 4;
+const VOICE_EVERY = 8;
 
 export function say(ui: UI, speaker: string | null, pages: string[], options: Option[] = [], opts: SayOptions = {}): Promise<string | null> {
   const lines = opts.page ? [pages.join('\n')] : pages;
@@ -30,7 +30,7 @@ export function say(ui: UI, speaker: string | null, pages: string[], options: Op
     const textEl = h('p', { class: opts.page ? 'dialog-text page' : 'dialog-text' });
     const arrow = h('span', { class: 'dialog-arrow', hidden: true }, '▼');
     const optionsEl = h('div', { class: 'dialog-options', hidden: true });
-    const box = h('div', { class: 'dialog', role: 'dialog' }, nameEl, textEl, arrow, optionsEl);
+    const box = h('div', { class: 'dialog ui-window', role: 'dialog' }, nameEl, textEl, arrow, optionsEl);
     const el = h('div', { class: 'layer dialog-layer' }, box);
     let index = 0;
     let shown = 0;
@@ -64,7 +64,7 @@ export function say(ui: UI, speaker: string | null, pages: string[], options: Op
         shown = Math.min(line.length, shown + 2);
         textEl.textContent = line.slice(0, shown);
         if (voiced && Math.floor(shown / VOICE_EVERY) > Math.floor(before / VOICE_EVERY) && /\S/.test(line[shown - 1] ?? ' ')) {
-          sound.sfx('voice', { detune: pitch + ((shown * 37) % 5) * 20 - 40, gain: 0.8 });
+          sound.sfx('voice', { detune: pitch + ((shown * 37) % 5) * 20 - 40, gain: 0.6 });
         }
         if (shown >= line.length) lineEnd();
       }, 2000 / CHARS_PER_SECOND);

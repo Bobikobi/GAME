@@ -1,0 +1,8 @@
+[
+ {"id": "keyart-poster", "label": "key art, poster", "source": "web/public/keyart/hero-poster.jpg", "hours": ["17:30", "19:00"], "sky": [[0, 0, 0.4, 0.08], [0.92, 0, 1, 0.18]], "ground": [[0, 0.3, 0.4, 0.95]]},
+ {"id": "keyart-video-00", "label": "key art, video 0.5 s", "source": "web/public/keyart/hero.mp4", "at": 0.5, "hours": ["17:30", "19:00"], "sky": [[0, 0, 0.4, 0.08], [0.92, 0, 1, 0.18]], "ground": [[0, 0.3, 0.4, 0.95]]},
+ {"id": "keyart-video-04", "label": "key art, video 4 s", "source": "web/public/keyart/hero.mp4", "at": 4, "hours": ["17:30", "19:00"], "sky": [[0, 0, 0.4, 0.08], [0.92, 0, 1, 0.18]], "ground": [[0, 0.3, 0.4, 0.95]]},
+ {"id": "keyart-video-08", "label": "key art, video 8 s", "source": "web/public/keyart/hero.mp4", "at": 8, "hours": ["17:30", "19:00"], "sky": [[0, 0, 0.4, 0.08], [0.92, 0, 1, 0.18]], "ground": [[0, 0.3, 0.4, 0.95]]},
+ {"id": "keyart-video-12", "label": "key art, video 12 s", "source": "web/public/keyart/hero.mp4", "at": 12, "hours": ["17:30", "19:00"], "sky": [[0, 0, 0.4, 0.08], [0.92, 0, 1, 0.18]], "ground": [[0, 0.3, 0.4, 0.95]]},
+ {"id": "keyart-video-16", "label": "key art, video 16 s", "source": "web/public/keyart/hero.mp4", "at": 16, "hours": ["17:30", "19:00"], "sky": [[0, 0, 0.4, 0.08], [0.92, 0, 1, 0.18]], "ground": [[0, 0.3, 0.4, 0.95]]}
+]

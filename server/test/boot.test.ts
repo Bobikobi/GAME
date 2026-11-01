@@ -115,6 +115,20 @@ describe('the session mode at boot (NEXT 18 e)', () => {
     expect(() => authFromEnv({ ...ready, GOOGLE_CLIENT_SECRET: 'secret' })).toThrow(/GOOGLE_CLIENT_ID/);
   });
 
+  test('takes Discord only as a pair, closed without it, and the notice never carries the secret', () => {
+    const closed = authFromEnv(ready);
+    if (closed.mode !== 'session') throw new Error('expected the session mode');
+    expect(closed.session.discord).toBeUndefined();
+    expect(closed.notice).not.toContain('Discord');
+    const auth = authFromEnv({ ...ready, DISCORD_CLIENT_ID: '1300000000000000000', DISCORD_CLIENT_SECRET: 'not-for-the-log' });
+    if (auth.mode !== 'session') throw new Error('expected the session mode');
+    expect(auth.session.discord).toEqual({ clientId: '1300000000000000000', clientSecret: 'not-for-the-log' });
+    expect(auth.notice).toContain('Discord');
+    expect(auth.notice).not.toContain('not-for-the-log');
+    expect(() => authFromEnv({ ...ready, DISCORD_CLIENT_ID: 'id' })).toThrow(/DISCORD_CLIENT_SECRET/);
+    expect(() => authFromEnv({ ...ready, DISCORD_CLIENT_SECRET: 'secret' })).toThrow(/DISCORD_CLIENT_ID/);
+  });
+
   test('refuses a missing origin, a path, a trailing slash, and plain http off a loopback host', () => {
     expect(() => authFromEnv({ AUTH_MODE: 'session', APP_ORIGIN: ready.PUBLIC_ORIGIN })).toThrow(/PUBLIC_ORIGIN/);
     for (const bad of ['https://play.example.org/', 'https://play.example.org/auth', 'http://play.example.org', 'play.example.org', 'ftp://play.example.org']) {
@@ -254,8 +268,8 @@ describe('the nginx site file (the 27.10 review)', () => {
     expect(game).not.toContain('proxy_pass');
     expect(game).toMatch(/add_header Cache-Control "no-cache"/);
     expect(blocks.get('/assets/') ?? '').toMatch(/add_header Cache-Control "public, max-age=\d+, immutable"/);
-    // the API answers these five and nothing else (api.ts): each is an exact location, so /state.html is a file, not the API
-    for (const path of ['/session', '/state', '/action', '/moves']) {
+    // the API answers these, /auth/ and nothing else (api.ts): each is an exact location, so /state.html is a file, not the API
+    for (const path of ['/session', '/state', '/action', '/moves', '/stats']) {
       expect(blocks.get(`= ${path}`), path).toMatch(/^\s*proxy_pass http:\/\/127\.0\.0\.1:\d+;\s*$/);
     }
     expect(auth).toMatch(/proxy_pass http:\/\/127\.0\.0\.1:\d+;/);
