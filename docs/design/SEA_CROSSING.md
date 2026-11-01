@@ -1,9 +1,8 @@
 # The sea crossing: the passage across the bay, with a sea event drawn on the way
 
 Written 2026-10-31 as gap M1 of [EXPERIENCE_AUDIT.md](EXPERIENCE_AUDIT.md). Built on 2026-11-01 as a round trip (issue #575): the
-boat leaves `core/ferry` and turns back, with no far jetty, while the owner's three questions in section 6 stay open. The events sit
-inline in the passage file, `land` is not an act of its own, and the boat opens with Maru's coin (`requires`): DECISIONS 2026-11-01
-"The sea passage".
+boat leaves `core/ferry` and turns back at the far bank. The events sit inline in the passage file, `land` is not an act of its own,
+and the boat opens with Maru's coin (`requires`): DECISIONS 2026-11-01 "The sea passage". The owner answered section 6 on 2026-11-01.
 
 **Research memo pending.** The sea memo commissioned on 29.10 never came (every outside research tool was down on 31.10). This page is
 designed from the first draft of 28.10, the explorer memo's section 5 (used as proposals, not facts), and the hooks already on
@@ -14,14 +13,14 @@ designed from the first draft of 28.10, the explorer memo's section 5 (used as p
 - **28.10, the owner:** the sailing to the human city is an open-world passage with a random sea quest on it, an opportunity, never a
   loading screen.
 - **DECISIONS 2026-10-22 "The human world is a serious city across the river":** the river becomes a bay, and boats cross it.
-- **DECISIONS 2026-10-22 "The skeleton and the elf reach the human city another, harder way":** the boat is the human's way; the
-  other two races have their own, harder ways, each with its opening quest.
+- **DECISIONS 2026-10-22 "The skeleton and the elf reach the human city another, harder way":** the other two races have their own,
+  harder ways, each with its opening quest. A human takes the boat, or walks round by a significant detour (section 6).
 - **DECISIONS 2026-10-22 "The opening pool and the region quests":** every region opens by its own quest. The crossing is part of the
   city's opening quest, never a gate by level.
 - **G55 "A far bank is scenery now and a promise later":** on the first map the far bank is scenery and a shut line says only what
   is true.
 - **DECISIONS 2026-10-30 "The first map is A2":** the walled city at the river's bend is a city of all races, not the human city.
-  Where the human city stands is open for STORY; FIRST_MAP still draws it on the far bank, south-west across the bay.
+  The human city stands on the far bank, across the bay (the owner, 2026-11-01; section 6).
 
 ## 2. The hooks already on develop
 
@@ -105,7 +104,8 @@ pick  = first event whose running sum of weights exceeds floor(r * total / 10000
 
 ### The far side on the first map
 
-The far bank is scenery on the first map (G55). So the first crossing lands at a small stamped jetty (`core/far-jetty`) at the bay's
+**Not now (the owner, 2026-11-01; section 6): the boat turns back at the far bank until the city is built, and what follows is kept
+for that day.** The far bank is scenery on the first map (G55). So the first crossing lands at a small stamped jetty (`core/far-jetty`) at the bay's
 far edge: a harbour hand with one line, the city gate in view and shut, with a line that says only what is true (G55),
 written with the city's land by the STORY rules. The city's own land comes later and opens from here. The crossing back is the same passage reversed.
 
@@ -130,11 +130,9 @@ Five events, each one a different type (G17):
 5. The check refuses a passage whose exits do not exist, a weight of 0 or less, an event with an unknown step kind, and a reward over
    the ladder.
 
-## 6. What the owner decides
+## 6. What the owner decided (2026-11-01)
 
-1. **Is the boat the only way for a human to reach the far bank**, or may a human also walk round (G61; the elf and the skeleton
-   already have their own harder ways)? Recommended: the only way for a human, so the crossing is the human's opening.
-2. **Does the first map's crossing land at a far jetty with the city shut** (section 3, recommended: the passage is playable on the
-   first map), or wait for the city's land?
-3. **Where does the human city stand now** that the city at the bend is of all races? FIRST_MAP and G55 keep it on the far bank; this
-   page assumes that.
+1. **Does the first crossing land at a far jetty?** Not now. The boat keeps turning back at the far bank until the city is built.
+2. **Is the boat the only way for a human to reach the far bank?** No. A human may also walk round, as a significant detour. Nothing
+   is built for it here: the route belongs to the first map's drawing (NEXT 19 e), where it is named as an open requirement.
+3. **Where does the human city stand?** On the far bank, across the bay.
