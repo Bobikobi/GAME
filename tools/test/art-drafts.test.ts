@@ -491,7 +491,7 @@ describe('the committed index', () => {
       expect(d.files.raw.sha256.startsWith(d.id)).toBe(true);
       if (d.stored !== null) {
         expect(d.stored.repo).toBe('Bobikobi/GAME-art-drafts');
-        expect(d.stored.assets.raw).toBe(`${d.id}.png`);
+        expect(d.stored.assets.raw).toBe(`${d.id}${d.files.raw.ext ?? '.png'}`);
       }
     }
   });
