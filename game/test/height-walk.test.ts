@@ -489,7 +489,10 @@ describe('the opening e2e plans its walks by the same rule, as its page runs it'
     const b = r.b;
     const slot = (id: string) => named(b.map.slots.find((x) => x.id === id), `slot ${id}`);
     const prop = (id: string) => named(b.map.props.find((x) => x.id === id), `prop ${id}`);
-    const nodes = (source: string): Rect[] => Object.values(b.instances).filter((i) => i.source === source).map((i) => ({ x: i.x, y: i.y, w: 1, h: 1 }));
+    // the tangle opens by its own quest after the opening, and the opening never walks into it
+    const tangle = slot('core/tangle');
+    const inTangle = (i: { x: number; y: number }) => i.x >= tangle.x && i.x < tangle.x + tangle.w && i.y >= tangle.y && i.y < tangle.y + tangle.h;
+    const nodes = (source: string): Rect[] => Object.values(b.instances).filter((i) => i.source === source && !inTangle(i)).map((i) => ({ x: i.x, y: i.y, w: 1, h: 1 }));
     const camp = slot('core/camp');
     const elder = slot('core/elder-house');
     const trader = slot('core/trader-stall');
