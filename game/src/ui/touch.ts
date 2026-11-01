@@ -216,14 +216,12 @@ export function mountTouch(root: HTMLElement): void {
     window.setTimeout(hideHint, HINT_MS);
   };
 
-  // the tap that leaves the title enters the world: there the phone asks for the full view
+  // the world is entered once the title closes: there a portrait phone may offer its hint (the full view is asked
+  // earlier, by the tap on Continue or Wake up itself, in title.ts)
   let atTitle = document.body.classList.contains('at-title');
   new MutationObserver(() => {
     const now = document.body.classList.contains('at-title');
-    if (atTitle && !now) {
-      enterFullView();
-      offerHint();
-    }
+    if (atTitle && !now) offerHint();
     atTitle = now;
   }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 }

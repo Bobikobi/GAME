@@ -108,6 +108,8 @@ async function main(): Promise<void> {
     await page.goto(`${remote ?? local?.url ?? ''}?debug&rich=none${seedQuery('core/west-bank')}`);
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
     await start(page);
+    // the tap on Wake up asks for the full view itself (best effort, so a refusal is told, not failed)
+    console.log(`landscape: the full view ${(await page.eval<boolean>('!!document.fullscreenElement')) ? 'granted' : 'refused by this browser'} on the Wake up tap`);
 
     const seen = await page.eval<{ landscape: boolean; pad: Box; buttons: (Box & { name: string })[]; hud: (Box & { name: string })[]; band: number; smallest: number; where: string }>(LAYOUT);
     if (!seen.landscape) throw new Error('the body does not wear "landscape" on a phone on its side');
