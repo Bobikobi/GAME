@@ -1,10 +1,13 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, KERNEL_VERSION, STEP_MILLI, WEAR_SLOTS, adaptState, appearSlots, appears, gaitStepMs, step, walkCharge, type Action, type Bundle, type Gait, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, KERNEL_VERSION, STEP_MILLI, WEAR_SLOTS, adaptState, appearSlots, appears, dayOf, gaitStepMs, skyAt, step, walkCharge, type Action, type Bundle, type Gait, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { goldRowsOf, isGait, moveOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
 import { cachedCounts, type AccountCounts } from './stats';
+
+/** The sky of a day over a region: clear, rain or fog. */
+type WeatherName = ReturnType<typeof skyAt>;
 
 const BODY_LIMIT = 64 * 1024;
 const MOVE_LIMIT = 256;
@@ -96,6 +99,8 @@ interface StateBody {
   version: number;
   /** the appear nodes that stand at this state's tick: drawn from the seed here, never on the phone */
   appears: string[];
+  /** the day's sky over the player's tile, drawn from the seed here (issue 581) */
+  sky: WeatherName;
 }
 
 interface ChangeBody {
@@ -103,6 +108,7 @@ interface ChangeBody {
   patch: MergePatch;
   version: number;
   appears: string[];
+  sky: WeatherName;
 }
 
 /**
@@ -267,6 +273,11 @@ function appearIds(bundle: Bundle, state: State): string[] {
   return [...appearSlots(bundle).keys()]
     .filter((id) => appears(bundle, state, id, state.tick))
     .sort();
+}
+
+/** The day's sky over the player's tile at this state's tick: the region's draw at its card's odds. */
+function skyOfState(bundle: Bundle, state: State): WeatherName {
+  return skyAt(bundle, state.seed, state.player.at[0], state.player.at[1], dayOf(bundle, state.tick));
 }
 
 interface HealthBody {
@@ -463,7 +474,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       const body = requireObject(await readJson(request, options.bodyLimit ?? BODY_LIMIT));
       if (Object.keys(body).length > 0) throw new RequestError('Resume does not accept client state.', 400);
     }
-    json(response, 200, { state: publicState(record.state), version: record.version, appears: appearIds(options.bundle, record.state) });
+    json(response, 200, { state: publicState(record.state), version: record.version, appears: appearIds(options.bundle, record.state), sky: skyOfState(options.bundle, record.state) });
     return;
   }
 
@@ -564,7 +575,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   if (!(await options.store.compareAndSet(playerId, record.version, next, books))) {
     throw new RequestError('The game state changed; resume before sending another action.', 409, 'stale');
   }
-  json(response, 200, { events, patch: statePatch(record.state, state), version: next.version, appears: appearIds(options.bundle, state) });
+  json(response, 200, { events, patch: statePatch(record.state, state), version: next.version, appears: appearIds(options.bundle, state), sky: skyOfState(options.bundle, state) });
 }
 
 export function createGameApi(given: ApiOptions): Server {

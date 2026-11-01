@@ -17,6 +17,9 @@ import {
   reactionHolds,
   regionOf,
   appears,
+  cardAt,
+  oddsOf,
+  skyAt,
   step,
   waitPermille,
   weatherOf,
@@ -144,5 +147,32 @@ describe('a fire', () => {
     expect(wet).toEqual(burn(dayWith(base, 'clear')));
     expect(wet).toEqual(burn(dayWith(base, 'fog')));
     expect(wet.until).toBe(cap * log_ms);
+  });
+});
+
+describe('the weather of a region card (issue 581)', () => {
+  test('the valley weathers by its card, at the odds the kernel held before, so no day moves', () => {
+    const card = cardAt(base, 0, 0);
+    expect(card?.id).toBe('valley-floor');
+    expect(oddsOf(card)).toEqual(WEATHER_ODDS);
+    for (let d = 0; d < 200; d++) expect(skyAt(base, SEED, 0, 0, d)).toBe(weatherOf(SEED, regionOf(base, 0, 0), d));
+  });
+
+  test('a region names its own card and falls about as that card says', () => {
+    const b = structuredClone(base);
+    b.map.regions = [{ id: 'coast', x: 0, y: 0, w: 4, h: 4, card: 'bay-coast' }];
+    const card = cardAt(b, 1, 1)!;
+    expect(card.id).toBe('bay-coast');
+    expect(cardAt(b, 10, 10)?.id).toBe('valley-floor');
+    const days = Array.from({ length: 2000 }, (_, d) => skyAt(b, SEED, 1, 1, d));
+    expect(Math.abs(days.filter((w) => w === 'rain').length / days.length - card.weather.rain / 10_000)).toBeLessThan(0.04);
+    expect(Math.abs(days.filter((w) => w === 'fog').length / days.length - card.weather.fog / 10_000)).toBeLessThan(0.04);
+  });
+
+  test('a map with no card keeps the fixed odds', () => {
+    const b = structuredClone(base);
+    delete b.map.card;
+    expect(cardAt(b, 0, 0)).toBeUndefined();
+    expect(oddsOf(cardAt(b, 0, 0))).toEqual(WEATHER_ODDS);
   });
 });

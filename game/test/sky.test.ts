@@ -107,6 +107,21 @@ describe('the fog banks', () => {
     expect(rowAlpha(Math.round(H / 2))).toBeGreaterThan(0.55);
   });
 
+  it('breaks into soft shapes rather than columns: a column of the bank changes as it runs down the band', () => {
+    const period = 256;
+    const h = BANK_TILE.high * AIR_DENSITY;
+    const px = bankPixels(period, h, 1.7, true, period);
+    const row = (y: number) => Array.from({ length: period }, (_, x) => at(px, period, x, y)[3]);
+    const corr = (a: number[], b: number[]) => {
+      const m = (v: number[]) => v.reduce((n, k) => n + k, 0) / v.length;
+      const [ma, mb] = [m(a), m(b)];
+      const top = a.reduce((n, k, i) => n + (k - ma) * (b[i]! - mb), 0);
+      return top / Math.sqrt(a.reduce((n, k) => n + (k - ma) ** 2, 0) * b.reduce((n, k) => n + (k - mb) ** 2, 0));
+    };
+    // rows a third of the band apart: in columns they would be the same row, near 1
+    expect(corr(row(Math.round(h * 0.35)), row(Math.round(h * 0.65)))).toBeLessThan(0.5);
+  });
+
   it('is a pale veil: the light end of the ramp and an alpha under its own cap', () => {
     const px = bankPixels(W, H, 4.3);
     const tones = new Set(Object.values(BANK_RGB).map((c) => c.join(',')));

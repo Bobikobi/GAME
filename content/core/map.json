@@ -4578,6 +4578,111 @@
       "x": 6,
       "y": 17
     },
+    "card": "valley-floor",
+    "cards": [
+      {
+        "id": "valley-floor",
+        "title": "Valley floor",
+        "climate": "temperate",
+        "weather": {
+          "rain": 2000,
+          "fog": 1000
+        },
+        "look": {
+          "rain": 1000,
+          "fog": 1000
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "east-highland",
+        "title": "East terraces + highland",
+        "climate": "cold",
+        "weather": {
+          "rain": 1500,
+          "fog": 2000
+        },
+        "look": {
+          "rain": 800,
+          "fog": 1300
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "elf-wood",
+        "title": "North: elf wood",
+        "climate": "temperate",
+        "weather": {
+          "rain": 2000,
+          "fog": 1500
+        },
+        "look": {
+          "rain": 700,
+          "fog": 1100
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "bay-coast",
+        "title": "The bay + south coast",
+        "climate": "wet",
+        "weather": {
+          "rain": 3500,
+          "fog": 2500
+        },
+        "look": {
+          "rain": 1200,
+          "fog": 1400
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "far-bank",
+        "title": "Far bank (map edge)",
+        "climate": "wet",
+        "weather": {
+          "rain": 3000,
+          "fog": 2000
+        },
+        "look": {
+          "rain": 1000,
+          "fog": 1000
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "undead-south",
+        "title": "Undead south",
+        "climate": "dry",
+        "weather": {
+          "rain": 500,
+          "fog": 2500
+        },
+        "look": {
+          "rain": 600,
+          "fog": 1300
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      }
+    ],
     "slots": [
       {
         "id": "core/river-stones",

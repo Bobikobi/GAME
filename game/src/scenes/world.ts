@@ -21,6 +21,7 @@ import {
   type Slot,
   appearSlots,
   campTile,
+  cardAt,
   coverAt,
   findSlot,
   OWN_FIRE,
@@ -70,6 +71,8 @@ import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
 import type { GameSession } from '../session-surface';
+import type { WeatherName } from '@game/schema';
+import { LANDING, LANDINGS, MARK_LIFE, RAIN_FALL, RAIN_LIFE, RAIN_MAX, RAIN_SLANT, type Landing, bankFog, dropsAlive, landingsPerSecond, markPixels, skyLook, streakPixels, washRgb } from '../rain';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
 import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '../flicker';
@@ -396,6 +399,16 @@ export class WorldScene extends Phaser.Scene {
   private cloudDay = -1;
   /** a sky picked by `?debug&cloud=0..3`, for a still or a test; unset in play */
   private cloudForce: number | null = null;
+  /** a day's weather picked by `?debug&sky=clear|rain|fog`, for a still or a test; unset in play */
+  private skyForce: WeatherName | null = null;
+  /** the rain (issue 581): its streaks, each landing's marks over the tiles it answers, the cool light, and how heavy it falls now */
+  private rainDrops: Emitter | undefined;
+  private rainMarks: { kind: Landing; zone: TileZone; emitter: Emitter }[] = [];
+  private rainTiles = new Map<Landing, number[]>();
+  private rainWash: Phaser.GameObjects.Rectangle | undefined;
+  private rainNow = -1;
+  /** the ambience bed the player's region card asks now; unset so the next shade asks again */
+  private bedNow: string | undefined;
   private banks: { img: Phaser.GameObjects.Image; key: string; tile: number; seed: number; drift: number; at: number; periods: number; moved: number }[] = [];
   /** the view's width the banks were last cut for, so a wider view rebuilds them instead of ending mid-screen */
   private bankView = 0;
@@ -649,6 +662,12 @@ export class WorldScene extends Phaser.Scene {
       }
     });
     make('fx-mote', 1, 1, () => px(PALETTE.paper, 0, 0));
+    // the rain of 21.10: the streak, and the mark each surface answers with (rain.ts)
+    for (const [key, tex] of [['fx-rain', streakPixels()], ...LANDINGS.map((k) => [`fx-land-${k}`, markPixels(k)] as const)] as const) {
+      make(key, tex.w, tex.h, () => {
+        for (const p of tex.px) g.fillStyle(p.rgb, p.a).fillRect(p.x, p.y, 1, 1);
+      });
+    }
     make('fx-fly', 2, 2, () => px(PALETTE.green4, 0, 0, 2, 2));
     make('fx-eye', 4, 1, () => {
       px(PALETTE.red2, 0, 0);
@@ -827,6 +846,11 @@ export class WorldScene extends Phaser.Scene {
           const tag = at(x, y)?.tag;
           if (tag === 'meadow') meadow.push(x, y);
           else if (tag === 'grove') grove.push(x, y);
+          const landing = tag === undefined ? undefined : LANDING[tag];
+          if (landing) {
+            if (!this.rainTiles.has(landing)) this.rainTiles.set(landing, []);
+            this.rainTiles.get(landing)!.push(x, y);
+          }
         }
       }
     }
@@ -1809,6 +1833,7 @@ export class WorldScene extends Phaser.Scene {
         ...(RICH.motion ? { maxAliveParticles: 8 } : {}),
       })
       .setDepth(DEPTH.glow);
+    this.buildRain();
     if (!RICH.motion || !this.meadowZone || !this.groveZone) return;
     this.butterflies = this.add
       .particles(0, 0, 'fx-butterfly', {
@@ -1882,6 +1907,8 @@ export class WorldScene extends Phaser.Scene {
     if (new URLSearchParams(location.search).has('debug')) {
       const asked = Number(new URLSearchParams(location.search).get('cloud'));
       if (Number.isInteger(asked) && asked >= 0 && asked < CLOUD_BUCKETS.length) this.cloudForce = asked;
+      const sky = new URLSearchParams(location.search).get('sky');
+      if (sky === 'clear' || sky === 'rain' || sky === 'fog') this.skyForce = sky;
     }
     if (this.textures.exists('fx-cloud-0')) {
       // three by three copies of one patch: a tile sprite drew its overlapping edge twice and doubled the shade
@@ -2148,6 +2175,7 @@ export class WorldScene extends Phaser.Scene {
     // waking up: the valley comes out of the dark
     if (RICH.light) this.cameras.main.fadeIn(600, 27, 26, 46);
     this.wasNight = undefined;
+    this.bedNow = undefined;
     this.refresh();
   }
 
@@ -2536,10 +2564,80 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.motion) this.flyBirds(time);
   }
 
+  /**
+   * The rain as the owner picked it on 21.10 (DECISIONS "Rain: the drops fall and land"): streaks over the view
+   * and each drop's mark on the ground it lands on, behind `RICH.motion`; the day's cool, dimmed light behind
+   * `RICH.light`. Nothing falls until a rain day (`showRain`).
+   */
+  private buildRain(): void {
+    if (RICH.light) {
+      this.rainWash = this.add
+        .rectangle(0, 0, this.b.map.width * T, this.b.map.height * T, washRgb())
+        .setOrigin(0)
+        .setDepth(DEPTH.mist - 1)
+        .setBlendMode(Phaser.BlendModes.MULTIPLY)
+        .setAlpha(0)
+        .setVisible(false);
+    }
+    if (!RICH.motion) return;
+    const lean = Math.hypot(1, RAIN_SLANT);
+    this.rainDrops = this.add
+      .particles(0, 0, 'fx-rain', {
+        emitZone: { type: 'random', source: this.viewRect, quantity: 1 },
+        lifespan: RAIN_LIFE,
+        speedX: RAIN_FALL / lean,
+        speedY: (RAIN_FALL * RAIN_SLANT) / lean,
+        scale: 1 / AIR_DENSITY,
+        frequency: 1000,
+        emitting: false,
+        maxAliveParticles: RAIN_MAX,
+      })
+      .setDepth(DEPTH.motes);
+    for (const [kind, tiles] of this.rainTiles) {
+      const zone = new TileZone(tiles);
+      const emitter = this.add
+        .particles(0, 0, `fx-land-${kind}`, {
+          emitZone: { type: 'random', source: zone, quantity: 1 },
+          lifespan: MARK_LIFE,
+          scale: 1 / AIR_DENSITY,
+          alpha: { start: 1, end: 0.2 },
+          frequency: 1000,
+          emitting: false,
+        })
+        .setDepth(DEPTH.shadow + 0.1);
+      this.rainMarks.push({ kind, zone, emitter });
+    }
+  }
+
+  /** The day's rain at its share of the decided look; 0 stops it. */
+  private showRain(rain: number): void {
+    if (rain === this.rainNow) return;
+    this.rainNow = rain;
+    this.tuneRain();
+  }
+
+  /** How many drops and marks the view holds at the rain's weight, as the view moves or grows. */
+  private tuneRain(): void {
+    if (!this.rainDrops) return;
+    const view = this.cameras.main.worldView;
+    const alive = dropsAlive(view.width * view.height, Math.max(0, this.rainNow));
+    // the rate first: start() counts down from it, so a rain day does not begin a second late
+    if (alive > 0) this.rainDrops.frequency = RAIN_LIFE / alive;
+    this.setEmitting(this.rainDrops, alive > 0);
+    const viewTiles = (view.width / T) * (view.height / T);
+    for (const m of this.rainMarks) {
+      m.zone.refresh(view);
+      const perSecond = landingsPerSecond(alive, m.zone.count, viewTiles);
+      if (perSecond > 0) m.emitter.frequency = 1000 / perSecond;
+      this.setEmitting(m.emitter, perSecond > 0);
+    }
+  }
+
   /** The emit zones follow the camera, and an emitter whose patch left the screen rests. */
   private refreshZones(): void {
     const view = this.cameras.main.worldView;
     this.viewRect.setTo(view.x - 8, view.y - 8, view.width + 16, view.height + 16);
+    if (this.rainNow > 0) this.tuneRain();
     const day = this.night < 0.5;
     if (this.meadowZone && this.butterflies) {
       this.meadowZone.refresh(view);
@@ -2955,18 +3053,27 @@ export class WorldScene extends Phaser.Scene {
     const fog = fogStrength(minute);
     // the day's own sky: clear on some days, one cloud on others, heavy on a few
     const day = Math.floor(s.tick / this.b.params.day_length_ms);
-    const k = this.cloudForce ?? cloudBucket(cloudCover(day));
+    // and the region's weather over it (issue 581): under rain or fog the whole sky is cloud, drawn as one even light
+    const card = cardAt(this.b, s.pos[0], s.pos[1]);
+    const look = skyLook(this.skyForce ?? s.sky(), card);
+    const k = this.cloudForce ?? (look.overcast ? CLOUD_BUCKETS.length - 1 : cloudBucket(cloudCover(day)));
     if (k !== this.cloudDay) {
       this.cloudDay = k;
       for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
     }
     // the night kept readable (the owner, 30.10): the cloud shade is gone by 20:00, so it never stacks on the night
     const clear = k === 0 ? 0 : cloudAt(this.night);
-    for (const c of this.clouds) c.setAlpha(clear);
+    for (const c of this.clouds) c.setAlpha(look.overcast ? 0 : clear);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
     // and a bank cannot stack on it past the fog's cap at night (light.read)
     const fogCap = (this.b.params.light?.read?.fog ?? READ.fog) / 100;
-    this.banks.forEach((b, i) => b.img.setAlpha(bankAt(fog, BANK_WEIGHT[i] ?? 0.9, this.night, fogCap)));
+    this.banks.forEach((b, i) => b.img.setAlpha(bankAt(bankFog(fog, look), BANK_WEIGHT[i] ?? 0.9, this.night, fogCap)));
+    // the rain's light goes with the cloud shade, gone by 20:00, so the night stays the night under every weather
+    if (this.rainWash) {
+      const wash = look.wash ? cloudAt(this.night) : 0;
+      this.rainWash.setVisible(wash > 0).setAlpha(wash);
+    }
+    this.showRain(look.rain);
     // the sway's pass costs a full screen: it runs only while the view holds ground whose colours move (motion.ts)
     if (this.gust) this.gust.setActive(this.swaysInView());
     this.showHazards(s);
@@ -2979,7 +3086,6 @@ export class WorldScene extends Phaser.Scene {
         this.inside.clear();
         this.arrive(s);
       }
-      sound.ambience(isNight ? 'night' : 'day');
       if (isNight) {
         this.flies.start();
         this.motes.stop();
@@ -2987,6 +3093,12 @@ export class WorldScene extends Phaser.Scene {
         this.flies.stop();
         this.motes.start();
       }
+    }
+    // the bed is the region card's for the hour; the cards hold the two beds there are until the owner's sound pick (#464)
+    const bed = card?.ambience[isNight ? 'night' : 'day'] ?? (isNight ? 'night' : 'day');
+    if (bed !== this.bedNow) {
+      this.bedNow = bed;
+      sound.ambience(bed);
     }
   }
 

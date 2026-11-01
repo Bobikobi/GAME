@@ -2358,6 +2358,41 @@ const Prop = (max: number) =>
     { additionalProperties: false },
   );
 
+/** The ambience beds a region card may name until the owner's sound pick (#464): the day and night beds the client has. */
+export const AMBIENCE_BEDS = ['day', 'night'] as const;
+const AmbienceBed = Type.Union(AMBIENCE_BEDS.map((k) => Type.Literal(k)));
+
+/**
+ * A region card (FIRST_MAP's table, issue 581): how a region of the first map weathers and sounds. The odds are
+ * the core's alone (the map is core-only), so a region's sky is never a creator's lever on value.
+ */
+export const RegionCard = Type.Object(
+  {
+    id: { ...WorldId, description: 'The card\'s name, unique on the map; a region (or the map itself) names it in `card`.' },
+    title: Type.String({ minLength: 1, maxLength: 60, description: 'The region as docs/design/FIRST_MAP.md names it in its table, word for word.' }),
+    climate: Type.Optional(Type.Union(CLIMATES.map((c) => Type.Literal(c)), { description: 'The region\'s climate (NATURE section 2). Left out: temperate.' })),
+    weather: Type.Object(
+      {
+        rain: Int(0, 5000, 'Days of rain, in basis points of the days.'),
+        fog: Int(0, 5000, 'Days of fog, in basis points of the days. The rest are clear.'),
+      },
+      { additionalProperties: false, description: 'The odds of each day\'s sky, drawn per region from the world\'s seed (REACTIONS phase B).' },
+    ),
+    look: Type.Object(
+      {
+        rain: Int(0, 2000, 'How much rain is drawn on a rain day, in permille of the decided look (DECISIONS 2026-10-21, "Rain").'),
+        fog: Int(0, 2000, 'How thick the banks lie on a fog day, in permille of the day\'s own banks.'),
+      },
+      { additionalProperties: false, description: 'How the region\'s weather looks: more or less of the drawn rain and mist, never a new kind.' },
+    ),
+    ambience: Type.Object(
+      { day: AmbienceBed, night: AmbienceBed },
+      { additionalProperties: false, description: 'The sound bed by day and by night; the existing beds until the owner\'s sound pick (#464).' },
+    ),
+  },
+  { additionalProperties: false },
+);
+
 export const MapBody = Type.Object(
   {
     climate: Type.Optional(
@@ -2429,6 +2464,7 @@ export const MapBody = Type.Object(
             w: Int(1, 1024),
             h: Int(1, 1024),
             world: Type.Optional({ ...WorldId, description: "The world the region belongs to. Left out: the map's world." }),
+            card: Type.Optional({ ...WorldId, description: 'The region card (`cards`) it weathers and sounds by. Left out: the map\'s own card.' }),
             title: Type.Optional({
               ...Name,
               description: 'The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable.',
@@ -2441,6 +2477,10 @@ export const MapBody = Type.Object(
           description: 'Named rectangles of the map. A tile in none is the map\'s own region. The first region that holds a tile wins.',
         },
       ),
+    ),
+    card: Type.Optional({ ...WorldId, description: 'The region card (`cards`) of the tiles in no region. Left out: the kernel\'s fixed odds and the default beds.' }),
+    cards: Type.Optional(
+      Type.Array(RegionCard, { maxItems: 32, description: 'How each region of the map weathers and sounds (FIRST_MAP\'s table, one card a row).' }),
     ),
     slots: Type.Array(Slot),
   },
@@ -2676,6 +2716,8 @@ export type Kit = Static<typeof KitBody>;
 export type Ramp = Static<typeof RampBody>;
 export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
+export type RegionCardDef = Static<typeof RegionCard>;
+export type AmbienceBedName = (typeof AMBIENCE_BEDS)[number];
 export type CreatureKindDef = Static<typeof CreatureKind>;
 export type HuntDef = Static<typeof Hunt>;
 export type BehaviourDef = Static<typeof Behaviour>;
