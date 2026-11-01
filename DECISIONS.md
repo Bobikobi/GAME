@@ -4123,3 +4123,10 @@ The owner, 1.11 23:20, on the boat's gate: no quest is locked in plain sight beh
 Result: recorded as CR-116, nothing built for it. The working reading treats his example as an allowed condition; he has been asked to confirm it. #627's gate is the opening's town beat, checked by the kernel with no lock on show, because hunting is held by the 1.11 focus.
 Why: DECISIONS 2026-10-22 already opens a region by its quest and never by level; this adds that the gate must not show as a lock.
 **Retry when:** hunting stands (then the boat may take his example), or the owner corrects the reading. Model: claude-opus-5-5. Issue #575.
+
+## 2026-11-01 ✅ The ground is warm: the owner picks the video's yellow-olive for the whole game (#541)
+
+Frame: `docs/design/frames/ground-warm-pick-0111.png`, the warm panel of round 4 (commit bcfb7b4e2 on `trial/grass-clumps`); it is a draw-time filter, and its beds were refused. The direction picked is the ground's colour only.
+Result: page 0111f, 1.11 23:32. Ground: warm over green (hue 56, saturation 0.86, luminance 155 against the reference's 56, 0.84, 157). Beds: no. His note: "יש פסים קטנים בהירים לא ברורים, ויש עדיין צורה עגולה לשיחים במקום שיהיו שיבולים קטנים" (small pale stripes that make no sense; a round shape where there should be small stalks).
+Why: his 14 s video is the bar for ground and grass (2026-10-30), and "Rich wave 3" left the yellower field open as a palette change.
+**Retry when:** round 5 shows stalks on real warm ramps. This compass stands for the polish after it, and the filter does not ship. Model: claude-opus-5-5. Issue #541.
