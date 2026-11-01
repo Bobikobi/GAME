@@ -5,8 +5,11 @@
  *   a) kinds of thing to act on: resource and dig kinds, slot kinds, crossings,
  *      characters, and noted props that pass G8 (a riddle cites them);
  *   b) kinds that move, as the data declares them: a sprite with frames (the
- *      client animates exactly those under `motion`), water, characters, predators;
- *   c) kinds that react to the player: predators, over their reach or their watch.
+ *      client animates exactly those under `motion`), water, characters, predators,
+ *      and the wild's creatures at their anchor spots;
+ *   c) kinds that react to the player: predators, over their reach or their watch,
+ *      and every creature kind that flees a player (`alert_tiles` above 0), at its
+ *      anchor spot only: it roams farther, but the spot is where it is met.
  * Warnings only. Thresholds live in richness.params.json.
  */
 import { readFileSync } from 'node:fs';
@@ -101,6 +104,14 @@ export function richnessWindows(b: Bundle, p: RichnessParams = readRichnessParam
     }
     reacts.push({ kind: hz.id, tiles });
     moves.push({ kind: 'predator', rect: hz.rect });
+  }
+  // the wild (map.creatures): an animal walks, and turns and flees when a player comes near
+  const kinds = b.map.creatures?.kinds ?? {};
+  for (const spot of b.map.creatures?.spots ?? []) {
+    const kind = kinds[spot.kind];
+    if (!kind) continue;
+    moves.push({ kind: `creature:${spot.kind}`, rect: tile(spot.x, spot.y) });
+    if (kind.alert_tiles > 0) reacts.push({ kind: `creature:${spot.kind}`, tiles: new Set([spot.y * width + spot.x]) });
   }
 
   const hit = (t: Rect, x0: number, y0: number, w: number, h: number) => t.x < x0 + w && t.x + t.w > x0 && t.y < y0 + h && t.y + t.h > y0;

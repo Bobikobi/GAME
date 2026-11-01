@@ -53,6 +53,7 @@ type RecordKey =
   | 'npcs'
   | 'quests'
   | 'expeditions'
+  | 'passages'
   | 'restores'
   | 'camps'
   | 'races'
@@ -68,6 +69,7 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   npc: 'npcs',
   quest: 'quests',
   expedition: 'expeditions',
+  passage: 'passages',
   restore: 'restores',
   camp: 'camps',
   race: 'races',
@@ -85,6 +87,7 @@ const BODY_OF: Record<string, string> = {
   npc: 'npc',
   quest: 'quest',
   expedition: 'expedition',
+  passage: 'passage',
   restore: 'restore',
   camp: 'camp',
   race: 'race',
@@ -187,6 +190,43 @@ export function flattenParams(p: ParamsBody): Params {
       grade2_bp: p.hunt.grade2_bp.value,
       grade3_bp: p.hunt.grade3_bp.value,
     },
+    combat: {
+      enabled: p.combat.enabled.value,
+      swing_quick_t: p.combat.swing_quick_t.value,
+      swing_standard_t: p.combat.swing_standard_t.value,
+      swing_heavy_t: p.combat.swing_heavy_t.value,
+      swing_floor_t: p.combat.swing_floor_t.value,
+      bare_windup_t: p.combat.bare_windup_t.value,
+      bare_base: p.combat.bare_base.value,
+      windup_min_t: p.combat.windup_min_t.value,
+      windup_max_t: p.combat.windup_max_t.value,
+      active_t: p.combat.active_t.value,
+      rehit_t: p.combat.rehit_t.value,
+      bite_div: p.combat.bite_div.value,
+      behind_permille: p.combat.behind_permille.value,
+      weak_permille: p.combat.weak_permille.value,
+      mercy_t: p.combat.mercy_t.value,
+      stun_t: p.combat.stun_t.value,
+      knockback_tiles: p.combat.knockback_tiles.value,
+      dodge_tiles: p.combat.dodge_tiles.value,
+      dodge_t: p.combat.dodge_t.value,
+      dodge_cooldown_t: p.combat.dodge_cooldown_t.value,
+      breath_base: p.combat.breath_base.value,
+      breath_per_stamina: p.combat.breath_per_stamina.value,
+      breath_refill: p.combat.breath_refill.value,
+      breath_hold_t: p.combat.breath_hold_t.value,
+      attack_breath: p.combat.attack_breath.value,
+      guard_drain: p.combat.guard_drain.value,
+      guard_hit_breath: p.combat.guard_hit_breath.value,
+      dodge_breath: p.combat.dodge_breath.value,
+      breath_stagger_t: p.combat.breath_stagger_t.value,
+      guard_stagger_t: p.combat.guard_stagger_t.value,
+      engage_tiles: p.combat.engage_tiles.value,
+      leash_tiles: p.combat.leash_tiles.value,
+      give_up_t: p.combat.give_up_t.value,
+      claim_lock_t: p.combat.claim_lock_t.value,
+      pay_per_s_mg: p.combat.pay_per_s_mg.value,
+    },
     wild: {
       tick_ms: p.wild.tick_ms.value,
       think_ticks: p.wild.think_ticks.value,
@@ -264,6 +304,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     npcs: {},
     quests: {},
     expeditions: {},
+    passages: {},
     restores: {},
     camps: {},
     races: {},
@@ -679,6 +720,20 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     });
     (x.reward.opens ?? []).forEach((rid, i) => {
       if (!b.restores[rid]) err(id, `expedition.reward.opens.${i}`, `no restore "${rid}"`);
+    });
+  }
+  const exits = new Set((b.map.plan?.exits ?? []).map((x) => x.id));
+  for (const [id, p] of Object.entries(b.passages)) {
+    if (!exits.has(p.from)) err(id, 'passage.from', `no exit "${p.from}" in the map plan`);
+    if (p.to !== undefined && !exits.has(p.to)) err(id, 'passage.to', `no exit "${p.to}" in the map plan`);
+    if (p.fare) item(id, 'passage.fare.item', p.fare.item);
+    p.events.forEach((e, i) => {
+      const w = `passage.events.${i}`;
+      if (e.act.kind === 'bring') item(id, `${w}.act.item`, e.act.item);
+      (e.reward.items ?? []).forEach((s, k) => {
+        item(id, `${w}.reward.items.${k}`, s.item);
+        if (s.instead !== undefined) item(id, `${w}.reward.items.${k}.instead`, s.instead);
+      });
     });
   }
   const opened = new Set([
