@@ -8,6 +8,7 @@ import {
   FOG_DAY_FLOOR,
   LANDING,
   RAIN_HEAD,
+  RAIN_LENGTH,
   RAIN_MAX,
   RAIN_RGB,
   RAIN_TAIL,
@@ -52,12 +53,12 @@ describe('the look of a day\'s sky', () => {
 });
 
 describe('the rain of 21.10', () => {
-  test('drops cover 2.5% of a phone\'s view at the full look, and a wide screen is capped', () => {
+  test('about 140 drops over a phone\'s view at the full look, at a card\'s share, and a wide screen is capped', () => {
     // a phone at four screen pixels to the world's: about 97 by 211 world units
-    expect(dropsAlive(97 * 211, 1)).toBe(256);
-    expect(dropsAlive(97 * 211, 0.5)).toBe(128);
+    expect(dropsAlive(97 * 211, 1)).toBe(143);
+    expect(dropsAlive(97 * 211, 0.5)).toBe(72);
     expect(dropsAlive(97 * 211, 0)).toBe(0);
-    expect(dropsAlive(480 * 270, 1)).toBe(RAIN_MAX);
+    expect(dropsAlive(960 * 540, 1)).toBe(RAIN_MAX);
   });
 
   test('marks land on a surface in proportion to its share of the view', () => {
@@ -65,12 +66,16 @@ describe('the rain of 21.10', () => {
     expect(landingsPerSecond(256, 50, 100)).toBeCloseTo(landingsPerSecond(256, 100, 100) / 2);
   });
 
-  test('the streak leans with the wind, its head at 78% and its tail at 55%', () => {
+  test('the streak is long and one pixel thin, leans with the wind, and fades from its head to its tail', () => {
     const s = streakPixels();
-    expect(s.px).toEqual([
-      { x: 0, y: 0, rgb: RAIN_RGB, a: RAIN_TAIL },
-      { x: 1, y: 1, rgb: RAIN_RGB, a: RAIN_HEAD },
-    ]);
+    expect(s.h).toBe(RAIN_LENGTH);
+    expect(s.px).toHaveLength(RAIN_LENGTH);
+    expect(new Set(s.px.map((p) => p.y)).size).toBe(RAIN_LENGTH);
+    expect(s.px.at(-1)!.x).toBeGreaterThan(s.px[0]!.x);
+    expect(s.px[0]!.a).toBeCloseTo(RAIN_TAIL);
+    expect(s.px.at(-1)!.a).toBeCloseTo(RAIN_HEAD);
+    // cooler than the sky is white: blue leads red
+    expect(RAIN_RGB & 0xff).toBeGreaterThan(RAIN_RGB >> 16);
   });
 
   test('each surface answers its own way: stone a ring, a crown and a dark centre; water a ripple and no crown; sand no shine', () => {

@@ -72,7 +72,7 @@ import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
 import type { GameSession } from '../session-surface';
 import type { WeatherName } from '@game/schema';
-import { LANDING, LANDINGS, MARK_LIFE, RAIN_FALL, RAIN_LIFE, RAIN_MAX, type Landing, bankFog, dropsAlive, landingsPerSecond, markPixels, skyLook, streakPixels, washRgb } from '../rain';
+import { LANDING, LANDINGS, MARK_LIFE, RAIN_FALL, RAIN_LIFE, RAIN_MAX, RAIN_SLANT, type Landing, bankFog, dropsAlive, landingsPerSecond, markPixels, skyLook, streakPixels, washRgb } from '../rain';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
 import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '../flicker';
@@ -2579,13 +2579,14 @@ export class WorldScene extends Phaser.Scene {
         .setVisible(false);
     }
     if (!RICH.motion) return;
-    const fall = RAIN_FALL * Math.SQRT1_2;
+    const lean = Math.hypot(1, RAIN_SLANT);
     this.rainDrops = this.add
       .particles(0, 0, 'fx-rain', {
         emitZone: { type: 'random', source: this.viewRect, quantity: 1 },
         lifespan: RAIN_LIFE,
-        speedX: fall,
-        speedY: fall,
+        speedX: RAIN_FALL / lean,
+        speedY: (RAIN_FALL * RAIN_SLANT) / lean,
+        scale: 1 / AIR_DENSITY,
         frequency: 1000,
         emitting: false,
         maxAliveParticles: RAIN_MAX,
@@ -2597,7 +2598,8 @@ export class WorldScene extends Phaser.Scene {
         .particles(0, 0, `fx-land-${kind}`, {
           emitZone: { type: 'random', source: zone, quantity: 1 },
           lifespan: MARK_LIFE,
-          alpha: { start: 1, end: 0 },
+          scale: 1 / AIR_DENSITY,
+          alpha: { start: 1, end: 0.2 },
           frequency: 1000,
           emitting: false,
         })
@@ -3066,7 +3068,10 @@ export class WorldScene extends Phaser.Scene {
     const fogCap = (this.b.params.light?.read?.fog ?? READ.fog) / 100;
     this.banks.forEach((b, i) => b.img.setAlpha(bankAt(bankFog(fog, look), BANK_WEIGHT[i] ?? 0.9, this.night, fogCap)));
     // the rain's light goes with the cloud shade, gone by 20:00, so the night stays the night under every weather
-    if (this.rainWash) this.rainWash.setVisible(look.wash && clear > 0).setAlpha(look.wash ? clear : 0);
+    if (this.rainWash) {
+      const wash = look.wash ? cloudAt(this.night) : 0;
+      this.rainWash.setVisible(wash > 0).setAlpha(wash);
+    }
     this.showRain(look.rain);
     // the sway's pass costs a full screen: it runs only while the view holds ground whose colours move (motion.ts)
     if (this.gust) this.gust.setActive(this.swaysInView());

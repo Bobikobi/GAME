@@ -8,24 +8,28 @@
  */
 import type { RegionCardDef, WeatherName } from '@game/schema';
 
-/** The drop's colour, `#c4ecf8`, at 78% at the head and 55% at the tail (Rain A). */
-export const RAIN_RGB = 0xc4ecf8;
-export const RAIN_HEAD = 0.78;
-export const RAIN_TAIL = 0.55;
-/** Share of the view's art pixels the drops cover at a card's full look: Rain A measured 2.5%. A streak is 2 px. */
-export const RAIN_COVER = 0.025;
-/** How fast a drop falls along its streak's own 45 degree line, right and down with the wind, in world units a second. */
-export const RAIN_FALL = 140;
+/**
+ * The drop's colour, and its alpha from tail to head. The 21.10 pick was 2 px at `#c4ecf8`; on the rich grid at phone
+ * size that read as snow, so a streak is long, thin and cooler (the manager's review of #629, beside a storm in a big
+ * pixel game: long thin blue dashes, few of them).
+ */
+export const RAIN_RGB = 0xa4cdec;
+export const RAIN_HEAD = 0.72;
+export const RAIN_TAIL = 0.15;
+/** A streak's length in art pixels, and how many pixels it falls for each one it leans with the wind. */
+export const RAIN_LENGTH = 14;
+export const RAIN_SLANT = 3;
+/** Drops alive per square world unit at a card's full look: about 140 over a phone's view. */
+export const RAIN_DENSITY = 0.007;
+/** How fast a drop falls along its streak's own line, right and down with the wind, in world units a second. */
+export const RAIN_FALL = 220;
 /** A drop's life in the air and a mark's on the ground, ms. */
 export const RAIN_LIFE = 300;
-export const MARK_LIFE = 260;
+export const MARK_LIFE = 340;
 /** The most drops alive at once, so a wide screen pays for no more than the eye reads. */
 export const RAIN_MAX = 600;
-/**
- * Marks a second for every drop a second. Rain B measured the marks at 1.6% of the frame against the drops' 2.5%,
- * at about 6 px a mark against 2 a streak: a fifth as many alive, and a quarter as many born at these lives.
- */
-export const LANDING_PER_DROP = 0.25;
+/** Marks a second for every drop a second. Fewer, longer drops than the 21.10 stills, so a larger share of them lands in sight. */
+export const LANDING_PER_DROP = 0.5;
 /** The rain's light (NATURE 4, the Rain row): the day minus 30%, cool, `#275a99` at 15%. */
 export const RAIN_WASH = { rgb: 0x275a99, alpha: 0.15, dim: 0.3 } as const;
 /** A fog day keeps the banks across the view all day (NATURE 4, the Fog row), at least this share of their dawn weight. */
@@ -72,9 +76,9 @@ export function bankFog(fog: number, look: SkyLook): number {
   return Math.min(1, Math.max(fog, look.fogFloor) * look.fogScale);
 }
 
-/** Drops alive over a view of this many square world units (one art pixel each at 16 a tile). */
+/** Drops alive over a view of this many square world units. */
 export function dropsAlive(area: number, rain: number): number {
-  return Math.min(RAIN_MAX, Math.round((area * RAIN_COVER * rain) / 2));
+  return Math.min(RAIN_MAX, Math.round(area * RAIN_DENSITY * rain));
 }
 
 /** Marks a second on the tiles of one landing in view, out of all the tiles the view holds. */
@@ -106,22 +110,20 @@ const INK = 0x1b1a2e;
 /** A mark's pixels in whole art pixels: `h` the drop's head, `t` its tail, `r` a ring at 60%, `d` the dark of a dent. */
 const INKS: Readonly<Record<string, { rgb: number; a: number }>> = {
   h: { rgb: RAIN_RGB, a: RAIN_HEAD },
-  t: { rgb: RAIN_RGB, a: RAIN_TAIL },
+  t: { rgb: RAIN_RGB, a: 0.55 },
   r: { rgb: RAIN_RGB, a: 0.6 },
-  d: { rgb: INK, a: 0.35 },
+  d: { rgb: INK, a: 0.45 },
 };
 
-/** The streak, tail up and left, head down and right: the 45 degree line it falls along. */
-const STREAK = ['t.', '.h'];
 const MARKS: Readonly<Record<Landing, readonly string[]>> = {
   // stone: a ring with its crown thrown up and a dark centre
   ring: ['..h..', '.rrr.', 'r.d.r', '.rrr.'],
   // water: a flat ripple, no crown
   ripple: ['.rrr.', 'r...r', '.rrr.'],
-  // grass: one drop in the blades
-  drop: ['h', 't'],
+  // grass: a small crown thrown up out of the blades
+  drop: ['h...h', '.t.t.', '..r..'],
   // sand and earth: a dimple and no shine
-  dimple: ['dd'],
+  dimple: ['.ddd.', 'ddddd', '.ddd.'],
 };
 
 function pixels(rows: readonly string[]): MarkPixel[] {
@@ -135,9 +137,13 @@ function pixels(rows: readonly string[]): MarkPixel[] {
   return out;
 }
 
-/** The streak's texture: its size and pixels. */
+/** The streak's texture, tail up and left, head down and right along the line it falls: its size and pixels. */
 export function streakPixels(): { w: number; h: number; px: MarkPixel[] } {
-  return { w: STREAK[0]!.length, h: STREAK.length, px: pixels(STREAK) };
+  const px: MarkPixel[] = [];
+  for (let y = 0; y < RAIN_LENGTH; y++) {
+    px.push({ x: Math.floor(y / RAIN_SLANT), y, rgb: RAIN_RGB, a: RAIN_TAIL + ((RAIN_HEAD - RAIN_TAIL) * y) / (RAIN_LENGTH - 1) });
+  }
+  return { w: Math.floor((RAIN_LENGTH - 1) / RAIN_SLANT) + 1, h: RAIN_LENGTH, px };
 }
 
 /** A landing's texture: its size and pixels. */
