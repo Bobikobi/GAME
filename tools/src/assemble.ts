@@ -139,6 +139,8 @@ export function flattenParams(p: ParamsBody): Params {
     day_length_ms: p.day_length_ms.value,
     walk_step_ms: p.walk_step_ms.value,
     move_reach_max: p.move_reach_max?.value ?? 32,
+    pay_gap_ms: p.pay_gap_ms?.value ?? 90000,
+    pay_sight_tiles: p.pay_sight_tiles?.value ?? 5,
     hp_low_pct: p.hp_low_pct.value,
     fire: {
       cap: p.fire.cap.value,

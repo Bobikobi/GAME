@@ -141,6 +141,10 @@ export interface Params {
   walk_step_ms: number;
   /** maximum path length allowed for a move report; defaults to 32 for older content */
   move_reach_max: number;
+  /** pillar 1's ceiling in game milliseconds: the longest walk without a pay the pay-gap check (G62) allows; defaults to 90000 for older content */
+  pay_gap_ms: number;
+  /** tiles away at which a pay is already on screen, added to the pay-gap check's allowance (G62); defaults to 5 for older content */
+  pay_sight_tiles: number;
   /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
   hp_low_pct: number;
   /** safe_tiles: the ring of safe ground around the player's own fire while it burns; burn_pct_per_d: how much faster its logs burn for each step of the area's danger, in percent */
