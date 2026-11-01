@@ -11,6 +11,7 @@
     "check": "tsx tools/src/cli.ts check",
     "sheet": "tsx tools/src/sheet.ts",
     "values": "tsx tools/src/cli.ts values",
+    "world:lock": "tsx tools/src/cli.ts lock",
     "bundle": "tsx tools/src/cli.ts bundle",
     "schemas": "tsx schema/src/emit.ts",
     "dev": "pnpm bundle && pnpm --filter game dev",
