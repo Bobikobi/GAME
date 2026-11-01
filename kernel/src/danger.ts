@@ -178,11 +178,19 @@ export function isTownTile(bundle: Bundle, at: Tile): boolean {
 }
 
 /**
- * The danger level d of the ground at a tile. Areas carry none yet (CR-38): it is 0 where ground is safe by itself
- * (the town and the safe slots) and 1 everywhere else, until the map fills it in. Every rule that reads d reads it here.
+ * The danger level d of the ground at a tile (G64, CR-38): 0 where ground is safe by itself (the town and the safe
+ * slots), else the `danger` of the smallest area slot that covers it, else 1 for wild ground in no area. Every rule
+ * that reads d reads it here.
  */
 export function dangerAt(bundle: Bundle, at: Tile): number {
-  return isSafeGround(bundle, at, false) ? 0 : 1;
+  if (isSafeGround(bundle, at, false)) return 0;
+  let found: { d: number; size: number } | undefined;
+  for (const s of bundle.map.slots) {
+    if (s.kind !== 'area' || s.danger === undefined || !inRect(at[0], at[1], s)) continue;
+    const size = s.w * s.h;
+    if (!found || size < found.size) found = { d: s.danger, size };
+  }
+  return found ? found.d : 1;
 }
 
 /** The tiles a fire on `at` makes safe while it burns: its own and the ring of `fire.safe_tiles` around it, inside the map. */
