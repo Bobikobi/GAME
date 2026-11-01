@@ -243,3 +243,17 @@ describe('a fire out (6b)', () => {
     expect(go(here, 460_000)).toEqual([]);
   });
 });
+
+describe('a named area is named once (G63)', () => {
+  test('the visit toast stays down once the banner has named the place, and speaks for one it has not', () => {
+    const s = newState(bundle, 1);
+    const visit: GameEvent = { e: 'visit', slot: 'core/town-square' };
+    expect(eventToasts(bundle, s, [visit]).map((t) => t.lines)).toEqual([['You reached the Town square']]);
+    s.player.seen = ['core/town-square'];
+    expect(eventToasts(bundle, s, [visit])).toEqual([]);
+  });
+
+  test('the first entry tells no toast of its own: the banner is its word', () => {
+    expect(eventToasts(bundle, newState(bundle, 1), [{ e: 'place', id: 'core/town-square' }])).toEqual([]);
+  });
+});
