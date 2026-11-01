@@ -1,5 +1,5 @@
 /**
- * The weapon block (WEAPONS 3; appendix row 1): eight closed fields, no class field, every bound held by
+ * The weapon block (WEAPONS 3; appendix row 1): seven closed fields, no class field, every bound held by
  * the schema. The check refuses every weapon block in content until combat (G35, G44); here only the shape.
  */
 import { describe, expect, it } from 'vitest';
@@ -30,7 +30,6 @@ describe('the weapon block', () => {
     for (const harm of [0, 1000]) expect(check({ ...base, harm })).toEqual([]);
     for (const range of [2, 12]) expect(check({ ...base, range })).toEqual([]);
     for (const noise of [0, 12]) expect(check({ ...base, noise })).toEqual([]);
-    for (const uses of [1, 1000]) expect(check({ ...base, uses })).toEqual([]);
     for (const ammo of ['tool', 'core/arrow']) expect(check({ ...base, ammo })).toEqual([]);
   });
 
@@ -47,19 +46,21 @@ describe('the weapon block', () => {
       ['range', 13],
       ['noise', -1],
       ['noise', 13],
-      ['uses', 0],
-      ['uses', 1001],
     ];
     for (const [field, value] of past) expect(pathsOf({ ...base, [field]: value })).toContain(`/items/0/weapon/${field}`);
   });
 
-  it('refuses an unknown tempo, a class key and a missing tempo', () => {
+  it('refuses an unknown tempo, a class key, a uses key and a missing tempo', () => {
     expect(check(base)).toEqual([]);
     expect(pathsOf({ ...base, tempo: 'slow' })).toContain('/items/0/weapon/tempo');
     // the class is the item's own (WEAPONS 3): the block is closed
     const withClass = pathsOf({ ...base, class: 'core/spear' });
     expect(withClass.length).toBeGreaterThan(0);
     expect(withClass.every((p) => p.startsWith('/items/0/weapon/'))).toBe(true);
+    // a hand never wears (WEAPONS 7, owner question 7): the block has no uses
+    const withUses = pathsOf({ ...base, uses: 100 });
+    expect(withUses.length).toBeGreaterThan(0);
+    expect(withUses.every((p) => p.startsWith('/items/0/weapon/'))).toBe(true);
     const { tempo: _tempo, ...noTempo } = base;
     const missing = pathsOf(noTempo);
     expect(missing.length).toBeGreaterThan(0);

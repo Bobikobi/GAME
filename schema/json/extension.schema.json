@@ -424,12 +424,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -1475,12 +1469,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -2492,12 +2480,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -3452,12 +3434,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -4503,12 +4479,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -5736,12 +5706,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -7248,12 +7212,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -8224,12 +8182,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -9193,12 +9145,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -10122,12 +10068,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -11183,12 +11123,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -12013,12 +11947,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -12939,12 +12867,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -14173,12 +14095,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -15048,12 +14964,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -16028,12 +15938,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -20918,12 +20822,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -21967,12 +21865,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }
@@ -24510,12 +24402,6 @@
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
                     "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
-                    "type": "integer"
                   }
                 }
               },
@@ -25427,12 +25313,6 @@
                     "minimum": 0,
                     "maximum": 12,
                     "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
-                    "type": "integer"
-                  },
-                  "uses": {
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "description": "Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).",
                     "type": "integer"
                   }
                 }

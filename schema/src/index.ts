@@ -254,6 +254,7 @@ export const Wear = Type.Object(
 export const WEAPON_TEMPOS = ['quick', 'standard', 'heavy'] as const;
 /**
  * A hand that strikes (WEAPONS 3). Closed, like the `tool` block, and with no class field: the class is the item's own.
+ * No `uses`: a hand never wears (WEAPONS 7, owner question 7).
  * Every weapon block in content is refused until combat (G35, G44); the grammar lands first.
  */
 export const Weapon = Type.Object(
@@ -270,7 +271,6 @@ export const Weapon = Type.Object(
       description: 'The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with the first shot (WEAPONS 6).',
     }),
     noise: Type.Optional(Int(0, 12, 'Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).')),
-    uses: Type.Optional(Int(1, 1000, 'Landed hits before it breaks; left out, it lasts (WEAPONS 3, 7).')),
   },
   {
     additionalProperties: false,
