@@ -63,6 +63,7 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
+import { LOOKS, scatterTufts, tuftFrame, type Tuft } from '../tufts';
 import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
 import { deepTile } from '../waterbody';
 import { plantLook, TUFTS } from '../plantlook';
@@ -389,6 +390,8 @@ export class WorldScene extends Phaser.Scene {
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
+  /** the meadow's tufts and the lean frame each shows now */
+  private tufts: { spr: Phaser.GameObjects.Sprite; t: Tuft; frame: number }[] = [];
   private blinks: Blink[] = [];
   private breathers: Breather[] = [];
   private glows: Glow[] = [];
@@ -518,6 +521,7 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.light) this.light = new LightLayer(this, this.lightTable, { floor: (read?.floor ?? READ.floor) / 100 }, { shade: DEPTH.shade, pools: DEPTH.shade + 0.2 });
     this.buildGround();
     this.buildProps();
+    this.buildTufts();
     this.buildNodes();
     this.buildNpcs();
     this.buildRestores();
@@ -1060,6 +1064,19 @@ export class WorldScene extends Phaser.Scene {
     this.waterFrame = (this.waterFrame + 1) % this.groundFrames;
     if (this.chunks) this.chunks.setFrame(this.waterFrame);
     else this.ground.setTexture(`ground-${this.waterFrame}`);
+  }
+
+  /**
+   * The meadow's grass tufts (tufts.ts): low clumps laid on the ground, under every prop and walker (a ground motif, never outlined),
+   * each leaning with the wind wave. With motion off they hold frame 0.
+   */
+  private buildTufts(): void {
+    for (const t of scatterTufts(this.b.map)) {
+      const ref = `core/base-kit:tiles/${LOOKS[t.look]}`;
+      if (!this.textures.exists(ref)) continue;
+      const spr = kitSprite(this, t.x, t.y, ref, 0).setOrigin(0.5, 1).setDepth(DEPTH.ground + 0.5);
+      this.tufts.push({ spr, t, frame: 0 });
+    }
   }
 
   private buildProps(): void {
@@ -2394,6 +2411,14 @@ export class WorldScene extends Phaser.Scene {
       if (frames < 2) continue;
       c.frame = (c.frame + 1) % frames;
       c.spr.setFrame(c.frame);
+    }
+    if (RICH.motion) {
+      for (const u of this.tufts) {
+        const f = tuftFrame(u.t, time);
+        if (f === u.frame) continue;
+        u.frame = f;
+        u.spr.setFrame(f);
+      }
     }
     for (const b of this.blinks) {
       const closed = blinking(RICH.motion, b.id, time);
