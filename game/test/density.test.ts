@@ -9,7 +9,7 @@ import { CHUNK, chunkRange } from '../src/groundchunks';
 import { adopt, baseOf, baseScale, densityOf, rel, retex, setRel, unitOf } from '../src/kitart';
 import { GREENS, remapTone } from '../src/richground';
 import { heightOf } from '../src/targets';
-import { cameraK, cameraZoom, deviceSize, ratioOf, worldToPage } from '../src/view';
+import { cameraK, cameraZoom, deviceSize, ratioOf, WHEEL_STEPS, wheelStep, wheelZoom, worldToPage } from '../src/view';
 
 describe('the camera: k = max(1, floor(S / 576)), zoom 4 * ceil(1.5k)', () => {
   // S is the canvas's shorter side in device pixels; the screen's own step k, and the picked closer view (DECISIONS 2026-10-25)
@@ -227,5 +227,30 @@ describe('the tone remap on a 64 px frame', () => {
     const copy = data.slice();
     remapTone(data, 64, 2);
     expect(data).toEqual(copy);
+  });
+});
+
+describe('the wheel: whole steps from the default view up to k + 2, and back out to it', () => {
+  const short = 900; // a 1440 x 900 window at 1x: k 1, the default view 8
+  test('a notch in comes one step closer, a notch out one step back, held to 0..2', () => {
+    let step = 0;
+    const seen: number[] = [];
+    for (const dy of [-100, -100, -100, 100, 100, 100, 100]) {
+      step = wheelStep(step, dy);
+      seen.push(wheelZoom(short, step));
+    }
+    expect(seen).toEqual([12, 16, 16, 12, 8, 8, 8]);
+    expect(wheelStep(1, 0)).toBe(1);
+  });
+  test.each([450, 576, 900, 1080, 1170, 2160])('every step is a multiple of 4 and never under the default, at a short side of %i', (side) => {
+    const base = cameraZoom(side);
+    for (let step = -3; step <= 5; step++) {
+      const zoom = wheelZoom(side, step);
+      expect(zoom % 4).toBe(0);
+      expect(zoom).toBeGreaterThanOrEqual(base);
+      expect(zoom).toBeLessThanOrEqual(base + 4 * WHEEL_STEPS);
+    }
+    expect(wheelZoom(side, 0)).toBe(base);
+    expect(wheelZoom(side, WHEEL_STEPS)).toBe(base + 8);
   });
 });

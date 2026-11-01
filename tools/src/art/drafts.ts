@@ -50,7 +50,14 @@ const DRAFTS_PER_RELEASE = 300;
 export interface FileRef {
   sha256: string;
   bytes: number;
+  /** The file's extension when it is not `.png` (`.jpg`, `.webp`, `.glb`): the asset in the store keeps it. */
+  ext?: string;
 }
+
+/** The extensions a draft may have, as the stray check names them; a PNG is the common case and needs no `ext`. */
+export const DRAFT_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.glb'] as const;
+/** A picture or model over this many bytes is not pushed (a raw photoscan runs to hundreds of megabytes). */
+export const MAX_DRAFT_BYTES = 100 * 1024 * 1024;
 
 export interface Stored {
   repo: string;
@@ -140,8 +147,8 @@ export function pngDims(png: Buffer): [number, number] | null {
   return [png.readUInt32BE(16), png.readUInt32BE(20)];
 }
 
-function fileRef(data: Buffer): FileRef {
-  return { sha256: sha256Hex(data), bytes: data.length };
+function fileRef(data: Buffer, ext = '.png'): FileRef {
+  return { sha256: sha256Hex(data), bytes: data.length, ...(ext === '.png' ? {} : { ext }) };
 }
 
 /* ---- the index: read, fold, append ---- */
@@ -502,21 +509,24 @@ export interface PictureOptions extends CollectOptions {
  */
 export function collectPictures(files: readonly string[], opts: PictureOptions): Collected[] {
   return files.flatMap((file) => {
+    const ext = extname(file).toLowerCase();
     const raw = readIf(file);
-    if (raw === null || pngDims(raw) === null) {
-      opts.skipped?.push({ name: basename(file), why: raw === null ? 'the file is not on disk' : 'not a PNG' });
+    const isPng = ext === '.png';
+    if (raw === null || (isPng && pngDims(raw) === null) || !(DRAFT_EXTENSIONS as readonly string[]).includes(ext) || raw.length > MAX_DRAFT_BYTES) {
+      const why = raw === null ? 'the file is not on disk' : raw.length > MAX_DRAFT_BYTES ? `over the ${MAX_DRAFT_BYTES / 1024 / 1024} MB cap` : isPng ? 'not a PNG' : 'not a picture or model';
+      opts.skipped?.push({ name: basename(file), why });
       return [];
     }
-    const side = readJson(file.replace(/\.png$/, '.json'));
+    const side = readJson(file.slice(0, file.length - ext.length) + '.json');
     const text = (k: string): string | null => (typeof side?.[k] === 'string' ? (side[k] as string) : null);
     const name = basename(file, extname(file));
     const date = text('date');
     return [{
       record: {
         id: draftId(raw), pool: opts.pool ?? null, name, spec: null, round: null, route: opts.route ?? null, recipe: text('tool'),
-        model: null, model_version: null, seed: null, denoise: null, canvas: pngDims(raw), asked: null, ramps: null,
+        model: null, model_version: null, seed: null, denoise: null, canvas: isPng ? pngDims(raw) : null, asked: null, ramps: null,
         prompt: text('prompt'), negative: null, warnings: [], errors: [], run: null,
-        files: { raw: fileRef(raw), full: null, imported: null }, stored: null, review: 'unreviewed', at: date,
+        files: { raw: fileRef(raw, ext), full: null, imported: null }, stored: null, review: 'unreviewed', at: date,
         sources: [{ label: opts.label, spec: null, run: basename(dirname(file)), file: basename(file), at: date, provenance: opts.provenance ?? null }],
       },
       paths: { raw: file, full: null, imported: null },
@@ -551,8 +561,8 @@ export const realGh: Gh = (args) => {
   return { status: run.status, stdout: run.stdout ?? '', stderr: run.stderr ?? '' };
 };
 
-export function assetName(id: string, kind: FileKind): string {
-  return kind === 'raw' ? `${id}.png` : `${id}.${kind}.png`;
+export function assetName(id: string, kind: FileKind, ext = '.png'): string {
+  return kind === 'raw' ? `${id}${ext}` : `${id}.${kind}${ext}`;
 }
 
 /** Waits in seconds; replaced in tests. */
@@ -639,7 +649,7 @@ export function pushCollected(items: readonly Collected[], index: DraftIndex, op
       const chunk = all.slice(part * DRAFTS_PER_RELEASE, (part + 1) * DRAFTS_PER_RELEASE);
       const uploads = chunk.flatMap((item) => FILE_KINDS.flatMap((kind) => {
         const path = item.paths[kind];
-        return path === null ? [] : [{ item, kind, path, name: assetName(item.record.id, kind) }];
+        return path === null ? [] : [{ item, kind, path, name: assetName(item.record.id, kind, item.record.files[kind]?.ext) }];
       }));
       say(`${tag}: ${chunk.length} drafts, ${uploads.length} files`);
       report.tags.push(tag);
@@ -675,7 +685,7 @@ export function pushCollected(items: readonly Collected[], index: DraftIndex, op
       if (lost.length > 0) throw new Error(`${tag} is missing ${lost.length} assets after the upload (first: ${lost[0]?.name ?? ''})`);
       for (const item of chunk) {
         const assets: Stored['assets'] = {};
-        for (const kind of FILE_KINDS) if (item.paths[kind] !== null) assets[kind] = assetName(item.record.id, kind);
+        for (const kind of FILE_KINDS) if (item.paths[kind] !== null) assets[kind] = assetName(item.record.id, kind, item.record.files[kind]?.ext);
         index.add({ ...item.record, stored: { repo, tag, assets } });
         report.uploaded += 1;
       }
@@ -688,8 +698,8 @@ export function pushCollected(items: readonly Collected[], index: DraftIndex, op
 
 export interface FetchReport { fetched: number; present: number; missing: { id: string; kind: FileKind; why: string }[] }
 
-function cachePath(cache: string, id: string, kind: FileKind): string {
-  return join(cache, assetName(id, kind));
+function cachePath(cache: string, id: string, kind: FileKind, ext?: string): string {
+  return join(cache, assetName(id, kind, ext));
 }
 
 /** Fill the cache from the releases. Only what is missing is asked for; a file already there is never overwritten. */
@@ -698,11 +708,12 @@ export function fetchDrafts(index: DraftIndex, ids: readonly string[] | null, op
   const cache = opts.cache ?? CACHE_DIR;
   mkdirSync(cache, { recursive: true });
   const report: FetchReport = { fetched: 0, present: 0, missing: [] };
-  const wanted = new Map<string, { id: string; kind: FileKind; asset: string }[]>();
+  const wanted = new Map<string, { id: string; kind: FileKind; asset: string; ext?: string }[]>();
   for (const draft of ids === null ? index.drafts.values() : ids.flatMap((id) => index.drafts.get(id) ?? [])) {
     for (const kind of FILE_KINDS) {
-      if (draft.files[kind] === null) continue;
-      if (existsSync(cachePath(cache, draft.id, kind))) {
+      const ref = draft.files[kind];
+      if (ref === null) continue;
+      if (existsSync(cachePath(cache, draft.id, kind, ref.ext))) {
         report.present += 1;
         continue;
       }
@@ -711,7 +722,7 @@ export function fetchDrafts(index: DraftIndex, ids: readonly string[] | null, op
         report.missing.push({ id: draft.id, kind, why: 'not stored in the drafts repo' });
         continue;
       }
-      wanted.set(draft.stored.tag, [...(wanted.get(draft.stored.tag) ?? []), { id: draft.id, kind, asset }]);
+      wanted.set(draft.stored.tag, [...(wanted.get(draft.stored.tag) ?? []), { id: draft.id, kind, asset, ...(ref.ext === undefined ? {} : { ext: ref.ext }) }]);
     }
   }
   for (const [tag, files] of wanted) {
@@ -720,7 +731,7 @@ export function fetchDrafts(index: DraftIndex, ids: readonly string[] | null, op
       opts.say?.(`fetch ${tag}: ${i + batch.length}/${files.length}`);
       const got = retry(gh, ['release', 'download', tag, '--repo', DRAFTS_REPO, '--dir', cache, ...batch.flatMap((f) => ['-p', f.asset])]);
       for (const f of batch) {
-        if (existsSync(cachePath(cache, f.id, f.kind))) report.fetched += 1;
+        if (existsSync(cachePath(cache, f.id, f.kind, f.ext))) report.fetched += 1;
         else report.missing.push({ id: f.id, kind: f.kind, why: got.status === 0 ? 'the release has no such asset' : `download failed: ${got.stderr.trim().slice(0, 120)}` });
       }
     }
@@ -749,7 +760,7 @@ export function verifyDrafts(index: DraftIndex, ids: readonly string[] | null, o
     for (const kind of FILE_KINDS) {
       const ref = draft.files[kind];
       if (ref === null) continue;
-      const file = readIf(cachePath(cache, draft.id, kind));
+      const file = readIf(cachePath(cache, draft.id, kind, ref.ext));
       if (file === null) {
         if (draft.stored == null) {
           if (!kept && !report.unpushed.includes(draft.id)) report.unpushed.push(draft.id);
@@ -894,7 +905,7 @@ function listPictures(dir: string, recursive: boolean): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = join(dir, e.name);
     if (e.isDirectory()) return recursive ? listPictures(p, true) : [];
-    return e.isFile() && e.name.endsWith('.png') ? [p] : [];
+    return e.isFile() && (DRAFT_EXTENSIONS as readonly string[]).includes(extname(e.name).toLowerCase()) ? [p] : [];
   }).sort();
 }
 
@@ -930,10 +941,15 @@ export function runCli(argv: readonly string[]): number {
       const base = { label, ...(provenance === undefined ? {} : { provenance }), hints, skipped, roundFromFolder: flags.has('round-from-folder') };
       const items: Collected[] = [];
       for (const target of positional) {
-        if (existsSync(join(target, 'manifest.jsonl'))) items.push(...collectRun(target, base));
-        else {
-          const files = statSync(target).isDirectory() ? listPictures(target, flags.has('recursive')) : [target];
-          items.push(...collectPictures(files, { ...base, pool: text('pool') ?? null, route: text('route') ?? null }));
+        const pictureOpts = { ...base, pool: text('pool') ?? null, route: text('route') ?? null };
+        const recursive = flags.has('recursive');
+        if (existsSync(join(target, 'manifest.jsonl'))) {
+          items.push(...collectRun(target, base));
+          // a run folder's own manifest names only its sprites; with --recursive the sub-folders (refinements, references) are read too
+          if (recursive) items.push(...collectPictures(listPictures(target, true), pictureOpts));
+        } else {
+          const files = statSync(target).isDirectory() ? listPictures(target, recursive) : [target];
+          items.push(...collectPictures(files, pictureOpts));
         }
       }
       const tag = text('tag') ?? (flags.has('backfill') ? `run-backfill-${label}` : undefined);

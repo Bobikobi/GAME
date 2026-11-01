@@ -76,7 +76,7 @@ describe('the stray art check', () => {
 
   test('build output and captures are skipped by directory name, a draft beside them is still counted', () => {
     const wt = worktree('skip');
-    for (const dir of ['signin-dist', 'dist', 'dist-3d', 'e2e3d', 'shots-before']) {
+    for (const dir of ['signin-dist', 'dist', 'dist-3d', 'e2e3d', 'shots-before', 'refs', 'ref-natural-joins', 'stills2', 'owner-page-3010', 'tint-pick']) {
       mkdirSync(join(wt, '.scratch', dir), { recursive: true });
       writeFileSync(join(wt, '.scratch', dir, 'out.png'), png(7));
     }

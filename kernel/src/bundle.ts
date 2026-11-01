@@ -75,6 +75,23 @@ export interface Flicker {
   spark_gap_max_s: number;
 }
 
+/** How a predator is heard far off and near, and how its bite is drawn (NEXT.md 12 c). Display only: no rule reads it. */
+export interface Telegraph {
+  howl_tiles: number;
+  howl_pct: number;
+  howl_gap_min_s: number;
+  howl_gap_max_s: number;
+  near_tiles: number;
+  near_pct: number;
+  near_curve: number;
+  dash_ms: number;
+  lunge_ms: number;
+  lunge_px: number;
+  flinch_ms: number;
+  flinch_px: number;
+  hit_ms: number;
+}
+
 export interface Params {
   /** The hours the valley is washed in a colour and the sun's shear (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
   light?: {
@@ -133,7 +150,17 @@ export interface Params {
   };
   hazard: {
     /** refill_bp: how high a hunt outrun to a safe place lifts health, in basis points of the cap: what its bites took comes back, up to this share */
-    predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number; refill_bp: number };
+    predator: {
+      reach: number;
+      pace_ms: number;
+      eyes: number;
+      catch_ms: number;
+      bite_ms: number;
+      bite_pct: number;
+      refill_bp: number;
+      /** the threat telegraph (NEXT.md 12 c): read by the client only, never by a rule */
+      telegraph?: Telegraph;
+    };
     pit: { harm_pct: number };
     trap: { harm_pct: number };
     deep_water: { harm_pct: number };

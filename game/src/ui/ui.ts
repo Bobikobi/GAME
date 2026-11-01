@@ -119,6 +119,7 @@ export class UI {
   private titleOpen = false;
   private hudTimer = 0;
   private hudParts: HudParts | undefined;
+  private meterHitTimer: ReturnType<typeof setTimeout> | undefined;
   private hudMap: HTMLButtonElement;
   private hudMapChart: HTMLElement;
   private hudMapNote: HTMLElement;
@@ -431,6 +432,18 @@ export class UI {
       h('div', { class: 'tracker-title' }, title, more > 0 ? h('span', { class: 'more' }, ` +${more}`) : null),
       ...lines.map((text) => h('div', { class: 'tracker-step' }, text)),
     );
+  }
+
+  /**
+   * The health meter's own reaction to a bite (the threat telegraph's act, NEXT.md 12 c): its frame and fill turn
+   * the warning colour for `ms`, and nothing moves, so it stays under reduced motion.
+   */
+  meterHit(ms: number): void {
+    const meter = this.hudParts?.meter;
+    if (!meter) return;
+    meter.dataset.hit = '';
+    clearTimeout(this.meterHitTimer);
+    this.meterHitTimer = setTimeout(() => delete meter.dataset.hit, ms);
   }
 
   setPrompt(label: string): void {
