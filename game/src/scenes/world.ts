@@ -72,6 +72,7 @@ import {LONGEST_FRAME_MS} from '../session';
 import type { GameSession } from '../session-surface';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
+import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '../flicker';
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
@@ -193,9 +194,16 @@ interface Fire {
   phase: number;
   /** the tint now on the flame, kept so a change from one tint to another is not missed */
   tint: number | undefined;
-  /** a few sparks rising while it burns (with motion on), and a thin smoke above them */
+  /** a few embers drifting up while it burns (with motion on), and a thin smoke above them */
   sparks: Emitter | undefined;
   smoke: Emitter | undefined;
+  /** a spark that pops now and then (with motion on), and when the next one is due on the wall clock (CR-110) */
+  pop: Emitter | undefined;
+  nextPop: number;
+  /** the fire's own breath: its light's strength and radius and its crackle wander together inside a band (CR-110) */
+  breath: FireFlicker | undefined;
+  /** the fire's own draws, for its sparks */
+  rng: () => number;
 }
 
 /** The burning look of a fire prop, from the base kit, and the cold look of the fire the player kindles. */
@@ -237,6 +245,8 @@ interface Cycle {
   next: number;
   frame: number;
   active: boolean;
+  /** a flame's own clock (CR-110): its start, frame order and frame times drawn from its seed, in place of min and max */
+  clock?: FlameClock;
 }
 
 /** A character that closes its eyes now and then (frame 1 of its blink sheet). */
@@ -261,6 +271,8 @@ interface Glow {
   lit: boolean;
   /** how strongly it shows while lit: a fire's light dims with its last wood (NEXT 21b) */
   strength?: number;
+  /** a fire's breath on its strength (CR-110), around 1; the glow's own flicker stands in without it */
+  gain?: number;
 }
 
 /** An emitter that only runs while its patch of the valley is on screen. */
@@ -389,6 +401,9 @@ export class WorldScene extends Phaser.Scene {
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
+  /** the crackle heard now, from the soundscape, and when the breath next moves it (CR-110) */
+  private crackle: { level: number; pan: number; id?: string } = { level: 0, pan: 0 };
+  private crackleAt = 0;
   private blinks: Blink[] = [];
   private breathers: Breather[] = [];
   private glows: Glow[] = [];
@@ -1151,14 +1166,15 @@ export class WorldScene extends Phaser.Scene {
   private buildFire(id: string, p: { w: number; solid: boolean; sprite: string }, cx: number, bottom: number): void {
     const depth = p.solid ? bottom : DEPTH.flat;
     const spr = kitSprite(this, cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(depth);
-    this.fires.set(id, this.fireAtTile(spr, p.sprite, depth));
+    this.fires.set(id, this.fireAtTile(spr, p.sprite, depth, id));
   }
 
   /** The kit's burning look, the drawn low flame, the glow and the burn stage over a sprite already on its tile. A fire's light covers its safe ring. */
-  private fireAtTile(spr: Phaser.GameObjects.Sprite, unlit: string, depth: number): Fire {
+  private fireAtTile(spr: Phaser.GameObjects.Sprite, unlit: string, depth: number, id: string): Fire {
+    const seed = seedOf(id);
     let cycle: Cycle | undefined;
     if (RICH.motion) {
-      cycle = { spr, min: FLAME_MS, max: FLAME_MS, next: 0, frame: 0, active: false };
+      cycle = this.flameCycle(spr, seed, false);
       this.cycles.push(cycle);
     }
     const flame = this.add
@@ -1184,6 +1200,7 @@ export class WorldScene extends Phaser.Scene {
     }
     let sparks: Emitter | undefined;
     let smoke: Emitter | undefined;
+    let pop: Emitter | undefined;
     if (RICH.motion) {
       sparks = this.add
         .particles(spr.x, spr.y - 6, 'fx-spark', {
@@ -1197,6 +1214,35 @@ export class WorldScene extends Phaser.Scene {
           emitting: false,
         })
         .setDepth(depth + 0.02);
+      if (this.flicker) {
+        // embers drift up slowly, wander and fade (CR-110): longer and softer than the old quick sparks
+        sparks.setConfig({
+          speedY: { min: -11, max: -4 },
+          speedX: { min: -5, max: 5 },
+          accelerationX: { min: -6, max: 6 },
+          lifespan: { min: 1100, max: 2100 },
+          alpha: { start: 0.95, end: 0 },
+          scale: { start: 1, end: 0.5 },
+          tint: [0xffc060, 0xff9040, 0xffe080],
+          frequency: emberEvery(this.flicker, 1),
+          maxAliveParticles: 10,
+          blendMode: 'ADD',
+          emitting: false,
+        });
+        // and now and then a spark pops, quick and bright
+        pop = this.add
+          .particles(spr.x, spr.y - 7, 'fx-spark', {
+            speedY: { min: -46, max: -26 },
+            speedX: { min: -18, max: 18 },
+            gravityY: 40,
+            lifespan: { min: 300, max: 560 },
+            alpha: { start: 1, end: 0 },
+            tint: 0xfff0b0,
+            blendMode: 'ADD',
+            emitting: false,
+          })
+          .setDepth(depth + 0.03);
+      }
       smoke = this.smokePuffs(spr.x, spr.y - 12, depth + 0.005, {
         speedY: { min: -9, max: -4 },
         speedX: { min: -3, max: 3 },
@@ -1225,7 +1271,23 @@ export class WorldScene extends Phaser.Scene {
       tint: undefined,
       sparks,
       smoke,
+      pop,
+      nextPop: 0,
+      breath: this.flicker ? new FireFlicker(seed, this.flicker) : undefined,
+      rng: seeded(seed ^ 0x5bd1e995),
     };
+  }
+
+  /** A flame's frames (CR-110): on its own clock from its seed when the params carry a fire's flicker, else every FLAME_MS. */
+  private flameCycle(spr: Phaser.GameObjects.Sprite, seed: number, active: boolean): Cycle {
+    const frames = this.b.sprites[spr.texture.key]?.frames ?? 1;
+    const clock = this.flicker ? new FlameClock(seed, Math.max(frames, this.b.sprites[FIRE_LIT_SPRITE]?.frames ?? 1), this.flicker, FLAME_MS) : undefined;
+    return { spr, min: FLAME_MS, max: FLAME_MS, next: 0, frame: 0, active, clock };
+  }
+
+  /** A living fire's numbers (CR-110), when the content carries them. */
+  private get flicker() {
+    return this.b.params.fire.flicker;
   }
 
   /**
@@ -1244,7 +1306,7 @@ export class WorldScene extends Phaser.Scene {
     const at = fireSpot(own.at, T);
     if (!f) {
       const spr = kitSprite(this, at.x, at.bottom, FIRE_UNLIT_SPRITE, 0).setOrigin(0.5, 1);
-      f = this.fireAtTile(spr, FIRE_UNLIT_SPRITE, at.bottom);
+      f = this.fireAtTile(spr, FIRE_UNLIT_SPRITE, at.bottom, OWN_FIRE);
       this.fires.set(OWN_FIRE, f);
     }
     // a re-kindled fire moves every part with its tile: the depth it falls back to by day and the smoke's column too
@@ -1259,6 +1321,7 @@ export class WorldScene extends Phaser.Scene {
     }
     f.sparks?.setPosition(at.x, at.sparksY).setDepth(at.sparksDepth);
     f.smoke?.setPosition(at.x, at.smokeY).setDepth(at.smokeDepth);
+    f.pop?.setPosition(at.x, at.sparksY - 1);
     return f;
   }
 
@@ -1278,10 +1341,7 @@ export class WorldScene extends Phaser.Scene {
         retex(f.spr, look, 0);
         if (f.cycle) f.cycle.frame = 0;
       }
-      if (f.cycle) {
-        f.cycle.active = full;
-        f.cycle.min = f.cycle.max = FLAME_MS;
-      }
+      if (f.cycle) f.cycle.active = full;
       // the full fire is the kit's campfire, a little smaller when it settles; the last wood is a drawn tongue
       f.spr.setAlpha(1).setScale(full ? (stage === 'full' ? 1 : 0.9) : 1);
       // at night the fire itself, its flame and its sparks are lifted over the shade, so the light has a source
@@ -1313,8 +1373,10 @@ export class WorldScene extends Phaser.Scene {
       }
       if (f.sparks) {
         f.sparks.emitting = stage !== 'out' && stage !== 'embers';
-        f.sparks.frequency = stage === 'full' ? 550 : stage === 'steady' ? 800 : 1300;
+        const share = stage === 'full' ? 1 : stage === 'steady' ? 0.7 : 0.4;
+        f.sparks.frequency = this.flicker ? emberEvery(this.flicker, share) : stage === 'full' ? 550 : stage === 'steady' ? 800 : 1300;
       }
+      f.pop?.setDepth(night ? DEPTH.shade + 0.95 : f.baseDepth + 0.03);
       if (f.smoke) {
         f.smoke.emitting = stage === 'full' || stage === 'steady' || stage === 'low';
         f.smoke.setDepth(night ? DEPTH.shade + 0.7 : f.baseDepth + 0.005);
@@ -1329,6 +1391,14 @@ export class WorldScene extends Phaser.Scene {
       if (lit) n.img.setTint(LIGHT.tint);
       else n.img.clearTint();
     }
+  }
+
+  /** A fire's breath now (CR-110), for a test: the factors its light and crackle take, whatever the motion setting. */
+  fireBreath(id: string): { gain: number; radius: number } | undefined {
+    const f = this.fires.get(id);
+    if (!f?.breath || f.stage === 'out') return undefined;
+    const b = f.breath.at(this.time.now);
+    return { gain: b.gain, radius: b.radius };
   }
 
   /** How a fire is drawn now, for a test and for the walk-out proof: its sprite, its burn, its wood stage and its strength. */
@@ -1362,7 +1432,7 @@ export class WorldScene extends Phaser.Scene {
     const spr = kitSprite(this, cx, bottom, ref, 0).setOrigin(0.5, 1);
     const name = baseName(ref);
     if (name === 'lantern_post') this.cycles.push({ spr, min: 150, max: 250, next: 0, frame: 0, active: true });
-    else if (name.startsWith('campfire')) this.cycles.push({ spr, min: 120, max: 120, next: 0, frame: 0, active: true });
+    else if (name.startsWith('campfire')) this.cycles.push(this.flameCycle(spr, seed, true));
     else this.cycles.push(this.sway(spr, seed));
     return spr;
   }
@@ -1539,7 +1609,7 @@ export class WorldScene extends Phaser.Scene {
       this.campArt.set(id, spr);
       // flames step through their frames only while the fire is built; refresh() sets that
       if (RICH.motion && (this.b.sprites[c.sprite]?.frames ?? 1) > 1) {
-        const cycle: Cycle = { spr, min: 120, max: 120, next: 0, frame: 0, active: false };
+        const cycle = this.flameCycle(spr, seedOf(id), false);
         this.cycles.push(cycle);
         this.campCycles.set(id, cycle);
       }
@@ -2388,6 +2458,12 @@ export class WorldScene extends Phaser.Scene {
   private animate(time: number, delta: number): void {
     this.driftAir(time, delta);
     for (const c of this.cycles) {
+      if (c.clock) {
+        if (!c.active) continue;
+        const frame = c.clock.frame(time) % (this.b.sprites[c.spr.texture.key]?.frames ?? 1);
+        if (frame !== c.frame) c.spr.setFrame((c.frame = frame));
+        continue;
+      }
       if (!c.active || time < c.next) continue;
       c.next = time + c.min + (c.max > c.min ? Math.random() * (c.max - c.min) : 0);
       const frames = this.b.sprites[c.spr.texture.key]?.frames ?? 1;
@@ -2435,6 +2511,7 @@ export class WorldScene extends Phaser.Scene {
         f.sparks?.setPosition(f.spr.x + wind * 1.2, f.spr.y - 6);
       }
     }
+    this.breatheFires(time);
     if (this.glows.length > 0) {
       const level = 0.9 * this.night;
       for (const g of this.glows) {
@@ -2443,7 +2520,7 @@ export class WorldScene extends Phaser.Scene {
           continue;
         }
         const flicker = 0.5 + 0.5 * Math.sin(time / 173 + g.phase) * Math.sin(time / 419 + g.phase * 1.7);
-        g.img.setAlpha(level * (g.strength ?? 1) * (0.8 + 0.2 * flicker));
+        g.img.setAlpha(level * (g.strength ?? 1) * (g.gain ?? 0.8 + 0.2 * flicker));
       }
     }
     for (const d of this.dapples) {
@@ -2717,8 +2794,41 @@ export class WorldScene extends Phaser.Scene {
   private hearPlace(s: GameSession): void {
     const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
     for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
-    sound.crackle(scape.crackle.level, scape.crackle.pan);
+    this.crackle = scape.crackle;
+    sound.crackle(scape.crackle.level * this.crackleGain(), scape.crackle.pan);
     this.hearThreats(s);
+  }
+
+  /**
+   * A living fire breathes (CR-110): each burning fire's light moves its strength and radius inside the band around
+   * the ladder's value, the crackle heard follows the same breath, and a spark pops now and then. The light's breath
+   * is the crackle's visual twin for a muted player (G24, G27); with reduced motion the light holds still and the
+   * crackle still breathes.
+   */
+  private breatheFires(time: number): void {
+    if (!this.flicker) return;
+    for (const f of this.fires.values()) {
+      const burning = f.stage !== 'out';
+      const b = burning && f.breath ? f.breath.at(time) : undefined;
+      if (f.light) f.light.breath = b && RICH.motion ? { gain: b.gain, radius: b.radius } : undefined;
+      if (f.glow) f.glow.gain = b && RICH.motion ? 0.9 * b.gain : undefined;
+      if (!f.pop || !burning || f.stage === 'embers' || !f.flame.visible && !f.spr.visible) continue;
+      if (f.nextPop === 0) f.nextPop = time + sparkGap(this.flicker, f.rng);
+      if (time < f.nextPop) continue;
+      f.pop.setPosition(f.spr.x, f.spr.y - 7).explode(1 + Math.floor(f.rng() * 3));
+      f.nextPop = time + sparkGap(this.flicker, f.rng);
+    }
+    // the crackle breathes on a short beat, not every frame
+    if (this.crackle.level > 0 && time >= this.crackleAt) {
+      this.crackleAt = time + 50;
+      sound.crackle(this.crackle.level * this.crackleGain(time), this.crackle.pan);
+    }
+  }
+
+  /** The breath of the fire whose crackle is heard, as a factor on its level; 1 with no flicker. */
+  private crackleGain(time = this.time.now): number {
+    const f = this.crackle.id === undefined ? undefined : this.fires.get(this.crackle.id);
+    return f?.breath && f.stage !== 'out' ? f.breath.at(time).gain : 1;
   }
 
   /**

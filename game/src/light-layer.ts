@@ -60,6 +60,8 @@ export interface Light {
   glass?: Phaser.GameObjects.Image;
   /** the flicker's phase: a flame's pool breathes (with motion on) */
   phase: number;
+  /** a living fire's breath (CR-110), set by the scene: its strength and its pool's radius as factors around 1; the phase's flicker stands in without it */
+  breath?: { gain: number; radius: number };
 }
 
 export class LightLayer {
@@ -115,7 +117,8 @@ export class LightLayer {
     const lit: { l: Light; gate: number; flick: number }[] = [];
     for (const l of this.lights) {
       // in fiftieths, so the hour's slow rise redraws the layers a few times an hour, not every minute
-      const gate = l.on ? Math.round(50 * poolAt(minute, l.kind) * l.strength) / 50 : 0;
+      const breath = flicker ? l.breath : undefined;
+      const gate = l.on ? Math.round(50 * poolAt(minute, l.kind) * l.strength * (breath?.gain ?? 1)) / 50 : 0;
       // a lit window's glass shows with its pool, at the hour's strength
       if (l.glass) l.glass.setVisible(gate > 0).setAlpha(gate);
       if (gate <= 0) continue;
@@ -126,7 +129,7 @@ export class LightLayer {
       const amp = l.kind === 'fire' ? 0.04 : 0;
       // read on a beat of FLICKER_MS, not every frame, so a still view redraws its layers a few times a second at most
       const beat = Math.floor(time / FLICKER_MS) * FLICKER_MS;
-      const flick = flicker && amp > 0 ? Math.round(100 * (1 + amp * Math.sin(beat / 173 + l.phase) * Math.sin(beat / 419 + l.phase * 1.7))) / 100 : 1;
+      const flick = breath ? Math.round(100 * breath.radius) / 100 : flicker && amp > 0 ? Math.round(100 * (1 + amp * Math.sin(beat / 173 + l.phase) * Math.sin(beat / 419 + l.phase * 1.7))) / 100 : 1;
       lit.push({ l, gate, flick });
     }
     const at = (x: number, y: number) => ({ x: Math.round((x - ox) * ART), y: Math.round((y - oy) * ART) });
