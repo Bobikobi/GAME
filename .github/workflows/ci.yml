@@ -1,14 +1,14 @@
 name: CI
 
 on:
-  # every pull request starts the workflow, docs-only included: "Check, test, build and play" is a required
-  # check on main and develop, and a path filter here would leave it "Expected" and block the merge
-  # (docs/team/PLATFORM.md 9.2). A docs-only pull request skips the browser jobs from inside (job "The browser
-  # test groups" decides, the gate accepts it); a push of prose only still runs no build.
+  # every pull request and every push to main or develop starts the workflow, docs-only included: "Check, test,
+  # build and play" is a required check on main and develop, and a path filter here would leave it "Expected" and
+  # block the merge (docs/team/PLATFORM.md 9.2); and the Deploy workflow deploys a head only once this one passed
+  # on it, so a landing of prose only (the hub renders the docs) needs its run too (issue #595). A docs-only
+  # change skips the browser jobs from inside (job "The browser test groups" decides, the gate accepts it).
   pull_request:
   push:
     branches: [main, develop]
-    paths-ignore: ['**.md', 'docs/**']
 
 permissions:
   contents: read
@@ -146,10 +146,18 @@ jobs:
       # the changed files are printed to the log with their kind; a diff that cannot be read fails the job
       # (pipefail), which fails the gate, and never reads as docs only
       - id: kind
+        env:
+          BEFORE: ${{ github.event.before }}
         run: |
           set -o pipefail
           if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
             git diff -z --no-renames --name-only HEAD^1 HEAD | node tools/src/docs-only.ts | tee -a "$GITHUB_OUTPUT"
+          # a push: everything since the head the branch had before it, which may be more than one commit back,
+          # so that head's tree is fetched alone. A branch's first push, or a head that is gone, is never docs only
+          elif [ "$GITHUB_EVENT_NAME" = push ] && [ -n "$BEFORE" ] \
+               && [ "$BEFORE" != 0000000000000000000000000000000000000000 ] \
+               && git fetch --quiet --depth=1 origin "$BEFORE"; then
+            git diff -z --no-renames --name-only "$BEFORE" HEAD | node tools/src/docs-only.ts | tee -a "$GITHUB_OUTPUT"
           else
             echo "docs_only=false" | tee -a "$GITHUB_OUTPUT"
           fi

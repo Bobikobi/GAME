@@ -44,8 +44,8 @@ export type ReviewState = (typeof REVIEW_STATES)[number];
 export const FILE_KINDS = ['raw', 'full', 'imported'] as const;
 export type FileKind = (typeof FILE_KINDS)[number];
 
-/** A release has room for 1000 assets; three a draft, and a margin. */
-const DRAFTS_PER_RELEASE = 300;
+/** GitHub holds at most 1000 assets in one release (HTTP 422 `file_count limited to 1000` past it). */
+export const ASSETS_PER_RELEASE = 1000;
 
 export interface FileRef {
   sha256: string;
@@ -621,8 +621,9 @@ function releaseAssets(gh: Gh, repo: string, tag: string): Set<string> | null {
 }
 
 /**
- * Upload what is not stored yet, one release per tag, and cite it in the index. A draft that already has `stored`
- * is left alone. Nothing is ever replaced (no `--clobber`): an asset that is there stays as it is.
+ * Upload what is not stored yet, one release per tag (rolling to `tag-2`, `tag-3` when a release reaches GitHub's
+ * 1000 assets, counting what it already holds), and cite it in the index. A draft that already has `stored` is left
+ * alone. Nothing is ever replaced (no `--clobber`): an asset that is there stays as it is.
  */
 export function pushCollected(items: readonly Collected[], index: DraftIndex, opts: PushOptions = {}): PushReport {
   const gh = opts.gh ?? realGh;
@@ -644,17 +645,47 @@ export function pushCollected(items: readonly Collected[], index: DraftIndex, op
     pending.set(tag, [...(pending.get(tag) ?? []), item]);
   }
   for (const [base, all] of pending) {
-    for (let part = 0; part * DRAFTS_PER_RELEASE < all.length; part += 1) {
-      const tag = part === 0 ? base : `${base}-${part + 1}`;
-      const chunk = all.slice(part * DRAFTS_PER_RELEASE, (part + 1) * DRAFTS_PER_RELEASE);
-      const uploads = chunk.flatMap((item) => FILE_KINDS.flatMap((kind) => {
-        const path = item.paths[kind];
-        return path === null ? [] : [{ item, kind, path, name: assetName(item.record.id, kind, item.record.files[kind]?.ext) }];
-      }));
+    const partTag = (part: number): string => (part === 0 ? base : `${base}-${part + 1}`);
+    const filesOf = (item: Collected): { item: Collected; kind: FileKind; path: string; name: string }[] => FILE_KINDS.flatMap((kind) => {
+      const path = item.paths[kind];
+      return path === null ? [] : [{ item, kind, path, name: assetName(item.record.id, kind, item.record.files[kind]?.ext) }];
+    });
+    // what the releases of this tag already hold (tag, tag-2, ...), read until one is missing; a dry run reads nothing
+    const held: Set<string>[] = [];
+    for (let part = 0; opts.dry !== true; part += 1) {
+      const present = releaseAssets(gh, repo, partTag(part));
+      if (present === null) break;
+      held.push(present);
+    }
+    // a draft whose files one release already holds (a push that stopped before the index) goes there; the rest fill the
+    // releases in order by the room each has left, a new one opening when the last is full; a draft's files never split
+    const room = held.map((present) => ASSETS_PER_RELEASE - present.size);
+    const parts: Collected[][] = held.map(() => []);
+    let open = 0;
+    for (const item of all) {
+      const names = filesOf(item).map((u) => u.name);
+      const home = held.findIndex((present) => names.every((name) => present.has(name)));
+      if (home >= 0) {
+        parts[home]!.push(item);
+        continue;
+      }
+      const cost = (part: number): number => names.filter((name) => held[part]?.has(name) !== true).length;
+      while (open < room.length && room[open]! < cost(open)) open += 1;
+      if (open === room.length) {
+        room.push(ASSETS_PER_RELEASE);
+        parts.push([]);
+      }
+      room[open]! -= cost(open);
+      parts[open]!.push(item);
+    }
+    for (const [part, chunk] of parts.entries()) {
+      if (chunk.length === 0) continue;
+      const tag = partTag(part);
+      const uploads = chunk.flatMap(filesOf);
       say(`${tag}: ${chunk.length} drafts, ${uploads.length} files`);
       report.tags.push(tag);
       if (opts.dry === true) continue;
-      let present = releaseAssets(gh, repo, tag);
+      let present = held[part] ?? null;
       if (present === null) {
         const made = retry(gh, ['release', 'create', tag, '--repo', repo, '--title', tag, '--notes', `Drafts of ${tag}: raw pictures, kernel pictures before the grid, and what the importer made, named by draft id. The index is tools/kit-gen/drafts.jsonl in the game repo. Nothing here is ever deleted.`]);
         if (made.status !== 0) throw new Error(`could not create release ${tag}: ${made.stderr.trim()}`);

@@ -59,7 +59,7 @@ export const timing: Minigame = (ui, opts) =>
       marker.style.left = `${pos * 100}%`;
       const grade = forced ?? timingGrade(pos, center, z, random);
       game.dataset.cue = 'wait';
-      result.textContent = label ?? (grade === 4 ? 'Jackpot! ×2 goods · ×3 xp' : GRADE_NAMES[grade]);
+      result.textContent = label ?? GRADE_NAMES[grade];
       result.className = `minigame-result g${grade}`;
       if (grade === 4) game.classList.add('jackpot');
       opts.onBeat?.(0, grade);

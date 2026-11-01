@@ -127,6 +127,14 @@
       "branches": ["feat/races-bags"],
       "owner": null,
       "cross_cutting": true
+    },
+    {
+      "id": "hunt-and-materials",
+      "title": "The hunt's foundations (the dress verb, drops and grades on a kind, hunt as a value source), the materials atlas, the three lands' animals, the first animal loops",
+      "plan": ["outside the original plan (asked 30.10)", "docs/design/HUNTING.md (#420) sections 5-10", "docs/design/PROGRESSION.md (#333) section 5", "DECISIONS 2026-10-30 the hunt foundations", "GAME_RULES G35, G45"],
+      "branches": ["feat/hunt-foundations", "docs/hunt-materials", "art/hare-crow-loops"],
+      "owner": null,
+      "cross_cutting": true
     }
   ]
 }

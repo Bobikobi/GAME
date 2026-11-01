@@ -172,10 +172,14 @@ The hourly hub refresh then asks that workflow for production instead of firing 
 needs the Git connection. Production can also be deployed by hand: Actions, Deploy, Run workflow.
 The daily budget is about 15 develop landings, plus the releases, plus the previews asked for by label, plus up to
 24 hub refreshes on the hours when the hub's data changed. That is about 30 on a busy day, against 100.
+The runner uploads the source and Vercel builds it with `vercel.json`'s commands, as it builds its own Git deploys.
+Not a build on the runner: the project's sensitive values (the Redis pair the hub's `usage` section reads) never
+leave Vercel, so `vercel pull` writes `[SENSITIVE]` in their place and the hub's build dies (issue #596).
 
 The owner's three steps (none of them is in this repository):
 1. Secrets, by name only, in the repository's Settings, Secrets, Actions:
-   - `VERCEL_TOKEN`: a token from the Vercel account's Settings, Tokens, scoped to the project's team.
+   - `VERCEL_TOKEN`: a token minted in the Vercel account's Settings, Tokens, scoped to the project's team. Never
+     the CLI's own login token from its auth file: the CLI rotates it, and the copy set on 31.10 died within hours.
    - `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`: from the project's Settings, General, or from `.vercel/project.json`
      after `vercel link`.
    Then the label: `gh label create preview --repo <the repository>`.

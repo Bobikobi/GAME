@@ -480,7 +480,7 @@ the repository; this list is names and places only.
 
 | Service | Where | What it does | Set up |
 |---|---|---|---|
-| Vercel project `mistvale` | the Vercel team that owns this repository | builds and serves the site, `/play/` and the `/api/s1/*` functions | Git integration on this repository |
+| Vercel project `loomvale` (named `mistvale` until 1.11.2026) | the Vercel team that owns this repository | builds and serves the site, `/play/` and the `/api/s1/*` functions | Git integration on this repository |
 | Upstash Redis `upstash-kv-amber-zebra` | Vercel project > Storage (Vercel Marketplace, Upstash, Free plan: 500K commands a month, region `iad1`) | the S-1 store: counters, stops and reports | linked to the Production and Preview environments; the integration sets `KV_REST_API_URL`, `KV_REST_API_TOKEN`, `KV_REST_API_READ_ONLY_TOKEN`, `KV_URL`, `REDIS_URL` (the code reads the first two, or the URL and the read-only token) |
 | Vercel Web Analytics | Vercel project > Analytics | page views, visitors, referrers, countries and devices for the site and the game | enabled in the project; the snippet loading `/_vercel/insights/script.js` sits in `web/src/layouts/Site.astro` (every page, the home page included, section 5.5) and `game/index.html` |
 | Stage-1 usage | `hub-data.json` > `usage`, the creator pages `/hub/creators/<handle>/` | per-record visits, pickups and reports, where players stop in the opening | `pnpm hub:data` reads Redis when the `KV_` pair is in the environment; without it `usage` stays `null` |

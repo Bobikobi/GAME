@@ -9,8 +9,9 @@
  * from the minigame and can only lower the goods below perfect play (D2), so
  * a client that always claims "perfect" earns what the economy already
  * assumes. Grade 4, the jackpot, is a thin strip inside "perfect": the same
- * goods, three times the experience. Experience is not part of item values,
- * so the jackpot speeds up levels and nothing else.
+ * goods and the same experience, told as a `jackpot` event. Experience is the
+ * active time at every grade (PROGRESSION 4.7, red line B), so no grade
+ * speeds up levels.
  *
  * A craft can miss (G40): skill against the recipe's level sets the chance,
  * luck only tilts it, and a miss keeps something. The value table prices a
@@ -184,8 +185,6 @@ export const GRADE_PCT = [25, 50, 80, 100, 100] as const;
 export const MISS_KEEP_BP = 5000;
 /** Luck never makes a miss a sure thing. */
 export const MISS_KEEP_MAX_BP = 9000;
-/** Experience for a jackpot, as a multiple of a normal action's. */
-export const JACKPOT_XP = 3;
 
 /** How often a missed gather still brings one unit home, in basis points: luck raises it. */
 export function missKeepBp(bundle: Bundle, state: PublicState): number {
@@ -638,7 +637,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   node.readyAt = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
-  gainXp(ctx, verb, grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
+  gainXp(ctx, verb, r.active_ms);
   if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'gather' });
 }
 
@@ -684,7 +683,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   node.readyAt = ctx.tick + ms + mulDiv(d.respawn_ms, wait, 1000);
   s.nodes[spotId] = node;
   busy(ctx, 'dig', ms);
-  gainXp(ctx, 'dig', grade === 4 ? d.active_ms * JACKPOT_XP : d.active_ms);
+  gainXp(ctx, 'dig', d.active_ms);
   if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'dig' });
   solveRiddles(ctx, { kind: 'dig', treasure: inst.source });
 }

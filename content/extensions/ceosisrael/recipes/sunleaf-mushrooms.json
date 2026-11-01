@@ -1,0 +1,48 @@
+{
+  "$schema": "../../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "ceosisrael/sunleaf-mushrooms",
+  "title": "Sunleaf mushrooms",
+  "creator": "ceosisrael",
+  "ai_tools": ["Claude (Anthropic)"],
+  "items": [
+    {
+      "id": "ceosisrael/sunleaf-mushrooms",
+      "name": "Sunleaf mushrooms",
+      "description": "Morning mushrooms folded in afternoon sunleaf and laid in the coals. The leaf keeps the steam in.",
+      "kind": "food",
+      "rarity": "uncommon",
+      "class": "meal",
+      "tier": 1,
+      "sprite": "ceosisrael/kit:items/sunleaf_mushrooms",
+      "weight": 1,
+      "food": {
+        "satiety": 30
+      }
+    }
+  ],
+  "recipe": {
+    "station": "fire",
+    "active_ms": 5000,
+    "level": 2,
+    "inputs": [
+      {
+        "item": "core/mushroom",
+        "qty": 2
+      },
+      {
+        "item": "core/sunleaf",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "ceosisrael/sunleaf-mushrooms",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

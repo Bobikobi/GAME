@@ -55,6 +55,17 @@
           "rust"
         ]
       },
+      "items/sunleaf_mushrooms": {
+        "file": "items/sunleaf_mushrooms.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "bark",
+          "fire"
+        ]
+      },
       "items/dried_herbs": {
         "file": "items/dried_herbs.png",
         "w": 64,

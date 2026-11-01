@@ -120,7 +120,7 @@ describe('timing grade', () => {
     expect(yields[1]!).toBeGreaterThanOrEqual(yields[0]!);
     expect(yields[2]!).toBeGreaterThanOrEqual(yields[1]!);
     expect(yields[3]!).toBeGreaterThanOrEqual(yields[2]!);
-    // the jackpot pays in experience only
+    // the jackpot adds nothing to the yield
     expect(yields[4]).toBe(yields[3]);
   });
 });

@@ -768,3 +768,28 @@ Measurable at the end:
 3. No frame of that CI run carries a field of PRESENCE section 4's never-sent list, and the relay's route table holds no route that lists players (tests).
 4. On the box, the numbers of PRESENCE section 9 are measured and written into build d's pull request, the load test run with the owner's yes.
 - For the owner: whether a name stands over a head; the look of other players, as stills; each three-line gate on the box.
+
+## hunt-and-materials. The hunt's foundations, the materials atlas, the three lands' animals, and the first animal loops
+
+Status: building - hunt-and-materials
+
+Read first: DECISIONS 2026-10-30 "The hunt foundations", `docs/design/HUNTING.md`, `docs/design/BESTIARY.md`, `docs/design/BESTIARY_LANDS.md`, `docs/design/MATERIALS.md`, `docs/design/GAP_RDR2.md`, and G35 and G45 in `docs/design/GAME_RULES.md`.
+
+The ask behind the stream: equipment that climbs by material, materials taken from animals and combined, what gear gives, and the drawing and movement that go with it, measured against Red Dead Redemption 2's hunt-to-gear chain. An outside developer's stream: the owner's merge is the yes on each pull request. GAP_RDR2.md measures the chain link by link; MATERIALS.md lays the atlas and the processing chain; BESTIARY_LANDS.md writes thirty-two rows in the foundations' fields, the valley's twelve and ten for each of the other two lands, with the balance by player count; the foundations (DECISIONS 2026-10-30) give the kernel the dress verb, drops and grades on a kind, the goods classes, the hunt value source and the check rows; the first two bodies that move (the hare and the crow) are pick pages under `docs/design/frames/`.
+
+What is left, in order:
+a) The owner's answers to the open points of MATERIALS 8, BESTIARY_LANDS 6 and GAP_RDR2 6 (one sentence each; every page carries its default).
+b) The creature schema lands (HUNTING's status line: "the creature schema is the next pull request"); `hunt` and `protected` move under it if its shape differs, and the tests follow (DECISIONS 2026-10-30, retry line).
+c) The first goods as content: the hare's and the crow's items with their icons through the kit route (MATERIALS 6: one icon per good, the grades sharing it), the hare and the crow given `hunt` in `content/core/map.json`, `pnpm check` green.
+d) The take: the `hunt` action of HUNTING 5 (the unaware check, T0 the thrown stone and T1 the snare), which lays the carcass that `dress` already reads; after the server (NEXT 18) and with G35 kept for the demo.
+e) The racks (drying and tanning) as core stations and the first leather chain (MATERIALS 3), one pull request.
+f) The lands' kinds as content, in the order of their look picks: the elf wood's flee kinds first, the south's crows and rats next; every `fight` way waits for the combat stream.
+g) The balance prover (BESTIARY_LANDS 4): a `pnpm balance` row per region and kind, red when a d0 kind empties under eight players.
+
+Measurable:
+1. `pnpm verify` exit 0 on every pull request of the stream; `kernel/test/dress.test.ts` and `tools/test/hunt.test.ts` green; the core as it stands prints no new check line.
+2. A kind written from a BESTIARY_LANDS row passes `pnpm check` without a change to the row's `hunt` columns (size, tier, danger, take, ways, drops, spawn: the schema's fields); the senses, a second hours window and the roof rule are not fields yet and wait for the creature schema.
+3. Each animal loop is four poses a loop at least, rendered through the clip tool, with a pick page at phone size and `pnpm anim check` green (DECISIONS 2026-10-29).
+4. No animal carries a price: the value lock prices every good through the `hunt` source, and a shop that sells one is refused.
+
+Not here: the fight (G35, COMBAT.md), houses and plots (paused, DECISIONS 2026-10-10), a mount, a kill count of any kind (HUNTING 10).

@@ -2,7 +2,7 @@
  * Pure rules and shared contracts for the one-button gathering minigames.
  *
  * Every game grades 0..4. Grade 4, the jackpot, needs play better than
- * perfect: the same goods as perfect and three times the experience. A miss
+ * perfect: the same goods and experience as perfect, told by a banner. A miss
  * (0) still keeps one unit now and then; the kernel draws that, not the game.
  */
 import type { Grade } from '@game/kernel';

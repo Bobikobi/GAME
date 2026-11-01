@@ -506,7 +506,7 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
     case 'attr':
       return { text: `${e.attr[0]?.toUpperCase()}${e.attr.slice(1)} is now ${e.value}`, tone: 'good' };
     case 'jackpot':
-      return { text: 'Jackpot! Three times the experience', tone: 'good' };
+      return { text: 'Jackpot! Better than perfect', tone: 'good' };
     case 'riddle':
       return { text: `That was it: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'good' };
     case 'visit': {
