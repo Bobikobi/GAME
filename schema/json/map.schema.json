@@ -1392,6 +1392,143 @@
                         }
                       }
                     },
+                    "fight": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "tier",
+                        "hp",
+                        "breath",
+                        "pace_ms",
+                        "moves",
+                        "patterns"
+                      ],
+                      "properties": {
+                        "tier": {
+                          "description": "How many hits of a starter hand fell it: T1 2, T2 6 to 8, T3 20 and more (the check counts hp against combat.bare_base).",
+                          "anyOf": [
+                            {
+                              "const": 1,
+                              "type": "number"
+                            },
+                            {
+                              "const": 2,
+                              "type": "number"
+                            },
+                            {
+                              "const": 3,
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "hp": {
+                          "minimum": 1,
+                          "maximum": 2000,
+                          "description": "Points of health.",
+                          "type": "integer"
+                        },
+                        "breath": {
+                          "minimum": 1,
+                          "maximum": 200,
+                          "description": "Points of breath; its moves spend it and it refills like a player's.",
+                          "type": "integer"
+                        },
+                        "pace_ms": {
+                          "minimum": 100,
+                          "maximum": 2000,
+                          "description": "Game milliseconds a tile when it walks at a player. Never under the walk: a hunter is escaped by walking (HUNTING 2).",
+                          "type": "integer"
+                        },
+                        "moves": {
+                          "minItems": 1,
+                          "maxItems": 4,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "windup_t",
+                              "reach",
+                              "breath",
+                              "recover_t",
+                              "cooldown_t"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                                "type": "string"
+                              },
+                              "windup_t": {
+                                "minimum": 1,
+                                "maximum": 20,
+                                "description": "Ticks the pose shows before the move lands. The check holds it to combat.windup_min_t and windup_max_t.",
+                                "type": "integer"
+                              },
+                              "reach": {
+                                "minimum": 1,
+                                "maximum": 3,
+                                "description": "Tiles in a line in front of the foe the move reaches.",
+                                "type": "integer"
+                              },
+                              "harm_div": {
+                                "minimum": 2,
+                                "maximum": 24,
+                                "description": "The move takes the health cap divided by this. Absent: combat.bite_div.",
+                                "type": "integer"
+                              },
+                              "breath": {
+                                "minimum": 0,
+                                "maximum": 40,
+                                "description": "Breath the move costs the foe.",
+                                "type": "integer"
+                              },
+                              "recover_t": {
+                                "minimum": 1,
+                                "maximum": 20,
+                                "description": "Ticks the foe stands open after the move; a strike that lands then does extra if this is the weak move.",
+                                "type": "integer"
+                              },
+                              "cooldown_t": {
+                                "minimum": 0,
+                                "maximum": 200,
+                                "description": "Ticks before the same move may start again.",
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "patterns": {
+                          "minItems": 1,
+                          "maxItems": 4,
+                          "description": "Closed move orders. One is drawn when the foe appears (R4); its moves then repeat in that order. The fight is read, not rolled (G79).",
+                          "type": "array",
+                          "items": {
+                            "minItems": 1,
+                            "maxItems": 6,
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "weak": {
+                          "additionalProperties": false,
+                          "description": "The move after whose recovery a strike lands weak_permille.",
+                          "type": "object",
+                          "required": [
+                            "after"
+                          ],
+                          "properties": {
+                            "after": {
+                              "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
                     "protected": {
                       "description": "A pet, a young animal or a person (HUNTING section 10): seen, never taken, never dressed. A protected kind carries no \"hunt\".",
                       "type": "boolean"
