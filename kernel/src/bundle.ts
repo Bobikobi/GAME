@@ -215,6 +215,10 @@ export interface Params {
     town_keep_day: number;
     town_keep_night: number;
   };
+  /**
+   * The fight (docs/design/COMBAT.md section 4.9): whole ticks of wild.tick_ms, points and tiles. Inert while `enabled` is 0 (G35).
+   */
+  combat: { enabled: number; swing_quick_t: number; swing_standard_t: number; swing_heavy_t: number; swing_floor_t: number; bare_windup_t: number; bare_base: number; windup_min_t: number; windup_max_t: number; active_t: number; rehit_t: number; bite_div: number; behind_permille: number; weak_permille: number; mercy_t: number; stun_t: number; knockback_tiles: number; dodge_tiles: number; dodge_t: number; dodge_cooldown_t: number; breath_base: number; breath_per_stamina: number; breath_refill: number; breath_hold_t: number; attack_breath: number; guard_drain: number; guard_hit_breath: number; dodge_breath: number; breath_stagger_t: number; guard_stagger_t: number; engage_tiles: number; leash_tiles: number; give_up_t: number; claim_lock_t: number; pay_per_s_mg: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
