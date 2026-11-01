@@ -4012,6 +4012,11 @@ Model: claude-sonnet-5-5.
 - Why (hypothesis): flat and hard things (ground, water, a stall) survive composition by code; organic silhouettes (a crown, a trunk, broken masonry standing in its place) come out even and repeated, and need a drawn reference at the same view and scale to be measured against while they are made.
 - Both PRs stay open and unlabeled; nothing from them lands. The 16 px trees and ruins stay in the game meanwhile; the scale audit's floors for them (#509) stand.
 **Retry when:** a reference set of top-down pixel trees and ruins at about 64 px per tile, gathered from the web with sources, sits in the manager's reference folder, and a route is picked by the owner on 2-3 stills beside it: the image model (once the Google check in the rig clears), open-licence pixel assets adapted to the palette and the audit's heights, or the script route redrawn against the reference piece by piece. Model: claude-fable-5-1 (the manager). PRs #516, #518.
+## 2026-11-01 ✅ The landscape phone skin is B
+**The owner picked B of three skins for the landscape controls (1.11, in chat, through the manager: "skin B").** [The frame](docs/design/frames/2026-10-30-phone-landscape-B.png) (2400x1080, the valley by day, the player mid-walk under a held stick, every control at 40% transparency). A (a lacquer disc with a thin gold rim) and C (a compass-rose ring and frame D's corner ornament in miniature) are dropped with their stills.
+- B as shipped in `game/src/style.css`: the stick an open gold ring with no filled disc; the knob and every button a gold-rimmed lacquer coin with an inset ring; the glyph cut in gold (Cinzel), the Sneak word and the column's line glyphs in the body face.
+- The floating stick, the Wild Rift sizes and density (`controlsLayout`) and the 0.6 opacity stay as built; only the skin changed.
+**Retry when:** players on real phones lose the open ring on bright ground (then the ring takes the lacquer fill of A under the same rim). Model: claude-opus-5-5. PR #459, issue #538.
 
 ## 2026-11-01 ✅ A save moves with the authored valley: the map carries its frame and its offset
 
