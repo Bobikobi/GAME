@@ -4,7 +4,7 @@
  * window; the list beside it carries the names a small screen cannot fit.
  */
 import { tagAt, type Bundle, type Slot } from '@game/kernel';
-import { MAP_CHUNK, PLACE_KIND, STALL_SLOT, chunkKey, mapPlaces, type MapPlace } from '../places';
+import { MAP_CHUNK, PLACE_KIND, STALL_SLOT, chunkKey, mapPlaces, type MapPlace, type MapRegion } from '../places';
 
 const INK = '#1b1a2e';
 const PAPER = '#ebd3a2';
@@ -40,6 +40,14 @@ export interface MapDraw {
   stall?: string;
   selected?: string;
   compact?: boolean;
+  /** the map regions entered (M3): each drawn whole, with its name, however little of it was walked */
+  regions?: readonly MapRegion[];
+}
+
+/** The chart is 640 units across whatever the map's size, so a name and a pin read the same on 64 tiles and on 192. */
+const CHART = 640;
+function scaleOf(b: Bundle): number {
+  return CHART / Math.max(b.map.width, b.map.height);
 }
 
 function esc(text: string): string {
@@ -105,10 +113,11 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
   if (o.compact) return miniSvg(b, o);
   const W = b.map.width;
   const H = b.map.height;
-  const S = 10;
+  const S = scaleOf(b);
   const places = mapPlaces(b, o.seen, o.at, o.stall);
   const named = places.filter((p) => p.label !== undefined).sort((a, c) => rank(a) - rank(c));
-  const names = named.map((p) => (p.stall ? 'your stall' : p.label!));
+  const regions = o.regions ?? [];
+  const names = [...regions.map((r) => r.title), ...named.map((p) => (p.stall ? 'your stall' : p.label!))];
   const parts: string[] = [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W * S} ${H * S}" role="img" aria-label="${esc(
       `A chart of the valley: ${names.length ? names.join(', ') : 'nothing walked yet'}${o.stall ? ', with your stall at the empty corner' : ''}.`,
@@ -159,6 +168,15 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
       );
     } else if (ref.includes('ruin_pillar') || ref.includes('ruin_wall')) {
       parts.push(`<rect x="${x - 6}" y="${y - 4}" width="12" height="8" fill="#5d6177" stroke="${INK}" stroke-width="1.4"/>`);
+    }
+  }
+
+  // the regions entered: the whole footprint and its name, not the tiles that were walked (M3, G66)
+  for (const r of regions) {
+    for (const [cx, cy, cw, ch] of r.cells) {
+      parts.push(
+        `<rect x="${cx * S}" y="${cy * S}" width="${cw * S}" height="${ch * S}" fill="${GOLD_DARK}" fill-opacity="${r.current ? 0.3 : 0.18}" stroke="#6e4226" stroke-width="2" stroke-dasharray="6 5" stroke-opacity=".6"/>`,
+      );
     }
   }
 
@@ -228,6 +246,7 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
     const ly = p.stall && p.current ? p.y * S + 18 : p.y * S + dy;
     placeLabel(text, lx, ly, p.stall || p.current ? 'below' : 'above');
   }
+  for (const r of regions) placeLabel(r.title, r.x * S, r.y * S, 'below');
   if (!named.some((p) => p.current)) {
     // the pin has no place name: it is on the road
     placeLabel('You', px, py, 'below');
@@ -246,7 +265,7 @@ export function mapSvg(b: Bundle, o: MapDraw): string {
 function miniSvg(b: Bundle, o: MapDraw): string {
   const W = b.map.width;
   const H = b.map.height;
-  const S = 10;
+  const S = scaleOf(b);
   const places = mapPlaces(b, o.seen, o.at, o.stall);
   const parts: string[] = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W * S} ${H * S}" role="img" aria-label="A small chart of the valley">`];
   parts.push('<g shape-rendering="crispEdges">');

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import type { Bundle } from '@game/kernel';
-import { STALL_SLOT, canPlaceStall, chunkKey, directionOf, mapPlaces } from '../src/places';
+import { STALL_SLOT, canPlaceStall, chunkKey, directionOf, mapPlaces, seenRegions } from '../src/places';
 import { mapSvg } from '../src/ui/map';
 import { loadBundle } from '../../tools/test/helpers/world';
 
@@ -65,3 +65,49 @@ describe('the map reveals only what was walked', () => {
     expect(directionOf([28, 9], [40, 30])).toBe('south-east');
   });
 });
+
+describe('the chart on the first map (M3)', () => {
+  /** The core map moved into a 192 by 192 frame with two regions, as the first map will have. */
+  function wide(): Bundle {
+    const b = structuredClone(bundle);
+    b.map.width = 192;
+    b.map.height = 192;
+    b.map.regions = [
+      { id: 'old_north-wood', purpose: 'wild', cells: [[70, 20, 40, 30]] },
+      { id: 'salt-shore', purpose: 'wild', title: 'The salt shore', cells: [[10, 150, 50, 20]] },
+    ] as NonNullable<Bundle['map']['regions']>;
+    return b;
+  }
+
+  test('a region entered is drawn whole with its name, and a region not entered is not', () => {
+    const b = wide();
+    const seen = [`${b.map.id}/old_north-wood`];
+    const regions = seenRegions(b, seen, [80, 30]);
+    expect(regions).toHaveLength(1);
+    expect(regions[0]).toMatchObject({ title: 'Old north wood', current: true });
+    const svg = mapSvg(b, { seen: new Set(), chunks: new Set(), at: [80, 30], regions });
+    expect(svg).toContain('Old north wood');
+    expect(svg).not.toContain('The salt shore');
+    expect(svg).toContain('stroke-dasharray="6 5"');
+  });
+
+  test('an id that is no region, and a region the map lost, are skipped', () => {
+    const b = wide();
+    expect(seenRegions(b, ['core/town-square', `${b.map.id}/gone`], [0, 0])).toEqual([]);
+    expect(seenRegions(b, undefined, [0, 0])).toEqual([]);
+  });
+
+  test('the chart is 640 units across at 64 tiles and at 192, so a name reads the same', () => {
+    const small = mapSvg(bundle, { seen: new Set(), chunks: new Set(), at: [28, 9] });
+    expect(small).toContain('viewBox="0 0 640 640"');
+    const big = mapSvg(wide(), { seen: new Set(), chunks: new Set(), at: [80, 30] });
+    expect(big).toContain('viewBox="0 0 640 640"');
+  });
+
+  test('a walked chunk shows no tile of an unwalked region', () => {
+    const b = wide();
+    const svg = mapSvg(b, { seen: new Set(), chunks: new Set(['9,2']), at: [80, 30], regions: [] });
+    expect(svg).not.toContain('Old north wood');
+  });
+});
+

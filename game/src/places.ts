@@ -1,5 +1,5 @@
 /** What stands where: read from the bundle, shared by the world and the menus. */
-import { inRect, type Bundle, type Slot } from '@game/kernel';
+import { inRect, placeName, regionAt, type Bundle, type Slot } from '@game/kernel';
 
 export interface PlaceInfo {
   id: string;
@@ -124,4 +124,32 @@ export function localMapState(s: unknown): LocalMapState | undefined {
   return m.seen instanceof Set && m.seenChunks instanceof Set
     ? { seen: m.seen, seenChunks: m.seenChunks, stall: typeof m.stall === 'string' ? m.stall : undefined }
     : undefined;
+}
+
+/** A map region the player has entered (G66): drawn as its whole footprint, never as the tiles walked. */
+export interface MapRegion {
+  /** the place id, `${map.id}/${region.id}` */
+  id: string;
+  title: string;
+  cells: readonly (readonly [number, number, number, number])[];
+  /** the centre of the first cell, in tiles: where the name stands */
+  x: number;
+  y: number;
+  current: boolean;
+}
+
+/** The regions of the map named in the player's seen list, in map order; ids that are no region are skipped. */
+export function seenRegions(b: Bundle, seen: readonly string[] | undefined, at: readonly [number, number]): MapRegion[] {
+  const out: MapRegion[] = [];
+  if (!seen?.length) return out;
+  const known = new Set(seen);
+  const here = regionAt(b.map, at[0], at[1]);
+  for (const region of b.map.regions ?? []) {
+    const id = `${b.map.id}/${region.id}`;
+    const title = placeName(b.map, id);
+    if (!known.has(id) || title === undefined) continue;
+    const [cx, cy, cw, ch] = region.cells[0]!;
+    out.push({ id, title, cells: region.cells, x: cx + cw / 2, y: cy + ch / 2, current: here === region });
+  }
+  return out;
 }
