@@ -7,6 +7,7 @@ import { PNG } from 'pngjs';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import {
+  codexArgs,
   type GenEntry, type ManifestLine, buildPrompt, enlargeOnMagenta, findOutput, galleryHtml, gridWarnings,
   importPalette, importRamps, importTile, loadReference, parseArgs, parseSpec, parseTokens,
 } from '../src/kit/gen.js';
@@ -274,5 +275,19 @@ describe('the gallery', () => {
     expect(html).toContain('drawn on a coarser grid');
     expect(html).toContain('style="width:96px"');
     expect(html).toContain('import: &lt;bad&gt;');
+  });
+});
+
+describe('the Codex call', () => {
+  test('stays on the cheapest footing and keeps the prompt before the images', () => {
+    const args = codexArgs('draw', ['-i', 'ref.png'], '');
+    expect(args).toContain('--ignore-user-config');
+    expect(args.slice(args.indexOf('-m'), args.indexOf('-m') + 2)).toEqual(['-m', 'gpt-5.6-luna']);
+    expect(args).toContain('model_reasoning_effort=low');
+    expect(args.slice(-3)).toEqual(['draw', '-i', 'ref.png']);
+  });
+
+  test('a named model replaces the lightest', () => {
+    expect(codexArgs('draw', [], 'gpt-5.6-terra')).toContain('gpt-5.6-terra');
   });
 });
