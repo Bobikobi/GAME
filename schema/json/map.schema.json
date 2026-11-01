@@ -2397,6 +2397,12 @@
                 "maxLength": 40,
                 "type": "string"
               },
+              "danger": {
+                "minimum": 0,
+                "maximum": 9,
+                "description": "The area's danger level d (G64, CR-38): 0 in the town and upward with the walk from it. Only an `area` slot carries it; ground in no area stays at 1. The world shows it (tracks, bones, thicker mist), the screen never does.",
+                "type": "integer"
+              },
               "safe": {
                 "description": "A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.",
                 "type": "boolean"

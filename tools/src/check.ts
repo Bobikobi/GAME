@@ -34,6 +34,7 @@ import { checkHands } from './hands';
 import { checkRichness } from './richness';
 import { checkSearch } from './search';
 import { checkStarts } from './starts';
+import { checkLock } from './lock';
 import { checkBalance } from './balance/check';
 import { mergedPullRequests, gitReader, resolveBase } from './decisions/base';
 import { NEXT_FILE, checkNext } from './decisions/next';
@@ -70,6 +71,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkRaces(b, assembled.origin));
     issues.push(...checkSchools(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
+    issues.push(...checkLock(b, assembled.origin, root));
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
