@@ -191,3 +191,82 @@
     align-items: start;
   }
 }
+
+/* the agents (issue 593): a dot on the tree for each agent, filled at work, a ring when waiting on a word */
+.wheel .agent,
+.tree-legend .agent {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.wheel .agent.wait,
+.tree-legend .agent.wait {
+  fill: var(--bg);
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+.tree-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-4);
+  margin-top: var(--s-2);
+  color: var(--fg2);
+  font-size: 16px;
+}
+.tree-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* one part grown on the tree (still B of issue 593): the spine of beads, done, in work, left */
+.tree-back {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.tree-back b {
+  font-family: var(--font-display);
+  font-weight: var(--w-display);
+  font-size: 24px;
+  line-height: 30px;
+}
+.tree-sum {
+  margin: var(--s-2) 0 var(--s-2);
+}
+.wheel .spine {
+  stroke: var(--cream);
+  stroke-width: 4;
+}
+.wheel .spine.left {
+  stroke: var(--wood2);
+  stroke-dasharray: 6 6;
+}
+.wheel .bead.done {
+  fill: var(--cream);
+}
+.wheel .bead.work {
+  fill: var(--accent);
+}
+.wheel .bead.left {
+  fill: var(--bg);
+  stroke: var(--wood2);
+  stroke-width: 3;
+}
+.wheel .bead-name.left,
+.wheel .side-count,
+.wheel .quiet {
+  fill: var(--fg2);
+}
+.wheel .now {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.wheel .now-word,
+.wheel .who {
+  fill: var(--accent);
+}
+.tree-back[hidden],
+.tree-sum[hidden] {
+  display: none;
+}

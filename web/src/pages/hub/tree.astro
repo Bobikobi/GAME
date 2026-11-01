@@ -1,10 +1,12 @@
 ---
-// The project tree (the owner's pick of 31.10: the radial tree, in the site's theme, under the developer area). The
-// page is a frame: the browser reads the tree's file (web/src/data/tree.ts) every minute and draws the wheel from it.
-// At first sight the wheel shows the root and the plan's stages only, each a short name and one count; a tap (or a
-// hover with a mouse) opens one stage's card with its work, its pull requests and its agents. Names of the agents,
-// their last lines, the queue's notes and the owner's open asks travel sealed in the same file; the gate opens them
-// in this browser only, and nothing typed leaves it.
+// The project tree (the owner's picks: the radial tree of 31.10, simplified to one trunk with two sides the same day,
+// and on 1.11 the game's parts as its branches, still B of issue 593). The page is a frame: the browser reads the tree's
+// file (web/src/data/tree.ts) every minute and draws from it. At first sight the tree shows the root and the game's
+// parts (gameplay, art, story, sound and the rest), each a short name, one count and a dot for each agent there. A tap
+// grows that part on the tree: its work hangs from its node as beads, done at the top, then what is in work, then what
+// is left as far as is known, and each agent stands on the bead it works on. Names of the agents, their last lines,
+// the queue's notes and the owner's open asks travel sealed in the same file; the gate opens them in this browser
+// only, and nothing typed leaves it.
 import Site from '../../layouts/Site.astro';
 import '../../styles/hub.css';
 import '../../styles/tree.css';
@@ -12,23 +14,32 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
 ---
 
 <Site
-  title="The project tree: the plan, its pull requests and the agents at work - Loomvale"
-  description="How Loomvale is being built right now: every stage of the plan with its progress, the open pull requests and their checks, and the agents at work on each branch, refreshed every minute."
+  title="The project tree: the game's parts, their progress and the agents at work - Loomvale"
+  description="How Loomvale is being built right now: every part of the game with its work done and left, the open pull requests and their checks, and where each agent is working, refreshed every minute."
   section="developers"
 >
   <div class="hub tree" data-src={TREE_URL} data-refresh={TREE_REFRESH_S} data-quiet={TREE_QUIET_MIN}>
     <header class="wrap tree-head">
       <p class="kicker">Developer area</p>
       <h1>The project tree</h1>
-      <p class="lead">Each branch is a stage of the plan, with its work done of its work planned. Tap a branch to open it.</p>
+      <p class="lead">Each branch is one part of the game, with its work done of its work known. Tap a branch to open it.</p>
       <p class="tree-stamp" id="tree-stamp" aria-live="polite"></p>
       <noscript><p class="tree-state">The tree is drawn in the browser; it needs JavaScript.</p></noscript>
     </header>
 
     <div class="wrap tree-main">
       <section aria-labelledby="wheel-h">
-        <h2 id="wheel-h" class="vh">The wheel</h2>
-        <svg class="wheel" id="wheel" role="group" aria-label="The plan's stages around the root"></svg>
+        <h2 id="wheel-h" class="vh">The tree</h2>
+        <div class="tree-back" id="back" hidden>
+          <button class="btn sm" type="button" id="back-btn">All parts</button>
+          <b id="back-name"></b>
+        </div>
+        <p class="row tree-sum" id="back-sum" hidden></p>
+        <svg class="wheel" id="wheel" role="group" aria-label="The game's parts around the root"></svg>
+        <p class="tree-legend" id="legend">
+          <span><svg width="16" height="16" aria-hidden="true"><circle class="agent" cx="8" cy="8" r="6"></circle></svg>an agent at work</span>
+          <span><svg width="16" height="16" aria-hidden="true"><circle class="agent wait" cx="8" cy="8" r="5"></circle></svg>waiting on a word</span>
+        </p>
       </section>
       <div class="tree-side">
         <section class="tree-card" id="card" aria-live="polite" hidden></section>
@@ -57,7 +68,8 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     faded: boolean;
     manager: boolean;
   };
-  type Item = { id: string | null; title: string; state: string; src: string };
+  type Item = { id?: string | null; title: string; state: string; src?: string };
+  type Pr = { n: number; title: string; ci: string; draft: boolean };
   type Limb = {
     id: string;
     title: string;
@@ -66,10 +78,21 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     done: number;
     total: number;
     items: Item[];
-    prs: { n: number; title: string; ci: string; draft: boolean }[];
+    prs: Pr[];
     sap: { n: number; title: string; at: string }[];
     sealed_asks: boolean;
     leaves: Leaf[];
+  };
+  /** A part of the game, the tree's branch since issue 593: its items done first, then in work, then left. */
+  type Part = {
+    id: string;
+    name: string;
+    done: number;
+    total: number;
+    items: Item[];
+    prs: Pr[];
+    /** each agent by its key, standing on the item it works on (`at`, an index into items) or on the node (null) */
+    agents: { key: string; at: number | null }[];
   };
   type Sealed = { kdf: string; iter: number; salt: string; iv: string; alg: string; ct: string };
   type Tree = {
@@ -79,6 +102,7 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     counts: { sessions: number; busy: number; open_prs: number; landed_today: number };
     notes: string[];
     limbs: Limb[];
+    parts?: Part[];
     root: Leaf[];
     trunk: Leaf[];
     sealed: Sealed | null;
@@ -100,8 +124,8 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
   const $ = (id: string): HTMLElement => document.getElementById(id)!;
   let tree: Tree | null = null;
   let opened: Open | null = null;
-  /** the stage whose card is open ('root' for the root), one at a time */
-  let open: string | null = null;
+  /** the part grown on the tree ('root' for the root's card), one at a time; a link may name it after the # */
+  let open: string | null = location.hash.slice(1) || null;
 
   const two = (n: number): string => String(n).padStart(2, '0');
   // the site's form for a time a person reads: DD.MM.YY HH:MM, in UTC
@@ -135,7 +159,7 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     return JSON.parse(new TextDecoder().decode(plain)) as Open;
   }
 
-  // the wheel's name for each stage, two or three words; a stage the page does not know yet is cut from its title
+  // a file written before the parts came draws its plan stages as the branches, each named in two or three words
   const SHORT: Record<string, string> = {
     opening: 'The opening',
     v015: 'v0.1.5',
@@ -149,14 +173,41 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     presence: 'Seeing others',
     chat: 'Chat',
   };
-  function short(l: Limb): string {
-    return SHORT[l.id] ?? l.title.split(/[,:]/)[0]!.split(/\s+/).slice(0, 3).join(' ');
+  const ORDER: Record<string, number> = { done: 0, building: 1, waiting: 2, open: 3 };
+  function partsOf(t: Tree): Part[] {
+    if (t.parts?.length) return t.parts;
+    return t.limbs.map((l) => ({
+      id: l.id,
+      name: SHORT[l.id] ?? l.title.split(/[,:]/)[0]!.split(/\s+/).slice(0, 3).join(' '),
+      done: l.done,
+      total: l.total,
+      items: [...l.items].sort((a, b) => (ORDER[a.state] ?? 4) - (ORDER[b.state] ?? 4)),
+      prs: l.prs,
+      agents: l.leaves.map((lf) => ({ key: lf.key, at: null })),
+    }));
   }
+  function leavesOf(t: Tree): Record<string, Leaf> {
+    const all: Record<string, Leaf> = {};
+    for (const lf of [...t.limbs.flatMap((l) => l.leaves), ...t.root, ...t.trunk]) all[lf.key] = lf;
+    return all;
+  }
+
   const quiet = (lf: Leaf): boolean => lf.faded || (lf.quiet_min ?? 0) > quietMin;
   // an agent at work right now: busy here or running in the cloud, and not quiet
   const working = (lf: Leaf): boolean => !quiet(lf) && (lf.status === 'busy' || lf.where === 'cloud');
-  // alive now: an agent working on the stage, or a pull request of it in flight
-  const alive = (l: Limb): boolean => l.prs.length > 0 || l.leaves.some(working);
+  // drawn on the tree: at work, or waiting on a word and not yet quiet; a shell with no agent in it is left out
+  const shown = (lf: Leaf): boolean => !quiet(lf) && lf.status !== 'shell';
+  const MODEL: Record<string, string> = { opus: 'Opus', sonnet: 'Sonnet', fable: 'Fable', haiku: 'Haiku' };
+  const who = (lf: Leaf): string => opened?.leaves[lf.key]?.name ?? (lf.model ? MODEL[lf.model] ?? lf.model : 'An agent');
+  /** The part's agents drawn on the tree, each with where it stands. */
+  function agentsIn(p: Part, leaves: Record<string, Leaf>): { lf: Leaf; at: number | null }[] {
+    return p.agents.flatMap((a) => {
+      const lf = leaves[a.key];
+      return lf && shown(lf) ? [{ lf, at: a.at }] : [];
+    });
+  }
+  // alive now: an agent working on the part, or a pull request of it in flight
+  const alive = (p: Part, leaves: Record<string, Leaf>): boolean => p.prs.length > 0 || agentsIn(p, leaves).some((a) => working(a.lf));
 
   /** Splits a name into lines of at most `max` letters, at spaces. */
   function lines(name: string, max: number): string[] {
@@ -168,27 +219,61 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     }
     return out;
   }
+  /** An item's title as a bead's name: its tracker number dropped, cut at its first clause, at most two lines. */
+  function beadName(title: string, max: number): string[] {
+    let t = title.replace(/^(#\d+|CR-\d+|NEXT \d+ ?\w?\)|Row \w+:)\s*/, '');
+    const cut = t.search(/: |; | - |, /);
+    if (cut >= 8) t = t.slice(0, cut);
+    t = t.charAt(0).toUpperCase() + t.slice(1);
+    const ls = lines(t, max);
+    if (ls.length <= 2) return ls;
+    const second = ls[1]!.length + 1 <= max ? `${ls[1]}…` : `${ls[1]!.slice(0, max - 1)}…`;
+    return [ls[0]!, second];
+  }
 
-  function toggle(id: string): void {
-    open = open === id ? null : id;
+  function setOpen(id: string | null): void {
+    open = id;
+    history.replaceState(null, '', id && id !== 'root' ? `#${id}` : location.pathname + location.search);
     draw();
   }
-  function hoverOpen(id: string): void {
-    if (open === id) return;
-    open = id;
-    draw();
+  function toggle(id: string): void {
+    setOpen(open === id ? null : id);
+  }
+  function hit(g: SVGElement, id: string, label: string): void {
+    g.setAttribute('role', 'button');
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('aria-label', label);
+    g.setAttribute('aria-expanded', String(open === id));
+    g.addEventListener('click', () => toggle(id));
+    g.addEventListener('keydown', (ev) => {
+      const k = (ev as KeyboardEvent).key;
+      if (k === 'Enter' || k === ' ') {
+        ev.preventDefault();
+        toggle(id);
+      }
+    });
+  }
+  /** Agent dots round a node's outer top, toward the root: filled at work, a ring when waiting on a word. */
+  function dots(g: SVGElement, x: number, y: number, side: 1 | -1, list: Leaf[]): void {
+    list.slice(0, 4).forEach((lf, j) => {
+      const a = ((-90 - side * (40 + j * 26)) * Math.PI) / 180;
+      g.append(sv('circle', { class: `agent${working(lf) ? '' : ' wait'}`, cx: (x + 30 * Math.cos(a)).toFixed(1), cy: (y + 30 * Math.sin(a)).toFixed(1), r: 7 }));
+    });
   }
 
   /**
-   * The wheel: the root in the middle and one branch per stage to a node that carries its count, with the stage's
-   * short name beside it. The stages go round clockwise from the top, the first half on the right; the wheel is as
-   * wide as its box and one unit is one CSS pixel, so every word stays at 16 px on a phone.
+   * The tree: the root in the middle and one branch per part to a node that carries its count, with the part's name
+   * beside it. The parts go round clockwise from the top, the first half on the right; the tree is as wide as its box
+   * and one unit is one CSS pixel, so every word stays at 16 px on a phone.
    */
   function drawWheel(t: Tree): void {
     const svg = $('wheel');
     svg.replaceChildren();
+    svg.setAttribute('aria-label', 'The game’s parts around the root');
+    const parts = partsOf(t);
+    const leaves = leavesOf(t);
     const W = Math.max(320, Math.min(720, svg.clientWidth || 360));
-    const n = t.limbs.length;
+    const n = parts.length;
     const right = Math.ceil(n / 2);
     const left = n - right;
     const gap = 64;
@@ -196,13 +281,14 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     const H = 2 * ry + 72;
     const cx = W / 2;
     const cy = H / 2;
-    // the node's distance from the middle: never on the root, and wider at the waist so the wheel reads round
-    const dx0 = Math.max(48, W * 0.12);
-    const rx = Math.max(16, W * 0.06);
+    // the node's distance from the middle: never on the root, and wider at the waist so the tree reads round
+    // (closer on a phone since issue 593: nine parts put one-word names like "Community" at the waist)
+    const narrow = W < 480;
+    const dx0 = narrow ? 44 : Math.max(48, W * 0.12);
+    const rx = narrow ? 16 : Math.max(16, W * 0.06);
     const max = Math.floor((W / 2 - dx0 - rx - 32) / 8.4);
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     svg.setAttribute('height', String(H));
-    const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
     const place = (i: number): { x: number; y: number; side: 1 | -1 } => {
       const side = i < right ? 1 : -1;
       const k = side === 1 ? i : n - 1 - i;
@@ -211,43 +297,108 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
       const u = (y - cy) / ry;
       return { x: cx + side * (dx0 + rx * Math.sqrt(Math.max(0, 1 - u * u))), y, side };
     };
-    const branch = (g: SVGElement, x: number, y: number, live: boolean): void => {
-      g.append(sv('path', { class: `limb${live ? ' alive' : ''}`, d: `M${cx} ${cy} Q${cx} ${y} ${x.toFixed(1)} ${y.toFixed(1)}` }));
-    };
-    const hit = (g: SVGElement, id: string, label: string): void => {
-      g.setAttribute('role', 'button');
-      g.setAttribute('tabindex', '0');
-      g.setAttribute('aria-label', label);
-      g.setAttribute('aria-expanded', String(open === id));
-      g.addEventListener('click', () => toggle(id));
-      g.addEventListener('keydown', (ev) => {
-        const k = (ev as KeyboardEvent).key;
-        if (k === 'Enter' || k === ' ') {
-          ev.preventDefault();
-          toggle(id);
-        }
-      });
-      if (fine) g.addEventListener('pointerenter', () => hoverOpen(id));
-    };
-    t.limbs.forEach((l, i) => {
+    parts.forEach((p, i) => {
       const { x, y, side } = place(i);
-      const live = alive(l);
-      const g = sv('g', { class: `stage${open === l.id ? ' open' : ''}${l.status === 'planned' ? ' planned' : ''}` });
-      branch(g, x, y, live);
+      const live = alive(p, leaves);
+      const here = agentsIn(p, leaves).map((a) => a.lf);
+      // a part with nothing in work, no pull request and no agent is drawn quiet
+      const still = !live && !here.length && !p.items.some((it) => it.state === 'building');
+      const g = sv('g', { class: `stage${still ? ' planned' : ''}` });
+      g.append(sv('path', { class: `limb${live ? ' alive' : ''}`, d: `M${cx} ${cy} Q${cx} ${y} ${x.toFixed(1)} ${y.toFixed(1)}` }));
       g.append(sv('circle', { class: `node${live ? ' alive' : ''}`, cx: x, cy: y, r: 23 }));
-      g.append(sv('text', { class: 'count', x, y: y + 6, 'text-anchor': 'middle' }, `${l.done}/${l.total}`));
-      const words = lines(short(l), max);
+      g.append(sv('text', { class: 'count', x, y: y + 6, 'text-anchor': 'middle' }, `${p.done}/${p.total}`));
+      dots(g, x, y, side, here);
+      const words = lines(p.name, max);
       const tx = x + side * 32;
       const ty = y + 6 - ((words.length - 1) * 22) / 2;
       words.forEach((w, k) => g.append(sv('text', { class: 'name', x: tx, y: ty + k * 22, 'text-anchor': side === 1 ? 'start' : 'end' }, w)));
-      hit(g, l.id, `${l.title}: ${l.done} of ${l.total} done${live ? ', alive now' : ''}`);
+      const agents = here.length ? `, ${here.length} agent${here.length === 1 ? '' : 's'} here` : '';
+      hit(g, p.id, `${p.name}: ${p.done} of ${p.total} done${agents}`);
       svg.append(g);
     });
     const r = sv('g', { class: `rootg${open === 'root' ? ' open' : ''}` });
     // the root carries no word: the page's title names it, and a name under it would run into the waist's nodes
     r.append(sv('circle', { class: 'root', cx, cy, r: 22 }));
-    hit(r, 'root', 'Loomvale: the agents with no stage, and today’s landings');
+    hit(r, 'root', 'Loomvale: the agents with no part, and today’s landings');
     svg.append(r);
+  }
+
+  /**
+   * One part grown on the tree (still B): the root, the branch to the part's node, and its work hanging from the node
+   * as beads on one spine, done at the top, then in work, then left as far as is known. The spine is solid as far as
+   * the work has reached and dashed beyond; a mark says where now is, and each agent stands under its bead.
+   */
+  function drawHang(t: Tree, p: Part): void {
+    const svg = $('wheel');
+    svg.replaceChildren();
+    svg.setAttribute('aria-label', `${p.name}: its work from done to left, and the agents on it`);
+    const leaves = leavesOf(t);
+    const here = agentsIn(p, leaves);
+    const W = Math.max(320, Math.min(720, svg.clientWidth || 360));
+    const x0 = 36;
+    const gx = 104;
+    const y0 = 44;
+    const lx = gx + 22;
+    const max = Math.max(12, Math.floor((W - lx - 16) / 8.4));
+    const items = p.items;
+    const ys: number[] = [];
+    const names = items.map((it) => beadName(it.title, max));
+    let y = y0 + 56;
+    items.forEach((_, k) => {
+      ys.push(y);
+      y += 34 + (names[k]!.length - 1) * 20 + (here.some((a) => a.at === k) ? 24 : 0);
+    });
+    const H = items.length ? y + 8 : y0 + 80;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('height', String(H));
+    const firstOpen = items.findIndex((i) => i.state !== 'done');
+    const reached = items.map((i) => i.state === 'done' || i.state === 'building').lastIndexOf(true);
+    const end = ys[ys.length - 1] ?? y0;
+    // the root, the branch to the part's node, and the spine down from it
+    svg.append(sv('path', { class: `limb${alive(p, leaves) ? ' alive' : ''}`, d: `M${x0} ${y0} L${gx} ${y0}` }));
+    if (items.length) {
+      const solid = reached >= 0 ? ys[reached]! : y0;
+      svg.append(sv('line', { class: 'spine', x1: gx, y1: y0, x2: gx, y2: solid }));
+      if (solid < end) svg.append(sv('line', { class: 'spine left', x1: gx, y1: solid, x2: gx, y2: end }));
+    }
+    const r = sv('g', { class: 'rootg' });
+    r.append(sv('circle', { class: 'root', cx: x0, cy: y0, r: 18 }));
+    hit(r, p.id, 'Back to all the parts');
+    svg.append(r);
+    const g = sv('g', { class: 'stage open' });
+    g.append(sv('circle', { class: 'node alive', cx: gx, cy: y0, r: 23 }));
+    g.append(sv('text', { class: 'count', x: gx, y: y0 + 6, 'text-anchor': 'middle' }, `${p.done}/${p.total}`));
+    g.append(sv('text', { class: 'name', x: gx + 32, y: y0 + 6 }, p.name));
+    dots(g, gx, y0, -1, here.filter((a) => a.at === null).map((a) => a.lf));
+    svg.append(g);
+    if (!items.length) {
+      svg.append(sv('text', { class: 'quiet', x: lx, y: y0 + 62 }, 'Nothing planned here yet.'));
+      return;
+    }
+    // now: a mark across the spine above the first piece not done; none once every piece is done
+    if (firstOpen >= 0) {
+      const ny = firstOpen === 0 ? ys[0]! - 22 : (ys[firstOpen]! + ys[firstOpen - 1]!) / 2 + (names[firstOpen - 1]!.length - 1) * 10;
+      svg.append(sv('line', { class: 'now', x1: gx - 22, y1: ny, x2: gx + 22, y2: ny }));
+      svg.append(sv('text', { class: 'now-word', x: gx - 28, y: ny + 6, 'text-anchor': 'end' }, 'now'));
+    }
+    items.forEach((it, k) => {
+      const st = it.state === 'done' ? 'done' : it.state === 'building' ? 'work' : 'left';
+      svg.append(sv('circle', { class: `bead ${st}`, cx: gx, cy: ys[k]!, r: 8 }));
+      names[k]!.forEach((w, q) => svg.append(sv('text', { class: `bead-name ${st}`, x: lx, y: ys[k]! + 6 + q * 20 }, w)));
+      const on = here.filter((a) => a.at === k).map((a) => a.lf);
+      if (on.length) {
+        const ay = ys[k]! + 6 + (names[k]!.length - 1) * 20 + 22;
+        on.slice(0, 3).forEach((lf, j) => svg.append(sv('circle', { class: `agent${working(lf) ? '' : ' wait'}`, cx: lx + 7 + j * 18, cy: ay - 6, r: 7 })));
+        const names_ = on.map(who);
+        const said = names_.length > 2 ? `${names_.length} agents here` : `${names_.join(' and ')} here`;
+        svg.append(sv('text', { class: 'who', x: lx + 7 + Math.min(on.length, 3) * 18, y: ay }, said));
+      }
+    });
+    // the counts beside the spine's two ends
+    const doneN = items.filter((i) => i.state === 'done').length;
+    const leftN = items.length - 1 - reached;
+    if (doneN) svg.append(sv('text', { class: 'side-count', x: gx - 28, y: (ys[0]! + ys[doneN - 1]!) / 2 + 6, 'text-anchor': 'end' }, `${doneN} done`));
+    if (leftN > 0) svg.append(sv('text', { class: 'side-count', x: gx - 28, y: (ys[reached + 1]! + end) / 2 + 6, 'text-anchor': 'end' }, `${leftN} left`));
   }
 
   /** One line of the card: a few parts side by side. */
@@ -260,9 +411,9 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     const ul = el('ul', 'card-list');
     for (const lf of list) {
       const o = opened?.leaves[lf.key];
-      const who = o ? `${o.name}${o.label ? ` (${o.label})` : ''}` : lf.manager ? 'The manager' : 'An agent';
+      const name = o ? `${o.name}${o.label ? ` (${o.label})` : ''}` : lf.manager ? 'The manager' : 'An agent';
       const li = el('li', working(lf) ? 'alive' : quiet(lf) ? 'quiet' : '');
-      li.append(el('b', '', who));
+      li.append(el('b', '', name));
       li.append(
         line(
           working(lf) ? 'working now' : quiet(lf) ? 'quiet' : lf.status,
@@ -283,53 +434,37 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
   }
   const head = (text: string): HTMLElement => el('h4', '', text);
 
-  /** The open stage's card: every word the wheel leaves out, at reading size. */
-  function drawCard(t: Tree): void {
+  /** The card: for the root, the agents with no part and today's landings; for a part, its pull requests and agents. */
+  function drawCard(t: Tree, p: Part | undefined): void {
     const card = $('card');
     card.replaceChildren();
-    const limb = t.limbs.find((l) => l.id === open);
     if (open === 'root') {
       card.append(el('h3', '', 'Loomvale'));
       card.append(line(`${t.counts.landed_today} landed today`, `release ${t.release.live ?? 'unknown'}`));
-      const near = [...t.root, ...t.trunk];
-      if (near.length) card.append(head(`Agents with no stage (${near.length})`), agentRows(near));
-    } else if (limb) {
-      card.append(el('h3', '', limb.title));
-      card.append(line(`${limb.done} of ${limb.total} done`, alive(limb) ? el('span', 'alive-word', 'alive now') : null, limb.kind === 'side' ? 'beside the plan' : null));
-      if (limb.prs.length) {
-        card.append(head(`Pull requests (${limb.prs.length})`));
+      const placed = new Set(partsOf(t).flatMap((x) => x.agents.map((a) => a.key)));
+      const near = [...t.root, ...t.trunk, ...t.limbs.flatMap((l) => l.leaves)].filter((lf) => !placed.has(lf.key));
+      if (near.length) card.append(head(`Agents with no part (${near.length})`), agentRows(near));
+    } else if (p) {
+      if (p.prs.length) {
+        card.append(head(`Pull requests (${p.prs.length})`));
         const ul = el('ul', 'card-list');
-        for (const p of limb.prs) {
+        for (const pr of p.prs) {
           const li = el('li', 'alive');
-          li.append(el('b', '', `#${p.n}`), document.createTextNode(` ${p.title}`));
-          li.append(line(`checks ${p.ci === 'none' ? 'not run' : p.ci}`, p.draft ? 'draft' : null));
+          li.append(el('b', '', `#${pr.n}`), document.createTextNode(` ${pr.title}`));
+          li.append(line(`checks ${pr.ci === 'none' ? 'not run' : pr.ci}`, pr.draft ? 'draft' : null));
           ul.append(li);
         }
         card.append(ul);
       }
-      if (limb.leaves.length) card.append(head(`Agents (${limb.leaves.length})`), agentRows(limb.leaves));
-      if (limb.sap.length) card.append(line(`Landed today: ${limb.sap.map((s) => `#${s.n} at ${s.at}`).join(', ')}`));
-      if (limb.sealed_asks) {
-        const asks = opened ? opened.asks.filter((a) => a.limb === limb.id) : [];
-        card.append(line(opened ? `${asks.length} picture${asks.length === 1 ? '' : 's'} for the owner today` : 'The owner’s asks are sealed.'));
-      }
-      if (limb.items.length) {
-        card.append(head(`Work items (${limb.items.length})`));
-        const ul = el('ul', 'card-list items');
-        limb.items.forEach((it, k) => {
-          const li = el('li', '', `${it.state}: ${it.title}`);
-          const extra = opened?.items[`${limb.id}:${k}`];
-          if (extra) li.append(el('span', 'note', ` - ${extra.status}`));
-          ul.append(li);
-        });
-        card.append(ul);
-      }
+      const leaves = leavesOf(t);
+      const list = p.agents.map((a) => leaves[a.key]).filter((lf): lf is Leaf => !!lf);
+      if (list.length) card.append(head(`Agents (${list.length})`), agentRows(list));
     }
     card.hidden = card.childElementCount === 0;
-    if (!card.hidden) {
+    if (!card.hidden && open === 'root') {
       const close = el('button', 'btn sm card-close', 'Close');
       close.type = 'button';
-      close.addEventListener('click', () => toggle(open ?? ''));
+      close.addEventListener('click', () => setOpen(null));
       card.append(close);
     }
   }
@@ -350,8 +485,21 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     $('tree-state').textContent =
       `Data built ${stamp(built)} UTC, ${age} min ago; read again every ${refresh} s.` +
       (t.notes.length ? ` Missing this time: ${t.notes.join('; ')}.` : '');
-    drawWheel(t);
-    drawCard(t);
+    const p = partsOf(t).find((x) => x.id === open);
+    if (open && open !== 'root' && !p) open = null;
+    $('back').hidden = !p;
+    $('back-sum').hidden = !p;
+    if (p) {
+      $('back-name').textContent = p.name;
+      const sum = $('back-sum');
+      sum.replaceChildren();
+      const n = agentsIn(p, leavesOf(t)).length;
+      sum.append(el('span', '', `${p.done} of ${p.total} done`));
+      if (n) sum.append(el('span', 'alive-word', `${n} agent${n === 1 ? '' : 's'} here`));
+      if (p.prs.length) sum.append(el('span', '', `${p.prs.length} pull request${p.prs.length === 1 ? '' : 's'}`));
+      drawHang(t, p);
+    } else drawWheel(t);
+    drawCard(t, p);
   }
 
   async function read(): Promise<void> {
@@ -382,6 +530,7 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
     }
   }
 
+  $('back-btn').addEventListener('click', () => setOpen(null));
   $('gate').addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const input = $('gate-pw') as HTMLInputElement;
@@ -409,11 +558,11 @@ import { TREE_QUIET_MIN, TREE_REFRESH_S, TREE_URL } from '../../data/tree';
 
   void read();
   setInterval(() => void read(), refresh * 1000);
-  // the wheel takes the width it is given, so it is drawn again when that changes
+  // the tree takes the width it is given, so it is drawn again when that changes
   let lastWidth = 0;
   new ResizeObserver(() => {
     const w = $('wheel').clientWidth;
-    if (w !== lastWidth && tree) drawWheel(tree);
+    if (w !== lastWidth && tree) draw();
     lastWidth = w;
   }).observe($('wheel'));
 </script>
