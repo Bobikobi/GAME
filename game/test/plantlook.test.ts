@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { LEAN, LEAN_SPREAD, plantLook } from '../src/plantlook';
+import { LEAN, LEAN_SPREAD, MIRRORED, mirroredAt, plantLook } from '../src/plantlook';
 
 describe('how a tuft stands', () => {
   const looks = Array.from({ length: 400 }, (_, i) => plantLook(i % 20, Math.floor(i / 20)));
@@ -28,6 +28,27 @@ describe('how a tuft stands', () => {
     for (const l of looks) {
       expect(Math.abs(l.dx)).toBeLessThanOrEqual(12);
       expect(Math.abs(l.dy)).toBeLessThanOrEqual(3);
+    }
+  });
+});
+
+describe('which natural things stand mirrored', () => {
+  const tiles = Array.from({ length: 400 }, (_, i) => [i % 20, Math.floor(i / 20)] as const);
+
+  test('the same tile always gives the same answer', () => {
+    for (const [x, y] of tiles) expect(mirroredAt('tree_oak', x, y)).toBe(mirroredAt('tree_oak', x, y));
+  });
+
+  test('about half of the natural kinds are mirrored, and the choice is the tile\'s, not the kind\'s', () => {
+    const flipped = tiles.filter(([x, y]) => mirroredAt('tree_oak', x, y)).length / tiles.length;
+    expect(flipped).toBeGreaterThan(0.4);
+    expect(flipped).toBeLessThan(0.6);
+    for (const name of MIRRORED) expect(tiles.every(([x, y]) => mirroredAt(name, x, y) === mirroredAt('tree_oak', x, y))).toBe(true);
+  });
+
+  test('a sign, a building or a made thing never is', () => {
+    for (const name of ['sign', 'shop_sign_food', 'house_small', 'market_stall', 'lantern_post', 'ruin_arch', 'standing_stone', 'totem', 'fence']) {
+      expect(tiles.some(([x, y]) => mirroredAt(name, x, y))).toBe(false);
     }
   });
 });

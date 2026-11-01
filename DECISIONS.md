@@ -4164,3 +4164,10 @@ The owner, 1.11 23:35, after looking through all 2,735 drafts by tool: this is t
 Result: the trees' route C (#544) moved from SD 1.5 to Qwen on Kaggle. On this date Codex is out of credits and Gemini's browser rig waits on the Google check (#533).
 Why: his judgement of the pictures, by eye. No measure was taken.
 **Retry when:** the owner asks for one of the others, or a new model beats Qwen beside the references. Model: claude-opus-5-5. Issue #544.
+
+## 2026-11-02 ✅ Natural things stand mirrored by their tile; the art's lit side moves with the sun anyway (#636)
+
+The owner, 2.11: objects can be mirrored for more variety. Trees, stumps, bushes, rocks, logs and mushrooms draw flipped or not by a hash of the tile (`mirroredAt`, `game/src/plantlook.ts`). The kernel is not touched, and signs, buildings, ruins, statues, lanterns and fences stay as drawn. Tufts keep their own flip, flowers and pebbles were not in the brief.
+Result: on the first map 55 of 113 natural things are mirrored, by family tree 13 of 26, stump 0 of 1, bush 7 of 14, rock 13 of 28, log 3 of 6, mushroom 19 of 38; a reload gave the same list. The hash's seed was picked for that balance, so a kind alone can sit further off (`mushrooms_small` 1 of 9). A phone-size still with four oaks, two mirrored: `docs/design/frames/mirror-natural-0211.png`.
+Why it holds: oaks are close to symmetric (left half against right half +3 of 255 in light). `young_tree` (+33) and `rock_mossy` (+27) do read lit from the right when mirrored, but the sun stands south and swings, so a shadow falls up-left in the morning: a right-lit thing is the morning's light and a left-lit one the afternoon's. No kind was kept out. Whether it reads right stays the owner's eye.
+**Retry when:** the owner sees a kind lit wrongly: take its name off `MIRRORED`. The 3D door is paused and does not have this yet. Model: claude-opus-5-5. Issue #636.
