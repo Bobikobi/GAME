@@ -233,6 +233,8 @@ export function buildSheets(settings: Settings, write = true): SheetsResult {
       const name = `${sheet}_${view}`;
       pending.push([join(SHEET_DIR, `${name}.png`), v.strip]);
       result.written.push(join(SHEET_DIR, `${name}.png`));
+      // `scale` is the scale audit's (#509), not the render's: a regeneration keeps what the entry declares
+      const scale = kit.kit.sprites[`chars/${name}`]?.scale;
       kit.kit.sprites[`chars/${name}`] = {
         file: `chars/${name}.png`,
         w: fw,
@@ -241,6 +243,7 @@ export function buildSheets(settings: Settings, write = true): SheetsResult {
         density: 4,
         ramps: named,
         stride: { travel_mpx: Math.round(v.travel * 1000), anchor: [...settings.frame.anchor], ...(target.ships.bob === false ? { bob: false } : {}) },
+        ...(scale === undefined ? {} : { scale }),
       };
       feet.sheets[sheet]![view] = { poses: info.poses, travel: v.travel, slope: v.slope, plants: v.plants };
       result.widths[name] = cycleWidth(v.strip, v.frames, fw);
