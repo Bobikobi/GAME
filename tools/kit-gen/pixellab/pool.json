@@ -1,8 +1,8 @@
 {
   "accounts": [
-    { "file": "pixellab-token.txt", "label": "current", "slots": 1 },
-    { "file": "pixellab-token-trial1.txt", "label": "trial1", "slots": 1 },
-    { "file": "pixellab-token-trial2.txt", "label": "trial2", "slots": 1 },
-    { "file": "pixellab-token-trial3.txt", "label": "trial3", "slots": 1 }
+    { "file": "pixellab-token.txt", "label": "current", "slots": 1, "plan": "free", "nightly": true },
+    { "file": "pixellab-token-trial1.txt", "label": "trial1", "slots": 10, "plan": "paid", "nightly": false },
+    { "file": "pixellab-token-trial2.txt", "label": "trial2", "slots": 1, "plan": "free", "nightly": true },
+    { "file": "pixellab-token-trial3.txt", "label": "trial3", "slots": 1, "plan": "free", "nightly": true }
   ]
 }

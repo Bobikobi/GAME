@@ -1,0 +1,11 @@
+[Unit]
+Description=The nightly PixelLab job, 02:30 Israel time
+
+[Timer]
+# 02:30 Israel time, in the 2 to 5 window the owner asked for. Persistent: a night the laptop was off runs when it is next on.
+# No WakeSystem: the laptop is never woken for this.
+OnCalendar=*-*-* 02:30:00 Asia/Jerusalem
+Persistent=true
+
+[Install]
+WantedBy=timers.target

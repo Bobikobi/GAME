@@ -13,6 +13,7 @@ import { join, resolve } from 'node:path';
 
 import { DRAFTS_REPO, type Draft, DraftIndex, type Gh, INDEX_PATH, pngDims, realGh, retry } from './drafts.js';
 import { dateReport, dateReportText, renderLibrary, rowOf } from './library.js';
+import { IDS_FILE, REVIEWS_FILE, applyChoice, readReviews } from './library-reviews.js';
 import { ROOT } from './queue.js';
 
 export const THUMB_SIDE = 300;
@@ -95,20 +96,26 @@ function readHead(file: string): Buffer {
   return head;
 }
 
-export interface BuildResult { total: number; html: string; thumbs: ThumbReport; dates: string }
+export interface BuildResult { total: number; html: string; thumbs: ThumbReport; dates: string; reviews: { applied: number; skipped: number } }
 
 /** The whole build: thumbnails, then the page. Throws only when the index cannot be read. */
 export function buildLibrary(index: DraftIndex, out: string, opts: ThumbOptions & { builtAt?: string } = {}): BuildResult {
   const drafts = [...index.drafts.values()];
   const thumbDir = join(out, 'thumb');
   const thumbs = ensureThumbs(drafts, thumbDir, opts);
-  const rows = drafts.map((d) => rowOf(d, (id) => existsSync(thumbPath(thumbDir, id))));
+  // the owner's hand sort (reviews.jsonl, kept in the page's folder by tools/art-library/serve.py) is laid over the index: his choice wins
+  const known = new Set(index.drafts.keys());
+  const saved = readReviews(join(out, REVIEWS_FILE), known);
+  const rows = drafts.map((d) => applyChoice(rowOf(d, (id) => existsSync(thumbPath(thumbDir, id))), saved.choices.get(d.id)));
   const html = renderLibrary(rows, { builtAt: opts.builtAt ?? new Date().toISOString() });
   mkdirSync(out, { recursive: true });
   writeFileSync(join(out, 'index.html.tmp'), html);
   // the page appears whole or not at all: the server may be reading it
   renameSync(join(out, 'index.html.tmp'), join(out, 'index.html'));
-  return { total: rows.length, html, thumbs, dates: dateReportText(dateReport(rows)) };
+  // the ids the page holds: the server accepts a choice only for one of them
+  writeFileSync(join(out, `${IDS_FILE}.tmp`), JSON.stringify([...known]));
+  renameSync(join(out, `${IDS_FILE}.tmp`), join(out, IDS_FILE));
+  return { total: rows.length, html, thumbs, dates: dateReportText(dateReport(rows)), reviews: { applied: saved.choices.size, skipped: saved.skipped } };
 }
 
 function flag(args: readonly string[], name: string): string | undefined {
@@ -125,6 +132,7 @@ export function main(args: readonly string[]): number {
   const t = result.thumbs;
   say(`thumbnails: ${t.present} kept, ${t.seeded} seeded, ${t.made} fetched, ${t.placeholders} placeholders (no picture), ${t.failed.length} failed`);
   say(result.dates);
+  say(`reviews.jsonl: ${result.reviews.applied} choices laid over the index, ${result.reviews.skipped} lines skipped (not a choice for a draft on the page)`);
   say(`${result.total} drafts on the page: ${join(out, 'index.html')}`);
   return 0;
 }
