@@ -285,6 +285,25 @@ describe('a mutation fails its own check', () => {
     expectError(src, /^fang-knife: swaps 3 items from slate-knife \(skeleton\)$/);
   });
 
+  it('tier gap in a row', () => {
+    const src = raw();
+    const shafts = src.parts.find((p) => p.part === 'arrow-shafts')!;
+    src.parts.push({ ...shafts, tiers: [3, 3], ids: { '3': 'arrow-shafts' }, early: { '3': ['branch'] } });
+    expectError(src, /^arrow-shafts: tier gap 1 to 3$/);
+  });
+
+  it('close rate at or over the bare hand', () => {
+    const src = raw();
+    src.params.matrix.price.feel.even = 400;
+    expectError(src, /^quarterstaff: close rate under the bare hand$/);
+  });
+
+  it('WM-BLOCK: no dominance in harm', () => {
+    const src = raw();
+    src.params.matrix.price.noise.hushed = 0;
+    expectError(src, /^WM-BLOCK: tier 2: tusk-dagger matches or beats slate-knife in harm$/);
+  });
+
   it('teacher sizes and tiers', () => {
     const src = raw();
     src.teachers.cache!.max = 1;
