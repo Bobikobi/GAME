@@ -7,6 +7,7 @@
 import type { Bundle } from './bundle';
 import { appearSlots } from './reactions';
 import { relocationOf } from './relocate';
+import { placeName } from './world';
 import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, type State } from './state';
 
 /**
@@ -52,6 +53,9 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  // a place that left the map is no place any more: it is neither seen nor counted (G63, G66)
+  if (p.seen) p.seen = p.seen.filter((id) => placeName(bundle.map, id) !== undefined);
+  if (p.explored) p.explored = p.explored.filter((id) => placeName(bundle.map, id) !== undefined);
   // what a searchable holds goes with it, and a row whose item left the content is dropped
   state.searched = Object.fromEntries(
     Object.entries(keepKeys(state.searched ?? {}, bundle.searchables)).map(([id, held]) => [id, { ...held, rows: held.rows.filter((item) => item in bundle.items) }]),
@@ -64,6 +68,8 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   // a world that changed may have moved the hazards and the safe ground: nothing carries over
   p.outing = null;
   p.chase = null;
+  // a crossing under way whose passage or drawn event left the content puts in at the jetty it left
+  if (p.aboard && !bundle.passages[p.aboard.passage]?.events[p.aboard.event]) p.aboard = null;
   // a node a reaction makes appear keeps its state under its own id, as long as the reaction stays
   state.nodes = keepKeys(state.nodes, { ...bundle.instances, ...Object.fromEntries(appearSlots(bundle)) });
   // a worn item that is gone, or no longer fits its place, comes off

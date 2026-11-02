@@ -210,7 +210,7 @@ describe('the equipment foundations', () => {
     const bindRow = (name: string) => at(r, `items.tester/${name}.bind`).map((i) => i.message);
     expect(bindRow('spade')).toEqual([power]);
     expect(bindRow('apron')).toEqual([power]);
-    // a legendary find with an effect is power too: a ceiling raiser cannot be told apart yet (owner question, default never)
+    // a legendary find with an effect is power too, and power is never bound, a found ceiling raiser included (DECISIONS 2026-11-01, #615)
     expect(bindRow('crown')).toEqual([power]);
     expect(bindRow('veil')).toEqual([]);
     expect(r.assembled.bundle?.items['tester/veil']?.bind).toBe('character');

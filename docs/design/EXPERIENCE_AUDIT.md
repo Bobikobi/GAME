@@ -158,7 +158,7 @@ Status words: BUILT (on develop), PLANNED (a NEXT section or DECISIONS entry hol
 
 1. **Old saves and the block move (M5):** move every saved position by (+66, +84) when the first map lands (recommended), or reset
    positions to the wake tile.
-2. **The sea crossing (SEA_CROSSING.md section 6):** whether the boat is the only way for a human to reach the far bank; whether the
-   first map's crossing lands at a far jetty with the city shut, or waits for the city's land; where the human city stands now.
+2. **The sea crossing:** answered by the owner, 2026-11-01 (SEA_CROSSING.md section 6): no far jetty until the city is built; a human
+   may also walk round, as a significant detour; the human city stands on the far bank.
 3. **The order:** M2, M3, M5 and M6 are small and ride 19 e; M1 is a stream of its own; M4, M7 and M8 are 19 e's content. Whether M1
    goes before or after 19 e is the owner's call (recommended after 19 e item a, beside the boathouse, since both use stamps).

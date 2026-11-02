@@ -1656,6 +1656,143 @@
                         }
                       }
                     },
+                    "fight": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "tier",
+                        "hp",
+                        "breath",
+                        "pace_ms",
+                        "moves",
+                        "patterns"
+                      ],
+                      "properties": {
+                        "tier": {
+                          "description": "How many hits of a starter hand fell it: T1 2, T2 6 to 8, T3 20 and more (the check counts hp against combat.bare_base).",
+                          "anyOf": [
+                            {
+                              "const": 1,
+                              "type": "number"
+                            },
+                            {
+                              "const": 2,
+                              "type": "number"
+                            },
+                            {
+                              "const": 3,
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "hp": {
+                          "minimum": 1,
+                          "maximum": 2000,
+                          "description": "Points of health.",
+                          "type": "integer"
+                        },
+                        "breath": {
+                          "minimum": 1,
+                          "maximum": 200,
+                          "description": "Points of breath; its moves spend it and it refills like a player's.",
+                          "type": "integer"
+                        },
+                        "pace_ms": {
+                          "minimum": 100,
+                          "maximum": 2000,
+                          "description": "Game milliseconds a tile when it walks at a player. Never under the walk: a hunter is escaped by walking (HUNTING 2).",
+                          "type": "integer"
+                        },
+                        "moves": {
+                          "minItems": 1,
+                          "maxItems": 4,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "windup_t",
+                              "reach",
+                              "breath",
+                              "recover_t",
+                              "cooldown_t"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                                "type": "string"
+                              },
+                              "windup_t": {
+                                "minimum": 1,
+                                "maximum": 20,
+                                "description": "Ticks the pose shows before the move lands. The check holds it to combat.windup_min_t and windup_max_t.",
+                                "type": "integer"
+                              },
+                              "reach": {
+                                "minimum": 1,
+                                "maximum": 3,
+                                "description": "Tiles in a line in front of the foe the move reaches.",
+                                "type": "integer"
+                              },
+                              "harm_div": {
+                                "minimum": 2,
+                                "maximum": 24,
+                                "description": "The move takes the health cap divided by this. Absent: combat.bite_div.",
+                                "type": "integer"
+                              },
+                              "breath": {
+                                "minimum": 0,
+                                "maximum": 40,
+                                "description": "Breath the move costs the foe.",
+                                "type": "integer"
+                              },
+                              "recover_t": {
+                                "minimum": 1,
+                                "maximum": 20,
+                                "description": "Ticks the foe stands open after the move; a strike that lands then does extra if this is the weak move.",
+                                "type": "integer"
+                              },
+                              "cooldown_t": {
+                                "minimum": 0,
+                                "maximum": 200,
+                                "description": "Ticks before the same move may start again.",
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "patterns": {
+                          "minItems": 1,
+                          "maxItems": 4,
+                          "description": "Closed move orders. One is drawn when the foe appears (R4); its moves then repeat in that order. The fight is read, not rolled (G79).",
+                          "type": "array",
+                          "items": {
+                            "minItems": 1,
+                            "maxItems": 6,
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "weak": {
+                          "additionalProperties": false,
+                          "description": "The move after whose recovery a strike lands weak_permille.",
+                          "type": "object",
+                          "required": [
+                            "after"
+                          ],
+                          "properties": {
+                            "after": {
+                              "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
                     "protected": {
                       "description": "A pet, a young animal or a person (HUNTING section 10): seen, never taken, never dressed. A protected kind carries no \"hunt\".",
                       "type": "boolean"
@@ -2407,6 +2544,159 @@
                 "maxLength": 40,
                 "type": "string",
                 "description": "The world the region belongs to. Left out: the map's world."
+              },
+              "card": {
+                "pattern": "^[a-z0-9_-]+$",
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string",
+                "description": "The region card (`cards`) it weathers and sounds by. Left out: the map's own card."
+              },
+              "title": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string",
+                "description": "The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable."
+              }
+            }
+          }
+        },
+        "card": {
+          "pattern": "^[a-z0-9_-]+$",
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string",
+          "description": "The region card (`cards`) of the tiles in no region. Left out: the kernel's fixed odds and the default beds."
+        },
+        "cards": {
+          "maxItems": 32,
+          "description": "How each region of the map weathers and sounds (FIRST_MAP's table, one card a row).",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "title",
+              "weather",
+              "look",
+              "ambience"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+$",
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string",
+                "description": "The card's name, unique on the map; a region (or the map itself) names it in `card`."
+              },
+              "title": {
+                "minLength": 1,
+                "maxLength": 60,
+                "description": "The region as docs/design/FIRST_MAP.md names it in its table, word for word.",
+                "type": "string"
+              },
+              "climate": {
+                "description": "The region's climate (NATURE section 2). Left out: temperate.",
+                "anyOf": [
+                  {
+                    "const": "temperate",
+                    "type": "string"
+                  },
+                  {
+                    "const": "dry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "cold",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wet",
+                    "type": "string"
+                  }
+                ]
+              },
+              "weather": {
+                "additionalProperties": false,
+                "description": "The odds of each day's sky, drawn per region from the world's seed (REACTIONS phase B).",
+                "type": "object",
+                "required": [
+                  "rain",
+                  "fog"
+                ],
+                "properties": {
+                  "rain": {
+                    "minimum": 0,
+                    "maximum": 5000,
+                    "description": "Days of rain, in basis points of the days.",
+                    "type": "integer"
+                  },
+                  "fog": {
+                    "minimum": 0,
+                    "maximum": 5000,
+                    "description": "Days of fog, in basis points of the days. The rest are clear.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "look": {
+                "additionalProperties": false,
+                "description": "How the region's weather looks: more or less of the drawn rain and mist, never a new kind.",
+                "type": "object",
+                "required": [
+                  "rain",
+                  "fog"
+                ],
+                "properties": {
+                  "rain": {
+                    "minimum": 0,
+                    "maximum": 2000,
+                    "description": "How much rain is drawn on a rain day, in permille of the decided look (DECISIONS 2026-10-21, \"Rain\").",
+                    "type": "integer"
+                  },
+                  "fog": {
+                    "minimum": 0,
+                    "maximum": 2000,
+                    "description": "How thick the banks lie on a fog day, in permille of the day's own banks.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "ambience": {
+                "additionalProperties": false,
+                "description": "The sound bed by day and by night; the existing beds until the owner's sound pick (#464).",
+                "type": "object",
+                "required": [
+                  "day",
+                  "night"
+                ],
+                "properties": {
+                  "day": {
+                    "anyOf": [
+                      {
+                        "const": "day",
+                        "type": "string"
+                      },
+                      {
+                        "const": "night",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "night": {
+                    "anyOf": [
+                      {
+                        "const": "day",
+                        "type": "string"
+                      },
+                      {
+                        "const": "night",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
               }
             }
           }
@@ -2523,6 +2813,12 @@
                 "minLength": 1,
                 "maxLength": 40,
                 "type": "string"
+              },
+              "danger": {
+                "minimum": 0,
+                "maximum": 9,
+                "description": "The area's danger level d (G64, CR-38): 0 in the town and upward with the walk from it. Only an `area` slot carries it; ground in no area stays at 1. The world shows it (tracks, bones, thicker mist), the screen never does.",
+                "type": "integer"
               },
               "safe": {
                 "description": "A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.",

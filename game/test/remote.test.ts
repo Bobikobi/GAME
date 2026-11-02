@@ -213,6 +213,20 @@ describe('the remote session (NEXT 18 c)', () => {
     }
   });
 
+  test('the day\'s sky is the server\'s answer too, and a server that sends none leaves the clouds as they were (issue 581)', async () => {
+    const local = Session.fresh(bundle);
+    const server = new FakeServer(bundle, local.state);
+    const remote = await RemoteSession.join(bundle, server);
+    await remote.act({ t: 'start', starter: 'core/forager', name: 'Tess' });
+    local.act({ t: 'start', starter: 'core/forager', name: 'Tess' });
+    expect(remote.sky()).toBe(local.sky());
+    expect(['clear', 'rain', 'fog']).toContain(remote.sky());
+
+    server.noSky = true;
+    await remote.resumeFromServer();
+    expect(remote.sky()).toBeUndefined();
+  });
+
   test('there is no save to write: saving sends the walk to the server', async () => {
     const local = Session.fresh(bundle);
     const server = new FakeServer(bundle, local.state);
