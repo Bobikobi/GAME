@@ -21,6 +21,10 @@ export interface PoolConfigAccount {
   /** A name for the ledger and the reports, not the file's and not secret. */
   label: string;
   slots: number;
+  /** `paid` is an account the owner funded; `free` is a trial account that refills a little each day. An account that does not say is `paid`. */
+  plan: 'free' | 'paid';
+  /** May the nightly job spend on it. Only a `free` account can say yes: a config that marks a paid one is refused. */
+  nightly: boolean;
 }
 
 export interface PoolConfig {
@@ -39,9 +43,19 @@ export function parsePoolConfig(text: string): PoolConfig {
     if (typeof a?.file !== 'string' || a.file === '') throw new Error(`pool.json: account ${i} has no "file"`);
     const slots = a.slots ?? 1;
     if (!Number.isInteger(slots) || slots < 1) throw new Error(`pool.json: account ${i} needs "slots" of 1 or more`);
-    return { file: a.file, label: a.label ?? `acct${i}`, slots };
+    const plan = a.plan ?? 'paid';
+    if (plan !== 'free' && plan !== 'paid') throw new Error(`pool.json: account ${i} has "plan" ${JSON.stringify(plan)}, expected "free" or "paid"`);
+    const nightly = a.nightly ?? false;
+    if (typeof nightly !== 'boolean') throw new Error(`pool.json: account ${i} needs "nightly" to be true or false`);
+    if (nightly && plan !== 'free') throw new Error(`pool.json: account ${i} (${a.label ?? a.file}) is a paid account and cannot be marked "nightly"`);
+    return { file: a.file, label: a.label ?? `acct${i}`, slots, plan, nightly };
   });
   return { dir: raw.dir ?? process.env['PIXELLAB_SECRETS_DIR'] ?? join(homedir(), '.claude', 'secrets'), accounts };
+}
+
+/** The indexes the nightly job may spend on: the free accounts that say so. Never a paid one. */
+export function nightlyIndexes(config: PoolConfig): number[] {
+  return config.accounts.flatMap((a, i) => (a.nightly && a.plan === 'free' ? [i] : []));
 }
 
 export type TokenReader = (config: PoolConfig, account: PoolConfigAccount) => string | null;
