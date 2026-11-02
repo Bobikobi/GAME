@@ -75,6 +75,7 @@ import type { WeatherName } from '@game/schema';
 import { LANDING, LANDINGS, MARK_LIFE, RAIN_FALL, RAIN_LIFE, RAIN_MAX, RAIN_SLANT, type Landing, bankFog, dropsAlive, landingsPerSecond, markPixels, skyLook, streakPixels, washRgb } from '../rain';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
+import { CHIMNEY_SMOKE, DRIFT_TEXTURE, Drifters, driftOn } from '../drift';
 import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '../flicker';
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
@@ -280,8 +281,16 @@ interface Glow {
 }
 
 /** An emitter that only runs while its patch of the valley is on screen. */
+/** What the on-screen rule needs of a thing that emits: a particle emitter, or the drift driver's pieces. */
+interface Switch {
+  emitting: boolean;
+  start(): unknown;
+  stop(): unknown;
+  destroy(): unknown;
+}
+
 interface Local {
-  emitter: Emitter;
+  emitter: Switch;
   rect: Phaser.Geom.Rectangle;
 }
 
@@ -422,6 +431,8 @@ export class WorldScene extends Phaser.Scene {
   private breathers: Breather[] = [];
   private glows: Glow[] = [];
   private locals: Local[] = [];
+  /** the drift driver's pieces (drift.ts), moved every frame; only behind `?drift=sheet` */
+  private drifting: Drifters[] = [];
   /** sparks over the targets of the first open step of the main task; rebuilt by refresh() */
   private glints: Local[] = [];
   private glintKey = '';
@@ -1522,6 +1533,14 @@ export class WorldScene extends Phaser.Scene {
 
   /** A thin thread of smoke rising from (x, y), only while that chimney is on screen. */
   private smoke(x: number, y: number, depth: number): void {
+    const rect = new Phaser.Geom.Rectangle(x - 16, y - 40, 48, 56);
+    // `?drift=sheet` and its sheet loaded: the driver's pieces; otherwise (the default) the kit's own puff below
+    if (driftOn(window.location.search) && this.textures.exists(DRIFT_TEXTURE)) {
+      const drifters = new Drifters(this, CHIMNEY_SMOKE.spec, x, y, depth, seedOf(`chimney-${x}-${y}`));
+      this.drifting.push(drifters);
+      this.locals.push({ emitter: drifters, rect });
+      return;
+    }
     const emitter = this.smokePuffs(x, y, depth, {
       speedY: { min: -7, max: -3 },
       speedX: { min: 1, max: 3 },
@@ -1530,7 +1549,7 @@ export class WorldScene extends Phaser.Scene {
       frequency: 420,
       maxAliveParticles: 10,
     });
-    this.locals.push({ emitter, rect: new Phaser.Geom.Rectangle(x - 16, y - 40, 48, 56) });
+    this.locals.push({ emitter, rect });
   }
 
   private buildNodes(): void {
@@ -2488,6 +2507,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private animate(time: number, delta: number): void {
     this.driftAir(time, delta);
+    for (const d of this.drifting) d.update(time);
     for (const c of this.cycles) {
       if (c.clock) {
         if (!c.active) continue;
@@ -2652,7 +2672,7 @@ export class WorldScene extends Phaser.Scene {
     for (const l of this.locals) this.setEmitting(l.emitter, Phaser.Geom.Rectangle.Overlaps(l.rect, this.viewRect));
   }
 
-  private setEmitting(emitter: Emitter, on: boolean): void {
+  private setEmitting(emitter: Switch, on: boolean): void {
     if (emitter.emitting === on) return;
     if (on) emitter.start();
     else emitter.stop();
