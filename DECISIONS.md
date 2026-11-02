@@ -4197,9 +4197,18 @@ The owner asked why the elf differs while looking at the draft `body_elf_woman_l
 **Retry when:** the owner gives the word to land the render (#656); no credits needed. Model: claude-opus-5-5.
 
 ## 2026-11-02 ✅ The hand's bonus offset is 128
+
 The owner, 1.11 (22:02, on the decisions page), answering the review of #609: "the hand's bonus offset is 128". COMBAT 4.9's hand compression counts a hand's bonus as `bonus + hand_offset` with `hand_offset` 128 (range 96 to 256, step 32), not `bonus + 64`.
 **Why:** 64 was an outside game's maximum-hit constant, carried in through research memo 6 (docs/research/research-combat.md:39, :180), and the gear pages compare outside games without copying their numbers (WEAPONS 14). A hand's harm is derived from its tier's rate cap, so at the cap the offset cancels out of the hit and only sets the unit shown on a weapon: 128 halves the rounding of each cell of WEAPONS 4's table and keeps its largest cell (tier 9 heavy, 448) inside `harm`'s 1000. Nothing was authored at the 64 scale (#598 carries 64 only as a doc row), and for a player nothing changes in how hard anything hits.
 - Amended to match: COMBAT.md 4.9's hand compression row, the 2026-10-29 entry's "Amended (01.11)" line, WEAPONS 4 and 15.
 - The value enters `content/core/params.json` with the pull request that lifts the weapon row (WEAPONS appendix, "For combat"); until then it is a design number, as the rest of WEAPONS 4.
 **Supersedes:** "with the hand's bonus counted as bonus + 64" in "Animals, then the foundations of combat and hunting, then the movement set, beside the first map" (2026-10-29).
 **Retry when:** the fight's tuning finds two neighbouring cells of WEAPONS 4's table striking the same hit at every `bare_base` of its range. Model: Claude Opus 5.5. Issue #613.
+
+## 2026-11-02 ✅ The figures follow Codex's drawings of 22-23.10, redrawn at the game's camera; the old angle stays for the bag's dressing page
+
+The owner, shown the drafts `body_*` and `npc_*` (`chars-1.json`) beside today's sprites on the game's grass: "they are much better than what exists now", and asks to use what Codex made then, with PixelLab fixes. [Frame](docs/design/frames/2026-11-02-codex-figures.png): today's three races top left, the drafts by a plain reduction (box filter, no dither, 48 colours, no palette snap), at the same height and taller.
+The angle: the drawings are near frontal. I advised excepting figures from the 50 degree rule, as Stardew and Zelda do; the owner refused: "where the angle is wrong, make or fix the angle, we managed it before. The old angle goes where you open the bag: on the dressing page you can see our figure enlarged" (#661). So in the world the 2026-10-26 rule holds for figures too, and the original drawing is the wardrobe's zoomed figure of 2026-10-22.
+This reopens 2026-10-25 "Characters are made industrially" and the race picks of 2026-10-27 for the look; Blender keeps the motion's reference until a figure proves otherwise. The old `imported` files looked broken from the palette snap, not from the size.
+**Not yet proven:** the camera fix and the motion on these drawings. PixelLab has the tools (`image-to-pixelart` with `fixer`, `rotate`, `generate-8-rotations-v3`, `animate-with-text-v3`, `transfer-outfit-v2`), and all accounts are at 0; Codex's workspace is out of credits.
+**Retry when:** a figure at the camera loses what made the drawing better (the face and the clothes reading at game size), or the motion breaks its shape; then the look stays a target and Blender carries the cast. Gear changes cost generations here and nothing in Blender, so the NPCs, whose clothes are fixed, go first. Model: claude-opus-5-5. Issue #634.
