@@ -135,6 +135,13 @@
       "branches": ["feat/hunt-foundations", "docs/hunt-materials", "art/hare-crow-loops"],
       "owner": null,
       "cross_cutting": true
+    },
+    {
+      "id": "materials-gap",
+      "title": "The materials gap: the count of the 158, the production map and the nine-game report, then the improvement plan's steps as domain-page amendments",
+      "plan": ["outside the original plan (asked 02.11)", "docs/design/GAP_MATERIALS.md section 6 (the build order)", "docs/design/MATERIALS_COUNT.md, docs/design/PRODUCTION_MAP.md", "DECISIONS 2026-11-02 the materials gap report"],
+      "branches": ["docs/materials-gap"],
+      "owner": null
     }
   ]
 }

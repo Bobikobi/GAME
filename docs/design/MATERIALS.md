@@ -2,6 +2,8 @@
 
 **Status:** Proposed 30.10, written for the owner. The companion of GAP_RDR2.md: that page reads the reference game, this one lays the valley's own table. Of what this page proposes, the fields of section 1 (the five classes, the grade, `min_grade`) and the check rows marked "foundations" in 4.2 are code in the hunt foundations pull request (DECISIONS 2026-10-30); the rest is not built.
 
+See also (02.11): [MATERIALS_COUNT.md](MATERIALS_COUNT.md) counts the 158 materials this page and its neighbours plan (17 built); [PRODUCTION_MAP.md](PRODUCTION_MAP.md) maps each from the world to the thing made; [GAP_MATERIALS.md](GAP_MATERIALS.md) measures them against nine crafting games and lays an improvement plan in build order.
+
 What this page is: the atlas of the animal materials (which animal gives which good, at which grade, tier and weight), how the goods are processed in short steps, how a material shapes the thing made from it, what a worn thing gives, and what each item needs drawn and moved. What it is not: no creature behaviour (that is [HUNTING.md](HUNTING.md)), no fight (COMBAT.md waits for G35), no price (a hunted good is priced by the hunt value source, HUNTING.md section 9, never by a number on an animal).
 
 Where the facts come from: the schema and the content on `develop` are cited by path; HUNTING.md is on `develop` and is cited as "HUNTING n"; PROGRESSION.md and BODY_CLOCKS.md are cited as "PROGRESSION n" and "BODY_CLOCKS n" and are only in #333; the traveller's cap, the worked example of a creator's garment, is only in #402. Every number this page adds is marked proposed and sits inside the range the existing params give.
