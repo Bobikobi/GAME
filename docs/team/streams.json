@@ -135,6 +135,13 @@
       "branches": ["feat/hunt-foundations", "docs/hunt-materials", "art/hare-crow-loops"],
       "owner": null,
       "cross_cutting": true
+    },
+    {
+      "id": "weapon-matrix",
+      "title": "The weapon matrix: hundreds of hands from form, material and tier, as a design page, a source file, a balance report and its test; no content before combat",
+      "plan": ["outside the original plan (proposed 01.11, re-framed 02.11)", "docs/design/WEAPON_MATRIX.md", "WEAPONS 5.3 (#609) names it", "DECISIONS 2026-11-02 the weapon matrix", "GAME_RULES G35, G44"],
+      "branches": ["feat/weapon-matrix"],
+      "owner": null
     }
   ]
 }
