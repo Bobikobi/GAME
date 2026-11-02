@@ -1,0 +1,21 @@
+{
+  "name": "elf-slim-2",
+  "label": "pixellab-elf-slim-2",
+  "provenance": "Issue #634 / #659: body_elf_woman_down_1 (Codex draft 26ad19ad79e24789, chars-1.json), squeezed to a slender body (18 px wide at 78 px tall in the 128 frame, the human 73 tall) in the 1024 px drawing and then reduced, so no detail is lost to a late squeeze. Owner, 2.11: very thin, taller than the human by about half a head or a little less.",
+  "jobs": [
+    {
+      "id": "fillA",
+      "recipe": "fill",
+      "inputs": {
+        "description": "a very slender young elf woman, standing, facing the viewer, narrow shoulders, slim waist, thin long arms and legs, pointed ears, long light-brown hair, grey shorts, narrow body half as wide as a human",
+        "size": 128,
+        "view": "high top-down",
+        "outline": "single color black outline",
+        "no_background": true,
+        "init_image": "../../../.scratch/pixellab/elf-slim-1/natural128.png",
+        "init_strength": 150
+      },
+      "note": "Not a squeeze: the natural elf as the start, the prompt asks the body slim."
+    }
+  ]
+}
