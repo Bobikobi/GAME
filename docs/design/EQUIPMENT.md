@@ -150,7 +150,7 @@ Each cell has a source in section 7. A cell reading "not read" means I did not r
 | **Weapon against tool** | not read | skilling tools can sit in the weapon slot (S5); a pickaxe has a Mining level to use and an Attack level to wield (S6) | a blacksmith upgrades axe, hoe, pickaxe and can, **not** the sword or the rod (S10) | tools and weapons wear from use (S11) | not read | two blocks, two readers; both only by a named recipe (section 4) |
 | **Durability** | not read | by charges, which fall by combat, use or time; at zero an item vanishes, reverts, breaks or stays with lost benefits (S8) | tools are upgraded, not worn (S10) | use wears tools and weapons, a hit wears armour; repair at a workbench whose level sets what it can mend; not in the field (S11) | not read | tools and weapons wear by use; clothing and armour never; mended at a bench |
 | **Rarity** | eight named qualities, Poor to Heirloom (S2) | not read | four tool tiers, copper, steel, gold, iridium (S10) | not read | common 0 affixes, magic 1-2, rare 3, legendary 4 (S7) | four names; effects at most 1, 1, 2, 2 |
-| **Binding** | soulbound on pickup, bound on equip, warband bound (S3) | not read | not read | not read | tradable until masterworked or tempered; mythic uniques account-bound (S7) | none on power; account for a bought look; character for a holiday look and a ceiling raiser |
+| **Binding** | soulbound on pickup, bound on equip, warband bound (S3) | not read | not read | not read | tradable until masterworked or tempered; mythic uniques account-bound (S7) | none on power, a found ceiling raiser included (1.11); account for a bought look; character for a holiday look |
 
 Three places where Loomvale differs **on purpose**:
 
