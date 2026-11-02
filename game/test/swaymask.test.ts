@@ -47,6 +47,24 @@ describe('wind by a mask of height', () => {
     }
   });
 
+  test('a mirrored sprite leans with the wind too: the left-sheared frame, mirrored, is the mirrored picture sheared right, byte for byte', () => {
+    const { data, w, h } = tree();
+    const mirror = (src: ArrayLike<number>, width: number) => {
+      const out = new Uint8ClampedArray(src.length);
+      for (let y = 0; y < src.length / 4 / width; y++) for (let x = 0; x < width; x++) for (let c = 0; c < 4; c++) out[4 * (y * width + x) + c] = src[4 * (y * width + (width - 1 - x)) + c] ?? 0;
+      return out;
+    };
+    for (let lean = 0; lean <= MAX_LEAN; lean++) {
+      const shownMirrored = mirror(shear(data, w, h, lean, MAX_LEAN, true), w + MAX_LEAN);
+      const want = shear(mirror(data, w), w, h, lean, MAX_LEAN);
+      expect(Array.from(shownMirrored)).toEqual(Array.from(want));
+      // the left lean moves the top row left by the lean, the foot row not at all
+      const left = shear(data, w, h, lean, MAX_LEAN, true);
+      expect(row(left, w + MAX_LEAN, 19)).toBe(`${'0'.repeat(MAX_LEAN)}${row(data, w, 19)}`);
+      expect(row(left, w + MAX_LEAN, 2)).toBe(`${'0'.repeat(MAX_LEAN - lean)}${row(data, w, 2)}${'0'.repeat(lean)}`);
+    }
+  });
+
   test('lean 0 is the picture itself, so a calm moment shows the plain sprite', () => {
     const { data, w, h } = tree();
     const out = shear(data, w, h, 0, MAX_LEAN);
