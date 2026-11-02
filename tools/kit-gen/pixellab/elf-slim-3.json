@@ -1,0 +1,41 @@
+{
+  "name": "elf-slim-3",
+  "label": "pixellab-elf-slim-3",
+  "provenance": "Issue #634: the slim elf approved by the owner on 2.11 (elf-slim-2, the Codex drawing body_elf_woman_down_1, redrawn slim by PixelLab and the loose hair curl removed), brought to a stored character, then a walk and an idle in down, left and up. Ceiling of wave 3: 200 generations of the paid account.",
+  "jobs": [
+    {
+      "id": "person",
+      "recipe": "character",
+      "inputs": {
+        "description": "a slender elf woman, pointed ears, long light brown hair, grey shorts, very thin narrow body",
+        "reference_image": "../../../.scratch/pixellab/elf-slim-3/elf.png",
+        "size": 128,
+        "n_directions": 4,
+        "view": "high top-down"
+      },
+      "note": "The stored character the motions run on."
+    },
+    {
+      "id": "walk",
+      "recipe": "motion",
+      "inputs": {
+        "character": "@person.character",
+        "size": 128,
+        "action": "walking calmly",
+        "directions": ["south", "west", "north"],
+        "frame_count": 8
+      }
+    },
+    {
+      "id": "idle",
+      "recipe": "motion",
+      "inputs": {
+        "character": "@person.character",
+        "size": 128,
+        "action": "standing still, breathing",
+        "directions": ["south", "west", "north"],
+        "frame_count": 8
+      }
+    }
+  ]
+}
