@@ -1,8 +1,9 @@
 [Unit]
-Description=Serve the GAME image library page on 127.0.0.1:8741
+Description=Serve the GAME image library page on 127.0.0.1:8741 and keep the owner's hand sort
 
 [Service]
-ExecStart=/usr/bin/python3 -m http.server 8741 --bind 127.0.0.1 --directory %h/Projects/GAME/.scratch/art-library
+# serve.py is copied beside update.sh (install in README.md): ~/Projects/GAME sits on whatever branch the owner is on
+ExecStart=/usr/bin/python3 -I %h/.local/share/art-library/serve.py --port 8741 --dir %h/Projects/GAME/.scratch/art-library
 Restart=on-failure
 RestartSec=5
 
