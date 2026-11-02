@@ -174,7 +174,9 @@ export function remapTone(data: Uint8ClampedArray, width: number, tone: Tone, fr
 /**
  * The pixels that may move (LIGHTING.md section 3 C, the owner's C of 30.10): the meadow's two lightest greens, which
  * lean with the gust wherever they are drawn (a tile, a tall grass, a canopy's highlights), and the water's two light
- * dashes, which drift along the stream. Every other colour holds still, so a trunk, a path or a body never moves.
+ * dashes, which drift along the stream. Every other colour holds still, so a trunk, a path or a body never moves
+ * (tools/test/anim-sheets.test.ts holds every shipped character and creature sheet to it: none draws a colour within
+ * `GUST.tolerance` of these).
  */
 export const MOVES = { meadow: [0x84c450, 0xc8e88a], water: [0x7cc4ec, 0xc4ecf8] } as const;
 
