@@ -37,6 +37,7 @@
     "art:run": "tsx tools/src/art/run-cli.ts",
     "art:pick": "tsx tools/src/art/pick-cli.ts",
     "art:gallery": "tsx tools/src/art/gallery-cli.ts",
+    "art:library": "tsx tools/src/art/library-cli.ts",
     "kit:notes": "tsx tools/src/kit/notes.ts",
     "kit:import": "tsx tools/src/kit/import.ts",
     "kit:ink": "tsx tools/src/kit/ink.ts",

@@ -576,7 +576,7 @@ export const pacing = {
 const RATE_LIMITED = /rate limit exceeded/i;
 
 /** Retry a gh call; a rate-limited answer waits and asks again (the window of the asset endpoint is its own, so poll rather than trust a reported reset). */
-function retry(gh: Gh, args: readonly string[], times = 3): GhResult {
+export function retry(gh: Gh, args: readonly string[], times = 3): GhResult {
   let last: GhResult = { status: null, stdout: '', stderr: '' };
   let limited = 0;
   for (let i = 0; i < times; i += 1) {
