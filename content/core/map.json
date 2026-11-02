@@ -455,8 +455,7 @@
             "core/base-kit:props/grass_tall": 40,
             "core/base-kit:props/flowers_blue": 20,
             "core/base-kit:props/rock_mossy": 10,
-            "core/base-kit:props/pro_bush": 15,
-            "core/base-kit:props/pro_patch": 10
+            "core/base-kit:props/pro_bush": 15
           },
           "opens_by": "wake"
         },
