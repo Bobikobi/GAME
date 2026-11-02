@@ -1,0 +1,340 @@
+{
+  "note": "One small piece the game names and does not yet draw, ordered by how soon a player meets it. The nightly job takes the first pieces not yet made, one generation each, on the free accounts only. A piece is never drawn twice: its id is in the done list of an earlier night (tools/kit-gen/pixellab/nightly-log.jsonl) or in the job's own state. Add to the end; do not reorder a piece that has been drawn.",
+  "size": 64,
+  "view": "high top-down",
+  "outline": "lineless",
+  "shading": "detailed shading",
+  "detail": "highly detailed",
+  "pieces": [
+    {
+      "id": "keystone_wedge",
+      "what": "wedge-shaped grey bridge keystone, wet, with chisel marks",
+      "class": "pickup",
+      "source": "content/core/resources/keystone.json:10"
+    },
+    {
+      "id": "returners_stone",
+      "what": "low standing stone cut with rows of carved names",
+      "class": "prop",
+      "source": "content/core/restores/old-bridge.json:25"
+    },
+    {
+      "id": "river_fish",
+      "what": "single silver river trout, side view, wet and cold",
+      "class": "pickup",
+      "source": "content/core/resources/river-fish.json:10"
+    },
+    {
+      "id": "reed_bundle",
+      "what": "tied bundle of tall green reeds with brown tips",
+      "class": "pickup",
+      "source": "content/core/resources/reed-bank.json:10"
+    },
+    {
+      "id": "sun_leaf",
+      "what": "broad golden-green leaf opening like a small sun",
+      "class": "pickup",
+      "source": "content/core/resources/sun-herbs.json:10"
+    },
+    {
+      "id": "moon_reed",
+      "what": "pale reed stalk with one open silver night bloom",
+      "class": "pickup",
+      "source": "content/core/resources/moon-reeds.json:10"
+    },
+    {
+      "id": "bell_berry",
+      "what": "cluster of dark blue-purple berries on a short stem",
+      "class": "pickup",
+      "source": "content/core/resources/bell-bushes.json:10"
+    },
+    {
+      "id": "fishing_spot",
+      "what": "ring of ripples on dark water with a fish shadow",
+      "class": "prop",
+      "source": "content/core/resources/river-fish.json"
+    },
+    {
+      "id": "walking_staff",
+      "what": "long smooth wooden staff with a worn grip",
+      "class": "pickup",
+      "source": "content/core/items/tools.json:59"
+    },
+    {
+      "id": "reed_cord",
+      "what": "coil of twisted pale reed cord with a loose end",
+      "class": "pickup",
+      "source": "content/core/recipes/reed-cord.json:10"
+    },
+    {
+      "id": "stone_flakes",
+      "what": "small heap of sharp pale knapped flint flakes",
+      "class": "pickup",
+      "source": "content/core/recipes/stone-flakes.json:10"
+    },
+    {
+      "id": "fishing_rod",
+      "what": "thin bent branch rod with line and small hook",
+      "class": "pickup",
+      "source": "content/core/recipes/fishing-rod.json:10"
+    },
+    {
+      "id": "grilled_fish",
+      "what": "whole fish on a stick with crisp charred skin",
+      "class": "pickup",
+      "source": "content/core/recipes/grilled-fish.json:10"
+    },
+    {
+      "id": "house_key",
+      "what": "plain iron key on a worn cord loop",
+      "class": "pickup",
+      "source": "content/core/items/maru-house-key.json:11"
+    },
+    {
+      "id": "rain_puddle",
+      "what": "small rain puddle reflecting pale sky, muddy rim",
+      "class": "prop",
+      "source": "docs/design/NATURE.md:83"
+    },
+    {
+      "id": "sandals_pair",
+      "what": "pair of thin-soled strapped sandals, one reed-woven",
+      "class": "pickup",
+      "source": "content/core/items/outfits.json:90"
+    },
+    {
+      "id": "herb_pouch",
+      "what": "small drawstring pouch with a herb sprig poking out",
+      "class": "pickup",
+      "source": "content/core/items/outfits.json:105"
+    },
+    {
+      "id": "woven_mat",
+      "what": "flat square mat of tightly woven reed cord",
+      "class": "pickup",
+      "source": "content/core/recipes/woven-mat.json:10"
+    },
+    {
+      "id": "reed_hat",
+      "what": "wide round woven reed sun hat",
+      "class": "pickup",
+      "source": "content/core/recipes/reed-hat.json:10"
+    },
+    {
+      "id": "dyed_cord",
+      "what": "coil of berry-purple dyed cord with a knot",
+      "class": "pickup",
+      "source": "content/core/templates/dye-cord.json:10"
+    },
+    {
+      "id": "lucky_charm",
+      "what": "sharp stone flake hanging from a dyed cord loop",
+      "class": "pickup",
+      "source": "content/core/recipes/lucky-charm.json:10"
+    },
+    {
+      "id": "stone_blade",
+      "what": "long ground flake bound to a wooden grip",
+      "class": "pickup",
+      "source": "content/core/recipes/stone-blade.json:10"
+    },
+    {
+      "id": "shoulder_satchel",
+      "what": "cloth and rope shoulder satchel with a buckled flap",
+      "class": "pickup",
+      "source": "content/core/recipes/satchel.json:10"
+    },
+    {
+      "id": "frame_pack",
+      "what": "wooden-frame backpack with hip strap and rolled load",
+      "class": "pickup",
+      "source": "content/core/items/bags.json:11"
+    },
+    {
+      "id": "whole_bowl",
+      "what": "intact blue and white glazed bowl, no crack",
+      "class": "pickup",
+      "source": "content/core/treasures/ruins-hall.json:10"
+    },
+    {
+      "id": "note_stake",
+      "what": "paper note pinned to a short wooden stake",
+      "class": "prop",
+      "source": "docs/design/EMPTY_WORLD.md:73"
+    },
+    {
+      "id": "dropped_pack",
+      "what": "traveller's pack lying in the grass, flap open",
+      "class": "prop",
+      "source": "docs/design/COMBAT.md:224"
+    },
+    {
+      "id": "sign_stone",
+      "what": "weathered stone waymarker with a faint carved arrow",
+      "class": "prop",
+      "source": "tools/kit-gen/pools/props.json:119"
+    },
+    {
+      "id": "bell_post",
+      "what": "wooden post with a small iron bell, reed tied on",
+      "class": "prop",
+      "source": "docs/design/SEA_CROSSING.md:122"
+    },
+    {
+      "id": "ruin_bell",
+      "what": "old bronze bell on a beam with a frayed rope",
+      "class": "prop",
+      "source": "docs/design/story/chapter-1.md:34"
+    },
+    {
+      "id": "work_clothes",
+      "what": "folded rust-brown patched shirt and trousers, elbow patches",
+      "class": "pickup",
+      "source": "content/core/items/outfits.json:11"
+    },
+    {
+      "id": "work_boots",
+      "what": "pair of dusty worn leather boots, laces loose",
+      "class": "pickup",
+      "source": "content/core/items/outfits.json:55"
+    },
+    {
+      "id": "light_cloak",
+      "what": "folded moss-green thin cloak with a bone clasp",
+      "class": "pickup",
+      "source": "content/core/items/outfits.json:70"
+    },
+    {
+      "id": "rust_pick",
+      "what": "old rusted pickaxe with a cracked wooden haft",
+      "class": "pickup",
+      "source": "content/core/items/outfits.json:125"
+    },
+    {
+      "id": "work_hammer",
+      "what": "big hammer with a worn haft and heavy iron head",
+      "class": "pickup",
+      "source": "content/core/items/outfits.json:31"
+    },
+    {
+      "id": "remnant_amulet",
+      "what": "old bronze amulet on a cord, one worn letter",
+      "class": "pickup",
+      "source": "content/core/items/outfits.json:149"
+    },
+    {
+      "id": "animal_hide",
+      "what": "scraped pale animal pelt, folded, with a furred edge",
+      "class": "pickup",
+      "source": "content/core/items/goods.json:57"
+    },
+    {
+      "id": "raw_meat",
+      "what": "slab of raw red meat with a small bone",
+      "class": "pickup",
+      "source": "content/core/items/goods.json:79"
+    },
+    {
+      "id": "small_bones",
+      "what": "three small pale bones crossed in a little pile",
+      "class": "pickup",
+      "source": "content/core/items/goods.json:68"
+    },
+    {
+      "id": "sinew_strand",
+      "what": "bundle of pale tendon strands tied with a knot",
+      "class": "pickup",
+      "source": "content/core/items/goods.json:115"
+    },
+    {
+      "id": "wolf_fang",
+      "what": "single long curved off-white wolf fang, root intact",
+      "class": "pickup",
+      "source": "content/core/items/goods.json:137"
+    },
+    {
+      "id": "bird_feather",
+      "what": "single grey-brown feather with a curved quill",
+      "class": "pickup",
+      "source": "docs/design/MATERIALS.md:13"
+    },
+    {
+      "id": "drying_rack",
+      "what": "wooden A-frame rack with strips of meat hanging",
+      "class": "prop",
+      "source": "docs/design/MATERIALS.md:77"
+    },
+    {
+      "id": "tanning_rack",
+      "what": "wooden frame with a hide stretched and laced in it",
+      "class": "prop",
+      "source": "docs/design/MATERIALS.md:86"
+    },
+    {
+      "id": "snare_trap",
+      "what": "cord loop on a bent sapling and a driven stake",
+      "class": "prop",
+      "source": "docs/design/HUNT_LADDER.md:15"
+    },
+    {
+      "id": "flint_spear",
+      "what": "long wooden spear with a bound flint point",
+      "class": "pickup",
+      "source": "docs/design/HUNTING.md:78"
+    },
+    {
+      "id": "short_bow",
+      "what": "short curved wooden bow with a sinew string",
+      "class": "pickup",
+      "source": "docs/design/HUNTING.md:79"
+    },
+    {
+      "id": "ember_pot",
+      "what": "small clay pot holding a glowing ember in ash",
+      "class": "pickup",
+      "source": "docs/design/QUEST_PATTERNS.md:645"
+    },
+    {
+      "id": "mud_tracks",
+      "what": "line of boot prints pressed into wet mud",
+      "class": "prop",
+      "source": "docs/design/REACTIONS.md:183"
+    },
+    {
+      "id": "fallen_leaves",
+      "what": "small scatter of brown and orange fallen oak leaves",
+      "class": "pickup",
+      "source": "docs/design/NATURE.md:82"
+    },
+    {
+      "id": "garden_bed",
+      "what": "small tilled bed with rows of young sprouting vegetables",
+      "class": "prop",
+      "source": "docs/design/NATURE.md:70"
+    },
+    {
+      "id": "washing_line",
+      "what": "cord between two posts with a hung cloth",
+      "class": "prop",
+      "source": "docs/design/NATURE.md:70"
+    },
+    {
+      "id": "water_jar",
+      "what": "large clay water jar with a wooden lid",
+      "class": "prop",
+      "source": "docs/design/NATURE.md:70"
+    },
+    {
+      "id": "drifting_crate",
+      "what": "small wooden crate afloat with a rope trailing",
+      "class": "prop",
+      "source": "docs/design/SEA_CROSSING.md:118"
+    },
+    {
+      "id": "ferry_token",
+      "what": "small stamped tin token with a boat mark",
+      "class": "pickup",
+      "source": "docs/design/SEA_CROSSING.md:50"
+    }
+  ]
+}
