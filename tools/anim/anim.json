@@ -120,7 +120,7 @@
       "pxm": 53,
       "ramps": ["wood", "moss", "skin"],
       "metal": "grey",
-      "leaf": "green",
+      "leaf": "moss",
       "ships": { "sheet": "elf", "bob": false },
       "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
@@ -133,7 +133,7 @@
       "pxm": 53,
       "ramps": ["wood", "moss", "skin"],
       "metal": "grey",
-      "leaf": "green",
+      "leaf": "moss",
       "ships": { "sheet": "elf_w", "bob": false },
       "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
