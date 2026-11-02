@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import type { Bundle } from '@game/kernel';
-import { STALL_SLOT, canPlaceStall, chunkKey, directionOf, mapPlaces } from '../src/places';
+import { STALL_SLOT, canPlaceStall, chunkKey, directionOf, mapPlaces, mapRegions } from '../src/places';
 import { mapSvg } from '../src/ui/map';
 import { loadBundle } from '../../tools/test/helpers/world';
 
@@ -63,5 +63,65 @@ describe('the map reveals only what was walked', () => {
     expect(directionOf([28, 9], [28, 30])).toBe('south');
     expect(directionOf([28, 9], [3, 9])).toBe('west');
     expect(directionOf([28, 9], [40, 30])).toBe('south-east');
+  });
+});
+
+describe('the chart on the first map (M3)', () => {
+  /** The core map moved into a 192 by 192 frame with two regions, as the first map will have. */
+  function wide(): Bundle {
+    const b = structuredClone(bundle);
+    b.map.width = 192;
+    b.map.height = 192;
+    const row = (b.map.ground[0]![0] ?? ' ').repeat(192);
+    b.map.ground = Array.from({ length: 192 }, () => row);
+    b.map.regions = [
+      { id: 'old_north-wood', x: 70, y: 20, w: 40, h: 30 },
+      { id: 'salt-shore', title: 'The salt shore', x: 10, y: 150, w: 50, h: 20 },
+    ];
+    return b;
+  }
+
+  test('every region is on the chart, and only one entered is named', () => {
+    const b = wide();
+    const regions = mapRegions(b, [`${b.map.id}/old_north-wood`], [80, 30]);
+    expect(regions).toHaveLength(2);
+    expect(regions[0]).toMatchObject({ title: 'Old north wood', current: true });
+    expect(regions[1]).toMatchObject({ title: undefined, current: false, x: 10, y: 150, w: 50, h: 20 });
+    const svg = mapSvg(b, { seen: new Set(), chunks: new Set(), at: [80, 30], regions });
+    expect(svg).toContain('Old north wood');
+    expect(svg).not.toContain('The salt shore');
+    expect(svg).toContain('stroke-dasharray="6 5"');
+  });
+
+  test('an entered region shows its ground whole; one not entered shows none', () => {
+    const b = wide();
+    const none = mapSvg(b, { seen: new Set(), chunks: new Set(), at: [80, 30], regions: mapRegions(b, [], [80, 30]) });
+    expect(none).not.toContain('opacity=".42"');
+    const svg = mapSvg(b, { seen: new Set(), chunks: new Set(), at: [80, 30], regions: mapRegions(b, [`${b.map.id}/salt-shore`], [80, 30]) });
+    expect(svg).toContain('The salt shore');
+    const d = /<path d="([^"]+)"[^>]*opacity="\.42"/.exec(svg)?.[1] ?? '';
+    // 20 rows of the region, one run each, and not one row outside it
+    expect(d.match(/M/g)).toHaveLength(20);
+    expect(d.startsWith(`M${Math.round((10 * 640 / 192) * 100) / 100} 500H`)).toBe(true);
+  });
+
+  test('an id that is no region, and a region the map lost, name nothing', () => {
+    const b = wide();
+    expect(mapRegions(b, ['core/town-square', `${b.map.id}/gone`], [0, 0]).filter((r) => r.title)).toEqual([]);
+    expect(mapRegions(b, undefined, [0, 0]).filter((r) => r.title)).toEqual([]);
+    expect(mapRegions(bundle, [], [0, 0])).toEqual([]);
+  });
+
+  test('the chart is 640 units across at 64 tiles and at 192, so a name reads the same', () => {
+    const small = mapSvg(bundle, { seen: new Set(), chunks: new Set(), at: [28, 9] });
+    expect(small).toContain('viewBox="0 0 640 640"');
+    const big = mapSvg(wide(), { seen: new Set(), chunks: new Set(), at: [80, 30] });
+    expect(big).toContain('viewBox="0 0 640 640"');
+  });
+
+  test('a named area entered shows its ground with no chunk walked, as on a server session', () => {
+    const svg = mapSvg(bundle, { seen: new Set(['core/town-square']), chunks: new Set(), at: [0, 0] });
+    expect(svg).toContain('Town square');
+    expect(svg).toContain('opacity=".42"');
   });
 });

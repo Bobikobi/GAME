@@ -42,6 +42,7 @@ import {
 import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
 import { localMapState } from '../places';
 import { resourceKind, treasureKind } from '../work';
+import { seaView } from '../sea';
 import { say, type Option } from './dialog';
 import { STONE_RESTORE, STONE_SPEAKER } from '../stone';
 import { carveName } from './carve';
@@ -114,6 +115,9 @@ export class UI {
   private band = new ToastBand<HTMLElement>();
   private bandTimer = 0;
   private promptEl: HTMLElement;
+  /** the crossing card aboard (SEA_CROSSING.md): not a layer, so the clock runs under it and a segment's sailing ends */
+  private seaEl: HTMLElement;
+  private seaKey = '';
   private layers: Layer[] = [];
   private loadingEl: HTMLElement | undefined;
   private titleOpen = false;
@@ -141,6 +145,7 @@ export class UI {
     this.tracker = h('div', { class: 'tracker', hidden: true });
     this.toasts = h('div', { class: 'toasts', 'aria-live': 'polite' });
     this.promptEl = h('div', { class: 'prompt', hidden: true });
+    this.seaEl = h('div', { class: 'sea-card ui-window', role: 'group', 'aria-label': 'The crossing', hidden: true });
     this.hudMapChart = h('span', { class: 'hud-map-chart' });
     this.hudMapNote = h('span', { class: 'hud-map-note' }, 'No stall placed');
     this.hudMap = h(
@@ -151,13 +156,14 @@ export class UI {
       this.hudMapNote,
     );
     this.loadingEl = h('div', { class: 'loading' }, h('div', { class: 'loading-title' }, 'Loading the valley'), h('div', { class: 'loading-bar' }, h('i')));
-    root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.loadingEl, this.hudMap);
+    root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.seaEl, this.loadingEl, this.hudMap);
     mountTouch(root);
     this.tracker.addEventListener('click', () => this.panel(() => openJournal(this, 'tasks')));
   }
 
+  /** A layer is open, or the player is aboard: the boat is the world then, and the walk waits for the landing. */
   get blocking(): boolean {
-    return this.layers.length > 0 || this.titleOpen;
+    return this.layers.length > 0 || this.titleOpen || Boolean(app.session?.state.player.aboard);
   }
 
   /** Opens a panel that reads the state: work under way is taken back first, so it never shows what will not stay. */
@@ -206,6 +212,11 @@ export class UI {
     if (this.titleOpen) return true;
     const s = app.session;
     if (!s?.started) return true;
+    // aboard, A sails on: the card's buttons answer the event
+    if (s.state.player.aboard) {
+      if (b === 'a') void this.sail();
+      return true;
+    }
     if (b === 'a') app.world?.interact();
     else if (b === 'bag') this.panel(() => openBag(this));
     else if (b === 'journal') this.panel(() => openJournal(this));
@@ -291,6 +302,7 @@ export class UI {
     }
     this.warnAtNight(s);
     this.warnFireLow(s);
+    this.renderSea(s);
     setClass(p.level, points > 0 ? 'chip glow' : 'chip');
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
     setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
@@ -402,6 +414,30 @@ export class UI {
     if (!w) return;
     this.warnedFires.add(w.key);
     void say(this, null, [`The ${w.name} is burning low.`, 'Wood keeps it: feed it before it goes out.']);
+  }
+
+  /** The crossing card: rebuilt only when what it says changes, so a button under a finger is never swapped. */
+  private renderSea(s: GameSession): void {
+    const view = seaView(app.bundle, s.state);
+    const key = view ? JSON.stringify([view, s.busy]) : '';
+    if (key === this.seaKey) return;
+    this.seaKey = key;
+    this.seaEl.hidden = !view;
+    if (!view) return this.seaEl.replaceChildren();
+    const dots = Array.from({ length: view.segments }, (_, i) => h('i', { class: i < view.segment ? 'on' : '' }));
+    this.seaEl.replaceChildren(
+      h('div', { class: 'sea-head' }, h('b', null, view.title), h('span', { class: 'muted' }, `${view.segment} / ${view.segments}`)),
+      h('div', { class: 'sea-track', 'aria-hidden': 'true' }, dots),
+      ...(view.event ? [h('p', { class: 'sea-event' }, h('b', null, view.event), ' ', view.sign!.join(' '))] : []),
+      ...(view.clue ? [h('p', { class: 'sea-clue' }, view.clue)] : []),
+      ...(view.held ? [h('p', { class: 'sea-held muted' }, `Held ${view.held}`)] : []),
+      h(
+        'div',
+        { class: 'sea-acts' },
+        view.answers.map((a) => button(a.label, () => void this.answer(a.choice), 'sea-answer')),
+        button(s.busy ? 'Sailing...' : 'Sail on', () => void this.sail(), 'sea-sail', s.busy),
+      ),
+    );
   }
 
   private renderTracker(s: GameSession): void {
@@ -533,6 +569,14 @@ export class UI {
       }
       // a fall is one plain box (G33): what happened and what it cost, never where it was
       if (e.e === 'fall') await say(this, null, fallLines(b, s.state.player.town, e.lost));
+      // the crossing's words: as the boat pulls away, when its event is met or missed, and as it puts in
+      const passage = 'passage' in e ? b.passages[e.passage] : undefined;
+      if (passage && e.e === 'board') await say(this, null, named(passage.board));
+      if (passage && e.e === 'sea' && e.outcome !== 'held') {
+        const ev = passage.events.find((x) => x.id === e.event);
+        if (ev) await say(this, null, named(e.outcome === 'met' ? ev.met : ev.missed));
+      }
+      if (passage && e.e === 'land') await say(this, null, named(e.back ? passage.back : passage.land));
       // the threshold of the night ruins is a place, not a mend or a task: the opening's last words
       if (e.e === 'visit' && e.slot === 'core/night-threshold') {
         await say(this, null, [
@@ -684,6 +728,34 @@ export class UI {
     const r = await s.act({ t: 'search', spot: spotId, at: s.pos });
     if (!r.ok) return this.toast(r.error, 'bad');
     openSearch(this, spotId);
+  }
+
+  /** Board a passage's boat from its jetty (SEA_CROSSING.md): the kernel draws the crossing's event and decides every refusal. */
+  async board(passageId: string): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    app.world?.dropWork();
+    const r = await s.act({ t: 'board', passage: passageId, at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
+    this.renderHud();
+  }
+
+  /** One act, one segment. */
+  async sail(): Promise<void> {
+    const s = app.session;
+    if (!s?.state.player.aboard || s.busy) return;
+    const r = await s.act({ t: 'sail' });
+    if (!r.ok) this.toast(r.error, 'bad');
+    this.renderHud();
+  }
+
+  /** Answer the event aboard: a riddle names its choice. */
+  async answer(choice?: number): Promise<void> {
+    const s = app.session;
+    if (!s?.state.player.aboard) return;
+    const r = await s.act(choice === undefined ? { t: 'answer' } : { t: 'answer', choice });
+    if (!r.ok) this.toast(r.error, 'bad');
+    this.renderHud();
   }
 
   /** The catch (G6): while a riddle waits on a dig somewhere else, a dig here says so once the hands stop. */

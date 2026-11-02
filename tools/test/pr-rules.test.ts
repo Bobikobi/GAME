@@ -37,6 +37,7 @@ describe('the story review line', () => {
       'content/core/pockets/west-bank.json',
       'content/core/restores/old-bridge.json',
       'content/extensions/kim/treasures/pie-tin.json',
+      'content/core/passages/bay-crossing.json',
       'docs/design/STORY.md',
       'docs/design/story/chapter-1.md',
     ]) {

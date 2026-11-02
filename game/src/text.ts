@@ -511,6 +511,8 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
       return { text: `That was it: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'good' };
     case 'visit': {
       const slot = findSlot(b.map, e.slot);
+      // a named area the banner has named already needs no second word (G63)
+      if (s.player.seen?.includes(e.slot)) return undefined;
       return slot?.label ? { text: `You reached the ${slot.label}`, tone: 'info' } : undefined;
     }
     default:

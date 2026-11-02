@@ -247,12 +247,15 @@ describe('the line home (HUNT_FAMILIES 3.1 and 8)', () => {
 });
 
 describe('the spots (HUNTING 8, CREATURE_BEHAVIOUR 4)', () => {
+  /** Where a spot pushed onto the core's list lands. */
+  const PUSHED = `map.creatures.spots.${(JSON.parse(readFileSync(join(CONTENT_DIR, 'core', 'map.json'), 'utf8')) as MapFile).map.creatures!.spots.length}`;
+
   it('refuses a spot for a kind at danger 2 until the fight', () => {
-    expect(has(world([spots((s) => s.push({ kind: WOLF, x: 44, y: 16 }))]), 'map.creatures.spots.34', 'hunts the player (danger 2)')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: WOLF, x: 44, y: 16 }))]), PUSHED, 'hunts the player (danger 2)')).toBe(true);
   });
 
   it('refuses a wild spot within 12 tiles of the town square, or on safe ground', () => {
-    expect(has(world([spots((s) => s.push({ kind: HARE, x: 20, y: 15 }))]), 'map.creatures.spots.34', 'within 12 tiles of core/town-square')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: HARE, x: 20, y: 15 }))]), PUSHED, 'within 12 tiles of core/town-square')).toBe(true);
     const safe = editCore<MapFile>('map.json', (m) => {
       m.map.slots.push({ id: 'core/test-safe', kind: 'area', x: 42, y: 14, w: 5, h: 5, safe: true } as MapFile['map']['slots'][number]);
     });
@@ -260,12 +263,12 @@ describe('the spots (HUNTING 8, CREATURE_BEHAVIOUR 4)', () => {
   });
 
   it('refuses a drinker with no water within its roam', () => {
-    expect(has(world([spots((s) => s.push({ kind: ROE, x: 44, y: 11 }))]), 'map.creatures.spots.34', 'drinks but no water')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: ROE, x: 44, y: 11 }))]), PUSHED, 'drinks but no water')).toBe(true);
   });
 
   it('refuses a second anchor of one kind on one tile, since the anchor id keys every draw', () => {
     const r = world([spots((s) => s.push({ kind: HARE, x: 44, y: 16 }))]);
-    expect(has(r, 'map.creatures.spots.34', 'a second core/hare anchor on 44,16, after spot 14')).toBe(true);
+    expect(has(r, PUSHED, 'a second core/hare anchor on 44,16, after spot 14')).toBe(true);
     expect(lines(r).some((l) => l.startsWith('map.creatures.spots.14: '))).toBe(false);
     // two kinds on one tile are two anchors with two ids
     expect(lines(world([spots((s) => s.push({ kind: ROE, x: 44, y: 16 }))])).some((l) => l.includes('a second'))).toBe(false);

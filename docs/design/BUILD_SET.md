@@ -18,9 +18,9 @@ Checked on the merged list against the repo copy (develop ea7fc12, which holds E
 - **Every item has a source.** The stone chain's materials come from its own nodes and spots (QUARRYING 2.1, 4.1, 6), which pull request 4 lands together with the items so none stands alone (QUARRYING appendix, Order); the picks' and camp parts' other inputs (branch, reed cord, stone flakes, log) are built. The clothing chain's one new piece, the woven reed coat, takes the built woven mat and dyed cord (CLOTHING 4.1). No row of the 67 needs a carcass: everything that does waits for the take verb (section 7; kernel/src/hunt.ts:2-5).
 - **Every found recipe has a teacher in the set.** The flint pick, the greenstone pick and dressed stone by the three scraps of `core/ruins-yard` (QUARRYING 6); the reed coat by `core/reed-coat-scrap` at the deep ruins (CLOTHING 6). Row 6's check proves it.
 - **Every tier-3 thing is gated.** Greenstone: level 6, respawn 300000, hours 6 to 18 and a required pick (QUARRYING 2.1, 2.3). Garnet: finds at chance 3 on the seam and in the glint pocket, level 6 (QUARRYING 4.1, 4.2). The glint pocket: level 6, respawn 300000. The greenstone pick and the reed coat: found recipes in the band from level 6 (G41; QUARRYING 6; CLOTHING 6).
-- **One tier up at most.** Flint (1) makes the flint pick (2); slate (2) dressed stone (2); greenstone (3) the greenstone pick (3); the woven mat and dyed cord (2) the reed coat (3). Scraps are tier-1 relics. The check row is built (tools/src/check.ts:409-411).
+- **One tier up at most.** Flint (1) makes the flint pick (2); slate (2) dressed stone (2); greenstone (3) the greenstone pick (3); the woven mat and dyed cord (2) the reed coat (3). Scraps are tier-1 relics. The check row is built (tools/src/check.ts:419-421).
 - **The rarity budget.** Today's world uses 87697 of 100000 ppm (measured on develop ea7fc12, unchanged at 4405cf379, where no node, spot or resource changed; the 34 wild creature spots add nothing). The stone chain takes it to 97531 (proposed, QUARRYING 2.4); the clothing chain adds nothing, since its scrap is rare at a spot whose bonus is already rare's (QUARRYING 2.4); the take verb's hunters' cache adds 2000 at respawn 300000, to 99531 (WEAPONS 5.4; GAP_RS_GEAR question 1, default A).
-- **The value lock.** The kernel fix moved no value (#592), and the foundations move none. The stone chain moves no locked value: stone keeps 1000, and a new spot changes no existing find table (QUARRYING 2.1, 6). The clothing chain moves none now: the deep ruins' re-split keeps the idol at 36800 and leaves the coin and the shard priced by the gate (CLOTHING 6). A new id passes without a lock entry (tools/src/check.ts:661), and the lock stays a core maintainer's (AGENTS.md:45; CONTRIBUTING.md:35).
+- **The value lock.** The kernel fix moved no value (#592), and the foundations move none. The stone chain moves no locked value: stone keeps 1000, and a new spot changes no existing find table (QUARRYING 2.1, 6). The clothing chain moves none now: the deep ruins' re-split keeps the idol at 36800 and leaves the coin and the shard priced by the gate (CLOTHING 6). A new id passes without a lock entry (tools/src/check.ts:671), and the lock stays a core maintainer's (AGENTS.md:45; CONTRIBUTING.md:35).
 
 ## 3. The kernel fix (1 row)
 
@@ -169,7 +169,7 @@ None from this page. Rows 3, 5, 6, 10 to 13, 23, 24 and 54 to 59 build 16 messag
 
 ## 10. Owner questions
 
-None here. Each page asks its own, and none repeats on another of the four: CLOTHING 18 (5), WEAPONS 17 (12), QUARRYING 17 (6), GAP_RS_GEAR 12 (2, the two that cross pages).
+None here. Each page asks its own, and none repeats on another of the four: CLOTHING 18 (5), WEAPONS 17 (12), QUARRYING 17 (6), GAP_RS_GEAR 12 (2, the two that cross pages). WEAPONS Q1 has since been closed by #598, which built its default A on develop (01.11).
 
 ## 11. Not here
 
@@ -183,4 +183,4 @@ Ours, from the repo:
 - EQUIPMENT 3.1, 3.3, 3.6 (#492); PROGRESSION 5.6, 7; docs/design/HUNTING.md:9.
 - GAME_RULES G35, G41, G44, G45; kernel rules R11 (the drift budget) and the rarity budget (8.2).
 - DECISIONS 2026-10-25 "Balance prover finding 3: the grade-4 jackpot pays 3x experience in the kernel (proposed: pay in goods, experience x1)", and its Built note (#592, 01.11).
-- Code: kernel/src/hunt.ts:2-5; tools/src/check.ts:409-411, :661; content/core/params.json:128; AGENTS.md:45; CONTRIBUTING.md:35.
+- Code: kernel/src/hunt.ts:2-5; tools/src/check.ts:419-421, :671; content/core/params.json:128; AGENTS.md:45; CONTRIBUTING.md:35.

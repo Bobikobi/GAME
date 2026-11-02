@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Every script, in the order `pnpm e2e` plays them. A new script goes here and into one group below. */
-const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape'];
+const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'sea'];
 
 interface Entry {
   name: string;
@@ -46,7 +46,7 @@ const GROUPS: Record<string, Group> = {
   // every other opening run, so a run added to opening.ts is played here without a change to this file
   'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 11 },
   // landscape plays the 2D game on a phone turned sideways, so it rides with the HUD's scripts, not the 3D door's
-  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree', 'landscape'].map(plain), minutes: 14 },
+  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree', 'landscape', 'sea'].map(plain), minutes: 16 },
   // the only scripts that serve game/dist-3d: play3d, and load for its bag button
   '3d-and-load': { entries: ['play3d', 'load', 'camera'].map(plain), minutes: 14, build3d: true },
   'map-and-shop': { entries: ['map', 'shop', 'fishing'].map(plain), minutes: 10 },
@@ -57,7 +57,7 @@ const GROUPS: Record<string, Group> = {
  * How much faster the game's clock runs while a script only waits on it (cdp.ts, WARP): the openings wait on digs,
  * fellings, cookings and dusk. E2E_WARP=1 in the shell turns it off, to debug a run at the game's own pace.
  */
-const WARP: Record<string, number> = { opening: 4 };
+const WARP: Record<string, number> = { opening: 4, sea: 4 };
 
 /** Throws when a script is in no group or a plain script is in two: CI would skip it or play it twice. */
 function checkGroups(): void {

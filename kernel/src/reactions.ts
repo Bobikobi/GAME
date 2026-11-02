@@ -8,7 +8,7 @@
  * holds, a wait that scales the thing's respawn, and a cue the client draws (the kernel never
  * emits one, since a cue changes no state). Phase B adds the day's weather as a condition.
  */
-import type { WeatherName } from '@game/schema';
+import type { RegionCardDef, WeatherName } from '@game/schema';
 import type { Bundle, Instance, ReactionDef, ResourceDef } from './bundle';
 import { idiv } from './num';
 import { drawBasisPoints, type Seed } from './rng';
@@ -151,7 +151,8 @@ export function dayOf(b: Bundle, tick: number): number {
 
 /**
  * The odds of each weather, in basis points of the days: clear on most, rain on one in five, fog on
- * one in ten. Fixed in the kernel, so a region's sky is never a creator's lever on value.
+ * one in ten. The sky of a map that names no region card; a card's odds are the core's alone (the map
+ * is core-only), so a region's sky is never a creator's lever on value.
  */
 export const WEATHER_ODDS: readonly (readonly [WeatherName, number])[] = [
   ['rain', 2000],
@@ -160,20 +161,44 @@ export const WEATHER_ODDS: readonly (readonly [WeatherName, number])[] = [
 ];
 
 /**
- * The weather over a region on a game day: a pure function of the world's seed, the region and the
- * day, and of nothing of the player's. In the shared world everyone in a region sees one sky, as
- * large online games keep one weather per zone, and a replay here or on the server gives the same
- * day. The days are drawn apart, so tomorrow's sky is known today (the morning's forecast). The
- * phone never computes it: the seed is the server's, which sends the day's sky with its reply, as it
- * sends the appear nodes that stand (DECISIONS 2026-10-20, a drawn outcome is the server's to say).
+ * The weather over a region on a game day: a pure function of the world's seed, the region, the day
+ * and the region's odds, and of nothing of the player's. In the shared world everyone in a region sees
+ * one sky, as large online games keep one weather per zone, and a replay here or on the server gives
+ * the same day. The days are drawn apart, so tomorrow's sky is known today (the morning's forecast).
+ * The phone never computes it: the seed is the server's, which sends the day's sky with its reply, as
+ * it sends the appear nodes that stand (DECISIONS 2026-10-20, a drawn outcome is the server's to say).
  */
-export function weatherOf(seed: Seed, region: string, day: number): WeatherName {
+export function weatherOf(seed: Seed, region: string, day: number, odds: readonly (readonly [WeatherName, number])[] = WEATHER_ODDS): WeatherName {
   let roll = drawBasisPoints(seed, `weather@${region}`, day);
-  for (const [kind, bp] of WEATHER_ODDS) {
+  for (const [kind, bp] of odds) {
     if (roll < bp) return kind;
     roll -= bp;
   }
   return 'clear';
+}
+
+/**
+ * The region card a tile weathers and sounds by (FIRST_MAP's table, issue 581): its region's card, else
+ * the map's own; none when the map names none.
+ */
+export function cardAt(b: Bundle, x: number, y: number): RegionCardDef | undefined {
+  const id = regionAt(b.map, x, y)?.card ?? b.map.card;
+  return id === undefined ? undefined : b.map.cards?.find((c) => c.id === id);
+}
+
+/** A card's odds in the order `weatherOf` reads them; the kernel's fixed odds without a card. */
+export function oddsOf(card: RegionCardDef | undefined): readonly (readonly [WeatherName, number])[] {
+  if (!card) return WEATHER_ODDS;
+  return [
+    ['rain', card.weather.rain],
+    ['fog', card.weather.fog],
+    ['clear', 10_000 - card.weather.rain - card.weather.fog],
+  ];
+}
+
+/** The day's sky over a tile: its region's draw at its card's odds. */
+export function skyAt(b: Bundle, seed: Seed, x: number, y: number, day: number): WeatherName {
+  return weatherOf(seed, regionOf(b, x, y), day, oddsOf(cardAt(b, x, y)));
 }
 
 /**
@@ -216,7 +241,7 @@ export function reactionHolds(b: Bundle, s: State, r: ReactionDef, anchor: Ancho
     if (reach(at, anchor.x, anchor.y) <= hintReach(b, s)) return false;
   }
   if (w.chance_pct !== undefined && drawBasisPoints(s.seed, `${r.id}@${anchor.id}`, dayOf(b, tick)) >= w.chance_pct * 100) return false;
-  if (w.weather !== undefined && weatherOf(s.seed, regionOf(b, anchor.x, anchor.y), dayOf(b, tick)) !== w.weather) return false;
+  if (w.weather !== undefined && skyAt(b, s.seed, anchor.x, anchor.y, dayOf(b, tick)) !== w.weather) return false;
   return true;
 }
 
