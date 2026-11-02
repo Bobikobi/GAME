@@ -9,9 +9,10 @@ import { type Http } from '../src/art/pixellab/api.js';
 import { cutSheet } from '../src/art/pixellab/cut.js';
 import { Ledger, parseLedger } from '../src/art/pixellab/ledger.js';
 import { findImages, findUrls, shapeOf } from '../src/art/pixellab/payload.js';
-import { Pool, parsePoolConfig, type PoolConfig } from '../src/art/pixellab/pool.js';
+import { Pool, nightlyIndexes, parsePoolConfig, type PoolConfig } from '../src/art/pixellab/pool.js';
 import { gridVariants, parseRef, plan, seedFor, type JobSpec, type PlanContext } from '../src/art/pixellab/recipes.js';
 import { jobKey, orderJobs, parseSpec, runSpec, type RunDeps, type RunOptions } from '../src/art/pixellab/run.js';
+import { REPO_ROOT } from '../src/load.js';
 
 const TOKENS = ['tk-FAKE-aaaa-0000', 'tk-FAKE-bbbb-1111', 'tk-FAKE-cccc-2222'];
 const scratch = mkdtempSync(join(tmpdir(), 'art-pixellab-'));
@@ -189,7 +190,7 @@ function rig(balances: number[], config?: Partial<PoolConfig>): Rig {
   const said: string[] = [];
   const pushed: string[] = [];
   const poolConfig: PoolConfig = config?.accounts === undefined
-    ? { dir: 'unused', accounts: balances.map((_, i) => ({ file: `acct${i}.txt`, label: `acct${i}`, slots: 1 })) }
+    ? { dir: 'unused', accounts: balances.map((_, i) => ({ file: `acct${i}.txt`, label: `acct${i}`, slots: 1, plan: 'free' as const, nightly: false })) }
     : { dir: 'unused', accounts: config.accounts };
   const deps: RunDeps = {
     http: api.http,
@@ -337,6 +338,23 @@ describe('the pool', () => {
     const pool = await Pool.open(config, (_c, a) => (a.file === 'acct0.txt' ? TOKENS[0] as string : null), r.api.http, {}, (t) => r.said.push(t));
     expect(pool.accounts.map((a) => a.index)).toEqual([0]);
     expect(r.said.join(' ')).toMatch(/account 1 \(acct1\): no token file, skipped/);
+  });
+
+  test('an account is paid unless the config says free, and only a free one can be a nightly account', () => {
+    const config = parsePoolConfig(JSON.stringify({ accounts: [{ file: 'a.txt' }, { file: 'b.txt', plan: 'free', nightly: true }, { file: 'c.txt', plan: 'free' }, { file: 'd.txt', plan: 'paid', slots: 10 }] }));
+    expect(config.accounts.map((a) => [a.plan, a.nightly])).toEqual([['paid', false], ['free', true], ['free', false], ['paid', false]]);
+    expect(nightlyIndexes(config)).toEqual([1]);
+    expect(() => parsePoolConfig(JSON.stringify({ accounts: [{ file: 'a.txt', nightly: true }] }))).toThrow(/paid account and cannot be marked "nightly"/);
+    expect(() => parsePoolConfig(JSON.stringify({ accounts: [{ file: 'a.txt', plan: 'paid', nightly: true }] }))).toThrow(/cannot be marked "nightly"/);
+    expect(() => parsePoolConfig(JSON.stringify({ accounts: [{ file: 'a.txt', plan: 'pro' }] }))).toThrow(/expected "free" or "paid"/);
+  });
+
+  test('the config of the repo marks the paid account as paid and keeps it out of the nightly set', () => {
+    const config = parsePoolConfig(readFileSync(join(REPO_ROOT, 'tools/kit-gen/pixellab/pool.json'), 'utf8'));
+    const paid = config.accounts.filter((a) => a.plan === 'paid');
+    expect(paid.map((a) => a.label)).toEqual(['trial1']);
+    expect(paid[0]?.slots).toBe(10);
+    expect(nightlyIndexes(config).map((i) => config.accounts[i]?.label)).toEqual(['current', 'trial2', 'trial3']);
   });
 });
 
