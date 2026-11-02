@@ -454,7 +454,9 @@
           "cover": {
             "core/base-kit:props/grass_tall": 40,
             "core/base-kit:props/flowers_blue": 20,
-            "core/base-kit:props/rock_mossy": 10
+            "core/base-kit:props/rock_mossy": 10,
+            "core/base-kit:props/pro_bush": 15,
+            "core/base-kit:props/pro_patch": 10
           },
           "opens_by": "wake"
         },
@@ -3924,6 +3926,22 @@
         "x": 34,
         "y": 22,
         "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/pro_ruin",
+        "x": 33,
+        "y": 24,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/pro_ruin",
+        "x": 34,
+        "y": 25,
+        "w": 1,
         "h": 1,
         "solid": true
       }
