@@ -1,0 +1,7 @@
+[Unit]
+Description=Rebuild the GAME image library page when the drafts index changed
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/share/art-library/update.sh
+Nice=10
