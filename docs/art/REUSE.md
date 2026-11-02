@@ -125,6 +125,22 @@ store, `Bobikobi/GAME-art-drafts` (private, releases only) with its index
   existing import pipeline, visual review and applicable checks for integration.
   Preserve source attribution and comply with the asset's licence.
 
+## The image library
+
+A view of the index for the owner: one page of every draft in `tools/kit-gen/drafts.jsonl`, with amendments folded in, in
+sections by tool (PixelLab, Blender, Kaggle, Codex, and the rest), chips with counts, search, review states, and a filter by
+creation date (from/to, today, 7 and 30 days, one button per month, and "no date" for drafts no fallback can date). The
+lightbox shows the prompt, seed, review, its note and who gave it. It is a view like any gallery here: the index stays the
+catalogue.
+
+- `pnpm art:library [--out DIR]` builds it (default `.scratch/art-library/`). Thumbnails are fetched once from the private
+  store and kept in `DIR/thumb/`; a run fetches only what is missing, and a model file or a failed fetch gets a placeholder
+  and a line in the log. It prints how many dates each fallback filled (`at`, a source's `at`, a timestamp in a source's
+  file name, the store tag's day) and how many stay undated.
+- `tools/art-library/` holds the `systemd --user` units that keep the page current: a 10 minute timer that rebuilds only when
+  `origin/develop`'s index changed, from a clean checkout of its own, and a static server on `127.0.0.1:8741`. Its README
+  says how they are installed.
+
 ## Parallel sessions
 
 Each session writes only its own task's records and sources. Read other worktrees

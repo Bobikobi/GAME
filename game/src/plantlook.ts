@@ -30,3 +30,17 @@ export function plantLook(x: number, y: number): PlantLook {
     dy: ((h >>> 14) % 7) - 3,
   };
 }
+
+/** The natural things that may stand either way round. Signs, buildings and anything with text or a meaningful side are not here. */
+export const MIRRORED: readonly string[] = [
+  'tree_oak', 'young_tree', 'sapling', 'dead_tree', 'stump',
+  'bush_berry', 'bush_berry_b', 'bush_berry_c', 'bush_empty',
+  'rock_mossy', 'rock_small', 'rock_stones',
+  'log_fallen', 'log_mossy',
+  'mushroom_patch', 'mushrooms_small', 'glow_mushrooms',
+];
+
+/** Whether the thing of this name on this tile is drawn mirrored, fixed by the tile: the same for every player and every reload. Only the drawing changes. */
+export function mirroredAt(name: string, x: number, y: number): boolean {
+  return MIRRORED.includes(name) && ((hash(x * 9 + 7, y * 9 + 9) >>> 8) & 1) === 1;
+}
