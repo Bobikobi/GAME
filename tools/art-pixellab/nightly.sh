@@ -68,10 +68,13 @@ GH_TOKEN=$(gh auth token --user "$GH_USER" 2>/dev/null || true)
 export GH_TOKEN
 git config credential.helper '!gh auth git-credential'
 
+# a non-zero exit of the job is read below, not an unexpected stop: the ERR trap and -e are off around it
+trap - ERR
 set +e
 pnpm --silent art:nightly --state "$STATE" | tee "$STATE/last-output.txt"
 code=${PIPESTATUS[0]}
 set -e
+trap 'alert "the script stopped at line $LINENO, see $STATE/run.log"' ERR
 # a refusal for lack of credit is "none today" and exits 0; 1 is a real failure on some account or in the push, 2 a crash
 result=$(grep '^RESULT ' "$STATE/last-output.txt" | tail -1 || true)
 tail -1 "$KIT/nightly-log.jsonl" >> "$STATE/nights.jsonl" 2>/dev/null || true
