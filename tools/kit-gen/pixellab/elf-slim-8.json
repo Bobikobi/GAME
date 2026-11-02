@@ -1,0 +1,19 @@
+{
+  "name": "elf-slim-8",
+  "label": "pixellab-elf-slim-8",
+  "provenance": "Issue #634: the camera fix of the taller elf (elf-slim-7), from and to direction south, side to high top-down, as PixelLab's rotating guide says.",
+  "jobs": [
+    {
+      "id": "high",
+      "recipe": "rotate",
+      "inputs": {
+        "from_image": "../../../.scratch/pixellab/elf-slim-7/tall/tall.png",
+        "size": 128,
+        "from_view": "side",
+        "to_view": "high top-down",
+        "from_direction": "south",
+        "to_direction": "south"
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "elf-slim-4",
+  "label": "pixellab-elf-slim-4",
+  "provenance": "Issue #634: the camera fix of the slim elf. The Codex drawing is near frontal; the game's figures stand at a 50 degree camera (DECISIONS 2026-11-02, the owner: where the angle is wrong, fix the angle). The API has no 50 degree setting, so the elf goes from a side view to the low and to the high top-down view and the result is judged by eye beside the human.",
+  "jobs": [
+    {
+      "id": "low",
+      "recipe": "rotate",
+      "inputs": { "from_image": "../../../.scratch/pixellab/elf-slim-3/elf.png", "size": 128, "from_view": "side", "to_view": "low top-down" }
+    },
+    {
+      "id": "high",
+      "recipe": "rotate",
+      "inputs": { "from_image": "../../../.scratch/pixellab/elf-slim-3/elf.png", "size": 128, "from_view": "side", "to_view": "high top-down" }
+    }
+  ]
+}
