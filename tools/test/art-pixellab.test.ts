@@ -190,7 +190,7 @@ function rig(balances: number[], config?: Partial<PoolConfig>): Rig {
   const said: string[] = [];
   const pushed: string[] = [];
   const poolConfig: PoolConfig = config?.accounts === undefined
-    ? { dir: 'unused', accounts: balances.map((_, i) => ({ file: `acct${i}.txt`, label: `acct${i}`, slots: 1 })) }
+    ? { dir: 'unused', accounts: balances.map((_, i) => ({ file: `acct${i}.txt`, label: `acct${i}`, slots: 1, plan: 'free' as const, nightly: false })) }
     : { dir: 'unused', accounts: config.accounts };
   const deps: RunDeps = {
     http: api.http,
