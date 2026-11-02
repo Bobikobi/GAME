@@ -139,7 +139,9 @@ describe('the queue file of the repo', () => {
     expect(QUEUE.pieces.length).toBeGreaterThanOrEqual(30);
     expect(new Set(QUEUE.pieces.map((p) => p.id)).size).toBe(QUEUE.pieces.length);
     const kit = (JSON.parse(readFileSync(join(REPO_ROOT, 'content/kit/core/kit.json'), 'utf8')) as { kit: { sprites: Record<string, unknown> } }).kit.sprites;
-    const names = new Set(Object.keys(kit).map((k) => k.split('/').pop() as string));
+    // hyphen and underscore are one name here: the kit's `old-coin` and a queue id `old_coin` are the same piece
+    const names = new Set(Object.keys(kit).map((k) => (k.split('/').pop() as string).replace(/-/g, '_')));
+    expect(names.has('old_coin') || names.size > 100).toBe(true);
     for (const p of QUEUE.pieces) {
       expect(names.has(p.id), `${p.id} is already a sprite of the kit`).toBe(false);
       expect(p.source.length).toBeGreaterThan(3);
@@ -281,6 +283,19 @@ describe('a night', () => {
     const result = await runNightly(r.deps, { maxPerAccount: 25 });
     expect(result.accounts.map((a) => a.outcome)).toEqual(['refused', 'no-token', 'refused']);
     expect(r.said.join('\n')).toMatch(/trial2: no token file, skipped/);
+    expect(result.failures).toEqual(['trial2: no token file']);
+  });
+
+  test('a free-labelled account whose balance reads more than a free account stores gets no post (a swapped token file)', async () => {
+    const night = new Night();
+    night.gives.set(PAID, 50);
+    // the second nightly account's file holds the paid token: it reads 5000
+    const r = deps(night, { readToken: (_c, a) => (a.file === 'pixellab-token-trial2.txt' ? PAID : TOKENS[a.file] ?? null) });
+    const result = await runNightly(r.deps, { maxPerAccount: 25 });
+    expect(night.posts(PAID)).toEqual([]);
+    expect(result.accounts[1]).toMatchObject({ label: 'trial2', outcome: 'failed', apiBalance: 5000 });
+    expect(result.failures.some((f) => /more than a free account stores/.test(f))).toBe(true);
+    expect(result.made).toEqual([]);
   });
 });
 

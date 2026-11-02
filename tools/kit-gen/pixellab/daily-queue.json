@@ -20,7 +20,7 @@
     },
     {
       "id": "river_fish",
-      "what": "single silver river trout, side view, wet and cold",
+      "what": "single silver river trout, wet and cold",
       "class": "pickup",
       "source": "content/core/resources/river-fish.json:10"
     },

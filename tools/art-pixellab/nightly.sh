@@ -49,6 +49,12 @@ git reset --quiet --hard
 git clean --quiet -fd
 git checkout --quiet -B "$BRANCH" origin/develop
 
+# until the pool change and this job have both landed on develop there is nothing to run: say so, and do not mark the day done
+if ! grep -q '"art:nightly"' package.json || [ ! -f "$KIT/daily-queue.json" ] || ! grep -q '"nightly"' "$KIT/pool.json"; then
+  alert "develop does not have the nightly job yet (it needs the pool change and the job landed): nothing was run"
+  exit 1
+fi
+
 lock=$(git rev-parse HEAD:pnpm-lock.yaml)
 if [ ! -d node_modules ] || [ ! -f .installed ] || [ "$(cat .installed)" != "$lock" ]; then
   pnpm install --frozen-lockfile --silent

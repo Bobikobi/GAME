@@ -26,6 +26,9 @@ import { toolString } from './run.js';
 
 export const PIECE_CLASSES = ['pickup', 'prop'] as const;
 
+/** A free account stores up to 20 generations. A balance over that is not a free account: the token file holds another one. */
+export const FREE_STORE_LIMIT = 20;
+
 export interface Piece {
   id: string;
   /** What it is, in words a picture model can draw. */
@@ -163,12 +166,24 @@ export async function runNightly(deps: NightlyDeps, opts: NightlyOptions): Promi
     result.accounts.push(night);
     const token = deps.readToken(config, account);
     if (token === null) {
+      // a moved secrets folder would otherwise make every night silently empty
       night.outcome = 'no-token';
+      night.error = 'no token file';
+      result.failures.push(`${account.label}: no token file`);
       say(`${account.label}: no token file, skipped`);
       continue;
     }
     const client = new Client(token, account.label, deps.http, deps.clientOptions);
     night.apiBalance = await client.balance().then((b) => b.generations, () => null);
+    // the balance read 0 on accounts that still gave, so a small number proves nothing; a big one does: the trial once swapped
+    // which account sat in which file, and the paid account reads thousands
+    if (night.apiBalance !== null && night.apiBalance > FREE_STORE_LIMIT) {
+      night.outcome = 'failed';
+      night.error = `the balance reads ${night.apiBalance}, more than a free account stores (${FREE_STORE_LIMIT}): is this token file the paid account? Nothing was spent on it`;
+      result.failures.push(`${account.label}: ${night.error}`);
+      say(`${account.label}: ${night.error}`);
+      continue;
+    }
 
     for (;;) {
       if (night.given >= opts.maxPerAccount) {
