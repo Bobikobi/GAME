@@ -281,11 +281,13 @@ describe('animals keep their spots (QUARRYING 8, 16 row 7)', () => {
   const MOVES = "so the later arrival moves, a laid node by its slot's place, size or count, an appear node by its reaction's appear.at, a new spot to a free tile (QUARRYING 8)";
   const errorsOf = (r: CheckResult) => r.issues.filter((i) => i.level === 'error').map((i) => `${i.where}: ${i.message}`);
 
-  it('passes the shipped world with its extensions: 71 nodes (63 laid, 8 appear), 34 spots, no shared tile', () => {
+  it('passes the shipped world with its extensions: every laid and appear node against every spot, no shared tile', () => {
     const shipped = runCheck();
     const b = shipped.assembled.bundle!;
-    expect([Object.keys(b.instances).length, appearSlots(b).size]).toEqual([63, 8]);
-    expect(b.map.creatures!.spots).toHaveLength(34);
+    // counted, not pinned: develop adds nodes and spots, and the row holds on any world (80 laid, 9 appear, 41 spots on 2.11)
+    expect(Object.keys(b.instances).length).toBeGreaterThan(0);
+    expect(appearSlots(b).size).toBeGreaterThan(0);
+    expect(b.map.creatures!.spots.length).toBeGreaterThan(0);
     expect(errorsOf(shipped).filter((l) => l.includes(STANDS))).toEqual([]);
     expect(errorsOf(core).filter((l) => l.includes(STANDS))).toEqual([]);
   });
@@ -293,7 +295,7 @@ describe('animals keep their spots (QUARRYING 8, 16 row 7)', () => {
   it('refuses a spot laid on a placed node\'s tile, and that is the only error', () => {
     const { x, y } = core.assembled.bundle!.instances['core/river-stones#0']!;
     const r = world([spots((s) => s.push({ kind: SPARROW, x, y }))]);
-    expect(errorsOf(r)).toEqual([`map.creatures.spots.34: node core/river-stones#0 stands on core/sparrow's spot at ${x},${y}: ${STANDS}, ${MOVES}`]);
+    expect(errorsOf(r)).toEqual([`map.creatures.spots.${core.assembled.bundle!.map.creatures!.spots.length}: node core/river-stones#0 stands on core/sparrow's spot at ${x},${y}: ${STANDS}, ${MOVES}`]);
   });
 
   it('refuses a spot laid on an appear node\'s tile, also of a kind with no behaviour', () => {
@@ -302,7 +304,7 @@ describe('animals keep their spots (QUARRYING 8, 16 row 7)', () => {
       delete kindsOf(m)[SPARROW]!.behaviour;
     });
     const r = world([cosmetic, spots((s) => s.push({ kind: SPARROW, x: slot.x, y: slot.y }))]);
-    expect(errorsOf(r)).toEqual([expect.stringContaining(`map.creatures.spots.34: node ${id} stands on core/sparrow's spot at ${slot.x},${slot.y}: ${STANDS}`)]);
+    expect(errorsOf(r)).toEqual([expect.stringContaining(`map.creatures.spots.${core.assembled.bundle!.map.creatures!.spots.length}: node ${id} stands on core/sparrow's spot at ${slot.x},${slot.y}: ${STANDS}`)]);
   });
 });
 
