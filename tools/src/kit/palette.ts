@@ -41,7 +41,7 @@ export interface CoreRamp extends RampLike {
  * The world's shared ramps, the depth of palette v2. Each passes the ramp rule of `ramps.ts`
  * (`kit-ramps.test.ts` holds it to that), and a ramp of a core family carries that family's core
  * colours as its own steps, so a sprite drawn in the core wood sits inside the `wood` ramp.
- * 46 colours beyond the core: 78 in all.
+ * 64 colours beyond the core: 96 in all.
  */
 export const CORE_RAMPS: readonly CoreRamp[] = [
   { id: 'grey', for: 'stone', steps: ['#1b1a2e', '#3a3554', '#5d6177', '#8f94a8', '#c6cad6', '#f5f4ef'] },
@@ -57,6 +57,12 @@ export const CORE_RAMPS: readonly CoreRamp[] = [
   { id: 'plum', for: 'cloth', steps: ['#241238', '#43204a', '#5b3373', '#7c4593', '#9a5bb0', '#c28bc9'] },
   { id: 'fire', for: 'light', steps: ['#6e2d14', '#b8661f', '#e08a2a', '#eda83a', '#f8de62', '#fff3a8'] },
   { id: 'skin', for: 'skin', steps: ['#5a3528', '#8a5540', '#b4764f', '#d38c66', '#f3c7a0', '#fae3c8'] },
+  // Added for issue #664 (the owner's kept pictures, promote wave): measured off the kept Pro-grid
+  // pieces so a snap to the palette no longer pulls a bush, a stone ruin or a ground patch toward
+  // the wrong family. None of the three sits within GUST.tolerance of a MOVES colour (richground.ts).
+  { id: 'sage', for: 'vegetation', steps: ['#06200d', '#13301e', '#365636', '#4a6e45', '#6f8c54', '#9eb471'] },
+  { id: 'sandstone', for: 'stone', steps: ['#211d11', '#44382a', '#5f5146', '#88775e', '#b1a283', '#d7c7a6'] },
+  { id: 'olive', for: 'vegetation', steps: ['#4c5022', '#555926', '#6d712a', '#7b7e2d', '#808443', '#959952'] },
 ];
 
 /** The shared ramp with this id, if there is one. */
@@ -84,7 +90,7 @@ export function paletteWithRamps(named: readonly string[]): readonly string[] {
   return colours;
 }
 
-/** The whole of palette v2: the 32 and every shared ramp's steps, 78 colours. */
+/** The whole of palette v2: the 32 and every shared ramp's steps, 96 colours. */
 export const DEEP_PALETTE: readonly string[] = paletteWithRamps(CORE_RAMPS.map((ramp) => ramp.id));
 
 /**
