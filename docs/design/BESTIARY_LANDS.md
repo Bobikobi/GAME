@@ -61,7 +61,7 @@ Dense forest at d2 with its foot at d1 (FIRST_MAP: three wayside stalls, branchi
 
 ### 3.2 The undead south: ten kinds for the dark, dry ground
 
-From the night arch down the stair to the sunken hall (d1) and the descent beyond (d2). The hours are flipped: most of the south is awake from 20:00 to 05:00, and the hall's roof counts as night at every hour. Nothing here is a person: no dead of the three races walks, the skeleton is a player's race and its flesh is never meat (BESTIARY 2, rule 4), and every creature below is a beast in shape, three of them demon-shaped (proposed; question 4), with a body that reads as an animal and no face that speaks. Meat from the south is not eaten by default (question 1).
+From the night arch down the stair to the sunken hall (d1) and the descent beyond (d2). The hours are flipped: most of the south is awake from 20:00 to 05:00, and the hall's roof counts as night at every hour. Nothing here is a person: no returner walks dead, the skeleton is a player's race and its flesh is never meat (BESTIARY 2, rule 4), and every creature below is a beast in shape, three of them demon-shaped (proposed; question 4), with a body that reads as an animal and no face that speaks. The bone-things of CREATURES.md STEP 3 (the owner's word, 1.11) are monsters of the fold under the bells that look like skeletons and are killed in a fight, not the races' dead; they get their rows here when their stills are picked, and nothing is dressed from them. Meat from the south is not eaten by default (question 1).
 
 | Kind | Size | Tier | Danger | Take s | Ways | Drops (qty, share) | Spawn cap / refill d | Sight / ear / smell | Hours | Where, and the tell |
 |---|---|---|---|---|---|---|---|---|---|---|

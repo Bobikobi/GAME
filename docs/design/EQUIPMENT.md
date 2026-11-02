@@ -111,7 +111,7 @@ The owner's rule is already in two places: a bought look is bound to the account
 |---|---|---|
 | `none` | trades inside the market's band (R8) | everything found or made, including power |
 | `account` | never traded, never sold to the trader | a look bought with money |
-| `character` | never traded | a holiday look of its year; a legendary ceiling raiser (PROGRESSION.md 5.7: "few, late, bound") |
+| `character` | never traded | a holiday look of its year (a found ceiling raiser is `none` since 1.11: DECISIONS 2026-11-01, "A found power item is not bound") |
 
 There is **no bind-on-pickup and no bind-on-equip** on power. Power is made and traded in the free market (DECISIONS 2026-10-09, "The crafting economy"); a bound upgrade would stop the made-share and the market from doing their work, and "power is never sold" (G39) already keeps money out.
 

@@ -257,7 +257,7 @@ The owner's concern: hard fixed caps would kill the chase for better sets, and f
 | `place` | answer steps on one condition (garment, master step, dish) | 2 | 2 | 3 | 3 | 4 | none (the ladder tops at 4) | 4 |
 | `strike`, `aim`, `guard` | reserved: rows with the combat layer | | | | | | 2 each, then | |
 
-**The raisers**: ten today (`work` 2, `move` 2, `health` 2, `sustain` 1, `find` 2, `sense` 1), each raising one category's ceiling by one step: rare, late and few. The owner's pick (27.10): half are crown nodes of a school (4.3), half are unique pieces found in band-5 places or at the end of a band-5 wall; never sold, never made, bound to the one who found or learned it; one of each counts. The count of ten is `raisers_max` in `content/core/params.json` and stays tunable. They are the end-game chase: a band-5 player full of sets and dishes stands at the band's ceiling, and only raisers lift it.
+**The raisers**: ten today (`work` 2, `move` 2, `health` 2, `sustain` 1, `find` 2, `sense` 1), each raising one category's ceiling by one step: rare, late and few. The owner's pick (27.10): half are crown nodes of a school (4.3), half are unique pieces found in band-5 places or at the end of a band-5 wall; never made; one of each counts. A crown node stays with the one who learned it; a found raiser is not bound: it trades and sells for gold like any found item, and whoever holds it gets its benefit (the owner, 1.11, DECISIONS 2026-11-01, "A found power item is not bound"). The count of ten is `raisers_max` in `content/core/params.json` and stays tunable. They are the end-game chase: a band-5 player full of sets and dishes stands at the band's ceiling, and only raisers lift it.
 
 `sustain` is the one ceiling the game itself enforces in a new place: while a place drains (BODY_CLOCKS 5), all health back, food eaten included, comes in at most at that rate; outside a draining place eating heals at once, as today. A regeneration or mend dish adds +2 on top of the ceiling while it lasts (balance finding 11, accepted 26.10), inside the room a `sustain` raiser gives, so those dishes still count in a wall after carried food has brought `sustain` to the ceiling; food alone never lifts it past. Without the clamp a wall could be eaten through and no proof would hold.
 
@@ -503,7 +503,7 @@ The owner: the base rarity, **common**, for food and for accessories and gear, c
 | `common` | **1, often 0** | at most the stat's **smallest step**: its tier-1 value (a worn effect's 5 points, `wear_effect_max_pct[0]`; +1 to an attribute; 1 grade for a trait; a dish effect's tier-1 row) | quality never lifts it past the step; every built common piece already fits (0 or 1 worn effect at 5) |
 | `uncommon` | 1 | 50-75% of the tier's value; a trait at the tier's strength (1, 1, 2, 2, 3) | |
 | `rare` | 2 | 75-90% | a master piece's second worn effect needs rare or above; the best rare of a tier stays at least 10% under a legendary of it |
-| `legendary` | 2 | 100%; may also carry one ceiling raiser (4.7) | the found raisers are legendary: few, late, bound |
+| `legendary` | 2 | 100%; may also carry one ceiling raiser (4.7) | the found raisers are legendary: few and late, not bound (1.11) |
 
 Quality (5.2) moves a piece inside its rarity's band, plain at the bottom and master at the top, never past it. A rarity's share of an effect rounds down with a floor of 1 (balance finding 6, accepted 26.10), so a small effect (full value 1-3) never rounds to nothing inside its band. What counts as an effect: each worn effect, each trait and each dish effect; whether an attribute bonus counts is an owner call (section 9, recommended: it counts). A made piece's rarity is its materials', as the check computes it now ("a rare material makes a rare thing").
 
@@ -606,7 +606,7 @@ Each is the owner's. All eight were answered on 25.10, one at a time; each answe
 | How a wall at band 3 or more holds | a clock or a school-level requirement beside the drain, as the stand-in walls carry | 4.7 |
 | The `Tree:` line and extensions | owed by every pull request, extensions included | 4.9 |
 | The coverage report's name | `pnpm tree:coverage` | 4.9 |
-| How the ceiling raisers are had | half crown nodes, half bound legendary finds; ten stays `raisers_max` | 4.7 |
+| How the ceiling raisers are had | half crown nodes, half legendary finds that trade (1.11); ten stays `raisers_max` | 4.7 |
 
 Also recorded 27.10: the ceiling bands read as drawn (health from stamina; sustain, sense and place from Survival; move and carry from Travel). One idea of the owner is not yet rules, a fog of total darkness and unbeatable titans past the map's edge (DECISIONS 2026-10-27 ⏸).
 
@@ -661,7 +661,7 @@ Also recorded 27.10: the ceiling bands read as drawn (health from stamina; susta
 | Rising ceilings by band, combinations stack freely up to them | R9 one power cap; Q5 "gear bonuses with no fixed cap" | agrees | the `work` row's top is `power_cap_max_permille`; the power cap keeps clamping by character level and the lower of the two binds; attributes stay outside the ceilings |
 | A wall's requirement | P3 "no level, band or node walls an attempt"; "no level wall" (9.10) | agrees | the wall checks nothing at its door; below a requirement the chance falls to nothing as a recipe's does, and the numbers make the wall |
 | `sustain` clamps health back while a place drains | G32 "eating is how the player heals" | **bends** | declared: only inside a draining grade; elsewhere a meal heals at once, as built |
-| Raisers bound to the one who found or learned them | the free market (9.10); "power is never sold" | extends | a raiser is power, so it is never sold, and binding keeps it off the market; ordinary made pieces trade as before |
+| A found raiser is not bound (1.11, superseding the 27.10 binding) | the free market (9.10); G39 "power is never sold" | agrees | G39 keeps power from money and premium currency; a found raiser sold for gold between players is the free market, as any found item |
 | The Q8 fill's "never more than one grade above the wearer's tier" | the owner's balance answer (25.10) | superseded | dropped: the `place` ceiling by band and the walls proven both ways replace it |
 | Rarity sets the count and band of effects, orthogonal to tier | the schema's "the rarity says how often it appears; the tier says how far up the ladder it is"; the rarity budget (kernel review 8.2) | agrees | rarity keeps pricing supply; it now also bounds what a thing carries |
 | Common things are plain | the built outfits and tools (every common piece 0 or 1 worn effect at 5) | agrees | today's content passes `common_plain` as it stands |

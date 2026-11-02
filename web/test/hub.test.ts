@@ -86,4 +86,11 @@ describe('the project tree', () => {
     expect(tree).toMatch(/data-refresh="60"/);
     expect(tree).not.toMatch(/game-[0-9a-f]{2}\b|\/home\/|session_/);
   });
+
+  it('grows an open part on the tree, with a way back to all the parts and a key to the agents (#593)', () => {
+    expect(tree).toMatch(/<div class="tree-back" id="back" hidden/);
+    expect(tree).toMatch(/id="back-btn"[^>]*>All parts</);
+    expect(tree).toContain('an agent at work');
+    expect(tree).toContain('waiting on a word');
+  });
 });

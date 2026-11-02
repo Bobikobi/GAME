@@ -71,12 +71,21 @@ describe('a log that replays (NEXT 18 g)', () => {
   test('the measures are CR-40\'s, read off the state alone', () => {
     const { state } = opened(44);
     const scores = scoresOf(bundle, state);
-    expect(scores.map((score) => score.board)).toEqual(['wealth', 'collection', 'levels']);
+    expect(scores.map((score) => score.board)).toEqual(['wealth', 'collection', 'levels', 'exploration']);
     expect(scores.find((score) => score.board === 'wealth')!.score).toBe(state.player.gold);
     expect(scores.find((score) => score.board === 'collection')!.score).toBe(state.player.journal.length);
     expect(scores.find((score) => score.board === 'levels')!.score).toBeGreaterThanOrEqual(
       Object.keys(bundle.professions).length,
     );
+    expect(scores.find((score) => score.board === 'exploration')!.score).toBe(state.player.explored?.length ?? 0);
+  });
+
+  test('the exploration board counts the places brought home, never the ones an outing still carries (G63)', () => {
+    const { state } = opened(44);
+    const found = structuredClone(state);
+    found.player.explored = ['core/town-square', 'core/north-gate'];
+    found.player.outing = { gained: {}, solved: [], visited: [], found: ['core/shore-gate'] };
+    expect(scoresOf(bundle, found).find((score) => score.board === 'exploration')!.score).toBe(2);
   });
 
   test('a week starts on its Monday, as the date column takes it', () => {
@@ -186,7 +195,7 @@ describe.skipIf(!hasDatabase())('the boards over the books (NEXT 18 g)', () => {
 
     const week = weekStart(new Date());
     const scores = await postScores(rig.pool!, bundle, made.accountId, week);
-    expect(scores.map((score) => score.board)).toEqual(['wealth', 'collection', 'levels']);
+    expect(scores.map((score) => score.board)).toEqual(['wealth', 'collection', 'levels', 'exploration']);
     expect((await readBoard(rig.pool!, week, 'wealth')).some((row) => row.account === made.accountId)).toBe(true);
   }, 240_000);
 });

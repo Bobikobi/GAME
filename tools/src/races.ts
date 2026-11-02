@@ -86,6 +86,7 @@ export function checkRaces(b: Bundle, origin: Record<string, string>): Issue[] {
     ['resource', b.resources],
     ['camp', b.camps],
     ['expedition', b.expeditions],
+    ['passage', b.passages],
   ];
   for (const [kind, records] of gated) {
     for (const [id, rec] of Object.entries(records)) {

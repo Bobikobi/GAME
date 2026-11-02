@@ -41,4 +41,21 @@ describe('richness', () => {
       expect(w.reacts).toContain(wolf.id);
     }
   });
+
+  it('a window holding a creature spot counts the kind as moving, and as reacting when it flees a player', () => {
+    const spots = base.map.creatures?.spots ?? [];
+    expect(spots.length).toBeGreaterThan(0);
+    const windows = richnessWindows(base);
+    for (const spot of spots) {
+      const kind = `creature:${spot.kind}`;
+      const inside = windows.filter((q) => spot.x >= q.x && spot.x < q.x + q.w && spot.y >= q.y && spot.y < q.y + q.h);
+      for (const w of inside) {
+        expect(w.moves).toContain(kind);
+        if (base.map.creatures!.kinds[spot.kind]!.alert_tiles > 0) expect(w.reacts).toContain(kind);
+      }
+      // counted at its spot only: a window that does not hold the spot does not count it for this spot
+      const away = windows.filter((q) => !inside.includes(q) && !spots.some((o) => o.kind === spot.kind && o.x >= q.x && o.x < q.x + q.w && o.y >= q.y && o.y < q.y + q.h));
+      for (const w of away) expect(w.moves).not.toContain(kind);
+    }
+  });
 });

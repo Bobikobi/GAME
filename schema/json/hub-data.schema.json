@@ -429,6 +429,10 @@
                 "type": "string"
               },
               {
+                "const": "passage",
+                "type": "string"
+              },
+              {
                 "const": "restore",
                 "type": "string"
               },

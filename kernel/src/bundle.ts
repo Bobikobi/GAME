@@ -12,6 +12,7 @@ import type {
   ItemDef,
   NodeSizeName,
   Npc,
+  Passage,
   Pocket,
   Profession,
   Quest,
@@ -23,6 +24,7 @@ import type {
   Restore,
   School,
   Search,
+  SeaEventDef as SeaEventBody,
   Shop,
   Treasure,
 } from '@game/schema';
@@ -49,6 +51,9 @@ export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
 export type QuestDef = Meta & Quest;
 export type ExpeditionDef = Meta & Expedition;
+/** A way across water (docs/design/SEA_CROSSING.md): board at a jetty, sail, meet the one event drawn, land. */
+export type PassageDef = Meta & Passage;
+export type SeaEventDef = SeaEventBody;
 export type RestoreDef = Meta & Restore;
 export type CampDef = Meta & Camp;
 /** A race the player picks at the title (DECISIONS.md, 2026-10-22). */
@@ -62,6 +67,18 @@ export type ShopDef = Meta & Shop;
 export type MapDef = Meta & GameMap;
 /** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
 export type ReactionDef = Meta & Reaction;
+
+/** A living fire's numbers (GRUNT CR-110), read by the client only. */
+export interface Flicker {
+  band_pct: number;
+  step_min_ms: number;
+  step_max_ms: number;
+  frame_jitter_pct: number;
+  start_spread_ms: number;
+  ember_per_s: number;
+  spark_gap_min_s: number;
+  spark_gap_max_s: number;
+}
 
 /** How a predator is heard far off and near, and how its bite is drawn (NEXT.md 12 c). Display only: no rule reads it. */
 export interface Telegraph {
@@ -124,10 +141,22 @@ export interface Params {
   walk_step_ms: number;
   /** maximum path length allowed for a move report; defaults to 32 for older content */
   move_reach_max: number;
+  /** pillar 1's ceiling in game milliseconds: the longest walk without a pay the pay-gap check (G62) allows; defaults to 90000 for older content */
+  pay_gap_ms: number;
+  /** tiles away at which a pay is already on screen, added to the pay-gap check's allowance (G62); defaults to 5 for older content */
+  pay_sight_tiles: number;
   /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
   hp_low_pct: number;
   /** safe_tiles: the ring of safe ground around the player's own fire while it burns; burn_pct_per_d: how much faster its logs burn for each step of the area's danger, in percent */
-  fire: { cap: number; log_ms: number; warn_min: number; safe_tiles: number; burn_pct_per_d: number };
+  fire: {
+    cap: number;
+    log_ms: number;
+    warn_min: number;
+    safe_tiles: number;
+    burn_pct_per_d: number;
+    /** how a burning fire moves, flickers and crackles (GRUNT CR-110): display only, the kernel never reads it */
+    flicker?: Flicker;
+  };
   hazard: {
     /** refill_bp: how high a hunt outrun to a safe place lifts health, in basis points of the cap: what its bites took comes back, up to this share */
     predator: {
@@ -190,6 +219,10 @@ export interface Params {
     town_keep_day: number;
     town_keep_night: number;
   };
+  /**
+   * The fight (docs/design/COMBAT.md section 4.9): whole ticks of wild.tick_ms, points and tiles. Inert while `enabled` is 0 (G35).
+   */
+  combat: { enabled: number; swing_quick_t: number; swing_standard_t: number; swing_heavy_t: number; swing_floor_t: number; bare_windup_t: number; bare_base: number; windup_min_t: number; windup_max_t: number; active_t: number; rehit_t: number; bite_div: number; behind_permille: number; weak_permille: number; mercy_t: number; stun_t: number; knockback_tiles: number; dodge_tiles: number; dodge_t: number; dodge_cooldown_t: number; breath_base: number; breath_per_stamina: number; breath_refill: number; breath_hold_t: number; attack_breath: number; guard_drain: number; guard_hit_breath: number; dodge_breath: number; breath_stagger_t: number; guard_stagger_t: number; engage_tiles: number; leash_tiles: number; give_up_t: number; claim_lock_t: number; pay_per_s_mg: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
@@ -259,6 +292,7 @@ export interface Bundle {
   npcs: Record<string, NpcDef>;
   quests: Record<string, QuestDef>;
   expeditions: Record<string, ExpeditionDef>;
+  passages: Record<string, PassageDef>;
   restores: Record<string, RestoreDef>;
   camps: Record<string, CampDef>;
   races: Record<string, RaceDef>;

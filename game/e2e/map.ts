@@ -108,6 +108,13 @@ async function run(page: Page, url: string, viewport: Viewport): Promise<void> {
   if (orders.some((row) => row.includes('The empty corner'))) throw new Error('the corner is named before the player stood in it');
   log(`the map opens: ${orders.length} place(s) the player stood in, none of them the corner`);
 
+  // a place in the player's seen list (M2, G66) is on the chart and in the list, with no walk behind it
+  await page.eval(`window.__game.session.state.player.seen = [...(window.__game.session.state.player.seen ?? []), 'core/tangle-heart']`);
+  await openMap(page);
+  orders = await rows(page);
+  if (!orders.some((row) => row.includes('Heart of the tangle'))) throw new Error(`a place entered is not in the list: ${JSON.stringify(orders)}`);
+  log('a place entered joins the chart and the list');
+
   // the pocket chart belongs to a desktop, and a phone does not carry one
   await page.eval(`window.__game.ui.closeAll()`);
   await sleep(200);
