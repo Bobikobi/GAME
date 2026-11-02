@@ -68,6 +68,7 @@ import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, ne
 import { deepTile } from '../waterbody';
 import { mirroredAt, plantLook, TUFTS } from '../plantlook';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
+import { MASKED, MaskSway } from '../swaymask';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
 import type { GameSession } from '../session-surface';
@@ -415,6 +416,8 @@ export class WorldScene extends Phaser.Scene {
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
+  /** the sprites that lean in the gust by a mask of their own height, not by colour (swaymask.ts) */
+  private maskSway = new MaskSway();
   /** the crackle heard now, from the soundscape, and when the breath next moves it (CR-110) */
   private crackle: { level: number; pan: number; id?: string } = { level: 0, pan: 0 };
   private crackleAt = 0;
@@ -1454,6 +1457,10 @@ export class WorldScene extends Phaser.Scene {
    */
   private standing(ref: string, cx: number, bottom: number, seed: number): Standing {
     const frames = this.b.sprites[ref]?.frames ?? 1;
+    if (RICH.motion && frames < 2 && MASKED.has(ref)) {
+      const leaning = this.maskSway.add(this, ref, cx, bottom, densityOf(ref));
+      if (leaning) return leaning;
+    }
     if (!RICH.motion || frames < 2) return kitImage(this, cx, bottom, ref).setOrigin(0.5, 1);
     const spr = kitSprite(this, cx, bottom, ref, 0).setOrigin(0.5, 1);
     const name = baseName(ref);
@@ -2488,6 +2495,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private animate(time: number, delta: number): void {
     this.driftAir(time, delta);
+    if (RICH.motion) this.maskSway.update(time, this.cameras.main.worldView);
     for (const c of this.cycles) {
       if (c.clock) {
         if (!c.active) continue;

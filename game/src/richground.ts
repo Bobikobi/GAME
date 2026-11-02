@@ -208,10 +208,14 @@ export function groundMask(data: Uint8ClampedArray | Uint8Array, width: number, 
  * its edge, 0 between gusts, and a row band every 6 px a step less. The shader runs the same sum.
  */
 export function leanAt(x: number, y: number, time: number): 0 | 1 | 2 {
+  const lean = gustAt(x, y, time);
+  return (Math.floor(y / 6) % 2 === 1 ? Math.max(0, lean - 1) : lean) as 0 | 1 | 2;
+}
+
+/** The gust alone at art pixel (x, y), before the row band: 2 at its heart, 1 at its edge, 0 between gusts. A whole tree leans by this, at its top. */
+export function gustAt(x: number, y: number, time: number): 0 | 1 | 2 {
   const g = Math.sin(x * GUST.scale + y * GUST.scale * 0.6 - time * GUST.speed);
-  let lean = g > 0.85 ? 2 : g > 0.55 ? 1 : 0;
-  if (Math.floor(y / 6) % 2 === 1) lean = Math.max(0, lean - 1);
-  return lean as 0 | 1 | 2;
+  return g > 0.85 ? 2 : g > 0.55 ? 1 : 0;
 }
 
 /**
