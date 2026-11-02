@@ -1,0 +1,17 @@
+{
+  "name": "elf-slim-1",
+  "label": "pixellab-elf-slim-1",
+  "provenance": "Issue #634 / #659: body_elf_woman_down_1 (Codex draft 26ad19ad79e24789, chars-1.json), squeezed to a slender body (18 px wide at 78 px tall in the 128 frame, the human 73 tall) in the 1024 px drawing and then reduced, so no detail is lost to a late squeeze. Owner, 2.11: very thin, taller than the human by about half a head or a little less.",
+  "jobs": [
+    {
+      "id": "faithful",
+      "recipe": "faithful",
+      "inputs": {
+        "image": "../../../.scratch/pixellab/elf-slim-1/source.png",
+        "image_size": {"width": 512, "height": 512},
+        "output_size": 128
+      },
+      "note": "The slender elf onto the 128 px grid, kept as drawn (fixer on)."
+    }
+  ]
+}

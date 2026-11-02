@@ -1,0 +1,35 @@
+{
+  "name": "elf-slim-5",
+  "label": "pixellab-elf-slim-5",
+  "provenance": "Issue #634: the camera fix by a text fill from the approved elf: the rotate recipe turned her to a profile, so the 50 degree look is asked for in words and the picture judged by eye.",
+  "jobs": [
+    {
+      "id": "highA",
+      "recipe": "fill",
+      "inputs": {
+        "description": "a very slender elf woman standing facing south toward the viewer, seen from above at a 50 degree downward camera like a top-down RPG, foreshortened: the head and shoulders large, the legs shorter, the top of the head visible, pointed ears, long light brown hair, grey shorts, narrow body",
+        "size": 128,
+        "view": "high top-down",
+        "outline": "single color black outline",
+        "no_background": true,
+        "direction": "south",
+        "init_image": "../../../.scratch/pixellab/elf-slim-3/elf.png",
+        "init_strength": 120
+      }
+    },
+    {
+      "id": "lowA",
+      "recipe": "fill",
+      "inputs": {
+        "description": "a very slender elf woman standing facing south toward the viewer, seen from above at a 50 degree downward camera like a top-down RPG, foreshortened: the head and shoulders large, the legs shorter, the top of the head visible, pointed ears, long light brown hair, grey shorts, narrow body",
+        "size": 128,
+        "view": "low top-down",
+        "outline": "single color black outline",
+        "no_background": true,
+        "direction": "south",
+        "init_image": "../../../.scratch/pixellab/elf-slim-3/elf.png",
+        "init_strength": 120
+      }
+    }
+  ]
+}

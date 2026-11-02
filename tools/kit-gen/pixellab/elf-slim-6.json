@@ -1,0 +1,31 @@
+{
+  "name": "elf-slim-6",
+  "label": "pixellab-elf-slim-6",
+  "provenance": "Issue #634: the camera fix as PixelLab's own rotating guide says: from and to direction both south, only the view changes (side to low top-down, side to high top-down). The first try (elf-slim-4) left the direction open and got profiles.",
+  "jobs": [
+    {
+      "id": "low",
+      "recipe": "rotate",
+      "inputs": {
+        "from_image": "../../../.scratch/pixellab/elf-slim-3/elf.png",
+        "size": 128,
+        "from_view": "side",
+        "to_view": "low top-down",
+        "from_direction": "south",
+        "to_direction": "south"
+      }
+    },
+    {
+      "id": "high",
+      "recipe": "rotate",
+      "inputs": {
+        "from_image": "../../../.scratch/pixellab/elf-slim-3/elf.png",
+        "size": 128,
+        "from_view": "side",
+        "to_view": "high top-down",
+        "from_direction": "south",
+        "to_direction": "south"
+      }
+    }
+  ]
+}

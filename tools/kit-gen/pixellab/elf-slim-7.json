@@ -1,0 +1,21 @@
+{
+  "name": "elf-slim-7",
+  "label": "pixellab-elf-slim-7",
+  "provenance": "Issue #634: the approved slim elf redrawn taller (about 87 px, from her own picture enlarged as the init, not squeezed), so that she stands about 79 after the view change, which shortens a figure by about a tenth (elf-slim-6: 78 to 71).",
+  "jobs": [
+    {
+      "id": "tall",
+      "recipe": "fill",
+      "inputs": {
+        "description": "a very slender young elf woman, standing, facing the viewer, narrow shoulders, slim waist, thin long arms and legs, pointed ears, long light-brown hair, grey shorts, sharp clean face",
+        "size": 128,
+        "view": "side",
+        "direction": "south",
+        "outline": "single color black outline",
+        "no_background": true,
+        "init_image": "../../../.scratch/pixellab/elf-slim-7/init.png",
+        "init_strength": 150
+      }
+    }
+  ]
+}
