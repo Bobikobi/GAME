@@ -207,8 +207,8 @@ describe('the landing branch and pull request', () => {
   });
 
   test('the worktree sits beside the repo and is named for the branch', () => {
-    expect(worktreeDir('/home/e/Projects/GAME', 'art/library-reviews-20261102-1000')).toBe('/home/e/Projects/GAME.worktrees/art-library-reviews-20261102-1000');
-    expect(worktreeDir('/home/e/Projects/GAME.worktrees/feat-x', 'art/y')).toBe('/home/e/Projects/GAME.worktrees/art-y');
+    expect(worktreeDir('/work/Projects/GAME', 'art/library-reviews-20261102-1000')).toBe('/work/Projects/GAME.worktrees/art-library-reviews-20261102-1000');
+    expect(worktreeDir('/work/Projects/GAME.worktrees/feat-x', 'art/y')).toBe('/work/Projects/GAME.worktrees/art-y');
   });
 
   test('the body names the issue and the tree line CI asks for', () => {
@@ -226,6 +226,9 @@ describe('landing on a real branch', () => {
     git(home, 'init', '--bare', '-b', 'develop', origin);
     const repo = join(home, 'GAME');
     git(home, 'clone', '-q', origin, repo);
+    // the landing command commits through plain git: a CI runner has no global identity (worktrees inherit the repo's)
+    git(repo, 'config', 'user.name', 't');
+    git(repo, 'config', 'user.email', 't@t');
     mkdirSync(join(repo, 'tools/kit-gen'), { recursive: true });
     writeFileSync(join(repo, 'tools/kit-gen/drafts.jsonl'), [a, b].map((d) => JSON.stringify(d)).join('\n') + '\n');
     git(repo, 'checkout', '-q', '-b', 'develop');

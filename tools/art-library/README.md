@@ -16,8 +16,7 @@
 
 Every card and the lightbox carry the state buttons: שמור (keep), חלקים (reuse-parts), לתקן (rework), ארכיון (archive), and a way
 back to לא נבדק (unreviewed), plus a short note. A click is one request, no confirmation; the page shows the state only after
-the server has written it, and a save that failed shows on the card, in the header (a count and a retry) and nowhere else is
-trusted. In the lightbox the keys 1 keep, 2 parts, 3 rework, 4 archive (0 unreviewed) save and move to the next picture; the
+the server has written it, and a save that failed shows on the card and in the header (a count and a retry). In the lightbox the keys 1 keep, 2 parts, 3 rework, 4 archive (0 unreviewed) save and move to the next picture; the
 page is right to left, so ArrowLeft is the next picture and ArrowRight the previous, and neither chooses. A digit typed in the
 note or in the search box never sorts. Many cards: the box on a card, shift-click for a range, "בחר את כל המוצגים" (everything the
 filters show, not only what is drawn), a note for the whole selection, one state for all: one request, and a batch that fails
@@ -55,9 +54,9 @@ mkdir -p ~/.local/share/art-library ~/.config/systemd/user
 cp tools/art-library/update.sh tools/art-library/serve.py ~/.local/share/art-library/
 cp tools/art-library/art-library-*.service tools/art-library/art-library-update.timer ~/.config/systemd/user/
 systemctl --user daemon-reload
-# retire whatever holds port 8741 first (ss -ltnp | grep 8741: the old http.server), then:
+systemctl --user start art-library-update.service   # the first build, now: it writes ids.json, which serve.py needs to save a choice
+# then retire whatever holds port 8741 (ss -ltnp | grep 8741: the old http.server), and:
 systemctl --user enable --now art-library-update.timer art-library-serve.service
-systemctl --user start art-library-update.service   # the first build, now
 ```
 
 `update.sh` and `serve.py` are copied rather than linked so that they keep working while `~/Projects/GAME` sits on any branch;
