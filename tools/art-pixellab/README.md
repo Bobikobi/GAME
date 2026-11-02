@@ -7,6 +7,17 @@ this job spends them every night on the next small pieces the game names and doe
 
 `docs/art/DRAWERS.md`, "The nightly job", is the reference; this page is the install.
 
+## Order of landing
+
+The script works from `origin/develop`, so tonight's run needs both the pool change (`plan` and `nightly` in `pool.json`, #670) and
+this job on develop. Until then it alerts "develop does not have the nightly job yet" and exits without marking the day done.
+Land the pool change, then this one, then install.
+
+The script itself was rehearsed offline before this change: against a local bare repository with stub `gh`, `pnpm` and
+`notify-send` it made the branch, commit and pull-request call on a night that gave pieces, did nothing on a night that gave none,
+alerted on a failing job and on a crashing one, refused a second run on the same date, and refused a develop without the job. The
+job itself ran only against a fake API. **Nothing here has spent a real generation yet.**
+
 ## What runs
 
 - `nightly.sh` works in a clean checkout of its own (`~/.cache/art-pixellab/checkout`), never the working copy the owner
