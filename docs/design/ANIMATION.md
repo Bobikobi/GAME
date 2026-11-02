@@ -42,6 +42,21 @@ Animals and monsters have their own sets in BESTIARY (the animals session); this
 2. **Rendered.** Body motion: a clip from a library on a rigged body, rendered at the frame size with no smoothing, snapped to the ramps, inked by script. A new clip or a new body costs a render and a check, never a drawing. Humans today; a four-legged body (the quadruped target) after the gate.
 3. **Code.** The feel layer: small offsets on top of any sheet, from the clock and the kernel's state. It costs nothing per animal and is the only part that scales to "movement for everything".
 
+### 3.1 Which layer moves what (the owner left this choice to the builder, 2.11: the best mix of efficiency, quality and price)
+
+The test: a thing that keeps its shape and is only pushed is moved by code. A thing that changes its shape is drawn. Many small things in flight are a few drawn pieces that code moves.
+
+| What moves | How | Why |
+|---|---|---|
+| Wind on trees, bushes and grass; water; mist; rain and snow | Code (`motion.ts` Sway, `rain.ts`, the weather cards) | Free, the same code for every tree, a phase per tree so no two move in step, and it follows the gust and the weather. A PixelLab wind clip on one oak cost 1 to 2 generations, changed 38 % of its pixels and is a fixed loop for that one tree. |
+| Chimney smoke, sparks, dust, falling leaves, scattered bones | A sheet of 8 to 16 drawn pieces (PixelLab, 1 generation) that code moves, fades and spawns from a seed | Drawn quality with no repeat, any number of chimneys from one sheet. Code already draws smoke at a fire (`fires.ts`) and at the town (`hookbridge.ts`). |
+| Fade, hit flash, hitstop, shake, a ghost drifting | Code only (`feel.ts`) | Nothing to draw. |
+| An animal's or a creature's moves, its own death, a slash, a spell, a close flame | PixelLab between two poses, or a lite effect as a layer, 1 generation a move | The shape changes; that is what code cannot do (DECISIONS 2026-11-02). |
+| The main characters' body moves | Not settled: Blender library clips against PixelLab (DECISIONS 2026-11-02) | Gear in slots against a new run for each change. |
+
+**Known gap:** Sway moves pixels by exact colour (`richground.ts` `MOVES`: the meadow's two lightest greens). A PixelLab tree is not in those colours, so it stands still until it is snapped to them or Sway reads a mask by height. Measure which on the first new tree in the real scene.
+An exception goes by eye: if code on one important tree reads flat beside the reference, that tree alone gets a drawn clip.
+
 ## 4. The feel layer (proposal: the numbers are starting points, judged by eye on a preview)
 
 `game/src/feel.ts`, a pure module: state and clock in, offsets out (no Phaser, no randomness except a seeded hash of the thing's id). The world scene applies the offsets to the player, NPCs and creatures. Every effect is zero at rest, so a frame at rest is the sheet's frame. All distances are art pixels at 64 px a tile; one art pixel is 3 device pixels on a 2K phone, so an offset may move in thirds. Under `RICH.motion === false` every row is off, except where the last column says otherwise.
