@@ -4213,3 +4213,12 @@ Rendered `jog` and `stand` on `elf-m` and `elf-f` (all four PASS) and brought th
 A first render used the `green` ramp, whose two lightest steps are exactly `MOVES.meadow` (`#84c450`, `#c8e88a`): the sway shader moves any screen pixel within `GUST.tolerance` of those wherever it is drawn, so the cloak leaned in the gust (game-d2: 1216 of 1289 pixels of elf frame 0 matched with the sway on, all of them with `?sway=off`). `water` is the same trap (`#7cc4ec`, `#c4ecf8`). The elf's `leaf` class now snaps to `moss`, whose steps all sit outside the tolerance, and `tools/test/anim-sheets.test.ts` ("the wind leaves a body alone") fails when any pixel of any shipped character or creature sheet is within the tolerance of a `MOVES` colour, so the Codex figures meet it without anyone remembering. In the real scene on a flat backdrop, with the gust held over the elf, the elf's 14094 pixels are identical with the sway on and off (a meadow-green control beside it changes 198 pixels in the same shots). Grass drawn directly to the left of a body's edge can still lean over that edge pixel: that is the shader's screen-space rule, not a colour of the body.
 `pnpm anim sheets` refuses to write until every shipped target is rendered, and it rebuilt each kit entry without the `scale` the scale audit (#509) had set; it now keeps an entry's declared `scale`. The elf's sheets were written by calling `buildSheets` on the two elf targets alone, so no other sheet could change.
 **Retry when:** the cloak's tone is judged on the live site and the owner wants another (a darker or greener moss step is a ramp choice, not a shader one). Model: claude-sonnet-5-5. Link: #656.
+## 2026-11-03 proposed The far bank has a long roadhead, not a live city
+Plan A2 now carries a winding coastal walk from the south dock to (25,176).
+The human-city skyline stays solid scenery under G55; the route reaches its roadhead, not city content.
+Evidence: `plan.py` reports no unreachable walkable tile and a longest authored run of 7.
+
+## 2026-11-03 failed Moving A2 is not a world-lock-only mechanical change
+The first export moved the valley by (+66,+84), but `pnpm check` found a disconnected north opening leg, unequal first-leg effort, G71 exits, and combined ground runs over G69.
+The world lock was not regenerated: G59 requires the owner's yes, and re-anchoring would hide unresolved geometry.
+Evidence and the exact continuation are in `docs/team/proposals/ring-map-conflicts.md` and `ring-map-status.md`.

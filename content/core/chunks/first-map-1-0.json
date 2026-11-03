@@ -1,0 +1,1310 @@
+{
+  "$schema": "../../../schema/json/chunk.schema.json",
+  "format": 1,
+  "type": "chunk",
+  "id": "core/first-map-1-0",
+  "title": "First map chunk 1,0",
+  "creator": "core",
+  "description": "Plan A2, exported from docs/design/first-map/plan.py.",
+  "chunk": {
+    "x": 64,
+    "y": 0,
+    "grounds": [
+      "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "TTTTTTTTTTTTTTTTTTTTTTTTTTTTffffTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "TTTfffTTTTTTTTTTTTTTTTTTTTTTf::fTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "TTTf:fTTTTTTTTTTTTTTfTTTfffff:ffTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "TTTf:fffTTTTTTTTTTfffffTf:::::fTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "TTTf:::fTTTTTTTTTffffffff:fffffTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "TTTfff:fTTTTTTTTffff::::::fTTTTTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "TTffff:fTTTTTTTTTfff:ffffffTTTTTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "TTf::::fTTTTTTTTTTff:fffTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "Tff:ffffTTTTTTTTTTTf:::fTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "ff::fTTTTTTTTTTTTTTfff:ffTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^^^^",
+      "ff:ffTTTTTTTTTTTTTTTTf::fTTTTTTTTTTTTTTTfTTTTTTTTTTTTTT^^^^^^^^^",
+      "ff:fTTTTTTTTTTTTTTTTTff:fTTTTTTTTTTTTTfffffTTTTTTTTTTTT^^^^^^^^^",
+      "ff:fTTTTTTTTTTTTTTTTTf::fTTTTTTTTTTTTfffffffTTTTTTTTTTT^^^^^^^^^",
+      ":::fTTTTTTTTTTTTTTTTTf:ffTTTTTTTTTTTff:::ffffTTTTTTTTTT^^^^^^^^^",
+      "ff:fTTTTTTTTTTTTTTTTTf:fTTTTTTTTTTTTTf:fffffTTTTTTTTTTT^^^^^^^^^",
+      "Tf:fTTTTTTTTTTTTTTTfff:fTTTTTTTTTTTTTf:ffffTTTTTTTTTTTT^^^^^^^^^",
+      "Tf:fTTTTTTTTTTTTTTTf:::fTTTTTTTTTTTTTf:ffTTTTTTTTTTTTTT^^^^^^^^^",
+      "ff:fffffffffffffffff:fffffffffffffffff:fTTTTTTTTTTTTTTT^^^^^^^^^",
+      "ff::::ffffffffffffff:fffffffffffffffff:fTTTTTTTTTTTTTTT^^^^^^^^^",
+      "fffff::::kkfffffffff:fffffffffffff:::::fTTTTTTTTTTTTTTT^^^^^^^^^",
+      "ffffkkkkkkkfffffffffffffffffffffffffffffTTTTTTTTTTTTTTT^^^^^^^^^",
+      "^^^^kkk::kk^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kk::kkk^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kk:kkkk^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kk::kk^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kkk:kk^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kk::kk^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kk:kkk^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kk:kkTT^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kk:kkTT^^^^^^^^^^^^^^^^^^^^^^^PPPPPPPP^^^^^^^^^^^^^^^^^^^^^^",
+      "^^^^kk:::TT^^^^^^^^^^^^^^^^^^^PPPPPPPPPPPPPPP^^^^^^^^^^^^^^^^^^^",
+      "^^^^TTTT:kkkkPPPPPPPPP^^^PPPPPPPPPPPPPPPPPPPPPP^^^^^^^^^^^^^^^^^",
+      "^^^^TTTT:kkkkPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP^^^^^^^^^^^^^^P",
+      "^^^^^^TT:::kkPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP^^^^^^^PPPPP",
+      "^^^^^^TTkk:kkPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+      "^^^^^^TTkk:kkPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+      "^^^^^^kkkk:kkPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+      "^^^^^^kkkk:kkPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+      "^^^^^^kk:::kkPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+      "^^^^^^kk:kkkkPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+      "^^^^^^kk:kkTTPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+      "......k::kkTTTTTTTTTT..................................TTTTTTT..",
+      "......k:kkkTTTTTTTTTTT................................TTTTTT~~~~",
+      "......k:kkkTTTTTTTTTT..................................TTTT~~~~~",
+      ".......:...T...TTTTT........T.............................~~~~~~",
+      "....::::.........T.......TTTTTTT.....T...................~~~~~~.",
+      "....:...................TTTTTTTTT...TTT.................~~~~~~..",
+      "P...::...................TTTTTTT...TTTTT..........~~~~~~~~~~~...",
+      ".....:..................TTTTTT......TTT..........~~~~~~~~~~~....",
+      "....::..................TTTTTTTT.....T.........~~~~~~~~~~~~.....",
+      "....:..................TTTTTTTTTT.............~~~~~~T~~.....T...",
+      "....:...................TTTTTTTTTT...........~~~TT~~~~~~..TTTTT.",
+      "....:....O..............TTTTTTTTTT...........~~~~~~~~~~..TTTTTTT",
+      "..:::....O...............T.TTTTTTTTT.~~~~~~~~~~~~~~~~~....TTTTTP",
+      "..:..........................TTTTTTT~~~~~~~~~~~~~.~......TTTT..P",
+      "..:...........................TTTTT~~~~~~~~~~~~~........TTTT..PP",
+      ":::.....................T...~~~~~~~~~~~~................TTTT...P"
+    ],
+    "levels": [
+      "7777777777777777777777777777777777777777777777777777777777777777",
+      "7777777777777777777777777777777777777777777777777777777777777777",
+      "7777777777777777777777777777777777777777777777777777777777777777",
+      "7777777777777777777777777777777777777777777777777777777777777777",
+      "7777777777777777777777777777777777777777777777777777777777777777",
+      "7777777777777777777777777777777777777777777777777777777777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111777777777",
+      "1111111111111111111111111111111111111111111111111111111677777766",
+      "1111111111111111111111111111111111111111111111111111111666666666",
+      "1111111111111111111111111111111111111111111111111111111666666666",
+      "1111111111111111111111111111111111111111111111111111111666666666",
+      "6665111111155555555555555555555544444444444445555555556666666666",
+      "5555111111155555555555555555444444444444444444455555555555555555",
+      "5555111111144444444444444444444444444444444444444555555555555555",
+      "5555111111444444444444444444444444443333344444444445555555555555",
+      "5555222222444444444444444444444433333333333344444444445555555544",
+      "5444222222444444444444444444333333333333333333444444444444444444",
+      "4444322222333333333333333333333333333333333333334444444444444444",
+      "4444333333333333333333333333333333333333333333333344444444444444",
+      "4444333333333333333333333333333333222222223333333333344444443333",
+      "4444333333333333333333333333332222222222222223333333333333333333",
+      "4444333333322222222222333222222222222222222222233333333333333333",
+      "4444333333322222222222222222222222222222222222222333333333333332",
+      "4444333333322222222222222222222222222222222222222222333333322222",
+      "4444332222222222222222222222222222222222222222222222222222222222",
+      "4444332222222222222222222222222222111111111222222222222222222222",
+      "4443330022222222211222222222222211111111111111222222222222222221",
+      "4443330011111222111111222222221111111111111111112222222222221111",
+      "4443330011111222111111111111111111111111111111111112222221111111",
+      "4433330011111222111111111111111111111111111111111111111111111111",
+      "4433330011111222111111111111111111111111111111111111111111111111",
+      "0000000000000000000000000000000000000000000000000000000000000000",
+      "0000000000000000000000000000000000000000000000000000000000000000",
+      "0000000000000000000000000000000000000000000000000000000000000000",
+      "0000000000000000000000000000000000000000000000000000000000000000",
+      "0000000000000000000000000000000000000000000000000000000000000000",
+      "0000000000000000000000000000000000000000000000000000000000000000",
+      "2000000000000000000000000000000000000000000000000000000000000000",
+      "0000000000000000000000000000000000000000000000000000000000000000",
+      "0000000001000000000000000000000000000000000000000000000000000000",
+      "0000000111110000000000000000000000000000000000000000000000000000",
+      "0000001111111000000000000000000000000000000000000000000000000000",
+      "0000001111111000000000000000000000000000000000000000000000000000",
+      "0000011111111000000000000000000000000000000000000000000000000001",
+      "0000001111111000000000000000000000000000000000000000000000000111",
+      "0000001111111000000000000000000000000000000000000000000000001111",
+      "1111111111110000000000000000000000000000000000000000000000001111"
+    ],
+    "props": [
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 4,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 4,
+        "y": 33,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 33,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 33,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 33,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 33,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 33,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 4,
+        "y": 34,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 34,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 34,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 34,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 34,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 34,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 4,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 4,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 4,
+        "y": 37,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 5,
+        "y": 37,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 37,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 37,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 37,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 38,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 38,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 38,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 38,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 38,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 39,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 39,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 39,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 39,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 39,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 40,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 40,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 40,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 40,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 40,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 41,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 41,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 41,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 41,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 41,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 42,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 42,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 42,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 42,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 42,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 43,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 43,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 43,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 43,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 43,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 44,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 44,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 44,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 44,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 44,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 12,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 48,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 48,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 48,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 48,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 48,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 49,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 49,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 49,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 49,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 49,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 6,
+        "y": 50,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 7,
+        "y": 50,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 8,
+        "y": 50,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 9,
+        "y": 50,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 50,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 1,
+        "y": 61,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 2,
+        "y": 61,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 3,
+        "y": 61,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 1,
+        "y": 62,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 2,
+        "y": 62,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 3,
+        "y": 62,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 1,
+        "y": 63,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 2,
+        "y": 63,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 3,
+        "y": 63,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "crossing": true
+      }
+    ],
+    "stamps": [
+      {
+        "id": "core/a2-spire",
+        "x": 9,
+        "y": 59,
+        "height": 1,
+        "grounds": [
+          "O"
+        ]
+      },
+      {
+        "id": "core/a2-stall2",
+        "x": 20,
+        "y": 12,
+        "height": 1,
+        "grounds": [
+          ":"
+        ]
+      },
+      {
+        "id": "core/a2-stall3",
+        "x": 40,
+        "y": 20,
+        "height": 1,
+        "grounds": [
+          ":"
+        ]
+      }
+    ]
+  }
+}

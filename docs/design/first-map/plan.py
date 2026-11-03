@@ -27,7 +27,14 @@ SOLID = set('T~^%AFPWROMD')  # A2 adds P pines, W wall, R roofs, O towers, M mos
 BAND_STEPS = 64  # G64: one danger level per 64 steps (the draft's default band, one chunk)
 
 OLD = json.loads((ROOT / 'content/core/map.json').read_text())['map']
-OLD_GROUND = OLD['ground']
+if OLD.get('frame', 1) >= 2:
+    # The exporter is deliberately repeatable: once frame 2 exists, recover frame 1's authored block and coordinates
+    # from its moved position instead of treating the 192-tile result as a new valley to move again.
+    OLD_GROUND = [row[SHIFT[0]:SHIFT[0] + 64] for row in OLD['ground'][SHIFT[1]:SHIFT[1] + 64]]
+    OLD = dict(OLD)
+    OLD['slots'] = [{**s, 'x': s['x'] - SHIFT[0], 'y': s['y'] - SHIFT[1]} for s in OLD['slots']]
+else:
+    OLD_GROUND = OLD['ground']
 
 # the three starting areas (wake tiles, new coordinates): proposals
 STARTS = {'N': ('North meadow', (72, 68)), 'W': ('West bank', (67, 95)), 'S': ('Slid bank', (68, 121))}
@@ -310,6 +317,12 @@ def build(variant='A'):
     p.disc(70, 178, 26, 6, 'r', 0, only='S')
     p.rect(0, 150, 24, 191, 'F', 0)  # the far bank: not walkable, a skyline
     p.rect(0, 186, 60, 191, 'F', 0)
+    # The long way round to the far bank (owner, 1.11): a human may walk to the bank as well as sail. The roadhead
+    # reaches the bank beside the skyline, but the human city itself stays scenery on this first map (G55).
+    far_bank = wind([(52, 177), (46, 182), (38, 184), (31, 181), (25, 176)], 71, jog=1, maxrun=6)
+    p.paths['far-bank-walk'] = far_bank
+    p.carve(far_bank, 1, 'S', lambda i, n: 0)
+    p.marks['far-bank-roadhead'] = dict(kind='roadhead', at=(25, 176), label='Far-bank roadhead')
 
     # 6. the east terraces and the east pass, the highland and the tarn
     for y in range(60, 131):
@@ -373,6 +386,12 @@ def build(variant='A'):
     p.carve(swp, 2, 'k', lambda i, n: 0)
     p.marks['dock'] = dict(kind='dock', at=(52, 177), label='Dock')
     p.disc(46, 168, 5, 3, '~', 0)
+    # The boat is the short road to the human city. A player may also walk round the bay (owner, 1.11): a long,
+    # winding shore detour reaches the near edge of the far bank, while the city behind it stays solid scenery (G55).
+    far_bank_walk = wind([(58, 176), (55, 182), (48, 185), (40, 183), (33, 178), (27, 171), (25, 166)], 18, jog=1, maxrun=5)
+    p.paths['far-bank-walk'] = far_bank_walk
+    p.carve(far_bank_walk, 1, 'k', lambda i, n: 0)
+    p.marks['far-bank-approach'] = dict(kind='shore', at=(25, 166), label='Far-bank approach')
 
     # 9. the descent: the night ruins' gate leads south through the old undead basin to the undead south
     p.rect(70, 158, 130, 186, 'x', 0)
@@ -444,6 +463,7 @@ def build(variant='A'):
     p.lay(p.paths['north-pass'])
     p.lay(p.paths['east-pass'])
     p.lay(p.paths['shore-pass'])
+    p.lay(p.paths['far-bank-walk'])
     p.lay(p.paths['descent-south'])
     p.g[BRIDGE[1] - 1:BRIDGE[1] + 1, BRIDGE[0] - 1:BRIDGE[0] + 2] = 'j'
 
@@ -480,6 +500,10 @@ def build(variant='A'):
         p.paths['shore-pass'] = []
         del p.passes['SW']
     fill_pockets(p)
+    # The plan block names the centreline of every authored route. Wider carved corridors keep their terrain; only this
+    # one-tile trace is a path for G69 and for the map-plan checker.
+    for route in p.paths.values():
+        p.lay(route)
     p.variant = variant
     return p
 

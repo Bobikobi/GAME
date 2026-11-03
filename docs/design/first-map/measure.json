@@ -21,17 +21,18 @@
    "W": false,
    "S": false
   },
-  "d_town_max": 169,
+  "d_town_max": 175,
   "d_levels": {
-   "0": 4541,
+   "0": 4539,
    "1": 6142,
-   "2": 994,
+   "2": 1085,
    "3": 0
   },
   "unreachable_walkable": 0,
   "g62_worst_steps": 69,
   "g62_limit": 241,
   "straight_run_max": {
+   "far-bank-walk": 6,
    "east-road": 6,
    "east-pass": 7,
    "elf-trail-W": 6,
@@ -63,7 +64,7 @@
    "stall1": 134,
    "stall3": 144
   },
-  "floor_walkable": 6688
+  "floor_walkable": 6686
  },
  "B": {
   "legs": {
@@ -87,17 +88,18 @@
    "W": false,
    "S": false
   },
-  "d_town_max": 169,
+  "d_town_max": 175,
   "d_levels": {
-   "0": 3769,
+   "0": 3767,
    "1": 4323,
-   "2": 1242,
+   "2": 1333,
    "3": 0
   },
   "unreachable_walkable": 0,
   "g62_worst_steps": 58,
   "g62_limit": 241,
   "straight_run_max": {
+   "far-bank-walk": 6,
    "east-road": 6,
    "east-pass": 7,
    "elf-trail-W": 6,
@@ -129,7 +131,7 @@
    "stall1": 134,
    "stall3": 144
   },
-  "floor_walkable": 4345,
+  "floor_walkable": 4343,
   "pixels_differing_from_A": 63301,
   "diff_bbox": [
    3,
@@ -160,17 +162,18 @@
    "W": false,
    "S": false
   },
-  "d_town_max": 189,
+  "d_town_max": 195,
   "d_levels": {
-   "0": 4541,
-   "1": 5619,
-   "2": 1400,
-   "3": 0
+   "0": 4539,
+   "1": 5617,
+   "2": 1481,
+   "3": 10
   },
-  "unreachable_walkable": 0,
+  "unreachable_walkable": 3,
   "g62_worst_steps": 69,
   "g62_limit": 241,
   "straight_run_max": {
+   "far-bank-walk": 6,
    "east-road": 6,
    "east-pass": 7,
    "elf-trail-W": 6,
@@ -200,10 +203,10 @@
    "stall1": 134,
    "stall3": 144
   },
-  "floor_walkable": 6688,
-  "pixels_differing_from_A": 790,
+  "floor_walkable": 6686,
+  "pixels_differing_from_A": 808,
   "diff_bbox": [
-   120,
+   51,
    324,
    190,
    823
@@ -231,17 +234,18 @@
    "W": false,
    "S": false
   },
-  "d_town_max": 169,
+  "d_town_max": 175,
   "d_levels": {
    "0": 4594,
    "1": 6287,
-   "2": 775,
+   "2": 866,
    "3": 0
   },
   "unreachable_walkable": 0,
   "g62_worst_steps": 69,
   "g62_limit": 241,
   "straight_run_max": {
+   "far-bank-walk": 6,
    "east-road": 6,
    "east-pass": 7,
    "elf-trail-W": 6,
@@ -285,7 +289,7 @@
    "darktower": 116
   },
   "floor_walkable": 6622,
-  "pixels_differing_from_A": 101748,
+  "pixels_differing_from_A": 101501,
   "diff_bbox": [
    3,
    40,
