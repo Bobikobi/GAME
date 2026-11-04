@@ -2,7 +2,7 @@
 
 The owner, 20.10: maximize the graphics, and the agents work by one page. This is that page. The measure is the one decided on 18.10 (DECISIONS "The compass for depth and for characters"): Dimraeth's depth in an open world, Drakantos's characters and animation. The distance to them is in [GAP_DIMRAETH_DRAKANTOS.md](GAP_DIMRAETH_DRAKANTOS.md); the look's rules are in [STYLE.md](STYLE.md). This page does not repeat them. It takes the four findings the agents raised on 20.10, says what each one becomes, gives every new layer its data, its check and its measure, and says who builds it, in what order, and what waits for the owner.
 
-One rule stands over all of it (AGENTS.md): a look is a direction, and a direction is tried as two or three still images at phone size before anything is built. A detail inside a picked direction is polish: iterate, do not ask. Every layer below says which of the two it is.
+One rule stands over all of it (AGENTS.md): a look is a direction, and a direction is tried as two or three still images at the full frame (1920 x 1080, STYLE 1, since DECISIONS 2026-11-04) before anything is built. A detail inside a picked direction is polish: iterate, do not ask. Every layer below says which of the two it is.
 
 Already decided, and not reopened here: 64 px per tile and the camera (NEXT 15), the proportions table (STYLE 1b), shadows C, the night at 92% with light pools, lit windows, height T2, the six depth cues (all DECISIONS 2026-10-18), the ground by motif scatter, and the character plan of GAP section 7 (the stills A, B and C of Pell, the animation format, the strip route and its check, the 3D route's trial, one character all the way first).
 

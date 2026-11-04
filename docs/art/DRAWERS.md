@@ -323,7 +323,7 @@ A job has an `id` (letters, digits, `-`, `_`), a `recipe`, its `inputs`, and opt
 | `skeleton` | `animate-character` mode `skeleton-v3` | 3 a direction at 128 (measured) | minutes a direction |
 | `effect` | `vfx` | lite 1, pro 6 (measured) | the response's `quoted_generations` is compared and a difference is printed |
 | `character` | `create-character-v3` | 2 (published formula) | from a reference `ceil(w*h*8/65536)`, from scratch `1 + ceil(s*s*8/65536)`; belongs to the account that made it |
-| `rotate` | `rotate` | **unknown** | `from_view` / `to_view` are `side`, `low top-down`, `high top-down`: there is no 50 degree setting, so the result is judged by eye in the scene |
+| `rotate` | `rotate` | **unknown** | `from_view` / `to_view` are `side`, `low top-down`, `high top-down`: there is no setting for the game's camera angle, so the result is judged by eye in the scene |
 | `rotations8` | `generate-8-rotations-v3` | **unknown** | |
 | `faithful` | `image-to-pixelart`, `fixer` true | **unknown** | |
 | `outfit` | `transfer-outfit-v2` | **unknown** | frames per call: 15 at 32-64 px, 8 at 65-80, 3 above |

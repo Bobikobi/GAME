@@ -10,8 +10,9 @@ The look in one place, for creators and for every session that draws or renders 
   - The night: darker than N3 out in the wild, with the town lit by its lights. The final level is the owner's call in the live game.
   - Height as levels with rock faces (T2).
   - All six depth cues of section 7.
+  - Since 2026-11-04 (DECISIONS "Foundations alignment"): the camera low for everything that moves (section 1), the engine's layers continuous over whole-pixel sprites (section 2), the full frame as the measure (section 1). Six choices in sections 1, 1b, 2 and 4 read *under A/B* until their pairs of stills are picked.
 - Waiting for the owner:
-  - the numbers of the proportions table, seen once on the first wave's phone still (section 1b);
+  - the numbers of the proportions table, seen once on the first wave's full-frame still (section 1b);
   - the final look of each new ground, as stills at the ground wave;
   - the walking rule between levels, through GAME_RULES section 6 when stage 3 opens.
 - When it lands:
@@ -35,7 +36,8 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 | Work pose | 128 x 128, two frames (tool raised, tool down) |
 | Prop | up to 384 x 384 (six tiles a side) |
 
-- **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 3 on a 2K phone (1440 px across, 7.5 tiles) and on a 390 x 844 phone at 3x (6.1 x 13.2 tiles), 2 on a 1080 px phone (about 8.4 tiles; older phones are not a target). The world is shown one whole step at or above 1.5 times the screen's own step (`4 * ceil(1.5k)`, built 28.10; DECISIONS 2026-10-25, the camera comes closer). The camera's first rule is in NEXT 15.
+- **The screen.** The measure is the full frame of a computer: 1920 x 1080 at the desktop step, one art pixel to one device pixel, 30 x 16.9 tiles (DECISIONS 2026-11-04; the camera rule of NEXT 15 gives k = 1 there). Every still, gate and ranking is judged at that frame. The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels on any screen: 1 on the desktop, 2 on a 1080 px phone, 3 on a 2K phone. The live game today shows the world one whole step at or above 1.5 times the screen's own step (`4 * ceil(1.5k)`, built 28.10; DECISIONS 2026-10-25, the camera comes closer), which on a 1920 x 1080 screen is two device pixels per art pixel and 15 x 8.4 tiles; whether the desktop keeps that closer step or shows the full frame's 30 tiles is one pair of stills in the v14 alignment. The phone is an adaptation of the finished game, in its own wave after the day recipe is locked: landscape only, possibly a zoom step of its own with smaller figures, a layout arranged for touch. It gates nothing; a phone still is attached once per wave as information.
+- **The camera.** Everything that moves (the cast, creatures, NPCs, moving props) is rendered at a low camera, about 35 degrees (`elev` in `tools/anim/anim.json`; DECISIONS 2026-11-04, superseding the 50 of 2026-10-26): the face, hands and stride read first and the crown is a sliver. Trees, houses and props are drawn from the front, the top barely seen, as the measured games draw them. One camera per frame: a figure is never shot from higher than the ground it stands on. The sheets in `content/` are the 50-degree renders until the cast is rendered again.
 - **A face.** At 64x96 the head is about 24 to 28 px wide and the face about 20. Eyes are 2 to 3 px, each with a white and a dark pupil; brows, a nose and a mouth are drawn, not implied. The frame `density-64` is the measure.
 - The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Since 23.10 the whole game is rich (DECISIONS.md): a new sprite at density 1 is refused, the core kit's 16 px sprites wait by name in `tools/src/kit/rich.ts` until their wave takes them off, and a rich sprite of the core kit names its ramps. Nothing drawn at 32 goes into a kit.
 
@@ -51,7 +53,7 @@ The owner, 18.10, on the walk video where an oak stood barely taller than Pell: 
 | Young tree | 1 x 1.5 | 2 x 3 (128 x 192) | 2 |
 | Dead tree | 2 x 2 | 3 x 4 (192 x 256) | 2.5 |
 | Canopy over a forest block | 2 x 2 | 3 x 3 (192 x 192) | over the head |
-| Bush, berry bush | 1 x 1 | 1 x 1 (64 x 64), about 48 px tall | half |
+| Bush, berry bush | 1 x 1 | 1 x 1 (64 x 64) | *under A/B* (DECISIONS 2026-11-04): half, about 48 px, as before, or 0.9, as the references' bushes measure (0.8 to 1.1) |
 | Tall grass, reeds, flowers | 1 x 1 | 1 x 1 (64 x 64), blades up to 24 px | a quarter |
 | Street lamp | 1 x 2 | 1 x 3 (64 x 192) | 2 |
 | Standing stone, pillar, totem, statue | 1 x 2 | 1 x 2.5 to 2 x 3 | 1.5 to 2 |
@@ -77,14 +79,14 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
 - **The map does not move.** A trunk, a door or a post stands on the tile it stands on today, and the solid tiles stay as they are (G59). A bigger drawing grows upward and over its neighbours, never into a new solid tile.
 - **See-through.** A thing that draws over the player (a canopy, a roof, a tall prop the player walks behind) shows the player through it: a fade of the part in front or a silhouette, the builder's choice. A bigger prop never hides the player or a thing a task points at.
 - **Measured at each wave:** on the opening's first frame and at the bridge, no wake tile, pickup or prop a task names is covered by another sprite's solid pixels over more than half its area, after the see-through rule.
-- **The numbers** are the art session's starting point, and the owner judges them by eye (18.10: "only by eye will I know"). He sees them once, on the first wave's phone still; his correction goes into this table, and from then on it is the compass.
+- **The numbers** are the art session's starting point, and the owner judges them by eye (18.10: "only by eye will I know"). He sees them once, on the first wave's full-frame still; his correction goes into this table, and from then on it is the compass.
 - **Bigger is open.** The table is a floor for each kind and the size of its common one. Above it a creator is free: a giant tree, a castle, a colossus (the owner, 18.10). Such a thing keeps the rules above (the map does not move, see-through, nothing a task names hidden). One sprite stays within the schema's 384 x 384, six tiles a side at 64; a larger thing is built from pieces, or the cap is raised in its own pull request.
 
 ## 2. Pixels and colour
 
 - **Colours:** the 32 core colours plus the shared `CORE_RAMPS` a sprite names (`tools/src/kit/palette.ts`), and a kit's own ramps for materials the shared set lacks.
 - **The windows' colours** (`UI_PALETTE`, DECISIONS 2026-10-28, frame D): the 32 plus eight for the UI alone, the antique gold `#2a2114 #4d3c22 #7a5f33 #a6854a #c9a96a #e8d4a2` and the blacks `#0c0b12 #131220`. No sprite or ground tile draws in them; the sprites stay on the colours above.
-- **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels. This is the rule for a sprite and a ground tile. A layer the engine draws over them (a shadow, the night, a pool, the hour's wash, cloud shade, fog) is a blend at one alpha per step, and the result is still a fully solid pixel; such a layer never has more than four steps, and where two steps meet it may dither (ART_SYSTEM 2, NATURE 4 and 5).
+- **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels. This is the rule for a sprite and a ground tile, and only for them. A layer the engine draws over them (the hour's grade and wash, relight, a cast shadow, the night, a light's pool, cloud shade, fog, a reflection, sparkle) is continuous: any alpha, a soft edge, a gradient where the light wants one, and it never changes a sprite's own pixels (DECISIONS 2026-11-04, "the engine's layers enter the law"; the four-step cap written here on 20.10 is gone, and the step ladders of the 30.10 lighting build stay as the built state until the recipe v14 is locked). A layer is judged on a full-frame still, never by counting its steps.
 - **Ramps** run dark to light:
   - greys: `#1b1a2e #3a3554 #5d6177 #8f94a8 #c6cad6 #f5f4ef`
   - greens: `#1f3d2b #2e6b3b #4c9a3f #84c450 #c8e88a`
@@ -94,7 +96,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
   - fire: `#b8661f #eda83a #f8de62`
   - skin: `#d38c66 #f3c7a0`
   - purples: `#5b3373 #9a5bb0`
-- **Outline:** the one-pixel ink line `#1b1a2e` on every sprite (owner's decision of 23.10, PR #305): characters, items and props, at both densities. An outline is the sprite's own edge pixels recoloured to ink (`pnpm kit:ink`), not a ring added outside it. Ground tiles have none, and animals wear no outline (the owner's pick C of 31.10; the `creatures/` group is not measured). `pnpm check` measures it: a 64 px sprite needs ink on at least 95% of its edge pixels, and the 16 px sprites are reported in one summary line.
+- **Outline:** the one-pixel ink line `#1b1a2e` on every sprite (owner's decision of 23.10, PR #305): characters, items and props, at both densities. An outline is the sprite's own edge pixels recoloured to ink (`pnpm kit:ink`), not a ring added outside it. Ground tiles have none, and animals wear no outline (the owner's pick C of 31.10; the `creatures/` group is not measured). `pnpm check` measures it: a 64 px sprite needs ink on at least 95% of its edge pixels, and the 16 px sprites are reported in one summary line. *Under A/B since 2026-11-04:* off or on, picked from one pair of full-frame stills (Stardew and ALttP ink every sprite; Eastward, GK2 and both references do not); the rule stands as written until the pick, and the pick moves the check's ink measure with it.
 - **Baked light comes from above.** Tops are lightest and undersides darkest, with left and right even. Light from the side is added while the game runs (section 4), and side light baked into the art would fight it.
 - **Never draw a shadow into a sprite.** The engine casts it from the sprite's own shape, starting at the lowest solid row: that row is where the thing touches the ground.
 
@@ -120,20 +122,20 @@ The engine draws the edges between grounds, so a new ground ships only its fill 
 
 - **The floor is the live game.** The owner on the 64 video: "the grass is too generic and not as rich in detail as the production". Everything today's ground shows carries over at 64: variants on about two tiles in five, the shaded, plain and sunlit patches of `game/src/richground.ts`, flowers, tall grass, the drawn edges between grounds, the canopies. On top of that, a 64 px fill tile uses at least five colours (today's use three to five on 16 px).
 - **Scatter, not rows.** Small motifs (a tuft, a flower, a pebble, a ripple dash, a fallen leaf, a crack's end) are scattered over the ground by a seeded hash on art-pixel positions, across tile edges, at a density each ground sets. The model draws the motifs; the script places them (DECISIONS 2026-10-18: a whole tile written by the model repeats in rows).
-- **Measured at the ground wave:** a phone still of the opening's first frame at 64 beside today's live frame of the same spot shows every decoration layer of today; in a 1440x3120 frame of meadow no two tiles are pixel-identical. How rich is rich enough is the owner's to judge in the live game.
+- **Measured at the ground wave:** a full-frame still of the opening's first frame at 64 beside today's live frame of the same spot shows every decoration layer of today; in a 1920 x 1080 frame of meadow no two tiles are pixel-identical. How rich is rich enough is the owner's to judge in the live game.
 - The path, cobble, forest floor, grove and ruin floor keep their present tiles until the ground wave redraws them to this table.
 - Later grounds (mud, ash, ice, moss, swamp) each add a row of their own.
 - **On one level:** the higher-ranked ground lies over the lower on a ragged line, never along a tile edge. The pixels of the lower ground along that line are one step darker (frame `terrain-T1`).
 
-## 4. Light and shadow (decided: C; the direction moved with the GK2 B sun)
+## 4. Light and shadow (decided: C; the direction moved with the GK2 B sun; direction, edge and body light under A/B since 2026-11-04)
 
 | Part | Rule |
 |---|---|
-| Cast shadow | The caster's silhouette, sheared away from the light. A pixel z rows above the lowest solid row lands at (x + z·sx, feet + z·sy). Colour `#1b1a2e` at 30%. Where shadows overlap, the ground is no darker than under one |
+| Cast shadow | The caster's silhouette, sheared away from the light. A pixel z rows above the lowest solid row lands at (x + z·sx, feet + z·sy). Colour `#1b1a2e` at 30%. Where shadows overlap, the ground is no darker than under one. *Under A/B since 2026-11-04:* ink-hard as written, or a warm feathered edge (olive-brown, 2 to 3 px soft), as the references and GK2 cast; one pair of stills |
 | Length | 0.8 to 1.1 times the caster's height at 08:00 and 16:30. At 12:00, no more than 12 art px past the feet |
-| Direction | The sun stands south (DECISIONS 2026-10-21, the GK2 method B), so the shadow falls **away** from the viewer: up-screen, behind its caster, which the depth order draws over it, and a thing standing north covers the shadow of the thing before it. Left in the morning, right in the evening: up-left at 08:00, up-right at 16:30, straight back at noon. Every caster in a frame points the same way |
+| Direction | *Under A/B since 2026-11-04:* down-left or down-right. The cast falls **toward** the viewer, down-screen, as every measured game and reference casts; the up-screen rule of 2026-10-21 (the sun south, the shadow behind its caster) is superseded, because no source casts up-screen and the frozen frame never did. Which side, and so where the sun stands by the hour, is one pair of stills. Every caster in a frame points the same way |
 | Contact line | Four rows under the feet, `#1b1a2e` at 45% |
-| Body light | The 4 art px on the side away from the light one step darker, the side toward it one step lighter. None at noon |
+| Body light | The 4 art px on the side away from the light one step darker, the side toward it one step lighter. None at noon. *Under A/B since 2026-11-04:* the lit side faces the sun that casts the shadow (the frozen frame lights the body from the left while its cast falls down-left); one pair |
 | Night | No sun shadow. Inside a light's pool, shadow and body light come from that light. Outside every pool, nothing casts |
 | Raised ground | Casts the same way, with z = levels x 32 (section 6) |
 | Weather | Overcast: the same length at half the alpha (15%). Rain and storm: no sun shadow. Fog waits for its still (the owner, 20.10, NATURE.md section 10 question 4) |
@@ -158,13 +160,13 @@ The owner, 18.10: "darker than N3; street lighting and the houses' light will li
 The owner, 18.10: "T2 fits".
 
 - **The layer.** A height layer beside the ground layer: one digit, 0 to 9, per tile, written in the map as rows like the ground. Integers only.
-- **The face.** One level is 32 art px of face, half a tile. A thing standing on a level draws 32 px higher per level.
+- **The face.** One level is 32 art px of face, half a tile. A thing standing on a level draws 32 px higher per level. *Under review since 2026-11-04* (FOUNDATIONS_ALIGNMENT.md, gap 12): the measured games and references draw a face of one to two tiles, warm soil or lit rock over a dark lower part, with a shadow on the lower level; the face's look and height are settled by one full-tile still in the art step. The layer, the digit per tile and the walking rule stand.
 - **T2, faces:**
   - The face is in the grey ramp, with ledges every 16 px.
   - A light lip of 2 to 4 px runs along the top edge: white with drips under snow, `#84c450` under meadow, `#c6cad6` under rock.
   - A dark line of 4 px runs along the foot, and the face casts a shadow (section 4).
   - Where a top stands over a lower neighbour to the west or east, it gets a 2 px dark rim.
-- **Not picked, T3, slopes:** the drop drawn in the upper ground, two steps darker, with no face. It barely shows at phone size.
+- **Not picked, T3, slopes:** the drop drawn in the upper ground, two steps darker, with no face. It barely showed on the stills of 18.10.
 - **Height limit:** one step shows at most 3 levels (96 px). Higher than that is a mountain band, which cannot be walked.
 - **Walking** (decided 18.10, GAME_RULES G68). A rock face blocks both ways. Between levels only across a crossing tile, and the crossing varies by place: stairs, a ramp, a lift, a cable car, any tool that fits the place. Stepping off a face is refused, like a solid tile.
 - **Paths wind** (GAME_RULES G69). Generated ground and authored paths both: no straight run over 8 tiles (a bridge or a causeway up to 12), and a turn or a gap through trees, rocks or mountains at least that often. The ground builders and the art follow it.
