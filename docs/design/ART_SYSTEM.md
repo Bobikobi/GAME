@@ -36,7 +36,7 @@ One scene, one difference per still, as the sets of 18.10 were made (`frames/202
 Today `game/src/scenes/world.ts` does light by hand in five places: the dusk ramp (`shadeFor`), the warm wash rectangle, the night shade with the lantern's hole, the dapple through the leaves (`buildDapple`), and the colour filter. They become one module both doors call (`game/src/light.ts`, proposal), with the decided shadows (STYLE 4) and night (STYLE 5) inside it, so the sun, the shadows and the pools agree.
 
 - **Inputs:** the hour from the session's clock; the lights (tile, radius in tiles, colour from the fire ramp or paper, flicker); the cover rects (groves and canopies today, roofs when houses return); the day's weather once #215 lands. What each weather, season and climate does to the light is [NATURE.md](NATURE.md) sections 2 to 5.
-- **Outputs, one layer each:** the ambient tint (multiplied), the pools (cut out of the darkness), the shade under cover (multiplied over the cover rects), the cast shadows. Every number is whole art pixels at one alpha, like STYLE section 4, so stills at fixed hours check the build.
+- **Outputs, one layer each:** the ambient tint (multiplied), the pools (cut out of the darkness), the shade under cover (multiplied over the cover rects), the cast shadows. Every number is whole art pixels, and since DECISIONS 2026-11-04 every layer may be continuous (STYLE 2), so full-frame stills at fixed hours check the build.
 - **The hour table lives in data,** not in code: a `light` block in `content/core/params.json` (proposal) with keyed hours and linear steps in whole percent between them: 05:00 a cool wash (`#7cc4ec`, 20%); 08:00 none; 16:30 a warm wash (`#eda83a`, 12%); 19:00 the dusk wash (`#e2533f`, 28%); 20:00 to 05:00 the night as decided (`#172a52`, 92%, the owner's final level in the live game). The pool's steps (2 decided, 4 if L2 is picked), the dither, the cover shade (12%, the strength of cloud shadows, cue 3) and the flicker's rate sit beside them. A pick changes the numbers, not the module.
 - **What never dims:** a signal a rule needs stays at least as visible as today: the wolf's eyes, the player's own pool, the fire's stage, the glint, the lantern post. Colour is never the only signal (G29). The module runs behind `RICH.light`; a phone that cannot hold the frame budget drops the layer like the other cosmetics (`?rich=`), and the plain valley still plays.
 - **The 3D door** reads the same hour table for its ambient light and the same light list for its point lights, as ratios (STYLE, "Both doors").
@@ -112,7 +112,7 @@ Rules for every step: its own pull request off `origin/develop`, never stacked; 
 
 ## 9. Measurable at the end
 
-- A capture of the square at 19:00 at 1440x3120, laid beside the picked still, differs only in what the pick left as polish (the motifs' layout, the flame's frames).
+- A capture of the square at 19:00 at the full frame (1920 x 1080, STYLE 1), laid beside the picked still, differs only in what the pick left as polish (the motifs' layout, the flame's frames).
 - A 2K phone holds its frame budget with every layer on; a weaker phone falls back by `RICH` group and still plays.
 - `pnpm check` passes every kit under the ramp rule, and reports the composition and richness warnings of the valley and the first ring with counts.
 - No signal a rule needs is dimmer than today: the wolf's eyes, the player's pool, the glint, the fire's stage, measured in the e2e.

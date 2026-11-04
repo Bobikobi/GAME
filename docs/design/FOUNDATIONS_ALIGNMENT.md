@@ -83,4 +83,12 @@ Branches without a pull request:
 - `game/src/cast.ts`: the sun's direction follows the down-left or down-right pick (step 3).
 - `tools/src/check.ts`: the ink measure follows the outline pick (step 3).
 - The 30.10 lighting build's step ladders: continuous at the v14 lock (step 3).
-- Dated frames made at 390 x 844 stay as history, never as gates; a page that still says "phone size" for a future still is reworded when it is next touched.
+- `tools/anim/blender/render.py`: a target with no `elev` renders at 50 by default; the default follows `anim.json` to 35.
+- Phone gates in the code. P3 makes them information, not gates, but turning a CI job off or into a landscape run is a code change of its own, proposed to the owner, not done here:
+  - the CI group `opening-phone` (`game/e2e/run.ts`), which every pull request must pass, and the phone legs of the camera, HUD, tree, load, map, shop and 3D e2e runs;
+  - the desktop legs of the same runs sit at 1440 x 900 or 1280 x 800, not at the full frame;
+  - `tools/test/ui-measurables.test.ts` judges tap targets at a 390 px portrait width.
+- Still tools fixed to the phone frame: `tools/stills/compose.py` (390 x 844 at 3x, and it refuses any other frame), `lighting-shoot.mts` and `lighting.py`, `frame-time.mts` (1440 x 3120), `nature.py`, `tint_compare.py`, `game/e2e/stills/hud-frame-d.ts`, and `kit:gen`'s `PHONE_FRAME` and compare page (`tools/src/kit/gen.ts`). The v14 stills follow the full-frame spec; each tool takes a 1920 x 1080 frame when it is next touched.
+- The richness, colour-per-window and composition checks judge 15 x 10 tile windows (`tools/src/richness.params.json`); the window is set against the full frame at the v14 lock.
+- Frame-time budgets written for a phone profile (ART_SYSTEM 9, NATURE 7, NEXT 19, OPEN_WORLD stage 5) are re-based on a computer at the full frame when they are next measured; the phone keeps a budget of its own in the adaptation wave.
+- Dated frames and records made at 390 x 844 stay as history, never as gates. Every page that set a phone-size still or a phone gate for future work is reworded in this pull request.

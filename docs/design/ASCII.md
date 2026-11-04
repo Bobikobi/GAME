@@ -65,7 +65,7 @@ Found on 18.10, none of them installed or trialled:
 ## 5. When to come back to it
 
 A character-grid look is a direction (AGENTS.md): it changes the product visibly everywhere. If it comes back:
-1. **First stills.** Two or three still frames at phone size go to the owner, each testing one named difference, for example: 8 px against 16 px glyphs, a converted sprite against a hand-drawn one, or characters over the pixel ground against characters only. Nothing is built before the pick.
+1. **First stills.** Two or three full-frame stills (1920 x 1080, STYLE 1) go to the owner, each testing one named difference, for example: 8 px against 16 px glyphs, a converted sprite against a hand-drawn one, or characters over the pixel ground against characters only. Nothing is built before the pick.
 2. **First the shared flow.** Walking, stepping, arriving, the haunt and the work timer move out of the two scenes into pure modules (the pattern `targets.ts`, `work.ts` and `fires.ts` already follow). A new renderer should only draw.
 3. **Then the conversion step**, starting from an existing converter, as one more option in the kit import (`tools/src/kit/import.ts`). Its output is generated data, never edited by hand.
 

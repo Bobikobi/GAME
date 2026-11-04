@@ -69,7 +69,7 @@ A region (one map file, OPEN_WORLD G51) declares one `climate`. The climate is a
 - **Mixing:** a region has one climate. The crossing between two climates is a band of two to four tiles where the ground's ramp steps from one table to the other, on the ragged line STYLE 3 already draws between grounds; the trees of both may stand in the band.
 - **A town carries its climate:** a pastoral town is green and full (gardens, a well, washing lines, chickens); a desert town is walled, shaded and bare (awnings, water jars, a shaded square). The stamps a creator adds (ART_SYSTEM 5) say which climates they fit.
 - **Data (proposal):** `climate` on the region's map body, one of a closed list; the tables above as `content/core/climates.json` (ramp set, densities, allowed kinds, air defaults, sound beds). The valley gets `temperate` in the same change and nothing on screen moves until a second climate exists.
-- **Kind:** direction, once. The still: one scene of the same layout (a well, a house, a tree, a path, water) rendered in each of the four climates at phone size, four frames (section 8). After the pick, a climate's numbers are polish.
+- **Kind:** direction, once. The still: one scene of the same layout (a well, a house, a tree, a path, water) rendered in each of the four climates at the full frame (1920 x 1080, STYLE 1), four frames (section 8). After the pick, a climate's numbers are polish.
 
 ## 3. The seasons of the year
 

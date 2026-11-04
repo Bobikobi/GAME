@@ -140,14 +140,14 @@ The engine draws the edges between grounds, so a new ground ships only its fill 
 | Raised ground | Casts the same way, with z = levels x 32 (section 6) |
 | Weather | Overcast: the same length at half the alpha (15%). Rain and storm: no sun shadow. Fog waits for its still (the owner, 20.10, NATURE.md section 10 question 4) |
 
-Every number above is whole art pixels at one alpha, so the build is checked by stills at fixed hours against this table. Creators do nothing: every shadow comes from the sprite's alpha.
+Every number above is whole art pixels at one alpha as built; the edge is under A/B since 2026-11-04, and STYLE 2 allows a feathered one. The build is checked by full-frame stills at fixed hours against this table. Creators do nothing: every shadow comes from the sprite's alpha.
 
 ## 5. The night (decided)
 
 The owner, 18.10: "darker than N3; street lighting and the houses' light will light the town, but in nature it has to be scary and dark".
 
 - **One darkness over the whole screen**, deeper than N3. Today the full night multiplies the screen by `#172a52` at 50%, and N3 is 85%. The build starts at 92%, and the owner sets the final level in the live game.
-- **Every light cuts a pool** in that darkness, in two hard steps: no tint inside, half the tint in a ring around it.
+- **Every light cuts a pool** in that darkness, in two hard steps: no tint inside, half the tint in a ring around it. *Under review since 2026-11-04:* the engine's layers may be continuous (STYLE 2), so a soft halo is allowed; the night wave picks the pool's edge by full-frame stills, and the 30.10 build draws four steps (LIGHTING.md).
 - **The town reads lit because it is full of lights:**
   - street lamps (the `lantern_post` prop), enough that every walkable town tile is within 3 tiles of a light (on 18.10, 19 of the 175 are not);
   - lit windows on the buildings the player uses: the shops and the stall.

@@ -594,7 +594,7 @@ Past the first map's edges (not built here): the same reckoning grows the world,
   - The boathouse is reachable, its errand completes in the timed run of each starter, and the chimney's smoke is on screen when the lake enters the frame.
   - Streaming: with a scripted walk across the whole map, no more than 9 chunks are loaded at any frame and no frame blocks over 50 ms on the phone profile.
   - `pnpm verify` and the opening e2e green; the opening's rung payoffs, ladder minutes and 90 s ceiling unchanged.
-- For the owner on a real phone: the feel of the valley's frame and of the first view of the world's size; whether the passes read as ways out; the sweeps' size and the props' density; the path's winding; and whether the recommended difficulty of each place feels right when played, which only a playtest can say.
+- For the owner at the full frame (1920 x 1080, STYLE 1): the feel of the valley's frame and of the first view of the world's size; whether the passes read as ways out; the sweeps' size and the props' density; the path's winding; and whether the recommended difficulty of each place feels right when played, which only a playtest can say.
 
 ## 20. Polish after v0.1.6: a success without a jolt, the wolf gone by day, the e2e screenshots
 
