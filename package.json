@@ -24,6 +24,7 @@
     "art:drafts": "tsx tools/src/art/drafts.ts",
     "art:pixellab": "tsx tools/src/art/pixellab-cli.ts",
     "art:reduce": "tsx tools/src/art/reduce-cli.ts",
+    "art:promote": "tsx tools/src/art/promote-cli.ts",
     "art:nightly": "tsx tools/src/art/pixellab-nightly-cli.ts",
     "art:status": "tsx tools/src/art/status-cli.ts",
     "art:wave": "tsx tools/src/art/wave-cli.ts",

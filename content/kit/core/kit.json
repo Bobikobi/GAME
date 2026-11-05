@@ -2819,6 +2819,48 @@
           "grey"
         ],
         "scale": 0.9
+      },
+      "props/pro_bush": {
+        "file": "props/pro_bush.png",
+        "w": 61,
+        "h": 53,
+        "density": 4,
+        "ramps": [
+          "sage"
+        ],
+        "scale": 0.73,
+        "source": {
+          "spec": "tools/kit-gen/drafts.jsonl",
+          "manifest": "tools/kit-gen/promote.manifest.jsonl:1"
+        }
+      },
+      "props/pro_patch": {
+        "file": "props/pro_patch.png",
+        "w": 56,
+        "h": 36,
+        "density": 4,
+        "ramps": [
+          "olive"
+        ],
+        "scale": 0.49,
+        "source": {
+          "spec": "tools/kit-gen/drafts.jsonl",
+          "manifest": "tools/kit-gen/promote.manifest.jsonl:2"
+        }
+      },
+      "props/pro_ruin": {
+        "file": "props/pro_ruin.png",
+        "w": 28,
+        "h": 57,
+        "density": 4,
+        "ramps": [
+          "sandstone"
+        ],
+        "scale": 0.78,
+        "source": {
+          "spec": "tools/kit-gen/drafts.jsonl",
+          "manifest": "tools/kit-gen/promote.manifest.jsonl:3"
+        }
       }
     }
   }

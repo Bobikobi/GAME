@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest';
 
+import { GUST, MOVES } from '../../game/src/richground';
 import { runCheck } from '../src/check.js';
 import { accentsOf, allowedColors, lightOf, rampProblems, warmthOf } from '../src/kit/ramps.js';
-import { CORE_PALETTE, CORE_RAMPS, DEEP_PALETTE, paletteWithRamps } from '../src/kit/palette.js';
+import { CORE_PALETTE, CORE_RAMPS, coreRamp, DEEP_PALETTE, paletteWithRamps } from '../src/kit/palette.js';
 
 /**
  * ART_SYSTEM section 3: a ramp is five or six steps dark to light, each lighter than the one
@@ -70,7 +71,7 @@ describe('which colours a sprite may use', () => {
 
 describe('the shared ramps of palette v2 (DECISIONS 2026-10-21)', () => {
   test('every shared ramp is a ramp by the rule: six steps, rising light, moving hue', () => {
-    expect(CORE_RAMPS.length).toBe(13);
+    expect(CORE_RAMPS.length).toBe(16);
     for (const ramp of CORE_RAMPS) {
       expect(ramp.steps, ramp.id).toHaveLength(6);
       expect(rampProblems(ramp), ramp.id).toEqual([]);
@@ -93,9 +94,41 @@ describe('the shared ramps of palette v2 (DECISIONS 2026-10-21)', () => {
     expect(paletteWithRamps([])).toEqual(CORE_PALETTE);
     expect(paletteWithRamps(['plum'])).toHaveLength(32 + 4);
     expect(paletteWithRamps(['grey'])).toEqual(CORE_PALETTE);
-    expect(DEEP_PALETTE).toHaveLength(78);
-    expect(new Set(DEEP_PALETTE).size).toBe(78);
+    expect(DEEP_PALETTE).toHaveLength(96);
+    expect(new Set(DEEP_PALETTE).size).toBe(96);
     expect(() => paletteWithRamps(['neon'])).toThrow(/not a shared ramp/);
+  });
+});
+
+describe('the issue #664 ramps (the owner approved them 2.11 11:38: a grey-green bush, a warm stone, an olive ground patch)', () => {
+  const NEW_RAMPS = ['sage', 'sandstone', 'olive'];
+
+  test('each is a ramp by the rule and names no colour twice', () => {
+    for (const id of NEW_RAMPS) {
+      const ramp = coreRamp(id);
+      expect(ramp, id).toBeDefined();
+      expect(ramp!.steps).toHaveLength(6);
+      expect(rampProblems(ramp!), id).toEqual([]);
+    }
+  });
+
+  test('none sits within GUST.tolerance of a MOVES colour, so a bush, a ruin or a patch never leans or drifts', () => {
+    const moving = [...MOVES.meadow, ...MOVES.water].map((c) => [(c >> 16) & 255, (c >> 8) & 255, c & 255] as const);
+    const limit = GUST.tolerance * 255;
+    const near = (hex: string): boolean => {
+      const n = Number.parseInt(hex.slice(1), 16);
+      const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      return moving.some(([mr, mg, mb]) => Math.abs(r - mr) < limit && Math.abs(g - mg) < limit && Math.abs(b - mb) < limit);
+    };
+    for (const id of NEW_RAMPS) for (const step of coreRamp(id)!.steps) expect(near(step), `${id} ${step}`).toBe(false);
+  });
+
+  test('a sprite may name sage, sandstone or olive beside the core, and the new steps are not already there', () => {
+    for (const id of NEW_RAMPS) {
+      const before = CORE_PALETTE.length;
+      const after = paletteWithRamps([id]);
+      expect(after.length, id).toBe(before + 6);
+    }
   });
 });
 
