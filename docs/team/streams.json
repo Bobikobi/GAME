@@ -135,6 +135,13 @@
       "branches": ["feat/hunt-foundations", "docs/hunt-materials", "art/hare-crow-loops"],
       "owner": null,
       "cross_cutting": true
+    },
+    {
+      "id": "gear-and-stone",
+      "title": "The gear wave: clothing, weapons and quarrying at tiers 1 to 3, the jackpot's experience and the docs first, then the equipment foundations, the stone chain and the clothing chain",
+      "plan": ["DECISIONS 2026-11-01 the gear wave", "docs/design/GAP_RS_GEAR.md section 11 (the order)", "docs/design/BUILD_SET.md (the 67 rows, and rows 68 to 81 past the wave, section 7.1)", "docs/design/WEAPONS.md section 17 (questions 7 to 12, the 01.11 revision)", "DECISIONS 2026-10-25 balance prover finding 3", "GAME_RULES G35, G40, G41, G44, G45 and G102", "docs/team/NEXT.md section gear-and-stone"],
+      "branches": ["docs/gear-and-stone", "fix/jackpot-xp", "feat/gear-foundations", "feat/stone-work-rules", "feat/stone-finds", "feat/stone-content", "feat/clothing-chain"],
+      "owner": null
     }
   ]
 }
