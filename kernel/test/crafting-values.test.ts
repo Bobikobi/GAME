@@ -81,3 +81,10 @@ describe('rarity budget', () => {
     expect(rarityBudget({ ...bundle, resources }).parts.some((p) => p.id === a.id)).toBe(false);
   });
 });
+
+describe('the first stone tools (QUARRYING 6)', () => {
+  test('are priced from their inputs: the hammerstone 3600, the knapped pick 11600', () => {
+    expect(bundle.values['core/hammerstone']).toBe(3600);
+    expect(bundle.values['core/knapped-pick']).toBe(11600);
+  });
+});

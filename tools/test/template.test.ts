@@ -50,10 +50,11 @@ describe('templates/extension', () => {
     expect(b.values['your-handle/plum']).toBeGreaterThan(0);
   });
 
-  it('drops a windfall plum below each bush left full, a reaction of its own', () => {
+  it('drops a windfall plum beside each bush left full, on its west side, a reaction of its own', () => {
     const b = result.assembled.bundle!;
     const slots = [...appearSlots(b).values()].filter((s) => s.reaction.id === 'your-handle/windfall-plums');
     expect(slots).toHaveLength(4);
-    for (const s of slots) expect([s.x, s.y]).toEqual([s.parent.x, s.parent.y + 1]);
+    // west, not below: below one of the glade's bushes lies a hare's spot, and animals keep their spots (QUARRYING 8)
+    for (const s of slots) expect([s.x, s.y]).toEqual([s.parent.x - 1, s.parent.y]);
   });
 });

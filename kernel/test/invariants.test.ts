@@ -91,8 +91,9 @@ describe('determinism', () => {
 
 describe('timing grade', () => {
   test('never lowers gather yield as grade increases', () => {
+    // the reeds play a minigame; the river stones run by themselves and read every grade as 3 (QUARRYING 10)
     const node = Object.entries(bundle.instances)
-      .find(([, instance]) => instance.source === 'core/river-stones');
+      .find(([, instance]) => instance.source === 'core/reed-bank');
     expect(node).toBeDefined();
     const [nodeId, instance] = node!;
     const yields: number[] = [];
@@ -112,7 +113,7 @@ describe('timing grade', () => {
       const result = step(bundle, state, { t: 'gather', node: nodeId, grade, at: path!.at(-1)! }, 0);
       expect(result.ok).toBe(true);
       if (!result.ok) throw new Error(result.error);
-      yields.push(result.state.player.bag['core/stone'] ?? 0);
+      yields.push(result.state.player.bag['core/reed'] ?? 0);
     }
 
     // a miss is a gamble that brings home at most one unit
