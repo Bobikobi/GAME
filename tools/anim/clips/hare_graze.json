@@ -1,0 +1,32 @@
+{
+  "about": "The hare grazing (HUNTING 2, GRAZE): crouched with the shoulders lowered, the head reaching forward and down with the nose on the ground, the head alone turned a little to the hare's left, one ear laid flat out beside it and the other upright (so the side view reads as eating, the back sloping down to the nose, and the down view as a head beside the body, not a teardrop), nibbling: down, up a little, down a little further round, up. Four poses of the body's own Graze, played by time; the head-up beat of GRAZE is the alert or the idle.",
+  "target": "hare",
+  "base": {
+    "library": "self:hare",
+    "action": "Graze"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    500,
+    350,
+    500,
+    350
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
