@@ -144,10 +144,12 @@ second pass draws each object in one flat colour: body, flame, tool metal, leave
 nearest colour (CIELAB) its class may use, each 4x4 block to one pixel by majority (opaque when at least half is),
 and adds the outline outside the silhouette. The left view is rendered facing right and mirrored.
 
-The camera looks down at 50 degrees for every target (`elev` in `anim.json`, DECISIONS 2026-10-26). The sun of the
+The camera looks down at one angle for every target (`elev` in `anim.json`): 50 degrees by DECISIONS 2026-10-26, about 35
+by DECISIONS 2026-11-04, which supersedes it; the shipped sheets are the 50-degree renders until the cast is rendered again. The sun of the
 render stands due south, above and behind the camera, at 60 degrees (`sun_elev`), the same in every view: the game's
 sun is south (DECISIONS 2026-10-21), so the side of the body the viewer sees is the lit side and the game's cast
-shadow falls up the screen, behind it. The lean of the shadow by the hour is the game's to draw; a sprite never bakes a
+shadow falls up the screen, behind it (the cast's direction is under A/B since DECISIONS 2026-11-04, down-left or
+down-right, never up-screen, and the render's sun follows the pick). The lean of the shadow by the hour is the game's to draw; a sprite never bakes a
 ground shadow (no ground is rendered), and the game casts one from the sprite's alpha.
 
 Each clip's frame is sized on the tallest body: the anchor sits where the farthest reach of the cast over the clip,
