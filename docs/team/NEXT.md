@@ -793,3 +793,28 @@ Measurable:
 4. No animal carries a price: the value lock prices every good through the `hunt` source, and a shop that sells one is refused.
 
 Not here: the fight (G35, COMBAT.md), houses and plots (paused, DECISIONS 2026-10-10), a mount, a kill count of any kind (HUNTING 10).
+
+## weapon-matrix. The weapon matrix: hundreds of hands from form, material and tier, as a page, a source file, a report and its test
+
+Status: building - weapon-matrix
+
+Read first: `docs/design/WEAPON_MATRIX.md` (sections 1, 2, 13, 14 and 15), DECISIONS 2026-11-02 "The weapon matrix", WEAPONS 4 and 5.3 of the open pull request #609, G35 and G44 in `docs/design/GAME_RULES.md`, and #598 (the combat foundations: `bare_base`, the swing ticks, `FIGHT_TIER_HITS`).
+
+The ask behind the stream: WEAPONS 5.3 (#609) names a matrix of form, material and tier as the stream's next pull request. This stream proposes it on develop with no content, no param and no schema change: the page, the source (`tools/src/balance/weapon-matrix.json`), the report (`tools/src/balance/weapons.ts`, `weapons-cli.ts`) and its test, and the word amendments to EQUIPMENT 3.7, PROGRESSION 5.1 and HUNT_FAMILIES 3a. The merge is the owner's yes; every row waits for combat.
+
+What is left, in order:
+a) The owner's answers to WEAPON_MATRIX 14 (16 questions, each with its default; 5 needs an explicit answer, since its default amends DECISIONS 2026-10-10).
+b) When #609 lands: the amendments to WEAPONS 4, 5.2, 5.3, 6.1, 6.2 and 16 and to CLOTHING (the hardened leather), as WEAPON_MATRIX 11 and 12 list them, one follow-up pull request.
+c) The try's kernel pull request (`discover?` on `RecipeBody`, the `known` description) and the check rows WM-TRY-SET, WM-TRY-SIZE and WM-TEACH in `tools/src/check.ts`, with the first weapon content.
+d) With combat (G35): the kernel's hand function beside `hitsToFell`, replacing the report's restated hit reading; the hands' `weapon` blocks as content, tier by tier as each tier opens (`open_tiers`, `tier_min_level`, the forge, Smithing, Woodcraft, Leatherwork).
+e) `pnpm weapons`, the report's `--write` and `--verify`, with the first weapon content (WEAPONS 5.5).
+
+Measurable:
+1. `pnpm exec tsx tools/src/balance/weapons-cli.ts` exits 0 on develop, and every fenced block of WEAPON_MATRIX 10 equals its print (the test).
+2. The counts stay inside the direction, 70 to 80 at tiers 1 to 3 and 300 to 350 at tiers 4 to 10, in the default variant (today 70 / 337).
+3. No pair of hands is dominated in hits at the built `bare_base` beyond the 44 listed ties, and the list shrinks or holds (WM-BLOCK).
+4. Every `built` value the source copies equals content at its anchored line (WM-BUILT), so a #598 retune fails the test the same day.
+
+Not here: the fight itself, the foes, the take verb's tools, the value of a row (the solver prices it when its inputs exist), armour and clothing (CLOTHING), the pages of #609.
+
+For the owner: the 16 questions of WEAPON_MATRIX 14, one sentence each; the merge of this pull request is the yes to the defaults until then.
