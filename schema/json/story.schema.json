@@ -722,11 +722,58 @@
           "description": "How full of creatures the land is, as a share of the kinds' caps: 0 empty, 100 at the cap. Left out: 25.",
           "type": "integer"
         },
-        "town": {
-          "minimum": 0,
-          "maximum": 3,
-          "description": "The settlement at the land's hub: 0 a clearing, 1 a hamlet (a few houses round a well), 2 a village (streets and a square), 3 a city (walls and gates, wide streets and narrow alleys, blocks of houses; the owner, 8.11). Left out: 0.",
-          "type": "integer"
+        "settlements": {
+          "maxItems": 8,
+          "description": "The settlements of the land, the largest first: the first stands at the hub where the roads meet, the rest the generator places apart from it and joins by road. Each world builds them its own way (the owner, 8.11: varied, in many sizes, as the big games do; a human city huge in its own right, with great walls, old Dubrovnik). Left out: a clearing at the hub.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "description": "What stands there: a city (walls and gates, a main street, districts of narrow streets), a town (a market square and streets, a wall perhaps), a village (houses round a square), a hamlet (a few houses), a farm (a house, a barn, fields), an outpost (a tower and a fence), a keep (a wall and a hall on a height).",
+                "anyOf": [
+                  {
+                    "const": "city",
+                    "type": "string"
+                  },
+                  {
+                    "const": "town",
+                    "type": "string"
+                  },
+                  {
+                    "const": "village",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hamlet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "farm",
+                    "type": "string"
+                  },
+                  {
+                    "const": "outpost",
+                    "type": "string"
+                  },
+                  {
+                    "const": "keep",
+                    "type": "string"
+                  }
+                ]
+              },
+              "size": {
+                "minimum": 1,
+                "maximum": 3,
+                "description": "Within its kind: 1 small, 2 the usual, 3 huge. Left out: 2.",
+                "type": "integer"
+              }
+            }
+          }
         }
       }
     }

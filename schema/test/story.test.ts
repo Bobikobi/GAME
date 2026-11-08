@@ -4,7 +4,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CORE_ONLY_TYPES, PARTICLE_KINDS, SCHEMAS, SIDES, SPOT_RANKS, SPOT_SHAPES, STORY_WORLDS, validateFile } from '../src/index';
+import { CORE_ONLY_TYPES, PARTICLE_KINDS, SCHEMAS, SETTLEMENT_KINDS, SIDES, SPOT_RANKS, SPOT_SHAPES, STORY_WORLDS, validateFile } from '../src/index';
 
 const load = (path: string) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8'));
 
@@ -66,10 +66,16 @@ describe('the story file', () => {
     expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).below = { cx: 3 })))).not.toEqual([]);
   });
 
-  it('may name the settlement at the hub, a clearing to a city', () => {
-    for (const town of [0, 1, 2, 3]) expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).town = town)))).toEqual([]);
-    expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).town = 4)))).not.toEqual([]);
-    expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).town = 'city')))).not.toEqual([]);
+  it('may list its settlements, the largest first, each a kind the big games know and a size within it', () => {
+    const put = (v: unknown) => validateFile(storyWith((s) => ((s.story as Record<string, unknown>).settlements = v)));
+    expect(put([])).toEqual([]);
+    expect(put([{ kind: 'city', size: 3 }, { kind: 'farm' }, { kind: 'outpost', size: 1 }])).toEqual([]);
+    expect(put(SETTLEMENT_KINDS.map((kind) => ({ kind })))).toEqual([]);
+    expect(put([{ kind: 'metropolis' }])).not.toEqual([]);
+    expect(put([{ kind: 'city', size: 4 }])).not.toEqual([]);
+    expect(put([{ kind: 'city', walls: true }])).not.toEqual([]);
+    expect(put(Array.from({ length: 9 }, () => ({ kind: 'farm' })))).not.toEqual([]);
+    expect([...SETTLEMENT_KINDS]).toEqual(['city', 'town', 'village', 'hamlet', 'farm', 'outpost', 'keep']);
   });
 
   it('is core-only, so the project board and the assembler know it as the core\'s record', () => {
