@@ -2717,6 +2717,13 @@ export const StoryBody = Type.Object(
     }),
     ruins: Type.Optional(Int(0, 6, 'Small ruins off the roads. Left out: 1.')),
     life: Type.Optional(Int(0, 100, 'How full of creatures the land is, as a share of the kinds\' caps: 0 empty, 100 at the cap. Left out: 25.')),
+    town: Type.Optional(
+      Int(
+        0,
+        3,
+        'The settlement at the land\'s hub: 0 a clearing, 1 a hamlet (a few houses round a well), 2 a village (streets and a square), 3 a city (walls and gates, wide streets and narrow alleys, blocks of houses; the owner, 8.11). Left out: 0.',
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -2776,7 +2783,7 @@ export const SchoolFile = record('school', 'school', SchoolBody);
 export const StoryFile = record('story', 'story', StoryBody);
 
 export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school', 'story'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,

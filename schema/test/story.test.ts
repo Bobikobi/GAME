@@ -4,7 +4,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { PARTICLE_KINDS, SCHEMAS, SIDES, SPOT_RANKS, SPOT_SHAPES, STORY_WORLDS, validateFile } from '../src/index';
+import { CORE_ONLY_TYPES, PARTICLE_KINDS, SCHEMAS, SIDES, SPOT_RANKS, SPOT_SHAPES, STORY_WORLDS, validateFile } from '../src/index';
 
 const load = (path: string) => JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8'));
 
@@ -64,6 +64,16 @@ describe('the story file', () => {
     expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).below = { cx: 3, cy: 12 })))).toEqual([]);
     expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).below = { cx: 16, cy: 12 })))).not.toEqual([]);
     expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).below = { cx: 3 })))).not.toEqual([]);
+  });
+
+  it('may name the settlement at the hub, a clearing to a city', () => {
+    for (const town of [0, 1, 2, 3]) expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).town = town)))).toEqual([]);
+    expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).town = 4)))).not.toEqual([]);
+    expect(validateFile(storyWith((s) => ((s.story as Record<string, unknown>).town = 'city')))).not.toEqual([]);
+  });
+
+  it('is core-only, so the project board and the assembler know it as the core\'s record', () => {
+    expect([...CORE_ONLY_TYPES]).toContain('story');
   });
 
   it('names three worlds and four sides', () => {

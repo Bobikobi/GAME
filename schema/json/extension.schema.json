@@ -24226,6 +24226,12 @@
               "maximum": 100,
               "description": "How full of creatures the land is, as a share of the kinds' caps: 0 empty, 100 at the cap. Left out: 25.",
               "type": "integer"
+            },
+            "town": {
+              "minimum": 0,
+              "maximum": 3,
+              "description": "The settlement at the land's hub: 0 a clearing, 1 a hamlet (a few houses round a well), 2 a village (streets and a square), 3 a city (walls and gates, wide streets and narrow alleys, blocks of houses; the owner, 8.11). Left out: 0.",
+              "type": "integer"
             }
           }
         }
