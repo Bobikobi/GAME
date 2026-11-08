@@ -1,98 +1,60 @@
 {
   "human": {
-    "sun": {
-      "day": [
-        255,
-        244,
-        214
-      ],
-      "dusk": [
-        255,
-        170,
-        110
-      ]
-    },
-    "night_depth": 55,
-    "fog_permille": 0,
-    "particles": [
-      {
-        "kind": "leaves",
-        "density": 2
+    "climate": "temperate",
+    "rain": 1800,
+    "atmosphere": {
+      "sun": {
+        "day": [255, 238, 198],
+        "dusk": [255, 164, 100]
       },
-      {
-        "kind": "birds",
-        "density": 1
-      }
-    ],
-    "shafts": false,
-    "ambience": {
-      "day": "meadow-birds",
-      "night": "crickets"
+      "night_depth": 55,
+      "particles": [
+        { "kind": "leaves", "density": 3 },
+        { "kind": "birds", "density": 1 }
+      ],
+      "shafts": false
     },
-    "note": "pastoral and neutral: a plain sun, an ordinary night"
+    "ambience": { "day": "day", "night": "night" },
+    "sounds": { "day": "meadow birds", "night": "crickets" },
+    "note": "pastoral and neutral under a warm sun (the owner's v14 list, 8.11: warmer light, leaves in the air); an ordinary night"
   },
   "elf": {
-    "sun": {
-      "day": [
-        236,
-        255,
-        220
-      ],
-      "dusk": [
-        220,
-        255,
-        200
-      ]
-    },
-    "night_depth": 40,
-    "fog_permille": 0,
-    "particles": [
-      {
-        "kind": "fireflies",
-        "density": 6
+    "climate": "temperate",
+    "rain": 1400,
+    "atmosphere": {
+      "sun": {
+        "day": [236, 255, 220],
+        "dusk": [220, 255, 200]
       },
-      {
-        "kind": "pollen",
-        "density": 5
-      }
-    ],
-    "shafts": true,
-    "ambience": {
-      "day": "deep-wood",
-      "night": "owl-and-stream"
+      "night_depth": 40,
+      "particles": [
+        { "kind": "fireflies", "density": 6 },
+        { "kind": "pollen", "density": 5 },
+        { "kind": "leaves", "density": 2 }
+      ],
+      "shafts": true
     },
-    "note": "bright and clear: sun shafts between the trees, pollen by day, fireflies by night"
+    "ambience": { "day": "day", "night": "night" },
+    "sounds": { "day": "deep wood", "night": "owl and stream" },
+    "note": "bright and clear: sun shafts between the trees, pollen by day, fireflies by night, a leaf now and then"
   },
   "undead": {
-    "sun": {
-      "day": [
-        255,
-        150,
-        120
-      ],
-      "dusk": [
-        200,
-        60,
-        40
-      ]
-    },
-    "night_depth": 80,
-    "fog_permille": 0,
-    "particles": [
-      {
-        "kind": "ash",
-        "density": 5
+    "climate": "dry",
+    "rain": 300,
+    "atmosphere": {
+      "sun": {
+        "day": [255, 150, 120],
+        "dusk": [200, 60, 40]
       },
-      {
-        "kind": "embers",
-        "density": 2
-      }
-    ],
-    "shafts": false,
-    "ambience": {
-      "day": "dry-wind",
-      "night": "bone-rattle"
+      "night_depth": 80,
+      "particles": [
+        { "kind": "ash", "density": 5 },
+        { "kind": "embers", "density": 2 }
+      ],
+      "shafts": false
     },
-    "note": "a redder sun, a darker night, ash in the air"
+    "ambience": { "day": "day", "night": "night" },
+    "sounds": { "day": "dry wind", "night": "bone rattle" },
+    "note": "a redder sun, a darker night, ash in the air; almost no rain"
   }
 }

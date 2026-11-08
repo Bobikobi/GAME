@@ -1,6 +1,9 @@
 import { makeStepRule } from '@game/kernel';
 import { validateFile } from '@game/schema';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { CONTENT_DIR } from '../src/load';
 import { chunkProblems } from '../src/chunks';
 import { cut } from '../src/gen/cut';
 import { G, Land, type Tile } from '../src/gen/grid';
@@ -11,8 +14,8 @@ import { BRIDGE_RUN_MAX, RUN_MAX, longestRuns, repair, straightRuns } from '../s
 import { storySeed } from '../src/gen/rand';
 import { focusTiles, render, renderBelow } from '../src/gen/render';
 import { HUB_CLEAR, affixProblems, affixes, fields, kindProblems, kindsOf, spawn, tagOf } from '../src/gen/spawn';
-import { atmosphereCards, atmosphereOf, atmosphereProblems } from '../src/gen/atmosphere';
-import { type StoryDef, parseStory, storyProblems } from '../src/gen/story';
+import { atmosphereCards, atmosphereOf, atmosphereProblems, cardOf } from '../src/gen/atmosphere';
+import { STORIES_DIR, type StoryDef, listStories, loadStory, parseStory, storyOf, storyProblems } from '../src/gen/story';
 
 const fixture: StoryDef = {
   id: 'core/test-wood',
@@ -73,15 +76,35 @@ describe('repair', () => {
   });
 });
 
+/** The fixture as a story file: the envelope round the body, the way content/core/stories/ holds one. */
+function fileOf(story: StoryDef): Record<string, unknown> {
+  const { id, title, description, ...body } = story;
+  return { $schema: '../../../schema/json/story.schema.json', format: 1, type: 'story', id, title, creator: 'core', ...(description ? { description } : {}), story: body };
+}
+
 describe('story', () => {
-  it('reads a sound story and names every fault of a bad one', () => {
-    expect(storyProblems(fixture)).toEqual([]);
-    const bad = { ...fixture, forest: 140, entries: ['n', 'n'], extra: 1 } as unknown;
+  it('reads a sound story file through the shared schema and names every fault of a bad one', () => {
+    const file = fileOf(fixture);
+    expect(storyProblems(file)).toEqual([]);
+    expect(storyOf(file as never)).toEqual(fixture);
+    const bad = { ...file, story: { ...fixture, forest: 140, entries: ['n', 'n'], extra: 1 } } as unknown;
     const problems = storyProblems(bad);
-    expect(problems.some((p) => p.startsWith('forest:'))).toBe(true);
-    expect(problems.some((p) => p.startsWith('entries:'))).toBe(true);
-    expect(problems.some((p) => p.startsWith('extra:'))).toBe(true);
+    expect(problems.some((p) => p.startsWith('story.forest:'))).toBe(true);
+    expect(problems.some((p) => p.startsWith('story.entries'))).toBe(true);
+    expect(problems.some((p) => /extra/.test(p))).toBe(true);
+    expect(storyProblems({ ...file, type: 'chunk' })[0]).toMatch(/type: must be "story"/);
     expect(() => parseStory('{"id":"x"}')).toThrow(/not a story/);
+  });
+  it('finds every story of the core by name, and each is a sound story file', () => {
+    const names = listStories();
+    expect(names.length).toBeGreaterThanOrEqual(3);
+    expect(STORIES_DIR).toBe(join(CONTENT_DIR, 'core', 'stories'));
+    for (const name of names) {
+      const byName = loadStory(name);
+      expect(byName).toEqual(loadStory(join(STORIES_DIR, `${name}.json`)));
+      expect(byName.id).toBe(`core/${name}`);
+      expect(validateFile(JSON.parse(readFileSync(join(STORIES_DIR, `${name}.json`), 'utf8')))).toEqual([]);
+    }
   });
 });
 
@@ -347,15 +370,32 @@ describe('spawn', () => {
 });
 
 describe('atmosphere', () => {
-  it('has a sound card for every world, mist only in the valley', () => {
+  it('has a sound air for every world, and a card the real map schema takes, with mist only in the valley', () => {
     const cards = atmosphereCards();
     for (const world of ['human', 'elf', 'undead'] as const) expect(atmosphereProblems(cards[world])).toEqual([]);
-    expect(cards.elf.particles.map((p) => p.kind)).toContain('fireflies');
-    expect(cards.undead.night_depth).toBeGreaterThan(cards.elf.night_depth);
-    expect(cards.undead.sun.day[0]).toBeGreaterThan(cards.undead.sun.day[2]);
-    expect(atmosphereOf(fixture).fog_permille).toBe(0);
-    expect(atmosphereOf({ ...fixture, id: 'core/valley' }).fog_permille).toBeGreaterThan(0);
-    expect(atmosphereProblems({ ...cards.elf, particles: [{ kind: 'bees', density: 1 }] })[0]).toMatch(/unknown kind/);
+    expect(cards.elf.atmosphere.particles.map((p) => p.kind)).toContain('fireflies');
+    expect(cards.undead.atmosphere.night_depth).toBeGreaterThan(cards.elf.atmosphere.night_depth);
+    expect(cards.undead.atmosphere.sun.day[0]).toBeGreaterThan(cards.undead.atmosphere.sun.day[2]);
+    // the owner's v14 list (8.11): warmer light on the human land, leaves in the air
+    expect(cards.human.atmosphere.sun.day[0]).toBeGreaterThan(cards.human.atmosphere.sun.day[2]);
+    expect(cards.human.atmosphere.particles.some((p) => p.kind === 'leaves')).toBe(true);
+    expect(atmosphereOf(fixture)).toEqual(cards.elf.atmosphere);
+    expect(atmosphereProblems({ ...cards.elf, atmosphere: { ...cards.elf.atmosphere, particles: [{ kind: 'rain', density: 1 }] } })[0]).toMatch(/unknown kind rain/);
+    const card = cardOf(fixture);
+    expect(card.id).toBe('test-wood-air');
+    expect(card.weather.fog).toBe(0);
+    expect(card.look.fog).toBe(0);
+    expect(cardOf({ ...fixture, id: 'core/valley' }).weather.fog).toBeGreaterThan(0);
+    // the card goes where the owner's map would put it, and the map's own schema takes it
+    const map = JSON.parse(readFileSync(join(CONTENT_DIR, 'core', 'map.json'), 'utf8')) as { map: { cards: unknown[]; regions?: unknown[] } };
+    expect((map.map.cards as { id: string }[]).some((c) => c.id === cardOf({ ...fixture, id: 'core/elf-wood' }).id)).toBe(false);
+    map.map.cards.push(card);
+    map.map.regions = [
+      ...(map.map.regions ?? []),
+      { id: 'test-wood', x: 128, y: 128, w: 128, h: 128, world: 'elf', card: card.id, title: fixture.title },
+      { id: 'test-wood-below', x: 128, y: 768, w: 128, h: 64, world: 'elf', card: card.id, title: `${fixture.title}, below`, underground: true },
+    ];
+    expect(validateFile(map)).toEqual([]);
   });
 });
 
