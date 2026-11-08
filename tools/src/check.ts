@@ -23,6 +23,7 @@ import { checkInk } from './ink-check';
 import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
+import { checkPortals } from './portals';
 import { checkRegions } from './regions';
 import { checkDanger } from './danger';
 import { checkReactions } from './reactions';
@@ -80,6 +81,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkPayGap(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
+    issues.push(...checkPortals(b, assembled.origin));
     issues.push(...checkRegions(b, assembled.origin));
     issues.push(...checkDanger(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));

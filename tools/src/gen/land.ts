@@ -3,7 +3,8 @@
  * and streams from a second, wood from a third with glades cut out of it, roads that wind in from the story's
  * sides to a clearing, small ruins off the roads, and cave mouths hidden where the wood is deepest. Every tile a
  * foot can stand on is reached from the roads (a pocket nothing leads into is filled, a larger one is joined by
- * a carved way with a crossing where the level changes, G68). Integers only; every draw is keyed by its tile, so
+ * a carved way with a crossing where the level changes, G68). The hidden doors come last, each a different form
+ * with its own hint, and lead down to the land below (below.ts). Integers only; every draw is keyed by its tile, so
  * the same story and seed give the same land on every machine.
  *
  * What the kit lacks stands in by name (the table `LOOKS`): a burnt tree is the dead tree, bones are stones, a
@@ -15,6 +16,7 @@ import { G, Land, type Prop, SOLID, STEPS4, type Tile } from './grid';
 import { fbm, valueNoise } from './noise';
 import { longestRuns, repair, route, wind } from './paths';
 import { at, chance, choose, pick, storySeed } from './rand';
+import { type Below, type Door, carveBelow } from './below';
 import type { Side, StoryDef, World } from './story';
 
 const KIT = 'core/base-kit:';
@@ -45,8 +47,6 @@ const SOLID_PROPS: ReadonlySet<string> = new Set([
   'props/tree_oak', 'props/young_tree', 'props/dead_tree', 'props/stump', 'props/standing_stone', 'props/ruin_wall', 'props/ruin_pillar', 'props/rock_mossy', 'props/log_fallen', 'props/log_mossy', 'props/bush_empty',
 ]);
 
-/** The cave mouth's stand-in until a mouth is drawn: an arch over the tile the player will step into. */
-export const CAVE_MOUTH = 'props/ruin_arch';
 /** The crossing's stand-in (the first map's exporter used the same): pebbles where steps will be drawn. */
 export const CROSSING = 'props/pebbles';
 
@@ -59,6 +59,8 @@ export interface Measure {
   longestBridgeRun: number;
   cavesAsked: number;
   caves: number;
+  /** The form of every door placed, in order. */
+  doorForms: string[];
   /** The share of wood (forest and grove) per 16 by 16 block, in percent: the least and the most. */
   woodSpread: [number, number];
   farthestSteps: number;
@@ -71,6 +73,9 @@ export interface Generated {
   seed: Seed;
   land: Land;
   entries: Tile[];
+  /** The hidden doors, in order; each a portal down when the story names a land below. */
+  doors: Door[];
+  below?: Below;
   measure: Measure;
 }
 
@@ -87,9 +92,17 @@ export function generate(story: StoryDef): Generated {
   roads(seed, land, entries, hub);
   ruins(seed, land, story, entries);
   trees(seed, land, story);
-  caves(seed, land, story, entries);
+  const placed = doors(seed, land, story, entries);
   connect(land, entries);
-  return { story, seed, land, entries, measure: measure(land, story, entries) };
+  const below = carveBelow(seed, story, placed);
+  if (below) {
+    placed.forEach((d, i) => {
+      const door = land.props.find((q) => q.id === doorId(story, d.n));
+      const [sx, sy] = below.steps[i]!;
+      if (door) door.portal = { x: sx, y: sy };
+    });
+  }
+  return { story, seed, land, entries, doors: placed, below, measure: measure(land, story, entries) };
 }
 
 // ---------------------------------------------------------------- the frame
@@ -527,60 +540,207 @@ function vary(seed: Seed, land: Land, list: readonly string[], x: number, y: num
   return list[i]!;
 }
 
-// ---------------------------------------------------------------- caves
+// ---------------------------------------------------------------- hidden doors
 
-function caves(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[]): void {
-  if (story.caves === 0) return;
+/**
+ * The hidden doors (the owner, 8.11: a door everywhere, never the same twice, a hint at the entrance but not an
+ * obvious one). Five forms, each with its own ground and its own hint: a cave in the rock with a worn trail that
+ * ends at it; a hollow tree ringed by mushrooms; an old well in a glade where the grass stands odd; a cellar under
+ * a ruin's floor, pebbles and old timber beside it; a way behind a fall, glowing mushrooms on the bank. A land never
+ * repeats a form before it has used them all. Each door is a non-solid prop a player steps onto; its `portal`
+ * leads to its chamber below (below.ts), and the way up there leads back to the tile before the door.
+ */
+export const DOOR_FORMS = ['cave', 'hollow', 'well', 'cellar', 'fall'] as const;
+export type DoorForm = (typeof DOOR_FORMS)[number];
+/** The stand-in of every form until its door is drawn. */
+export const DOOR_SPRITE: Record<DoorForm, string> = {
+  cave: 'props/ruin_arch',
+  hollow: 'props/dead_tree',
+  well: 'props/standing_stone',
+  cellar: 'props/rubble',
+  fall: 'props/log_mossy',
+};
+export const doorId = (story: StoryDef, n: number) => `core/${name(story)}-door-${n}`;
+
+/** What stands round a tile: of its eight neighbours how many are wood, rock (or the land's edge) and water; whether the ground drops beside it; whether a ruin is near. */
+interface Site {
+  wood: number;
+  rock: number;
+  water: number;
+  drop: boolean;
+  ruin: boolean;
+}
+
+function siteOf(land: Land, x: number, y: number, ruinsAt: readonly Tile[]): Site {
+  let wood = 0;
+  let rock = 0;
+  let water = 0;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const ch = land.inside(x + dx, y + dy) ? land.get(x + dx, y + dy) : G.mountain;
+      if (ch === G.forest) wood++;
+      else if (ch === G.mountain) rock++;
+      else if (ch === G.water) water++;
+    }
+  }
+  const drop = STEPS4.some(([dx, dy]) => land.inside(x + dx, y + dy) && land.level(x + dx, y + dy) !== land.level(x, y));
+  return { wood, rock, water, drop, ruin: near(ruinsAt, x, y, 3) };
+}
+
+/** Whether a form may stand on the tile: its ground letter and what is round it. */
+function fitsForm(form: DoorForm, ch: string, s: Site): boolean {
+  switch (form) {
+    case 'cave':
+      return ch === G.forest && s.rock >= 2 && s.wood + s.rock >= 6;
+    case 'hollow':
+      return ch === G.forest && s.wood >= 6 && s.rock === 0;
+    case 'well':
+      return (ch === G.meadow || ch === G.flowers || ch === G.grove) && s.wood <= 4 && s.rock === 0 && s.water === 0 && !s.drop;
+    case 'cellar':
+      return ch === G.ruinFloor && s.ruin;
+    case 'fall':
+      return (ch === G.bank || ch === G.grove || ch === G.meadow) && s.water >= 2 && s.drop;
+  }
+}
+
+/** The fewest road steps a form keeps: a cellar lies in a ruin, which stands near the roads; the rest hide deep. */
+const DOOR_FROM_ROAD: Record<DoorForm, number> = { cave: 8, hollow: 8, well: 8, cellar: 3, fall: 6 };
+
+function doors(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[]): Door[] {
+  if (story.caves === 0) return [];
   const fromRoad = roadDistance(land);
-  const mouths: Tile[] = [];
-  /** How many of the eight tiles round (x, y) are wood, and how many rock or the land's edge. */
-  const deep = (x: number, y: number): [number, number] => {
-    let wood = 0;
-    let rock = 0;
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        if (dx === 0 && dy === 0) continue;
-        const ch = land.inside(x + dx, y + dy) ? land.get(x + dx, y + dy) : G.mountain;
-        if (ch === G.forest) wood++;
-        else if (ch === G.mountain) rock++;
-      }
-    }
-    return [wood, rock];
-  };
   const sources = entries.map(([x, y]) => land.nearestWalkable(x, y) ?? ([x, y] as Tile));
+  const ruinsAt = land.marks.filter((m) => m.kind === 'ruin').map((m) => [m.x, m.y] as Tile);
+  const placed: Door[] = [];
+  const used = new Set<DoorForm>();
+  const first = pick(seed, 'door-form', 0, DOOR_FORMS.length);
   for (let n = 0; n < story.caves; n++) {
-    // every deep tile scored, best first; the first one a way can be carved to is the mouth
-    const found: { x: number; y: number; s: number }[] = [];
-    for (let y = land.y0 + 6; y < land.y0 + land.h - 6; y++) {
-      for (let x = land.x0 + 6; x < land.x0 + land.w - 6; x++) {
-        if (land.get(x, y) !== G.forest || land.level(x, y) > 2) continue;
-        if (fromRoad[land.key(x, y)]! < 10 || near(mouths, x, y, 14) || near(entries, x, y, 16)) continue;
-        const [wood, rock] = deep(x, y);
-        if (wood < 5 || wood + rock < 7) continue;
-        found.push({ x, y, s: (wood * 2 + rock) * 100000 + fromRoad[land.key(x, y)]! * 1000 + pick(seed, `cave:${n}`, at(x, y), 1000) });
-      }
+    let door: Door | undefined;
+    for (let f = 0; f < DOOR_FORMS.length && !door; f++) {
+      const form = DOOR_FORMS[(first + n + f) % DOOR_FORMS.length]!;
+      if (used.has(form) && used.size < DOOR_FORMS.length) continue;
+      door = placeDoor(seed, land, story, form, n, fromRoad, sources, entries, placed, ruinsAt);
     }
-    found.sort((a, b) => b.s - a.s);
-    let placed = false;
-    const failed: Tile[] = [];
-    for (const { x: mx, y: my } of found) {
-      if (failed.length >= 12) break;
-      if (near(failed, mx, my, 8)) continue;
-      land.set(mx, my, G.grove);
-      const dist = land.distances(sources);
-      // the way in is the secret path: a long winding corridor carved through the wood
-      if (dist[land.key(mx, my)] === -1 && !join(land, [[mx, my]], dist, 48)) {
-        land.set(mx, my, G.forest);
-        failed.push([mx, my]);
+    if (!door) break;
+    used.add(door.form as DoorForm);
+    placed.push(door);
+  }
+  return placed;
+}
+
+/** The best site of the form, deep and far from the roads, that a way can be carved to; the door, its hint and its step tile. */
+function placeDoor(
+  seed: Seed,
+  land: Land,
+  story: StoryDef,
+  form: DoorForm,
+  n: number,
+  fromRoad: Int32Array,
+  sources: readonly Tile[],
+  entries: readonly Tile[],
+  placed: readonly Door[],
+  ruinsAt: readonly Tile[],
+): Door | undefined {
+  const others = placed.map((d) => [d.x, d.y] as Tile);
+  const found: { x: number; y: number; s: number }[] = [];
+  for (let y = land.y0 + 6; y < land.y0 + land.h - 6; y++) {
+    for (let x = land.x0 + 6; x < land.x0 + land.w - 6; x++) {
+      if (land.level(x, y) > 2 || land.blocked.has(land.key(x, y)) || land.crossings.has(land.key(x, y))) continue;
+      const d = fromRoad[land.key(x, y)]!;
+      if (d < DOOR_FROM_ROAD[form] || near(others, x, y, 14) || near(entries, x, y, 16)) continue;
+      const site = siteOf(land, x, y, ruinsAt);
+      if (!fitsForm(form, land.get(x, y), site)) continue;
+      found.push({ x, y, s: (site.wood * 2 + site.rock) * 100000 + Math.min(d, 60) * 1000 + pick(seed, `door:${n}`, at(x, y), 1000) });
+    }
+  }
+  found.sort((a, b) => b.s - a.s);
+  const failed: Tile[] = [];
+  for (const { x, y } of found) {
+    if (failed.length >= 12) break;
+    if (near(failed, x, y, 8)) continue;
+    const was = land.get(x, y);
+    if (was === G.forest) land.set(x, y, G.grove);
+    let dist = land.distances(sources);
+    // the way in is the secret path: a long winding corridor carved through the wood
+    if (dist[land.key(x, y)] === -1) {
+      if (!join(land, [[x, y]], dist, 48)) {
+        land.set(x, y, was);
+        failed.push([x, y]);
         continue;
       }
-      land.addProp(prop(CAVE_MOUTH, mx, my, false, { id: `core/${name(story)}-cave-${n}` }));
-      land.marks.push({ kind: 'cave', x: mx, y: my, label: `cave mouth ${n}` });
-      mouths.push([mx, my]);
-      placed = true;
+      dist = land.distances(sources);
+    }
+    let step: Tile | undefined;
+    for (const [dx, dy] of STEPS4) {
+      const d = land.walkable(x + dx, y + dy) ? dist[land.key(x + dx, y + dy)]! : -1;
+      if (d >= 0 && (!step || d < dist[land.key(step[0], step[1])]!)) step = [x + dx, y + dy];
+    }
+    if (!step) {
+      land.set(x, y, was);
+      failed.push([x, y]);
+      continue;
+    }
+    land.clearProps(x, y);
+    land.addProp(prop(DOOR_SPRITE[form], x, y, false, { id: doorId(story, n) }));
+    hint(seed, land, form, x, y, step, n);
+    land.marks.push({ kind: 'cave', x, y, label: `door ${n}: ${form}` });
+    return { n, form, x, y, step };
+  }
+  return undefined;
+}
+
+/** The hint at a door, never the same for two forms: a trail that ends, a ring of mushrooms, odd grass, pebbles and timber, glow on the bank. */
+function hint(seed: Seed, land: Land, form: DoorForm, x: number, y: number, step: Tile, n: number): void {
+  const free = (tx: number, ty: number) => land.walkable(tx, ty) && land.get(tx, ty) !== G.path && !land.props.some((p) => p.x === tx && p.y === ty);
+  const lay = (sprite: string, tx: number, ty: number) => {
+    if (free(tx, ty)) land.addProp(prop(sprite, tx, ty, false));
+  };
+  switch (form) {
+    case 'cave': {
+      // a worn trail that ends at the mouth: three or four path tiles straight on from the step, where no path lies already
+      const dx = step[0] - x;
+      const dy = step[1] - y;
+      for (let i = 0; i < 3 + pick(seed, `trail:${n}`, 0, 2); i++) {
+        const tx = step[0] + dx * i;
+        const ty = step[1] + dy * i;
+        const ch = land.inside(tx, ty) ? land.get(tx, ty) : G.mountain;
+        if (ch !== G.meadow && ch !== G.grove && ch !== G.flowers) break;
+        if (STEPS4.some(([sx, sy]) => land.inside(tx + sx, ty + sy) && land.get(tx + sx, ty + sy) === G.path && !(tx + sx === step[0] + dx * (i - 1) && ty + sy === step[1] + dy * (i - 1)))) break;
+        land.clearProps(tx, ty);
+        land.set(tx, ty, G.path);
+      }
       break;
     }
-    if (!placed) return;
+    case 'hollow':
+      for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [2, -2], [-2, 2], [2, 2]] as const) {
+        if (chance(seed, `ring:${n}`, at(x + dx, y + dy), 750)) lay(chance(seed, `ring-glow:${n}`, at(x + dx, y + dy), 400) ? 'props/glow_mushrooms' : 'props/mushrooms_small', x + dx, y + dy);
+      }
+      break;
+    case 'well':
+      for (const [dx, dy] of STEPS4) if (!(x + dx === step[0] && y + dy === step[1])) lay('props/grass_tall', x + dx, y + dy);
+      lay('props/flowers_white', x - 1, y - 1);
+      lay('props/flowers_white', x + 1, y + 1);
+      break;
+    case 'cellar':
+      lay('props/pebbles', x - 1, y);
+      lay('props/pebbles', x + 1, y);
+      lay('props/fallen_branches', x, y - 1);
+      break;
+    case 'fall': {
+      let laid = 0;
+      for (let dy = -2; dy <= 2 && laid < 3; dy++) {
+        for (let dx = -2; dx <= 2 && laid < 3; dx++) {
+          if ((dx === 0 && dy === 0) || !land.inside(x + dx, y + dy)) continue;
+          const ch = land.get(x + dx, y + dy);
+          if ((ch === G.bank || ch === G.grove) && chance(seed, `fall-glow:${n}`, at(x + dx, y + dy), 600) && free(x + dx, y + dy)) {
+            lay('props/glow_mushrooms', x + dx, y + dy);
+            laid++;
+          }
+        }
+      }
+      break;
+    }
   }
 }
 
@@ -736,6 +896,7 @@ function measure(land: Land, story: StoryDef, entries: readonly Tile[]): Measure
     longestBridgeRun,
     cavesAsked: story.caves,
     caves: land.marks.filter((m) => m.kind === 'cave').length,
+    doorForms: land.marks.filter((m) => m.kind === 'cave').map((m) => m.label.split(': ')[1] ?? ''),
     woodSpread: [least, most],
     farthestSteps: farthest,
     treeKinds,

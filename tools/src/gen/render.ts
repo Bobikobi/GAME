@@ -1,7 +1,7 @@
 /**
  * The picture of a generated land at phone size (390 by 844): the whole land from above at a few pixels a tile,
- * then two windows drawn with the kit's own tiles and props, one on the clearing and one on a cave mouth, each
- * marked on the overview. No text: the measure is printed beside it. The kit art is read once and scaled with
+ * then two windows drawn with the kit's own tiles and props, one on the clearing and one on a hidden door, each
+ * marked on the overview; the land below gets the same frame, dark (`renderBelow`). No text: the measure is printed beside it. The kit art is read once and scaled with
  * nearest neighbour; a prop stands bottom-centred on its tile at the kit's scale, the way the game draws it.
  */
 import { readFileSync } from 'node:fs';
@@ -48,7 +48,25 @@ const COLOURS: Record<string, RGB> = {
   [G.rubble]: [112, 106, 100],
   [G.mountain]: [122, 122, 128],
 };
-const MARKS: Record<string, RGB> = { cave: [255, 64, 220], ruin: [255, 255, 255], clearing: [255, 220, 60], entry: [80, 230, 255], spring: [120, 200, 255], lake: [120, 200, 255] };
+const MARKS: Record<string, RGB> = {
+  cave: [255, 64, 220],
+  ruin: [255, 255, 255],
+  clearing: [255, 220, 60],
+  entry: [80, 230, 255],
+  spring: [120, 200, 255],
+  lake: [120, 200, 255],
+  arrival: [255, 64, 220],
+  secret: [255, 220, 60],
+  pool: [120, 200, 255],
+};
+/** The overview's colours below the ground: the rock near black, the floor a dim grey-brown, the water deep. */
+const DARK_COLOURS: Record<string, RGB> = {
+  [G.mountain]: [34, 32, 36],
+  [G.ruinFloor]: [118, 108, 96],
+  [G.rubble]: [80, 74, 70],
+  [G.water]: [40, 70, 120],
+  [G.bank]: [120, 110, 84],
+};
 
 class Canvas {
   readonly data: Uint8Array;
@@ -171,7 +189,7 @@ function groundSprite(gen: Generated, ch: string, x: number, y: number): string 
   }
 }
 
-function drawWindow(canvas: Canvas, kit: Kit, gen: Generated, centre: Tile, dx: number, dy: number): void {
+function drawWindow(canvas: Canvas, kit: Kit, gen: Generated, centre: Tile, dx: number, dy: number, dark = false): void {
   const { land } = gen;
   const [ww, wh] = WINDOW;
   const x0 = Math.min(Math.max(land.x0, centre[0] - (ww >> 1)), land.x0 + land.w - ww);
@@ -186,9 +204,10 @@ function drawWindow(canvas: Canvas, kit: Kit, gen: Generated, centre: Tile, dx: 
       const px = dx + (x - x0) * TILE;
       const py = dy + (y - y0) * TILE;
       const lv = Math.min(3, land.level(x, y));
-      const shade = ch === G.mountain ? 236 : 200 + lv * 18;
+      // below the ground the rock is near black and the floor lit only by what glows: the lamp's reach is the client's
+      const shade = dark ? (ch === G.mountain ? 48 : 120) : ch === G.mountain ? 236 : 200 + lv * 18;
       if (img && def) canvas.blit(img, 0, 0, def.w, def.h, px, py, TILE, TILE, shade);
-      else canvas.fill(px, py, TILE, TILE, COLOURS[ch] ?? [255, 0, 255]);
+      else canvas.fill(px, py, TILE, TILE, (dark ? DARK_COLOURS[ch] : undefined) ?? COLOURS[ch] ?? [255, 0, 255]);
       // a dark lip where the ground drops to the south or the east: the terrace reads
       if (land.inside(x, y + 1) && land.level(x, y + 1) < land.level(x, y)) canvas.fill(px, py + TILE - 2, TILE, 2, [30, 26, 20]);
       if (land.inside(x + 1, y) && land.level(x + 1, y) < land.level(x, y)) canvas.fill(px + TILE - 2, py, 2, TILE, [30, 26, 20]);
@@ -207,22 +226,22 @@ function drawWindow(canvas: Canvas, kit: Kit, gen: Generated, centre: Tile, dx: 
     const ph = Math.max(2, Math.round(((def.h / density) * scale * TILE) / 16));
     const cx = dx + (p.x - x0) * TILE + (TILE >> 1);
     const bottom = dy + (p.y - y0 + 1) * TILE;
-    canvas.blit(img, 0, 0, def.w, def.h, cx - (pw >> 1), bottom - ph, pw, ph);
+    canvas.blit(img, 0, 0, def.w, def.h, cx - (pw >> 1), bottom - ph, pw, ph, dark && !name.includes('glow') ? 150 : 255);
   }
   canvas.unclip();
   for (const m of land.marks) {
     if (m.x < x0 || m.x >= x0 + ww || m.y < y0 || m.y >= y0 + wh) continue;
-    if (m.kind !== 'cave' && m.kind !== 'entry') continue;
+    if (m.kind !== 'cave' && m.kind !== 'entry' && m.kind !== 'arrival' && m.kind !== 'secret') continue;
     canvas.box(dx + (m.x - x0) * TILE - 2, dy + (m.y - y0) * TILE - 2, TILE + 4, TILE + 4, MARKS[m.kind]!);
   }
   canvas.box(dx - 1, dy - 1, ww * TILE + 2, wh * TILE + 2, [90, 90, 96]);
 }
 
-function drawOverview(canvas: Canvas, land: Land, dx: number, dy: number, s: number, windows: readonly Tile[]): void {
+function drawOverview(canvas: Canvas, land: Land, dx: number, dy: number, s: number, windows: readonly Tile[], dark = false): void {
   for (let y = land.y0; y < land.y0 + land.h; y++) {
     for (let x = land.x0; x < land.x0 + land.w; x++) {
       const ch = land.get(x, y);
-      const [r, g, b] = COLOURS[ch] ?? [255, 0, 255];
+      const [r, g, b] = (dark ? DARK_COLOURS[ch] : undefined) ?? COLOURS[ch] ?? [255, 0, 255];
       const lv = Math.min(3, land.level(x, y));
       const k = ch === G.mountain ? 70 + lv * 6 : 82 + lv * 8;
       canvas.fill(dx + (x - land.x0) * s, dy + (y - land.y0) * s, s, s, [(r * k) / 100, (g * k) / 100, (b * k) / 100]);
@@ -230,8 +249,8 @@ function drawOverview(canvas: Canvas, land: Land, dx: number, dy: number, s: num
   }
   for (const m of land.marks) {
     const c = MARKS[m.kind];
-    if (!c || m.kind === 'lake' || m.kind === 'spring') continue;
-    const r = m.kind === 'cave' ? 3 : 2;
+    if (!c || m.kind === 'lake' || m.kind === 'spring' || m.kind === 'pool') continue;
+    const r = m.kind === 'cave' || m.kind === 'arrival' ? 3 : 2;
     canvas.fill(dx + (m.x - land.x0) * s - r, dy + (m.y - land.y0) * s - r, 2 * r + s, 2 * r + s, c);
   }
   for (const [wx, wy] of windows) {
@@ -274,20 +293,35 @@ function drawSpawns(canvas: Canvas, land: Land, spawns: readonly Spawn[], dx: nu
 }
 
 export function render(gen: Generated, spawns: readonly Spawn[] = [], dangerOf: (s: Spawn) => number = (s) => Math.min(2, s.danger)): Buffer {
+  return draw(gen, focusTiles(gen), spawns, dangerOf, false);
+}
+
+/** The land below in the same frame: its overview dark, a window on the first way up and one on the pool or a secret. */
+export function renderBelow(gen: Generated): Buffer | undefined {
+  if (!gen.below) return undefined;
+  const land = gen.below.land;
+  const find = (kind: string) => land.marks.find((m) => m.kind === kind);
+  const a = find('arrival') ?? { x: land.x0 + (land.w >> 1), y: land.y0 + (land.h >> 1) };
+  // the second window far from the first: the farthest secret, else the farthest other way up, else the pool
+  const far = (kind: string) => land.marks.filter((m) => m.kind === kind).sort((m, n) => Math.abs(n.x - a.x) + Math.abs(n.y - a.y) - (Math.abs(m.x - a.x) + Math.abs(m.y - a.y)))[0];
+  const b = far('secret') ?? land.marks.find((m) => m.kind === 'arrival' && (m.x !== a.x || m.y !== a.y)) ?? find('pool') ?? a;
+  return draw({ ...gen, land }, [[a.x, a.y], [b.x, b.y]], [], () => 0, true);
+}
+
+function draw(gen: Generated, windows: readonly Tile[], spawns: readonly Spawn[], dangerOf: (s: Spawn) => number, dark: boolean): Buffer {
   const canvas = new Canvas(WIDTH, HEIGHT);
   canvas.fill(0, 0, WIDTH, HEIGHT, [28, 28, 32]);
   const { land } = gen;
-  const windows = focusTiles(gen);
   const s = Math.max(1, Math.min(3, Math.floor(386 / Math.max(land.w, land.h))));
   const ox = (WIDTH - land.w * s) >> 1;
-  drawOverview(canvas, land, ox, 8, s, windows);
+  drawOverview(canvas, land, ox, 8, s, windows, dark);
   drawSpawns(canvas, land, spawns, ox, 8, s, dangerOf);
   let y = 8 + land.h * s + 12;
   const kit = new Kit();
   const wx = (WIDTH - WINDOW[0] * TILE) >> 1;
   for (const centre of windows) {
     if (y + WINDOW[1] * TILE > HEIGHT) break;
-    drawWindow(canvas, kit, gen, centre, wx, y);
+    drawWindow(canvas, kit, gen, centre, wx, y, dark);
     y += WINDOW[1] * TILE + 12;
   }
   return canvas.png();

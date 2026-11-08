@@ -33,7 +33,7 @@ export const STEPS4: readonly Tile[] = [
 ];
 
 export interface Mark {
-  kind: 'cave' | 'clearing' | 'ruin' | 'entry' | 'lake' | 'spring';
+  kind: 'cave' | 'clearing' | 'ruin' | 'entry' | 'lake' | 'spring' | 'door' | 'arrival' | 'chamber' | 'secret' | 'pool';
   x: number;
   y: number;
   label: string;

@@ -4,11 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { chunkProblems } from '../src/chunks';
 import { cut } from '../src/gen/cut';
 import { G, Land, type Tile } from '../src/gen/grid';
-import { CAVE_MOUTH, CROSSING, generate } from '../src/gen/land';
+import { WAY_UP } from '../src/gen/below';
+import { CROSSING, DOOR_FORMS, DOOR_SPRITE, generate } from '../src/gen/land';
 import { fbm, valueNoise } from '../src/gen/noise';
 import { BRIDGE_RUN_MAX, RUN_MAX, longestRuns, repair, straightRuns } from '../src/gen/paths';
 import { storySeed } from '../src/gen/rand';
-import { focusTiles, render } from '../src/gen/render';
+import { focusTiles, render, renderBelow } from '../src/gen/render';
 import { HUB_CLEAR, affixProblems, affixes, fields, kindProblems, kindsOf, spawn, tagOf } from '../src/gen/spawn';
 import { atmosphereCards, atmosphereOf, atmosphereProblems } from '../src/gen/atmosphere';
 import { type StoryDef, parseStory, storyProblems } from '../src/gen/story';
@@ -26,6 +27,7 @@ const fixture: StoryDef = {
   caves: 2,
   entries: ['s', 'w'],
   ruins: 1,
+  below: { cx: 2, cy: 12 },
 };
 
 describe('noise', () => {
@@ -131,23 +133,59 @@ describe('generate', () => {
     expect(crossings.every((p) => p.sprite.endsWith(CROSSING))).toBe(true);
   });
 
-  it('hides its cave mouths deep in the wood, far from the roads and from each other, each reached on foot', () => {
-    const mouths = land.marks.filter((m) => m.kind === 'cave');
-    expect(mouths.length).toBe(fixture.caves);
+  it('hides its doors far from the roads and from each other, each of another form, each reached on foot and hinted at', () => {
+    const marks = land.marks.filter((m) => m.kind === 'cave');
+    expect(marks.length).toBe(fixture.caves);
+    expect(gen.doors.length).toBe(fixture.caves);
+    expect(new Set(gen.doors.map((d) => d.form)).size).toBe(Math.min(fixture.caves, DOOR_FORMS.length));
     const roads = land.roads.flat();
-    for (const m of mouths) {
-      expect(land.walkable(m.x, m.y)).toBe(true);
-      let wall = 0;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && [G.forest, G.mountain].includes(land.get(m.x + dx, m.y + dy) as typeof G.forest)) wall++;
-      expect(wall).toBeGreaterThanOrEqual(5);
-      expect(Math.min(...roads.map(([x, y]) => Math.abs(x - m.x) + Math.abs(y - m.y)))).toBeGreaterThanOrEqual(8);
-      const prop = land.props.find((p) => p.x === m.x && p.y === m.y);
-      expect(prop?.sprite.endsWith(CAVE_MOUTH)).toBe(true);
-      expect(prop?.id).toMatch(/^core\/test-wood-cave-\d$/);
+    for (const d of gen.doors) {
+      expect(land.walkable(d.x, d.y)).toBe(true);
+      expect(land.walkable(d.step[0], d.step[1])).toBe(true);
+      expect(Math.abs(d.step[0] - d.x) + Math.abs(d.step[1] - d.y)).toBe(1);
+      expect(Math.min(...roads.map(([x, y]) => Math.abs(x - d.x) + Math.abs(y - d.y)))).toBeGreaterThanOrEqual(d.form === 'cellar' ? 3 : 6);
+      const prop = land.props.find((p) => p.x === d.x && p.y === d.y);
+      expect(prop?.sprite.endsWith(DOOR_SPRITE[d.form as keyof typeof DOOR_SPRITE])).toBe(true);
+      expect(prop?.solid).toBe(false);
+      expect(prop?.id).toBe(`core/test-wood-door-${d.n}`);
+      // the hint: something laid within two tiles that is not the door itself, or a worn trail from the step
+      const hinted = land.props.some((p) => p !== prop && Math.abs(p.x - d.x) <= 2 && Math.abs(p.y - d.y) <= 2) || land.get(d.step[0], d.step[1]) === G.path;
+      expect(hinted).toBe(true);
     }
-    for (let i = 1; i < mouths.length; i++) {
-      expect(Math.max(Math.abs(mouths[i]!.x - mouths[0]!.x), Math.abs(mouths[i]!.y - mouths[0]!.y))).toBeGreaterThan(12);
+    for (let i = 1; i < gen.doors.length; i++) {
+      expect(Math.max(Math.abs(gen.doors[i]!.x - gen.doors[0]!.x), Math.abs(gen.doors[i]!.y - gen.doors[0]!.y))).toBeGreaterThan(12);
     }
+  });
+
+  it('leads every door down to the land below and back: a portal each way, every floor tile reached', () => {
+    const below = gen.below!;
+    expect(below).toBeDefined();
+    expect(below.land.x0).toBe(2 * 64);
+    expect(below.land.y0).toBe(12 * 64);
+    expect(below.measure.unreachable).toBe(0);
+    expect(below.measure.chambers).toBe(fixture.caves);
+    expect(below.arrivals.length).toBe(gen.doors.length);
+    expect(below.measure.span).toBeGreaterThan(20);
+    expect(below.measure.secrets + (below.measure.pool ? 1 : 0)).toBeGreaterThan(0);
+    gen.doors.forEach((d, i) => {
+      const door = land.props.find((p) => p.id === `core/test-wood-door-${d.n}`)!;
+      const [ax, ay] = below.arrivals[i]!;
+      const [sx, sy] = below.steps[i]!;
+      // the door lands the player beside the way up, never on it: one way per step, no chain
+      expect(door.portal).toEqual({ x: sx, y: sy });
+      expect(Math.abs(sx - ax) + Math.abs(sy - ay)).toBe(1);
+      expect(below.land.walkable(ax, ay)).toBe(true);
+      expect(below.land.walkable(sx, sy)).toBe(true);
+      expect(below.land.props.some((p) => p.x === sx && p.y === sy && p.portal)).toBe(false);
+      const up = below.land.props.find((p) => p.x === ax && p.y === ay)!;
+      expect(up.sprite.endsWith(WAY_UP)).toBe(true);
+      expect(up.solid).toBe(false);
+      expect(up.id).toBe(`core/test-wood-up-${d.n}`);
+      expect(up.portal).toEqual({ x: d.step[0], y: d.step[1] });
+    });
+    for (const p of below.land.props) expect([G.mountain, G.water].includes(below.land.get(p.x, p.y) as typeof G.water)).toBe(false);
+    const again = generate(fixture).below!;
+    expect(again.land.ground.join('')).toBe(below.land.ground.join(''));
   });
 
   it('varies the wood: denser and sparser blocks, more than one tree', () => {
@@ -169,27 +207,38 @@ describe('generate', () => {
     }
   });
 
-  it('cuts into chunk files the shape check and the schema accept', () => {
-    const files = cut(gen);
-    expect(files.length).toBe(fixture.size.w * fixture.size.h);
+  it('cuts into chunk files the shape check and the schema accept, the land below among them, the spots in theirs', () => {
+    const { spawns } = spawn(gen);
+    const files = cut(gen, spawns);
+    expect(files.length).toBe(fixture.size.w * fixture.size.h + gen.below!.land.w / 64);
+    let spots = 0;
     for (const f of files) {
       expect(validateFile(f)).toEqual([]);
       expect(chunkProblems(f.chunk)).toEqual([]);
       expect(f.chunk.x % 64).toBe(0);
       expect(f.chunk.levels?.length).toBe(64);
+      for (const s of f.chunk.spawns ?? []) {
+        expect(s.kind.startsWith('core/')).toBe(true);
+        expect(s.x >= 0 && s.x < 64 && s.y >= 0 && s.y < 64).toBe(true);
+        if (s.route) expect(s.route.every(([x, y]) => x >= f.chunk.x - 64 && x < f.chunk.x + 128 && y >= f.chunk.y - 64 && y < f.chunk.y + 128)).toBe(true);
+        spots++;
+      }
     }
+    expect(spots).toBe(spawns.length);
     const ids = files.flatMap((f) => f.chunk.props.map((p) => p.id).filter(Boolean));
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('draws the phone-size picture with the clearing and a cave in its windows', () => {
+  it('draws the phone-size picture with the clearing and a door in its windows, and the land below dark in its own', () => {
     const [a, b] = focusTiles(gen);
     expect(land.marks.some((m) => m.kind === 'clearing' && m.x === a[0] && m.y === a[1])).toBe(true);
     expect(land.marks.some((m) => m.kind === 'cave' && m.x === b[0] && m.y === b[1])).toBe(true);
-    const png = render(gen);
-    expect(png.subarray(1, 4).toString()).toBe('PNG');
-    expect(png.readUInt32BE(16)).toBe(390);
-    expect(png.readUInt32BE(20)).toBe(844);
+    for (const png of [render(gen), renderBelow(gen)!]) {
+      expect(png.subarray(1, 4).toString()).toBe('PNG');
+      expect(png.readUInt32BE(16)).toBe(390);
+      expect(png.readUInt32BE(20)).toBe(844);
+    }
+    expect(renderBelow({ ...gen, below: undefined })).toBeUndefined();
   });
 });
 

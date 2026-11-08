@@ -171,6 +171,8 @@ export type GameEvent =
   | { e: 'hurt'; by: string; id?: string; hp: number }
   /** health reached zero (G33): the player fell at `from`, lost `lost` (what the outing brought), and woke at `at` */
   | { e: 'fall'; from: Tile; at: Tile; lost: { item: string; qty: number }[] }
+  /** the player stepped onto a way through (a hidden door down, the way back up) at `from` and stands at `at`; `id` is the prop */
+  | { e: 'through'; id: string; from: Tile; at: Tile }
   /** a predator noticed the player and a hunt began: once, at the step that starts it; `id` is the predator prop */
   | { e: 'seen'; id: string }
   /** a hunt ended because the player reached a safe place (G30), not at dawn, in a fall or at a walk-out (G49); `bitten` when it bit at least once */
@@ -1647,13 +1649,17 @@ function checkTravel(ctx: Ctx, target: Tile, gait: Gait = 'walk'): void {
  * hunt and the outing, a hazard that wakes under their feet hurts, and at zero
  * health they fall. Returns true when they fell: that step does nothing else.
  */
-function arrive(ctx: Ctx, at: Tile, gait: Gait = 'walk'): boolean {
+function arrive(ctx: Ctx, to: Tile, gait: Gait = 'walk'): boolean {
   const { b, s, tick } = ctx;
   const p = s.player;
   const before = p.at;
   chaseBites(ctx);
   // a bite that took the last of the health lands where the player stood, before they reach any safe tile
   if (fallIfDown(ctx)) return true;
+  // a way through under the foot: the player stands at its far tile, and the rest of the step happens there
+  const way = wayThrough(b, s, to);
+  const at: Tile = way ? way.to : to;
+  if (way) ctx.events.push({ e: 'through', id: way.id, from: [to[0], to[1]], at: [at[0], at[1]] });
   p.at = [at[0], at[1]];
   p.movedAt = tick;
   gradeEvents(ctx, before);
@@ -1679,6 +1685,21 @@ function arrive(ctx: Ctx, at: Tile, gait: Gait = 'walk'): boolean {
     }
   }
   return fallIfDown(ctx);
+}
+
+/**
+ * The way through under a tile (OPEN_WORLD: a hidden door down, the way back up): a non-solid prop with an id
+ * and a `portal` whose footprint holds the tile, when a player can stand on the far tile. One way per step,
+ * never chained: a way whose far tile is another way leaves the player standing on it, and the content check
+ * refuses such a far tile so a creator lands the player beside a way, not on it.
+ */
+function wayThrough(b: Bundle, s: State, at: Tile): { id: string; to: Tile } | undefined {
+  for (const prop of b.map.props) {
+    if (prop.portal === undefined || prop.solid || prop.id === undefined || !inRect(at[0], at[1], prop)) continue;
+    const to: Tile = [prop.portal.x, prop.portal.y];
+    return walkableFor(b)(to[0], to[1], s.player) ? { id: prop.id, to } : undefined;
+  }
+  return undefined;
 }
 
 /**

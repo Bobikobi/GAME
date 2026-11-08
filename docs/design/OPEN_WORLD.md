@@ -485,9 +485,9 @@ Nothing is built on it until then. Its art side (grounds and height carried as d
 - **The discovery banner** (G63). It is UI frame and words (NEXT:21; pillar 2, GAME_RULES.md:36-37). Recommended: two or three full-frame stills (1920 x 1080, STYLE 1) first.
 - **Caves and interiors.**
   - They are planned only on the 3D track, as GLB scenes behind portals (docs/3d/world-notes.md:22-29).
-  - In 2D they need a kernel portal, which is dec 1345-1346's question.
+  - In 2D a way through exists since 8.11: a non-solid prop with an id and a `portal` (the world tile the player stands on instead; `kernel/src/step.ts` `wayThrough`, event `through`, one way per step and never chained; `checkPortals` proves the far tile). The map generator's hidden doors and the land below use it (DECISIONS 2026-11-08). A room drawn as its own scene is still dec 1345-1346's question.
   - The shop interior exists as stills only (dec 1333).
-  - Recommended: leave both until that question is asked.
+  - Recommended: leave the scene rooms until that question is asked.
 - **Region size.** The earlier 64 x 64 region copied a 3D example (world-notes.md:11-13). Recommended: chunks fixed at 64 tiles, regions sized by their content.
 - **Trait, skill and tool gates, and shortcuts** (G58, G61). This is dec 1345-1346's "door that opens" question, with dec 1094 as the bar.
 - **A second camp**, in a far town (G65). It needs a camp reference in the schema and state per camp.
