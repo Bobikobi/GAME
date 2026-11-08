@@ -2681,6 +2681,21 @@ export const STORY_WORLDS = ['human', 'elf', 'undead'] as const;
 /** The sides of a land a road may come in from. */
 export const SIDES = ['n', 'e', 's', 'w'] as const;
 
+/** The kinds of settlement a story may ask for, as the big games sort them: from a walled city to a lone tower. */
+export const SETTLEMENT_KINDS = ['city', 'town', 'village', 'hamlet', 'farm', 'outpost', 'keep'] as const;
+
+/** One settlement of a land: its kind, and how big within its kind. */
+const Settlement = Type.Object(
+  {
+    kind: Type.Union(SETTLEMENT_KINDS.map((k) => Type.Literal(k)), {
+      description:
+        'What stands there: a city (walls and gates, a main street, districts of narrow streets), a town (a market square and streets, a wall perhaps), a village (houses round a square), a hamlet (a few houses), a farm (a house, a barn, fields), an outpost (a tower and a fence), a keep (a wall and a hall on a height).',
+    }),
+    size: Type.Optional(Int(1, 3, 'Within its kind: 1 small, 2 the usual, 3 huge. Left out: 2.')),
+  },
+  { additionalProperties: false },
+);
+
 /**
  * A story: what the owner tells the generator about a land, as data (the owner, 8.11: "I give it a story and it
  * makes a beautiful map"). The generator (tools/src/gen, `pnpm gen`) reads it and writes the land's chunks; the
@@ -2717,6 +2732,13 @@ export const StoryBody = Type.Object(
     }),
     ruins: Type.Optional(Int(0, 6, 'Small ruins off the roads. Left out: 1.')),
     life: Type.Optional(Int(0, 100, 'How full of creatures the land is, as a share of the kinds\' caps: 0 empty, 100 at the cap. Left out: 25.')),
+    settlements: Type.Optional(
+      Type.Array(Settlement, {
+        maxItems: 8,
+        description:
+          'The settlements of the land, the largest first: the first stands at the hub where the roads meet, the rest the generator places apart from it and joins by road. Each world builds them its own way (the owner, 8.11: varied, in many sizes, as the big games do; a human city huge in its own right, with great walls, old Dubrovnik). Left out: a clearing at the hub.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -2776,7 +2798,7 @@ export const SchoolFile = record('school', 'school', SchoolBody);
 export const StoryFile = record('story', 'story', StoryBody);
 
 export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school', 'story'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,
