@@ -9,6 +9,8 @@ import { fbm, valueNoise } from '../src/gen/noise';
 import { BRIDGE_RUN_MAX, RUN_MAX, longestRuns, repair, straightRuns } from '../src/gen/paths';
 import { storySeed } from '../src/gen/rand';
 import { focusTiles, render } from '../src/gen/render';
+import { HUB_CLEAR, affixProblems, affixes, fields, kindProblems, kindsOf, spawn, tagOf } from '../src/gen/spawn';
+import { atmosphereCards, atmosphereOf, atmosphereProblems } from '../src/gen/atmosphere';
 import { type StoryDef, parseStory, storyProblems } from '../src/gen/story';
 
 const fixture: StoryDef = {
@@ -188,5 +190,120 @@ describe('generate', () => {
     expect(png.subarray(1, 4).toString()).toBe('PNG');
     expect(png.readUInt32BE(16)).toBe(390);
     expect(png.readUInt32BE(20)).toBe(844);
+  });
+});
+
+describe('spawn', () => {
+  const gen = generate(fixture);
+  const { land } = gen;
+  const { spawns, measure } = spawn(gen);
+  const kinds = kindsOf(fixture.world);
+  const f = fields(land);
+  const kindOf = (id: string) => kinds.find((k) => k.id === id)!;
+
+  it('reads sound tables and names a bad row', () => {
+    for (const world of ['human', 'elf', 'undead'] as const) expect(kindsOf(world).length).toBeGreaterThanOrEqual(9);
+    expect(kindProblems({ ...kindOf('core/lynx'), danger: 2, size: 'small' })).toContain('danger: a hunter is medium or large');
+    expect(kindProblems({ ...kindOf('core/dove'), group: { class: 'pack', bands: [100, 0, 0, 0] } })).toContain('group.class: a pack is hunters or defenders, not danger 0');
+    expect(affixes().length).toBeGreaterThan(4);
+    expect(affixProblems({ id: 'Fast', worlds: [], ranks: ['regular'], note: 1 }).length).toBe(4);
+  });
+
+  it('is the same twice and places most kinds', () => {
+    expect(JSON.stringify(spawn(gen).spawns)).toBe(JSON.stringify(spawns));
+    expect(measure.kinds).toBeGreaterThanOrEqual(8);
+    expect(measure.spots).toBeGreaterThan(20);
+  });
+
+  it('stands every kind on its habitat, off the roads, clear of the hub (HUNTING 8)', () => {
+    for (const s of spawns) {
+      const k = kindOf(s.kind);
+      if (s.shape !== 'patrol') expect(k.habitat).toContain(tagOf(land.get(s.x, s.y)));
+      expect(f.hubPlain[land.key(s.x, s.y)]).toBeGreaterThan(HUB_CLEAR);
+      expect(f.fromRoad[land.key(s.x, s.y)]).toBeGreaterThanOrEqual(2);
+      if (k.drinks) expect(f.water[land.key(s.x, s.y)]).toBeLessThanOrEqual(k.roam);
+      if (k.near === 'rock') expect(f.rock[land.key(s.x, s.y)]).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it('puts no hunter nearer than danger 2 and no defender on the hub ring (G64, G30)', () => {
+    for (const s of spawns) expect(s.danger).toBeGreaterThanOrEqual(kindOf(s.kind).danger);
+    expect(spawns.some((s) => kindOf(s.kind).danger === 2)).toBe(true);
+  });
+
+  it('keeps one anchor a tile, anchors apart, and every kind under its cap', () => {
+    const tiles = new Set(spawns.map((s) => `${s.x},${s.y}`));
+    expect(tiles.size).toBe(spawns.length);
+    for (const a of spawns) {
+      for (const b of spawns) {
+        if (a === b) continue;
+        expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(2);
+      }
+    }
+    for (const [id, { standing, mean }] of Object.entries(measure.load)) {
+      expect(mean, id).toBeLessThanOrEqual(Math.max(standing, 1) * 1.5 + 2);
+    }
+  });
+
+  it('crowns at most one boss, the strongest hunter, and dresses the ranks from the world list', () => {
+    const bosses = spawns.filter((s) => s.rank === 'boss');
+    expect(bosses.length).toBeLessThanOrEqual(1);
+    if (bosses[0]) {
+      const top = Math.max(...spawns.filter((s) => kindOf(s.kind).danger === 2 && s.danger >= 2).map((s) => kindOf(s.kind).tier));
+      expect(kindOf(bosses[0].kind).tier).toBe(top);
+      expect(bosses[0].affixes.length).toBe(2);
+    }
+    const table = affixes();
+    for (const s of spawns) {
+      if (s.rank === 'regular') expect(s.affixes).toEqual([]);
+      else expect(s.affixes.length).toBeGreaterThanOrEqual(1);
+      expect(new Set(s.affixes).size).toBe(s.affixes.length);
+      for (const id of s.affixes) {
+        const a = table.find((x) => x.id === id)!;
+        expect(a.worlds).toContain(fixture.world);
+        expect(a.ranks).toContain(s.rank);
+      }
+    }
+    expect(spawns.filter((s) => s.rank === 'rare').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shapes: a lone kind stands alone, a camp has a leader, a patrol walks road tiles end to end', () => {
+    for (const s of spawns) {
+      const k = kindOf(s.kind);
+      if (s.shape === 'lone') expect(s.count).toEqual([1, 1]);
+      if (k.group.class === 'solitary' && s.rank !== 'boss') expect(s.shape).toBe('lone');
+      if (s.shape === 'camp') {
+        expect(s.leader).toBe(s.kind);
+        expect(s.rank).not.toBe('regular');
+      }
+      if (s.shape === 'patrol') {
+        expect(s.route!.length).toBeGreaterThanOrEqual(8);
+        for (let i = 1; i < s.route!.length; i++) {
+          const [ax, ay] = s.route![i - 1]!;
+          const [bx, by] = s.route![i]!;
+          expect(Math.abs(ax - bx) + Math.abs(ay - by)).toBeLessThanOrEqual(2);
+          expect([G.path, G.bridge]).toContain(land.get(bx, by));
+        }
+      }
+      expect(s.count[0]).toBeLessThanOrEqual(s.count[1]);
+    }
+  });
+
+  it('draws the spots on the picture', () => {
+    const png = render(gen, spawns);
+    expect(png.readUInt32BE(16)).toBe(390);
+  });
+});
+
+describe('atmosphere', () => {
+  it('has a sound card for every world, mist only in the valley', () => {
+    const cards = atmosphereCards();
+    for (const world of ['human', 'elf', 'undead'] as const) expect(atmosphereProblems(cards[world])).toEqual([]);
+    expect(cards.elf.particles.map((p) => p.kind)).toContain('fireflies');
+    expect(cards.undead.night_depth).toBeGreaterThan(cards.elf.night_depth);
+    expect(cards.undead.sun.day[0]).toBeGreaterThan(cards.undead.sun.day[2]);
+    expect(atmosphereOf(fixture).fog_permille).toBe(0);
+    expect(atmosphereOf({ ...fixture, id: 'core/valley' }).fog_permille).toBeGreaterThan(0);
+    expect(atmosphereProblems({ ...cards.elf, particles: [{ kind: 'bees', density: 1 }] })[0]).toMatch(/unknown kind/);
   });
 });

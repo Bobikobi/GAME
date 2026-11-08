@@ -413,7 +413,7 @@ function lay(land: Land, road: readonly Tile[]): void {
 
 // ---------------------------------------------------------------- places
 
-function roadDistance(land: Land): Int32Array {
+export function roadDistance(land: Land): Int32Array {
   const sources: Tile[] = [];
   for (let y = land.y0; y < land.y0 + land.h; y++) {
     for (let x = land.x0; x < land.x0 + land.w; x++) {
@@ -421,7 +421,11 @@ function roadDistance(land: Land): Int32Array {
       if (ch === G.path || ch === G.bridge) sources.push([x, y]);
     }
   }
-  // plain four-way steps over every tile, solid or not: how far from the nearest road
+  return plainDistance(land, sources);
+}
+
+/** Plain four-way steps over every tile, solid or not: how far each tile lies from the nearest source (-1: none). */
+export function plainDistance(land: Land, sources: readonly Tile[]): Int32Array {
   const dist = new Int32Array(land.w * land.h).fill(-1);
   const queue: Tile[] = [];
   for (const [x, y] of sources) {

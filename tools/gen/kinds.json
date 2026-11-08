@@ -1,0 +1,870 @@
+{
+  "human": [
+    {
+      "id": "core/sparrow",
+      "name": "sparrow",
+      "family": "perching-birds",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "meadow"
+      ],
+      "hours": [
+        5,
+        20
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          0,
+          10,
+          50,
+          40
+        ]
+      },
+      "roam": 6,
+      "art": "still",
+      "ambient": true
+    },
+    {
+      "id": "core/crow",
+      "name": "carrion crow",
+      "family": "perching-birds",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "grove"
+      ],
+      "hours": [
+        5,
+        20
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          10,
+          50,
+          40,
+          0
+        ]
+      },
+      "roam": 10,
+      "art": "moving"
+    },
+    {
+      "id": "core/trout",
+      "name": "trout",
+      "family": "fish",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "water"
+      ],
+      "hours": [
+        5,
+        22
+      ],
+      "group": {
+        "class": "herd",
+        "bands": [
+          20,
+          40,
+          40,
+          0
+        ]
+      },
+      "roam": 6,
+      "art": "none"
+    },
+    {
+      "id": "core/hare",
+      "name": "hare",
+      "family": "burrowers",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "meadow"
+      ],
+      "hours": [
+        5,
+        20
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 8,
+      "art": "moving"
+    },
+    {
+      "id": "core/roe",
+      "name": "roe deer",
+      "family": "deer",
+      "size": "medium",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "meadow"
+      ],
+      "hours": [
+        5,
+        22
+      ],
+      "group": {
+        "class": "herd",
+        "bands": [
+          0,
+          40,
+          60,
+          0
+        ]
+      },
+      "roam": 12,
+      "art": "moving",
+      "drinks": true
+    },
+    {
+      "id": "core/fowl",
+      "name": "ground fowl",
+      "family": "game-birds",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "meadow",
+        "grove"
+      ],
+      "hours": [
+        5,
+        20
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          0,
+          10,
+          60,
+          30
+        ]
+      },
+      "roam": 6,
+      "art": "moving"
+    },
+    {
+      "id": "core/goat",
+      "name": "highland goat",
+      "family": "wild-goats",
+      "size": "medium",
+      "danger": 0,
+      "tier": 2,
+      "habitat": [
+        "meadow"
+      ],
+      "hours": [
+        5,
+        22
+      ],
+      "group": {
+        "class": "herd",
+        "bands": [
+          0,
+          30,
+          60,
+          10
+        ]
+      },
+      "roam": 10,
+      "art": "still",
+      "near": "rock",
+      "drinks": true
+    },
+    {
+      "id": "core/boar",
+      "name": "wild boar",
+      "family": "pigs",
+      "size": "medium",
+      "danger": 1,
+      "tier": 2,
+      "habitat": [
+        "grove"
+      ],
+      "hours": [
+        5,
+        9
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          60,
+          40,
+          0,
+          0
+        ]
+      },
+      "roam": 10,
+      "art": "moving",
+      "drinks": true
+    },
+    {
+      "id": "core/adder",
+      "name": "dust adder",
+      "family": "reptiles",
+      "size": "small",
+      "danger": 1,
+      "tier": 2,
+      "habitat": [
+        "meadow",
+        "riverbank"
+      ],
+      "hours": [
+        6,
+        20
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 4,
+      "art": "none",
+      "near": "rock"
+    },
+    {
+      "id": "core/wolf",
+      "name": "wolf",
+      "family": "canids",
+      "size": "medium",
+      "danger": 2,
+      "tier": 3,
+      "habitat": [
+        "grove",
+        "meadow"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "pack",
+        "bands": [
+          30,
+          60,
+          10,
+          0
+        ]
+      },
+      "roam": 14,
+      "art": "moving"
+    },
+    {
+      "id": "core/wildcat",
+      "name": "wildcat",
+      "family": "cats",
+      "size": "small",
+      "danger": 1,
+      "tier": 3,
+      "habitat": [
+        "grove"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 10,
+      "art": "none"
+    },
+    {
+      "id": "core/white-bear",
+      "name": "white bear",
+      "family": "bears",
+      "size": "large",
+      "danger": 2,
+      "tier": 3,
+      "habitat": [
+        "grove"
+      ],
+      "hours": [
+        20,
+        7
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 14,
+      "art": "still",
+      "near": "rock"
+    }
+  ],
+  "elf": [
+    {
+      "id": "core/dove",
+      "name": "wood dove",
+      "family": "perching-birds",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "grove"
+      ],
+      "hours": [
+        5,
+        20
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          0,
+          10,
+          50,
+          40
+        ]
+      },
+      "roam": 6,
+      "art": "none"
+    },
+    {
+      "id": "core/heron",
+      "name": "grey heron",
+      "family": "waterfowl",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "riverbank"
+      ],
+      "hours": [
+        5,
+        20
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 6,
+      "art": "still"
+    },
+    {
+      "id": "core/goose",
+      "name": "wild goose",
+      "family": "waterfowl",
+      "size": "medium",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "meadow"
+      ],
+      "hours": [
+        5,
+        20
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          0,
+          10,
+          50,
+          40
+        ]
+      },
+      "roam": 8,
+      "art": "none",
+      "drinks": true
+    },
+    {
+      "id": "core/otter",
+      "name": "river otter",
+      "family": "mustelids",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "riverbank"
+      ],
+      "hours": [
+        5,
+        22
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          60,
+          40,
+          0,
+          0
+        ]
+      },
+      "roam": 6,
+      "art": "none"
+    },
+    {
+      "id": "core/marten",
+      "name": "tree marten",
+      "family": "mustelids",
+      "size": "small",
+      "danger": 0,
+      "tier": 2,
+      "habitat": [
+        "grove"
+      ],
+      "hours": [
+        18,
+        6
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 8,
+      "art": "none"
+    },
+    {
+      "id": "core/silver-fox",
+      "name": "silver fox",
+      "family": "canids",
+      "size": "small",
+      "danger": 0,
+      "tier": 2,
+      "habitat": [
+        "grove",
+        "meadow"
+      ],
+      "hours": [
+        19,
+        7
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 10,
+      "art": "still"
+    },
+    {
+      "id": "core/moon-moth",
+      "name": "moon moth",
+      "family": "night-fliers",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "ruin",
+        "grove"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          0,
+          0,
+          40,
+          60
+        ]
+      },
+      "roam": 4,
+      "art": "none",
+      "ambient": true
+    },
+    {
+      "id": "core/hart",
+      "name": "white hart",
+      "family": "deer",
+      "size": "large",
+      "danger": 0,
+      "tier": 3,
+      "habitat": [
+        "meadow",
+        "grove"
+      ],
+      "hours": [
+        5,
+        22
+      ],
+      "group": {
+        "class": "herd",
+        "bands": [
+          0,
+          40,
+          60,
+          0
+        ]
+      },
+      "roam": 14,
+      "art": "moving",
+      "drinks": true
+    },
+    {
+      "id": "core/eagle",
+      "name": "great eagle",
+      "family": "raptors",
+      "size": "medium",
+      "danger": 1,
+      "tier": 3,
+      "habitat": [
+        "meadow"
+      ],
+      "hours": [
+        6,
+        19
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 16,
+      "art": "none",
+      "near": "rock"
+    },
+    {
+      "id": "core/lynx",
+      "name": "wood lynx",
+      "family": "cats",
+      "size": "medium",
+      "danger": 2,
+      "tier": 3,
+      "habitat": [
+        "grove"
+      ],
+      "hours": [
+        19,
+        7
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 12,
+      "art": "still",
+      "near": "rock"
+    }
+  ],
+  "undead": [
+    {
+      "id": "core/crow",
+      "name": "carrion crow",
+      "family": "perching-birds",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "grove",
+        "ruin"
+      ],
+      "hours": [
+        5,
+        20
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          10,
+          50,
+          40,
+          0
+        ]
+      },
+      "roam": 10,
+      "art": "moving"
+    },
+    {
+      "id": "core/barrow-rat",
+      "name": "barrow rat",
+      "family": "burrowers",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "ruin"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "herd",
+        "bands": [
+          0,
+          20,
+          50,
+          30
+        ]
+      },
+      "roam": 6,
+      "art": "still",
+      "near": "cave"
+    },
+    {
+      "id": "core/ash-bat",
+      "name": "ash bat",
+      "family": "night-fliers",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "ruin",
+        "grove"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          0,
+          10,
+          40,
+          50
+        ]
+      },
+      "roam": 8,
+      "art": "still",
+      "near": "cave"
+    },
+    {
+      "id": "core/grave-moth",
+      "name": "grave moth",
+      "family": "night-fliers",
+      "size": "small",
+      "danger": 0,
+      "tier": 1,
+      "habitat": [
+        "ruin"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "flock",
+        "bands": [
+          0,
+          0,
+          40,
+          60
+        ]
+      },
+      "roam": 4,
+      "art": "none",
+      "ambient": true
+    },
+    {
+      "id": "core/shade-fox",
+      "name": "shade fox",
+      "family": "canids",
+      "size": "small",
+      "danger": 0,
+      "tier": 2,
+      "habitat": [
+        "meadow",
+        "grove"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 10,
+      "art": "none"
+    },
+    {
+      "id": "core/bone-hound",
+      "name": "bone hound",
+      "family": "canids",
+      "size": "medium",
+      "danger": 1,
+      "tier": 2,
+      "habitat": [
+        "ruin",
+        "grove"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "pack",
+        "bands": [
+          20,
+          50,
+          30,
+          0
+        ]
+      },
+      "roam": 12,
+      "art": "still"
+    },
+    {
+      "id": "core/cinder-imp",
+      "name": "cinder imp",
+      "family": "horned-beasts",
+      "size": "small",
+      "danger": 1,
+      "tier": 3,
+      "habitat": [
+        "ruin"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "pack",
+        "bands": [
+          30,
+          50,
+          20,
+          0
+        ]
+      },
+      "roam": 8,
+      "art": "none"
+    },
+    {
+      "id": "core/tomb-spider",
+      "name": "tomb spider",
+      "family": "spiders",
+      "size": "medium",
+      "danger": 1,
+      "tier": 3,
+      "habitat": [
+        "ruin",
+        "grove"
+      ],
+      "hours": [
+        0,
+        24
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          60,
+          40,
+          0,
+          0
+        ]
+      },
+      "roam": 6,
+      "art": "still",
+      "near": "cave"
+    },
+    {
+      "id": "core/barrow-fiend",
+      "name": "barrow fiend",
+      "family": "horned-beasts",
+      "size": "large",
+      "danger": 2,
+      "tier": 5,
+      "habitat": [
+        "grove",
+        "meadow"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 14,
+      "art": "none"
+    },
+    {
+      "id": "core/ash-drake",
+      "name": "ash drake",
+      "family": "drakes",
+      "size": "large",
+      "danger": 2,
+      "tier": 8,
+      "habitat": [
+        "meadow"
+      ],
+      "hours": [
+        20,
+        5
+      ],
+      "group": {
+        "class": "solitary",
+        "bands": [
+          100,
+          0,
+          0,
+          0
+        ]
+      },
+      "roam": 16,
+      "art": "none",
+      "near": "rock",
+      "cap_per_1000": 1
+    }
+  ]
+}

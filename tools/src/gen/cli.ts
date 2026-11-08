@@ -7,9 +7,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { REPO_ROOT } from '../load';
+import { atmosphereOf } from './atmosphere';
 import { cut } from './cut';
 import { generate } from './land';
 import { render } from './render';
+import { spawn } from './spawn';
 import { loadStory } from './story';
 
 function main(argv: string[]): number {
@@ -38,13 +40,20 @@ function main(argv: string[]): number {
   for (const file of cut(gen)) writeFileSync(join(dir, `${file.id.split('/')[1]}.json`), `${JSON.stringify(file, null, 2)}\n`);
   writeFileSync(join(dir, 'ground.txt'), `${gen.land.ground.join('\n')}\n`);
   writeFileSync(join(dir, 'measure.json'), `${JSON.stringify({ ...gen.measure, marks: gen.land.marks, ms }, null, 2)}\n`);
+  const { spawns, measure: sm } = spawn(gen);
+  writeFileSync(join(dir, 'spawns.json'), `${JSON.stringify({ story: story.id, spawns }, null, 2)}\n`);
+  writeFileSync(join(dir, 'atmosphere.json'), `${JSON.stringify(atmosphereOf(story), null, 2)}\n`);
+  writeFileSync(join(dir, 'spawn-measure.json'), `${JSON.stringify(sm, null, 2)}\n`);
   const png = picture ?? join(dir, `${name}.png`);
-  writeFileSync(png, render(gen));
+  writeFileSync(png, render(gen, spawns));
   const m = gen.measure;
   console.log(`${story.id} seed "${story.seed}" ${gen.land.w}x${gen.land.h} in ${ms} ms -> ${dir}`);
   console.log(`  tiles ${Object.entries(m.tiles).map(([k, v]) => `${k}=${v}`).join(' ')}`);
   console.log(`  walkable ${m.walkable} unreachable ${m.unreachable} farthest ${m.farthestSteps} steps; roads ${m.roads}, longest straight ${m.longestRun} (bridge ${m.longestBridgeRun}), crossings ${m.crossings}`);
   console.log(`  caves ${m.caves}/${m.cavesAsked}; wood per block ${m.woodSpread[0]}..${m.woodSpread[1]}%; tree kinds ${m.treeKinds}`);
+  console.log(`  creatures: ${sm.spots} spots, ${sm.creatures[0]}-${sm.creatures[1]} alive, ${sm.kinds} kinds (${sm.skipped.length} without a place: ${sm.skipped.join(' ') || '-'})`);
+  console.log(`    by danger ${sm.byDanger.join('/')}; ranks ${Object.entries(sm.byRank).map(([k, v]) => `${k} ${v}`).join(', ')}; shapes ${Object.entries(sm.byShape).map(([k, v]) => `${k} ${v}`).join(', ')}`);
+  console.log(`    no picture yet: ${sm.noArt.join(' ') || '-'}`);
   console.log(`  picture ${png}`);
   return m.unreachable === 0 ? 0 : 1;
 }

@@ -1,0 +1,98 @@
+{
+  "human": {
+    "sun": {
+      "day": [
+        255,
+        244,
+        214
+      ],
+      "dusk": [
+        255,
+        170,
+        110
+      ]
+    },
+    "night_depth": 55,
+    "fog_permille": 0,
+    "particles": [
+      {
+        "kind": "leaves",
+        "density": 2
+      },
+      {
+        "kind": "birds",
+        "density": 1
+      }
+    ],
+    "shafts": false,
+    "ambience": {
+      "day": "meadow-birds",
+      "night": "crickets"
+    },
+    "note": "pastoral and neutral: a plain sun, an ordinary night"
+  },
+  "elf": {
+    "sun": {
+      "day": [
+        236,
+        255,
+        220
+      ],
+      "dusk": [
+        220,
+        255,
+        200
+      ]
+    },
+    "night_depth": 40,
+    "fog_permille": 0,
+    "particles": [
+      {
+        "kind": "fireflies",
+        "density": 6
+      },
+      {
+        "kind": "pollen",
+        "density": 5
+      }
+    ],
+    "shafts": true,
+    "ambience": {
+      "day": "deep-wood",
+      "night": "owl-and-stream"
+    },
+    "note": "bright and clear: sun shafts between the trees, pollen by day, fireflies by night"
+  },
+  "undead": {
+    "sun": {
+      "day": [
+        255,
+        150,
+        120
+      ],
+      "dusk": [
+        200,
+        60,
+        40
+      ]
+    },
+    "night_depth": 80,
+    "fog_permille": 0,
+    "particles": [
+      {
+        "kind": "ash",
+        "density": 5
+      },
+      {
+        "kind": "embers",
+        "density": 2
+      }
+    ],
+    "shafts": false,
+    "ambience": {
+      "day": "dry-wind",
+      "night": "bone-rattle"
+    },
+    "note": "a redder sun, a darker night, ash in the air"
+  }
+}

@@ -11,6 +11,7 @@ import { REPO_ROOT } from '../load';
 import { G, type Land, type Tile } from './grid';
 import type { Generated } from './land';
 import { at, pick } from './rand';
+import type { Spawn } from './spawn';
 
 const KIT_DIR = join(REPO_ROOT, 'content', 'kit', 'core');
 const WIDTH = 390;
@@ -253,7 +254,26 @@ export function focusTiles(gen: Generated): [Tile, Tile] {
   ];
 }
 
-export function render(gen: Generated): Buffer {
+const DANGER_COLOURS: readonly RGB[] = [
+  [240, 236, 200],
+  [255, 160, 40],
+  [255, 60, 60],
+];
+
+/** The creatures on the overview: a dot a spot, coloured by the kind's danger; a rare a white ring, a boss a red one. */
+function drawSpawns(canvas: Canvas, land: Land, spawns: readonly Spawn[], dx: number, dy: number, s: number, dangerOf: (s: Spawn) => number): void {
+  for (const sp of spawns) {
+    const px = dx + (sp.x - land.x0) * s;
+    const py = dy + (sp.y - land.y0) * s;
+    const c = DANGER_COLOURS[dangerOf(sp)] ?? DANGER_COLOURS[0]!;
+    canvas.fill(px, py, Math.max(2, s), Math.max(2, s), c);
+    if (sp.rank === 'rare') canvas.box(px - 2, py - 2, s + 4, s + 4, [255, 255, 255]);
+    if (sp.rank === 'boss') canvas.box(px - 3, py - 3, s + 6, s + 6, [255, 40, 40]);
+    if (sp.shape === 'camp') canvas.box(px - 2, py - 2, s + 4, s + 4, [255, 200, 60]);
+  }
+}
+
+export function render(gen: Generated, spawns: readonly Spawn[] = [], dangerOf: (s: Spawn) => number = (s) => Math.min(2, s.danger)): Buffer {
   const canvas = new Canvas(WIDTH, HEIGHT);
   canvas.fill(0, 0, WIDTH, HEIGHT, [28, 28, 32]);
   const { land } = gen;
@@ -261,6 +281,7 @@ export function render(gen: Generated): Buffer {
   const s = Math.max(1, Math.min(3, Math.floor(386 / Math.max(land.w, land.h))));
   const ox = (WIDTH - land.w * s) >> 1;
   drawOverview(canvas, land, ox, 8, s, windows);
+  drawSpawns(canvas, land, spawns, ox, 8, s, dangerOf);
   let y = 8 + land.h * s + 12;
   const kit = new Kit();
   const wx = (WIDTH - WINDOW[0] * TILE) >> 1;

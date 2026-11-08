@@ -37,6 +37,8 @@ export interface StoryDef {
   entries: Side[];
   /** Small ruins off the roads. Left out: 1. */
   ruins?: number;
+  /** How full of creatures the land is, as a share of the caps: 0 empty, 100 at the cap. Left out: 25. */
+  life?: number;
 }
 
 const ID = /^[a-z0-9_-]+\/[a-z0-9_-]+$/;
@@ -72,6 +74,7 @@ const FIELDS: Record<keyof StoryDef, { check: Check; optional?: true }> = {
   caves: { check: int(0, 8) },
   entries: { check: sides },
   ruins: { check: int(0, 6), optional: true },
+  life: { check: int(0, 100), optional: true },
 };
 
 /** Every fault in a story, as "field: what is wrong"; empty when the story is sound. */

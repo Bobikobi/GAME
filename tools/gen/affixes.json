@@ -1,0 +1,102 @@
+[
+  {
+    "id": "fast",
+    "worlds": [
+      "human",
+      "elf",
+      "undead"
+    ],
+    "ranks": [
+      "elite",
+      "rare",
+      "boss"
+    ],
+    "note": "moves a step quicker; a blur at its feet"
+  },
+  {
+    "id": "armoured",
+    "worlds": [
+      "human",
+      "undead"
+    ],
+    "ranks": [
+      "elite",
+      "rare",
+      "boss"
+    ],
+    "note": "takes less harm; a darker hide"
+  },
+  {
+    "id": "venom",
+    "worlds": [
+      "elf",
+      "undead"
+    ],
+    "ranks": [
+      "elite",
+      "rare",
+      "boss"
+    ],
+    "note": "its bite keeps hurting; a green sheen"
+  },
+  {
+    "id": "ember",
+    "worlds": [
+      "undead"
+    ],
+    "ranks": [
+      "elite",
+      "rare",
+      "boss"
+    ],
+    "note": "burns on touch; sparks at its mouth"
+  },
+  {
+    "id": "shielded",
+    "worlds": [
+      "elf",
+      "undead"
+    ],
+    "ranks": [
+      "rare",
+      "boss"
+    ],
+    "note": "a glow that must be broken first"
+  },
+  {
+    "id": "caller",
+    "worlds": [
+      "human",
+      "elf",
+      "undead"
+    ],
+    "ranks": [
+      "rare",
+      "boss"
+    ],
+    "note": "calls two of its kind once; a cry heard across the glade"
+  },
+  {
+    "id": "silent",
+    "worlds": [
+      "elf"
+    ],
+    "ranks": [
+      "elite",
+      "rare"
+    ],
+    "note": "makes no noise; seen only when close"
+  },
+  {
+    "id": "hulking",
+    "worlds": [
+      "human",
+      "undead"
+    ],
+    "ranks": [
+      "rare",
+      "boss"
+    ],
+    "note": "drawn a third larger; hits harder, turns slower"
+  }
+]
