@@ -224,8 +224,9 @@ function drawWindow(canvas: Canvas, kit: Kit, gen: Generated, centre: Tile, dx: 
     const scale = def.scale ?? 1;
     const pw = Math.max(2, Math.round(((def.w / density) * scale * TILE) / 16));
     const ph = Math.max(2, Math.round(((def.h / density) * scale * TILE) / 16));
-    const cx = dx + (p.x - x0) * TILE + (TILE >> 1);
-    const bottom = dy + (p.y - y0 + 1) * TILE;
+    // drawn bottom-centred on the footprint, as the game draws a prop
+    const cx = dx + (p.x - x0) * TILE + ((p.w * TILE) >> 1);
+    const bottom = dy + (p.y - y0 + p.h) * TILE;
     canvas.blit(img, 0, 0, def.w, def.h, cx - (pw >> 1), bottom - ph, pw, ph, dark && !name.includes('glow') ? 150 : 255);
   }
   canvas.unclip();

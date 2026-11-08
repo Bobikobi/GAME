@@ -2,7 +2,7 @@
  * Cuts a generated land into the world's 64 by 64 chunk files (OPEN_WORLD G50-G52): the ground rows, the level
  * digits, the props in chunk coordinates, and the creature spots the spawner placed in the chunk, in its
  * coordinates too (a patrol's route stays in world tiles, so a beat may cross a seam). A prop stands in the chunk
- * its tile is in; a footprint is one tile, so none straddles a seam. The land below is cut the same way, at its own
+ * its top left tile is in; a piece is placed inside one chunk (looks.ts `fits`), so none straddles a seam. The land below is cut the same way, at its own
  * chunks. The files pass `chunkProblems` and the chunk schema; the test proves both.
  */
 import type { ChunkFile } from '@game/schema';

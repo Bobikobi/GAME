@@ -7,48 +7,20 @@
  * with its own hint, and lead down to the land below (below.ts). Integers only; every draw is keyed by its tile, so
  * the same story and seed give the same land on every machine.
  *
- * What the kit lacks stands in by name (the table `LOOKS`): a burnt tree is the dead tree, bones are stones, a
- * cave mouth is a ruin arch. The story says which world; the world says which set.
+ * Which picture stands where, and how much ground it takes, is the looks table (looks.ts, tools/gen/looks.json):
+ * a burnt tree is the dead tree until one is drawn, bones are stones, a cave mouth is a ruin arch. The story says
+ * which world; the world says which set. A piece stands only where its whole footprint fits, inside one chunk.
  */
 import type { Seed } from '@game/kernel';
 import { CHUNK_SIZE } from '../chunks';
-import { G, Land, type Prop, SOLID, STEPS4, type Tile } from './grid';
+import { G, Land, SOLID, STEPS4, type Tile } from './grid';
+import { DOOR_FORMS, type DoorForm, type Looks, fits, footprint, looksOf, oneChunk, piece, pieceOf } from './looks';
 import { fbm, valueNoise } from './noise';
 import { longestRuns, repair, route, wind } from './paths';
 import { at, chance, choose, pick, storySeed } from './rand';
 import { type Below, type Door, carveBelow } from './below';
-import type { Side, StoryDef, World } from './story';
+import type { Side, StoryDef } from './story';
 
-const KIT = 'core/base-kit:';
-
-/** The looks per world: solid trees, small things on the ground, and the stand-ins the kit still lacks. */
-export const LOOKS: Record<World, { trees: readonly string[]; small: readonly string[]; lone: readonly string[] }> = {
-  human: {
-    trees: ['props/tree_oak', 'props/tree_oak', 'props/young_tree', 'props/tree_oak', 'props/bush_empty'],
-    small: ['props/flowers', 'props/flowers_white', 'props/grass_tall', 'props/rock_small', 'props/mushrooms_small', 'props/log_fallen'],
-    lone: ['props/tree_oak', 'props/young_tree'],
-  },
-  elf: {
-    // the elf wood's pines and birches are not drawn yet: oaks and young trees stand for them
-    trees: ['props/tree_oak', 'props/young_tree', 'props/tree_oak', 'props/young_tree', 'props/tree_oak'],
-    small: ['props/flowers_blue', 'props/flowers_white', 'props/glow_mushrooms', 'props/mushroom_patch', 'props/grass_tall', 'props/log_mossy'],
-    lone: ['props/tree_oak', 'props/young_tree'],
-  },
-  undead: {
-    // burnt trees and bones are not drawn yet: the dead tree, the stump and stones stand for them
-    trees: ['props/dead_tree', 'props/dead_tree', 'props/stump', 'props/dead_tree', 'props/log_fallen'],
-    small: ['props/rock_stones', 'props/rock_small', 'props/pebbles', 'props/fallen_branches', 'props/rubble', 'props/stump'],
-    lone: ['props/dead_tree', 'props/stump'],
-  },
-};
-
-/** Props that stand in the way (a trunk); the rest a foot walks over. */
-const SOLID_PROPS: ReadonlySet<string> = new Set([
-  'props/tree_oak', 'props/young_tree', 'props/dead_tree', 'props/stump', 'props/standing_stone', 'props/ruin_wall', 'props/ruin_pillar', 'props/rock_mossy', 'props/log_fallen', 'props/log_mossy', 'props/bush_empty',
-]);
-
-/** The crossing's stand-in (the first map's exporter used the same): pebbles where steps will be drawn. */
-export const CROSSING = 'props/pebbles';
 
 export interface Measure {
   tiles: Record<string, number>;
@@ -81,20 +53,20 @@ export interface Generated {
 
 const name = (story: StoryDef) => story.id.split('/')[1]!;
 
-export function generate(story: StoryDef): Generated {
+export function generate(story: StoryDef, looks: Looks = looksOf()): Generated {
   const seed = storySeed(story.seed);
   const land = new Land(story.origin.cx * CHUNK_SIZE, story.origin.cy * CHUNK_SIZE, story.size.w * CHUNK_SIZE, story.size.h * CHUNK_SIZE);
   const entries = entryTiles(seed, land, story.entries);
   relief(seed, land, story, entries);
   water(seed, land, story, entries);
   wood(seed, land, story, entries);
-  const hub = clearing(seed, land, entries);
-  roads(seed, land, entries, hub);
-  ruins(seed, land, story, entries);
-  trees(seed, land, story);
-  const placed = doors(seed, land, story, entries);
-  connect(land, entries);
-  const below = carveBelow(seed, story, placed);
+  const hub = clearing(seed, land, entries, looks);
+  roads(seed, land, entries, hub, looks);
+  ruins(seed, land, story, entries, looks);
+  trees(seed, land, story, looks);
+  const placed = doors(seed, land, story, entries, looks);
+  connect(land, entries, looks);
+  const below = carveBelow(seed, story, placed, looks);
   if (below) {
     placed.forEach((d, i) => {
       const door = land.props.find((q) => q.id === doorId(story, d.n));
@@ -102,7 +74,7 @@ export function generate(story: StoryDef): Generated {
       if (door) door.portal = { x: sx, y: sy };
     });
   }
-  return { story, seed, land, entries, doors: placed, below, measure: measure(land, story, entries) };
+  return { story, seed, land, entries, doors: placed, below, measure: measure(land, story, entries, looks) };
 }
 
 // ---------------------------------------------------------------- the frame
@@ -344,7 +316,7 @@ function wood(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[])
 
 // ---------------------------------------------------------------- the clearing and the roads
 
-function clearing(seed: Seed, land: Land, entries: readonly Tile[]): Tile {
+function clearing(seed: Seed, land: Land, entries: readonly Tile[], looks: Looks): Tile {
   const cx = land.x0 + Math.floor(land.w / 2) + pick(seed, 'hub', 0, Math.floor(land.w / 4)) - Math.floor(land.w / 8);
   const cy = land.y0 + Math.floor(land.h / 2) + pick(seed, 'hub', 1, Math.floor(land.h / 4)) - Math.floor(land.h / 8);
   const lv = Math.min(2, land.level(cx, cy));
@@ -355,17 +327,13 @@ function clearing(seed: Seed, land: Land, entries: readonly Tile[]): Tile {
       land.set(x, y, Math.max(Math.abs(x - cx), Math.abs(y - cy)) <= 3 ? G.meadow : land.get(x, y) === G.mountain || land.get(x, y) === G.water ? G.grove : land.get(x, y));
     }
   }
-  land.addProp(prop('props/standing_stone', cx, cy, true));
-  for (const [dx, dy, s] of [[-2, 1, 'props/rock_small'], [2, -1, 'props/rock_mossy'], [1, 2, 'props/flowers_white'], [-1, -2, 'props/flowers']] as const) {
-    land.addProp(prop(s, cx + dx, cy + dy, SOLID_PROPS.has(s)));
+  land.addProp(piece(looks, looks.places.hub.centre, cx, cy));
+  for (const [s, dx, dy] of looks.places.hub.around) {
+    if (fits(looks, land, s, cx + dx, cy + dy, (x, y) => land.walkable(x, y))) land.addProp(piece(looks, s, cx + dx, cy + dy));
   }
   land.marks.push({ kind: 'clearing', x: cx, y: cy, label: 'clearing' });
   void entries;
   return [cx, cy];
-}
-
-function prop(sprite: string, x: number, y: number, solid: boolean, extra: Partial<Prop> = {}): Prop {
-  return { sprite: KIT + sprite, x, y, w: 1, h: 1, solid, ...extra } as Prop;
 }
 
 /** The price of a road entering a tile: water is a bridge, wood is felled, a level change is steps, rock is never. */
@@ -382,15 +350,15 @@ function roadCost(seed: Seed, land: Land): (x: number, y: number, fx: number, fy
   };
 }
 
-function roads(seed: Seed, land: Land, entries: readonly Tile[], hub: Tile): void {
+function roads(seed: Seed, land: Land, entries: readonly Tile[], hub: Tile, looks: Looks): void {
   const cost = roadCost(seed, land);
-  const fits = ([x, y]: Tile) => land.inside(x, y) && land.get(x, y) !== G.water && land.get(x, y) !== G.mountain;
+  const onLand = ([x, y]: Tile) => land.inside(x, y) && land.get(x, y) !== G.water && land.get(x, y) !== G.mountain;
   const onRoad = (x: number, y: number) => land.get(x, y) === G.path || land.get(x, y) === G.bridge;
   for (const entry of entries) {
     const found = route(land, entry, hub, cost, land.roads.length > 0 ? onRoad : undefined);
     if (!found) continue;
-    const road = repair(found, fits);
-    lay(land, road);
+    const road = repair(found, onLand);
+    lay(land, road, looks);
     land.roads.push(road);
     land.marks.push({ kind: 'entry', x: entry[0], y: entry[1], label: 'road in' });
   }
@@ -403,7 +371,7 @@ function roads(seed: Seed, land: Land, entries: readonly Tile[], hub: Tile): voi
 }
 
 /** Writes a road: path letters, a bridge over water, a crossing where the level changes, air at the sides. */
-function lay(land: Land, road: readonly Tile[]): void {
+function lay(land: Land, road: readonly Tile[], looks: Looks): void {
   for (let i = 0; i < road.length; i++) {
     const [x, y] = road[i]!;
     const ch = land.get(x, y);
@@ -415,7 +383,7 @@ function lay(land: Land, road: readonly Tile[]): void {
       if (land.level(px, py) !== land.level(x, y) && !land.crossings.has(land.key(x, y)) && !land.crossings.has(land.key(px, py))) {
         const lower = land.level(px, py) < land.level(x, y) ? road[i - 1]! : road[i]!;
         const on = land.get(lower[0], lower[1]) === G.bridge ? (lower === road[i] ? road[i - 1]! : road[i]!) : lower;
-        land.addProp(prop(CROSSING, on[0], on[1], false, { crossing: true }));
+        land.addProp(piece(looks, looks.places.crossing, on[0], on[1], { solid: false, crossing: true }));
       }
     }
     for (const [dx, dy] of STEPS4) {
@@ -458,7 +426,7 @@ export function plainDistance(land: Land, sources: readonly Tile[]): Int32Array 
   return dist;
 }
 
-function ruins(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[]): void {
+function ruins(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[], looks: Looks): void {
   const count = story.ruins ?? 1;
   if (count === 0) return;
   const fromRoad = roadDistance(land);
@@ -490,10 +458,12 @@ function ruins(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[]
     }
     land.set(cx, cy + 2, G.ruinFloor);
     land.set(cx, cy - 2, G.ruinFloor);
-    for (const [dx, dy, s] of [[-2, -2, 'props/ruin_wall'], [2, -2, 'props/ruin_wall'], [-2, 2, 'props/ruin_wall'], [2, 2, 'props/ruin_wall'], [1, 0, 'props/ruin_pillar'], [-1, -1, 'props/ruin_pillar']] as const) {
-      if (land.get(cx + dx, cy + dy) !== G.water && land.get(cx + dx, cy + dy) !== G.mountain) land.addProp(prop(s, cx + dx, cy + dy, true));
+    const { wall, pillar, arch } = looks.places.ruin;
+    const open = (x: number, y: number) => land.inside(x, y) && land.get(x, y) !== G.water && land.get(x, y) !== G.mountain;
+    for (const [dx, dy, s] of [[-2, -2, wall], [2, -2, wall], [-2, 2, wall], [2, 2, wall], [1, 0, pillar], [-1, -1, pillar]] as const) {
+      if (fits(looks, land, s, cx + dx, cy + dy, open)) land.addProp(piece(looks, s, cx + dx, cy + dy, { solid: true }));
     }
-    land.addProp(prop('props/ruin_arch', cx, cy + 2, false));
+    if (fits(looks, land, arch, cx, cy + 2, open)) land.addProp(piece(looks, arch, cx, cy + 2, { solid: false }));
     land.marks.push({ kind: 'ruin', x: cx, y: cy, label: 'ruin' });
     placed.push(best);
   }
@@ -501,41 +471,44 @@ function ruins(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[]
 
 // ---------------------------------------------------------------- trees and small things
 
-function trees(seed: Seed, land: Land, story: StoryDef): void {
-  const looks = LOOKS[story.world];
+function trees(seed: Seed, land: Land, story: StoryDef, looks: Looks): void {
+  const set = looks.worlds[story.world];
   const fromRoad = roadDistance(land);
   for (let y = land.y0; y < land.y0 + land.h; y++) {
     for (let x = land.x0; x < land.x0 + land.w; x++) {
       const ch = land.get(x, y);
       const k = land.key(x, y);
       if (land.blocked.has(k) || land.crossings.has(k) || fromRoad[k]! <= 1) continue;
-      if (land.props.some((p) => p.x === x && p.y === y)) continue;
+      if (land.propAt(x, y)) continue;
       const grove = ch === G.grove;
       const meadow = ch === G.meadow || ch === G.flowers;
       if (!grove && !meadow) continue;
       const roll = pick(seed, 'tree', at(x, y), 1000);
       let sprite: string | undefined;
-      if (grove && roll < 300) sprite = vary(seed, land, looks.trees, x, y);
-      else if (grove && roll < 420) sprite = choose(seed, 'small', at(x, y), looks.small);
-      else if (meadow && roll < 20) sprite = vary(seed, land, looks.lone, x, y);
-      else if (meadow && roll < 70) sprite = choose(seed, 'small', at(x, y), looks.small);
+      if (grove && roll < 300) sprite = vary(seed, land, set.trees, x, y);
+      else if (grove && roll < 420) sprite = choose(seed, 'small', at(x, y), set.small);
+      else if (meadow && roll < 20) sprite = vary(seed, land, set.lone, x, y);
+      else if (meadow && roll < 70) sprite = choose(seed, 'small', at(x, y), set.small);
       if (!sprite) continue;
-      const solid = SOLID_PROPS.has(sprite);
+      const solid = pieceOf(looks, sprite).solid;
       // a trunk never stands between two trunks on a row: a wall of wood is the forest letter's job
       if (solid && land.blocked.has(land.key(x - 1, y)) && land.inside(x - 2, y) && land.blocked.has(land.key(x - 2, y))) continue;
-      land.addProp(prop(sprite, x, y, solid));
+      // the whole footprint on the same kind of ground, off the roads and their crossings
+      const same = (tx: number, ty: number) => (grove ? land.get(tx, ty) === G.grove : land.get(tx, ty) === G.meadow || land.get(tx, ty) === G.flowers) && !land.crossings.has(land.key(tx, ty)) && fromRoad[land.key(tx, ty)]! > 1;
+      if (!fits(looks, land, sprite, x, y, same)) continue;
+      land.addProp(piece(looks, sprite, x, y));
     }
   }
 }
 
 /** A tree sprite that differs from the one just left and the one just above: the wood is varied, never a stamp. */
 function vary(seed: Seed, land: Land, list: readonly string[], x: number, y: number): string {
-  const left = land.props.find((p) => p.x === x - 1 && p.y === y)?.sprite;
-  const up = land.props.find((p) => p.x === x && p.y === y - 1)?.sprite;
+  const left = land.propAt(x - 1, y)?.sprite;
+  const up = land.propAt(x, y - 1)?.sprite;
   const i = pick(seed, 'vary', at(x, y), list.length);
   for (let tries = 0; tries < list.length; tries++) {
-    const s = KIT + list[(i + tries) % list.length]!;
-    if (s !== left && s !== up) return list[(i + tries) % list.length]!;
+    const s = list[(i + tries) % list.length]!;
+    if (!left?.endsWith(`:${s}`) && !up?.endsWith(`:${s}`)) return s;
   }
   return list[i]!;
 }
@@ -550,16 +523,6 @@ function vary(seed: Seed, land: Land, list: readonly string[], x: number, y: num
  * repeats a form before it has used them all. Each door is a non-solid prop a player steps onto; its `portal`
  * leads to its chamber below (below.ts), and the way up there leads back to the tile before the door.
  */
-export const DOOR_FORMS = ['cave', 'hollow', 'well', 'cellar', 'fall'] as const;
-export type DoorForm = (typeof DOOR_FORMS)[number];
-/** The stand-in of every form until its door is drawn. */
-export const DOOR_SPRITE: Record<DoorForm, string> = {
-  cave: 'props/ruin_arch',
-  hollow: 'props/dead_tree',
-  well: 'props/standing_stone',
-  cellar: 'props/rubble',
-  fall: 'props/log_mossy',
-};
 export const doorId = (story: StoryDef, n: number) => `core/${name(story)}-door-${n}`;
 
 /** What stands round a tile: of its eight neighbours how many are wood, rock (or the land's edge) and water; whether the ground drops beside it; whether a ruin is near. */
@@ -607,7 +570,7 @@ function fitsForm(form: DoorForm, ch: string, s: Site): boolean {
 /** The fewest road steps a form keeps: a cellar lies in a ruin, which stands near the roads; the rest hide deep. */
 const DOOR_FROM_ROAD: Record<DoorForm, number> = { cave: 8, hollow: 8, well: 8, cellar: 3, fall: 6 };
 
-function doors(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[]): Door[] {
+function doors(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[], looks: Looks): Door[] {
   if (story.caves === 0) return [];
   const fromRoad = roadDistance(land);
   const sources = entries.map(([x, y]) => land.nearestWalkable(x, y) ?? ([x, y] as Tile));
@@ -620,7 +583,7 @@ function doors(seed: Seed, land: Land, story: StoryDef, entries: readonly Tile[]
     for (let f = 0; f < DOOR_FORMS.length && !door; f++) {
       const form = DOOR_FORMS[(first + n + f) % DOOR_FORMS.length]!;
       if (used.has(form) && used.size < DOOR_FORMS.length) continue;
-      door = placeDoor(seed, land, story, form, n, fromRoad, sources, entries, placed, ruinsAt);
+      door = placeDoor(seed, land, story, form, n, fromRoad, sources, entries, placed, ruinsAt, looks);
     }
     if (!door) break;
     used.add(door.form as DoorForm);
@@ -641,6 +604,7 @@ function placeDoor(
   entries: readonly Tile[],
   placed: readonly Door[],
   ruinsAt: readonly Tile[],
+  looks: Looks,
 ): Door | undefined {
   const others = placed.map((d) => [d.x, d.y] as Tile);
   const found: { x: number; y: number; s: number }[] = [];
@@ -659,31 +623,46 @@ function placeDoor(
   for (const { x, y } of found) {
     if (failed.length >= 12) break;
     if (near(failed, x, y, 8)) continue;
-    const was = land.get(x, y);
-    if (was === G.forest) land.set(x, y, G.grove);
+    // the whole door on ground a foot stands on or on wood that opens, off the roads, inside one chunk
+    const sprite = looks.doors[form].sprite;
+    const foot = footprint(looks, sprite, x, y);
+    const open = (tx: number, ty: number) => land.inside(tx, ty) && (!SOLID.has(land.get(tx, ty)) || land.get(tx, ty) === G.forest) && !land.crossings.has(land.key(tx, ty)) && land.get(tx, ty) !== G.path && land.get(tx, ty) !== G.bridge;
+    if (!oneChunk(foot) || !foot.every(([tx, ty]) => open(tx, ty))) {
+      failed.push([x, y]);
+      continue;
+    }
+    const was = foot.map(([tx, ty]) => land.get(tx, ty));
+    const revert = () => foot.forEach(([tx, ty], i) => land.set(tx, ty, was[i]!));
+    for (const [tx, ty] of foot) if (land.get(tx, ty) === G.forest) land.set(tx, ty, G.grove);
     let dist = land.distances(sources);
     // the way in is the secret path: a long winding corridor carved through the wood
     if (dist[land.key(x, y)] === -1) {
-      if (!join(land, [[x, y]], dist, 48)) {
-        land.set(x, y, was);
+      if (!join(land, [[x, y]], dist, 48, looks)) {
+        revert();
         failed.push([x, y]);
         continue;
       }
       dist = land.distances(sources);
     }
+    // the step: the reached tile beside the footprint nearest the roads
     let step: Tile | undefined;
-    for (const [dx, dy] of STEPS4) {
-      const d = land.walkable(x + dx, y + dy) ? dist[land.key(x + dx, y + dy)]! : -1;
-      if (d >= 0 && (!step || d < dist[land.key(step[0], step[1])]!)) step = [x + dx, y + dy];
+    const inFoot = (tx: number, ty: number) => foot.some(([fx, fy]) => fx === tx && fy === ty);
+    for (const [fx, fy] of foot) {
+      for (const [dx, dy] of STEPS4) {
+        const [tx, ty] = [fx + dx, fy + dy];
+        if (inFoot(tx, ty)) continue;
+        const d = land.walkable(tx, ty) ? dist[land.key(tx, ty)]! : -1;
+        if (d >= 0 && (!step || d < dist[land.key(step[0], step[1])]!)) step = [tx, ty];
+      }
     }
     if (!step) {
-      land.set(x, y, was);
+      revert();
       failed.push([x, y]);
       continue;
     }
-    land.clearProps(x, y);
-    land.addProp(prop(DOOR_SPRITE[form], x, y, false, { id: doorId(story, n) }));
-    hint(seed, land, form, x, y, step, n);
+    for (const [tx, ty] of foot) land.clearProps(tx, ty);
+    land.addProp(piece(looks, sprite, x, y, { solid: false, id: doorId(story, n) }));
+    hint(seed, land, form, x, y, step, n, looks);
     land.marks.push({ kind: 'cave', x, y, label: `door ${n}: ${form}` });
     return { n, form, x, y, step };
   }
@@ -691,10 +670,11 @@ function placeDoor(
 }
 
 /** The hint at a door, never the same for two forms: a trail that ends, a ring of mushrooms, odd grass, pebbles and timber, glow on the bank. */
-function hint(seed: Seed, land: Land, form: DoorForm, x: number, y: number, step: Tile, n: number): void {
-  const free = (tx: number, ty: number) => land.walkable(tx, ty) && land.get(tx, ty) !== G.path && !land.props.some((p) => p.x === tx && p.y === ty);
+function hint(seed: Seed, land: Land, form: DoorForm, x: number, y: number, step: Tile, n: number, looks: Looks): void {
+  const h = looks.doors[form].hint;
+  const free = (tx: number, ty: number) => land.walkable(tx, ty) && land.get(tx, ty) !== G.path && !land.propAt(tx, ty);
   const lay = (sprite: string, tx: number, ty: number) => {
-    if (free(tx, ty)) land.addProp(prop(sprite, tx, ty, false));
+    if (fits(looks, land, sprite, tx, ty, free)) land.addProp(piece(looks, sprite, tx, ty, { solid: false }));
   };
   switch (form) {
     case 'cave': {
@@ -714,18 +694,18 @@ function hint(seed: Seed, land: Land, form: DoorForm, x: number, y: number, step
     }
     case 'hollow':
       for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [2, -2], [-2, 2], [2, 2]] as const) {
-        if (chance(seed, `ring:${n}`, at(x + dx, y + dy), 750)) lay(chance(seed, `ring-glow:${n}`, at(x + dx, y + dy), 400) ? 'props/glow_mushrooms' : 'props/mushrooms_small', x + dx, y + dy);
+        if (chance(seed, `ring:${n}`, at(x + dx, y + dy), 750)) lay(chance(seed, `ring-glow:${n}`, at(x + dx, y + dy), 400) ? h[1]! : h[0]!, x + dx, y + dy);
       }
       break;
     case 'well':
-      for (const [dx, dy] of STEPS4) if (!(x + dx === step[0] && y + dy === step[1])) lay('props/grass_tall', x + dx, y + dy);
-      lay('props/flowers_white', x - 1, y - 1);
-      lay('props/flowers_white', x + 1, y + 1);
+      for (const [dx, dy] of STEPS4) if (!(x + dx === step[0] && y + dy === step[1])) lay(h[0]!, x + dx, y + dy);
+      lay(h[1]!, x - 1, y - 1);
+      lay(h[1]!, x + 1, y + 1);
       break;
     case 'cellar':
-      lay('props/pebbles', x - 1, y);
-      lay('props/pebbles', x + 1, y);
-      lay('props/fallen_branches', x, y - 1);
+      lay(h[0]!, x - 1, y);
+      lay(h[0]!, x + 1, y);
+      lay(h[1]!, x, y - 1);
       break;
     case 'fall': {
       let laid = 0;
@@ -734,7 +714,7 @@ function hint(seed: Seed, land: Land, form: DoorForm, x: number, y: number, step
           if ((dx === 0 && dy === 0) || !land.inside(x + dx, y + dy)) continue;
           const ch = land.get(x + dx, y + dy);
           if ((ch === G.bank || ch === G.grove) && chance(seed, `fall-glow:${n}`, at(x + dx, y + dy), 600) && free(x + dx, y + dy)) {
-            lay('props/glow_mushrooms', x + dx, y + dy);
+            lay(h[0]!, x + dx, y + dy);
             laid++;
           }
         }
@@ -747,7 +727,7 @@ function hint(seed: Seed, land: Land, form: DoorForm, x: number, y: number, step
 // ---------------------------------------------------------------- every tile reached
 
 /** Joins what the roads do not reach: a small pocket fills with wood, a larger one gets a carved way, a stream a plank. */
-function connect(land: Land, entries: readonly Tile[]): void {
+function connect(land: Land, entries: readonly Tile[], looks: Looks): void {
   const sources = entries.map(([x, y]) => land.nearestWalkable(x, y) ?? ([x, y] as Tile));
   const keep = new Set(land.marks.filter((m) => m.kind === 'cave' || m.kind === 'ruin' || m.kind === 'clearing').map((m) => land.key(m.x, m.y)));
   for (let round = 0; round < 200; round++) {
@@ -767,7 +747,7 @@ function connect(land: Land, entries: readonly Tile[]): void {
     if (large.length === 0) continue;
     large.sort((a, b) => Number(isKept(b)) - Number(isKept(a)) || b.length - a.length);
     const comp = large[0]!;
-    if (join(land, comp, dist)) continue;
+    if (join(land, comp, dist, 14, looks)) continue;
     // nothing leads in: the pocket is wood (a kept mark in it was already proven joinable when it was placed)
     for (const [x, y] of comp) {
       land.clearProps(x, y);
@@ -781,7 +761,7 @@ function connect(land: Land, entries: readonly Tile[]): void {
  * cleared, a crossing where the level changes. False when no way exists within reach (rock all round, or a
  * drop past the step rule), and then the land is untouched.
  */
-function join(land: Land, comp: readonly Tile[], dist: Int32Array, reach = 14): boolean {
+function join(land: Land, comp: readonly Tile[], dist: Int32Array, reach: number, looks: Looks): boolean {
   {
     // the pair of tiles, one lost and one reached, that lie closest; then a carved way between them
     let from: Tile | undefined;
@@ -814,15 +794,16 @@ function join(land: Land, comp: readonly Tile[], dist: Int32Array, reach = 14): 
     for (let i = 0; i < way.length; i++) {
       const [x, y] = way[i]!;
       const ch = land.get(x, y);
-      if (land.blocked.has(land.key(x, y))) land.clearProps(x, y);
+      // the way is cleared of whatever stood on it, a trunk or a flower, before a crossing is laid
+      land.clearProps(x, y);
       if (ch === G.water) land.set(x, y, G.bridge);
       else if (ch === G.forest) land.set(x, y, G.grove);
       if (i > 0) {
         const [px, py] = way[i - 1]!;
         if (land.level(px, py) !== land.level(x, y) && !land.crossings.has(land.key(x, y)) && !land.crossings.has(land.key(px, py))) {
           const lower = land.level(px, py) < land.level(x, y) ? way[i - 1]! : way[i]!;
-          if (land.get(lower[0], lower[1]) !== G.bridge) land.addProp(prop(CROSSING, lower[0], lower[1], false, { crossing: true }));
-          else land.addProp(prop(CROSSING, x, y, false, { crossing: true }));
+          if (land.get(lower[0], lower[1]) !== G.bridge) land.addProp(piece(looks, looks.places.crossing, lower[0], lower[1], { solid: false, crossing: true }));
+          else land.addProp(piece(looks, looks.places.crossing, x, y, { solid: false, crossing: true }));
         }
       }
     }
@@ -832,7 +813,7 @@ function join(land: Land, comp: readonly Tile[], dist: Int32Array, reach = 14): 
 
 // ---------------------------------------------------------------- the measure
 
-function measure(land: Land, story: StoryDef, entries: readonly Tile[]): Measure {
+function measure(land: Land, story: StoryDef, entries: readonly Tile[], looks: Looks): Measure {
   const tiles: Record<string, number> = {};
   let walkable = 0;
   for (let y = land.y0; y < land.y0 + land.h; y++) {
@@ -886,7 +867,7 @@ function measure(land: Land, story: StoryDef, entries: readonly Tile[]): Measure
       most = Math.max(most, share);
     }
   }
-  const treeKinds = new Set(land.props.filter((p) => SOLID_PROPS.has(p.sprite.slice(KIT.length))).map((p) => p.sprite)).size;
+  const treeKinds = new Set(land.props.filter((p) => pieceOf(looks, p.sprite.slice(looks.kit.length)).solid).map((p) => p.sprite)).size;
   return {
     tiles,
     walkable,
@@ -904,4 +885,5 @@ function measure(land: Land, story: StoryDef, entries: readonly Tile[]): Measure
   };
 }
 
-export { SOLID };
+export { SOLID, DOOR_FORMS };
+export type { DoorForm };

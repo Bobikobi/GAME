@@ -14,23 +14,13 @@ import { fbm } from './noise';
 import { route } from './paths';
 import { at, chance, choose, pick } from './rand';
 import type { StoryDef } from './story';
+import { type DoorForm, type Looks, fits, piece } from './looks';
 
-const KIT = 'core/base-kit:';
-/** The way back up: an arch until a ladder or a rope is drawn. */
-export const WAY_UP = 'props/ruin_arch';
-/** What the caves are dressed with; the kit lacks bones and old timber, so stones and branches stand in. */
-export const BELOW_LOOK = {
-  stones: ['props/rock_stones', 'props/pebbles', 'props/rock_small'],
-  glow: 'props/glow_mushrooms',
-  bones: 'props/rock_small',
-  timber: 'props/fallen_branches',
-  pillar: 'props/standing_stone',
-} as const;
 
 /** A hidden door on the surface, as the land placed it: its form, its tile, and the tile a player stands on coming back up. */
 export interface Door {
   n: number;
-  form: string;
+  form: DoorForm;
   x: number;
   y: number;
   step: Tile;
@@ -70,17 +60,17 @@ const name = (story: StoryDef) => story.id.split('/')[1]!;
 const inMargin = (land: Land, x: number, y: number) => x > land.x0 && y > land.y0 && x < land.x0 + land.w - 1 && y < land.y0 + land.h - 1;
 
 /** The caves under a land, or nothing when the story names no `below` or the land placed no door. */
-export function carveBelow(seed: Seed, story: StoryDef, doors: readonly Door[]): Below | undefined {
+export function carveBelow(seed: Seed, story: StoryDef, doors: readonly Door[], looks: Looks): Below | undefined {
   const frame = belowFrame(story, doors.length);
   if (!frame) return undefined;
   const land = new Land(frame.x0, frame.y0, frame.w, frame.h);
   for (let i = 0; i < land.h; i++) land.ground[i] = G.mountain.repeat(land.w);
   const rooms = chambers(seed, land, doors.length);
   tunnels(seed, land, rooms);
-  const secrets = sidePassages(seed, land, rooms);
-  const { arrivals, steps } = waysUp(seed, land, story, doors, rooms);
+  const secrets = sidePassages(seed, land, rooms, looks);
+  const { arrivals, steps } = waysUp(seed, land, story, doors, rooms, looks);
   const pool = poolIn(seed, land, rooms, arrivals);
-  dress(seed, land, rooms, arrivals);
+  dress(seed, land, rooms, arrivals, looks);
   const unreachable = reachAll(land, arrivals);
   return { land, arrivals, steps, measure: measureBelow(land, rooms, secrets, pool, arrivals, unreachable) };
 }
@@ -155,7 +145,7 @@ function tunnels(seed: Seed, land: Land, rooms: Room[]): void {
 }
 
 /** From every chamber one passage into the rock, away from the strip's middle, that ends in a secret (bones, old timber). */
-function sidePassages(seed: Seed, land: Land, rooms: Room[]): Tile[] {
+function sidePassages(seed: Seed, land: Land, rooms: Room[], looks: Looks): Tile[] {
   const ends: Tile[] = [];
   const midY = land.y0 + (land.h >> 1);
   rooms.forEach((room, i) => {
@@ -172,7 +162,7 @@ function sidePassages(seed: Seed, land: Land, rooms: Room[]): Tile[] {
     if (!way || way.length < 4) return;
     carve(land, way);
     const end = way[way.length - 1]!;
-    land.addProp(prop(choose(seed, `secret:${i}`, 2, [BELOW_LOOK.bones, BELOW_LOOK.timber]), end[0], end[1], false));
+    land.addProp(piece(looks, choose(seed, `secret:${i}`, 2, [looks.below.bones, looks.below.timber]), end[0], end[1], { solid: false }));
     land.marks.push({ kind: 'secret', x: end[0], y: end[1], label: `secret ${i}` });
     ends.push(end);
   });
@@ -180,10 +170,6 @@ function sidePassages(seed: Seed, land: Land, rooms: Room[]): Tile[] {
 }
 
 // ---------------------------------------------------------------- the ways up and the water
-
-function prop(sprite: string, x: number, y: number, solid: boolean, extra: Partial<Prop> = {}): Prop {
-  return { sprite: `${KIT}${sprite}`, x, y, w: 1, h: 1, solid, ...extra } as Prop;
-}
 
 /** How many of the four neighbours a foot can stand on. */
 function openAround(land: Land, x: number, y: number): number {
@@ -197,7 +183,7 @@ function openAround(land: Land, x: number, y: number): number {
  * before the door. The door's own portal is the floor tile beside the arch nearest the centre (the step), so a
  * player lands next to a way, never on one: the kernel takes one way per step and never chains them.
  */
-function waysUp(seed: Seed, land: Land, story: StoryDef, doors: readonly Door[], rooms: Room[]): { arrivals: Tile[]; steps: Tile[] } {
+function waysUp(seed: Seed, land: Land, story: StoryDef, doors: readonly Door[], rooms: Room[], looks: Looks): { arrivals: Tile[]; steps: Tile[] } {
   const arrivals: Tile[] = [];
   const steps: Tile[] = [];
   doors.forEach((door, i) => {
@@ -211,7 +197,7 @@ function waysUp(seed: Seed, land: Land, story: StoryDef, doors: readonly Door[],
       const s = 1000 - d * 10 + pick(seed, `arrival:${i}`, at(t[0], t[1]), 10);
       if (s > score) [score, best] = [s, t];
     }
-    land.addProp(prop(WAY_UP, best[0], best[1], false, { id: `core/${name(story)}-up-${door.n}`, portal: { x: door.step[0], y: door.step[1] } } as Partial<Prop>));
+    land.addProp(piece(looks, looks.below.way_up, best[0], best[1], { solid: false, id: `core/${name(story)}-up-${door.n}`, portal: { x: door.step[0], y: door.step[1] } } as Partial<Prop>));
     land.marks.push({ kind: 'arrival', x: best[0], y: best[1], label: `up to door ${door.n} (${door.form})` });
     arrivals.push(best);
     let step: Tile = best;
@@ -259,22 +245,26 @@ function poolIn(seed: Seed, land: Land, rooms: Room[], arrivals: readonly Tile[]
 // ---------------------------------------------------------------- dressing and reach
 
 /** Stones along the walls, glowing mushrooms by the ways up and in the chambers, a pillar where a chamber is wide. */
-function dress(seed: Seed, land: Land, rooms: Room[], arrivals: readonly Tile[]): void {
+function dress(seed: Seed, land: Land, rooms: Room[], arrivals: readonly Tile[], looks: Looks): void {
   const inRoom = new Set<number>();
   for (const room of rooms) for (const k of room.tiles) inRoom.add(k);
   for (let y = land.y0 + 1; y < land.y0 + land.h - 1; y++) {
     for (let x = land.x0 + 1; x < land.x0 + land.w - 1; x++) {
-      if (land.get(x, y) !== G.ruinFloor || land.props.some((p) => p.x === x && p.y === y)) continue;
+      if (land.get(x, y) !== G.ruinFloor || land.propAt(x, y)) continue;
+      const floor = (tx: number, ty: number) => land.get(tx, ty) === G.ruinFloor;
+      const put = (sprite: string, solid: boolean) => {
+        if (fits(looks, land, sprite, x, y, floor)) land.addProp(piece(looks, sprite, x, y, { solid }));
+      };
       const nearUp = arrivals.some(([ax, ay]) => Math.abs(ax - x) <= 3 && Math.abs(ay - y) <= 3);
       const onUp = arrivals.some(([ax, ay]) => Math.abs(ax - x) <= 1 && Math.abs(ay - y) <= 1);
       if (onUp) continue;
       const open = openAround(land, x, y);
       let rock = 0;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (land.get(x + dx, y + dy) === G.mountain) rock++;
-      if (nearUp && chance(seed, 'glow-up', at(x, y), 220)) land.addProp(prop(BELOW_LOOK.glow, x, y, false));
-      else if (rock > 0 && chance(seed, 'stones', at(x, y), 110)) land.addProp(prop(choose(seed, 'stones', at(x, y), BELOW_LOOK.stones), x, y, false));
-      else if (inRoom.has(land.key(x, y)) && rock === 0 && open === 4 && chance(seed, 'pillar', at(x, y), 35)) land.addProp(prop(BELOW_LOOK.pillar, x, y, true));
-      else if (inRoom.has(land.key(x, y)) && chance(seed, 'glow', at(x, y), 45)) land.addProp(prop(BELOW_LOOK.glow, x, y, false));
+      if (nearUp && chance(seed, 'glow-up', at(x, y), 220)) put(looks.below.glow, false);
+      else if (rock > 0 && chance(seed, 'stones', at(x, y), 110)) put(choose(seed, 'stones', at(x, y), looks.below.stones), false);
+      else if (inRoom.has(land.key(x, y)) && rock === 0 && open === 4 && chance(seed, 'pillar', at(x, y), 35)) put(looks.below.pillar, true);
+      else if (inRoom.has(land.key(x, y)) && chance(seed, 'glow', at(x, y), 45)) put(looks.below.glow, false);
     }
   }
 }

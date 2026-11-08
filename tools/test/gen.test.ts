@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { chunkProblems } from '../src/chunks';
 import { cut } from '../src/gen/cut';
 import { G, Land, type Tile } from '../src/gen/grid';
-import { WAY_UP } from '../src/gen/below';
-import { CROSSING, DOOR_FORMS, DOOR_SPRITE, generate } from '../src/gen/land';
+import { generate } from '../src/gen/land';
+import { DOOR_FORMS, type Looks, footprint, kitSprites, looksOf, looksProblems, pieceOf } from '../src/gen/looks';
 import { fbm, valueNoise } from '../src/gen/noise';
 import { BRIDGE_RUN_MAX, RUN_MAX, longestRuns, repair, straightRuns } from '../src/gen/paths';
 import { storySeed } from '../src/gen/rand';
@@ -87,6 +87,7 @@ describe('story', () => {
 
 describe('generate', () => {
   const gen = generate(fixture);
+  const looks = looksOf();
   const { land, measure } = gen;
 
   it('gives the same land for the same story and another for another seed', () => {
@@ -130,7 +131,7 @@ describe('generate', () => {
     }
     const crossings = land.props.filter((p) => p.crossing);
     expect(crossings.length).toBe(land.crossings.size);
-    expect(crossings.every((p) => p.sprite.endsWith(CROSSING))).toBe(true);
+    expect(crossings.every((p) => p.sprite.endsWith(looks.places.crossing))).toBe(true);
   });
 
   it('hides its doors far from the roads and from each other, each of another form, each reached on foot and hinted at', () => {
@@ -145,7 +146,7 @@ describe('generate', () => {
       expect(Math.abs(d.step[0] - d.x) + Math.abs(d.step[1] - d.y)).toBe(1);
       expect(Math.min(...roads.map(([x, y]) => Math.abs(x - d.x) + Math.abs(y - d.y)))).toBeGreaterThanOrEqual(d.form === 'cellar' ? 3 : 6);
       const prop = land.props.find((p) => p.x === d.x && p.y === d.y);
-      expect(prop?.sprite.endsWith(DOOR_SPRITE[d.form as keyof typeof DOOR_SPRITE])).toBe(true);
+      expect(prop?.sprite.endsWith(looks.doors[d.form].sprite)).toBe(true);
       expect(prop?.solid).toBe(false);
       expect(prop?.id).toBe(`core/test-wood-door-${d.n}`);
       // the hint: something laid within two tiles that is not the door itself, or a worn trail from the step
@@ -178,7 +179,7 @@ describe('generate', () => {
       expect(below.land.walkable(sx, sy)).toBe(true);
       expect(below.land.props.some((p) => p.x === sx && p.y === sy && p.portal)).toBe(false);
       const up = below.land.props.find((p) => p.x === ax && p.y === ay)!;
-      expect(up.sprite.endsWith(WAY_UP)).toBe(true);
+      expect(up.sprite.endsWith(looks.below.way_up)).toBe(true);
       expect(up.solid).toBe(false);
       expect(up.id).toBe(`core/test-wood-up-${d.n}`);
       expect(up.portal).toEqual({ x: d.step[0], y: d.step[1] });
@@ -217,6 +218,7 @@ describe('generate', () => {
       expect(chunkProblems(f.chunk)).toEqual([]);
       expect(f.chunk.x % 64).toBe(0);
       expect(f.chunk.levels?.length).toBe(64);
+      for (const p of f.chunk.props) expect(p.x + p.w <= 64 && p.y + p.h <= 64).toBe(true);
       for (const s of f.chunk.spawns ?? []) {
         expect(s.kind.startsWith('core/')).toBe(true);
         expect(s.x >= 0 && s.x < 64 && s.y >= 0 && s.y < 64).toBe(true);
@@ -354,5 +356,71 @@ describe('atmosphere', () => {
     expect(atmosphereOf(fixture).fog_permille).toBe(0);
     expect(atmosphereOf({ ...fixture, id: 'core/valley' }).fog_permille).toBeGreaterThan(0);
     expect(atmosphereProblems({ ...cards.elf, particles: [{ kind: 'bees', density: 1 }] })[0]).toMatch(/unknown kind/);
+  });
+});
+
+describe('looks', () => {
+  const base = looksOf();
+  const clone = () => structuredClone(base) as Looks & { pieces: Record<string, Partial<{ w: number; h: number; solid: boolean }>> };
+
+  it('the repo table passes, and every name it uses is drawn in the kit', () => {
+    expect(looksProblems(base, kitSprites())).toEqual([]);
+  });
+
+  it('refuses a missing world, a wrong hint count, a footprint out of range, a bad name and a name the kit lacks', () => {
+    const noWorld = clone();
+    delete (noWorld.worlds as Partial<typeof noWorld.worlds>).elf;
+    expect(looksProblems(noWorld).join('\n')).toContain('worlds.elf: missing');
+    const shortHint = clone();
+    shortHint.doors.well = { sprite: 'props/standing_stone', hint: ['props/grass_tall'] };
+    expect(looksProblems(shortHint).join('\n')).toContain('doors.well.hint: 2 names');
+    const wide = clone();
+    wide.pieces['props/tree_oak'] = { w: 9 };
+    expect(looksProblems(wide).join('\n')).toContain('pieces.props/tree_oak.w: 1 to 8');
+    const badName = clone();
+    (badName.below as { glow: string }).glow = 'Glow Mushrooms';
+    expect(looksProblems(badName).join('\n')).toContain('below.glow: a kit name');
+    const undrawn = clone();
+    (undrawn.below as { glow: string }).glow = 'props/not_drawn_yet';
+    expect(looksProblems(undrawn, kitSprites()).join('\n')).toContain('props/not_drawn_yet: not drawn in the kit');
+    expect(looksProblems(undrawn)).toEqual([]);
+  });
+
+  it('a piece with a footprint stands whole: in one chunk, under no other prop, its solid tiles blocked, and the land still walks', () => {
+    const big = clone();
+    big.pieces['props/tree_oak'] = { w: 2, h: 2, solid: true };
+    big.pieces['props/ruin_arch'] = { w: 3, h: 2 };
+    big.pieces['props/standing_stone'] = { w: 2, h: 1, solid: true };
+    const gen = generate(fixture, big);
+    const lands = [gen.land, gen.below!.land];
+    let wide = 0;
+    for (const land of lands) {
+      const taken = new Set<number>();
+      for (const p of land.props) {
+        const name = p.sprite.slice(big.kit.length);
+        const def = pieceOf(big, name);
+        expect([p.w, p.h]).toEqual([def.w, def.h]);
+        if (p.w > 1 || p.h > 1) wide++;
+        const tiles = footprint(big, name, p.x, p.y);
+        expect(new Set(tiles.map(([x]) => Math.floor(x / 64))).size).toBe(1);
+        expect(new Set(tiles.map(([, y]) => Math.floor(y / 64))).size).toBe(1);
+        for (const [x, y] of tiles) {
+          expect(land.inside(x, y)).toBe(true);
+          expect(taken.has(land.key(x, y))).toBe(false);
+          taken.add(land.key(x, y));
+          if (p.solid) expect(land.blocked.has(land.key(x, y))).toBe(true);
+        }
+      }
+    }
+    expect(wide).toBeGreaterThan(20);
+    expect(gen.measure.unreachable).toBe(0);
+    expect(gen.below!.measure.unreachable).toBe(0);
+    expect(gen.doors.length).toBe(fixture.caves);
+    for (const d of gen.doors) expect(gen.land.walkable(d.step[0], d.step[1])).toBe(true);
+    for (const f of cut(gen)) {
+      expect(validateFile(f)).toEqual([]);
+      expect(chunkProblems(f.chunk)).toEqual([]);
+    }
+    expect(generate(fixture, big).land.props.length).toBe(gen.land.props.length);
   });
 });

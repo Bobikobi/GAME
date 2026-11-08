@@ -1,0 +1,74 @@
+{
+  "kit": "core/base-kit:",
+  "pieces": {
+    "props/tree_oak": { "solid": true },
+    "props/young_tree": { "solid": true },
+    "props/dead_tree": { "solid": true },
+    "props/stump": { "solid": true },
+    "props/bush_empty": { "solid": true },
+    "props/log_fallen": { "solid": true },
+    "props/log_mossy": { "solid": true },
+    "props/standing_stone": { "solid": true },
+    "props/ruin_wall": { "solid": true },
+    "props/ruin_pillar": { "solid": true },
+    "props/rock_mossy": { "solid": true },
+    "props/ruin_arch": {},
+    "props/rubble": {},
+    "props/flowers": {},
+    "props/flowers_white": {},
+    "props/flowers_blue": {},
+    "props/grass_tall": {},
+    "props/rock_small": {},
+    "props/rock_stones": {},
+    "props/pebbles": {},
+    "props/mushrooms_small": {},
+    "props/mushroom_patch": {},
+    "props/glow_mushrooms": {},
+    "props/fallen_branches": {}
+  },
+  "worlds": {
+    "human": {
+      "trees": ["props/tree_oak", "props/tree_oak", "props/young_tree", "props/tree_oak", "props/bush_empty"],
+      "small": ["props/flowers", "props/flowers_white", "props/grass_tall", "props/rock_small", "props/mushrooms_small", "props/log_fallen"],
+      "lone": ["props/tree_oak", "props/young_tree"]
+    },
+    "elf": {
+      "trees": ["props/tree_oak", "props/young_tree", "props/tree_oak", "props/young_tree", "props/tree_oak"],
+      "small": ["props/flowers_blue", "props/flowers_white", "props/glow_mushrooms", "props/mushroom_patch", "props/grass_tall", "props/log_mossy"],
+      "lone": ["props/tree_oak", "props/young_tree"]
+    },
+    "undead": {
+      "trees": ["props/dead_tree", "props/dead_tree", "props/stump", "props/dead_tree", "props/log_fallen"],
+      "small": ["props/rock_stones", "props/rock_small", "props/pebbles", "props/fallen_branches", "props/rubble", "props/stump"],
+      "lone": ["props/dead_tree", "props/stump"]
+    }
+  },
+  "places": {
+    "hub": {
+      "centre": "props/standing_stone",
+      "around": [
+        ["props/rock_small", -2, 1],
+        ["props/rock_mossy", 2, -1],
+        ["props/flowers_white", 1, 2],
+        ["props/flowers", -1, -2]
+      ]
+    },
+    "ruin": { "wall": "props/ruin_wall", "pillar": "props/ruin_pillar", "arch": "props/ruin_arch" },
+    "crossing": "props/pebbles"
+  },
+  "doors": {
+    "cave": { "sprite": "props/ruin_arch", "hint": [] },
+    "hollow": { "sprite": "props/dead_tree", "hint": ["props/mushrooms_small", "props/glow_mushrooms"] },
+    "well": { "sprite": "props/standing_stone", "hint": ["props/grass_tall", "props/flowers_white"] },
+    "cellar": { "sprite": "props/rubble", "hint": ["props/pebbles", "props/fallen_branches"] },
+    "fall": { "sprite": "props/log_mossy", "hint": ["props/glow_mushrooms"] }
+  },
+  "below": {
+    "way_up": "props/ruin_arch",
+    "stones": ["props/rock_stones", "props/pebbles", "props/rock_small"],
+    "glow": "props/glow_mushrooms",
+    "bones": "props/rock_small",
+    "timber": "props/fallen_branches",
+    "pillar": "props/standing_stone"
+  }
+}

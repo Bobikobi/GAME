@@ -112,6 +112,11 @@ export class Land {
     }
   }
 
+  /** The prop whose footprint covers the tile, if any. */
+  propAt(x: number, y: number): Prop | undefined {
+    return this.props.find((p) => x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h);
+  }
+
   /** Drops every prop whose footprint touches the tile. */
   clearProps(x: number, y: number): void {
     for (let i = this.props.length - 1; i >= 0; i--) {
