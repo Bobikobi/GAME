@@ -1,0 +1,14 @@
+{
+  "id": "core/undead-ash",
+  "title": "The ash flats",
+  "seed": "red sun",
+  "world": "undead",
+  "origin": { "cx": 5, "cy": 6 },
+  "size": { "w": 2, "h": 3 },
+  "forest": 45,
+  "relief": 60,
+  "water": 15,
+  "caves": 2,
+  "entries": ["n"],
+  "ruins": 4
+}

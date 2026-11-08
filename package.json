@@ -9,6 +9,7 @@
   },
   "scripts": {
     "check": "tsx tools/src/cli.ts check",
+    "gen": "tsx tools/src/gen/cli.ts",
     "sheet": "tsx tools/src/sheet.ts",
     "values": "tsx tools/src/cli.ts values",
     "world:lock": "tsx tools/src/cli.ts lock",

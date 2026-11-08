@@ -1,0 +1,14 @@
+{
+  "id": "core/human-meadow",
+  "title": "The low meadows",
+  "seed": "pastoral",
+  "world": "human",
+  "origin": { "cx": 1, "cy": 4 },
+  "size": { "w": 3, "h": 2 },
+  "forest": 35,
+  "relief": 25,
+  "water": 50,
+  "caves": 1,
+  "entries": ["w", "e", "n"],
+  "ruins": 2
+}
