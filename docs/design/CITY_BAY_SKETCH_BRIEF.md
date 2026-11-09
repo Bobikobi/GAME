@@ -1,14 +1,14 @@
 # Sketch brief for Gemini: the city and the bay (draft, for the owner)
 
-Status: draft. Nothing here is a decision. The sketches are looked at only, never imported into the game (PROP_FROM_REF.md: a picture from outside is named by looking, the palette decision comes first). Attach the owner's reference images as style references only, never to copy their characters, landmarks or names.
+Status: draft, superseded in practice by the place cards beside it (`places/drowned-bay.md`, `places/tiered-city.md`). Nothing here is a decision, and whether any outside picture may be an input to an image model is the owner's to rule. The sketches are looked at only, never imported into the game.
 
 ## Send with every prompt (the game's rules)
 
 - A concept sketch for a 2D top-down-leaning RPG, camera low, about 35 degrees over the ground: the figure is seen from the front and slightly above, the crown a sliver. Trees, houses and props are drawn from the front.
-- Portrait, phone-shaped, 9:16. No sky strip: the top of the picture is the far ground or something enormous that runs out of the frame.
+- Portrait, phone-shaped, 9:16. The land seen from above: no sky, horizon, sun or moon in the frame, the ground reaches all four edges. Something enormous runs out of the frame and its effect lies on the ground (cast shade, shafts of light, mist).
 - Scale by contrast: the player figure is tiny, about 3% of the picture's height, in a red cloak, beside things many times its size.
 - Ink outline with soft colour under it, one dominant colour world per picture, one huge lit landmark, layered fog for depth, still water used as a mirror.
-- Never: a named character, a recognisable game's landmark (no giant golden tree trunk copied, no red-haired blade-wielder, no giant on a horse), text, UI, modern things, a second art style.
+- Never: a named or recognisable character or landmark from any other work, text, UI, modern things, a second art style.
 - Output: PNG, no JPEG.
 
 ## Prompt 1: the city across the bay (human world)
@@ -19,12 +19,12 @@ Attach: references 3 and 4 (the golden city).
 ## Prompt 2: the drowned bay (the bay and the coast)
 
 Attach: reference 5 (the flooded ruins).
-"A wide shallow bay with the roofs, towers and arches of a drowned town standing in clear turquoise water, stone causeways and low bridges joining islets, reeds and small trees on the islets, thin fog banks lying between them, every tower reflected in the still water. A far bank holds a tall pale castle on a cliff, the one landmark, half in mist. Low 35 degree camera standing on a stone causeway in the shallows, the closest ruin larger than the frame. A tiny figure in a red cloak wades beside it. Palette: turquoise, pale stone, grey-lilac fog, a little moss green, blue flowers in the foreground."
+"A wide shallow bay with the roofs, towers and arches of a drowned town standing in clear turquoise water, stone causeways and low bridges joining islets, reeds and small trees on the islets, thin fog banks lying between them, every tower reflected in the still water. One tall pale tower is the landmark and runs out of the top of the frame. Low 35 degree camera standing on a stone causeway in the shallows, the closest ruin larger than the frame. A tiny figure in a red cloak wades beside it. Palette: turquoise, pale stone, grey-lilac fog, a little moss green, blue flowers in the foreground."
 
-## Prompt 3 (optional): open sea at night
+## Prompt 3 (optional): open water at night
 
-Attach: reference 7 (the moon over the water).
-"A still open sea at night, the whole picture water, a huge full moon low and close making a long bright reflection that runs toward the camera, a little cloud, many small stars at the top edge. A distant tall robed figure with a crescent staff stands in the water as a landmark, throwing a thin trail of blue shards. Low 35 degree camera on a small boat or in shallows, a tiny figure in a red cloak in the foreground. Palette: deep navy, pale cream moon, one cold blue light."
+Attach: reference 7 (the water by moonlight).
+"Still open water at night, the whole picture water, with a long pale band of moonlight lying on it (the moon itself is never in the frame, only its light), a little mist. A tall robed figure with a crescent staff stands in the water as the landmark, throwing a thin trail of blue shards. Low 35 degree camera on a small boat or in shallows, a tiny figure in a red cloak in the foreground. Palette: deep navy, pale cream moonlight, one cold blue light."
 
 ## What the owner looks at in the three results
 
