@@ -43,7 +43,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 
 ## 1b. Proportions (decided that they rule; the numbers wait for one look)
 
-The owner, 18.10, on the walk video where an oak stood barely taller than Pell: "64 is the new standard ... bring in proportions". The character is the measure: a frame of 1 x 1.5 tiles, the body about 80 px tall. A top-down game shrinks the world around its people, and so does this one, but never below the ratios here.
+The owner, 18.10, on the walk video where an oak stood barely taller than Pell: "64 is the new standard ... bring in proportions". The character is the measure, and it is two numbers that are not the same thing: the frame is 1 x 1.5 tiles (64 x 96 px of room), and the body inside it is the adult human's 73 art px, 1.14 tiles or 18.25 world units (`chars/human_down`, the height `pnpm art:scale` and every "characters" column measure against). "A character's height" on this page and in NATURE is that 73 px body; 1.5 tiles is only the frame's room. An elf stands taller (1.08 to 1.37 of it, the scale audit of 31.10). A top-down game shrinks the world around its people, and so does this one, but never below the ratios here.
 
 | Thing | Today at 16 (tiles) | At 64 (tiles, art px) | Against a character's height |
 |---|---|---|---|
