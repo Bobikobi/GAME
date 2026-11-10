@@ -4240,3 +4240,16 @@ Not done: no tree, house or prop is redrawn to a higher camera; no reference pix
 **Not built:** the plan (this entry is the rule it follows), and the whole later part. Shops, secret passages and hidden quests wait for the stage of shops and city quests; until then a door or a passage is only a marked place in the plan.
 **Retry when:** a first walk of the city shows players lost without pleasure (then Tier 3: the shape seen once from a high place inside the city, never as a peek at the gate), or the stage of shops begins.
 **Model:** Claude Fable 5. **Link:** GAME_RULES `maze`; DECISIONS 2026-10-11 "Maze difficulty is a ladder of four tiers"; 2026-11-10 owner's log.
+
+## 2026-11-11 ✅ Painted scenes at zoom 3, the figure redrawn to the painting's 51 px, the full frame as the measure
+
+The owner, 11.11, on stills of two finished painted scenes in the live engine (the full frame 1920 x 1080 with the phone frame beside it, one difference each): the figure and the world were not in proportion. Measured: a painted scene places its figure at 18 world units of a 270-unit frame, 51.2 px at a 1369 x 768 frame (26.7 x 15.0 figure-heights), while the slim elf the engine draws stands 93 px (1.82 times too tall against what the painting holds). Doors (a cabin door 59-62 px) and a flight of stairs (about 52 px for a figure) agree with 51.2 within 5%; the 58 px that some tools used is a second constant that no picture supports. At today's zoom (one device pixel per art pixel) a painted scene does not fill a 1920 x 1080 window, since the camera is bounded by the scene.
+Picks, all five from one page:
+1. **Zoom 3.** One art pixel is three device pixels. At 1920 x 1080 a 51 px figure is 153 px, 14.2% of the screen height (the range of the audit games: Stardew 9.4%, Eastward 14.5-15.5%), 7 figure-heights of world top to bottom.
+2. **The figure moves, the paintings stay.** The cast is redrawn at the painting's 51 px, not the painted scenes repainted to the 93 px elf.
+3. **The full frame is the measure**, as 2026-11-04 ruled; the phone is information, not a second set of judged stills.
+4. **35 degrees** for everything that moves (2026-11-04); `tools/anim/anim.json` and the renderer's default now say it (#694).
+5. **The character's height is the adult human's 73 px body (1.14 tiles)**; 1.5 tiles (96 px) is only the frame's room (STYLE 1b).
+**Open:** the figure's presence. The owner's note: "the figure still feels small, maybe more than zoom 3, or a little bigger too, it still gets swallowed." Round 2 draws three looks against zoom 3, one difference each: zoom 4; the figure a little bigger at zoom 3 (it makes everything around read smaller against it); the figure lifted off the ground by the engine's own draw. His pick of those is the next entry.
+**Not done:** the cast is not redrawn and no engine zoom step changed; the stills used the current elf sheet scaled to 51 px as a stand-in. **Retry when:** round 2 shows zoom 3 reads too small on the phone frame, or a redrawn 51 px figure loses its face at that size.
+**Model:** claude-sonnet-5-5. **Link:** #694; DECISIONS 2026-11-04 "Foundations alignment".
