@@ -4265,3 +4265,15 @@ The open point of the entry above. The owner judged round 2 in two picks on the 
 **Retry when:** painted scenes are made at a higher density (at least a third more pixels per world unit), or the cast is redrawn larger than 51 px.
 **Lesson for the next pick:** a judgement about zoom is shown full screen at true pixels. Inside a page's window the frames are shrunk and the softness cannot be seen; the owner asked for the full screen before he answered.
 **Model:** claude-fable-5-2 (judging), claude-sonnet-5-5 (building). **Link:** follows the entry above (#695).
+
+## 2026-11-12 ✅ The see-through behind tall things stays; the halo around the figure is a trait of the race: light for the elf, black for the skeleton, none for the human
+
+The open point of the entry above (the see-through was still behind a switch). The owner judged it on 12.11, full screen at true pixels, at two painted places, each with and without: liked.
+**What he liked, as built:** a window in the shape of the body (the figure's 15 x 52 art px grown by one pixel) in which the cover is almost fully seen through, fading out over about 8 art px. It follows the figure, opens only behind cover, and changes nothing in the open (0 pixels differ at five open spots).
+**His notes with the Like, the same hour:**
+1. Where the thing behind the cover is bright, a narrow bright halo is left around the body. It is a little too strong: soften it.
+2. The halo is a trait of the race, not a side effect. The elf has a halo of light, felt mainly in the land of the dead and at night. The skeleton has the same halo in black. The human is neutral.
+3. He has more animations in mind for the halo. They belong to a later stage: the work now is the foundation that makes the world.
+**Built / not built:** the see-through is built behind its switch and is not on `develop` yet. Nothing of notes 1 to 3 is built.
+**The manager's reading, to be checked on the first stills:** the window itself leaves no halo of its own (that is the human's case), and the halo is then its own effect, a colour and a strength per race as data, growing with how dark the place is.
+**Model:** claude-fable-5-2 (judging), claude-sonnet-5-5 (building). **Link:** follows the entry above.
