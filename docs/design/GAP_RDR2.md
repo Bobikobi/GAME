@@ -224,7 +224,7 @@ Each in one sentence, three options, A the recommendation, and the default if un
    Default if unanswered: A.
 
 7. **How is gear drawn on the body?**
-   A (recommended): layered slots rendered from the 3D body at the 50 degree camera
+   A (recommended): layered slots rendered from the 3D body at the game's camera (about 35 degrees since DECISIONS 2026-11-04)
    (`tools/anim/README.md`), as decisions 6 and 41 say, one layer per slot in every pose and
    view.
    B: baked outfit sheets per set, the whole body re-rendered per outfit.

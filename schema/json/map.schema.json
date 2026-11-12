@@ -594,7 +594,7 @@
         },
         "creatures": {
           "additionalProperties": false,
-          "description": "Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A kind with \"hunt\" is the kernel's too: it dresses its carcasses and the value table prices its goods, with its spots as the source's capacity (HUNTING sections 5-9). A kind with \"behaviour\" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den's mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).",
+          "description": "Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A spot may carry a rank, a shape, a count, affixes, a leader and a route (the generator's axes, DECISIONS 2026-11-08); left out, it is a regular spot of the kind's own group class. A kind with \"hunt\" is the kernel's too: it dresses its carcasses and the value table prices its goods, with its spots as the source's capacity (HUNTING sections 5-9). A kind with \"behaviour\" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den's mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).",
           "type": "object",
           "required": [
             "kinds",
@@ -1564,6 +1564,108 @@
                     "minimum": 0,
                     "maximum": 1023,
                     "type": "integer"
+                  },
+                  "rank": {
+                    "description": "How strong the spot's creatures are against the kind's norm. Left out: regular. At most one boss on a map.",
+                    "anyOf": [
+                      {
+                        "const": "regular",
+                        "type": "string"
+                      },
+                      {
+                        "const": "elite",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rare",
+                        "type": "string"
+                      },
+                      {
+                        "const": "boss",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "shape": {
+                    "description": "How they stand: alone, as a pack, as a camp around a leader, or walking a route. Left out: the kind's own group class.",
+                    "anyOf": [
+                      {
+                        "const": "lone",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pack",
+                        "type": "string"
+                      },
+                      {
+                        "const": "camp",
+                        "type": "string"
+                      },
+                      {
+                        "const": "patrol",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "count": {
+                    "description": "How many are drawn at the spot, the fewest then the most. Left out: the kind's own band.",
+                    "type": "array",
+                    "items": [
+                      {
+                        "minimum": 1,
+                        "maximum": 16,
+                        "type": "integer"
+                      },
+                      {
+                        "minimum": 1,
+                        "maximum": 16,
+                        "type": "integer"
+                      }
+                    ],
+                    "additionalItems": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "affixes": {
+                    "maxItems": 3,
+                    "uniqueItems": true,
+                    "description": "The affix words of the spot's creatures; a regular spot carries none.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                      "description": "An affix word the fight reads (fast, armoured, venom, ember...): a small change to the kind's norm, never a new kind.",
+                      "type": "string"
+                    }
+                  },
+                  "leader": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A camp only: the kind standing at its middle, one of the map's kinds.",
+                    "type": "string"
+                  },
+                  "route": {
+                    "minItems": 2,
+                    "maxItems": 64,
+                    "description": "A patrol only: the tiles it walks, in order, each a path tile four-adjacent to the one before. World tiles, in a chunk too, so a beat may cross a seam.",
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
                   }
                 }
               }
@@ -2073,6 +2175,27 @@
                 "const": true,
                 "type": "boolean"
               },
+              "portal": {
+                "additionalProperties": false,
+                "description": "A way through: a player who steps onto this non-solid prop's footprint stands on that world tile instead (a cave mouth, a hollow tree, an old well, the way back up). The tile is walkable and the check proves it. It needs an id. A chunk's portal names a world tile, not a chunk tile.",
+                "type": "object",
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  },
+                  "y": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  }
+                }
+              },
               "lit_by": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
@@ -2293,6 +2416,11 @@
                 "maxLength": 40,
                 "type": "string",
                 "description": "The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable."
+              },
+              "underground": {
+                "description": "Below the ground, reached through a portal: no sky over it (no weather, no sun, its card's night all day), and the chart draws it only once entered. Left out: open air.",
+                "const": true,
+                "type": "boolean"
               }
             }
           }
@@ -2433,6 +2561,140 @@
                     ]
                   }
                 }
+              },
+              "atmosphere": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "sun",
+                  "night_depth",
+                  "particles"
+                ],
+                "properties": {
+                  "sun": {
+                    "additionalProperties": false,
+                    "description": "The tint the light layer gives the day and the dusk. [255, 255, 255] by day leaves the valley's light as it is; a redder day is the undead land's.",
+                    "type": "object",
+                    "required": [
+                      "day",
+                      "dusk"
+                    ],
+                    "properties": {
+                      "day": {
+                        "description": "Red, green, blue.",
+                        "type": "array",
+                        "items": [
+                          {
+                            "minimum": 0,
+                            "maximum": 255,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 0,
+                            "maximum": 255,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 0,
+                            "maximum": 255,
+                            "type": "integer"
+                          }
+                        ],
+                        "additionalItems": false,
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      "dusk": {
+                        "description": "Red, green, blue.",
+                        "type": "array",
+                        "items": [
+                          {
+                            "minimum": 0,
+                            "maximum": 255,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 0,
+                            "maximum": 255,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 0,
+                            "maximum": 255,
+                            "type": "integer"
+                          }
+                        ],
+                        "additionalItems": false,
+                        "minItems": 3,
+                        "maxItems": 3
+                      }
+                    }
+                  },
+                  "night_depth": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "How far the night falls: 0 the lightest night the layer draws, 100 its darkest. The valley's own night is about 50.",
+                    "type": "integer"
+                  },
+                  "particles": {
+                    "maxItems": 4,
+                    "description": "What drifts in the air, each kind once.",
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "density"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "anyOf": [
+                            {
+                              "const": "fireflies",
+                              "type": "string"
+                            },
+                            {
+                              "const": "pollen",
+                              "type": "string"
+                            },
+                            {
+                              "const": "ash",
+                              "type": "string"
+                            },
+                            {
+                              "const": "embers",
+                              "type": "string"
+                            },
+                            {
+                              "const": "leaves",
+                              "type": "string"
+                            },
+                            {
+                              "const": "birds",
+                              "type": "string"
+                            },
+                            {
+                              "const": "snow",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "density": {
+                          "minimum": 1,
+                          "maximum": 10,
+                          "description": "How much of it drifts: 1 a few, 10 a cloud.",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "shafts": {
+                    "description": "Sun shafts between the trees by day (the elf wood). Left out: none.",
+                    "type": "boolean"
+                  }
+                },
+                "description": "The region's air: its sun, its night and what drifts in it. Left out: the valley's own light, as the layer draws it today."
               }
             }
           }

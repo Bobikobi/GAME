@@ -536,7 +536,7 @@ PEGI 16 line on his word of 19.10 (DECISIONS.md 2026-10-23, "The line is PEGI
   against someone who cannot act, nothing sexual. It is visual only and
   changes no rule, number or state. The text names a death as a death (G33).
   A predator biting, a body in the grass and blood on a sleeve change sprite
-  sheets, so they are a direction: phone-size stills go to the owner before a
+  sheets, so they are a direction: full-frame stills (1920 x 1080, STYLE 1) go to the owner before a
   sprite is touched (TONE.md section 3).
 
 ### Combat

@@ -14,7 +14,7 @@ Two rules stand over all of it:
 
 | Decided | Where |
 |---|---|
-| The character is the measure: a frame of 1 x 1.5 tiles, the body about 80 px; the proportions table for trees, houses, props; bigger is open | STYLE 1b, DECISIONS 2026-10-18 |
+| The character is the measure: a frame of 1 x 1.5 tiles, the body 73 px (STYLE 1b); the proportions table for trees, houses, props; bigger is open | STYLE 1b, DECISIONS 2026-10-18 |
 | Shadows C, the night at 92% with light pools, lit windows, height T2, the six depth cues (reflections, into the grass, cloud shadows, footprints, a shadow that stays down, height) | STYLE 4 to 7 |
 | The light is one module with an hour table in `params.json`; the hour's tints wait for the L2 pick | ART_SYSTEM 2, #234, #241 |
 | Ramps per material and per region, declared and checked; a region's look is a table, not a redraw | ART_SYSTEM 3, #230 |
@@ -25,7 +25,7 @@ Two rules stand over all of it:
 
 ## 1. Scale: everything is measured in characters
 
-STYLE 1b gives the floor for trees, houses and props. This section adds what it leaves out: people, animals, and the things a monster is allowed to break. The unit is one character's height (about 80 px of body at 64 px per tile). A number is a floor and the size of the common one; bigger is open (STYLE 1b).
+STYLE 1b gives the floor for trees, houses and props. This section adds what it leaves out: people, animals, and the things a monster is allowed to break. The unit is one character's height (the adult human's 73 px of body at 64 px per tile, STYLE 1b). A number is a floor and the size of the common one; bigger is open (STYLE 1b).
 
 | Thing | Height in characters | Footprint (tiles) | Note |
 |---|---|---|---|
@@ -69,7 +69,7 @@ A region (one map file, OPEN_WORLD G51) declares one `climate`. The climate is a
 - **Mixing:** a region has one climate. The crossing between two climates is a band of two to four tiles where the ground's ramp steps from one table to the other, on the ragged line STYLE 3 already draws between grounds; the trees of both may stand in the band.
 - **A town carries its climate:** a pastoral town is green and full (gardens, a well, washing lines, chickens); a desert town is walled, shaded and bare (awnings, water jars, a shaded square). The stamps a creator adds (ART_SYSTEM 5) say which climates they fit.
 - **Data (proposal):** `climate` on the region's map body, one of a closed list; the tables above as `content/core/climates.json` (ramp set, densities, allowed kinds, air defaults, sound beds). The valley gets `temperate` in the same change and nothing on screen moves until a second climate exists.
-- **Kind:** direction, once. The still: one scene of the same layout (a well, a house, a tree, a path, water) rendered in each of the four climates at phone size, four frames (section 8). After the pick, a climate's numbers are polish.
+- **Kind:** direction, once. The still: one scene of the same layout (a well, a house, a tree, a path, water) rendered in each of the four climates at the full frame (1920 x 1080, STYLE 1), four frames (section 8). After the pick, a climate's numbers are polish.
 
 ## 3. The seasons of the year
 

@@ -183,7 +183,7 @@ Recommended: S1, the wings, with the strip at the foot, because it answers the o
 
 The owner's word of 19.10, recorded in this pull request (DECISIONS 2026-10-20 ❌ "The crafting workshop screen as built is a hosted list"): the workshop screen is "a hosted list", uncomfortable and ugly, and it is rebuilt only after a stills ladder of its own. What is built is the station panel (`game/src/ui/panels.ts`, the station function): a row per known recipe with the output's sprite, the title, the needs as item names with counts, a class-and-seconds line, the gate line (the kernel's own refusal, never a level, CR-17) and a Make button; the upgrades as cards under the rows; one muted line at the end. A list that hosts rows, which is what he saw.
 
-The ladder, specified here and made before any rebuild, the same way as section 6 (three stills, 390x844 at 3x, one difference each, the same content in all three: the workbench at tier 2, the handcraft recipes of the stone and reed chains, the same bag, the same gate on one recipe):
+The ladder, specified here and made before any rebuild, the same way as section 6 (three full-frame stills at 1920 x 1080 (STYLE 1), one difference each, the same content in all three: the workbench at tier 2, the handcraft recipes of the stone and reed chains, the same bag, the same gate on one recipe):
 
 | Still | Tests | What the eye should find |
 |---|---|---|
