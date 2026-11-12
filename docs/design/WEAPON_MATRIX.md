@@ -261,7 +261,7 @@ So 16 rows start known (all tier 1), 4 come from the cache, 44 from 15 quests of
 ```text
 taught recipes sharing one input set (no try reads them): 7
   bow-stave = club (workshop)
-  shaped-stones = throwing-stones = stone-flakes (built) (workshop)
+  shaped-stones = throwing-stones = hammerstone (built) = stone-flakes (built) (workshop)
   greenstone-mace = throwing-axe (workshop)
   fine-basket (built) = satchel (built) (workshop)
   fishing-rod (built) = reed-basket (built) (workshop)
