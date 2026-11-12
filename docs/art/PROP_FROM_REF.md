@@ -18,7 +18,7 @@ decides before any number does, and the object is named by looking.
    grids for an organic prop, no "darken the bottom-left". The image model behind `kit:gen`
    draws; you own the reference, the spec, the import and the judgement.
 2. **Every round you look before you decide.** Open `gallery.html` (reference beside result,
-   3x phone size) and write two sentences on what is wrong. A score may sit beside the eye,
+   at the game's scale and at 3x) and write two sentences on what is wrong. A score may sit beside the eye,
    never replace it. If your tooling cannot show you an image, stop and say so.
 3. **Style-similar, not a copy.** The result reads as this kit, never as the source's asset.
    The reference says *what* the object is; existing kit sprites say *how* we draw.
@@ -71,7 +71,7 @@ style, not a copy, and carries the palette decision; see `buildPrompt` in `gen.t
 
 ## Step 3: import and look
 
-`kit:gen` imports the picture itself. Open `gallery.html` at 3x phone size, reference beside
+`kit:gen` imports the picture itself. Open `gallery.html` at the game's scale and at 3x, reference beside
 result. Write down: silhouette, material, colours inside the allowed ramps, outline and seam
 against the neighbouring kit props. The gallery's colour count must be all core palette.
 Detail is judged only at this size: if the reference looks richer here, the gap is grid or
