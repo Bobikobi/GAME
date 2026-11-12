@@ -4277,3 +4277,11 @@ The open point of the entry above (the see-through was still behind a switch). T
 **Built / not built:** the see-through is built behind its switch and is not on `develop` yet. Nothing of notes 1 to 3 is built.
 **The manager's reading, to be checked on the first stills:** the window itself leaves no halo of its own (that is the human's case), and the halo is then its own effect, a colour and a strength per race as data, growing with how dark the place is.
 **Model:** claude-fable-5-2 (judging), claude-sonnet-5-5 (building). **Link:** follows the entry above.
+
+## 2026-11-12 ✅ The order since 9.11: the wide world's foundation leads
+
+**What:** the "open world" of the order of 2026-10-17 became the leading stage - geography and the world chart, painted frames joined into one map, light and shadow in the engine over the day, water and fog. Accounts and a server run beside it when a builder is free; players who see each other and then chat stay last. The stage ends when a first block of nine joined frames is walked in the live engine with a full day's light, water and fog, and the owner has seen it.
+**Evidence:** since 9.11 every builder slot went to this stage while the written order still listed the opening and v0.1.5 as current; v0.1.11 is live since 31.10 and no release followed.
+**Why:** the owner's focus of 12.11 (the wide world's foundation; the halo parked) and his word that the manager orders the work by professional order. Proven: the written order and the work had drifted apart for 12 days.
+**Retry when:** the owner changes the focus, or the stage's end is reached.
+**Model:** Claude (manager). **Link:** #691.

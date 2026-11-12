@@ -320,7 +320,7 @@ b) The client and the content, branch `feat/tending`, on (a):
 
 ## 14. The first expedition: the night ruins (P-6)
 
-Status: building - variety
+Status: open
 
 Read DECISIONS 2026-10-08 (the expedition), 2026-10-10 (the entrance is safe; "one mist"), 2026-10-11 (P-5c: the doorstep and its pit), 2026-10-13 (the frames), 2026-10-16 (the vigil closes at dawn; the night ruins' one way in), GAME_RULES G36, G37 and G49, and GRUNT P-6 first. Two pull requests, after sections 12 and 13: the container, then the ruins.
 
