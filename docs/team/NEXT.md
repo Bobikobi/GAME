@@ -806,11 +806,11 @@ Steps 1 and 2 of GAP_MATERIALS section 6 (the take and the snare; one tanning an
 
 What is left, in order (GAP_MATERIALS section 6; each its own pull request off `origin/develop`, after #609 lands where it says so):
 a) Step 3, every hole gets one source on the page of its family: about 14 rows across MATERIALS 3 and QUARRYING 3 (#609).
-b) Step 4, a component lands with its first consumer: the check row and thirteen recipe edits (owner question 2).
+b) Step 4, a component lands with its first consumer: the check row and the recipe edits that give each existing orphan its consumer (owner question 2).
 c) Step 5, the valley's table: 12 ingredients, 16 dishes, two slots (BODY_CLOCKS 7 as its spec).
 d) Step 6, a healing ladder of five rungs, no cure.
 e) Step 7, the ladder above tier 3 and metal's place (QUARRYING question 1 (#609), owner question 3).
-f) Step 8, things that are used up (owner question 4); step 9, dyes on garments; step 10, two more families for the valley (owner question 5).
+f) Step 8, things that are used up (owner question 4); step 9, dyes on garments; step 10, the valley's balance: six or more items of plant, stone and other families (owner question 5, default B).
 
 Measurable:
 1. Every pull request of the stream: `pnpm verify` exit 0; a step's rules land on its domain page with the "(amended <date>, GAP_MATERIALS 6 step n)" mark and nothing on GAP_MATERIALS.md itself but a status word.
