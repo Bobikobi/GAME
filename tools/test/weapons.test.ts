@@ -371,8 +371,8 @@ describe('a mutation fails its own check', () => {
     src.params.built.bare_base!.max = 20;
     expectError(src, /^WM-BUILT: bare_base: max 20 in the source, 16 in content$/);
     const src2 = raw();
-    src2.params.built.bare_base!.at = 'content/core/params.json:1121';
-    expectError(src2, /^WM-BUILT: bare_base: content\/core\/params\.json:1121 does not name it \(the line reads: .*\)$/);
+    src2.params.built.bare_base!.at = 'content/core/params.json:1141';
+    expectError(src2, /^WM-BUILT: bare_base: content\/core\/params\.json:1141 does not name it \(the line reads: .*\)$/);
   });
 
   it('WM-COUNT', () => {
