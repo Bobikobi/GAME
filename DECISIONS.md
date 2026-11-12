@@ -4304,3 +4304,24 @@ The open point of the entry above (the see-through was still behind a switch). T
 **Why:** the owner's focus of 12.11 (the wide world's foundation; the halo parked) and his word that the manager orders the work by professional order. Proven: the written order and the work had drifted apart for 12 days.
 **Retry when:** the owner changes the focus, or the stage's end is reached.
 **Model:** Claude (manager). **Link:** #691.
+
+## 2026-11-12 ✅ The full game's content targets, sized against the large online games
+
+**What:** progress is measured against the full game, not against the plan already written. The owner set the size of each field on 12.11 in two rounds: he turned down the first, smaller offer in six fields and took the highest step in each.
+
+| Field | On `develop` today | Target | The measure it was set beside |
+|---|---|---|---|
+| Weapons | 0 | 500 | Old School RuneScape: 578 weapon pages, variants included |
+| Clothing and armour | 12 | 400 | Core Keeper: 238 armour pieces |
+| Monsters and bosses | 0 | 700 and 100 | Tibia: 718 creatures and 112 boostable bosses in its library |
+| Animals | 6, as decoration | 90 | Terraria: 94 critter types |
+| Skills | 6 schools, 44 nodes | 23 schools, 1,000 nodes | Old School RuneScape: 24 skills |
+| Quests | 15, all in the first valley | 200 | Old School RuneScape: 189 quests |
+| Fighting between players | none | 3 styles: a duel by consent, an arena, open dangerous zones | his choice; the alpha carries the duel by consent only |
+| Animations | 34 | about 3,700 | derived: 890 creatures with a walk, an idle, a fight and a death each, and the three races' own moves |
+
+For the fields that are a checklist and not a count (combat, the living world, multiplayer, security, sound) the target is every item of the list: present at the alpha, passing a quality check at the beta.
+**Evidence:** the measures were read on 11-12.11 from public pages of seven games, four made by small teams and three large online ones. Wiki category counts include variants and are an order of magnitude; the clean ones are the skills, the quests and Tibia's own library. A launch-day number was found for almost none of the seven, so the small-team figures are what such a game holds after years of updates.
+**Why:** the owner's choice: the game aims at the level of the large multiplayer games, so each field is sized by what they hold today. At a year's pace this is about 10 weapons, 8 garments, 16 creatures and 4 quests a week (the manager's arithmetic); how that pace is reached is not decided here.
+**Retry when:** a field's first month of real production shows its pace; its number is then re-read against it. This entry sets sizes only and switches nothing on: combat stays off, and no weapon item enters before it is on.
+**Model:** Claude Fable 5.2 (manager). **Link:** https://oldschool.runescape.wiki/w/Quests , https://oldschool.runescape.wiki/w/Skills , https://www.tibia.com/library/?subtopic=creatures , https://terraria.wiki.gg/wiki/Critters , https://corekeeper.atma.gg/en/Armor
