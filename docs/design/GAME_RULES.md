@@ -393,7 +393,7 @@ The demo has no combat (G35); its danger is the hour, and what the player eats.
   running back to a safe place (G30: the town, all ground at danger level 0,
   or a camp whose fire burns), and the run is hard and possible; once combat
   opens a predator can also be fought, which is very hard without a weapon
-  (his note on the predators card, 12.11; the manager's reading); the rest
+  (the owner's yes of 12.11 in chat to this wording); the rest
   are avoided by knowing the rule: the trap shows by day, the pit is where the
   floor is broken, the herb is bad raw and safe cooked, deep water is the
   river without its bridge at night. No thing bought or made is the answer to
