@@ -1,7 +1,8 @@
 /**
  * The wild's content rows (docs/design/HUNTING.md sections 2, 8 and 12; CREATURE_BEHAVIOUR section 7; HUNT_FAMILIES
  * section 8): every rule about a kind's `behaviour` that reads only the content. A kind without `behaviour` is
- * cosmetic and none of these rows reads it.
+ * cosmetic and none of these rows reads it, but one: animals keep their spots, every spot of every kind, so no node
+ * stands on one (QUARRYING 8).
  *
  * Left for later, with their targets:
  * - kernel tests of the pull requests that step animals, since each needs an animal stepped: a sleeper never a
@@ -18,7 +19,7 @@
  *
  * A kind's danger is its `hunt.danger`; a kind with no `hunt` is ambient and reads as danger 0.
  */
-import { type Bundle, anchorId, boltCandidates, distanceTo, idiv, isSafeGround, regionOf, tagAt } from '@game/kernel';
+import { type Bundle, anchorId, appearSlots, boltCandidates, distanceTo, idiv, isSafeGround, regionOf, tagAt } from '@game/kernel';
 import { GROUP_BAND_SIZES, GROUP_BANDS } from '@game/schema';
 import type { Issue } from './load';
 
@@ -195,6 +196,22 @@ export function checkWild(b: Bundle, origin: Record<string, string>): Issue[] {
       const { bolt_min_tiles: lo, bolt_max_tiles: hi } = b.params.wild;
       err(where, `${s.kind}'s den at ${s.x},${s.y} has no bolt hole: no open ${be.habitat.join(' or ')} tile ${lo} to ${hi} tiles away that it can run to from the mouth (HUNT_FAMILIES 3.1)`);
     }
+  });
+
+  // animals keep their spots (QUARRYING 8, 16 row 7): no node of the merged world, laid by its slot or made to appear
+  // by a reaction, stands on a creature spot's tile. Every spot of every kind, behaviour or not, which is why this is
+  // not inside the loop above. The later arrival moves: a laid node by its slot, an appear node by its `appear.at`.
+  const nodeAt = new Map<number, string>();
+  const lay = (id: string, x: number, y: number) => {
+    const tile = y * map.width + x;
+    if (!nodeAt.has(tile)) nodeAt.set(tile, id);
+  };
+  for (const [id, inst] of byId(Object.entries(b.instances))) lay(id, inst.x, inst.y);
+  for (const [id, slot] of byId([...appearSlots(b)])) lay(id, slot.x, slot.y);
+  spots.forEach((s, i) => {
+    const node = nodeAt.get(s.y * map.width + s.x);
+    if (node === undefined) return;
+    err(`map.creatures.spots.${i}`, `node ${node} stands on ${s.kind}'s spot at ${s.x},${s.y}: animals keep their spots, so the later arrival moves, a laid node by its slot's place, size or count, an appear node by its reaction's appear.at, a new spot to a free tile (QUARRYING 8)`);
   });
   return issues;
 }

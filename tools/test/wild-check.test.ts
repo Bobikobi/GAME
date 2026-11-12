@@ -6,6 +6,7 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { appearSlots } from '@game/kernel';
 import type { MapFile, ParamsFile } from '@game/schema';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type CheckResult, runCheck } from '../src/check';
@@ -272,6 +273,38 @@ describe('the spots (HUNTING 8, CREATURE_BEHAVIOUR 4)', () => {
     expect(lines(r).some((l) => l.startsWith('map.creatures.spots.14: '))).toBe(false);
     // two kinds on one tile are two anchors with two ids
     expect(lines(world([spots((s) => s.push({ kind: ROE, x: 44, y: 16 }))])).some((l) => l.includes('a second'))).toBe(false);
+  });
+});
+
+describe('animals keep their spots (QUARRYING 8, 16 row 7)', () => {
+  const STANDS = 'animals keep their spots';
+  const MOVES = "so the later arrival moves, a laid node by its slot's place, size or count, an appear node by its reaction's appear.at, a new spot to a free tile (QUARRYING 8)";
+  const errorsOf = (r: CheckResult) => r.issues.filter((i) => i.level === 'error').map((i) => `${i.where}: ${i.message}`);
+
+  it('passes the shipped world with its extensions: every laid and appear node against every spot, no shared tile', () => {
+    const shipped = runCheck();
+    const b = shipped.assembled.bundle!;
+    // counted, not pinned: develop adds nodes and spots, and the row holds on any world (80 laid, 9 appear, 41 spots on 2.11)
+    expect(Object.keys(b.instances).length).toBeGreaterThan(0);
+    expect(appearSlots(b).size).toBeGreaterThan(0);
+    expect(b.map.creatures!.spots.length).toBeGreaterThan(0);
+    expect(errorsOf(shipped).filter((l) => l.includes(STANDS))).toEqual([]);
+    expect(errorsOf(core).filter((l) => l.includes(STANDS))).toEqual([]);
+  });
+
+  it('refuses a spot laid on a placed node\'s tile, and that is the only error', () => {
+    const { x, y } = core.assembled.bundle!.instances['core/river-stones#0']!;
+    const r = world([spots((s) => s.push({ kind: SPARROW, x, y }))]);
+    expect(errorsOf(r)).toEqual([`map.creatures.spots.${core.assembled.bundle!.map.creatures!.spots.length}: node core/river-stones#0 stands on core/sparrow's spot at ${x},${y}: ${STANDS}, ${MOVES}`]);
+  });
+
+  it('refuses a spot laid on an appear node\'s tile, also of a kind with no behaviour', () => {
+    const [id, slot] = [...appearSlots(core.assembled.bundle!)].sort(([a], [b]) => (a < b ? -1 : 1))[0]!;
+    const cosmetic = editCore<MapFile>('map.json', (m) => {
+      delete kindsOf(m)[SPARROW]!.behaviour;
+    });
+    const r = world([cosmetic, spots((s) => s.push({ kind: SPARROW, x: slot.x, y: slot.y }))]);
+    expect(errorsOf(r)).toEqual([expect.stringContaining(`map.creatures.spots.${core.assembled.bundle!.map.creatures!.spots.length}: node ${id} stands on core/sparrow's spot at ${slot.x},${slot.y}: ${STANDS}`)]);
   });
 });
 
