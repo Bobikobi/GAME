@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/quarrying",
+  "title": "Quarrying",
+  "creator": "core",
+  "description": "The stone tools knapped at the workshop.",
+  "items": [
+    {
+      "id": "core/hammerstone",
+      "name": "Hammerstone",
+      "description": "Two river stones, one knocked to a grip. Breaks stone faster, and wears out.",
+      "kind": "tool",
+      "rarity": "common",
+      "class": "tool",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stone",
+      "weight": 1,
+      "tool": {
+        "kind": "hammer",
+        "tier": 1,
+        "uses": 40
+      }
+    },
+    {
+      "id": "core/knapped-pick",
+      "name": "Knapped pick",
+      "description": "A stone flake lashed to a branch with reed cord. Breaks stone faster, and wears out.",
+      "kind": "tool",
+      "rarity": "common",
+      "class": "tool",
+      "tier": 1,
+      "sprite": "core/base-kit:items/trowel",
+      "weight": 1,
+      "tool": {
+        "kind": "pick",
+        "tier": 1,
+        "uses": 60
+      }
+    }
+  ]
+}
