@@ -936,6 +936,27 @@
                 "const": true,
                 "type": "boolean"
               },
+              "portal": {
+                "additionalProperties": false,
+                "description": "A way through: a player who steps onto this non-solid prop's footprint stands on that world tile instead (a cave mouth, a hollow tree, an old well, the way back up). The tile is walkable and the check proves it. It needs an id. A chunk's portal names a world tile, not a chunk tile.",
+                "type": "object",
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  },
+                  "y": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  }
+                }
+              },
               "lit_by": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
@@ -1167,6 +1188,27 @@
                       "const": true,
                       "type": "boolean"
                     },
+                    "portal": {
+                      "additionalProperties": false,
+                      "description": "A way through: a player who steps onto this non-solid prop's footprint stands on that world tile instead (a cave mouth, a hollow tree, an old well, the way back up). The tile is walkable and the check proves it. It needs an id. A chunk's portal names a world tile, not a chunk tile.",
+                      "type": "object",
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "properties": {
+                        "x": {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        },
+                        "y": {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        }
+                      }
+                    },
                     "lit_by": {
                       "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                       "maxLength": 80,
@@ -1397,6 +1439,140 @@
                       "type": "boolean"
                     }
                   }
+                }
+              }
+            }
+          }
+        },
+        "spawns": {
+          "maxItems": 64,
+          "description": "The chunk's creature spots, in chunk coordinates, each of a kind the map's `creatures.kinds` names. The generator writes them (tools/src/gen); no client draws them yet. Absent: none.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "kind",
+              "x",
+              "y"
+            ],
+            "properties": {
+              "kind": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "x": {
+                "minimum": 0,
+                "maximum": 63,
+                "type": "integer"
+              },
+              "y": {
+                "minimum": 0,
+                "maximum": 63,
+                "type": "integer"
+              },
+              "rank": {
+                "description": "How strong the spot's creatures are against the kind's norm. Left out: regular. At most one boss on a map.",
+                "anyOf": [
+                  {
+                    "const": "regular",
+                    "type": "string"
+                  },
+                  {
+                    "const": "elite",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rare",
+                    "type": "string"
+                  },
+                  {
+                    "const": "boss",
+                    "type": "string"
+                  }
+                ]
+              },
+              "shape": {
+                "description": "How they stand: alone, as a pack, as a camp around a leader, or walking a route. Left out: the kind's own group class.",
+                "anyOf": [
+                  {
+                    "const": "lone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pack",
+                    "type": "string"
+                  },
+                  {
+                    "const": "camp",
+                    "type": "string"
+                  },
+                  {
+                    "const": "patrol",
+                    "type": "string"
+                  }
+                ]
+              },
+              "count": {
+                "description": "How many are drawn at the spot, the fewest then the most. Left out: the kind's own band.",
+                "type": "array",
+                "items": [
+                  {
+                    "minimum": 1,
+                    "maximum": 16,
+                    "type": "integer"
+                  },
+                  {
+                    "minimum": 1,
+                    "maximum": 16,
+                    "type": "integer"
+                  }
+                ],
+                "additionalItems": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "affixes": {
+                "maxItems": 3,
+                "uniqueItems": true,
+                "description": "The affix words of the spot's creatures; a regular spot carries none.",
+                "type": "array",
+                "items": {
+                  "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                  "description": "An affix word the fight reads (fast, armoured, venom, ember...): a small change to the kind's norm, never a new kind.",
+                  "type": "string"
+                }
+              },
+              "leader": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "A camp only: the kind standing at its middle, one of the map's kinds.",
+                "type": "string"
+              },
+              "route": {
+                "minItems": 2,
+                "maxItems": 64,
+                "description": "A patrol only: the tiles it walks, in order, each a path tile four-adjacent to the one before. World tiles, in a chunk too, so a beat may cross a seam.",
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "minimum": 0,
+                      "maximum": 1023,
+                      "type": "integer"
+                    },
+                    {
+                      "minimum": 0,
+                      "maximum": 1023,
+                      "type": "integer"
+                    }
+                  ],
+                  "additionalItems": false,
+                  "minItems": 2,
+                  "maxItems": 2
                 }
               }
             }

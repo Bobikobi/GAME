@@ -1,140 +1,77 @@
 {
-  "note": "One line per stream of work: what it advances in the original plan, its branches, and who holds it. Edited only when a stream starts, ends or changes hands; the live picture (pull requests, CI, conflicts, order) is computed by `pnpm streams`, never written here. owner names the role of the session that holds the stream (session names change when the editor reloads); the integration session assigns it (docs/team/PARALLEL.md).",
+  "note": "The tracker (issues with the label `track` on Bobikobi/GAME) is the source of the plan; this file is its view for contributors: one line per stream that has an open tracker issue, with the branches those issues work on. The first `plan` entry of each stream names its tracker issues. A finished stream is removed; one that waits for the owner's word says `parked`. Edited only when a stream starts, ends or changes hands; the live picture (pull requests, CI, conflicts, order) is computed by `pnpm streams`, never written here. owner names the role of the session that holds the stream; the integration session assigns it (docs/team/PARALLEL.md).",
   "streams": [
     {
-      "id": "health-and-starts",
-      "title": "Health and hazards (P-5), then the three starters (CR-37)",
-      "plan": ["spec G-3 (third starter, stage 3)", "GRUNT P-5, CR-37", "GAME_RULES G30-G35"],
-      "branches": ["feat/health-hazards", "feat/three-starts"],
-      "owner": "the health-and-hazards session"
-    },
-    {
-      "id": "opening-recut",
-      "title": "The first ten minutes, recut (option B), with the one-time save reset (CR-62)",
-      "plan": ["spec G-13 (the opening)", "docs/FTUE_RESEARCH.md"],
-      "branches": ["feat/opening-recut-b"],
-      "owner": "the opening-and-crafting session"
-    },
-    {
-      "id": "crafting",
-      "title": "Crafting: the workshop, the economy, the bag in categories",
-      "plan": ["outside the original plan (added 9.10)", "touches spec G-6, G-12, G-15", "docs/design/CRAFTING_AUDIT.md"],
-      "branches": ["feat/crafting-wave3", "feat/crafting-economy", "feat/crafting-wave4"],
-      "owner": "the opening-and-crafting session, after the opening"
-    },
-    {
-      "id": "variety",
-      "title": "New kinds of play: the first maze, then stealth over the hazards, tending and the first expedition",
-      "plan": ["GAME_RULES section 3 (maze, stealth, tending), G47-G49", "DECISIONS 2026-10-09 maze and stealth, 2026-10-13 the three frames", "NEXT 12-14, GRUNT P-6"],
-      "branches": ["feat/first-maze", "docs/variety-frames", "feat/stealth-kernel", "feat/stealth", "feat/tending-kernel", "fix/fire-whole-log", "feat/tending", "feat/expedition-kernel", "feat/kernel-events", "feat/vigil-dawn", "docs/next14-plan-fixes", "feat/night-ruins", "feat/hud-6c", "docs/wolf-eyes-frames", "feat/tending-cues", "feat/stealth-cues", "feat/threat-telegraph"],
-      "owner": "the variety session"
-    },
-    {
-      "id": "site",
-      "title": "The site: real hub data, rules and docs pages, the MCP snippet, coming-soon boxes, the 3D door",
-      "plan": ["PLATFORM.md", "GRUNT 3, 12, 13, 15, 16", "then the walk animation and the sound pass in the game"],
-      "branches": ["feat/site-hub-data", "feat/site-rules-docs", "feat/site-mcp", "feat/site-coming-soon"],
-      "owner": "the site session"
-    },
-    {
-      "id": "owner-answers",
-      "title": "The owner's answers written into the decisions and the rules",
-      "plan": ["DECISIONS.md", "docs/design/GAME_RULES.md", "GRUNT CR-60 to CR-62"],
-      "branches": ["docs/answers-2026-10-09", "docs/owner-answers-2026-10-10", "docs/owner-answers-2026-10-10-pm", "docs/chapter-1-answers", "docs/owner-ideas-2026-10-11"],
-      "owner": "the docs session; the integration session for the 10.10 afternoon answers"
-    },
-    {
-      "id": "parallel-3d",
-      "title": "The 3D version, a parallel version behind its own button on the same data",
-      "plan": ["DECISIONS 2026-10-10 owner's answers of the afternoon, item 9"],
-      "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev", "docs/next-3d-credits", "docs/3d-gap"],
-      "owner": "the 3D session"
-    },
-    {
-      "id": "art",
-      "title": "The art at 64 px per tile: the generation pipeline, the engine step, the redraw waves with proportions",
-      "plan": ["DECISIONS 2026-10-18 the art moves to 64 px per tile, shadows C, the night, height T2, the six depth cues", "docs/team/NEXT.md section 15", "docs/design/ASSET_PATH.md", "docs/design/STYLE.md"],
-      "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32", "docs/style-spec", "docs/night-height-picks", "feat/kit-gen-grid", "docs/art-64", "feat/kit-scatter", "docs/art-redraw-plan", "feat/art-density", "docs/wheel-zoom", "feat/wheel-zoom"],
-      "owner": "the art session"
-    },
-    {
-      "id": "engine-light",
-      "title": "The light layer: one engine module both doors call, with the decided shadows and night inside it and the hour table in params",
-      "plan": ["docs/design/ART_SYSTEM.md section 2, step 2 of its order", "DECISIONS 2026-10-20 the art system", "STYLE sections 4 and 5", "docs/team/NEXT.md section 15"],
-      "branches": ["feat/light-module"],
-      "owner": "the lighting session"
-    },
-    {
-      "id": "hook",
-      "title": "The opening's hook: the receding mist, the bridge's moment, the returners' stone",
-      "plan": ["DECISIONS 2026-10-10 the hook is the receding mist", "DECISIONS 2026-10-17 the opening's renewal", "DECISIONS 2026-10-18 the hook's stills", "docs/design/OPENING_REVIEW.md", "docs/team/NEXT.md section 16"],
-      "branches": ["docs/hook-build", "feat/hook-mist", "feat/hook-schema", "feat/hook-pockets", "feat/hook-bridge", "feat/hook-stone", "feat/hook-waking"],
-      "owner": "the hook session"
-    },
-    {
-      "id": "state-tests",
-      "title": "A text view of the state, and e2e checks moved to state tests, starting with stealth",
-      "plan": ["DECISIONS 2026-10-18 a character-grid look is kept for later", "docs/design/ASCII.md section 4"],
-      "branches": ["docs/ascii-idea", "test/stealth-state", "test/stealth-e2e-route", "test/tending-state"],
-      "owner": "the state-tests session"
-    },
-    {
-      "id": "opening-logic",
-      "title": "The opening's quest logic: the review's gaps that are not the hook",
-      "plan": ["DECISIONS 2026-10-18 the opening's quest logic is built beside the hook", "docs/design/OPENING_REVIEW.md section 3", "docs/team/NEXT.md section 17"],
-      "branches": ["docs/next-quest-logic", "feat/node-opens-after", "feat/glint-first", "feat/opening-lines"],
-      "owner": "the opening-logic session"
-    },
-    {
-      "id": "accounts",
-      "title": "Accounts and a server: the game's own containers on the owner's box, sign-in, state on the server",
-      "plan": ["DECISIONS 2026-10-17 the order from here", "DECISIONS 2026-10-18 accounts and a server: the owner's answers", "docs/spec stage 2a", "docs/team/NEXT.md section 18"],
-      "branches": ["docs/next-stage-3", "feat/server-core", "feat/server-db", "feat/client-remote", "feat/handover-opening", "feat/signin", "feat/server-luck", "feat/server-sim"],
+      "id": "foundation",
+      "title": "The wide world's foundation, public side: light and shadow over the day, the wind, the mist window, the grass, the figure's size, the image tools",
+      "plan": ["tracker #682, #660, #603, #541, #669, #533, #642", "DECISIONS 2026-11-04 foundations alignment, 2026-11-11 painted scenes at zoom 3, 2026-11-12 the see-through and the halo", "docs/design/FOUNDATIONS_ALIGNMENT.md"],
+      "branches": ["feat/drift-driver", "feat/grass-tufts", "feat/art-elf-slim", "claude/settings-screen-ui-s2ss3y"],
       "owner": null
     },
     {
-      "id": "open-world",
-      "title": "The open world's first ring: generated ground in chunks, levels with rock faces, the valley reshaped, the boathouse",
-      "plan": ["DECISIONS 2026-10-17 the world has no end", "DECISIONS 2026-10-18 height: levels with rock faces (T2)", "DECISIONS 2026-10-18 the first ring's three stills", "docs/design/OPEN_WORLD.md", "docs/team/NEXT.md section 19"],
-      "branches": ["feat/ring-schema", "feat/ring-gen", "feat/ring-walk", "feat/ring-stream", "feat/ring-valley", "feat/ring-boathouse", "feat/ring-checks", "feat/ring-creators", "feat/ring-look"],
+      "id": "kept-pictures",
+      "title": "The owner's kept pictures go into the full map: camera check, fix, reduce, place",
+      "plan": ["tracker #664", "DECISIONS 2026-11-02 the image library is sorted by hand"],
+      "branches": ["feat/art-promote-2", "feat/art-promote-2-pipeline"],
       "owner": null
     },
     {
-      "id": "quest-designer",
-      "title": "The quest designer: an agent that pitches quests from expert patterns, and the hand report",
-      "plan": ["DECISIONS 2026-10-18 the quest designer", "GAME_RULES G17 and section 3 (the palette)", "docs/design/QUEST_PATTERNS.md"],
-      "branches": ["feat/quest-agent"],
-      "owner": null
-    },
-    {
-      "id": "kit-and-map",
-      "title": "The Field Kit direction as built: the kit screen, the map window and pocket chart, and the stall at the town's free corner with its draft in the save",
-      "plan": ["DECISIONS 2026-10-20 the UI's direction: Field Kit", "DECISIONS 2026-10-20 the map: its own window, the ground you walked, and the stall at the empty corner", "DECISIONS 2026-10-20 a player places a stall at the town's free corner (the owner's answer)", "DECISIONS 2026-10-21 the stall draft as built", "CR-104", "docs/design/SETTLEMENT.md 3.4 (sales while away and other players wait for the shared world)"],
-      "branches": ["feat/ui-kit-screen", "feat/ui-field-kit", "feat/stall-draft-save"],
-      "owner": "the kit-and-map session"
-    },
-    {
-      "id": "valley-map",
-      "title": "The valley map plan v2 on the core map: the plan block, G69 and the first-night check (G71), then the 64x64 valley",
-      "plan": ["the valley map plan v2 (the owner, 22.10 and 23.10)", "GAME_RULES G68-G71", "DECISIONS 2026-10-22 decisions 25 and 49-51", "DECISIONS 2026-10-23 the map plan block"],
-      "branches": ["feat/map-plan-block", "feat/valley-v2"],
-      "owner": null
-    },
-    {
-      "id": "races-bags",
-      "title": "Races, weight and bags: a weight on every item, three walking paces, the back slot with a satchel and a frame pack, one body fact per race",
-      "plan": ["DECISIONS 2026-10-23 races, weight and bags (the owner's answers)", "GAME_RULES section 2"],
-      "branches": ["feat/races-bags"],
+      "id": "object-library",
+      "title": "One library and one index for the art's object pieces (parked: starts only on the owner's word)",
+      "plan": ["tracker #686", "the owner's word of 9.11, recorded on the issue"],
+      "branches": [],
       "owner": null,
-      "cross_cutting": true
+      "parked": true
     },
     {
       "id": "hunt-and-materials",
-      "title": "The hunt's foundations (the dress verb, drops and grades on a kind, hunt as a value source), the materials atlas, the three lands' animals, the first animal loops",
-      "plan": ["outside the original plan (asked 30.10)", "docs/design/HUNTING.md (#420) sections 5-10", "docs/design/PROGRESSION.md (#333) section 5", "DECISIONS 2026-10-30 the hunt foundations", "GAME_RULES G35, G45"],
-      "branches": ["feat/hunt-foundations", "docs/hunt-materials", "art/hare-crow-loops"],
+      "title": "Combat and the hunt's foundations, the animals, the movement set and the first animal loops",
+      "plan": ["tracker #549, #547, #550, #600 (#693 and #644 ride on #550)", "DECISIONS 2026-10-30 the hunt foundations", "docs/design/HUNTING.md, COMBAT.md, ANIMATION.md", "GAME_RULES G35, G45", "docs/team/NEXT.md section hunt-and-materials"],
+      "branches": ["art/hare-crow-loops"],
+      "owner": null
+    },
+    {
+      "id": "first-map",
+      "title": "The first map by hand and what lives on it: ring items e to i, the inn, a sound and weather per region, quests and pays beyond the valley",
+      "plan": ["tracker #558, #560, #581, #582, #583", "docs/design/FIRST_MAP.md, EXPERIENCE_AUDIT.md", "docs/team/NEXT.md section 19"],
+      "branches": ["feat/music-by-state", "feat/content-inn-v2"],
+      "owner": null
+    },
+    {
+      "id": "gear-wave",
+      "title": "The outside account's gear wave: clothing, weapons, stone work, dried herbs",
+      "plan": ["tracker #613 (it holds #539)", "docs/design/PROGRESSION.md"],
+      "branches": ["docs/gear-and-stone", "feat/gear-foundations", "feat/stone-work-rules", "feat/weapon-matrix", "feat/dried-herbs"],
+      "owner": null
+    },
+    {
+      "id": "accounts",
+      "title": "Accounts and a server: sign-in on the live box, the players counter, the cutover gates",
+      "plan": ["tracker #536, #557", "DECISIONS 2026-10-17 the order from here, 2026-10-18 accounts and a server", "docs/team/NEXT.md section 18"],
+      "branches": [],
+      "owner": null
+    },
+    {
+      "id": "screen",
+      "title": "The screen and its menus: settings, landscape, character select, the HUD, the feel of walking, the bag's dressing page",
+      "plan": ["tracker #561, #562, #638, #639, #641, #643, #661 (#640 rides on #639)", "DECISIONS 2026-10-28 the windows' direction, 2026-11-01 the landscape phone skin"],
+      "branches": [],
+      "owner": null
+    },
+    {
+      "id": "skill-tree",
+      "title": "The full skill tree (parked: held until stage 3 specialisation is current)",
+      "plan": ["tracker #559", "DECISIONS 2026-10-25 foundations", "docs/design/PROGRESSION.md"],
+      "branches": [],
       "owner": null,
-      "cross_cutting": true
+      "parked": true
+    },
+    {
+      "id": "order",
+      "title": "Tools, CI and order: the checks, the deploy path, the art backlog, the stale branches and folders, this map",
+      "plan": ["tracker #691, #555, #556, #563, #571, #573, #595, #692, #540, #554", "docs/team/PARALLEL.md"],
+      "branches": ["docs/plan-reread-1112"],
+      "owner": null
     }
   ]
 }

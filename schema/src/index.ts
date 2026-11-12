@@ -2295,6 +2295,54 @@ const CreatureKind = Type.Object(
   { additionalProperties: false },
 );
 
+/** A spot's rank: how strong the creatures there are against their kind's norm (DECISIONS 2026-11-08, the generator's five axes). */
+export const SPOT_RANKS = ['regular', 'elite', 'rare', 'boss'] as const;
+/** A spot's shape: how its creatures stand: alone, as a pack, as a camp with a leader, or on a patrol route. */
+export const SPOT_SHAPES = ['lone', 'pack', 'camp', 'patrol'] as const;
+const AffixId = Type.String({
+  pattern: '^[a-z][a-z0-9_-]{0,23}$',
+  description: 'An affix word the fight reads (fast, armoured, venom, ember...): a small change to the kind\'s norm, never a new kind.',
+});
+
+/**
+ * A creature spot: where a kind sits until the player comes close. The map holds its spots in world tiles, a chunk
+ * in its own tiles. The first three fields are the spot; the rest are the generator's five axes (DECISIONS
+ * 2026-11-08), every one optional: left out, the spot is a regular one of the kind's own group class.
+ */
+const CreatureSpot = (max: number) =>
+  Type.Object(
+    {
+      kind: Id,
+      x: Int(0, max),
+      y: Int(0, max),
+      rank: Type.Optional(
+        Type.Union(SPOT_RANKS.map((k) => Type.Literal(k)), {
+          description: 'How strong the spot\'s creatures are against the kind\'s norm. Left out: regular. At most one boss on a map.',
+        }),
+      ),
+      shape: Type.Optional(
+        Type.Union(SPOT_SHAPES.map((k) => Type.Literal(k)), {
+          description: 'How they stand: alone, as a pack, as a camp around a leader, or walking a route. Left out: the kind\'s own group class.',
+        }),
+      ),
+      count: Type.Optional(
+        Type.Tuple([Int(1, 16), Int(1, 16)], { description: 'How many are drawn at the spot, the fewest then the most. Left out: the kind\'s own band.' }),
+      ),
+      affixes: Type.Optional(
+        Type.Array(AffixId, { maxItems: 3, uniqueItems: true, description: 'The affix words of the spot\'s creatures; a regular spot carries none.' }),
+      ),
+      leader: Type.Optional({ ...Id, description: 'A camp only: the kind standing at its middle, one of the map\'s kinds.' }),
+      route: Type.Optional(
+        Type.Array(Type.Tuple([Int(0, 1023), Int(0, 1023)]), {
+          minItems: 2,
+          maxItems: 64,
+          description: 'A patrol only: the tiles it walks, in order, each a path tile four-adjacent to the one before. World tiles, in a chunk too, so a beat may cross a seam.',
+        }),
+      ),
+    },
+    { additionalProperties: false },
+  );
+
 /** The closed list of climates a region may declare (NATURE section 2). The tables live in content/core/climates.json. */
 export const CLIMATES = ['temperate', 'dry', 'cold', 'wet'] as const;
 
@@ -2425,6 +2473,16 @@ const Prop = (max: number) =>
       crossing: Type.Optional(
         Type.Literal(true, { description: 'Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.' }),
       ),
+      portal: Type.Optional(
+        Type.Object(
+          { x: Int(0, 1023), y: Int(0, 1023) },
+          {
+            additionalProperties: false,
+            description:
+              'A way through: a player who steps onto this non-solid prop\'s footprint stands on that world tile instead (a cave mouth, a hollow tree, an old well, the way back up). The tile is walkable and the check proves it. It needs an id. A chunk\'s portal names a world tile, not a chunk tile.',
+          },
+        ),
+      ),
       lit_by: Type.Optional({
         ...Id,
         description: 'Id of the fire prop while whose fire burns this prop\'s note and sign may be read.',
@@ -2460,6 +2518,41 @@ const Prop = (max: number) =>
     { additionalProperties: false },
   );
 
+/** What may drift in a region's air (the owner, 8.11: fireflies and pollen in the elf wood, ash over the undead land). Rain is the weather's, not the air's. */
+export const PARTICLE_KINDS = ['fireflies', 'pollen', 'ash', 'embers', 'leaves', 'birds', 'snow'] as const;
+const Rgb = Type.Tuple([Int(0, 255), Int(0, 255), Int(0, 255)], { description: 'Red, green, blue.' });
+
+/**
+ * A region's air, read by the light layer (DECISIONS 2026-11-04, the engine's layers): the sun's tint, the night's
+ * depth and what drifts in the air. The mist stays the weather's (`weather.fog`, `look.fog`): only the valley has
+ * it. The owner's three lands (8.11): the human land pastoral under a plain sun, the elf wood bright with shafts,
+ * pollen and fireflies, the undead land under a redder sun and a darker night with ash in the air.
+ */
+const Atmosphere = Type.Object(
+  {
+    sun: Type.Object(
+      { day: Rgb, dusk: Rgb },
+      {
+        additionalProperties: false,
+        description: 'The tint the light layer gives the day and the dusk. [255, 255, 255] by day leaves the valley\'s light as it is; a redder day is the undead land\'s.',
+      },
+    ),
+    night_depth: Int(0, 100, 'How far the night falls: 0 the lightest night the layer draws, 100 its darkest. The valley\'s own night is about 50.'),
+    particles: Type.Array(
+      Type.Object(
+        {
+          kind: Type.Union(PARTICLE_KINDS.map((k) => Type.Literal(k))),
+          density: Int(1, 10, 'How much of it drifts: 1 a few, 10 a cloud.'),
+        },
+        { additionalProperties: false },
+      ),
+      { maxItems: 4, description: 'What drifts in the air, each kind once.' },
+    ),
+    shafts: Type.Optional(Type.Boolean({ description: 'Sun shafts between the trees by day (the elf wood). Left out: none.' })),
+  },
+  { additionalProperties: false },
+);
+
 /** The ambience beds a region card may name until the owner's sound pick (#464): the day and night beds the client has. */
 export const AMBIENCE_BEDS = ['day', 'night'] as const;
 const AmbienceBed = Type.Union(AMBIENCE_BEDS.map((k) => Type.Literal(k)));
@@ -2491,6 +2584,7 @@ export const RegionCard = Type.Object(
       { day: AmbienceBed, night: AmbienceBed },
       { additionalProperties: false, description: 'The sound bed by day and by night; the existing beds until the owner\'s sound pick (#464).' },
     ),
+    atmosphere: Type.Optional({ ...Atmosphere, description: 'The region\'s air: its sun, its night and what drifts in it. Left out: the valley\'s own light, as the layer draws it today.' }),
   },
   { additionalProperties: false },
 );
@@ -2506,14 +2600,11 @@ export const MapBody = Type.Object(
       Type.Object(
         {
           kinds: Type.Record(Id, CreatureKind),
-          spots: Type.Array(
-            Type.Object({ kind: Id, x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
-            { maxItems: 200 },
-          ),
+          spots: Type.Array(CreatureSpot(1023), { maxItems: 200 }),
         },
         {
           additionalProperties: false,
-          description: 'Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A kind with "hunt" is the kernel\'s too: it dresses its carcasses and the value table prices its goods, with its spots as the source\'s capacity (HUNTING sections 5-9). A kind with "behaviour" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den\'s mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).',
+          description: 'Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A spot may carry a rank, a shape, a count, affixes, a leader and a route (the generator\'s axes, DECISIONS 2026-11-08); left out, it is a regular spot of the kind\'s own group class. A kind with "hunt" is the kernel\'s too: it dresses its carcasses and the value table prices its goods, with its spots as the source\'s capacity (HUNTING sections 5-9). A kind with "behaviour" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den\'s mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).',
         },
       ),
     ),
@@ -2571,6 +2662,11 @@ export const MapBody = Type.Object(
               ...Name,
               description: 'The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable.',
             }),
+            underground: Type.Optional(
+              Type.Literal(true, {
+                description: 'Below the ground, reached through a portal: no sky over it (no weather, no sun, its card\'s night all day), and the chart draws it only once entered. Left out: open air.',
+              }),
+            ),
           },
           { additionalProperties: false },
         ),
@@ -2647,6 +2743,12 @@ export const ChunkBody = Type.Object(
     ),
     props: Type.Array(Prop(63), { description: 'The chunk\'s props, in chunk coordinates.' }),
     stamps: Type.Array(Stamp, { description: 'The hand-made places stamped onto the chunk.' }),
+    spawns: Type.Optional(
+      Type.Array(CreatureSpot(63), {
+        maxItems: 64,
+        description: 'The chunk\'s creature spots, in chunk coordinates, each of a kind the map\'s `creatures.kinds` names. The generator writes them (tools/src/gen); no client draws them yet. Absent: none.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -2669,6 +2771,75 @@ export const CreatorBody = Type.Object(
         },
         { additionalProperties: false },
       ),
+    ),
+  },
+  { additionalProperties: false },
+);
+
+// ---------------------------------------------------------------- a story: the generator's input (DECISIONS 2026-11-08)
+
+/** The three worlds a land belongs to (DECISIONS 2026-10-22, decision 11): each has its own ground, trees, creatures and air. */
+export const STORY_WORLDS = ['human', 'elf', 'undead'] as const;
+/** The sides of a land a road may come in from. */
+export const SIDES = ['n', 'e', 's', 'w'] as const;
+
+/** The kinds of settlement a story may ask for, as the big games sort them: from a walled city to a lone tower. */
+export const SETTLEMENT_KINDS = ['city', 'town', 'village', 'hamlet', 'farm', 'outpost', 'keep'] as const;
+
+/** One settlement of a land: its kind, and how big within its kind. */
+const Settlement = Type.Object(
+  {
+    kind: Type.Union(SETTLEMENT_KINDS.map((k) => Type.Literal(k)), {
+      description:
+        'What stands there: a city (walls and gates, a main street, districts of narrow streets), a town (a market square and streets, a wall perhaps), a village (houses round a square), a hamlet (a few houses), a farm (a house, a barn, fields), an outpost (a tower and a fence), a keep (a wall and a hall on a height).',
+    }),
+    size: Type.Optional(Int(1, 3, 'Within its kind: 1 small, 2 the usual, 3 huge. Left out: 2.')),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * A story: what the owner tells the generator about a land, as data (the owner, 8.11: "I give it a story and it
+ * makes a beautiful map"). The generator (tools/src/gen, `pnpm gen`) reads it and writes the land's chunks; the
+ * same story gives the same land, always. The envelope's `description` holds the owner's words about the place.
+ * Every number is an integer; the words name sets the generator knows, never a sprite.
+ */
+export const StoryBody = Type.Object(
+  {
+    seed: Type.String({ minLength: 1, maxLength: 60, description: 'The seed word: the same word gives the same land, always.' }),
+    world: Type.Union(STORY_WORLDS.map((w) => Type.Literal(w)), { description: 'Whose land it is: its ground, trees, creatures and air.' }),
+    origin: Type.Object(
+      { cx: Int(0, 15), cy: Int(0, 15) },
+      { additionalProperties: false, description: 'The land\'s top-left chunk in the world grid of 64-tile chunks (G51).' },
+    ),
+    size: Type.Object({ w: Int(1, 8), h: Int(1, 8) }, { additionalProperties: false, description: 'The land in chunks, wide and high.' }),
+    forest: Int(0, 100, 'How much of the land is wood: 0 open meadow, 100 a wall of trees with few glades.'),
+    relief: Int(0, 100, 'How much the ground rises: 0 flat, 100 terraces and crags everywhere.'),
+    water: Int(0, 100, 'Lakes and streams: 0 none, 100 a wet land.'),
+    caves: Int(0, 8, 'How many hidden doors the deep wood holds, each the way down to the land below.'),
+    below: Type.Optional(
+      Type.Object(
+        { cx: Int(0, 15), cy: Int(0, 15) },
+        {
+          additionalProperties: false,
+          description: 'The top-left chunk of the land below: the caves the doors lead down to, one chunk high and one wide per door up to the land\'s width, in a part of the grid no land above uses. Left out: the doors lead nowhere yet, so none is placed.',
+        },
+      ),
+    ),
+    entries: Type.Array(Type.Union(SIDES.map((s) => Type.Literal(s))), {
+      minItems: 1,
+      maxItems: 4,
+      uniqueItems: true,
+      description: 'The sides a road comes in from.',
+    }),
+    ruins: Type.Optional(Int(0, 6, 'Small ruins off the roads. Left out: 1.')),
+    life: Type.Optional(Int(0, 100, 'How full of creatures the land is, as a share of the kinds\' caps: 0 empty, 100 at the cap. Left out: 25.')),
+    settlements: Type.Optional(
+      Type.Array(Settlement, {
+        maxItems: 8,
+        description:
+          'The settlements of the land, the largest first: the first stands at the hub where the roads meet, the rest the generator places apart from it and joins by road. Each world builds them its own way (the owner, 8.11: varied, in many sizes, as the big games do; a human city huge in its own right, with great walls, old Dubrovnik). Left out: a clearing at the hub.',
+      }),
     ),
   },
   { additionalProperties: false },
@@ -2725,9 +2896,11 @@ export const MapFile = record('map', 'map', MapBody);
 export const ChunkFile = record('chunk', 'chunk', ChunkBody);
 export const PocketFile = record('pocket', 'pocket', PocketBody);
 export const SchoolFile = record('school', 'school', SchoolBody);
+/** A story file is core-only: the generator's input, never in the bundle (the chunks it writes are). */
+export const StoryFile = record('story', 'story', StoryBody);
 
 export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school', 'story'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,
@@ -2751,6 +2924,7 @@ export const ExtensionFile = Type.Union([
   MapFile,
   PocketFile,
   SchoolFile,
+  StoryFile,
 ]);
 
 export type ItemDef = Static<typeof ItemDef>;
@@ -2812,6 +2986,10 @@ export type SchoolNodeDef = Static<typeof SchoolNode>;
 export type NodeSizeName = (typeof NODE_SIZES)[number];
 export type TreeTint = (typeof TREE_TINTS)[number];
 export type SchoolFile = Static<typeof SchoolFile>;
+export type Story = Static<typeof StoryBody>;
+export type StoryFile = Static<typeof StoryFile>;
+export type StoryWorld = (typeof STORY_WORLDS)[number];
+export type Side = (typeof SIDES)[number];
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
@@ -2819,8 +2997,13 @@ export type Ramp = Static<typeof RampBody>;
 export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
 export type RegionCardDef = Static<typeof RegionCard>;
+export type AtmosphereDef = Static<typeof Atmosphere>;
+export type ParticleKind = (typeof PARTICLE_KINDS)[number];
 export type AmbienceBedName = (typeof AMBIENCE_BEDS)[number];
 export type CreatureKindDef = Static<typeof CreatureKind>;
+export type CreatureSpotDef = Static<ReturnType<typeof CreatureSpot>>;
+export type SpotRank = (typeof SPOT_RANKS)[number];
+export type SpotShape = (typeof SPOT_SHAPES)[number];
 export type HuntDef = Static<typeof Hunt>;
 export type BehaviourDef = Static<typeof Behaviour>;
 export type ChunkFile = Static<typeof ChunkFile>;
@@ -2865,6 +3048,7 @@ export const SCHEMAS = {
   chunk: ChunkFile,
   pocket: PocketFile,
   school: SchoolFile,
+  story: StoryFile,
 } as const;
 
 export { validateFile, type SchemaIssue } from './validate';

@@ -33,7 +33,7 @@ The references and their sources (URL, licence, author) go in the card. Images u
 
 ## 3. One board for the owner, one answer
 
-The owner sees one board at phone size, opened in his browser: the references in a strip, the card's colour ramps as swatches, and **one still** of a corner of the place drawn in the card's language. He answers once. That is the direction for this place, recorded in DECISIONS with the still as its frame. After it, everything inside the place is polish: the builder iterates and does not ask again.
+The owner sees one board at the full frame (1920 x 1080, STYLE 1), opened in his browser: the references in a strip, the card's colour ramps as swatches, and **one still** of a corner of the place drawn in the card's language. He answers once. That is the direction for this place, recorded in DECISIONS with the still as its frame. After it, everything inside the place is polish: the builder iterates and does not ask again.
 
 A place in a climate or a world that already has an approved card starts from that card. Only what differs is put to the owner, and if nothing differs, nothing is.
 
@@ -44,7 +44,7 @@ After the owner's answer, the card's ramps become data and `pnpm check` holds th
 - a place declares its ramp set (at most six, ART_SYSTEM 3) where the place's map or chunk data lives;
 - every sprite placed in the place uses only the core and the place's ramps; a sprite drawn by any tool that brings in a colour from outside fails, with its name and the colours it brings;
 - a sprite placed in two places with different ramp sets is either in both sets or recoloured per place by a ramp swap (ART_SYSTEM 3, dyes), never left as it is;
-- the place's sheet: a contact sheet of every sprite in the place side by side at phone size, built by the same command, so a style that does not belong shows at a glance.
+- the place's sheet: a contact sheet of every sprite in the place side by side at the game's scale, one art pixel per device pixel (STYLE 1), built by the same command, so a style that does not belong shows at a glance.
 
 The check is built by the first place that needs it, as its own small pull request before the place's art lands, because the ramp set needs a home in the place data first. Until then, the card and the board apply, and the contact sheet is made by hand.
 

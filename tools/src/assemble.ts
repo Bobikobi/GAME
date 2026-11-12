@@ -385,6 +385,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     } else if ((d as { type: string }).type === 'chunk') {
       // a chunk is not in the bundle yet (NEXT section 19 b streams it); its shape is checked here all the same
       for (const p of chunkProblems((d as unknown as ChunkFile).chunk)) err(f, p.where, p.message);
+    } else if (d.type === 'story') {
+      // a story is the generator's input (tools/src/gen); the chunks it writes are the content, the story itself is not in the bundle
     } else if (d.type === 'kit') {
       kits[d.id] = {
         dir: dirname(f.abs),

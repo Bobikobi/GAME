@@ -284,7 +284,7 @@ A `combat` group in `content/core/params.json`, each number with a range and a s
 | noise, felling or digging | 5 | 3 to 8 | 1 | Memo 9; a new row of the gait group. |
 | `noise_turn_t` | 30 | 20 to 50 | 10 | Memo 9 over the frame's `hazard.noise_ms` 4000: three seconds is long enough to draw and read the turn, and shorter keeps a stealth crossing open after someone else's noise (round 4's retry clause). |
 | `claim_lock_t` | 48 | 30 to 60 | 6 | Memo 10; the frame was silent. The first account whose strike lands holds the foe; each hit the holder deals or takes refreshes the lock; the bar turns grey for the rest. It never stops another from fighting. |
-| bars | a 31 by 4 px frame, fill inset 1 px, 29 px at full; health over breath; at least 1 px of fill while alive; no number | fixed | none | Owner (round 3: two bars, no number); memo 11 for the size. The look is a direction: phone-size stills go to the owner before a sprite is drawn. |
+| bars | a 31 by 4 px frame, fill inset 1 px, 29 px at full; health over breath; at least 1 px of fill while alive; no number | fixed | none | Owner (round 3: two bars, no number); memo 11 for the size. The look is a direction: full-frame stills (1920 x 1080, STYLE 1) go to the owner before a sprite is drawn. |
 | `bar_linger_t` | 50 | 30 to 80 | 10 | Memo 11: the bars stay 5 seconds after the lock ends. |
 | `zone_min_d` | 5 | 3 to 8 | 1 | Frame. |
 | `pay_per_s_mg` | 50 | 25 to 100 | 5 | Frame: the cap on what a fight pays, read through the value solver; a hunted drop needs the solver's fifth source, `hunt`, which does not exist yet ([HUNTING.md](HUNTING.md) section 9). No drop carries a price of its own. |
@@ -295,7 +295,7 @@ The check (section 8 of GAME_RULES gains rows): every move has a wind-up of 2 to
 
 ### 4.10 What the screen reads (for the art and the client, not decided here)
 
-The foe's two bars over its head, no number on them; the other player's two bars inside the zone only; the player's own bar as today and a breath meter of their own; the foe's wind-up pose and its open pose; blood where a hit lands at the sprite's size and a limp after (TONE); a predator's head turning to a noise; the death card of TONE section 4 with the pack line; the zone's line drawn as stones or banners and its sign; the pack in the grass. A direction decision (the frame of a fight on screen) goes to the owner as two or three phone-size stills before a sprite is drawn, as every direction does (AGENTS.md).
+The foe's two bars over its head, no number on them; the other player's two bars inside the zone only; the player's own bar as today and a breath meter of their own; the foe's wind-up pose and its open pose; blood where a hit lands at the sprite's size and a limp after (TONE); a predator's head turning to a noise; the death card of TONE section 4 with the pack line; the zone's line drawn as stones or banners and its sign; the pack in the grass. A direction decision (the frame of a fight on screen) goes to the owner as two or three full-frame stills (1920 x 1080, STYLE 1) before a sprite is drawn, as every direction does (AGENTS.md).
 
 ## 5. Rule lines proposed, in the form GAME_RULES uses
 
