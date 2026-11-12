@@ -1,30 +1,13 @@
 /**
  * Work that runs by itself after one press (DECISIONS.md, 2026-10-11): felling with the axe,
  * digging with the trowel, mining with the pick. The kernel decides how long it lasts and
- * what it yields; this file only says which nodes work this way and how the time splits
- * into swings. Pure, so the rhythm can be tested without a scene.
+ * what it yields, and says which nodes work this way (kernel/src/work.ts, QUARRYING 10); this
+ * file says how the time splits into swings. Pure, so the rhythm can be tested without a scene.
  */
-import type { Bundle } from '@game/kernel';
+import type { AutoKind } from '@game/kernel';
 import { ART_PX } from './walking';
 
-export type AutoKind = 'fell' | 'dig' | 'mine';
-
-/** The tool that makes a node work by itself, and what the work is called. A node marked `work: "mine"` works by itself with no tool; herbs and the keystone keep their minigames. */
-const BY_TOOL: Readonly<Record<string, AutoKind>> = { axe: 'fell', trowel: 'dig', pick: 'mine' };
-
-export function autoKind(tool: string | undefined): AutoKind | undefined {
-  return tool === undefined ? undefined : BY_TOOL[tool];
-}
-
-/** What a resource node asks for: a tree, a mined stone, or whatever else is worked with a tool. */
-export function resourceKind(r: Pick<Bundle['resources'][string], 'tool' | 'work'>): AutoKind | undefined {
-  return r.work === 'mine' && r.tool === undefined ? 'mine' : autoKind(r.tool);
-}
-
-/** What a treasure asks for: a dig with a trowel; a find picked up by hand has no work. */
-export function treasureKind(t: Pick<Bundle['treasures'][string], 'tool'>): AutoKind | undefined {
-  return autoKind(t.tool);
-}
+export { autoKind, resourceKind, treasureKind, type AutoKind } from '@game/kernel';
 
 /** The pose sheets a work kind uses, in the order they are tried: the kind's own first, the axe swing last. */
 export const POSES: Readonly<Record<AutoKind, readonly string[]>> = { fell: ['work'], mine: ['pick', 'work'], dig: ['dig', 'work'] };

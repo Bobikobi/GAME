@@ -1,7 +1,7 @@
 # Extension template
 
 A working extension: a townsperson (Wren the mender, who stands at the trainers' stall), one fruit
-bush for the empty glade west of the river, a plum that drops below a bush left full (a reaction),
+bush for the empty glade west of the river, a plum that drops beside a bush left full (a reaction),
 and a quest that Wren gives.
 
 1. Copy this folder to `content/extensions/<your-handle>/`.

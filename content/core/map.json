@@ -303,7 +303,7 @@
             "riverbank"
           ],
           "cover": {
-            "core/base-kit:props/reeds": 30,
+            "core/base-kit:props/grass_tall": 30,
             "core/base-kit:props/flowers": 20,
             "core/base-kit:props/mushrooms_small": 10
           },
@@ -343,7 +343,7 @@
             "frame"
           ],
           "cover": {
-            "core/base-kit:props/reeds": 60
+            "core/base-kit:props/grass_tall": 60
           },
           "opens_by": "core/the-landing"
         },
@@ -475,7 +475,7 @@
           ],
           "cover": {
             "core/base-kit:props/pebbles": 20,
-            "core/base-kit:props/rock_small": 10
+            "core/base-kit:props/rock_mossy": 10
           },
           "opens_by": "wake"
         },
@@ -496,7 +496,7 @@
             "walled"
           ],
           "cover": {
-            "core/base-kit:props/rock_stones": 30,
+            "core/base-kit:props/pebbles": 30,
             "core/base-kit:props/mushrooms_small": 30
           },
           "opens_by": "core/the-night-arch"
@@ -646,7 +646,7 @@
           ],
           "cover": {
             "core/base-kit:props/mushrooms_small": 60,
-            "core/base-kit:props/rock_small": 50,
+            "core/base-kit:props/rock_mossy": 50,
             "core/base-kit:props/glow_mushrooms": 40
           },
           "opens_by": "core/the-tangle"
@@ -669,7 +669,7 @@
             "world:undead"
           ],
           "cover": {
-            "core/base-kit:props/rock_stones": 40,
+            "core/base-kit:props/pebbles": 40,
             "core/base-kit:props/fallen_branches": 40
           },
           "opens_by": "core/the-descent"
@@ -692,7 +692,7 @@
             "world:undead"
           ],
           "cover": {
-            "core/base-kit:props/rock_stones": 80,
+            "core/base-kit:props/pebbles": 80,
             "core/base-kit:props/glow_mushrooms": 60,
             "core/base-kit:props/mushrooms_small": 40,
             "core/base-kit:props/fallen_branches": 20
@@ -717,7 +717,7 @@
             "world:human"
           ],
           "cover": {
-            "core/base-kit:props/reeds": 40,
+            "core/base-kit:props/grass_tall": 40,
             "core/base-kit:props/pebbles": 20
           },
           "opens_by": "core/the-shore-way"
