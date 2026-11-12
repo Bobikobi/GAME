@@ -4364,3 +4364,7 @@ For the fields that are a checklist and not a count (combat, the living world, m
 **Why:** the owner's choice: the game aims at the level of the large multiplayer games, so each field is sized by what they hold today. At a year's pace this is about 10 weapons, 8 garments, 16 creatures and 4 quests a week (the manager's arithmetic); how that pace is reached is not decided here.
 **Retry when:** a field's first month of real production shows its pace; its number is then re-read against it. This entry sets sizes only and switches nothing on: combat stays off, and no weapon item enters before it is on.
 **Model:** Claude Fable 5.2 (manager). **Link:** https://oldschool.runescape.wiki/w/Quests , https://oldschool.runescape.wiki/w/Skills , https://www.tibia.com/library/?subtopic=creatures , https://terraria.wiki.gg/wiki/Critters , https://corekeeper.atma.gg/en/Armor
+
+## 2026-11-13 ✅ The players counter's source is one repository secret, read by both builds
+The address `GAME_SERVER_ORIGIN` is a repository secret; the hourly refresh (loop.yml) and the site deploy (deploy.yml, `vercel deploy --build-env`, left out when the secret is empty) both read it. Before, only the refresh had it (as a variable): the site build on Vercel never did, so the deployed `hub-data.json` kept `accounts: null`, each refresh saw a different document and asked for a production deploy, and that deploy lost the count again, at every refresh.
+**Retry when:** never the variable form. **Model:** Claude Sonnet 5.5. **Link:** issue #706.

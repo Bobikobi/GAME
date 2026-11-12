@@ -117,9 +117,9 @@ jobs:
           KV_REST_API_READ_ONLY_TOKEN: ${{ secrets.KV_REST_API_READ_ONLY_TOKEN }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
           DEPLOYED: https://loomvale.vercel.app/api/hub-data.json
-          # the players counter (tools/src/hub/accounts.ts): the game server's origin, a repository variable so the
-          # name stays out of the repo; unset, the count is null and the hub says it is unknown
-          GAME_SERVER_ORIGIN: ${{ vars.GAME_SERVER_ORIGIN }}
+          # the players counter (tools/src/hub/accounts.ts): the game server's origin, a repository secret so the
+          # name stays out of the repo; the site build gets the same secret (deploy.yml); unset, the count is null and the hub says it is unknown
+          GAME_SERVER_ORIGIN: ${{ secrets.GAME_SERVER_ORIGIN }}
           DEPLOY_FROM_CI: ${{ vars.DEPLOY_FROM_CI }}
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
