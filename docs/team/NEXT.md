@@ -796,6 +796,32 @@ Measurable:
 
 Not here: the fight (G35, COMBAT.md), houses and plots (paused, DECISIONS 2026-10-10), a mount, a kill count of any kind (HUNTING 10).
 
+## materials-gap. The materials gap: the count, the production map and the nine-game report, then the plan's steps
+
+Status: building - gear-wave
+
+Read first: `docs/design/GAP_MATERIALS.md` (sections 3, 4 and 6), `docs/design/MATERIALS_COUNT.md` (Totals, By family), `docs/design/PRODUCTION_MAP.md` (sections 4 and 5), DECISIONS 2026-11-02 "The materials gap report", and the hunt-and-materials section above (its d and e own steps 1 and 2 below).
+
+What the three pages found: 158 materials counted (17 built, 127 planned on landed pages, 14 only in the open gear pull request #609), 11% in play, 119 of the 158 from animals; 374 production steps of which 50 run, 22 materials on a hole, and one planned tool, the snare, gating 62 steps behind a take verb that does not exist. The improvement plan is ten steps in build order, each a rule or content rows for a domain page, every owner question carrying its default until the owner answers.
+
+Steps 1 and 2 of GAP_MATERIALS section 6 (the take and the snare; one tanning answer with `tan_cure_d`, owner question 1) are hunt-and-materials d and e; this stream waits for them where a step depends on them.
+
+What is left, in order (GAP_MATERIALS section 6; each its own pull request off `origin/develop`, after #609 lands where it says so):
+a) Step 3, every hole gets one source on the page of its family: about 14 rows across MATERIALS 3 and QUARRYING 3 (#609).
+b) Step 4, a component lands with its first consumer: the check row and the recipe edits that give each existing orphan its consumer (owner question 2).
+c) Step 5, the valley's table: 12 ingredients, 16 dishes, two slots (BODY_CLOCKS 7 as its spec).
+d) Step 6, a healing ladder of five rungs, no cure.
+e) Step 7, the ladder above tier 3 and metal's place (QUARRYING question 1 (#609), owner question 3).
+f) Step 8, things that are used up (owner question 4); step 9, dyes on garments; step 10, the valley's balance: six or more items of plant, stone and other families (owner question 5, default B).
+
+Measurable:
+1. Every pull request of the stream: `pnpm verify` exit 0; a step's rules land on its domain page with the "(amended <date>, GAP_MATERIALS 6 step n)" mark and nothing on GAP_MATERIALS.md itself but a status word.
+2. The three pages stay true to the tree: when a counted material becomes built, its row in MATERIALS_COUNT.md and PRODUCTION_MAP.md changes status in the same pull request, and the totals line changes with it.
+3. After step 3, PRODUCTION_MAP section 5 lists no hole for a material that a landed recipe names (22 today).
+4. After step 4, `pnpm check` refuses a made material no recipe, template or build consumes (the gems excepted while QUARRYING question 5 (#609) stands).
+
+Not here: the take and the racks themselves (hunt-and-materials d and e), the fight (G35), houses and plots (paused, DECISIONS 2026-10-10), the farm and the city (decision 51), metal before its discovery (DECISIONS 2026-10-09), any amendment to a #609 page before it lands.
+
 ## weapon-matrix. The weapon matrix: hundreds of hands from form, material and tier, as a page, a source file, a report and its test
 
 Status: building - gear-wave
