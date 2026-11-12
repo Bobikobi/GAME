@@ -483,6 +483,10 @@
               {
                 "const": "school",
                 "type": "string"
+              },
+              {
+                "const": "story",
+                "type": "string"
               }
             ]
           },

@@ -92,7 +92,7 @@ everything that made a line readable on a phone in two lines.
   bones, an animal's), never animated in pain.
 - **The art is a direction decision.** A predator drawn biting, a body in the
   grass, blood on a sleeve: these change every sprite sheet that has them, so
-  two or three phone-size stills of one scene go to the owner before a sprite
+  two or three full-frame stills (1920 x 1080, STYLE 1) of one scene go to the owner before a sprite
   is touched, as for every look. Until then the sprites stay as built.
 
 ## 4. Three scenes at the line

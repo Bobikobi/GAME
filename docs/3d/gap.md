@@ -107,7 +107,7 @@ downloaded; the rows are routes, and the looks wait for stills (below).
 
 ### The looks that go to the owner as stills
 
-Three still frames of the same spot (the town square edge, meadow into forest and the river bank), phone size, each testing one named difference:
+Three still frames of the same spot (the town square edge, meadow into forest and the river bank), at the full frame (1920 x 1080, STYLE 1), each testing one named difference:
 
 1. **Painted**: the 2D tiles at higher resolution (the 2D art's kit or an image-model pass), the Kenney low poly on top. Keeps one world for both doors.
 2. **Photographic PBR**: ambientCG or Poly Haven colour maps at 512 px with a soft blend of the seams, the same Kenney props.
