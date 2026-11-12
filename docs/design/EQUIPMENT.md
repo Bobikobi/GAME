@@ -1,6 +1,6 @@
 # The equipment model: categories, slots, tools against weapons, and what separates a weapon from clothing (2026-10-31)
 
-Status: a proposal for the owner. Nothing here is built. The owner's word of 28.10 asked to characterise the equipment (items, weapons, clothing, and whether to separate them). Most of the model already exists as decisions and as a proposal in [PROGRESSION.md](PROGRESSION.md) section 5; this page does not compete with it. It does three things the other pages do not: it names the **categories** as one closed list, it draws the line between a **tool and a weapon**, and it compares the model with five games. Anything new is marked "new"; the questions only the owner can answer are at the end (at most four, each with a default).
+Status: a proposal for the owner. Nothing here is built, except the 3.1 category (`itemCategory`), the 3.3 fields (`weapon`, `wear.req`, `wear.attrs`, `wear.trait`) and 3.6's `bind`, which landed on 01.11 as checked fields that wait for their readers (DECISIONS.md, 2026-11-01). The owner's word of 28.10 asked to characterise the equipment (items, weapons, clothing, and whether to separate them). Most of the model already exists as decisions and as a proposal in [PROGRESSION.md](PROGRESSION.md) section 5; this page does not compete with it. It does three things the other pages do not: it names the **categories** as one closed list, it draws the line between a **tool and a weapon**, and it compares the model with five games. Anything new is marked "new"; the questions only the owner can answer are at the end (at most four, each with a default).
 
 ## 1. The answer to the owner's question first
 
@@ -42,12 +42,12 @@ One closed list, **derived** from the fields an item already has, not stored as 
 
 | Category | Derived from | Examples today | Notes |
 |---|---|---|---|
-| `tool` | an item with a `tool` block and no `weapon` block | basket, trowel, axe, rod | works a node; may wear out (`uses`) |
+| `tool` | an item with a `tool` block or an `ammo` block and no `weapon` block (the `ammo` block amended by the gear wave, WEAPONS.md 6 and 15) | basket, trowel, axe, rod | works a node; may wear out (`uses`) |
 | `weapon` | an item with a `weapon` block (new) | none yet | reads in a fight; may wear out |
 | `wear` | an item with a `wear` block on a work slot, not a look | work clothes, boots, hats, bags | small capped bonus on work; armour classes join here with combat |
 | `look` | an item with `wear.look: true` | the two feet looks | no effect, no set; sells or binds by how it was got |
 | `consumable` | `kind: food`, and later remedies | berries, bread | used once; its effects are timed (PROGRESSION.md 4.5) |
-| `material` | `kind: material` with no `wear`, `tool` or `weapon` | reeds, wood, hides | feeds recipes; has a class and a tier |
+| `material` | `kind: material` with no `wear`, `tool`, `ammo` or `weapon` (the `ammo` amended by the gear wave, WEAPONS.md 6 and 15) | reeds, wood, hides | feeds recipes; has a class and a tier |
 | `quest` | `kind: fragment` or `treasure`, or a flag a quest sets | a found scrap, a key | not sold to the trader |
 
 ### 3.2 The slots on the one rig
@@ -69,8 +69,16 @@ A shield: PROGRESSION.md names Guard (shield, brace, the breath) but the slots h
 Item
   kind, rarity, class, tier, weight, sprite            as built
   tool    { kind, tier, uses? }                        as built
-  weapon  { class, reach, windup_ms, cooldown_ms,      new: COMBAT.md 4.3 fixes the numbers;
-            harm_pct, uses? }                          this page fixes the block's place
+  weapon  { tempo, windup_t, reach, harm, range?,      new: WEAPONS.md 3 fixes the fields, in ticks
+            ammo?, noise? }                            and points, the class the item's own,
+                                                       no `uses` on WEAPONS.md question 7's
+                                                       default A (a hand never wears; answer B
+                                                       adds the field back; until the answer,
+                                                       3.1's `weapon` row, 3.4's weapon wear and
+                                                       section 5's durability cell stay as
+                                                       written, held by that question)
+                                                       (amended by the gear wave, WEAPONS.md 15);
+                                                       COMBAT.md 4.9 the numbers; this page the place
   wear    { slot, look?, effects?, set?, places?,      as built
             load_bonus?,
             attrs?  { might: 2, stamina: 1 },          new: PROGRESSION.md 5.6
@@ -150,7 +158,7 @@ Each cell has a source in section 7. A cell reading "not read" means I did not r
 | **Weapon against tool** | not read | skilling tools can sit in the weapon slot (S5); a pickaxe has a Mining level to use and an Attack level to wield (S6) | a blacksmith upgrades axe, hoe, pickaxe and can, **not** the sword or the rod (S10) | tools and weapons wear from use (S11) | not read | two blocks, two readers; both only by a named recipe (section 4) |
 | **Durability** | not read | by charges, which fall by combat, use or time; at zero an item vanishes, reverts, breaks or stays with lost benefits (S8) | tools are upgraded, not worn (S10) | use wears tools and weapons, a hit wears armour; repair at a workbench whose level sets what it can mend; not in the field (S11) | not read | tools and weapons wear by use; clothing and armour never; mended at a bench |
 | **Rarity** | eight named qualities, Poor to Heirloom (S2) | not read | four tool tiers, copper, steel, gold, iridium (S10) | not read | common 0 affixes, magic 1-2, rare 3, legendary 4 (S7) | four names; effects at most 1, 1, 2, 2 |
-| **Binding** | soulbound on pickup, bound on equip, warband bound (S3) | not read | not read | not read | tradable until masterworked or tempered; mythic uniques account-bound (S7) | none on power; account for a bought look; character for a holiday look and a ceiling raiser |
+| **Binding** | soulbound on pickup, bound on equip, warband bound (S3) | not read | not read | not read | tradable until masterworked or tempered; mythic uniques account-bound (S7) | none on power, a found ceiling raiser included (1.11); account for a bought look; character for a holiday look |
 
 Three places where Loomvale differs **on purpose**:
 
