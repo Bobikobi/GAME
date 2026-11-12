@@ -297,6 +297,14 @@ The check (section 8 of GAME_RULES gains rows): every move has a wind-up of 2 to
 
 The foe's two bars over its head, no number on them; the other player's two bars inside the zone only; the player's own bar as today and a breath meter of their own; the foe's wind-up pose and its open pose; blood where a hit lands at the sprite's size and a limp after (TONE); a predator's head turning to a noise; the death card of TONE section 4 with the pack line; the zone's line drawn as stones or banners and its sign; the pack in the grass. A direction decision (the frame of a fight on screen) goes to the owner as two or three full-frame stills (1920 x 1080, STYLE 1) before a sprite is drawn, as every direction does (AGENTS.md).
 
+### 4.11 Lasting effects: the harm that stays (the owner, 12.11; designed at the combat stage, not now)
+
+The owner, on the weapons page's `bleed` card, 12.11: "על הכל, יהיו רעלים מלכודות ועוד שמשפיעים על ההחלמה הטבעית או ממשיכים את הדרדרות הבריאות ואת יכולות השחקן (מהירות, דיוק, שחייה וכו׳)" (everything is affected; there will be poisons, traps and more that act on natural recovery, or keep health falling, or lower the player's abilities: speed, aim, swimming and the like).
+
+The manager's reading of his note: lasting harm applies to everything, animals included, and is one family and not only bleeding. Each effect does one of three things: it slows natural healing, it keeps health falling, or it lowers an ability of the player (speed, aim, swimming and the like). Poisons and traps are in the family. It is a system of its own and nothing of it is designed here: it waits for combat (G35) and for its own page. When it is designed it answers: how an effect ends (a time, a cure, a rest), how effects stack, and which of them reach a person, an animal or both. G34 holds: a hunting hazard is still answered by a run, and an effect is a result of a hit, a trap or a poison, never a roll.
+
+Predators (the owner's note on the weapons page's `predators` card, 12.11, "גם לחימה בסדר אך קשה מאד בהתחלה בלי נשק": fighting is fine but very hard at the start without a weapon): when combat opens a predator can be fought, the run stays an answer, and a fight without a weapon is very hard (the manager's reading of his note). The line in section 4.1 that a predator never joins a fight is the demo stage's rule.
+
 ## 5. Rule lines proposed, in the form GAME_RULES uses
 
 Numbers provisional (G78 onward, after G77 of RULES_REVIEW). The owner's answers of 20.10 stand behind G78, G81, G83, G84 and G86, and those five entered GAME_RULES on 29.10 under these numbers; G79, G80, G82 and G85 stay the frame's proposals here and keep their numbers until the owner reads them.

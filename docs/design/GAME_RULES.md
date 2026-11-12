@@ -384,19 +384,27 @@ The demo has no combat (G35); its danger is the hour, and what the player eats.
   The cost is the lesson:
   a bad fruit eaten on the way means the basket is gone and the walk is made
   again.
-- **G34 A hazard is a rule, not a roll, and the answer is a run, never gear.**
-  Each hazard acts by a rule the player can learn, and no thing bought or made
-  answers it (DECISIONS.md, 9.10 and 10.10). A hunting hazard (the wolf, the
-  hidden pit, the trap, deep water at night) is escaped by running back to a
-  safe place (G30: the town, all ground at danger level 0, or a camp whose fire
-  burns), and the run is hard
-  and possible; the rest are avoided by knowing the rule: the trap shows by
-  day, the pit is where the floor is broken, the herb is bad raw and safe
-  cooked, deep water is the river without its bridge at night. Food, a
-  first-aid kit and a bandage give health back (G32); they heal, they do not
-  answer a hazard. Chance, where a rule has it, runs through the kernel's own
-  random stream so the server at stage 2a can replay it. Road thieves wait for
-  weapons (G35).
+- **G34 A hazard is a rule, not a roll. Gear answers a place's condition; a predator is answered by a run.**
+  Each hazard acts by a rule the player can learn. A place's condition (cold,
+  snow, the dark) is answered by gear: a garment, a torch (the owner, 25.10,
+  "hard places, and gear answers them"; his pick of 12.11 on the torch card;
+  amended 2026-11-12, DECISIONS.md the entry on the torch). A hunting hazard
+  (the wolf, the hidden pit, the trap, deep water at night) is escaped by
+  running back to a safe place (G30: the town, all ground at danger level 0,
+  or a camp whose fire burns), and the run is hard and possible; once combat
+  opens a predator can also be fought, which is very hard without a weapon
+  (his note on the predators card, 12.11; the manager's reading); the rest
+  are avoided by knowing the rule: the trap shows by day, the pit is where the
+  floor is broken, the herb is bad raw and safe cooked, deep water is the
+  river without its bridge at night. No thing bought or made is the answer to
+  a hunting hazard (DECISIONS.md, 9.10 and 10.10). Food, a first-aid kit and
+  a bandage give health back (G32); they heal, they do not answer a hazard.
+  Chance, where a rule has it, runs through the kernel's own random stream so
+  the server at stage 2a can replay it. Road thieves wait for weapons (G35).
+  **Open point, for the stage where players see each other:** a fire a player
+  lights (a thrown torch on dry grass or reeds) can ruin another player's
+  place; what a lit fire may burn, what grows back and what a settlement is
+  safe from are not decided. Not asked of the owner yet.
 - **G35 No fighting in the demo.** In the demo (stage 1) predators are hazards,
   not enemies: the answer is to run back to a safe place, never gear. Combat
   comes after the foundation, as a core part of the game (the owner, 19.10, in
@@ -623,7 +631,7 @@ Named so a review can point at one in two words.
 | Silent night | A fall with no countdown and no warning box before it. | G31 |
 | Breadcrumb | A death that leaves more than its pack: a stash, a pin on the map, or a line beyond the death card's. | G33 |
 | Hunger clock | A bar that empties by the clock, awake or asleep (the drain is 0 since P-5c). | G32, G28 |
-| Gear answer | A thing bought or made as the answer to a hazard: oil, a torch, a rope, an antidote. | G34 |
+| Gear answer | A thing bought or made as the answer to a hunting hazard (a predator, a pit, a trap, deep water at night): oil, a rope, an antidote. A torch or a garment against a place's condition (cold, snow, the dark) is allowed (amended 2026-11-12). | G34 |
 | Empty miss | A missed strike that gives nothing at all. | G15 |
 | Quiz talk | A topic list with one right pick, or a line that exists to explain. | G19, G23 |
 
@@ -732,7 +740,7 @@ test stays with the checklist above.
 | G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | error |
 | G30 | A hazard prop (predator, pit, trap, deep water) with no id or touching safe ground (the town's cobbles, a slot marked `safe`, the first camp slot); a pit, trap or deep water that is solid, or any but a predator with a reach. The schema refuses a hazard with no window (`night`; `mist` comes with P-6); a bad fruit or herb needs none. | error |
 | G15 | A node with no miss table, or a miss row that is not a thing with a value. | needs the miss tables (CR-60) |
-| G34 | A predator with a walkable tile in its reach from which no road leads to a safe place, or from which the run to the nearest one costs a whole fall in bites. No field of the schema can name an item as a hazard's answer. | error |
+| G34 | A predator with a walkable tile in its reach from which no road leads to a safe place, or from which the run to the nearest one costs a whole fall in bites. No field of the schema can name an item as the answer to a hunting hazard; a place's condition may name its gear (amended 2026-11-12). | error |
 | G36 | An expedition whose place is not an area slot, whose chain repeats a type, has a quest with no type, counts fewer than three or more than five or does not run each quest on the one before, with no hazard inside its place, with a bell outside the night or out of ring order, a quest of its chain with a giver or in another expedition's chain or opening a restore outside the place, a reward that opens something that is not a restore, a step of its chain outside its place (a visit's slot, a restore, a build, a riddle's props or its answer, a tend step's fire) or a find in it whose item nothing inside the place gives, an exit that is not safe ground (the camp's ground is not: no part of it may stand yet), a place that can be walked into from anywhere but its exit (on the map by day, and once every passable restore of the valley is mended) or whose exit leads into none of it by day, an exit whose corner tile, where the walk-out sets the player, cannot be stood on, or a climax slot outside its place. | error since the `expedition` kind (NEXT 14a) |
 | G37 | A quest of the opening or of another creator in an expedition's chain; a restore whose input only an expedition gives (its reward or a quest of its chain), or a restore that opens by no hand and only an expedition's reward names, unless a quest outside every chain opens the place; a quest outside every chain that requires a quest of a chain, or that brings or finds what only an expedition gives. | error since the `expedition` kind (NEXT 14a) |
 | G47 | A stealth quest whose target (the find's slot or the visit's slot) lies outside the watch of a predator's round; a round that is not a closed loop of adjacent tiles on walkable ground (its own den counted as ground), or that touches safe ground; a round with no cover prop inside its watch. G34's run to safety walks from every tile a round watches. | error since the round (NEXT 12a) |

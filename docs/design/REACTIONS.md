@@ -224,7 +224,7 @@ Reactions meet the shared-world rules of 10.10 (DECISIONS, "The shared world: wh
 | A mark that closes a way | Only the world makes one (high water from weather), never a player | "Nobody blocks a way" (10.10) |
 | Fire | Below | |
 
-**Fire.** The owner, 19.10: a wildfire and putting it out are rewarding; several players may fight one at once; a fire set on purpose comes only in the future. So:
+**Fire.** The owner, 19.10: a wildfire and putting it out are rewarding; several players may fight one at once; a fire set on purpose comes only in the future (amended 2026-11-12: the owner's pick on the torch card lets a thrown torch light a fire that spreads slowly, DECISIONS.md the entry on the torch; its rules are a later page). So:
 - A spreading fire is a world event. The seed lights it in the wild, in an area between players, never in a town and never on a plot, a house, a tent or a path. It runs as a front from its tick and its tile, so every client draws the same burn with no messages. It burns shared nodes and grass, which grow back, and never takes from a player's bag.
 - Putting it out pays, and many hands work on one front at once. Each player's work is their own act and is paid as their own (R6), and nobody waits on another to start. What it pays is designed with the fire itself.
 - A fire a player lights burns only what it was lit in: a campfire, a hearth, a torch. Setting a fire on purpose waits for the future, with its own rules then.
