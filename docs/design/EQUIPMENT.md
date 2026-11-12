@@ -129,8 +129,8 @@ A recipe names the profession that gates it, else the one that works its station
 
 | Category | Made by | Station | Gate beyond the recipe |
 |---|---|---|---|
-| `tool` | Handcraft (tiers 1 to 3), Woodcraft (handles, staves), Smithing (metal) | workshop, then the city's forge | tier and station; no node wall (G40) |
-| `weapon` | Smithing (blade, blunt), Woodcraft (bow, staff, spear), Handcraft's Stonework (stone blade, tiers 1 to 2) | forge, workshop | the same, and a soft wear requirement on use |
+| `tool` | Handcraft (tiers 1 to 3), Woodcraft (handles, staves), Smithing (metal); ammunition by Woodcraft (arrows, bolts), Smithing (metal heads, shot) (amended 02.11, WEAPON_MATRIX section 12) | workshop, then the city's forge | tier and station; no node wall (G40) |
+| `weapon` | Smithing (blade, blunt, metal thrown), Woodcraft (bow, staff, spear, the javelin, the staff-sling), Leatherwork (sling, from tier 4), Handcraft every hand of tiers 1 to 3 (amended 02.11, WEAPON_MATRIX section 12) | forge, workshop | the same, and a soft wear requirement on use |
 | `wear`, cloth | Tailoring | workshop | traits (`cold_proof`...) at the bench |
 | `wear`, leather | Leatherwork, from hunted hides | workshop | hide grade and colour (2026-10-30) |
 | `look` | the maker's craft or a shop | | binding by how it was got |
