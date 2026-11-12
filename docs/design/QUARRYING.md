@@ -218,7 +218,7 @@ All five lie on level-0 tiles, overlap no slot and no plan rest (tools/src/mappl
 
 Four slots keep a tile to spare over their count; the ruins yard has exactly its two, (44, 22) and (44, 24), the most any clear rectangle in the garden court holds, so a third yard spot needs a ground edit. The content pull request's `pnpm check` and a capture confirm them. The ids stay when the slots move to the first map.
 
-**Caves** wait for a kernel portal (docs/design/OPEN_WORLD.md:486-490). An ore vein inside a mountain is the first reason to ask for one.
+**Caves** wait for content: the schema has carried a `portal` prop and an `underground` region since DECISIONS 2026-11-08 ("The generator's output is content"), and no cave exists yet (docs/design/OPEN_WORLD.md:486-490). An ore vein inside a mountain is the first reason to ask for one.
 
 ## 9. The timing grade and experience: the jackpot finding
 

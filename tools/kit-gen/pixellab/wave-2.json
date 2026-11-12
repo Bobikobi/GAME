@@ -1,0 +1,728 @@
+{
+  "name": "wave-2",
+  "out": ".scratch/pixellab/wave-2",
+  "label": "pixellab-wave-2",
+  "provenance": "Production wave 2 on the paid account, run by a script with no agent, owner 2.11 'stop everything and run a production script for PixelLab'. Pro grids at the game's camera with a shipped human as the camera reference, plus lite effects.",
+  "jobs": [
+    {
+      "id": "elf-plants",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "plants of an ancient elf forest: glowing mushroom cluster, giant fern, silver-leaf sapling, vine-wrapped stump, moonflower, bluebell cluster, luminous moss cushion, hanging root clump, bracket fungi on a log, thorn rose, pale reeds, spiral fern, dew flower, ivy mound, fallen mossy log, seed pods, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, muted greens with small points of pale glow",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "elf-things",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "things built by forest elves: carved wooden arch, living-wood bench, leaf-roofed shrine, lantern on a curved branch, rope bridge post, woven nest basket, standing stone with carved spirals, stump table, moon pool stone rim, wind chime post, vine gate, hanging lantern post, ladder foot at a tree, signpost of bent wood, seed altar, bark drum, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, pale wood, moss and soft glow",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "elf-creatures-2",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "guardian creatures of an elf forest: antlered wolf, leaf-maned lion cub, bark tortoise, moss ram, glowing deer fawn, three-eyed owl, vine snake, flower-backed boar, pale lynx, mushroom-capped frog, thorned badger, feathered hare, crystal beetle, willow wisp, twin-headed squirrel, root-legged crab, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, muted natural colours with pale glow",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "two-tailed-fox-poses",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "the same orange fox with two tails, every picture a different pose: standing, walking, sitting upright, curled up asleep, stretching, crouching to pounce, leaping, looking back, scratching, yawning, lying on its side, sniffing the ground, trotting, shaking, tails raised high, licking a paw, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, orange and white with faintly glowing tail tips",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "dead-plants",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "plants of the world of the dead: dead tree stump, bare thorn bush, grey shelf fungus, ash grass tuft, black rose, bone-white reeds, withered vine, skull-shaped mushroom, pale lichen patch, leafless sapling, dried seed heads, black moss, dust-covered fern, bleached root, ghost lily, charred log, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, cold greys and bone whites with a little sickly green",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "dead-things",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "things of a land of the dead: leaning tombstone, rusted iron grave fence, crypt door in a mound, heap of bones, heap of skulls, old closed coffin, burial urn, tall candle stand with black wax, rusted hanging cage, ghost lantern on a pole, sunken grave, stone sarcophagus, cracked obelisk, ring of small stones, dark stone well, rotten wooden post, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, cold greys and rust, no blood",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ghost-animals",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "pale drifting ghosts of animals, faint white and see-through looking, every picture a different animal: ghost fox, ghost hare, ghost cat, ghost crow, ghost deer, ghost boar, ghost dog, ghost hen, ghost sheep, ghost goat, ghost owl, ghost rat, ghost horse, ghost wolf, ghost frog, ghost fish, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, pale white and faint blue, fading out at the edges",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "dead-creatures-2",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "monsters of the world of the dead: skeleton rider-less horse, bone serpent, faceless pale child-sized spirit in a sheet, crow-headed shade, walking ribcage cage, skull swarm, bone spider, ash hound, candle wraith, hollow armour walking, grave worm, skeleton fish, pale leech, shadow cat, mask spirit, bone beetle, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, cold greys and bone whites, no blood",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "odd-cat-poses",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "the same grey cat with a strange oversized skull head, every picture a different pose: standing, walking, sitting, curled up, stretching, crouching, jumping, looking back, scratching, yawning, lying on its side, sniffing, trotting, shaking, arching its back, washing a paw, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, grey fur and bone white",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "cat-poses",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "the same small grey tabby town cat, every picture a different pose: sitting upright, curled up asleep with the tail over the nose, stretching with the front legs far forward, arching its back, licking a paw, lying on its side, rolling on its back, crouching low, standing, yawning, walking, trotting, leaping, scratching an ear, looking up, kneading, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, warm grey",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "dog-poses",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "the same brown town dog, every picture a different pose: sitting, lying down, sleeping curled, standing, walking, running, sniffing the ground, scratching, wagging its tail, digging, shaking, begging, stretching, barking, rolling on its back, looking back, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, warm brown",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "farm-animal-poses",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "farm animals doing things, every picture different: hen pecking, hen sitting, rooster crowing, sheep grazing, sheep lying down, lamb jumping, goat on its hind legs, goat grazing, pig lying down, pig sniffing, cow grazing, cow lying down, donkey standing, horse grazing, duck waddling, goose hissing, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, warm natural colours",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "big-beasts",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "large animals of a valley and its mountains: ox, bull, mule, draught horse, red stag, brown bear, lynx, elk, wild boar sow, mountain goat, wolf pack leader, grey heron, swan, wild horse, ram, badger sow, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, muted natural colours",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "small-life",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "tiny living things seen close to the ground: butterfly, bee, dragonfly, beetle, snail, ladybird, grasshopper, spider, ant line, mouse, shrew, lizard, toad, sparrow, robin, pigeon, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, small details, natural colours",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "wild-monsters",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "wild monsters of the valley caves and marshes: giant rat, green slime, giant cave spider, bog creature, cave bat, giant centipede, rock crab, mud golem, swamp leech, giant toad, stinging wasp, horned lizard, moss troll cub, wild boar with tusks, cave worm, fire salamander, every picture a different one, top-down game view from high above at fifty degrees: we look down on the back and the top of the head, legs short and foreshortened, never a side profile, soft light from the upper left, short soft shadow side, no outline, muted natural colours",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "farm-things",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "things on a small farm: haystack, scarecrow, cabbage patch, pumpkin patch, wheat sheaf, wooden plough, straw beehive, chicken coop, water butt, tool rack, milking stool, feed sack, wooden field gate, compost heap, grape trellis, staked sapling, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, worn wood and warm earth",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "forage",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "things to gather on the ground: blackberry bush, red berry cluster, wild herb clump, brown mushrooms, fallen apples, hazelnuts, mint patch, wild garlic, chamomile, pine cones, bird's nest with eggs, honeycomb on a stump, sage bush, rosehips, sorrel, watercress, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, natural colours, the foot fades softly into the ground",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "bushes",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "different wild bushes of a green valley: hazel, hawthorn, elder, gorse, juniper, box, bramble, holly, wild rose, low willow, broom, dogwood, blackthorn, heather clump, fern bush, young beech, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, olive greens, leaf clumps with lit tops and dark undersides, the foot sits into the ground",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "flowers",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "flower patches growing on the ground: red poppies, white daisies, bluebells, cowslips, purple vetch, pink campion, wild pansies, ox-eye daisies, marsh marigold, lavender, meadow sweet, sea thrift, forget-me-nots, primroses, field scabious, wild orchid, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, each patch's foot fades softly into the ground with no hard edge",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "market",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "goods on a medieval town market: crate of apples, barrel of fish, bolts of cloth, pottery stand, spice sacks, hanging sausages, cheese wheels, loaf basket, egg basket, tied bunches of herbs, wine jars, leather hides on a rack, candle stand, tin pots, honey jars, salt sack, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, warm earthen colours",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "crafts",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "tools of town crafts: anvil on a stump, stone forge, bellows, grindstone, tanning rack, loom, potter's wheel, sawhorse with a log, carpenter's bench, dye vats, spinning wheel, cooper's barrel staves, weaving frame, chopping block with an axe, kiln, water wheel hub, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, worn wood and iron",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "street",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "furniture of a medieval town street: lamp post, stone well, notice board, bench, flower box, cart wheel leaning, stone drain, horse trough, stacked barrels, market awning post, small statue on a plinth, hitching post, stone steps, low garden wall, wooden gate, milestone, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, warm stone and worn wood",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "indoors",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "furniture inside a medieval house: table, chair, bed with blanket, wooden chest, cupboard, shelf with jars, stone fireplace, round rug, candle holder, stool, cradle, wash basin, hanging herbs, barrel seat, bookstand, cooking pot on a hook, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, warm wood and cloth",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "water-edge",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "things at the water's edge and in shallow water: lily pads, water reeds, wet rock in water, stepping stones, wooden dock piece, fishing rod rest, cattails, floating log, duck nest, water mint, sunken stone, wooden bridge piece, mud bank patch, fish basket, marsh grass, frog stone, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, muted weathered colours",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "bay",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "things of a sea bay and its harbour: seaweed clump, gull nest, cork buoy, crab on sand, harbour bollard, stacked lobster pots, ship's wheel, tar barrel, sail cloth pile, rope ladder, small anchor, harbour crane post, sand ripple patch, large shell, wooden pier post, fishing boat at rest, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, weathered wood and sea greys",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "cave",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "things in a cave and a mine: stalagmite, crystal cluster, ore vein in rock, mine cart, timber prop, wall torch, cave mushrooms, rock pile, wooden ladder, pick and shovel, broken rail piece, dark pool rim, glowing lichen, old lantern, sack of ore, cave entrance stone frame, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, dark stone with small warm lights",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "mountain",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "things high on a mountain: pine sapling, scree patch, snow patch, wind-bent shrub, cairn, rocky ledge, frozen puddle, ice shard, shepherd's hut stone wall, mountain flower, boulder with snow, hanging rope post, eagle nest, old prayer-less marker stone, dry grass tuft, cliff piece, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, cold greys, pale snow",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ruins-2",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "ruins of a lost age, overgrown: broken archway, sunken stairway, tilted column with vines, carved face in stone, cracked floor mosaic, fallen statue, stone bench with moss, tree growing through a wall, broken watch post, ring of stones, stone trough, carved tablet, roofless small shrine, buried wheel, wall corner, tiled patch, every picture a different one, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, warm grey stone with moss",
+        "cell": 64,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "trees-young",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "four different young trees of a green valley: a small oak, a thin birch, a young ash, a small maple, the crown seen from above and the trunk short, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, olive greens",
+        "cell": 128,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "trees-fruit",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "four different fruit trees of a village orchard: apple with red fruit, pear, plum in blossom, cherry, the crown seen from above and the trunk short, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, warm greens",
+        "cell": 128,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "trees-elf",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "four different huge old trees of an elf forest: silver bark tree, tree with hanging moss, twisted root tree with pale glow, blue-green leaved tree, the crown seen from above and the trunk short, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, muted greens and pale glow",
+        "cell": 128,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "trees-dead",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "four different dead trees: bare black oak, hollow grey trunk, tree with hanging bones, split burnt tree, the bare branches seen from above and the trunk short, seen from high above at fifty degrees, we see the top surfaces and the walls foreshortened, never a flat front view, soft light from the upper left, short soft shadow side, no outline, cold greys",
+        "cell": 128,
+        "reference_images": [
+          {
+            "image": "../../../.scratch/pixellab/refs/human-50.png",
+            "usage_description": "Only the camera angle: everything is seen from the same height and angle as this figure, from above. Do not copy the figure, its clothes or its colours."
+          }
+        ]
+      }
+    },
+    {
+      "id": "fx-rain-splash",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "small rain drops hitting the ground in tiny splashes",
+        "artist": "lite",
+        "name": "fx-rain-splash"
+      }
+    },
+    {
+      "id": "fx-snow-puff",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a soft puff of snow that spreads and fades",
+        "artist": "lite",
+        "name": "fx-snow-puff"
+      }
+    },
+    {
+      "id": "fx-sparks",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a short burst of orange sparks from a forge",
+        "artist": "lite",
+        "name": "fx-sparks"
+      }
+    },
+    {
+      "id": "fx-heal",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "soft pale green shimmer rising and fading",
+        "artist": "lite",
+        "name": "fx-heal"
+      }
+    },
+    {
+      "id": "fx-poison",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "small green bubbles rising and popping",
+        "artist": "lite",
+        "name": "fx-poison"
+      }
+    },
+    {
+      "id": "fx-arrow-trail",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a thin pale streak behind a flying arrow, fading",
+        "artist": "lite",
+        "name": "fx-arrow-trail"
+      }
+    },
+    {
+      "id": "fx-step-dust",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a tiny puff of dust at a footstep",
+        "artist": "lite",
+        "name": "fx-step-dust"
+      }
+    },
+    {
+      "id": "fx-drip",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a single water drop falling and making a small ring",
+        "artist": "lite",
+        "name": "fx-drip"
+      }
+    },
+    {
+      "id": "fx-torch-smoke",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a thin dark wisp of smoke rising from a torch",
+        "artist": "lite",
+        "name": "fx-torch-smoke"
+      }
+    },
+    {
+      "id": "fx-clash",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "short bright sparks of two blades meeting",
+        "artist": "lite",
+        "name": "fx-clash"
+      }
+    },
+    {
+      "id": "fx-magic-ring",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a thin ring of pale light that expands and fades",
+        "artist": "lite",
+        "name": "fx-magic-ring"
+      }
+    },
+    {
+      "id": "fx-ghost-mist",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "low pale mist that drifts and thins",
+        "artist": "lite",
+        "name": "fx-ghost-mist"
+      }
+    },
+    {
+      "id": "fx-bone-shatter",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "small white bone pieces bursting apart and falling",
+        "artist": "lite",
+        "name": "fx-bone-shatter"
+      }
+    },
+    {
+      "id": "fx-leaf-burst",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "green leaves bursting outward and falling",
+        "artist": "lite",
+        "name": "fx-leaf-burst"
+      }
+    },
+    {
+      "id": "fx-coin",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a small gold sparkle that twinkles once",
+        "artist": "lite",
+        "name": "fx-coin"
+      }
+    },
+    {
+      "id": "fx-glow-up",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a warm golden glow rising around a figure and fading",
+        "artist": "lite",
+        "name": "fx-glow-up"
+      }
+    },
+    {
+      "id": "fx-lantern-glow",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a soft warm glow that flickers, seamless loop",
+        "artist": "lite",
+        "name": "fx-lantern-glow"
+      }
+    },
+    {
+      "id": "fx-fireflies",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a few small yellow fireflies drifting, seamless loop",
+        "artist": "lite",
+        "name": "fx-fireflies"
+      }
+    },
+    {
+      "id": "fx-dust-motes",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "pale dust motes drifting slowly in light, seamless loop",
+        "artist": "lite",
+        "name": "fx-dust-motes"
+      }
+    },
+    {
+      "id": "fx-gust",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "thin pale curved lines of a passing gust of wind",
+        "artist": "lite",
+        "name": "fx-gust"
+      }
+    },
+    {
+      "id": "fx-mist-wisp",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "one thin wisp of white mist drifting across",
+        "artist": "lite",
+        "name": "fx-mist-wisp"
+      }
+    },
+    {
+      "id": "fx-steam",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "white steam rising from a cooking pot, seamless loop",
+        "artist": "lite",
+        "name": "fx-steam"
+      }
+    },
+    {
+      "id": "fx-forge-glow",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "embers pulsing with an orange glow, seamless loop",
+        "artist": "lite",
+        "name": "fx-forge-glow"
+      }
+    },
+    {
+      "id": "fx-smoke-thick",
+      "recipe": "effect",
+      "account": 1,
+      "inputs": {
+        "description": "a thick dark grey plume of smoke rising, seamless loop",
+        "artist": "lite",
+        "name": "fx-smoke-thick"
+      }
+    }
+  ]
+}

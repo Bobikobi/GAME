@@ -32,7 +32,7 @@ TARGET = cfg.get("target", "forager")
 IS_RIG = TARGET.startswith("rig:")
 IS_UAL = TARGET == "ual"
 NATIVE = cfg.get("map") == "native"   # a body that carries its own actions (the four-legged wolf): played as they are, nothing retargeted
-ELEV = math.radians(cfg.get("elev", 50)); PXM = cfg.get("pxm", 10.0 if IS_RIG else 53.0)
+ELEV = math.radians(cfg.get("elev", 35)); PXM = cfg.get("pxm", 10.0 if IS_RIG else 53.0)
 ANCHOR = tuple(cfg.get("anchor", [32, 84]))
 
 if IS_RIG:

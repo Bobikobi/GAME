@@ -19766,7 +19766,7 @@
             },
             "creatures": {
               "additionalProperties": false,
-              "description": "Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A kind with \"hunt\" is the kernel's too: it dresses its carcasses and the value table prices its goods, with its spots as the source's capacity (HUNTING sections 5-9). A kind with \"behaviour\" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den's mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).",
+              "description": "Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A spot may carry a rank, a shape, a count, affixes, a leader and a route (the generator's axes, DECISIONS 2026-11-08); left out, it is a regular spot of the kind's own group class. A kind with \"hunt\" is the kernel's too: it dresses its carcasses and the value table prices its goods, with its spots as the source's capacity (HUNTING sections 5-9). A kind with \"behaviour\" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den's mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).",
               "type": "object",
               "required": [
                 "kinds",
@@ -20736,6 +20736,108 @@
                         "minimum": 0,
                         "maximum": 1023,
                         "type": "integer"
+                      },
+                      "rank": {
+                        "description": "How strong the spot's creatures are against the kind's norm. Left out: regular. At most one boss on a map.",
+                        "anyOf": [
+                          {
+                            "const": "regular",
+                            "type": "string"
+                          },
+                          {
+                            "const": "elite",
+                            "type": "string"
+                          },
+                          {
+                            "const": "rare",
+                            "type": "string"
+                          },
+                          {
+                            "const": "boss",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "shape": {
+                        "description": "How they stand: alone, as a pack, as a camp around a leader, or walking a route. Left out: the kind's own group class.",
+                        "anyOf": [
+                          {
+                            "const": "lone",
+                            "type": "string"
+                          },
+                          {
+                            "const": "pack",
+                            "type": "string"
+                          },
+                          {
+                            "const": "camp",
+                            "type": "string"
+                          },
+                          {
+                            "const": "patrol",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "count": {
+                        "description": "How many are drawn at the spot, the fewest then the most. Left out: the kind's own band.",
+                        "type": "array",
+                        "items": [
+                          {
+                            "minimum": 1,
+                            "maximum": 16,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 1,
+                            "maximum": 16,
+                            "type": "integer"
+                          }
+                        ],
+                        "additionalItems": false,
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "affixes": {
+                        "maxItems": 3,
+                        "uniqueItems": true,
+                        "description": "The affix words of the spot's creatures; a regular spot carries none.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z][a-z0-9_-]{0,23}$",
+                          "description": "An affix word the fight reads (fast, armoured, venom, ember...): a small change to the kind's norm, never a new kind.",
+                          "type": "string"
+                        }
+                      },
+                      "leader": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "A camp only: the kind standing at its middle, one of the map's kinds.",
+                        "type": "string"
+                      },
+                      "route": {
+                        "minItems": 2,
+                        "maxItems": 64,
+                        "description": "A patrol only: the tiles it walks, in order, each a path tile four-adjacent to the one before. World tiles, in a chunk too, so a beat may cross a seam.",
+                        "type": "array",
+                        "items": {
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
                       }
                     }
                   }
@@ -21245,6 +21347,27 @@
                     "const": true,
                     "type": "boolean"
                   },
+                  "portal": {
+                    "additionalProperties": false,
+                    "description": "A way through: a player who steps onto this non-solid prop's footprint stands on that world tile instead (a cave mouth, a hollow tree, an old well, the way back up). The tile is walkable and the check proves it. It needs an id. A chunk's portal names a world tile, not a chunk tile.",
+                    "type": "object",
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "properties": {
+                      "x": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      "y": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      }
+                    }
+                  },
                   "lit_by": {
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                     "maxLength": 80,
@@ -21465,6 +21588,11 @@
                     "maxLength": 40,
                     "type": "string",
                     "description": "The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable."
+                  },
+                  "underground": {
+                    "description": "Below the ground, reached through a portal: no sky over it (no weather, no sun, its card's night all day), and the chart draws it only once entered. Left out: open air.",
+                    "const": true,
+                    "type": "boolean"
                   }
                 }
               }
@@ -21605,6 +21733,140 @@
                         ]
                       }
                     }
+                  },
+                  "atmosphere": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "sun",
+                      "night_depth",
+                      "particles"
+                    ],
+                    "properties": {
+                      "sun": {
+                        "additionalProperties": false,
+                        "description": "The tint the light layer gives the day and the dusk. [255, 255, 255] by day leaves the valley's light as it is; a redder day is the undead land's.",
+                        "type": "object",
+                        "required": [
+                          "day",
+                          "dusk"
+                        ],
+                        "properties": {
+                          "day": {
+                            "description": "Red, green, blue.",
+                            "type": "array",
+                            "items": [
+                              {
+                                "minimum": 0,
+                                "maximum": 255,
+                                "type": "integer"
+                              },
+                              {
+                                "minimum": 0,
+                                "maximum": 255,
+                                "type": "integer"
+                              },
+                              {
+                                "minimum": 0,
+                                "maximum": 255,
+                                "type": "integer"
+                              }
+                            ],
+                            "additionalItems": false,
+                            "minItems": 3,
+                            "maxItems": 3
+                          },
+                          "dusk": {
+                            "description": "Red, green, blue.",
+                            "type": "array",
+                            "items": [
+                              {
+                                "minimum": 0,
+                                "maximum": 255,
+                                "type": "integer"
+                              },
+                              {
+                                "minimum": 0,
+                                "maximum": 255,
+                                "type": "integer"
+                              },
+                              {
+                                "minimum": 0,
+                                "maximum": 255,
+                                "type": "integer"
+                              }
+                            ],
+                            "additionalItems": false,
+                            "minItems": 3,
+                            "maxItems": 3
+                          }
+                        }
+                      },
+                      "night_depth": {
+                        "minimum": 0,
+                        "maximum": 100,
+                        "description": "How far the night falls: 0 the lightest night the layer draws, 100 its darkest. The valley's own night is about 50.",
+                        "type": "integer"
+                      },
+                      "particles": {
+                        "maxItems": 4,
+                        "description": "What drifts in the air, each kind once.",
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "density"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "anyOf": [
+                                {
+                                  "const": "fireflies",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "pollen",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "ash",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "embers",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "leaves",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "birds",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "snow",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "density": {
+                              "minimum": 1,
+                              "maximum": 10,
+                              "description": "How much of it drifts: 1 a few, 10 a cloud.",
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      },
+                      "shafts": {
+                        "description": "Sun shafts between the trees by day (the elf wood). Left out: none.",
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "The region's air: its sun, its night and what drifts in it. Left out: the valley's own light, as the layer draws it today."
                   }
                 }
               }
@@ -23234,6 +23496,786 @@
                     "minLength": 1,
                     "maxLength": 40,
                     "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "additionalProperties": false,
+      "$id": "story",
+      "type": "object",
+      "required": [
+        "format",
+        "id",
+        "title",
+        "creator",
+        "type",
+        "story"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "format": {
+          "description": "Format version of this file.",
+          "const": 1,
+          "type": "number"
+        },
+        "id": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string"
+        },
+        "creator": {
+          "pattern": "^[a-z0-9_-]+$",
+          "maxLength": 39,
+          "description": "GitHub handle, lowercase.",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "maxLength": 240,
+          "type": "string"
+        },
+        "ai_tools": {
+          "maxItems": 8,
+          "description": "AI tools used to make this file or its art. Required when any were used.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 60,
+            "type": "string"
+          }
+        },
+        "items": {
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "rarity",
+              "sprite",
+              "weight"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "material",
+                    "type": "string"
+                  },
+                  {
+                    "const": "food",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fragment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "treasure",
+                    "type": "string"
+                  }
+                ]
+              },
+              "rarity": {
+                "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+                "anyOf": [
+                  {
+                    "const": "common",
+                    "type": "string"
+                  },
+                  {
+                    "const": "uncommon",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rare",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legendary",
+                    "type": "string"
+                  }
+                ]
+              },
+              "class": {
+                "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                ]
+              },
+              "family": {
+                "pattern": "^[a-z0-9_-]+$",
+                "maxLength": 24,
+                "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+                "type": "string"
+              },
+              "tags": {
+                "maxItems": 8,
+                "uniqueItems": true,
+                "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+                "type": "array",
+                "items": {
+                  "pattern": "^[a-z0-9_-]+$",
+                  "maxLength": 24,
+                  "description": "A lowercase word.",
+                  "type": "string"
+                }
+              },
+              "tier": {
+                "minimum": 1,
+                "maximum": 20,
+                "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+                "type": "integer"
+              },
+              "sprite": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                "maxLength": 120,
+                "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                "type": "string"
+              },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
+              "food": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "satiety"
+                ],
+                "properties": {
+                  "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "tool": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "kind",
+                  "tier"
+                ],
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "const": "basket",
+                        "type": "string"
+                      },
+                      {
+                        "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tier": {
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Better tools work faster. The calculator clamps the total.",
+                    "type": "integer"
+                  },
+                  "uses": {
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "fragment": {
+                "additionalProperties": false,
+                "description": "A found scrap that teaches a recipe.",
+                "type": "object",
+                "required": [
+                  "unlocks"
+                ],
+                "properties": {
+                  "unlocks": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                }
+              },
+              "wear": {
+                "additionalProperties": false,
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
+                "type": "object",
+                "required": [
+                  "slot"
+                ],
+                "properties": {
+                  "slot": {
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
+                    "anyOf": [
+                      {
+                        "const": "head",
+                        "type": "string"
+                      },
+                      {
+                        "const": "top",
+                        "type": "string"
+                      },
+                      {
+                        "const": "legs",
+                        "type": "string"
+                      },
+                      {
+                        "const": "outfit",
+                        "type": "string"
+                      },
+                      {
+                        "const": "feet",
+                        "type": "string"
+                      },
+                      {
+                        "const": "jewelry",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "look": {
+                    "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                    "type": "boolean"
+                  },
+                  "effects": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "effect",
+                        "value"
+                      ],
+                      "properties": {
+                        "effect": {
+                          "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                          "anyOf": [
+                            {
+                              "const": "gather_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "dig_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_chance_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "rare_find_pct",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "value": {
+                          "minimum": 1,
+                          "maximum": 100,
+                          "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "set": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                    "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "premium_later": {
+                "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "classes": {
+          "maxItems": 10,
+          "description": "Classes of your own, each under one base class.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "base"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "base": {
+                "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  }
+                ]
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "type": {
+          "const": "story",
+          "type": "string"
+        },
+        "story": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "seed",
+            "world",
+            "origin",
+            "size",
+            "forest",
+            "relief",
+            "water",
+            "caves",
+            "entries"
+          ],
+          "properties": {
+            "seed": {
+              "minLength": 1,
+              "maxLength": 60,
+              "description": "The seed word: the same word gives the same land, always.",
+              "type": "string"
+            },
+            "world": {
+              "description": "Whose land it is: its ground, trees, creatures and air.",
+              "anyOf": [
+                {
+                  "const": "human",
+                  "type": "string"
+                },
+                {
+                  "const": "elf",
+                  "type": "string"
+                },
+                {
+                  "const": "undead",
+                  "type": "string"
+                }
+              ]
+            },
+            "origin": {
+              "additionalProperties": false,
+              "description": "The land's top-left chunk in the world grid of 64-tile chunks (G51).",
+              "type": "object",
+              "required": [
+                "cx",
+                "cy"
+              ],
+              "properties": {
+                "cx": {
+                  "minimum": 0,
+                  "maximum": 15,
+                  "type": "integer"
+                },
+                "cy": {
+                  "minimum": 0,
+                  "maximum": 15,
+                  "type": "integer"
+                }
+              }
+            },
+            "size": {
+              "additionalProperties": false,
+              "description": "The land in chunks, wide and high.",
+              "type": "object",
+              "required": [
+                "w",
+                "h"
+              ],
+              "properties": {
+                "w": {
+                  "minimum": 1,
+                  "maximum": 8,
+                  "type": "integer"
+                },
+                "h": {
+                  "minimum": 1,
+                  "maximum": 8,
+                  "type": "integer"
+                }
+              }
+            },
+            "forest": {
+              "minimum": 0,
+              "maximum": 100,
+              "description": "How much of the land is wood: 0 open meadow, 100 a wall of trees with few glades.",
+              "type": "integer"
+            },
+            "relief": {
+              "minimum": 0,
+              "maximum": 100,
+              "description": "How much the ground rises: 0 flat, 100 terraces and crags everywhere.",
+              "type": "integer"
+            },
+            "water": {
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Lakes and streams: 0 none, 100 a wet land.",
+              "type": "integer"
+            },
+            "caves": {
+              "minimum": 0,
+              "maximum": 8,
+              "description": "How many hidden doors the deep wood holds, each the way down to the land below.",
+              "type": "integer"
+            },
+            "below": {
+              "additionalProperties": false,
+              "description": "The top-left chunk of the land below: the caves the doors lead down to, one chunk high and one wide per door up to the land's width, in a part of the grid no land above uses. Left out: the doors lead nowhere yet, so none is placed.",
+              "type": "object",
+              "required": [
+                "cx",
+                "cy"
+              ],
+              "properties": {
+                "cx": {
+                  "minimum": 0,
+                  "maximum": 15,
+                  "type": "integer"
+                },
+                "cy": {
+                  "minimum": 0,
+                  "maximum": 15,
+                  "type": "integer"
+                }
+              }
+            },
+            "entries": {
+              "minItems": 1,
+              "maxItems": 4,
+              "uniqueItems": true,
+              "description": "The sides a road comes in from.",
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "const": "n",
+                    "type": "string"
+                  },
+                  {
+                    "const": "e",
+                    "type": "string"
+                  },
+                  {
+                    "const": "s",
+                    "type": "string"
+                  },
+                  {
+                    "const": "w",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "ruins": {
+              "minimum": 0,
+              "maximum": 6,
+              "description": "Small ruins off the roads. Left out: 1.",
+              "type": "integer"
+            },
+            "life": {
+              "minimum": 0,
+              "maximum": 100,
+              "description": "How full of creatures the land is, as a share of the kinds' caps: 0 empty, 100 at the cap. Left out: 25.",
+              "type": "integer"
+            },
+            "settlements": {
+              "maxItems": 8,
+              "description": "The settlements of the land, the largest first: the first stands at the hub where the roads meet, the rest the generator places apart from it and joins by road. Each world builds them its own way (the owner, 8.11: varied, in many sizes, as the big games do; a human city huge in its own right, with great walls, old Dubrovnik). Left out: a clearing at the hub.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "description": "What stands there: a city (walls and gates, a main street, districts of narrow streets), a town (a market square and streets, a wall perhaps), a village (houses round a square), a hamlet (a few houses), a farm (a house, a barn, fields), an outpost (a tower and a fence), a keep (a wall and a hall on a height).",
+                    "anyOf": [
+                      {
+                        "const": "city",
+                        "type": "string"
+                      },
+                      {
+                        "const": "town",
+                        "type": "string"
+                      },
+                      {
+                        "const": "village",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hamlet",
+                        "type": "string"
+                      },
+                      {
+                        "const": "farm",
+                        "type": "string"
+                      },
+                      {
+                        "const": "outpost",
+                        "type": "string"
+                      },
+                      {
+                        "const": "keep",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "size": {
+                    "minimum": 1,
+                    "maximum": 3,
+                    "description": "Within its kind: 1 small, 2 the usual, 3 huge. Left out: 2.",
+                    "type": "integer"
                   }
                 }
               }

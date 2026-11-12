@@ -125,6 +125,29 @@ store, `Bobikobi/GAME-art-drafts` (private, releases only) with its index
   existing import pipeline, visual review and applicable checks for integration.
   Preserve source attribution and comply with the asset's licence.
 
+## The image library
+
+A view of the index for the owner: one page of every draft in `tools/kit-gen/drafts.jsonl`, with amendments folded in, in
+sections by tool (PixelLab, Blender, Kaggle, Codex, and the rest), chips with counts, search, review states, and a filter by
+creation date (from/to, today, 7 and 30 days, one button per month, and "no date" for drafts no fallback can date). The
+lightbox shows the prompt, seed, review, its note and who gave it. It is a view like any gallery here: the index stays the
+catalogue.
+
+- `pnpm art:library [--out DIR]` builds it (default `.scratch/art-library/`). Thumbnails are fetched once from the private
+  store and kept in `DIR/thumb/`; a run fetches only what is missing, and a model file or a failed fetch gets a placeholder
+  and a line in the log. It prints how many dates each fallback filled (`at`, a source's `at`, a timestamp in a source's
+  file name, the store tag's day) and how many stay undated.
+- `tools/art-library/` holds the `systemd --user` units that keep the page current: a 10 minute timer that rebuilds only when
+  `origin/develop`'s index (or the owner's `reviews.jsonl`) changed, from a clean checkout of its own, and `serve.py`, a server on
+  `127.0.0.1:8741` that also saves the owner's choices. Its README says how they are installed.
+- **Sorting by hand.** Each card and the lightbox carry buttons for the five review states and a note; keys 1-4 in the lightbox
+  save and move on; many cards can be ticked (shift-click a range, select all that the filters show) and given one state in one
+  request. A state is the owner's own when it came from a click on the page or from an amendment stamped `owner` or `elad`; the
+  agents' sort of 30.10 is shown as an agent's, "לא מוין ידנית" lists what he has not decided, and "מיינת X מתוך N" counts his.
+  Choices are appended to `reviews.jsonl` in the page's folder and win over any agent's state on a rebuild. `pnpm art:library:land`
+  carries them into this index as amendment lines on a fresh branch and pull request (`--apply`, `--pr`); the manager lands it.
+  Archive only sets a state: nothing is deleted from the store or the thumbnails.
+
 ## Parallel sessions
 
 Each session writes only its own task's records and sources. Read other worktrees

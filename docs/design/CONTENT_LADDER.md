@@ -72,7 +72,7 @@ What the tests hold once the rung exists. The kit has no field for a rung today;
 
 Measurables for the pull request that builds it:
 
-1. One saved state, two captures at 390 x 844 (mild and the line) of the bank wolf's bite and of a hare's carcass under dressing: the same HUD, the same goods, different images; both in `docs/design/frames/`.
+1. One saved state, two full-frame captures at 1920 x 1080 (STYLE 1) (mild and the line) of the bank wolf's bite and of a hare's carcass under dressing: the same HUD, the same goods, different images; both in `docs/design/frames/`.
 2. `grep -rn "eye\b\|'mild'\|'line'" kernel/src` finds nothing; in `server/src` it finds only the account column and the answer's field.
 3. The Settings window at 16, 18 and 20 text with the new row: no text under 16 px, the row's control at 44 x 44 or more (#437's measures, repeated).
 4. The e2e opening is untouched: the opening and the demo play on mild, and the opening's fall stays as built until the combat frame lands the card and the pack for both rungs (G33).
