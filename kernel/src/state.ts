@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.26.0';
+export const KERNEL_VERSION = '0.27.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -212,6 +212,8 @@ export interface Player {
   outing: Outing | null;
   /** the hunt the player is in, if any */
   chase: Chase | null;
+  /** Live combat marker; old saves have none. The chunk owns the fight itself. */
+  fight: { foe?: string; since: number } | null;
   /** quests that were open when a predator bit the player on an outing that came home (not in a fall), sorted: the giver's line at the hand-in may say so */
   bitten: string[];
   /** tended fires by map prop id */
@@ -323,6 +325,7 @@ export function newState(bundle: Bundle, seed: Seed | number): State {
       town: '',
       outing: null,
       chase: null,
+      fight: null,
       bitten: [],
       fires: {},
       own: null,
@@ -348,6 +351,7 @@ export function migrateState(saved: State): State {
   const s = structuredClone(saved) as State & { player: Player & { starter?: string; attrs: Record<string, number> } };
   // kernel 0.15: the bound balance is a field of its own; a save without it holds none
   s.player.boundGold ??= 0;
+  s.player.fight ??= null;
   // a save from before kernel 0.17 has searched nothing: it reads as empty, whatever its format
   s.searched ??= {};
   // kernel 0.19: the health bar is named hp and has no clock; a save from before it carries its satiety over

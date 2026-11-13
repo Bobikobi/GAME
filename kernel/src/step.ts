@@ -134,6 +134,7 @@ export type Action =
   | { t: 'move'; at: Tile; gait?: Gait };
 
 export type GameEvent =
+  | import('./events').FightEvent
   | { e: 'gain'; item: string; qty: number }
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
@@ -487,6 +488,7 @@ function perform(ctx: Ctx, a: Action): void {
 }
 
 function act(ctx: Ctx, a: Action): void {
+  if (ctx.s.player.fight != null && (a.t === 'craft' || a.t === 'kindle' || a.t === 'restore')) refuse('Not during a fight.');
   switch (a.t) {
     case 'gather':
       return gather(ctx, a.node, a.grade, a.at);
@@ -1847,6 +1849,7 @@ function fall(ctx: Ctx): void {
   p.busyUntil = ctx.tick;
   p.hp = hpCap(b, s);
   p.chase = null;
+  p.fight = null;
   p.outing = null;
   ctx.fell = true;
   ctx.events.push({ e: 'fall', from, at, lost });
@@ -2084,4 +2087,24 @@ function gainProfessionXp(ctx: Ctx, id: string, ms: number): void {
 /** Stable text of a state, for saves and for comparing two runs. */
 export function serialize(state: State): string {
   return canonical(state);
+}
+
+/** Combat uses the same hurt and fall path as hazards. Time here is game milliseconds. Pure. */
+export function fightHurt(bundle: Bundle, state: State, amount: number, foe: string, tick: number): { state: State; events: GameEvent[] } {
+  const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [], hurt: false, fell: false };
+  ctx.s.tick = tick;
+  hurt(ctx, amount, 'foe', foe);
+  fallIfDown(ctx);
+  return { state: ctx.s, events: ctx.events };
+}
+
+/** G49 at the fight boundary: reuse expedition accounting and the existing walk-out. */
+export function fightBell(bundle: Bundle, state: State, tick: number): { state: State; events: GameEvent[] } | undefined {
+  const ctx: Ctx = { b: bundle, s: state, tick, events: [], hurt: false, fell: false };
+  ctx.walkOut = walkOutDue(ctx);
+  if (!ctx.walkOut) return undefined;
+  ctx.s = structuredClone(state);
+  ctx.s.tick = tick;
+  expeditions(ctx);
+  return { state: ctx.s, events: ctx.events };
 }
