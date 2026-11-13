@@ -39,9 +39,9 @@
     },
     {
       "id": "gear-wave",
-      "title": "The outside account's gear wave: clothing, weapons, stone work, dried herbs",
+      "title": "The outside account's gear wave: what is left after the pages and rules landed - dried herbs, the hare and crow loops",
       "plan": ["tracker #613 (it holds #539)", "docs/design/PROGRESSION.md"],
-      "branches": ["docs/gear-and-stone", "feat/gear-foundations", "feat/stone-work-rules", "feat/weapon-matrix", "feat/dried-herbs"],
+      "branches": ["feat/dried-herbs", "art/hare-crow-loops", "art/hare-crow-living"],
       "owner": null
     },
     {
