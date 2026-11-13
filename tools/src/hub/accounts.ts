@@ -1,7 +1,7 @@
 /**
  * The `accounts` section of hub-data, the players counter (DECISIONS.md, 2026-10-31): the game server's GET /stats
- * (server/src/stats.ts), read from the origin in GAME_SERVER_ORIGIN. The hourly refresh takes that name from a
- * repository variable, so it never enters the repo. Not named, a name that is not an https origin, unreachable, an
+ * (server/src/stats.ts), read from the origin in GAME_SERVER_ORIGIN. The hourly refresh and the site build take that name from a
+ * repository secret, so it never enters the repo. Not named, a name that is not an https origin, unreachable, an
  * error, an answer of another shape or more than 5 seconds: `accounts` and `sources.accounts` stay null, and the hub
  * says the count is unknown, never a guessed 0.
  */
