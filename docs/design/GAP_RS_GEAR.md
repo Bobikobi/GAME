@@ -54,7 +54,7 @@ The columns: **RuneScape** (one generic line, a sourced number, a link); **Loomv
 | Places | not read | none | the hunters' cache, a new ruin slot, waits (WEAPONS 5.4) | the city's forge (decision 51) | not measurable |
 | The economy's role | the central exchange and its tax ([S18](https://oldschool.runescape.wiki/w/Grand_Exchange)) | the trader sells four tier-1 tools at 30 gold (content/core/shops/trader-shop.json:11-28; DECISIONS 2026-10-09 "The workshop makes better tools that no shop sells; the 30-gold tools stay") | a check row refuses a shop that sells a tool, weapon or ammunition of tier 2 or more (WEAPONS 16) | unchanged | the market |
 
-**Tempo, beside the rows.** RuneScape paces a fight in ticks of 0.6 seconds, a weapon striking every 2 to 9 ticks ([S13](https://oldschool.runescape.wiki/w/Attack_speed)). WEAPONS 3 and 4 propose three named tempos on one cooldown, counted in ticks of the landed `wild.tick_ms` (content/core/params.json:546), and a rate cap per tier so a fast hand trades size for openings, never output. Nothing of it is built in this wave.
+**Tempo, beside the rows.** RuneScape paces a fight in ticks of 0.6 seconds, a weapon striking every 2 to 9 ticks ([S13](https://oldschool.runescape.wiki/w/Attack_speed)). WEAPONS 3 and 4 propose three named tempos on one cooldown, counted in ticks of the landed `wild.tick_ms` (content/core/params.json:566), and a rate cap per tier so a fast hand trades size for openings, never output. Nothing of it is built in this wave.
 
 ## 5. Quarrying and what follows
 
