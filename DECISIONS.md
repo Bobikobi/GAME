@@ -4422,3 +4422,10 @@ The address `GAME_SERVER_ORIGIN` is a repository secret; the hourly refresh (loo
 **Chosen:** stay on Phaser and TypeScript with the shared integer kernel, and take methods, each rebuilt in our own code at its own stage: the see-through of a crown the figure stands behind (STYLE 1b, open since 2026-10-26), animation transition rules and frame events as data, borders bent by a warp before they are classified, a music transition table on the beat grid, a weighted scatter brush, a particle table per kind, route smoothing on the client, parent states for the creature brain. MIT code may be translated with a credit line; a GPL shader may not enter.
 **Not checked:** the 4.7.2 web export's size, the plugins' own source, C# on the web.
 **Retry when:** a need appears that Phaser cannot carry (none of the twelve today), or one engine for both doors becomes worth a rewrite of the client. **Model:** Claude Sonnet 5.5 (the study), Claude Fable 5.2 (the manager's ruling). **Link:** none; the study's notes are not in this repository.
+
+
+## 2026-11-14 ✅ The fight's tick lands in the kernel, off
+**What:** issue #549 step 4 adds a pure integer chunk fight tick, typed events, old-save migration and the engaged work refusals; combat.enabled stays 0 and no game or server calls it.
+**Chosen:** COMBAT 4.9 governs dodge without invulnerability and the den leash; inputs retain arrival order, players resolve before foes, and windows exclude their ending tick. Existing combat params and the kind's hunt refill clock supply the numbers.
+**Tree:** serves the future Strike and Guard schools (PROGRESSION 4.2); no node, technique or growth effect is added. **Model:** GPT-6 (Codex).
+**Retry when:** the manager wires the authoritative server tick and designs the first combat nodes, weapons and loot collection. **Link:** public issue #549.
