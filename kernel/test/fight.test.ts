@@ -243,18 +243,37 @@ describe('fight tick', () => {
     expect(ended.world.creatures[FOE]!.at).toEqual([8, 8]);
   });
 
-  it('give-up: last distant tick stays engaged; next tick ends and preserves health until refill', () => {
+  it('give-up: last distant tick stays engaged; next tick ends, and the foe left standing is whole again at once', () => {
     const b = arena(), w = setup(b), p = w.players[PLAYER]!, f = w.creatures[FOE]!;
-    p.state.player.at = [18, 18]; f.home = [12, 12]; f.away[PLAYER] = 0; f.health = 7;
-    expect(fightTick(b, w, [], b.params.combat.give_up_t - 1).world.players[PLAYER]!.state.player.fight).not.toBeNull();
+    const whole = b.map.creatures!.kinds['core/wolf']!.fight!;
+    p.state.player.at = [18, 18]; f.home = [12, 12]; f.away[PLAYER] = 0; f.health = 7; f.breath = 1; f.cursor = 2;
+    const edge = fightTick(b, w, [], b.params.combat.give_up_t - 1).world;
+    expect(edge.players[PLAYER]!.state.player.fight).not.toBeNull();
+    expect(edge.creatures[FOE]!.health).toBe(7);
     const ended = fightTick(b, w, [], b.params.combat.give_up_t);
     expect(ended.world.players[PLAYER]!.state.player.fight).toBeNull();
     const foe = ended.world.creatures[FOE]!;
-    expect(foe.health).toBe(7);
+    // COMBAT 4.9: a run ends the fight and leaves nothing to come back to. No rest, no node clock, no move.
+    expect([foe.health, foe.breath, foe.cursor, foe.readyAt]).toEqual([whole.hp, whole.breath, 0, 0]);
+    expect(foe.at).toEqual([8, 8]);
+    expect(ended.world.players[PLAYER]!.state.nodes[FOE]).toBeUndefined();
+  });
+
+  it('a fallen foe rests on its spot for the kind\'s refill: absent on the last resting tick, whole at home on the next', () => {
+    const b = arena(), w = setup(b), f = w.creatures[FOE]!;
+    const kind = b.map.creatures!.kinds['core/wolf']!;
+    f.health = 0; f.at = [9, 8];
+    const ended = fightTick(b, w, [], 1);
+    expect(ended.events).toContainEqual({ e: 'disengage', player: PLAYER });
+    const foe = ended.world.creatures[FOE]!;
+    expect(foe.readyAt).toBe(b.params.wild.tick_ms + (kind.hunt?.spawn.refill_d ?? 1) * b.params.day_length_ms);
     expect(ended.world.players[PLAYER]!.state.nodes[FOE]!.readyAt).toBe(foe.readyAt);
     const refill = Math.ceil(foe.readyAt / b.params.wild.tick_ms);
-    expect(fightTick(b, ended.world, [], refill - 1).world.creatures[FOE]!.health).toBe(7);
-    expect(fightTick(b, ended.world, [], refill).world.creatures[FOE]!.health).toBe(16);
+    const resting = fightTick(b, ended.world, [], refill - 1);
+    expect(resting.world.creatures[FOE]!.health).toBe(0);
+    expect(resting.events).toEqual([]);
+    const back = fightTick(b, ended.world, [], refill).world.creatures[FOE]!;
+    expect([back.health, back.at]).toEqual([kind.fight!.hp, [8, 8]]);
   });
 
   it('leash: the den boundary stays engaged, and the next tile disengages immediately', () => {

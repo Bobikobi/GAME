@@ -6,7 +6,8 @@
  * server's arrival stamp, never a client clock; equal stamps retain array order. No rolls here:
  * the caller supplies the pattern drawn at appearance and a read-only snapshot of animal tiles/kinds.
  * Windows are [since, until): at `until` the next phase already holds. A swing hits a target once.
- * Dodge moves out of reach; 4.9 supersedes 4.3's invulnerability. The leash/give-up rows also win.
+ * Dodge moves out of reach; 4.9 supersedes 4.3's invulnerability. The leash/give-up rows also win,
+ * and with them the ending: a foe left standing is whole again at once, only a fallen foe rests.
  */
 import type { Bundle } from './bundle';
 import { dangerAt, isSafe } from './danger';
@@ -88,7 +89,7 @@ const direction = (a: Tile, b: Tile): Tile => [Math.sign(b[0] - a[0]), Math.sign
 const cardinal = (a: Tile, b: Tile): Tile => Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1])
   ? [Math.sign(b[0] - a[0]), 0] : [0, Math.sign(b[1] - a[1])];
 const same = (a: Tile, b: Tile): boolean => a[0] === b[0] && a[1] === b[1];
-const validDir = (d: Tile): boolean => d.length === 1 + 1 && d.every((n) => Number.isSafeInteger(n) && Math.abs(n) <= 1) && !same(d, [0, 0]);
+const validDir = (d: Tile): boolean => d.length === [0, 0].length &&d.every((n) => Number.isSafeInteger(n) && Math.abs(n) <= 1) && !same(d, [0, 0]);
 const due = (f: Figure, key: string): number => f.cooldowns[key] ?? 0;
 const textOrder = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
 const ahead = (from: Tile, to: Tile, face: Tile, reach: number): boolean =>
@@ -198,9 +199,15 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
         f.phase = 'idle';
         f.move = null;
         const kind = bundle.map.creatures!.kinds[f.kind]!;
-        // The kind's existing refill clock is in game days; there is no separate foe content type.
-        f.readyAt = ms + (kind.hunt?.spawn.refill_d ?? 1) * bundle.params.day_length_ms;
-        for (const [, p] of players()) p.state.nodes[f.spot] = { readyAt: f.readyAt, draws: p.state.nodes[f.spot]?.draws ?? 0 };
+        if (f.health > 0) {
+          // COMBAT 4.9 (leash_tiles): a foe left standing is whole again at once, so a run ends a fight and
+          // kiting gains nothing. It stays where it stands; outside a fight its tile is the wild's.
+          f.health = kind.fight!.hp; f.breath = kind.fight!.breath; f.cursor = 0; f.credit = 0; f.hit = []; f.away = {};
+        } else {
+          // Only a fallen foe rests. The kind's refill clock is in game days; there is no separate foe content type.
+          f.readyAt = ms + (kind.hunt?.spawn.refill_d ?? 1) * bundle.params.day_length_ms;
+          for (const [, p] of players()) p.state.nodes[f.spot] = { readyAt: f.readyAt, draws: p.state.nodes[f.spot]?.draws ?? 0 };
+        }
       } else if (f.heed === null || !f.engaged.includes(f.heed)) f.heed = [...f.engaged].sort()[0] ?? null;
     }
     for (const [id, p] of players()) {
