@@ -444,6 +444,51 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
   }
   // Derive foe phases before player damage so the recovery's first tick is already weak.
   function moveOf(f: FightCreature, def: FightDef): MoveDef | undefined { return def.moves.find((m) => m.id === f.move); }
+  // dodgeSteps counts every step the dodge tried, blocked ones too, and the tile before the dodge is not kept. A dodge is
+  // told only when it can be rebuilt for certain: the way ahead of the player is open (a dodge that stopped against an
+  // obstacle cannot be told from one that never moved) and the tried steps replay from the rebuilt tile to the tile the
+  // player stands on. Anything less tells no dodge, never a false one.
+  function dodgeOrigin(p: FightPlayer): Tile | null {
+    const at = p.state.player.at, n = p.dodgeSteps;
+    if (n === 0 || same(step(at, p.facing, p.state, false), at)) return null;
+    const origin: Tile = [at[0] - p.facing[0] * n, at[1] - p.facing[1] * n];
+    let tile = origin;
+    for (let i = 0; i < n; i++) tile = step(tile, p.facing, p.state, false);
+    return same(tile, at) ? origin : null;
+  }
+  // A foe move's last active tick is where its outcome is told, after that tick's blows: a blow or guard was told when it
+  // landed, so this adds only a dodge (once per player) or, when nobody was met, one miss. It reads the world as the tick
+  // leaves it, while a dodge that began as the move wound up is still the player's latest move and its tiles can be rebuilt.
+  function resolve(fid: string, f: FightCreature, m: MoveDef): void {
+    let met = f.hit.length > 0;
+    const activeSince = f.since + m.windup_t;
+    for (const id of f.engaged) {
+      if (f.hit.includes(id)) continue;
+      const p = w.players[id];
+      if (!p) continue;
+      // Mercy and safe ground are silent, but still mean this move met somebody.
+      if (due(p, 'mercy') > activeSince || playerSafe(p)) {
+        met = true;
+        continue;
+      }
+      const overlapped = p.since <= activeSince + c.active_t - 1 && p.since + c.dodge_t > activeSince;
+      const origin = overlapped ? dodgeOrigin(p) : null;
+      if (origin && !ahead(f.at, p.state.player.at, f.facing, m.reach) && ahead(f.at, origin, f.facing, m.reach)) {
+        met = true;
+        events.push({
+          e: 'fight_dodge', kind: 'dodge', number: 0, at: [...p.state.player.at], move: m.id,
+          striker: { side: 'foe', id: fid }, struck: { side: 'player', id },
+        });
+      }
+    }
+    if (!met && f.heed) {
+      events.push({
+        e: 'fight_miss', kind: 'miss', number: 0,
+        at: [f.at[0] + f.facing[0] * m.reach, f.at[1] + f.facing[1] * m.reach], move: m.id,
+        striker: { side: 'foe', id: fid }, struck: { side: 'player', id: f.heed },
+      });
+    }
+  }
   function phase(f: FightCreature, def: FightDef): void {
     const m = moveOf(f, def);
     if (!m || f.phase === 'idle') return;
@@ -458,18 +503,33 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
   }
   for (const [id, p] of players()) {
     if (!p.state.player.fight || p.move !== 'attack' || tick < p.stagger || tick - p.since < c.bare_windup_t) continue;
+    let landed = false;
     for (const [fid, f] of foes()) {
       if (f.health === 0 || ms < f.readyAt || safe(f.at) || !ahead(p.state.player.at, f.at, p.facing, 1)) continue;
       const def = bundle.map.creatures!.kinds[f.kind]!.fight!;
       let harm = c.bare_base;
       if (!same(direction(f.at, p.state.player.at), f.facing)) harm = mulDiv(harm, c.behind_permille, MILLI);
-      if (f.phase === 'recovery' && f.move === def.weak?.after) harm = mulDiv(harm, c.weak_permille, MILLI);
+      const weak = f.phase === 'recovery' && f.move === def.weak?.after;
+      if (weak) harm = mulDiv(harm, c.weak_permille, MILLI);
       const next = writeCreature(fid);
       next.health = Math.max(0, f.health - harm);
       next.heed = id;
-      events.push({ e: 'hit', player: id, by: 'player', harm, at: [...f.at] });
+      events.push({
+        e: 'hit', player: id, by: 'player', harm, kind: weak ? 'critical' : 'attack', number: harm,
+        at: [...f.at], move: 'attack', striker: { side: 'player', id }, struck: { side: 'foe', id: fid },
+        foe: { left: next.health, whole: def.hp },
+      });
       if (next.health === 0) events.push({ e: 'foe_fall', foe: fid, at: [...f.at], drops: structuredClone(f.drops) });
+      landed = true;
       break;
+    }
+    if (!landed) {
+      const fid = p.state.player.fight.foe ?? '';
+      events.push({
+        e: 'fight_miss', kind: 'miss', number: 0,
+        at: [p.state.player.at[0] + p.facing[0], p.state.player.at[1] + p.facing[1]], move: 'attack',
+        striker: { side: 'player', id }, struck: { side: 'foe', id: fid },
+      });
     }
     const next = writePlayer(id);
     next.phase = 'idle'; next.move = null;
@@ -519,10 +579,17 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
       if (p.guarding && same(p.guarding, direction(p.state.player.at, f.at))) {
         spend(p, c.guard_hit_breath, 'player', id);
         stagger(f, c.guard_stagger_t, 'foe', fid);
+        events.push({
+          e: 'fight_guard', kind: 'guard', number: 0, at: [...p.state.player.at], move: m.id,
+          striker: { side: 'foe', id: fid }, struck: { side: 'player', id },
+        });
         break;
       }
       const harm = moveHarm(bundle.params, hpCap(bundle, p.state), m);
-      events.push({ e: 'hit', player: id, by: 'foe', harm, at: [...p.state.player.at] });
+      events.push({
+        e: 'hit', player: id, by: 'foe', harm, kind: 'attack', number: harm, at: [...p.state.player.at], move: m.id,
+        striker: { side: 'foe', id: fid }, struck: { side: 'player', id },
+      });
       const result = fightHurt(bundle, p.state, harm, fid, ms);
       replaceState(id, result.state);
       events.push(...result.events.map((event) => ({ ...event, player: id })));
@@ -535,6 +602,13 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
       } else for (let n = 0; n < c.knockback_tiles; n++) writePlayerState(id).at = step(p.state.player.at, direction(f.at, p.state.player.at), p.state, false);
     }
   }
+  const resolving: [string, MoveDef][] = [];
+  for (const fid in w.creatures) {
+    const f = w.creatures[fid]!;
+    const m = f.phase === 'active' && f.health > 0 ? moveOf(f, bundle.map.creatures!.kinds[f.kind]!.fight!) : undefined;
+    if (m && tick === f.since + m.windup_t + c.active_t - 1) resolving.push([fid, m]);
+  }
+  for (const [fid, m] of resolving.sort(([a], [b]) => textOrder(a, b))) resolve(fid, w.creatures[fid]!, m);
   finish();
   return { world: w, events };
 }

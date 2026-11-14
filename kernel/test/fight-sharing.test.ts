@@ -14,6 +14,23 @@ function freeze(value: unknown, seen = new WeakSet<object>()): void {
   Object.freeze(value);
 }
 
+function developEvents(events: ReturnType<typeof fightTick>['events']): unknown[] {
+  return events.flatMap((event): unknown[] => {
+    if (event.e === 'fight_miss' || event.e === 'fight_guard' || event.e === 'fight_dodge') return [];
+    if (event.e !== 'hit') return [event];
+    const { kind: _kind, number: _number, move: _move, striker: _striker, struck: _struck, foe: _foe, ...old } = event;
+    return [old];
+  });
+}
+
+/** The fixture's hashes were recorded under the kernel string of the day (#711); the new tick's worlds differ from develop's in that string alone. */
+const RECORDED_KERNEL = '0.27.0';
+function developWorld(world: FightWorld): FightWorld {
+  const old = structuredClone(world);
+  for (const player of Object.values(old.players)) player.state.kernel = RECORDED_KERNEL;
+  return old;
+}
+
 function pair(): FightWorld {
   const w: FightWorld = { players: {}, creatures: {} };
   const p = fightPlayer(b, playedState(b, 42, [8, 9]));
@@ -37,7 +54,7 @@ describe('fight tick golden identity and purity', () => {
         const before = structuredClone(w);
         freeze(w); freeze(inputs);
         const r = fightTick(b, w, inputs, tick);
-        expect([hashOf(r.world), hashOf(r.events)], `tick ${tick}`).toEqual(fixture.ticks[tick]);
+        expect([hashOf(developWorld(r.world)), hashOf(developEvents(r.events))], `tick ${tick}`).toEqual(fixture.ticks[tick]);
         expect(w, `input at tick ${tick}`).toEqual(before);
         w = r.world;
       }
