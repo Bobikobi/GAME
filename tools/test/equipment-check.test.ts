@@ -192,12 +192,16 @@ describe('the equipment foundations', () => {
       'items.json': items(
         garment('wrap', { slot: 'top', trait: 'cold_proof' }),
         garment('spikes', { slot: 'head', trait: 'ice_grip' }),
+        garment('ice-boots', { slot: 'feet', trait: 'ice_grip' }),
+        garment('ice-gloves', { slot: 'hands', trait: 'ice_grip' }),
         item('charm', { class: 'jewelry', wear: { slot: 'jewelry', trait: 'cold_proof' } }),
         garment('shawl', { slot: 'top', look: true, trait: 'heat_ward' }),
       ),
     });
     expect(at(r, 'items.tester/wrap.wear.trait').map((i) => i.message)).toEqual([gate]);
-    expect(at(r, 'items.tester/spikes.wear.trait').map((i) => i.message)).toEqual([gate, 'ice_grip goes on the feet, not the head (BODY_CLOCKS 6.1)']);
+    expect(at(r, 'items.tester/spikes.wear.trait').map((i) => i.message)).toEqual([gate, 'ice_grip goes on the hands, not the head (BODY_CLOCKS 6.1)']);
+    expect(at(r, 'items.tester/ice-boots.wear.trait').map((i) => i.message)).toEqual([gate, 'ice_grip goes on the hands, not the feet (BODY_CLOCKS 6.1)']);
+    expect(at(r, 'items.tester/ice-gloves.wear.trait').map((i) => i.message)).toEqual([gate]);
     expect(at(r, 'items.tester/charm.wear.trait').map((i) => i.message)).toContain('cold_proof goes on the top, back, head, not the jewelry (BODY_CLOCKS 6.1)');
     expect(at(r, 'items.tester/shawl.wear.trait').map((i) => i.message)).toContain('a look carries no trait');
   });
