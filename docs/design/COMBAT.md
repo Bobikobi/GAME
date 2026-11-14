@@ -93,6 +93,14 @@ The question: G77 keeps every chance, level, difficulty, danger and time left of
 
 **The owner's word (20.10): B, a bar over every head.** Read as (proposed): a foe carries its health and its breath as two small bars over its head while it is engaged, and so does the other player inside the marked zone; outside the zone no bar stands over another player, and nothing about their health travels, so PRESENCE section 4 keeps its list with this one exception, inside the zone and only while the fight runs. No number is printed on any bar (G77 holds for numbers). The poses of A are not lost: a wind-up is still drawn before a move lands (G31, nobody falls unwarned; the telegraph of NEXT 12 c), blood still shows where a hit lands at the sprite's size (TONE section 3), and the weakness still opens as a pose; the bars add to the figure, they do not replace it. The player's own bar stays as it is, and gains a breath meter of its own.
 
+**The owner's word (14.11), which replaces the reading above:**
+
+- On every hit an animated number pops above the foe, by kind: attack, guard, dodge, miss, critical.
+- Under the foe or animal: a small health bar with a number, how much is left of the whole.
+- Later: combos of different moves and tools.
+
+Read as: `attack` is a landed strike outside the weak window, including a larger strike from behind; `critical` is a player's strike in the foe's weak recovery; `miss` is a player's ended wind-up with no foe ahead (a fallen foe not yet back, or one on safe ground, counts as none), or one foe move whose active phase met nobody (told on the move's last active tick); `guard` is a foe blow met by a guard held toward it, with zero harm through today; `dodge` is a foe blow whose reach the player's dodge movement escaped (told on the same tick, and only when the tile the dodge began on can be rebuilt for certain, never falsely). Mercy and safe ground remain silent. These are rules the tick already has, never draws.
+
 ### Q4. A foe's attention: does noise turn a head?
 
 The question: the owner said no to noise in the demo (REACTIONS section 9, Q1 b) and the retry line names combat, "where reading a foe's attention is part of the fight". Is it?
@@ -227,7 +235,7 @@ pack: { at: Tile, items: { item: qty }, until: tick }   // a world object the se
 
 ### 4.7 Events and quests
 
-New kernel events: `{ e: 'engage', foe | zone }`, `{ e: 'hit', by: 'player' | 'foe' | 'other', harm, at }`, `{ e: 'stagger', side }`, `{ e: 'foe_fall', foe, at, drops }`, `{ e: 'disengage' }`, `{ e: 'pack', at, until }` on a fall, `{ e: 'take', pack, items }`. The `hurt` and `fall` events stay as they are. `defeat { foe, count }` counts `foe_fall` events the player's hits earned (the last hit, or any hit above `combat.credit_permille` of the foe's health, so a group shares a kill), `hold { place, bells }` counts the side still standing, `escort { npc, from, to }` fails on the companion's fall by the fall rule of 8.10 (QUEST_GRAMMAR 3.7, SETTLEMENT 3.7).
+New kernel events: `{ e: 'engage', foe | zone }`; the existing `{ e: 'hit', player, by, harm, at }`, now also carrying `kind`, `number`, `move`, `striker`, `struck` and, when a foe was struck, `{ foe: { left, whole } }`; `{ e: 'fight_miss' | 'fight_guard' | 'fight_dodge', kind, number, at, move, striker, struck }`; `{ e: 'stagger', side }`; `{ e: 'foe_fall', foe, at, drops }`; `{ e: 'disengage' }`; `{ e: 'pack', at, until }` on a fall; `{ e: 'take', pack, items }`. `hit` remains the landed-outcome event so its old readers keep every field they use; the three new names cannot be mistaken for damage by an old reader. The `hurt` and `fall` events stay as they are. `defeat { foe, count }` counts `foe_fall` events the player's hits earned (the last hit, or any hit above `combat.credit_permille` of the foe's health, so a group shares a kill), `hold { place, bells }` counts the side still standing, `escort { npc, from, to }` fails on the companion's fall by the fall rule of 8.10 (QUEST_GRAMMAR 3.7, SETTLEMENT 3.7).
 
 ### 4.8 What a fight may break
 
@@ -295,7 +303,7 @@ The check (section 8 of GAME_RULES gains rows): every move has a wind-up of 2 to
 
 ### 4.10 What the screen reads (for the art and the client, not decided here)
 
-The foe's two bars over its head, no number on them; the other player's two bars inside the zone only; the player's own bar as today and a breath meter of their own; the foe's wind-up pose and its open pose; blood where a hit lands at the sprite's size and a limp after (TONE); a predator's head turning to a noise; the death card of TONE section 4 with the pack line; the zone's line drawn as stones or banners and its sign; the pack in the grass. A direction decision (the frame of a fight on screen) goes to the owner as two or three full-frame stills (1920 x 1080, STYLE 1) before a sprite is drawn, as every direction does (AGENTS.md).
+On every hit an animated number pops above the foe, by kind: attack, guard, dodge, miss, critical; under the foe or animal, a small health bar with a number says how much is left of the whole; later come combos of different moves and tools. The other player's two bars inside the zone only; the player's own bar as today and a breath meter of their own; the foe's wind-up pose and its open pose; blood where a hit lands at the sprite's size and a limp after (TONE); a predator's head turning to a noise; the death card of TONE section 4 with the pack line; the zone's line drawn as stones or banners and its sign; the pack in the grass. A direction decision (the frame of a fight on screen) goes to the owner as two or three full-frame stills (1920 x 1080, STYLE 1) before a sprite is drawn, as every direction does (AGENTS.md).
 
 ### 4.11 Lasting effects: the harm that stays (the owner, 12.11; designed at the combat stage, not now)
 
