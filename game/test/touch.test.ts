@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { STICK_DEAD, STICK_FULL, stickFrom } from '../src/input';
-import { FloatingStick, GAP, type Placed, STICK_RING, controlsLayout, inZone, stickZone } from '../src/ui/stick';
+import { BUTTON_SCALE } from '../src/settings';
+import { FloatingStick, GAP, MIN_TAP, type Placed, STICK_RING, controlsLayout, inZone, stickZone } from '../src/ui/stick';
 
 const zone = stickZone(800, 360, 90);
 
@@ -110,5 +111,60 @@ describe('the landscape controls in Wild Rift\'s size and density', () => {
     expect(at.bag.d).toBe(53);
     expect(at.ring).toBe(125);
     expect(STICK_RING).toBe(96);
+  });
+});
+
+describe("the player's stick side and button size (Settings, Controls)", () => {
+  it('names the three scales Settings offers', () => {
+    expect(BUTTON_SCALE).toEqual({ small: 0.85, medium: 1, large: 1.2 });
+  });
+
+  it('cuts the action buttons and the ring to the three scales at 390 and 360 px high (K3)', () => {
+    const cut = (H: number, scale: number) => {
+      const at = controlsLayout(H, scale);
+      return { a: at.a.d, b: at.b.d, sneak: at.sneak.d, ring: at.ring };
+    };
+    expect(cut(390, 0.85)).toEqual({ a: 63, b: 44, sneak: 44, ring: 86 });
+    expect(cut(390, 1)).toEqual({ a: 74, b: 51, sneak: 51, ring: 101 });
+    expect(cut(390, 1.2)).toEqual({ a: 89, b: 61, sneak: 61, ring: 121 });
+    expect(cut(360, 0.85)).toEqual({ a: 58, b: 44, sneak: 44, ring: 82 });
+    expect(cut(360, 1.2)).toEqual({ a: 82, b: 58, sneak: 58, ring: 115 });
+  });
+
+  for (const H of [320, 360, 390, 412, 480]) {
+    it(`keeps every touch target at 44 px or more at the smallest scale, H ${H} (K3)`, () => {
+      const at = controlsLayout(H, BUTTON_SCALE.small);
+      for (const p of [at.a, at.b, at.sneak, at.bag, at.journal, at.menu]) expect(p.d).toBeGreaterThanOrEqual(MIN_TAP);
+      expect(at.ring).toBeGreaterThanOrEqual(Math.round(STICK_RING * BUTTON_SCALE.small));
+    });
+
+    it(`leaves no two buttons touching and none off the screen at any scale, H ${H} (K3)`, () => {
+      for (const scale of Object.values(BUTTON_SCALE)) {
+        const at = controlsLayout(H, scale);
+        const all = [at.a, at.b, at.sneak, at.bag, at.journal, at.menu];
+        for (const [i, p] of all.entries()) {
+          for (const q of all.slice(i + 1)) expect(gap(p, q)).toBeGreaterThan(0);
+          expect(p.right - p.d / 2).toBeGreaterThanOrEqual(0);
+          expect(p.bottom - p.d / 2).toBeGreaterThanOrEqual(0);
+          expect(p.bottom + p.d / 2).toBeLessThan(H);
+        }
+      }
+    });
+
+    it(`keeps the Bag, Journal and Menu column where it is at every scale, H ${H}`, () => {
+      const medium = controlsLayout(H, 1);
+      for (const scale of [BUTTON_SCALE.small, BUTTON_SCALE.large]) {
+        const at = controlsLayout(H, scale);
+        expect([at.bag, at.journal, at.menu]).toEqual([medium.bag, medium.journal, medium.menu]);
+      }
+    });
+  }
+
+  it('gives the stick the half the player chose, and the two halves meet in the middle (K2)', () => {
+    expect(stickZone(844, 390, 90, 'left')).toEqual({ left: 0, top: 90, right: 422, bottom: 390 });
+    expect(stickZone(844, 390, 90, 'right')).toEqual({ left: 422, top: 90, right: 844, bottom: 390 });
+    expect(stickZone(844, 390, 90)).toEqual(stickZone(844, 390, 90, 'left'));
+    expect(inZone(stickZone(844, 390, 90, 'right'), 200, 300)).toBe(false);
+    expect(inZone(stickZone(844, 390, 90, 'right'), 640, 300)).toBe(true);
   });
 });

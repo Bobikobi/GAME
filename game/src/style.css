@@ -908,8 +908,8 @@ body {
 .tbtn {
   font: inherit;
   font-size: 22px;
-  width: 68px;
-  height: 68px;
+  width: calc(68px * var(--btn-scale, 1));
+  height: calc(68px * var(--btn-scale, 1));
   border-radius: 50%;
   border: 3px solid var(--ink);
   background: var(--red2);
@@ -921,8 +921,8 @@ body {
 }
 
 .tbtn.b {
-  width: 56px;
-  height: 56px;
+  width: calc(56px * var(--btn-scale, 1));
+  height: calc(56px * var(--btn-scale, 1));
   font-size: 18px;
   margin-bottom: 30px;
   background: var(--grey2);
@@ -939,7 +939,7 @@ body {
   bottom: calc(100% + 10px);
   width: auto;
   min-width: 44px;
-  height: 44px;
+  height: max(44px, calc(44px * var(--btn-scale, 1)));
   padding: 0 12px;
   border-radius: 0;
   font-size: 16px;
@@ -1165,6 +1165,48 @@ body {
 .touch-on.landscape .dialog-layer {
   padding-bottom: max(10px, env(safe-area-inset-bottom));
   padding-right: calc(var(--cluster, 172px) + env(safe-area-inset-right));
+}
+
+/* ------------------------------------------------------------ touch, the stick on the right */
+
+/* The page-root setting mirrors only the touch controls. Portrait swaps the pad and action row. Landscape moves
+   the stick zone to the right half and measures each button from the left edge; the HUD and menu window do not move. */
+:root[data-stick-side='right'] .touch-on .touch,
+:root[data-stick-side='right'] .touch-on .tbtns {
+  flex-direction: row-reverse;
+}
+
+:root[data-stick-side='right'] .tbtn.sneak {
+  right: auto;
+  left: 0;
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .stick-zone {
+  left: auto;
+  right: 0;
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .tbtn {
+  right: auto;
+  left: calc(var(--cx) + env(safe-area-inset-left));
+  transform: translate(-50%, 50%);
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .tbtn.down {
+  transform: translate(-50%, calc(50% + 3px));
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .dialog-layer {
+  padding-right: max(8px, env(safe-area-inset-right));
+  padding-left: calc(var(--cluster, 172px) + env(safe-area-inset-left));
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .tracker {
+  margin-left: var(--column-clear, 56px);
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .toasts {
+  margin-right: 0;
 }
 
 /* ------------------------------------------------------------ the rotate hint */

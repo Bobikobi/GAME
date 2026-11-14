@@ -1,6 +1,7 @@
 /**
  * The player's settings and how Auto resolves them: a quality preset (Low, Medium, High), a frame-rate cap
- * (30, 60, 120, max) and reduced motion, each of them either chosen or Auto. Auto picks from the device
+ * (30, 60, 120, max) and reduced motion, each of them either chosen or Auto, and the phone's controls: the side
+ * the stick stands on and the size of the buttons. Auto picks from the device
  * (device.ts): the tier gives the preset, and the measured refresh and frame time give the cap. The choice
  * lives in localStorage under one key, read defensively like the sound preference (audio/storage.ts), so a
  * missing or corrupt value is Auto. Nothing here changes a rule of the game: the kernel never sees it.
@@ -16,15 +17,28 @@ export type FrameCap = 'auto' | 30 | 60 | 120 | 'max';
 /** The smallest word of a window in px: 16 is the floor (G29) and the kit's own size, 18 and 20 scale every window's type up with it. */
 export type TextSize = 16 | 18 | 20;
 
+/** The side of the screen the stick stands on; the buttons take the other side. */
+export type StickSide = 'left' | 'right';
+
+/** The size of the touch buttons, as a scale on the layout's current sizes. */
+export type ButtonSize = 'small' | 'medium' | 'large';
+
+/** Small and Large scale every action button and the stick ring; Medium is today's size. */
+export const BUTTON_SCALE: Readonly<Record<ButtonSize, number>> = { small: 0.85, medium: 1, large: 1.2 };
+
 export interface Settings {
   quality: Quality;
   frameCap: FrameCap;
   /** on: no motion whatever the phone says; off: the phone's own prefers-reduced-motion decides */
   reducedMotion: boolean;
   textSize: TextSize;
+  stickSide: StickSide;
+  buttonSize: ButtonSize;
 }
 
-export const AUTO_SETTINGS: Readonly<Settings> = { quality: 'auto', frameCap: 'auto', reducedMotion: false, textSize: 16 };
+export const AUTO_SETTINGS: Readonly<Settings> = {
+  quality: 'auto', frameCap: 'auto', reducedMotion: false, textSize: 16, stickSide: 'left', buttonSize: 'medium',
+};
 
 export interface Effective {
   quality: 'low' | 'medium' | 'high';
@@ -50,6 +64,8 @@ export interface SettingsStorage {
 const QUALITIES: readonly Quality[] = ['auto', 'low', 'medium', 'high'];
 const CAPS: readonly FrameCap[] = ['auto', 30, 60, 120, 'max'];
 export const TEXT_SIZES: readonly TextSize[] = [16, 18, 20];
+export const STICK_SIDES: readonly StickSide[] = ['left', 'right'];
+export const BUTTON_SIZES: readonly ButtonSize[] = ['small', 'medium', 'large'];
 
 /** The stored settings; every field that is missing or wrong falls back to Auto. */
 export function readSettings(storage: SettingsStorage | null | undefined): Settings {
@@ -64,6 +80,8 @@ export function readSettings(storage: SettingsStorage | null | undefined): Setti
       frameCap: CAPS.find((c) => c === o.frameCap) ?? 'auto',
       reducedMotion: o.reducedMotion === true,
       textSize: TEXT_SIZES.find((t) => t === o.textSize) ?? 16,
+      stickSide: STICK_SIDES.find((v) => v === o.stickSide) ?? 'left',
+      buttonSize: BUTTON_SIZES.find((v) => v === o.buttonSize) ?? 'medium',
     };
   } catch {
     return { ...AUTO_SETTINGS };

@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Every script, in the order `pnpm e2e` plays them. A new script goes here and into one group below. */
-const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'sea'];
+const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea'];
 
 interface Entry {
   name: string;
@@ -46,7 +46,7 @@ const GROUPS: Record<string, Group> = {
   // every other opening run, so a run added to opening.ts is played here without a change to this file
   'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 11 },
   // landscape plays the 2D game on a phone turned sideways, so it rides with the HUD's scripts, not the 3D door's
-  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree', 'landscape', 'sea'].map(plain), minutes: 16 },
+  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree', 'landscape', 'controls', 'sea'].map(plain), minutes: 18 },
   // the only scripts that serve game/dist-3d: play3d, and load for its bag button
   '3d-and-load': { entries: ['play3d', 'load', 'camera'].map(plain), minutes: 14, build3d: true },
   'map-and-shop': { entries: ['map', 'shop', 'fishing'].map(plain), minutes: 10 },
