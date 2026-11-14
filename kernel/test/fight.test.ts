@@ -52,6 +52,8 @@ function integers(value: unknown): void {
   if (typeof value === 'number') { if (!Number.isSafeInteger(value)) throw new Error(`Non-integer: ${value}`); }
   else if (value && typeof value === 'object') for (const x of Object.values(value)) integers(x);
 }
+const outcomes = (events: ReturnType<typeof fightTick>['events']) => events.filter((e) =>
+  e.e === 'hit' || e.e === 'fight_miss' || e.e === 'fight_guard' || e.e === 'fight_dodge');
 
 describe('fight tick', () => {
   it('off: 100 ticks of all verbs preserve the original world and emit nothing', () => {
@@ -384,5 +386,130 @@ describe('fight tick', () => {
     expect(r.events).toContainEqual({ e: 'walked_out', expedition: x.id, player: PLAYER });
     expect(r.events.some((e) => e.e === 'hit')).toBe(false);
     expect(r.world.players[PLAYER]!.state.player.fight).toBeNull();
+  });
+});
+
+describe('one screen outcome for each kind of resolved strike', () => {
+  it('attack carries the landed number, tile, figures, move and foe health', () => {
+    const b = arena(), w = setup(b), p = w.players[PLAYER]!;
+    p.move = 'attack'; p.phase = 'windup'; p.since = 0;
+    expect(outcomes(fightTick(b, w, [], 3).events)).toEqual([{
+      e: 'hit', player: PLAYER, by: 'player', harm: 8, kind: 'attack', number: 8, at: [8, 8], move: 'attack',
+      striker: { side: 'player', id: PLAYER }, struck: { side: 'foe', id: FOE }, foe: { left: 8, whole: 16 },
+    }]);
+  });
+
+  it('an attack from behind stays attack and carries its larger number', () => {
+    const b = arena(), w = setup(b), p = w.players[PLAYER]!, f = w.creatures[FOE]!;
+    f.facing = [0, -1]; p.move = 'attack'; p.phase = 'windup'; p.since = 0;
+    const r = fightTick(b, w, [], 3);
+    expect(outcomes(r.events)).toEqual([{
+      e: 'hit', player: PLAYER, by: 'player', harm: 16, kind: 'attack', number: 16, at: [8, 8], move: 'attack',
+      striker: { side: 'player', id: PLAYER }, struck: { side: 'foe', id: FOE }, foe: { left: 0, whole: 16 },
+    }]);
+    expect(r.events.filter((e) => e.e === 'foe_fall')).toHaveLength(1);
+  });
+
+  it('critical is the weak-window attack', () => {
+    const b = arena(), w = setup(b), p = w.players[PLAYER]!, f = w.creatures[FOE]!;
+    active(w, 0, 'lunge'); f.hit = [PLAYER]; p.move = 'attack'; p.phase = 'windup'; p.since = 6;
+    const r = fightTick(b, w, [], 9);
+    expect(outcomes(r.events)).toEqual([{
+      e: 'hit', player: PLAYER, by: 'player', harm: 16, kind: 'critical', number: 16, at: [8, 8], move: 'attack',
+      striker: { side: 'player', id: PLAYER }, struck: { side: 'foe', id: FOE }, foe: { left: 0, whole: 16 },
+    }]);
+  });
+
+  it('a player whose windup ends into empty ground misses', () => {
+    const b = arena(), w = setup(b), p = w.players[PLAYER]!;
+    p.facing = [1, 0]; p.move = 'attack'; p.phase = 'windup'; p.since = 0;
+    expect(outcomes(fightTick(b, w, [], 3).events)).toEqual([{
+      e: 'fight_miss', kind: 'miss', number: 0, at: [9, 9], move: 'attack',
+      striker: { side: 'player', id: PLAYER }, struck: { side: 'foe', id: FOE },
+    }]);
+  });
+
+  it('a held guard reports that none of the foe move got through', () => {
+    const b = arena(), w = setup(b); active(w, 0); w.players[PLAYER]!.guarding = [0, -1];
+    expect(outcomes(fightTick(b, w, [], 5).events)).toEqual([{
+      e: 'fight_guard', kind: 'guard', number: 0, at: [8, 9], move: 'bite',
+      striker: { side: 'foe', id: FOE }, struck: { side: 'player', id: PLAYER },
+    }]);
+  });
+
+  it('a dodge reports once when its movement took the player out of reach', () => {
+    const b = arena(), w = setup(b), p = w.players[PLAYER]!; active(w, 0);
+    p.state.player.at = [10, 9]; p.facing = [1, 0]; p.move = 'dodge'; p.phase = 'windup'; p.since = 4; p.dodgeSteps = 2;
+    expect(outcomes(fightTick(b, w, [], 6).events)).toEqual([{
+      e: 'fight_dodge', kind: 'dodge', number: 0, at: [10, 9], move: 'bite',
+      striker: { side: 'foe', id: FOE }, struck: { side: 'player', id: PLAYER },
+    }]);
+  });
+
+  it('a foe move whose active phase met nobody misses once', () => {
+    const b = arena(), w = setup(b); active(w, 0); w.players[PLAYER]!.state.player.at = [10, 9];
+    expect(outcomes(fightTick(b, w, [], 6).events)).toEqual([{
+      e: 'fight_miss', kind: 'miss', number: 0, at: [8, 9], move: 'bite',
+      striker: { side: 'foe', id: FOE }, struck: { side: 'player', id: PLAYER },
+    }]);
+  });
+});
+
+describe('silent fight skips', () => {
+  it('mercy is silent even when it expires as the active phase ends', () => {
+    const b = arena(), w = setup(b), p = w.players[PLAYER]!; active(w, 0);
+    p.state.player.at = [10, 9]; p.cooldowns.mercy = 7;
+    expect(outcomes(fightTick(b, w, [], 6).events)).toEqual([]);
+  });
+});
+
+describe('a dodge is told only for a blow that would have reached the player', () => {
+  // The bite winds up for 5 ticks and is active at ticks 5 and 6; its outcome is told on the last of them, tick 6.
+  const wall: [number, number] = [8, 6];
+  function walled(): Bundle {
+    const b = arena();
+    b.map.legend['#'] = { tag: 'meadow', solid: true, sprite: '' };
+    b.map.ground = b.map.ground.map((row, y) => (y === wall[1] ? row.slice(0, wall[0]) + '#' + row.slice(wall[0] + 1) : row));
+    return b;
+  }
+  function run(b: Bundle, at: [number, number], dir: [number, number]) {
+    const w = setup(b), f = w.creatures[FOE]!;
+    f.move = 'bite'; f.phase = 'windup'; f.since = 0; w.players[PLAYER]!.state.player.at = at;
+    let world = w, told: ReturnType<typeof outcomes> = [];
+    for (let tick = 4; tick <= 6; tick++) {
+      const r = fightTick(b, world, tick === 4 ? [input('dodge', 4, dir)] : [], tick);
+      told = told.concat(outcomes(r.events));
+      world = r.world;
+    }
+    return { told, world };
+  }
+
+  it('a real dodge out of the bite is told once, with the tile the player reached', () => {
+    const { told } = run(arena(), [8, 9], [1, 0]);
+    expect(told).toEqual([{
+      e: 'fight_dodge', kind: 'dodge', number: 0, at: [10, 9], move: 'bite',
+      striker: { side: 'foe', id: FOE }, struck: { side: 'player', id: PLAYER },
+    }]);
+  });
+
+  it('a dodge by a player the bite never reached is not told; the move misses', () => {
+    const { told } = run(arena(), [8, 7], [1, 0]);
+    expect(told.map((e) => e.e)).toEqual(['fight_miss']);
+  });
+
+  it('a dodge blocked by a wall for a player already out of reach is not told as a dodge', () => {
+    // The player stands behind the wolf; the way north is walled, so the two tried steps never moved them.
+    const { told, world } = run(walled(), [8, 7], [0, -1]);
+    expect(world.players[PLAYER]!.state.player.at).toEqual([8, 7]);
+    expect(world.players[PLAYER]!.dodgeSteps).toBe(2);
+    expect(told.map((e) => e.e)).toEqual(['fight_miss']);
+  });
+
+  it('a dodge that ends against an obstacle is not told, since it cannot be told from a blocked one', () => {
+    // A real dodge east from [8,9] stops at [10,9] with a wall at [11,9]: a known limit, the move is told a miss.
+    const b = walled();
+    b.map.ground = b.map.ground.map((row, y) => (y === 9 ? row.slice(0, 11) + '#' + row.slice(12) : row));
+    const { told } = run(b, [8, 9], [1, 0]);
+    expect(told.map((e) => e.e)).toEqual(['fight_miss']);
   });
 });
