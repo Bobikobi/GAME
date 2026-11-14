@@ -19,11 +19,14 @@ export interface Zone {
 }
 
 /**
- * The stick's zone on a screen `width` by `height`: the left half, below the HUD's band (`bandBottom`, the lowest
- * edge of what the top band shows).
+ * The stick's zone on a screen `width` by `height`: the half on the stick's side (left by default), below the HUD's
+ * band (`bandBottom`, the lowest edge of what the top band shows).
  */
-export function stickZone(width: number, height: number, bandBottom: number): Zone {
-  return { left: 0, top: Math.max(0, bandBottom), right: width / 2, bottom: height };
+export function stickZone(width: number, height: number, bandBottom: number, side: 'left' | 'right' = 'left'): Zone {
+  const top = Math.max(0, bandBottom);
+  return side === 'right'
+    ? { left: width / 2, top, right: width, bottom: height }
+    : { left: 0, top, right: width / 2, bottom: height };
 }
 
 export function inZone(zone: Zone, x: number, y: number): boolean {
@@ -100,6 +103,9 @@ export interface ControlsLayout {
 /** The gap between two buttons that stand side by side: a fifth of the smaller one's diameter, as Wild Rift's. */
 export const GAP = 0.2;
 
+/** No action button goes under this across, in CSS px, whatever size the player chooses. */
+export const MIN_TAP = 44;
+
 /**
  * The landscape controls for a screen `H` CSS px tall, in Wild Rift's size and density (the owner, 30.10, through
  * the manager's measure of a Wild Rift screen): every size a share of H with a floor for the thumb.
@@ -110,25 +116,23 @@ export const GAP = 0.2;
  * - Bag, Journal and Menu, the column at the right edge: 0.11 H (44 at the least), centers 0.07 H from the edge,
  *   from just above Sneak's top upward, one gap apart.
  * - The stick: a ring of 0.26 H (96 at the least), the knob 0.4 of it.
+ * The player's size scale (0.85, 1 or 1.2) applies to A, B, Sneak and the stick ring. The navigation column keeps
+ * its existing size and place: at its 44 px floor, growing it would collide with the HUD on a 360 px-high phone.
  */
-export function controlsLayout(H: number): ControlsLayout {
-  const aD = Math.max(60, Math.round(0.19 * H));
-  const aC = Math.round(0.19 * H);
-  const sD = Math.max(48, Math.round(0.13 * H));
-  const arc = aD / 2 + sD / 2 + GAP * sD;
-  // the chord between B's and Sneak's centers is one diameter and one gap
-  const sneakDeg = 180 - (2 * Math.asin(((1 + GAP) * sD) / (2 * arc)) * 180) / Math.PI;
-  const rad = (sneakDeg * Math.PI) / 180;
-  const sneak = { right: aC - arc * Math.cos(rad), bottom: aC + arc * Math.sin(rad), d: sD };
+export function controlsLayout(H: number, scale = 1): ControlsLayout {
+  const arc = actionArc(H, scale);
+  const { aD, aC, sD, sneakDeg, sneak } = arc;
+  // The navigation column stays at today's place while the action cluster changes size.
+  const medium = scale === 1 ? arc : actionArc(H, 1);
   const cD = Math.max(44, Math.round(0.11 * H));
   const cR = Math.max(Math.round(0.07 * H), cD / 2 + 2);
   const step = cD + GAP * cD;
-  const bagBottom = sneak.bottom + sD / 2 + GAP * cD + cD / 2;
-  const ring = Math.max(96, Math.round(0.26 * H));
+  const bagBottom = medium.sneak.bottom + medium.sD / 2 + GAP * cD + cD / 2;
+  const ring = Math.round(Math.max(96, Math.round(0.26 * H)) * scale);
   const round = (p: Placed): Placed => ({ right: Math.round(p.right), bottom: Math.round(p.bottom), d: p.d });
   return {
     a: { right: aC, bottom: aC, d: aD },
-    b: round({ right: aC + arc, bottom: aC, d: sD }),
+    b: round({ right: aC + arc.arc, bottom: aC, d: sD }),
     sneak: round(sneak),
     bag: round({ right: cR, bottom: bagBottom, d: cD }),
     journal: round({ right: cR, bottom: bagBottom + step, d: cD }),
@@ -136,6 +140,20 @@ export function controlsLayout(H: number): ControlsLayout {
     ring,
     knob: Math.round(0.4 * ring),
     sneakDeg: Math.round(sneakDeg * 10) / 10,
-    cluster: Math.ceil(aC + arc + sD / 2 + 12),
+    cluster: Math.ceil(aC + arc.arc + sD / 2 + 12),
   };
+}
+
+/** A, and B and Sneak on their arc around it, at one of the Settings scales. */
+function actionArc(H: number, scale: number) {
+  const size = (share: number, floor: number) => Math.max(MIN_TAP, Math.round(Math.max(floor, Math.round(share * H)) * scale));
+  const aD = size(0.19, 60);
+  const aC = Math.round(0.19 * H * scale);
+  const sD = size(0.13, 48);
+  const arc = aD / 2 + sD / 2 + GAP * sD;
+  // The chord between B's and Sneak's centers is one diameter and one gap.
+  const sneakDeg = 180 - (2 * Math.asin(((1 + GAP) * sD) / (2 * arc)) * 180) / Math.PI;
+  const rad = (sneakDeg * Math.PI) / 180;
+  const sneak = { right: aC - arc * Math.cos(rad), bottom: aC + arc * Math.sin(rad), d: sD };
+  return { aD, aC, sD, arc, sneakDeg, sneak };
 }
