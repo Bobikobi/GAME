@@ -47,13 +47,13 @@ describe('the hands wear place', () => {
 
   test('the existing save adapter loads an old save with hands empty', () => {
     const saved = wearer();
-    saved.kernel = '0.26.0';
+    saved.kernel = '0.27.0';
     saved.content = 'older-content';
     saved.player.worn.hand = 'core/walking-staff';
     saved.player.bag['core/walking-staff'] = 1;
     const before = serialize(saved);
     const loaded = adaptState(b, JSON.parse(before))!;
-    expect(loaded.kernel).toBe('0.27.0');
+    expect(loaded.kernel).toBe('0.28.0');
     expect(loaded.player.worn.hands).toBeUndefined();
     expect(loaded.player.looks.hands).toBeUndefined();
     expect(loaded.player.worn.hand).toBe('core/walking-staff');

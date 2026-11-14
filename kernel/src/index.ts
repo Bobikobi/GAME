@@ -20,3 +20,5 @@ export * from './values';
 export * from './work';
 export * from './world';
 export * from './wild/den';
+export * from './fight';
+export * from './events';
