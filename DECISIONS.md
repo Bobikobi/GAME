@@ -4433,6 +4433,7 @@ The address `GAME_SERVER_ORIGIN` is a repository secret; the hourly refresh (loo
 ## 2026-11-14 ✅ The tenth wear place is built: hands, and ice_grip lives there
 **What:** the owner's 12.11 pick adds the garment place `hands` after `feet`; the held `hand` remains a tool place.
 **Chosen:** gloves use the existing worn effects and save adapter; `ice_grip` moves from feet to hands. No content piece or param is added.
+**Observation for the manager (no rule change):** on a 360-minute wall of deep snow and ice at band 3, the witness (342 minutes) and the previously reported band-1 build (380 minutes, 68.3 percent health) are 38 minutes apart, so a wall of this kind in content needs its clock inside that window or a requirement.
 **Tree:** none: a wear place is added and nothing a player can grow in changes.
 **Model:** GPT-6 (Codex); reasoning effort is not exposed by this runtime.
 **Retry when:** the first glove or place-condition reader is built.

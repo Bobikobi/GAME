@@ -178,9 +178,11 @@ describe('walls (BODY_CLOCKS 5-7)', () => {
     const pieces = ['feet.t3.uncommon.snow_shod.master', 'hands.t3.uncommon.ice_grip.master'];
     const hard: Wall = { id: 'hard', band: 3, conditions: ['deep_snow', 'ice'], grade: 3, lengthMin: 360, by: 'move', witness: { pieces, dishes: [] } };
     expect(status(proveOnly({ ...cat, walls: [hard] }), 'wall_not_cheesable:hard')).toBe('fail');
-    const north = cat.walls.find((w) => w.id === 'north-pass')!;
-    const clocked: Wall = { ...hard, timerMin: north.timerMin! };
-    expect(status(proveOnly({ ...cat, walls: [clocked] }), 'wall_not_cheesable:hard')).toBe('pass');
+    // The witness needs 342 minutes, the clock allows 360, and the band-1 build needs 380.
+    const clocked: Wall = { ...hard, timerMin: hard.lengthMin };
+    const clockedProof = proveOnly({ ...cat, walls: [clocked] });
+    expect(status(clockedProof, 'wall_not_cheesable:hard')).toBe('pass');
+    expect(status(clockedProof, 'wall_solvable:hard')).toBe('pass');
   });
 
   it('a wall with no witness is red', () => {
