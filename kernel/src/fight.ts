@@ -99,7 +99,52 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
   if (bundle.params.combat.enabled === 0) return { world, events: [] };
   assertInt(tick, 'fight tick');
   if (tick < 0) throw new Error('Fight tick cannot be negative.');
-  const w = structuredClone(world);
+  const w = { ...world };
+  const playerIds = Object.keys(world.players);
+  // Only these figures can act without a new input/engagement. Keep sorting their
+  // current records at each phase: movement and focus changes can change the order.
+  const acting = new Set<string>(), safetyIds = new Set<string>();
+  const visiting: string[] = [];
+  let bounds: [number, number, number, number] | undefined;
+  for (const id of playerIds) {
+    const p = world.players[id]!, s = p.state;
+    if (s.player.fight || p.walking || p.move) acting.add(id);
+    if (s.player.camp.length || s.player.own) safetyIds.add(id);
+    if (Object.keys(s.player.expeditions).length) visiting.push(id);
+    const [x, y] = s.player.at;
+    if (!bounds) bounds = [x, y, x, y];
+    else {
+      bounds[0] = Math.min(bounds[0], x); bounds[1] = Math.min(bounds[1], y);
+      bounds[2] = Math.max(bounds[2], x); bounds[3] = Math.max(bounds[3], y);
+    }
+  }
+  function writePlayer(id: string): FightPlayer {
+    const p = w.players[id]!;
+    if (p !== world.players[id]) return p;
+    if (w.players === world.players) w.players = { ...w.players };
+    return w.players[id] = { ...p, cooldowns: { ...p.cooldowns } };
+  }
+  function writeState(id: string): State {
+    const p = writePlayer(id);
+    if (p.state === world.players[id]!.state) p.state = { ...p.state };
+    return p.state;
+  }
+  function writePlayerState(id: string): State['player'] {
+    const s = writeState(id);
+    if (s.player === world.players[id]!.state.player) s.player = { ...s.player };
+    return s.player;
+  }
+  function writeNodes(id: string): State['nodes'] {
+    const s = writeState(id);
+    if (s.nodes === world.players[id]!.state.nodes) s.nodes = { ...s.nodes };
+    return s.nodes;
+  }
+  function writeCreature(id: string): FightCreature {
+    const f = w.creatures[id]!;
+    if (f !== world.creatures[id]) return f;
+    if (w.creatures === world.creatures) w.creatures = { ...w.creatures };
+    return w.creatures[id] = { ...f, cooldowns: { ...f.cooldowns }, engaged: [...f.engaged], away: { ...f.away }, hit: [...f.hit] };
+  }
   const events: FightWorldEvent[] = [];
   const c = bundle.params.combat;
   const ms = tick * bundle.params.wild.tick_ms;
@@ -109,39 +154,99 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     geometry.set(bundle, ground);
   }
   const { walkable, stepOpen } = ground;
-  const players = (): [string, FightPlayer][] => Object.entries(w.players).sort(([a, p], [b, q]) => {
-    const f = p.state.player.fight?.foe;
-    const g = q.state.player.fight?.foe;
-    return (f && w.creatures[f] ? distance(p.state.player.at, w.creatures[f]!.at) : 0)
-      - (g && w.creatures[g] ? distance(q.state.player.at, w.creatures[g]!.at) : 0) || textOrder(a, b);
-  });
+  const players = (ids: Iterable<string> = acting): [string, FightPlayer][] =>
+    Array.from(ids, (id): [string, FightPlayer] => [id, w.players[id]!]).sort(([a, p], [b, q]) => {
+      const f = p.state.player.fight?.foe;
+      const g = q.state.player.fight?.foe;
+      return (f && w.creatures[f] ? distance(p.state.player.at, w.creatures[f]!.at) : 0)
+        - (g && w.creatures[g] ? distance(q.state.player.at, w.creatures[g]!.at) : 0) || textOrder(a, b);
+    });
   const foes = (): [string, FightCreature][] => Object.entries(w.creatures).sort(([a, f], [b, g]) =>
     (f.heed && w.players[f.heed] ? distance(f.at, w.players[f.heed]!.state.player.at) : 0)
     - (g.heed && w.players[g.heed] ? distance(g.at, w.players[g.heed]!.state.player.at) : 0) || textOrder(a, b));
-  const safe = (at: Tile): boolean => dangerAt(bundle, [at[0], at[1]]) === 0 || Object.values(w.players).some((p) =>
-    isSafe(bundle, { ...p.state, player: { ...p.state.player, aboard: null } }, [at[0], at[1]], ms));
+  // Only camps and personal fires can add safety beyond dangerAt's static ground.
+  // A hurt/bell can replace State; rebuild these views then rather than caching
+  // them across ticks or scanning/copying every account for every safety query.
+  let safety: State[] | undefined;
+  const safe = (at: Tile): boolean => {
+    if (dangerAt(bundle, [at[0], at[1]]) === 0) return true;
+    if (!safety) {
+      safety = [];
+      for (const id of safetyIds) {
+        const s = w.players[id]!.state;
+        safety.push({ ...s, player: { ...s.player, aboard: null } });
+      }
+    }
+    return safety.some((s) => isSafe(bundle, s, [at[0], at[1]], ms));
+  };
+  function replaceState(id: string, state: State): void {
+    writePlayer(id).state = state;
+    if (state.player.camp.length || state.player.own) safetyIds.add(id); else safetyIds.delete(id);
+    safety = undefined;
+    bounds = undefined;
+  }
+  // Built after held movement, used only by engagement. Filtering candidates
+  // before the usual sort preserves their relative distance/account ordering.
+  let tiles: Map<string, string[]> | undefined;
+  const cell = c.engage_tiles + 1;
+  const tileKey = (x: number, y: number): string => `${x},${y}`;
+  function nearbyPlayers(at: Tile): [string, FightPlayer][] {
+    if (!playerIds.length) return [];
+    if (!bounds) {
+      const first = w.players[playerIds[0]!]!.state.player.at;
+      bounds = [first[0], first[1], first[0], first[1]];
+      for (const id of playerIds) {
+        const [x, y] = w.players[id]!.state.player.at;
+        bounds[0] = Math.min(bounds[0], x); bounds[1] = Math.min(bounds[1], y);
+        bounds[2] = Math.max(bounds[2], x); bounds[3] = Math.max(bounds[3], y);
+      }
+    }
+    const r = c.engage_tiles;
+    if (at[0] + r < bounds[0] || at[1] + r < bounds[1] || at[0] - r > bounds[2] || at[1] - r > bounds[3]) return [];
+    if (!tiles) {
+      tiles = new Map();
+      for (const id of playerIds) {
+        const [x, y] = w.players[id]!.state.player.at;
+        const key = tileKey(idiv(x, cell), idiv(y, cell));
+        const ids = tiles.get(key);
+        if (ids) ids.push(id); else tiles.set(key, [id]);
+      }
+    }
+    const ids: string[] = [], x = idiv(at[0], cell), y = idiv(at[1], cell);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      for (const id of tiles.get(tileKey(x + dx, y + dy)) ?? []) {
+        if (distance(at, w.players[id]!.state.player.at) <= r) ids.push(id);
+      }
+    }
+    return players(ids);
+  }
   const playerSafe = (p: FightPlayer): boolean => p.state.player.aboard != null || safe(p.state.player.at);
   const cap = (p: FightPlayer): number => c.breath_base + c.breath_per_stamina * attrAt(bundle, p.state, 'stamina');
   const shortened = (p: FightPlayer, duration: number): number =>
     Math.max(1, mulDiv(duration, Math.max(0, PERCENT - bundle.params.per_point.agility_pct * attrAt(bundle, p.state, 'agility')), PERCENT));
-  function end(id: string, p: FightPlayer): void {
-    if (!p.state.player.fight) return;
-    p.state.player.fight = null;
+  function end(id: string): void {
+    if (!w.players[id]!.state.player.fight) return;
+    const p = writePlayer(id);
+    writePlayerState(id).fight = null;
     p.guarding = null;
     p.walking = null;
     p.phase = 'idle';
     p.move = null;
-    for (const f of Object.values(w.creatures)) {
+    for (const [fid, original] of Object.entries(w.creatures)) {
+      if (!original.engaged.includes(id) && !Object.hasOwn(original.away, id)) continue;
+      const f = writeCreature(fid);
       f.engaged = f.engaged.filter((player) => player !== id);
       delete f.away[id];
     }
     events.push({ e: 'disengage', player: id });
   }
-  function engage(id: string, p: FightPlayer, fid: string, f: FightCreature): void {
-    if (f.engaged.includes(id)) return;
+  function engage(id: string, fid: string): void {
+    if (w.creatures[fid]!.engaged.includes(id)) return;
+    const f = writeCreature(fid), p = writePlayer(id);
     f.engaged.push(id);
+    acting.add(id);
     if (!p.state.player.fight) {
-      p.state.player.fight = { foe: fid, since: tick };
+      writePlayerState(id).fight = { foe: fid, since: tick };
       p.breath = cap(p);
     }
     f.heed ??= id;
@@ -179,7 +284,10 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     return target;
   }
   function finish(): void {
-    for (const [, f] of foes()) {
+    let restingPlayers: string[] | undefined;
+    for (const [fid, original] of foes()) {
+      if (!original.engaged.length && original.heed === null) continue;
+      const f = writeCreature(fid);
       const sight = bundle.map.creatures!.kinds[f.kind]!.behaviour?.sight ?? c.engage_tiles;
       f.engaged = f.engaged.filter((id) => {
         const p = w.players[id];
@@ -206,40 +314,52 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
         } else {
           // Only a fallen foe rests. The kind's refill clock is in game days; there is no separate foe content type.
           f.readyAt = ms + (kind.hunt?.spawn.refill_d ?? 1) * bundle.params.day_length_ms;
-          for (const [, p] of players()) p.state.nodes[f.spot] = { readyAt: f.readyAt, draws: p.state.nodes[f.spot]?.draws ?? 0 };
+          // Resting-node writes change neither positions nor focus, so this order
+          // is shared by all fallen foes in this finish pass.
+          restingPlayers ??= players(playerIds).map(([id]) => id);
+          for (const id of restingPlayers) {
+            const draws = w.players[id]!.state.nodes[f.spot]?.draws ?? 0;
+            writeNodes(id)[f.spot] = { readyAt: f.readyAt, draws };
+          }
         }
       } else if (f.heed === null || !f.engaged.includes(f.heed)) f.heed = [...f.engaged].sort()[0] ?? null;
     }
+    // Ending a pairing and switching focus cannot change a foe's target tile.
+    // Rank once here; the next phase will rank again after any movement.
+    const remaining = foes();
     for (const [id, p] of players()) {
       if (!p.state.player.fight) continue;
-      const still = foes().filter(([, f]) => f.engaged.includes(id));
-      if (!still.length) end(id, p);
-      else if (!still.some(([fid]) => fid === p.state.player.fight!.foe)) p.state.player.fight.foe = still[0]![0];
+      const still = remaining.filter(([, f]) => f.engaged.includes(id));
+      if (!still.length) end(id);
+      else if (!still.some(([fid]) => fid === p.state.player.fight!.foe)) writePlayerState(id).fight = { ...p.state.player.fight!, foe: still[0]![0] };
     }
   }
 
   // G49's walk-out precedes every input, even when a caller missed the bell tick.
-  for (const [id, p] of players()) {
+  for (const [id, p] of players(visiting)) {
     const bell = fightBell(bundle, p.state, ms);
     if (bell) {
-      p.state = bell.state;
+      replaceState(id, bell.state);
       events.push(...bell.events.map((event) => ({ ...event, player: id })));
-      end(id, p);
+      end(id);
     }
   }
   finish();
-  for (const [, p] of players()) {
-    if (p.move === 'dodge' && tick - p.since >= c.dodge_t) { p.phase = 'idle'; p.move = null; }
+  for (const [id, p] of players()) {
+    if (p.move === 'dodge' && tick - p.since >= c.dodge_t) { const next = writePlayer(id); next.phase = 'idle'; next.move = null; }
   }
   for (const input of inputs) {
-    const p = w.players[input.player];
-    if (!p) continue;
+    const found = w.players[input.player];
+    if (!found) continue;
+    let p: FightPlayer = found;
     const refuse = (reason: string): void => { events.push({ e: 'fight_refused', player: input.player, verb: input.v, reason }); };
     if (!Number.isSafeInteger(input.tick) || input.tick < 0 || input.tick > tick) { refuse('Input has not arrived.'); continue; }
     if (input.v === 'tech') { refuse('Combat techniques are not implemented.'); continue; }
     if (input.dir !== null && !validDir(input.dir)) { refuse('Bad direction.'); continue; }
     if (tick < p.stagger) { refuse('Staggered.'); continue; }
     if (input.v === 'move') {
+      p = writePlayer(input.player);
+      acting.add(input.player);
       p.walking = input.dir;
       if (input.dir) p.facing = input.dir;
       else p.credit = 0;
@@ -248,11 +368,12 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     if (!p.state.player.fight) {
       const candidate = foes().find(([, f]) => f.health > 0 && ms >= f.readyAt && !safe(f.at) && !playerSafe(p)
         && distance(p.state.player.at, f.home) <= c.leash_tiles && ahead(p.state.player.at, f.at, input.dir ?? p.facing, 1));
-      if (candidate && input.v === 'attack') engage(input.player, p, ...candidate);
+      if (candidate && input.v === 'attack') { engage(input.player, candidate[0]); p = w.players[input.player]!; }
     }
     if (!p.state.player.fight) { refuse('Not engaged.'); continue; }
     if (input.v === 'guard') {
       if (input.dir && (p.phase !== 'idle' || p.breath === 0)) { refuse('Cannot guard now.'); continue; }
+      p = writePlayer(input.player);
       p.cooldowns.hold = tick + c.breath_hold_t;
       p.guarding = input.dir;
       if (input.dir) p.facing = input.dir;
@@ -262,6 +383,7 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     const key = input.v === 'attack' ? 'hand' : 'dodge';
     const cost = input.v === 'attack' ? c.attack_breath : c.dodge_breath;
     if (tick < due(p, key) || p.breath < cost) { refuse('Cooldown or insufficient breath.'); continue; }
+    p = writePlayer(input.player);
     p.facing = input.dir!;
     p.guarding = null;
     p.walking = null;
@@ -273,42 +395,52 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     spend(p, cost, 'player', input.player);
   }
 
-  for (const [id, p] of players()) {
+  for (const [id, original] of players()) {
+    let p = original;
     if (tick < p.stagger) continue;
     if (p.walking && p.phase === 'idle') {
+      p = writePlayer(id);
       p.credit += bundle.params.wild.tick_ms;
       const pace = walkStepMs(bundle, p.state);
       while (p.credit >= pace) {
-        p.state.player.at = step(p.state.player.at, p.walking, p.state, false);
+        bounds = undefined;
+        writePlayerState(id).at = step(p.state.player.at, p.walking!, p.state, false);
         p.credit -= pace;
-        p.state.player.movedAt = ms;
+        writePlayerState(id).movedAt = ms;
       }
     }
     if (p.move === 'dodge') {
+      p = writePlayer(id);
       const steps = Math.min(c.dodge_tiles, idiv((tick - p.since + 1) * c.dodge_tiles, c.dodge_t));
       while (p.dodgeSteps < steps) {
-        p.state.player.at = step(p.state.player.at, p.facing, p.state, false);
+        bounds = undefined;
+        writePlayerState(id).at = step(p.state.player.at, p.facing, p.state, false);
         p.dodgeSteps += 1;
       }
       if (tick - p.since >= c.dodge_t) { p.phase = 'idle'; p.move = null; }
     }
     // Movement can reach safety before any attack on this tick.
-    if (p.state.player.fight && playerSafe(p)) end(id, p);
+    if (p.state.player.fight && playerSafe(p)) end(id);
   }
-  for (const [fid, f] of foes()) {
+  for (const [fid, original] of foes()) {
+    let f = original;
     if (ms >= f.readyAt && f.readyAt > 0) {
+      f = writeCreature(fid);
       const def = bundle.map.creatures!.kinds[f.kind]!.fight!;
       f.health = def.hp; f.breath = def.breath; f.at = [...f.home]; f.cooldowns = {}; f.cursor = 0; f.stagger = 0; f.readyAt = 0; f.away = {};
     }
     if (f.health === 0 || ms < f.readyAt || safe(f.at)) continue;
-    for (const [id, p] of players()) {
-      if (!playerSafe(p) && distance(f.at, p.state.player.at) <= c.engage_tiles && distance(f.at, f.home) <= c.leash_tiles && distance(p.state.player.at, f.home) <= c.leash_tiles) engage(id, p, fid, f);
+    for (const [id, p] of nearbyPlayers(f.at)) {
+      if (!playerSafe(p) && distance(f.at, p.state.player.at) <= c.engage_tiles && distance(f.at, f.home) <= c.leash_tiles && distance(p.state.player.at, f.home) <= c.leash_tiles) engage(id, fid);
     }
   }
   for (const [id, p] of players()) {
     if (!p.state.player.fight) continue;
-    if (p.guarding) spend(p, c.guard_drain, 'player', id);
-    else if (!p.walking && p.move !== 'dodge' && tick >= due(p, 'hold')) p.breath = Math.min(cap(p), p.breath + mulDiv(c.breath_refill, breathRefillPermille(bundle, p.state), MILLI));
+    if (p.guarding) spend(writePlayer(id), c.guard_drain, 'player', id);
+    else if (!p.walking && p.move !== 'dodge' && tick >= due(p, 'hold')) {
+      const breath = Math.min(cap(p), p.breath + mulDiv(c.breath_refill, breathRefillPermille(bundle, p.state), MILLI));
+      if (breath !== p.breath) writePlayer(id).breath = breath;
+    }
   }
   // Derive foe phases before player damage so the recovery's first tick is already weak.
   function moveOf(f: FightCreature, def: FightDef): MoveDef | undefined { return def.moves.find((m) => m.id === f.move); }
@@ -320,7 +452,10 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
       : age < m.windup_t + c.active_t + m.recover_t ? 'recovery' : 'idle';
     if (f.phase === 'idle') f.move = null;
   }
-  for (const [, f] of foes()) phase(f, bundle.map.creatures!.kinds[f.kind]!.fight!);
+  for (const [fid, f] of foes()) {
+    const def = bundle.map.creatures!.kinds[f.kind]!.fight!;
+    if (f.phase !== 'idle' && moveOf(f, def)) phase(writeCreature(fid), def);
+  }
   for (const [id, p] of players()) {
     if (!p.state.player.fight || p.move !== 'attack' || tick < p.stagger || tick - p.since < c.bare_windup_t) continue;
     for (const [fid, f] of foes()) {
@@ -329,15 +464,19 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
       let harm = c.bare_base;
       if (!same(direction(f.at, p.state.player.at), f.facing)) harm = mulDiv(harm, c.behind_permille, MILLI);
       if (f.phase === 'recovery' && f.move === def.weak?.after) harm = mulDiv(harm, c.weak_permille, MILLI);
-      f.health = Math.max(0, f.health - harm);
-      f.heed = id;
+      const next = writeCreature(fid);
+      next.health = Math.max(0, f.health - harm);
+      next.heed = id;
       events.push({ e: 'hit', player: id, by: 'player', harm, at: [...f.at] });
-      if (f.health === 0) events.push({ e: 'foe_fall', foe: fid, at: [...f.at], drops: structuredClone(f.drops) });
+      if (next.health === 0) events.push({ e: 'foe_fall', foe: fid, at: [...f.at], drops: structuredClone(f.drops) });
       break;
     }
-    p.phase = 'idle'; p.move = null;
+    const next = writePlayer(id);
+    next.phase = 'idle'; next.move = null;
   }
-  for (const [fid, f] of foes()) {
+  for (const [fid] of foes()) {
+    // An earlier foe's hit can end this pairing and copy this creature.
+    let f = w.creatures[fid]!;
     if (f.health === 0 || !f.heed || ms < f.readyAt || safe(f.at)) continue;
     const def = bundle.map.creatures!.kinds[f.kind]!.fight!;
     let target = w.players[f.heed];
@@ -345,9 +484,13 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     if (!target) continue;
     const nextMove = patternMoves(def, f.pattern)[f.cursor % f.pattern.length]!;
     const standing = f.phase === 'recovery' || (f.phase === 'idle' && ahead(f.at, target.state.player.at, cardinal(f.at, target.state.player.at), nextMove.reach));
-    if (tick >= due(f, 'hold') && standing) f.breath = Math.min(def.breath, f.breath + c.breath_refill);
+    if (tick >= due(f, 'hold') && standing) {
+      const breath = Math.min(def.breath, f.breath + c.breath_refill);
+      if (breath !== f.breath) { f = writeCreature(fid); f.breath = breath; }
+    }
     if (tick < f.stagger) continue;
     if (f.phase === 'idle') {
+      f = writeCreature(fid);
       f.facing = cardinal(f.at, target.state.player.at);
       const m = patternMoves(def, f.pattern)[f.cursor % f.pattern.length]!;
       if (!ahead(f.at, target.state.player.at, f.facing, m.reach)) {
@@ -366,10 +509,13 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     }
     const m = moveOf(f, def);
     if (!m || f.phase !== 'active') continue;
-    for (const [id, p] of players()) {
+    for (const [id, original] of players()) {
+      let p = original;
       if (!f.engaged.includes(id) || f.hit.includes(id) || tick < due(p, 'mercy') || playerSafe(p)
         || !ahead(f.at, p.state.player.at, f.facing, m.reach)) continue;
+      f = writeCreature(fid);
       f.hit.push(id);
+      p = writePlayer(id);
       if (p.guarding && same(p.guarding, direction(p.state.player.at, f.at))) {
         spend(p, c.guard_hit_breath, 'player', id);
         stagger(f, c.guard_stagger_t, 'foe', fid);
@@ -378,15 +524,15 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
       const harm = moveHarm(bundle.params, hpCap(bundle, p.state), m);
       events.push({ e: 'hit', player: id, by: 'foe', harm, at: [...p.state.player.at] });
       const result = fightHurt(bundle, p.state, harm, fid, ms);
-      p.state = result.state;
+      replaceState(id, result.state);
       events.push(...result.events.map((event) => ({ ...event, player: id })));
       p.cooldowns.mercy = tick + c.mercy_t;
       stagger(p, c.stun_t, 'player', id);
       if (result.events.some((e) => e.e === 'fall')) {
         // fall already cleared the persistent marker; end still emits the live ending.
-        p.state.player.fight = { foe: fid, since: tick };
-        end(id, p);
-      } else for (let n = 0; n < c.knockback_tiles; n++) p.state.player.at = step(p.state.player.at, direction(f.at, p.state.player.at), p.state, false);
+        writePlayerState(id).fight = { foe: fid, since: tick };
+        end(id);
+      } else for (let n = 0; n < c.knockback_tiles; n++) writePlayerState(id).at = step(p.state.player.at, direction(f.at, p.state.player.at), p.state, false);
     }
   }
   finish();
