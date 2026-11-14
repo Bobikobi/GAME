@@ -65,7 +65,9 @@ describe('richOf', () => {
 describe('storage', () => {
   it('round-trips', () => {
     const m = mem();
-    const s: Settings = { quality: 'high', frameCap: 120, reducedMotion: true, textSize: 20 };
+    const s: Settings = {
+      quality: 'high', frameCap: 120, reducedMotion: true, textSize: 20, stickSide: 'right', buttonSize: 'large',
+    };
     writeSettings(m, s);
     expect(readSettings(m)).toEqual(s);
   });
@@ -81,6 +83,18 @@ describe('storage', () => {
     expect(readSettings(m)).toEqual(AUTO_SETTINGS);
     m.store[SETTINGS_KEY] = JSON.stringify({ quality: 'low' });
     expect(readSettings(m)).toEqual({ ...AUTO_SETTINGS, quality: 'low' });
+    m.store[SETTINGS_KEY] = JSON.stringify({
+      quality: 'high', frameCap: 60, reducedMotion: true, textSize: 18, stickSide: 'up', buttonSize: 'large',
+    });
+    expect(readSettings(m)).toEqual({
+      quality: 'high', frameCap: 60, reducedMotion: true, textSize: 18, stickSide: 'left', buttonSize: 'large',
+    });
+    m.store[SETTINGS_KEY] = JSON.stringify({
+      quality: 'low', frameCap: 30, reducedMotion: true, textSize: 20, stickSide: 'right', buttonSize: 2,
+    });
+    expect(readSettings(m)).toEqual({
+      quality: 'low', frameCap: 30, reducedMotion: true, textSize: 20, stickSide: 'right', buttonSize: 'medium',
+    });
   });
   it('survives a storage that throws', () => {
     const bad = { getItem: () => { throw new Error('x'); }, setItem: () => { throw new Error('x'); } };

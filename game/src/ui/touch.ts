@@ -10,10 +10,14 @@
  * it, Sneak above-left, and the bag, journal and menu in a small arc above A. The body's `landscape` class comes from
  * the orientation query, never from the user agent; the stylesheet shows one layout or the other.
  *
+ * Settings may mirror the two sides and scale the action buttons and stick ring. The choices arrive as data
+ * attributes from settings-apply.ts; the stylesheet mirrors, and the layout here responds without a reload.
+ *
  * Shown on touch screens, and on any device after its first touch.
  */
 import { app } from '../app';
 import { type Button, type Dir, stickFrom } from '../input';
+import { BUTTON_SCALE, BUTTON_SIZES, type StickSide } from '../settings';
 import { h } from './dom';
 import { TAP, buzz } from './haptics';
 import { type ControlsLayout, FloatingStick, type Placed, controlsLayout, stickZone } from './stick';
@@ -74,10 +78,13 @@ export function mountTouch(root: HTMLElement): void {
     hideHint();
   });
   const floating = new FloatingStick();
+  const rootData = document.documentElement.dataset;
+  const side = (): StickSide => (rootData.stickSide === 'right' ? 'right' : 'left');
+  const scale = (): number => BUTTON_SCALE[BUTTON_SIZES.find((v) => v === rootData.buttonSize) ?? 'medium'];
   const placed: [HTMLElement, keyof ControlsLayout][] = [[a, 'a'], [b, 'b'], [sneak, 'sneak'], [bag, 'bag'], [journal, 'journal'], [menu, 'menu']];
   // every size of the landscape controls is a share of the screen's height (controlsLayout)
   const layOut = () => {
-    const at = controlsLayout(window.innerHeight);
+    const at = controlsLayout(window.innerHeight, scale());
     for (const [btn, name] of placed) {
       const p = at[name] as Placed;
       btn.style.setProperty('--cx', `${p.right}px`);
@@ -86,7 +93,9 @@ export function mountTouch(root: HTMLElement): void {
     }
     el.style.setProperty('--ring', `${at.ring}px`);
     el.style.setProperty('--knob', `${at.knob}px`);
+    el.style.setProperty('--btn-scale', String(scale()));
     document.body.style.setProperty('--cluster', `${at.cluster}px`);
+    document.body.style.setProperty('--column-clear', `${Math.ceil(at.bag.right + at.bag.d / 2 + 8)}px`);
     floating.ring = at.ring;
   };
 
@@ -98,6 +107,10 @@ export function mountTouch(root: HTMLElement): void {
   };
   landscape.addEventListener('change', setLandscape);
   window.addEventListener('resize', layOut);
+  new MutationObserver(layOut).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-stick-side', 'data-button-size'],
+  });
   setLandscape();
 
   const setStick = (v: readonly [number, number] | null) => {
@@ -146,7 +159,7 @@ export function mountTouch(root: HTMLElement): void {
   };
   zone.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    if (!floating.down(e.pointerId, e.clientX, e.clientY, stickZone(window.innerWidth, window.innerHeight, bandBottom()))) return;
+    if (!floating.down(e.pointerId, e.clientX, e.clientY, stickZone(window.innerWidth, window.innerHeight, bandBottom(), side()))) return;
     zone.setPointerCapture(e.pointerId);
     stick.style.left = `${e.clientX}px`;
     stick.style.top = `${e.clientY}px`;

@@ -3,10 +3,12 @@
  * control or a switch. Every press goes through SettingsApplier (settings-apply.ts), so it is applied and kept at
  * once; the window only draws the record and what Auto resolved to. Sound is the mute alone: the audio buses
  * keep their levels inside the graph (audio/index.ts) and the sound API offers no gain per bus.
- * There is no Controls section: the touch pad and buttons have no side or size to choose today.
+ * Controls appears with the touch controls and chooses which side the stick uses and how large the controls draw.
  */
 import type { SettingsApplier } from '../settings-apply';
-import { TEXT_SIZES, type FrameCap, type Quality, type Settings, type TextSize } from '../settings';
+import {
+  TEXT_SIZES, type ButtonSize, type FrameCap, type Quality, type Settings, type StickSide, type TextSize,
+} from '../settings';
 import { button, h } from './dom';
 
 interface Choice<T> {
@@ -45,14 +47,23 @@ const QUALITIES: readonly Choice<Quality>[] = [
 const CAPS: readonly Choice<FrameCap>[] = [
   { value: 'auto', label: 'Auto' }, { value: 30, label: '30' }, { value: 60, label: '60' }, { value: 120, label: '120' },
 ];
+const SIDES: readonly Choice<StickSide>[] = [{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }];
+const BUTTON_SIZES: readonly Choice<ButtonSize>[] = [
+  { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+];
 
 export interface SoundSwitch {
   muted: boolean;
   setMuted(muted: boolean): void;
 }
 
-/** Draws the window's body, and draws it again after every change. */
-export function settingsBody(apply: SettingsApplier, sound: SoundSwitch | undefined, onClose?: () => void): HTMLElement {
+/** Draws the window's body, and draws it again after every change. `touch-on` is the same flag that shows the controls. */
+export function settingsBody(
+  apply: SettingsApplier,
+  sound: SoundSwitch | undefined,
+  onClose?: () => void,
+  showControls = typeof document !== 'undefined' && document.body.classList.contains('touch-on'),
+): HTMLElement {
   const body = h('div', { class: 'set-body' });
   const draw = () => {
     const s: Settings = apply.settings;
@@ -70,6 +81,11 @@ export function settingsBody(apply: SettingsApplier, sound: SoundSwitch | undefi
           draw();
         }))]
         : []),
+      ...(showControls ? [
+        h('h3', null, 'Controls'),
+        row('Stick side', null, segmented('Stick side', SIDES, s.stickSide, (stickSide) => change({ stickSide }))),
+        row('Button size', null, segmented('Button size', BUTTON_SIZES, s.buttonSize, (buttonSize) => change({ buttonSize }))),
+      ] : []),
       h('h3', null, 'Accessibility'),
       row('Reduced motion', s.reducedMotion ? null : 'Off follows your phone', toggle('Reduced motion', s.reducedMotion, (reducedMotion) => change({ reducedMotion }))),
       row('Text size', null, segmented<TextSize>('Text size', TEXT_SIZES.map((t) => ({ value: t, label: String(t) })), s.textSize, (textSize) => change({ textSize }))),
