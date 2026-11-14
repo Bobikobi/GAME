@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import gates, process, verdict, manifest
+import gates, process, verdict, manifest, jobs, plspec, card
 
 BONE, DARK, SKIN = (226, 190, 140), (40, 24, 28), (170, 120, 90)
 GROUND, STAND = 117, 60
@@ -109,6 +109,24 @@ def main():
         manifest.main([str(out), str(Path(tmp) / "m2.json"), "--ledger", str(led), "--cap", "50"])
         sp = json.loads((Path(tmp) / "m2.json").read_text())["spend"]
         check("manifest spend is first before minus last after, whatever the file order", sp["generations_spent"] == 30.0 and sp["cap"] == 50 and len(sp["runs_over_8_generations"]) == 2)
+        # the moves of a row, the job list, the card's helpers
+        check("manifest rows name the weapon family and the kernel's move id", rows[0]["weapon_family"] == "bare" and rows[0]["move"] == "attack")
+        check("a felling side swing has no move id yet and is listed", manifest.what_it_is("fell", "side-s703")[1] == "none-yet" and manifest.what_it_is("fell", "")[1] == "fell"
+              and manifest.what_it_is("hit", "nf")[1] == "hit" and manifest.what_it_is("quarry", "")[1] == "")
+        kd = Path(tmp) / "kd"; kd.mkdir(); Image.fromarray(clean[0]).save(kd / "key.png")
+        cells = [{"id": "t-strike", "first": str(kd / "key.png"), "last": str(kd / "key.png"), "frames": 8, "seeds": [1, 2], "action": "x"}]
+        jl = jobs.build_jobs(cells, Path(tmp) / "job" / "keys")
+        check("jobs.py writes one job per seed, ids with the seed, keys copied beside the job", [j["id"] for j in jl] == ["t-strike_S1", "t-strike_S2"] and Path(jl[0]["first"]).exists()
+              and plspec.gens(8) == 2 and sum(plspec.gens(j["frames"]) for j in jl) == 4)
+        try:
+            jobs.build_jobs([{"id": "bad id", "first": str(kd / "key.png"), "frames": 8, "seeds": [1], "action": "x"}], Path(tmp) / "job2"); bad_id = False
+        except SystemExit:
+            bad_id = True
+        check("jobs.py refuses an id with a space", bad_id)
+        tile = Path(tmp) / "tile.png"; Image.fromarray(np.full((64, 64, 4), 90, np.uint8)).save(tile)
+        info = card.make_gif(d, "skeleton", 100, tile, Path(tmp) / "c.gif")
+        gif = Image.open(Path(tmp) / "c.gif")
+        check("card.py writes a moving 384 px GIF with the halo layer behind", gif.size == (384, 384) and gif.n_frames == info["frames"] * info["loops"] and gif.n_frames > 1)
     print("selftest:", "FAILED %d" % check.bad if check.bad else "all passed")
     return 1 if check.bad else 0
 

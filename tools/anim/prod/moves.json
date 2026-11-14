@@ -1,0 +1,24 @@
+{
+  "about": "What each clip is, for the screen: the weapon family of the hand and the id the kernel or the content already gives the move. `none-yet` where no id exists; no id is invented here. A variant may override the motion's entry: the key `motion/variant`, or `motion/<variant's first word>` (so every `side-...` take of fell reads `fell/side`).",
+  "weapon_family": "bare",
+  "sources": {
+    "attack, guard, dodge": "kernel/src/fight.ts FightInput `v` ('move' | 'guard' | 'attack' | 'dodge' | 'tech'); COMBAT.md 4.3",
+    "hit": "kernel/src/fight.ts event `{ e: 'hit', by: 'foe' }` (the player taking a hit; `stagger` follows on a guard); COMBAT.md 4.2",
+    "fell": "content/core/professions/woodcutting.json profession.verb; its `techniques` list is empty, so a second kind of felling has no id yet",
+    "tech": "FightInput `tech` takes a technique id from a school's active slot; no combat technique exists in content/core/schools yet"
+  },
+  "moves": {
+    "strike": "attack",
+    "guard": "guard",
+    "dodge": "dodge",
+    "hit": "hit",
+    "fell": "fell",
+    "fell/side": "none-yet"
+  },
+  "fight_motions": [
+    "strike",
+    "guard",
+    "dodge",
+    "hit"
+  ]
+}
