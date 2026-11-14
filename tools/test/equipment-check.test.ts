@@ -75,6 +75,25 @@ const NEW_ROWS = [
 const NEW_PLACE = /^params\.(wear_req_level|attr_bonus_max|attr_bonus_step)\b|\.wear\.(req|attrs|trait)\b|\.(weapon|bind|known)$/;
 
 describe('the equipment foundations', () => {
+  it('G44 accepts a garment in hands and the built content', () => {
+    expect(errors(world({}))).toEqual([]);
+    expect(errors(world({ 'items.json': items(garment('gloves', { slot: 'hands', effects: [{ effect: 'gather_speed_pct', value: 5 }] })) }))).toEqual([]);
+  });
+
+  it('G44 refuses a glove declared for hand with only the held-tool row', () => {
+    const r = world({ 'items.json': items(garment('gloves', { slot: 'hand' })) });
+    expect(errors(r).map(({ where, message }) => ({ where, message }))).toEqual([
+      { where: 'items.tester/gloves.wear.slot', message: 'the hand holds a tool: an item of kind "tool"' },
+    ]);
+  });
+
+  it('G44 refuses a tool declared for hands with only the garment row', () => {
+    const r = world({ 'items.json': items(item('pick', { kind: 'tool', class: 'tool', tool: { kind: 'pick', tier: 1 }, wear: { slot: 'hands' } })) });
+    expect(errors(r).map(({ where, message }) => ({ where, message }))).toEqual([
+      { where: 'items.tester/pick.wear.slot', message: 'the hands take items of class "garment"' },
+    ]);
+  });
+
   it('the core raises none of the new rows (regression guard, passes before by design)', () => {
     const r = world({});
     for (const m of r.issues.map((i) => i.message)) {
@@ -173,12 +192,16 @@ describe('the equipment foundations', () => {
       'items.json': items(
         garment('wrap', { slot: 'top', trait: 'cold_proof' }),
         garment('spikes', { slot: 'head', trait: 'ice_grip' }),
+        garment('ice-boots', { slot: 'feet', trait: 'ice_grip' }),
+        garment('ice-gloves', { slot: 'hands', trait: 'ice_grip' }),
         item('charm', { class: 'jewelry', wear: { slot: 'jewelry', trait: 'cold_proof' } }),
         garment('shawl', { slot: 'top', look: true, trait: 'heat_ward' }),
       ),
     });
     expect(at(r, 'items.tester/wrap.wear.trait').map((i) => i.message)).toEqual([gate]);
-    expect(at(r, 'items.tester/spikes.wear.trait').map((i) => i.message)).toEqual([gate, 'ice_grip goes on the feet, not the head (BODY_CLOCKS 6.1)']);
+    expect(at(r, 'items.tester/spikes.wear.trait').map((i) => i.message)).toEqual([gate, 'ice_grip goes on the hands, not the head (BODY_CLOCKS 6.1)']);
+    expect(at(r, 'items.tester/ice-boots.wear.trait').map((i) => i.message)).toEqual([gate, 'ice_grip goes on the hands, not the feet (BODY_CLOCKS 6.1)']);
+    expect(at(r, 'items.tester/ice-gloves.wear.trait').map((i) => i.message)).toEqual([gate]);
     expect(at(r, 'items.tester/charm.wear.trait').map((i) => i.message)).toContain('cold_proof goes on the top, back, head, not the jewelry (BODY_CLOCKS 6.1)');
     expect(at(r, 'items.tester/shawl.wear.trait').map((i) => i.message)).toContain('a look carries no trait');
   });

@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.27.0';
+export const KERNEL_VERSION = '0.28.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -48,7 +48,7 @@ export function legacyNodeId(id: string): string {
 }
 
 /** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs; the back holds a bag or a quiver (2026-10-23). */
-export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
+export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'hands', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
 export type WearSlot = (typeof WEAR_SLOTS)[number];
 
 const SLOTS_OF: Record<string, readonly WearSlot[]> = {
@@ -57,6 +57,7 @@ const SLOTS_OF: Record<string, readonly WearSlot[]> = {
   legs: ['legs'],
   outfit: ['outfit'],
   feet: ['feet'],
+  hands: ['hands'],
   jewelry: ['jewelry1', 'jewelry2'],
   hand: ['hand'],
   back: ['back'],

@@ -4422,9 +4422,19 @@ The address `GAME_SERVER_ORIGIN` is a repository secret; the hourly refresh (loo
 **Not checked:** the 4.7.2 web export's size, the plugins' own source, C# on the web.
 **Retry when:** a need appears that Phaser cannot carry (none of the twelve today), or one engine for both doors becomes worth a rewrite of the client. **Model:** Claude Sonnet 5.5 (the study), Claude Fable 5.2 (the manager's ruling). **Link:** none; the study's notes are not in this repository.
 
+
 ## 2026-11-14 ✅ The fight's tick lands in the kernel, off
 **What:** issue #549 step 4 adds a pure integer chunk fight tick (`kernel/src/fight.ts`), typed events, old-save migration and the engaged work refusals; `combat.enabled` stays 0 and no game or server calls it. 31 focused tests; a bare-handed player who reads the bank wolf fells it at tick 43, one who never guards falls at tick 94.
 **Chosen:** COMBAT 4.9 governs wherever it and 4.3 differ: a dodge has no invulnerability, the leash is measured from the den, and a foe left standing is whole again the moment its fight ends, so a run ends a fight and coming back gains nothing. Only a fallen foe rests on its spot, for the kind's hunt refill. The first build kept 4.3's wording and left a standing foe out of every fight for a game day, which let a player switch a guard off by touching it and stepping away; the review changed it and aligned 4.3. Inputs retain arrival order, players resolve before foes, and windows exclude their ending tick. Existing combat params supply every number; none was added.
 **Not built, not measured:** weapons, techniques (a refused stub), noise, loot collection, the server's call. The tick copies every player's whole state each tick: measure it with a full chunk before the server calls it. One bare-hand strike in the weak window takes the wolf's whole 16 health: a balance question for the combat stage.
 **Tree:** serves the future Strike and Guard schools (PROGRESSION 4.2); no node, technique or growth effect is added. **Model:** GPT-6.1 Sol at medium effort on Codex Cloud (the build), Claude Fable 5.2 (the manager's review and the standing-foe ruling).
 **Retry when:** the manager wires the authoritative server tick and designs the first combat nodes, weapons and loot collection. **Link:** public issue #549, pull request #711.
+
+## 2026-11-14 ✅ The tenth wear place is built: hands, and ice_grip lives there
+**What:** the owner's 12.11 pick adds the garment place `hands` after `feet`; the held `hand` remains a tool place.
+**Chosen:** gloves use the existing worn effects and save adapter; `ice_grip` moves from feet to hands. No content piece or param is added.
+**Observation for the manager (no rule change):** on a 360-minute wall of deep snow and ice at band 3, the witness (342 minutes) and the previously reported band-1 build (380 minutes, 68.3 percent health) are 38 minutes apart, so a wall of this kind in content needs its clock inside that window or a requirement.
+**Tree:** none: a wear place is added and nothing a player can grow in changes.
+**Model:** GPT-6 (Codex); reasoning effort is not exposed by this runtime.
+**Retry when:** the first glove or place-condition reader is built.
+**Link:** [PR #714](https://github.com/Bobikobi/GAME/pull/714), issue #710 item 3.

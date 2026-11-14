@@ -127,6 +127,15 @@ describe('rarity (5.7)', () => {
 });
 
 describe('walls (BODY_CLOCKS 5-7)', () => {
+  it('finding 5 closes: hands ice grip and feet snow shod answer every condition pair', () => {
+    expect(cat.pieces.find((p) => p.id === 'hands.t4.uncommon.ice_grip.master')?.trait).toBe('ice_grip');
+    expect(cat.pieces.filter((p) => p.trait === 'ice_grip').every((p) => p.slot === 'hands')).toBe(true);
+    expect(cat.pieces.some((p) => p.slot === 'feet' && p.trait === 'snow_shod')).toBe(true);
+    expect(fixture.rows.find((r) => r.id === 'condition_pairs')).toMatchObject({
+      status: 'pass', detail: 'the top band answers every pair of conditions at the top grade',
+    });
+  });
+
   it('every stand-in wall has a witness that passes, and nothing two bands below passes', () => {
     for (const w of cat.walls) {
       expect(status(fixture, `wall_witness_required:${w.id}`), w.id).toBe('pass');
@@ -153,12 +162,27 @@ describe('walls (BODY_CLOCKS 5-7)', () => {
     expect(status(proveOnly({ ...cat, walls: [mild] }), 'wall_not_cheesable:mild')).toBe('fail');
   });
 
-  it('deep snow and ice at band 3 for six game hours cannot be walked, even by its witness: red', () => {
+  it('the feet-only witness cannot walk the deep snow and ice wall', () => {
     const feet = cat.pieces.find((p) => p.slot === 'feet' && p.tier === 3 && p.trait !== undefined)!;
     const hard: Wall = { id: 'hard', band: 3, conditions: ['deep_snow', 'ice'], grade: 3, lengthMin: 360, by: 'move', witness: { pieces: [feet.id], dishes: [] } };
-    const p = proveOnly({ ...cat, walls: [hard] });
-    expect(status(p, 'wall_solvable:hard')).toBe('fail');
-    expect(status(p, 'wall_not_cheesable:hard')).toBe('pass');
+    expect(status(proveOnly({ ...cat, walls: [hard] }), 'wall_solvable:hard')).toBe('fail');
+  });
+
+  it('a band-3 feet and hands witness answers both deep snow and ice', () => {
+    const pieces = ['feet.t3.uncommon.snow_shod.master', 'hands.t3.uncommon.ice_grip.master'];
+    const hard: Wall = { id: 'hard', band: 3, conditions: ['deep_snow', 'ice'], grade: 3, lengthMin: 360, by: 'move', witness: { pieces, dishes: [] } };
+    expect(status(proveOnly({ ...cat, walls: [hard] }), 'wall_solvable:hard')).toBe('pass');
+  });
+
+  it('a wall of drain alone is cheesable: it needs a clock or a requirement', () => {
+    const pieces = ['feet.t3.uncommon.snow_shod.master', 'hands.t3.uncommon.ice_grip.master'];
+    const hard: Wall = { id: 'hard', band: 3, conditions: ['deep_snow', 'ice'], grade: 3, lengthMin: 360, by: 'move', witness: { pieces, dishes: [] } };
+    expect(status(proveOnly({ ...cat, walls: [hard] }), 'wall_not_cheesable:hard')).toBe('fail');
+    // The witness needs 342 minutes, the clock allows 360, and the band-1 build needs 380.
+    const clocked: Wall = { ...hard, timerMin: hard.lengthMin };
+    const clockedProof = proveOnly({ ...cat, walls: [clocked] });
+    expect(status(clockedProof, 'wall_not_cheesable:hard')).toBe('pass');
+    expect(status(clockedProof, 'wall_solvable:hard')).toBe('pass');
   });
 
   it('a wall with no witness is red', () => {

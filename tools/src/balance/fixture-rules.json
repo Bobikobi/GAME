@@ -31,6 +31,7 @@
     { "id": "back", "count": 1, "cats": ["carry", "sustain"] },
     { "id": "legs", "count": 1, "cats": ["move", "health"] },
     { "id": "feet", "count": 1, "cats": ["move", "carry"] },
+    { "id": "hands", "count": 1, "cats": [] },
     { "id": "hand", "count": 1, "cats": ["work", "find"] },
     { "id": "jewelry", "count": 2, "cats": ["find", "sense", "sustain", "work"] }
   ],
@@ -38,7 +39,7 @@
     { "name": "cold_proof", "answers": "frost", "slots": ["top", "back", "head"], "maker": "tailoring" },
     { "name": "snow_shod", "answers": "deep_snow", "slots": ["feet"], "maker": "woodcraft" },
     { "name": "storm_proof", "answers": "storm", "slots": ["back", "top"], "maker": "tailoring" },
-    { "name": "ice_grip", "answers": "ice", "slots": ["feet"], "maker": "handcraft" },
+    { "name": "ice_grip", "answers": "ice", "slots": ["hands"], "maker": "handcraft" },
     { "name": "heat_ward", "answers": "heat", "slots": ["head", "top"], "maker": "tailoring" }
   ],
   "piece_full_note": "Stand-in: a worn effect's full strength by tier (legendary, 1000 permille); work follows wear_effect_max_pct's rise, the rest are guesses sized so a band's best set reaches its ceiling.",
@@ -116,7 +117,7 @@
       "length_gh": 9,
       "timer_gh": 8.6,
       "by": "move",
-      "witness": { "pieces": ["feet.t4.uncommon.ice_grip.master"], "dishes": [] }
+      "witness": { "pieces": ["hands.t4.uncommon.ice_grip.master"], "dishes": [] }
     },
     {
       "id": "dune-sea",
