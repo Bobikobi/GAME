@@ -56,7 +56,7 @@ function info(c){const C=el('div','col');C.style.flex='1';const g=c.gates||{};
    C.appendChild(Object.assign(el('div','gates'),{innerHTML:
    '<b>a feet</b><span class="'+(g.gate_a==='PASS'?'pass':'fail')+'">spread '+g.a_raw_spread+' px raw, '+g.a_spread_after+' after re-snap, bob '+g.a_bob_px+' px: '+g.gate_a+'</span>'+
    '<b>b identity</b><span class="'+(g.gate_b==='PASS'?'pass':'fail')+'">worst frame '+g.b_identity_max+' (mean '+g.b_identity_mean+'): '+g.gate_b+'</span>'+
-   '<b>c size</b><span class="'+(g.gate_c==='PASS'?'pass':'fail')+'">stance '+g.c_stance_height+' px, lowest '+g.c_lowest_height+' px, upright off by '+g.c_upright_dev_max+' px: '+g.gate_c+'</span>'+
+   '<b>c size</b><span class="'+(g.gate_c==='PASS'?'pass':'fail')+'">stance '+g.c_stance_height+' px, lowest '+g.c_lowest_height+', highest '+g.c_highest_height+' px, upright off by '+g.c_upright_dev_max+' px: '+g.gate_c+'</span>'+
    '<b>d eye</b><span>planted foot '+yn(e.planted_foot)+', weight with foot '+yn(e.weight_with_foot)+', identity '+yn(e.identity)+'</span>'+
    '<b>e loop</b><span class="'+(g.gate_e==='PASS'?'pass':g.gate_e==='FAIL'?'fail':'dim')+'">'+(g.gate_e==='n/a'?'not a loop':'close '+g.e_close+' vs largest step '+g.e_step_max+': '+g.gate_e)+'</span>'+
    '<b>f drawn</b><span>'+(c.effects||(c.flags_for_the_eye&&c.flags_for_the_eye.length?'frames flagged for the eye: '+c.flags_for_the_eye.map(f=>f.frame).join(', '):'nothing flagged'))+'</span>'+

@@ -78,6 +78,11 @@ def main():
         check("f: a detached blob is flagged for the eye", [f["frame"] for f in m["f_flags"]] == [1])
         _, m = gates.run([figure(), figure(blob=(20, 100)), figure()], ref, effect=[1])
         check("f: an effect frame is declared and left out of c", m["effect_frames"] == [1])
+        sl = [figure(), figure(x0=59), figure(x0=45), figure()]
+        _, m = gates.run(sl, ref)
+        check("feet edges read a figure that translated 9 px", m["aid_foot_edges"][1][0] - m["aid_foot_edges"][0][0] == 9)
+        _, m = gates.run(sl, ref, anchor_x=True)
+        check("anchor_x pins the feet midpoint to frame 0 by whole pixels", len({tuple(e) for e in m["aid_foot_edges"]}) == 1 and m["aid_x_shifts"] == [0, -9, 5, 0])
         sn = gates.snap(figure(colour=(250, 250, 250)), ref.race_palette)
         check("snap: every opaque pixel lands on a kept colour", {tuple(c) for c in sn[..., :3][sn[..., 3] > 0]} <= {tuple(c) for c in ref.race_palette})
         # the CLI end to end, the verdict guard, the manifest

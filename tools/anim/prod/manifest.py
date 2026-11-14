@@ -6,7 +6,7 @@ One row per clip: race, motion, view, route, variant, frames, ms, loops, the gat
 import argparse, json
 from pathlib import Path
 
-KEYS = ["a_raw_spread", "a_spread_after", "a_bob_px", "b_identity_max", "b_identity_mean", "c_stance_height", "c_lowest_height", "c_upright_dev_max",
+KEYS = ["a_raw_spread", "a_spread_after", "a_bob_px", "b_identity_max", "b_identity_mean", "c_stance_height", "c_lowest_height", "c_highest_height", "c_upright_dev_max",
         "e_close", "e_step_max", "gate_a", "gate_b", "gate_c", "gate_e"]
 
 

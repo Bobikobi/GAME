@@ -104,6 +104,14 @@ def lowest_x(a):
     return round(float(np.where(m[r - 1:r + 1].any(0))[0].mean()), 1)
 
 
+def foot_edges(a, band=14):
+    """Left and right x of the opaque pixels in the lowest `band` rows: where the toes and the heel stand. A planted foot keeps its edge until it lifts."""
+    m = a[..., 3] > 0
+    r = np.where(m.any(1))[0][-1]
+    xs = np.where(m[max(0, r - band + 1):r + 1].any(0))[0]
+    return [int(xs[0]), int(xs[-1])]
+
+
 def shift_rows(a, s):
     y = np.roll(a, s, axis=0)
     if s > 0:
@@ -146,7 +154,7 @@ def mad(a, b):
     return float(np.abs(a.astype(float) - b.astype(float)).mean())
 
 
-def run(frames, ref, *, air=(), bend=(), loop=False, loop_from=0, no_resnap=False, key_range=None, effect=()):
+def run(frames, ref, *, air=(), bend=(), loop=False, loop_from=0, no_resnap=False, key_range=None, effect=(), anchor_x=False):
     """frames: list of RGBA arrays. Returns (delivered frames, measures dict)."""
     air, effect = set(air), set(effect)
     bend = set(bend) - {0, len(frames) - 1}   # the first and last frame are always held to the stance
@@ -154,6 +162,16 @@ def run(frames, ref, *, air=(), bend=(), loop=False, loop_from=0, no_resnap=Fals
     low = [extent(x)[1] for x in sn]
     shifts = [0 if (i in air or no_resnap) else ref.ground - low[i] for i in range(len(sn))]
     fr = [shift_rows(x, s) for x, s in zip(sn, shifts)]
+    xshift = [0] * len(fr)
+    if anchor_x:   # the whole figure translates between kept key frames: pin the feet band's midpoint to frame 0's, by whole pixels
+        mid = lambda x: sum(foot_edges(x)) / 2
+        target = mid(fr[0])
+        for i, x in enumerate(fr):
+            xshift[i] = 0 if i in air else int(round(target - mid(x)))
+        fr = [np.roll(x, d, axis=1) if d else x for x, d in zip(fr, xshift)]
+        for i, d in enumerate(xshift):
+            if d:   # nothing may wrap or leave the frame
+                assert (fr[i][:, :max(d, 0)][..., 3] == 0).all() and (fr[i][:, 128 + min(d, 0):][..., 3] == 0).all(), f"frame {i}: the x anchor pushed the figure out of the frame"
     ext = [extent(x) for x in fr]
     heights = [e[1] - e[0] + 1 for e in ext]
     grounded = [i for i in range(len(fr)) if i not in air]
@@ -172,9 +190,9 @@ def run(frames, ref, *, air=(), bend=(), loop=False, loop_from=0, no_resnap=Fals
         "a_raw_low_rows": low, "a_raw_spread": raw_spread, "a_shifts": shifts, "a_bob_px": bob,
         "a_spread_after": spread_after,
         "b_identity_per_frame": ids, "b_identity_max": max(idv), "b_identity_mean": round(sum(idv) / len(idv), 1),
-        "c_heights": heights, "c_stance_height": ref.stand_h, "c_lowest_height": min(heights),
+        "c_heights": heights, "c_stance_height": ref.stand_h, "c_lowest_height": min(heights), "c_highest_height": max(heights),
         "c_upright_dev_max": max(dev) if dev else 0, "c_ends_dev_max": max([dev[upright.index(i)] for i in ends], default=0),
-        "aid_lowest_x": [lowest_x(x) for x in fr], "aid_centre_x": [round((e[2] + e[3]) / 2, 1) for e in ext],
+        "aid_lowest_x": [lowest_x(x) for x in fr], "aid_foot_edges": [foot_edges(x) for x in fr], "aid_x_shifts": xshift, "aid_centre_x": [round((e[2] + e[3]) / 2, 1) for e in ext],
         "aid_ink_share": [ink_share(x) for x in fr], "aid_kept_ink_share": ref.ink,
         "aid_area_ratio": [round(float((x[..., 3] > 0).sum() / ref.stance_area), 2) for x in fr],
     }
