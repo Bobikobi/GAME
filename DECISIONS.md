@@ -4428,3 +4428,9 @@ The address `GAME_SERVER_ORIGIN` is a repository secret; the hourly refresh (loo
 **Not built, not measured:** weapons, techniques (a refused stub), noise, loot collection, the server's call. The tick copies every player's whole state each tick: measure it with a full chunk before the server calls it. One bare-hand strike in the weak window takes the wolf's whole 16 health: a balance question for the combat stage.
 **Tree:** serves the future Strike and Guard schools (PROGRESSION 4.2); no node, technique or growth effect is added. **Model:** GPT-6.1 Sol at medium effort on Codex Cloud (the build), Claude Fable 5.2 (the manager's review and the standing-foe ruling).
 **Retry when:** the manager wires the authoritative server tick and designs the first combat nodes, weapons and loot collection. **Link:** public issue #549, pull request #711.
+
+## 2026-11-14 ✅ The fight's tick copies only what it changes
+**What:** issue #549's tick-cost follow-up preserves all 3,000 golden worlds/events; C4 before → after: busy 20/200 medians 3589.57/160384.23 → 178.84/253.28 µs (44.681× → 1.416×), idle 200 median 153305.01 → 36.15 µs. Full tables and workload: `kernel/bench/fight-cost.md`.
+**Chosen:** copy live records and State branches on first write; rank only acting/nearby players, reuse unchanged ending order and index safety per tick. A foe fall still writes all accounts' node clocks; existing hurt/bell State copies remain. No result, rule, param, event, dependency or KERNEL_VERSION changes.
+**Tree:** none: simulation cost changes and nothing a player can grow in changes. **Model:** GPT-6 (Codex); the runtime does not expose the reasoning-effort setting.
+**Retry when:** the server wires this tick, chunk population or the account shape grows, or a new write path reaches a shared branch. **Link:** public issue #549; baseline PR #711; `kernel/test/fixtures/fight-golden.json`.

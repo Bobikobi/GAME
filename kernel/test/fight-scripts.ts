@@ -21,7 +21,7 @@ export function fightArena(base: Bundle): Bundle {
 
 /**
  * Play an account into a full bag and a history of gathering and quests. The arena
- * places 36 ordinary fallen-log nodes together, then herbs/reeds/berries/stones.
+ * places ordinary herb/reed/berry/stone nodes together, then 36 fallen logs.
  * Start supplies the legacy forager's basket and axe. Dropping each log keeps room
  * for the next; the real 180 s refill leaves all 36 logs resting after this walk.
  * Normal automatic quest accounting finishes first-pickings and opens the bridge.
@@ -48,12 +48,12 @@ export function playedState(b: Bundle, seed: number, at: [number, number]): Stat
     act({ t: 'gather', node, grade: 3, at });
   }
   // Empty one place, work 36 distinct log nodes, then retrieve the herbs.
-  act({ t: 'drop', item: 'core/herb', qty: s.player.bag['core/herb']! });
+  act({ t: 'drop', item: 'core/herb', qty: s.player.bag['core/herb']!, at });
   for (let i = 0; i < 36; i++) {
     const node = `core/fallen-logs#bench-${i}`;
     prep.instances[node] = { source: 'core/fallen-logs', kind: 'resource', x: at[0], y: at[1] };
     act({ t: 'gather', node, grade: 3, at });
-    act({ t: 'drop', item: 'core/log', qty: 1 });
+    act({ t: 'drop', item: 'core/log', qty: 1, at });
   }
   act({ t: 'pickup', item: 'core/herb', at });
   if (Object.values(s.nodes).filter((n) => n.readyAt > s.tick).length < 36
