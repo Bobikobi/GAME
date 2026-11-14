@@ -4430,4 +4430,4 @@ The address `GAME_SERVER_ORIGIN` is a repository secret; the hourly refresh (loo
 **Tree:** none: a wear place is added and nothing a player can grow in changes.
 **Model:** GPT-6 (Codex); reasoning effort is not exposed by this runtime.
 **Retry when:** the first glove or place-condition reader is built.
-**Link:** issue #710, item 3; pull request link added when opened.
+**Link:** [PR #714](https://github.com/Bobikobi/GAME/pull/714), issue #710 item 3.
