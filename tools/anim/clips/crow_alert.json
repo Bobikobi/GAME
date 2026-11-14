@@ -1,0 +1,30 @@
+{
+  "about": "The crow on alert (HUNTING 2, ALERT): standing tall with the head up, then a tail flick with the head turned a little. Two poses of the body's own Alert (a bird's idle budget), played by time while the state lasts.",
+  "target": "crow",
+  "base": {
+    "library": "self:crow",
+    "action": "Alert"
+  },
+  "frames": {
+    "even": 2
+  },
+  "ms": [
+    900,
+    300
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

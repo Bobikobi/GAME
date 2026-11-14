@@ -1,0 +1,30 @@
+{
+  "about": "The crow pecking at the ground (HUNTING 2, GRAZE): tipped forward with the beak on the ground, then the head part way back up. Two poses of the body's own Peck, played by time.",
+  "target": "crow",
+  "base": {
+    "library": "self:crow",
+    "action": "Peck"
+  },
+  "frames": {
+    "even": 2
+  },
+  "ms": [
+    250,
+    350
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

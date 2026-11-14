@@ -1,0 +1,29 @@
+{
+  "about": "The crow lying still on its side after a take (HUNTING 10): the wings closed, the legs tucked back, no blood, nothing moving. One pose, a still (`even` needs two or more, so a one-frame list); the take's fade is the client fading this pose out, not a clip.",
+  "target": "crow",
+  "base": {
+    "library": "self:crow",
+    "action": "Lie"
+  },
+  "frames": [
+    0
+  ],
+  "ms": [
+    1000
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
