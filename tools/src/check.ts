@@ -614,8 +614,8 @@ function checkWear(b: Bundle): Issue[] {
       if (it.kind !== 'tool') err(it.file, `${where}.wear.slot`, 'the hand holds a tool: an item of kind "tool"');
     } else if (w.slot === 'jewelry') {
       if (base !== 'jewelry') err(it.file, `${where}.wear.slot`, 'the jewelry places take items of class "jewelry"');
-    } else if (base !== 'garment') {
-      err(it.file, `${where}.wear.slot`, `the ${w.slot} takes items of class "garment"`);
+    } else if (base !== 'garment' || (w.slot === 'hands' && it.kind === 'tool')) {
+      err(it.file, `${where}.wear.slot`, `the ${w.slot} ${w.slot === 'hands' ? 'take' : 'takes'} items of class "garment"`);
     }
     // a bag on the back gives places, and a frame bag a weight bonus (DECISIONS.md, 2026-10-23)
     if ((w.places !== undefined || w.load_bonus !== undefined) && (w.slot !== 'back' || w.look)) {

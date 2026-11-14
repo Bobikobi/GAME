@@ -4422,3 +4422,12 @@ The address `GAME_SERVER_ORIGIN` is a repository secret; the hourly refresh (loo
 **Chosen:** stay on Phaser and TypeScript with the shared integer kernel, and take methods, each rebuilt in our own code at its own stage: the see-through of a crown the figure stands behind (STYLE 1b, open since 2026-10-26), animation transition rules and frame events as data, borders bent by a warp before they are classified, a music transition table on the beat grid, a weighted scatter brush, a particle table per kind, route smoothing on the client, parent states for the creature brain. MIT code may be translated with a credit line; a GPL shader may not enter.
 **Not checked:** the 4.7.2 web export's size, the plugins' own source, C# on the web.
 **Retry when:** a need appears that Phaser cannot carry (none of the twelve today), or one engine for both doors becomes worth a rewrite of the client. **Model:** Claude Sonnet 5.5 (the study), Claude Fable 5.2 (the manager's ruling). **Link:** none; the study's notes are not in this repository.
+
+
+## 2026-11-14 ✅ The tenth wear place is built: hands, and ice_grip lives there
+**What:** the owner's 12.11 pick adds the garment place `hands` after `feet`; the held `hand` remains a tool place.
+**Chosen:** gloves use the existing worn effects and save adapter; `ice_grip` moves from feet to hands. No content piece or param is added.
+**Tree:** none: a wear place is added and nothing a player can grow in changes.
+**Model:** GPT-6 (Codex); reasoning effort is not exposed by this runtime.
+**Retry when:** the first glove or place-condition reader is built.
+**Link:** issue #710, item 3; pull request link added when opened.

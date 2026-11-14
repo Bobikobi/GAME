@@ -151,10 +151,10 @@ export const Output = Type.Object(
  * The slots an item names: jewelry takes either of two places on the character, an outfit takes the top and the legs,
  * and the back holds one bag or one quiver (DECISIONS.md, 2026-10-23: races, weight and bags).
  */
-export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry', 'hand', 'back'] as const;
+export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'hands', 'jewelry', 'hand', 'back'] as const;
 export const WornSlot = Type.Union(WORN_SLOTS.map((k) => Type.Literal(k)), {
   description:
-    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).',
+    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, hands (gloves), jewelry (two places), hand (a tool) or back (one bag or one quiver).',
 });
 
 /** The effects a worn item may carry: rates of work, never the output of a craft (rule R9). Every one is in EFFECTS too. */
@@ -165,7 +165,7 @@ export const WornEffect = Type.Union(WORN_EFFECTS.map((k) => Type.Literal(k)), {
 
 /**
  * The garment traits (BODY_CLOCKS 6.1): what a piece is worn against, each on the places the table names.
- * `ice_grip` sits on the feet only while no hands place exists (CLOTHING question 1).
+ * `ice_grip` sits on hands, the glove place (the owner's pick, 2026-11-12).
  */
 export const TRAITS = ['cold_proof', 'snow_shod', 'storm_proof', 'ice_grip', 'heat_ward'] as const;
 export const GarmentTrait = Type.Union(TRAITS.map((k) => Type.Literal(k)), {
@@ -175,7 +175,7 @@ export const TRAIT_SLOTS: Readonly<Record<(typeof TRAITS)[number], readonly (typ
   cold_proof: ['top', 'back', 'head'],
   snow_shod: ['feet'],
   storm_proof: ['back', 'top'],
-  ice_grip: ['feet'],
+  ice_grip: ['hands'],
   heat_ward: ['head', 'top'],
 };
 

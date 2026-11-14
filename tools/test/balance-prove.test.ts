@@ -127,6 +127,15 @@ describe('rarity (5.7)', () => {
 });
 
 describe('walls (BODY_CLOCKS 5-7)', () => {
+  it('finding 5 closes: hands ice grip and feet snow shod answer every condition pair', () => {
+    expect(cat.pieces.find((p) => p.id === 'hands.t4.uncommon.ice_grip.master')?.trait).toBe('ice_grip');
+    expect(cat.pieces.filter((p) => p.trait === 'ice_grip').every((p) => p.slot === 'hands')).toBe(true);
+    expect(cat.pieces.some((p) => p.slot === 'feet' && p.trait === 'snow_shod')).toBe(true);
+    expect(fixture.rows.find((r) => r.id === 'condition_pairs')).toMatchObject({
+      status: 'pass', detail: 'the top band answers every pair of conditions at the top grade',
+    });
+  });
+
   it('every stand-in wall has a witness that passes, and nothing two bands below passes', () => {
     for (const w of cat.walls) {
       expect(status(fixture, `wall_witness_required:${w.id}`), w.id).toBe('pass');

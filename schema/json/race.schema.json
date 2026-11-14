@@ -450,7 +450,7 @@
             ],
             "properties": {
               "slot": {
-                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, hands (gloves), jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                 "anyOf": [
                   {
                     "const": "head",
@@ -470,6 +470,10 @@
                   },
                   {
                     "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hands",
                     "type": "string"
                   },
                   {

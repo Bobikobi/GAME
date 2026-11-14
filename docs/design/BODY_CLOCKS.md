@@ -140,7 +140,7 @@ No meter, no slow fill and empty, no "warm" state carried out of the place: the 
 | `cold_proof` | `frost` | top, back, head | Tailoring (wool, fur), Leatherwork (lined hide) | wool from the farm, fur from Hunting |
 | `snow_shod` | `deep_snow` | feet | Woodcraft (snowshoes), Leatherwork (high boots) | ash and gut, hide |
 | `storm_proof` | `storm` | back, top | Tailoring (oiled cloth), Leatherwork (waxed hide) | linen and oil, hide and wax |
-| `ice_grip` | `ice` | feet, hands (crampons on the feet, claws in the hands) | Handcraft's Stonework (stone studs, tiers 1-2), Smithing (iron cleats, tier 3 and up; city only, decision 51) | stone, iron |
+| `ice_grip` | `ice` | hands (claws in the hands) | Handcraft's Stonework (stone studs, tiers 1-2), Smithing (iron cleats, tier 3 and up; city only, decision 51) | stone, iron |
 | `heat_ward` | `heat` | head, top | Tailoring (light cloth, a wide hat) | linen, reed |
 
 ### 6.2 Strength by tier

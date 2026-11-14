@@ -514,7 +514,7 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   stations, one tier per station step, every action inside the action cap.
   The journal shows the question, not the whole chain (G3).
 - **G44 Worn things help work, a little.** A hat, a top, trousers or one full
-  outfit, shoes, two pieces of jewelry and the tool in hand. Each gives a
+  outfit, shoes, gloves, two pieces of jewelry and the tool in hand. Each gives a
   small bonus to gathering or crafting from the closed list of effects, a full
   set a little more, all through the one calculator under the level's power
   cap; nothing raises the output of a craft (R9). A look layer sits on the
@@ -750,7 +750,7 @@ test stays with the checklist above.
 | G45 | A class that is neither a base class nor declared under one; a metal item or a class under metal; a recipe template that fits nothing, has no class input, or fits more than `template_max_recipes` combinations. | error |
 | G39 | The premium marker on anything but a look item with no effect, or on a look that nothing in the game gives. | error |
 | G40 | A craft chance that rises with the tier; a miss worth as much as a success. The kernel keeps part of the inputs on every miss and makes nothing else. | error |
-| G44 | A garment or jewelry piece that is not worn, or worn outside its places; the hand for anything but a tool; an effect over its tier's cap or named twice; a look with effects or a set; a set of one piece, of another creator, or that cannot be worn whole; a cap on worn effects that falls with the tier. | error |
+| G44 | A garment or jewelry piece that is not worn, or worn outside its places; the hands for anything but a garment (gloves), the hand for anything but a tool; an effect over its tier's cap or named twice; a look with effects or a set; a set of one piece, of another creator, or that cannot be worn whole; a cap on worn effects that falls with the tier. | error |
 
 Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats, a `find` may name what
 only digging gives or what one timed plant gives (P-3), and G8 checks each

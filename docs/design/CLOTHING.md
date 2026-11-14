@@ -33,6 +33,8 @@ The schema names eight places (`jewelry` covers two; schema/src/index.ts:153) an
 
 The proposal (question 1, default A): a tenth place, `hands`, a garment place labelled "Gloves", beside the held `hand`. Gloves are clothing (worn effects, a trait, never wear); the hand keeps the tool. It costs one entry in `WORN_SLOTS`, `WEAR_SLOTS`, `SLOTS_OF` and `SLOT_LABEL`, and one kernel version step; a save needs no change (the worn record is keyed by place). Under A the rules pull request adds gloves to G44's list and a DECISIONS line records the tenth place (conflict 8). The equipment foundations pull request lists `ice_grip` on the feet only; the feet are the start under every answer, and the hands join with the place (conflict 17). No gloves are built in this wave.
 
+Built 14.11: answer A adds `hands` (Gloves), and `ice_grip` lives there (PR number added when opened).
+
 ## 3. Classes and families
 
 | Class (proposed unless marked) | Base | What it is | Item families | In this wave |
