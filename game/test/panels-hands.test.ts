@@ -53,6 +53,8 @@ test('the kit renders ten work and look rows in WEAR_SLOTS order, with Gloves af
   const check = () => {
     const rows = elements(root!).filter((el) => el.props.class === 'worn-row');
     expect(rows).toHaveLength(10);
+    const sides = elements(root!).filter((el) => el.props.class === 'worn-slots');
+    expect(sides.map((side) => side.children.length)).toEqual([5, 5]);
     expect(rows.map((row) => text(row.children[0] as Element))).toEqual(WEAR_SLOTS.map((slot) => labels[slot]));
     expect(text(rows[5]!.children[0] as Element)).toBe('Gloves');
     expect(rows.every((row) => text(row.children[1] as Element) === 'Empty')).toBe(true);

@@ -332,9 +332,9 @@ export function openBag(ui: UI): void {
       h(
         'div',
         { class: 'worn-stage' },
-        h('div', { class: 'worn-slots' }, slots.slice(0, 4).map((slot) => slotButton(slot, true))),
+        h('div', { class: 'worn-slots' }, slots.slice(0, 5).map((slot) => slotButton(slot, true))),
         h('div', { class: 'worn-figure' }, figure()),
-        h('div', { class: 'worn-slots' }, slots.slice(4).map((slot) => slotButton(slot, true))),
+        h('div', { class: 'worn-slots' }, slots.slice(5).map((slot) => slotButton(slot, true))),
         toggle(),
       ),
       h(
