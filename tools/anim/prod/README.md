@@ -24,7 +24,7 @@ job and the measure of identity, size and ground row. Run `python3 tools/anim/pr
 5. **Eye.** `sheet.py` makes a numbered contact sheet beside the kept stance. Three yes or no per clip: the planted foot stays on its spot until it lifts;
    the weight moves with the planted foot; identity holds. `verdict.py` writes them and refuses "PASS (eye)" unless all are yes and no gate failed.
    Snapping to the palette hides a swoosh (white turns bone-coloured), so `clip.json` flags detached components and area spikes: look at those frames.
-6. **Manifest and page.** `manifest.py` collects every clip (and the motions parked without a clip) into `manifest.json`; `buildpage.py` builds the one-screen
+6. **Manifest and page.** `manifest.py SET OUT --parked parked.json --ledger ledger.jsonl` collects every clip (and the motions parked without a clip) into `manifest.json`, with the spend (the fall of the server balance from the first run's `before` to the last run's `after`; a clip's own `generations` is an estimate by the cost rule, so the clips' sum can differ from the spend); `buildpage.py` builds the one-screen
    moving page. The halo is the page's own layer behind the figure, with a switch: black for the skeleton from the owner GIFs' measured rule, white for the elf with
    the same numbers (borrowed, not judged), none for the human.
 
@@ -35,6 +35,13 @@ job and the measure of identity, size and ground row. Run `python3 tools/anim/pr
 (d) the eye, above. (e) a loop (guard, fell, quarry, fish, pickup): mean absolute difference last > first no larger than the largest step between neighbours.
 (f) nothing drawn that the figure does not own: in a work motion such a frame is dropped or made again; in a fight motion a flash is written in the manifest's effects.
 A clip gets three tries; then it is parked with its reason.
+
+## What the first full run showed (14.11, 284 of the 600 generations)
+
+Front and back views: a motion that stays in the figure's own column (pick-up, fell, quarry, fish, hit, dodge) reads in one 8 frame stance-to-stance job.
+A punch toward or away from the viewer does not (the arm goes overhead or a fist is drawn the size of the torso), and a guard from the front or back
+often draws the hands overhead or the figure taller. Those cells are parked with their frames kept as FAIL rows. Any single job costs 2 generations (8 frames);
+the dearer lines in the ledger are runs of many jobs side by side.
 
 ## Known trap
 

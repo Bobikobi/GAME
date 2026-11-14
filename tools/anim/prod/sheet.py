@@ -16,7 +16,7 @@ def main(argv=None):
     ap.add_argument("--crop", default="20,12,108,124"); ap.add_argument("--bg", default="70,96,58")
     a = ap.parse_args(argv)
     x0, y0, x1, y1 = [int(v) for v in a.crop.split(",")]
-    files = sorted(glob.glob(str(Path(a.clip) / "f[0-9]*.png")))
+    files = sorted(glob.glob(str(Path(a.clip) / "f[0-9]*.png"))) or sorted(glob.glob(str(Path(a.clip) / "*.png")))
     cells = ([("kept", a.kept_stance)] if a.kept_stance else []) + [(str(i), f) for i, f in enumerate(files)]
     w, h = (x1 - x0) * a.zoom, (y1 - y0) * a.zoom
     rows = -(-len(cells) // a.cols)

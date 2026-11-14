@@ -34,7 +34,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("set"); ap.add_argument("manifest"); ap.add_argument("kept"); ap.add_argument("out"); ap.add_argument("--halo-json", default="")
     a = ap.parse_args(argv)
-    man = json.loads(Path(a.manifest).read_text())["rows"]
+    mj = json.loads(Path(a.manifest).read_text())
+    man, spend = mj["rows"], mj.get("spend")
     halo = dict(DEFAULT_HALO)
     if a.halo_json and Path(a.halo_json).exists():
         h = json.loads(Path(a.halo_json).read_text()).get("rule_used_on_the_page", {})
@@ -52,7 +53,7 @@ def main(argv=None):
             p = Path(a.kept) / race / f"idle-{view}" / "f0.png"
             if p.exists():
                 stances[f"{race}/{view}"] = png64(gates.load(p))
-    html = (HERE / "page_template.html").read_text().replace("/*DATA*/", "const CLIPS=" + json.dumps(clips) + ";const STANCES=" + json.dumps(stances) + ";const HALO=" + json.dumps(halo) + ";")
+    html = (HERE / "page_template.html").read_text().replace("/*DATA*/", "const CLIPS=" + json.dumps(clips) + ";const STANCES=" + json.dumps(stances) + ";const HALO=" + json.dumps(halo) + ";const SPEND=" + json.dumps(spend) + ";")
     Path(a.out).write_text(html)
     print(a.out, len(html) // 1024, "KB,", len(clips), "rows")
 

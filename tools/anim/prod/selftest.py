@@ -102,6 +102,13 @@ def main():
         manifest.main([str(out), str(Path(tmp) / "m.json")])
         rows = json.loads((Path(tmp) / "m.json").read_text())["rows"]
         check("manifest has one row with the verdict and gates", len(rows) == 1 and rows[0]["verdict"] == "PASS (eye)" and rows[0]["gates"]["gate_a"] == "PASS")
+        led = Path(tmp) / "ledger.jsonl"
+        led.write_text("\n".join(json.dumps(r) for r in (
+            {"at": "2026-11-14T10:05:00", "before": 90.0, "after": 70.0, "server_spent": 20.0, "own_count": 5, "note": "later run"},
+            {"at": "2026-11-14T10:00:00", "before": 100.0, "after": 90.0, "server_spent": 10.0, "own_count": 4, "note": "first run"})) + "\n")
+        manifest.main([str(out), str(Path(tmp) / "m2.json"), "--ledger", str(led), "--cap", "50"])
+        sp = json.loads((Path(tmp) / "m2.json").read_text())["spend"]
+        check("manifest spend is first before minus last after, whatever the file order", sp["generations_spent"] == 30.0 and sp["cap"] == 50 and len(sp["runs_over_8_generations"]) == 2)
     print("selftest:", "FAILED %d" % check.bad if check.bad else "all passed")
     return 1 if check.bad else 0
 

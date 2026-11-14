@@ -3,6 +3,7 @@
 <title>Animation production</title>
 <style>
 :root{--bg:#14161a;--panel:#1d2025;--line:#2d3139;--ink:#e8e6df;--dim:#9aa0a8;--ok:#6fcf8a;--bad:#e6735f;--warn:#e0b24f;--acc:#7aa7ff}
+#spend{text-align:right;color:var(--dim);font-size:12px}
 *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font:13px/1.35 system-ui,Segoe UI,Roboto,sans-serif}
 #app{width:1440px;height:900px;margin:0 auto;display:flex;flex-direction:column;padding:10px 16px 8px;gap:6px}
 header{display:flex;align-items:center;gap:16px;height:30px}h1{font-size:16px;margin:0;font-weight:600}header .sp{flex:1}
@@ -19,7 +20,7 @@ main{flex:1;display:flex;gap:12px;min-height:0}
 .verdict{font-weight:600;font-size:14px}.note{color:var(--dim);font-size:12px}
 .strip{display:flex;gap:2px;flex-wrap:wrap;overflow:hidden}.strip canvas{border:1px solid var(--line);background:#2b3a26}
 </style></head><body><div id="app">
-<header><h1>Animation production: fight and work motions of the three races</h1><span class="sp"></span>
+<header><h1>Animation production: fight and work motions of the three races</h1><span class="sp" id="spend"></span>
 <label class="tg"><input type="checkbox" id="halo" checked> halo layer (skeleton black, elf white, human none; the page draws it, the frames never carry it)</label></header>
 <div class="row" id="r-race"></div><div class="row" id="r-view"></div><div class="row" id="r-motion"></div><div class="row" id="r-take"></div>
 <main id="main"></main></div>
@@ -52,6 +53,7 @@ function draw(){stop();buttons('#r-race',RACES,'race',x=>x[0].toUpperCase()+x.sl
   m.appendChild(info(c));stop=run(cv,cv2,c)}
 function info(c){const C=el('div','col');C.style.flex='1';const g=c.gates||{};
   C.appendChild(el('div','verdict '+cls(c.verdict),c.verdict||'unread'));
+  if(c.motion==='dodge')C.appendChild(el('div','note part','<b>New, not yet seen by the owner:</b> the duck dodge (the owner saw two earlier dodges and both failed).'));
   if(c.clip){const e=c.eye||{};const yn=v=>v===true?'yes':v===false?'NO':'n/a';
    C.appendChild(Object.assign(el('div','gates'),{innerHTML:
    '<b>a feet</b><span class="'+(g.gate_a==='PASS'?'pass':'fail')+'">spread '+g.a_raw_spread+' px raw, '+g.a_spread_after+' after re-snap, bob '+g.a_bob_px+' px: '+g.gate_a+'</span>'+
@@ -81,4 +83,5 @@ function run(cv,cv2,c){let alive=true;const ctx=cv.getContext('2d'),c2=cv2.getCo
     ctx.drawImage(f,0,0,384,384)}else{bg(ctx);ctx.fillStyle='#9aa0a8';ctx.font='14px sans-serif';ctx.fillText('no clip',150,190)}
    requestAnimationFrame(tick)})(0);return()=>{alive=false}}
 fix();draw();
+if(SPEND)$('#spend').textContent='PixelLab spend '+SPEND.generations_spent+' of '+SPEND.cap+' generations (server balance '+SPEND.start_balance+' to '+SPEND.end_balance+')';
 </script></body></html>
