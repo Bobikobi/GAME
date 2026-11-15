@@ -23940,6 +23940,108 @@
                         }
                       }
                     },
+                    "clip": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "race",
+                        "view",
+                        "verb",
+                        "frame_ms",
+                        "anchor"
+                      ],
+                      "properties": {
+                        "race": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "The race id the clip is drawn for, for example \"core/human\".",
+                          "type": "string"
+                        },
+                        "view": {
+                          "description": "left, front or back; the right side is the left one flipped.",
+                          "anyOf": [
+                            {
+                              "const": "left",
+                              "type": "string"
+                            },
+                            {
+                              "const": "front",
+                              "type": "string"
+                            },
+                            {
+                              "const": "back",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "verb": {
+                          "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup or dig.",
+                          "anyOf": [
+                            {
+                              "const": "strike",
+                              "type": "string"
+                            },
+                            {
+                              "const": "guard",
+                              "type": "string"
+                            },
+                            {
+                              "const": "dodge",
+                              "type": "string"
+                            },
+                            {
+                              "const": "hit",
+                              "type": "string"
+                            },
+                            {
+                              "const": "fell",
+                              "type": "string"
+                            },
+                            {
+                              "const": "quarry",
+                              "type": "string"
+                            },
+                            {
+                              "const": "fish",
+                              "type": "string"
+                            },
+                            {
+                              "const": "pickup",
+                              "type": "string"
+                            },
+                            {
+                              "const": "dig",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "frame_ms": {
+                          "minimum": 1,
+                          "maximum": 5000,
+                          "description": "How long each frame shows, in whole milliseconds: the clip's own speed.",
+                          "type": "integer"
+                        },
+                        "anchor": {
+                          "description": "The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body's feet.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      }
+                    },
                     "scale": {
                       "minimum": 0.1,
                       "maximum": 40,

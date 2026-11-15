@@ -22,7 +22,7 @@ import {
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type ClipInfo, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
 import { chunkProblems, levelsProblems } from './chunks';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems, startFinds } from './play';
@@ -36,7 +36,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; source?: { spec: string; manifest: string } }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; clip?: ClipInfo; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -298,6 +298,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const err = (f: Loaded | string, where: string, message: string) =>
     issues.push({ file: typeof f === 'string' ? f : toRepoPath(f.abs), where, message, level: 'error' });
 
+  const kitFiles: Record<string, string> = {};
   const items: Record<string, ItemInfo> = {};
   const classes: Record<string, ClassInfo> = {};
   const templates: TemplateDef[] = [];
@@ -388,6 +389,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     } else if (d.type === 'story') {
       // a story is the generator's input (tools/src/gen); the chunks it writes are the content, the story itself is not in the bundle
     } else if (d.type === 'kit') {
+      kitFiles[d.id] = toRepoPath(f.abs);
       kits[d.id] = {
         dir: dirname(f.abs),
         rel: toRepoPath(dirname(f.abs)),
@@ -402,6 +404,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
               ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
+              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number] } } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -422,7 +425,23 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const sprites: Record<string, SpriteInfo> = {};
   for (const [kitId, kit] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
-      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density, ...(s.stride ? { stride: s.stride } : {}) };
+      // `clip` rides on the entry for the client (game/src/clips.ts reads it); the kernel's SpriteInfo does not name it
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density, ...(s.stride ? { stride: s.stride } : {}), ...(s.clip ? { clip: s.clip } : {}) };
+    }
+  }
+
+  // a clip is found by verb + race + view (game/src/clips.ts): two sheets for one lookup would leave the figure to guess, and a race that is not one plays nothing
+  const clipAt = new Map<string, string>();
+  for (const [kitId, kit] of Object.entries(kits)) {
+    for (const [name, s] of Object.entries(kit.sprites)) {
+      if (!s.clip) continue;
+      const where = `kit.sprites.${name}.clip`;
+      const file = kitFiles[kitId]!;
+      if (!records.races[s.clip.race]) issues.push({ file, where: `${where}.race`, message: `"${s.clip.race}" is not a race`, level: 'error' });
+      const lookup = `${s.clip.verb} ${s.clip.race} ${s.clip.view}`;
+      const other = clipAt.get(lookup);
+      if (other) issues.push({ file, where, message: `${other} already plays ${lookup}: a clip is one sheet for one verb, race and view`, level: 'error' });
+      else clipAt.set(lookup, `${kitId}:${name}`);
     }
   }
 

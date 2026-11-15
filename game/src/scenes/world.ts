@@ -93,6 +93,7 @@ import { FishingView } from './fishing-view';
 import type { FishPhase } from '../ui/games/shared';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import type { WorkKind } from '../ui/ui';
+import { ClipPlayer, VERB_OF_AUTO, VERB_OF_WORK, clipFor, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
@@ -529,6 +530,8 @@ export class WorldScene extends Phaser.Scene {
   private lanternFor: number | undefined;
   /** while the fall plays: no walking, and the player's sprite belongs to the animation */
   private falling = false;
+  /** the kit's clip under way on the player's figure (#742): while it plays it owns the frame shown, and the kernel knows nothing of it */
+  private readonly figure = new ClipPlayer();
   /** the "!" over a predator that has just seen the player */
   private bang!: Phaser.GameObjects.Image;
   /** the ground a drawn wolf runs on, and the mends and camp it was worked out for */
@@ -2153,6 +2156,7 @@ export class WorldScene extends Phaser.Scene {
     this.held.clear();
     this.look = session.facing;
     this.falling = false;
+    this.figure.stop();
     this.stoneHeld = false;
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
@@ -2173,6 +2177,7 @@ export class WorldScene extends Phaser.Scene {
       }),
       session.on('events', (events) => {
         this.biteDrawn(events);
+        this.fightClips(events);
         this.celebrate(events);
         for (const event of events) if (event.e === 'cue') this.playCue(event);
       }),
@@ -2220,7 +2225,9 @@ export class WorldScene extends Phaser.Scene {
     const st = info?.stride;
     // art px, down is positive: the bob is negative or zero
     const dy = !st
-      ? walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE)
+      ? (info as ClipSprite | undefined)?.clip
+        ? 0
+        : walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE)
       : st.bob === false
         ? 0
         : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000);
@@ -2299,6 +2306,44 @@ export class WorldScene extends Phaser.Scene {
     if (info?.stride) return this.faceFrame(undefined, poseFrame(this.body.walked, info.stride.travel_mpx / 1000, info.frames, this.paceMs));
     const walked = this.body.walked / ART_PX;
     this.faceFrame(strideFrame(walked % 1, Math.floor(walked), info?.frames ?? 1));
+  }
+
+  /**
+   * Plays the kit's clip for a verb on the player's figure, in the way it faces, at the clip's own frame time (clips.ts has the
+   * one rule for how long). True when the kit has one; with none the figure keeps today's walk sheet or code-drawn motion, and
+   * a clip still playing is dropped, so a verb with no art never shows the last one's.
+   */
+  private playClip(verb: ClipVerb, lasts?: number): boolean {
+    const s = this.session;
+    const race = s?.state.player.race;
+    if (!s || !race || this.falling) return false;
+    const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing);
+    if (!found) {
+      this.figure.stop();
+      return false;
+    }
+    this.figure.start(found, this.time.now, lasts);
+    this.drawClip(this.time.now);
+    return true;
+  }
+
+  /** The frame of the clip under way, drawn last in the frame so it wins over the stance, the blink and the work pose; a clip over puts the stance back. */
+  private drawClip(now: number): void {
+    if (!this.figure.active) return;
+    // a body that walks is no longer in the clip: the walk draws it
+    if (this.body.moving) return this.figure.stop();
+    const shown = this.figure.frameAt(now);
+    if (!shown) return this.faceFrame();
+    this.showPlayer(shown.found.key, shown.frame, shown.found.flip);
+  }
+
+  /** The player's figure answers each outcome of the fight (#726) with the clip of its kind: display only, the kernel has already told it. */
+  private fightClips(events: readonly GameEvent[]): void {
+    for (const e of events) {
+      if (!('striker' in e)) continue;
+      const verb = verbOfOutcome(e);
+      if (verb) this.playClip(verb);
+    }
   }
 
   /** The work pose: arm up (frame 0) or down on the thing (frame 1). Falls back to a bob when the art is missing. */
@@ -2487,6 +2532,7 @@ export class WorldScene extends Phaser.Scene {
     this.workTick(s);
     this.drawFishing(s, time);
     this.drawBusy(s, time);
+    this.drawClip(time);
     this.updatePrompt(s);
     this.haunt(s, time);
   }
@@ -2764,7 +2810,7 @@ export class WorldScene extends Phaser.Scene {
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: GameSession, time: number): void {
     if (this.falling) return;
-    const still = !this.body.moving && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
+    const still = !this.body.moving && !s.busy && !this.work && !this.auto && this.swingUntil === 0 && !this.figure.active;
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
@@ -3238,6 +3284,7 @@ export class WorldScene extends Phaser.Scene {
     this.work = { node: nodeId, kind };
     this.faceNode(s, nodeId);
     this.workFrame(true);
+    this.playClip(VERB_OF_WORK[kind]);
     this.swingUntil = this.time.now + 160;
     this.impact(nodeId, kind, grade);
   }
@@ -3250,6 +3297,7 @@ export class WorldScene extends Phaser.Scene {
     if (phase === 'cast' || phase === 'reel') {
       this.work = { node: nodeId, kind: 'fish' };
       this.workFrame(true);
+      this.playClip(VERB_OF_WORK.fish);
       this.swingUntil = this.time.now + 220;
     }
     this.fishing?.phase(nodeId, phase, this.time.now);
@@ -3512,6 +3560,7 @@ export class WorldScene extends Phaser.Scene {
     const s = this.session;
     if (!s) return;
     this.falling = true;
+    this.figure.stop();
     // work under way is not taken back: it is simply over (the session drops its undo)
     if (this.auto) this.endWork(this.auto);
     this.work = null;
@@ -3591,6 +3640,8 @@ export class WorldScene extends Phaser.Scene {
     this.auto = { node: nodeId, kind, start: s.tick, ms: busy.ms, hits: 0, facing: s.facing, underfoot, onDone: solved ? undefined : onDone };
     this.held.add(nodeId);
     this.workFrame(false);
+    // the kernel's `busy` ms is how long the work lasts: a clip loops until then and is cut there, never the other way round
+    this.playClip(VERB_OF_AUTO[kind], busy.ms);
   }
 
   /** Drops the work under way, if any, before a panel reads the state. */
@@ -3629,6 +3680,7 @@ export class WorldScene extends Phaser.Scene {
 
   private endWork(w: Auto): void {
     this.auto = null;
+    this.figure.stop();
     this.busyMs = 0;
     this.held.delete(w.node);
     const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
