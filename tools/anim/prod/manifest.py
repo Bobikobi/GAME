@@ -9,8 +9,20 @@ One row per clip: race, motion, view, route, variant, frames, ms, loops, the gat
 import argparse, json
 from pathlib import Path
 
+MOVES = json.loads((Path(__file__).resolve().parent / "moves.json").read_text())
+
 KEYS = ["a_raw_spread", "a_spread_after", "a_bob_px", "b_identity_max", "b_identity_mean", "c_stance_height", "c_lowest_height", "c_highest_height", "c_upright_dev_max",
         "e_close", "e_step_max", "gate_a", "gate_b", "gate_c", "gate_e"]
+
+
+def what_it_is(motion, variant):
+    """(weapon family, move id) of a clip: the moves table keyed `motion/variant`, then `motion`; a motion not in the table has no move (`""`)."""
+    mv = None
+    if variant:
+        mv = MOVES["moves"].get(f"{motion}/{variant}", MOVES["moves"].get(f"{motion}/{variant.split('-')[0]}"))
+    if mv is None:
+        mv = MOVES["moves"].get(motion, "")
+    return MOVES["weapon_family"], mv
 
 
 def row(d, m):
@@ -18,6 +30,7 @@ def row(d, m):
     r = {"race": m["race"], "motion": m["motion"], "view": m["view"], "route": m["route"], "variant": m.get("variant", ""), "clip": f"{m['race']}/{d.name}",
          "frames": m["frames"], "ms_per_frame": m["ms"], "loops": bool(m.get("loops")), "gates": {k: m.get(k) for k in KEYS},
          "declared": {"bend": m.get("bend", []), "airborne": m.get("airborne", []), "effect_frames": m.get("effect_frames", [])},
+         "weapon_family": what_it_is(m["motion"], m.get("variant", ""))[0], "move": what_it_is(m["motion"], m.get("variant", ""))[1],
          "flags_for_the_eye": m.get("f_flags", []), "eye": m.get("eye"), "verdict": m.get("verdict", "unread"),
          "effects": m.get("effects", ""), "jobs": meta.get("jobs", []), "seeds": meta.get("seeds", []), "origin": meta.get("origin", ""),
          "generations": m.get("gens"), "tries": m.get("tries"), "note": m.get("note", ""), "parked": m.get("parked", "")}
@@ -40,14 +53,18 @@ def main(argv=None):
         rows.append(row(p.parent, json.loads(p.read_text())))
     if a.parked and Path(a.parked).exists():
         for x in json.loads(Path(a.parked).read_text()):
-            rows.append({"race": x["race"], "motion": x["motion"], "view": x["view"], "route": x.get("route", "P"), "variant": "", "clip": None, "verdict": x.get("verdict", "parked"),
+            rows.append({"race": x["race"], "motion": x["motion"], "view": x["view"], "route": x.get("route", "P"), "variant": "", "clip": None,
+                         "weapon_family": what_it_is(x["motion"], "")[0], "move": what_it_is(x["motion"], "")[1], "verdict": x.get("verdict", "parked"),
                          "parked": x.get("parked", ""), "note": x.get("stand_in", ""), "generations": x.get("gens")})
     out = {"rows": rows}
+    # fight rows and the felling takes must say which move they show; the ones with no id yet are listed
+    out["moves_none_yet"] = [f"{r['race']}/{r['motion']}-{r['view']}" + (f"-{r['variant']}" if r.get("variant") else "") for r in rows
+                             if r.get("move") == "none-yet" or (r["motion"] in MOVES["fight_motions"] and not r.get("move"))]
     if a.ledger and Path(a.ledger).exists():
         led = sorted((json.loads(l) for l in Path(a.ledger).read_text().splitlines() if l.strip()), key=lambda r: r["at"])
         out["spend"] = spend(led, a.cap)
     Path(a.out).write_text(json.dumps(out, indent=1))
-    print(a.out, len(rows), "rows")
+    print(a.out, len(rows), "rows,", len(out["moves_none_yet"]), "with no move id yet")
     if a.table:
         for r in rows:
             print(f"{r['race']:9} {r['motion']:7} {r['view']:6} {r['route']} {r['variant'] or '-':6} {r['verdict']}")
