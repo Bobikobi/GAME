@@ -11,7 +11,7 @@
  */
 import type { Bundle } from './bundle';
 import { dangerAt, isSafe } from './danger';
-import { type FightDef, type MoveDef, moveHarm, patternMoves } from './fightmath';
+import { type FightDef, type MoveDef, moveHarm, movePulseDurations, movePulseTimeline, patternMoves, pulseDurations } from './fightmath';
 import { breathRefillPermille, walkStepMs } from './load';
 import { assertInt, idiv, mulDiv, MILLI, PERCENT } from './num';
 import { attrAt, hpCap, type State } from './state';
@@ -146,7 +146,7 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     return w.creatures[id] = { ...f, cooldowns: { ...f.cooldowns }, engaged: [...f.engaged], away: { ...f.away }, hit: [...f.hit] };
   }
   const events: FightWorldEvent[] = [];
-  const c = bundle.params.combat;
+  const c = pulseDurations(bundle.params).combat;
   const ms = tick * bundle.params.wild.tick_ms;
   let ground = geometry.get(bundle);
   if (!ground) {
@@ -444,6 +444,7 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
   }
   // Derive foe phases before player damage so the recovery's first tick is already weak.
   function moveOf(f: FightCreature, def: FightDef): MoveDef | undefined { return def.moves.find((m) => m.id === f.move); }
+  const pulseMove = (m: MoveDef) => movePulseDurations(bundle.params, m);
   // dodgeSteps counts every step the dodge tried, blocked ones too, and the tile before the dodge is not kept. A dodge is
   // told only when it can be rebuilt for certain: the way ahead of the player is open (a dodge that stopped against an
   // obstacle cannot be told from one that never moved) and the tried steps replay from the rebuilt tile to the tile the
@@ -461,7 +462,8 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
   // leaves it, while a dodge that began as the move wound up is still the player's latest move and its tiles can be rebuilt.
   function resolve(fid: string, f: FightCreature, m: MoveDef): void {
     let met = f.hit.length > 0;
-    const activeSince = f.since + m.windup_t;
+    const timeline = movePulseTimeline(bundle.params, m);
+    const activeSince = f.since + timeline.active_since_t;
     for (const id of f.engaged) {
       if (f.hit.includes(id)) continue;
       const p = w.players[id];
@@ -471,7 +473,7 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
         met = true;
         continue;
       }
-      const overlapped = p.since <= activeSince + c.active_t - 1 && p.since + c.dodge_t > activeSince;
+      const overlapped = p.since <= f.since + timeline.recovery_since_t - 1 && p.since + c.dodge_t > activeSince;
       const origin = overlapped ? dodgeOrigin(p) : null;
       if (origin && !ahead(f.at, p.state.player.at, f.facing, m.reach) && ahead(f.at, origin, f.facing, m.reach)) {
         met = true;
@@ -492,9 +494,10 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
   function phase(f: FightCreature, def: FightDef): void {
     const m = moveOf(f, def);
     if (!m || f.phase === 'idle') return;
+    const mt = movePulseTimeline(bundle.params, m);
     const age = tick - f.since;
-    f.phase = age < m.windup_t ? 'windup' : age < m.windup_t + c.active_t ? 'active'
-      : age < m.windup_t + c.active_t + m.recover_t ? 'recovery' : 'idle';
+    f.phase = age < mt.active_since_t ? 'windup' : age < mt.recovery_since_t ? 'active'
+      : age < mt.idle_since_t ? 'recovery' : 'idle';
     if (f.phase === 'idle') f.move = null;
   }
   for (const [fid, f] of foes()) {
@@ -562,7 +565,7 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
         }
       } else if (tick >= due(f, m.id) && f.breath >= m.breath) {
         f.move = m.id; f.phase = 'windup'; f.since = tick; f.hit = [];
-        f.cooldowns[m.id] = tick + m.cooldown_t;
+        f.cooldowns[m.id] = tick + pulseMove(m).cooldown_t;
         f.cursor += 1;
         spend(f, m.breath, 'foe', fid);
       }
@@ -606,7 +609,7 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
   for (const fid in w.creatures) {
     const f = w.creatures[fid]!;
     const m = f.phase === 'active' && f.health > 0 ? moveOf(f, bundle.map.creatures!.kinds[f.kind]!.fight!) : undefined;
-    if (m && tick === f.since + m.windup_t + c.active_t - 1) resolving.push([fid, m]);
+    if (m && tick === f.since + movePulseTimeline(bundle.params, m).recovery_since_t - 1) resolving.push([fid, m]);
   }
   for (const [fid, m] of resolving.sort(([a], [b]) => textOrder(a, b))) resolve(fid, w.creatures[fid]!, m);
   finish();

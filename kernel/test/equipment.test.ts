@@ -78,7 +78,7 @@ describe('itemCategory', () => {
   });
 
   it('reads a look before a weapon and a weapon before a tool', () => {
-    const weapon = { tempo: 'standard' as const, windup_t: 4, reach: 1, harm: 100 };
+    const weapon = { tempo: 'standard' as const, windup_ms: 400, reach: 1, harm: 100 };
     const tool = { kind: 'staff' as const, tier: 1 };
     expect(itemCategory({ kind: 'tool', weapon })).toBe('weapon');
     expect(itemCategory({ kind: 'tool', tool, weapon })).toBe('weapon');

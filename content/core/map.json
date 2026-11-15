@@ -4343,20 +4343,20 @@
             "moves": [
               {
                 "id": "bite",
-                "windup_t": 5,
+                "windup_ms": 500,
                 "reach": 1,
                 "breath": 15,
-                "recover_t": 8,
-                "cooldown_t": 10
+                "recover_ms": 800,
+                "cooldown_ms": 1000
               },
               {
                 "id": "lunge",
-                "windup_t": 7,
+                "windup_ms": 700,
                 "reach": 2,
                 "harm_div": 4,
                 "breath": 20,
-                "recover_t": 10,
-                "cooldown_t": 40
+                "recover_ms": 1000,
+                "cooldown_ms": 4000
               }
             ],
             "patterns": [

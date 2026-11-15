@@ -308,13 +308,13 @@
             "type": "object",
             "required": [
               "tempo",
-              "windup_t",
+              "windup_ms",
               "reach",
               "harm"
             ],
             "properties": {
               "tempo": {
-                "description": "The swing, the hand's one cooldown: quick, standard or heavy, each a combat param in ticks (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.",
+                "description": "The swing, the hand's one cooldown: quick, standard or heavy, each a combat duration in milliseconds (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.",
                 "anyOf": [
                   {
                     "const": "quick",
@@ -330,10 +330,10 @@
                   }
                 ]
               },
-              "windup_t": {
-                "minimum": 2,
-                "maximum": 10,
-                "description": "Ticks from the press to the landing, inside the swing (WEAPONS 3).",
+              "windup_ms": {
+                "minimum": 200,
+                "maximum": 1000,
+                "description": "Game milliseconds from the press to the landing, inside the swing (WEAPONS 3).",
                 "type": "integer"
               },
               "reach": {
@@ -1712,21 +1712,21 @@
                             "type": "object",
                             "required": [
                               "id",
-                              "windup_t",
+                              "windup_ms",
                               "reach",
                               "breath",
-                              "recover_t",
-                              "cooldown_t"
+                              "recover_ms",
+                              "cooldown_ms"
                             ],
                             "properties": {
                               "id": {
                                 "pattern": "^[a-z][a-z0-9_-]{0,23}$",
                                 "type": "string"
                               },
-                              "windup_t": {
-                                "minimum": 1,
-                                "maximum": 20,
-                                "description": "Ticks the pose shows before the move lands. The check holds it to combat.windup_min_t and windup_max_t.",
+                              "windup_ms": {
+                                "minimum": 100,
+                                "maximum": 2000,
+                                "description": "Game milliseconds the pose shows before the move lands. The check holds it to combat.windup_min_ms and windup_max_ms.",
                                 "type": "integer"
                               },
                               "reach": {
@@ -1747,16 +1747,16 @@
                                 "description": "Breath the move costs the foe.",
                                 "type": "integer"
                               },
-                              "recover_t": {
-                                "minimum": 1,
-                                "maximum": 20,
-                                "description": "Ticks the foe stands open after the move; a strike that lands then does extra if this is the weak move.",
+                              "recover_ms": {
+                                "minimum": 100,
+                                "maximum": 2000,
+                                "description": "Game milliseconds the foe stands open after the move; a strike that lands then does extra if this is the weak move.",
                                 "type": "integer"
                               },
-                              "cooldown_t": {
+                              "cooldown_ms": {
                                 "minimum": 0,
-                                "maximum": 200,
-                                "description": "Ticks before the same move may start again.",
+                                "maximum": 20000,
+                                "description": "Game milliseconds before the same move may start again.",
                                 "type": "integer"
                               }
                             }

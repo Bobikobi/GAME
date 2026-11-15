@@ -202,11 +202,11 @@ export interface Params {
   hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; grade2_bp: number; grade3_bp: number };
   /**
    * The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1):
-   * the numbers every kind shares, its own character being the kind's `behaviour`. Ticks, think steps, tiles and game ms.
+   * the numbers every kind shares, its own character being the kind's `behaviour`. Durations are game ms.
    */
   wild: {
     tick_ms: number;
-    think_ticks: number;
+    think_ms: number;
     wake_tiles: number;
     awake_max: number;
     catchup_max_steps: number;
@@ -226,9 +226,9 @@ export interface Params {
     town_keep_night: number;
   };
   /**
-   * The fight (docs/design/COMBAT.md section 4.9): whole ticks of wild.tick_ms, points and tiles. Inert while `enabled` is 0 (G35).
+   * The fight (docs/design/COMBAT.md section 4.9): durations in game ms, points and tiles. The kernel derives pulses from wild.tick_ms. Inert while `enabled` is 0 (G35).
    */
-  combat: { enabled: number; swing_quick_t: number; swing_standard_t: number; swing_heavy_t: number; swing_floor_t: number; bare_windup_t: number; bare_base: number; windup_min_t: number; windup_max_t: number; active_t: number; rehit_t: number; bite_div: number; behind_permille: number; weak_permille: number; mercy_t: number; stun_t: number; knockback_tiles: number; dodge_tiles: number; dodge_t: number; dodge_cooldown_t: number; breath_base: number; breath_per_stamina: number; breath_refill: number; breath_hold_t: number; attack_breath: number; guard_drain: number; guard_hit_breath: number; dodge_breath: number; breath_stagger_t: number; guard_stagger_t: number; engage_tiles: number; leash_tiles: number; give_up_t: number; claim_lock_t: number; pay_per_s_mg: number };
+  combat: { enabled: number; swing_quick_ms: number; swing_standard_ms: number; swing_heavy_ms: number; swing_floor_ms: number; bare_windup_ms: number; bare_base: number; windup_min_ms: number; windup_max_ms: number; active_ms: number; rehit_ms: number; bite_div: number; behind_permille: number; weak_permille: number; mercy_ms: number; stun_ms: number; knockback_tiles: number; dodge_tiles: number; dodge_ms: number; dodge_cooldown_ms: number; breath_base: number; breath_per_stamina: number; breath_refill: number; breath_hold_ms: number; attack_breath: number; guard_drain: number; guard_hit_breath: number; dodge_breath: number; breath_stagger_ms: number; guard_stagger_ms: number; engage_tiles: number; leash_tiles: number; give_up_ms: number; claim_lock_ms: number; pay_per_s_mg: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };

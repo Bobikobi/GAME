@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   type Action, type Bundle, type FightInput, type FightWorld, type State, adaptState, fightCreature,
-  fightPlayer, fightTick, hashOf, hpCap, lastBellAt, makeWalkable, migrateState, newState, step, visitNight,
+  fightPlayer, fightTick, hashOf, hpCap, lastBellAt, makeWalkable, migrateState, newState, pulseDurations, step, visitNight,
 } from '@game/kernel';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -9,6 +9,7 @@ let base: Bundle;
 beforeAll(() => { base = loadBundle(); });
 const PLAYER = 'account/a';
 const FOE = 'core/bank-wolf';
+const clock = (b: Bundle) => pulseDurations(b.params).combat;
 
 function arena(): Bundle {
   const b = structuredClone(base);
@@ -129,7 +130,7 @@ describe('fight tick', () => {
     const b = arena(), w = setup(b);
     active(w, 0);
     const first = fightTick(b, w, [], 5);
-    const until = 5 + b.params.combat.mercy_t;
+    const until = 5 + clock(b).mercy_t;
     expect(first.world.players[PLAYER]!.cooldowns.mercy).toBe(until);
     active(first.world, until - 1 - 5);
     first.world.creatures[FOE]!.hit = [];
@@ -159,7 +160,7 @@ describe('fight tick', () => {
     const r = fightTick(b, w, [], 5);
     expect(r.events.some((e) => e.e === 'hurt')).toBe(false);
     expect(r.world.players[PLAYER]!.breath).toBe(w.players[PLAYER]!.breath - b.params.combat.guard_drain - b.params.combat.guard_hit_breath);
-    const until = 5 + b.params.combat.guard_stagger_t;
+    const until = 5 + clock(b).guard_stagger_t;
     expect(r.world.creatures[FOE]!.stagger).toBe(until);
     const boundary = structuredClone(r.world);
     boundary.players[PLAYER]!.guarding = null;
@@ -198,7 +199,7 @@ describe('fight tick', () => {
     for (const [t, expected] of [[9, 16], [18, 16], [19, 8]]) {
       const w = setup(b), p = w.players[PLAYER]!, f = w.creatures[FOE]!;
       f.health = 100; active(w, 0, 'lunge');
-      p.move = 'attack'; p.phase = 'windup'; p.since = t! - b.params.combat.bare_windup_t;
+      p.move = 'attack'; p.phase = 'windup'; p.since = t! - clock(b).bare_windup_t;
       expect(fightTick(b, w, [], t!).events).toContainEqual(expect.objectContaining({ e: 'hit', by: 'player', harm: expected }));
     }
   });
@@ -223,7 +224,7 @@ describe('fight tick', () => {
     const b = arena(), w = setup(b); w.players[PLAYER]!.breath = b.params.combat.attack_breath;
     const r = fightTick(b, w, [input('attack', 1)], 1);
     expect(r.world.players[PLAYER]!.move).toBeNull();
-    expect(r.world.players[PLAYER]!.stagger).toBe(1 + b.params.combat.breath_stagger_t);
+    expect(r.world.players[PLAYER]!.stagger).toBe(1 + clock(b).breath_stagger_t);
   });
 
   it('inputs: preserves arrival order and refuses the typed tech stub with a reason', () => {
@@ -249,10 +250,10 @@ describe('fight tick', () => {
     const b = arena(), w = setup(b), p = w.players[PLAYER]!, f = w.creatures[FOE]!;
     const whole = b.map.creatures!.kinds['core/wolf']!.fight!;
     p.state.player.at = [18, 18]; f.home = [12, 12]; f.away[PLAYER] = 0; f.health = 7; f.breath = 1; f.cursor = 2;
-    const edge = fightTick(b, w, [], b.params.combat.give_up_t - 1).world;
+    const edge = fightTick(b, w, [], clock(b).give_up_t - 1).world;
     expect(edge.players[PLAYER]!.state.player.fight).not.toBeNull();
     expect(edge.creatures[FOE]!.health).toBe(7);
-    const ended = fightTick(b, w, [], b.params.combat.give_up_t);
+    const ended = fightTick(b, w, [], clock(b).give_up_t);
     expect(ended.world.players[PLAYER]!.state.player.fight).toBeNull();
     const foe = ended.world.creatures[FOE]!;
     // COMBAT 4.9: a run ends the fight and leaves nothing to come back to. No rest, no node clock, no move.

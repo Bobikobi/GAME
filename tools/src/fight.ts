@@ -25,11 +25,21 @@ export function checkFight(b: Bundle, origin: Record<string, string>): Issue[] {
   const warn = (where: string, message: string) => issues.push({ file, where, message, level: 'warning' });
   const perr = (where: string, message: string) => issues.push({ file: paramsFile, where: `params.combat.${where}`, message, level: 'error' });
 
-  if (c.windup_min_t > c.windup_max_t) perr('windup_min_t', 'a wind-up runs from windup_min_t to windup_max_t: keep the first at or under the second (COMBAT 4.9)');
-  if (!(c.swing_floor_t <= c.swing_quick_t && c.swing_quick_t <= c.swing_standard_t && c.swing_standard_t <= c.swing_heavy_t)) {
-    perr('swing_floor_t', 'a quick hand swings no slower than a standard one and a heavy one slower than both, none under the floor: swing_floor_t <= quick <= standard <= heavy (COMBAT 4.9, memo 4)');
+  const wholePulse = (where: string, ms: number, report = perr): void => {
+    if (ms % b.params.wild.tick_ms !== 0) report(where, `${where} is ${ms} ms, not a whole number of ${b.params.wild.tick_ms} ms pulses (COMBAT 4.9)`);
+  };
+  wholePulse('think_ms', b.params.wild.think_ms, (where, message) => issues.push({ file: paramsFile, where: `params.wild.${where}`, message, level: 'error' }));
+  for (const name of [
+    'swing_quick_ms', 'swing_standard_ms', 'swing_heavy_ms', 'swing_floor_ms', 'bare_windup_ms',
+    'windup_min_ms', 'windup_max_ms', 'active_ms', 'rehit_ms', 'mercy_ms', 'stun_ms', 'dodge_ms',
+    'dodge_cooldown_ms', 'breath_hold_ms', 'breath_stagger_ms', 'guard_stagger_ms', 'give_up_ms', 'claim_lock_ms',
+  ] as const) wholePulse(name, c[name]);
+
+  if (c.windup_min_ms > c.windup_max_ms) perr('windup_min_ms', 'a wind-up runs from windup_min_ms to windup_max_ms: keep the first at or under the second (COMBAT 4.9)');
+  if (!(c.swing_floor_ms <= c.swing_quick_ms && c.swing_quick_ms <= c.swing_standard_ms && c.swing_standard_ms <= c.swing_heavy_ms)) {
+    perr('swing_floor_ms', 'a quick hand swings no slower than a standard one and a heavy one slower than both, none under the floor: swing_floor_ms <= quick <= standard <= heavy (COMBAT 4.9, memo 4)');
   }
-  if (c.bare_windup_t > c.swing_quick_t) perr('bare_windup_t', 'a strike lands inside its own swing: keep bare_windup_t at or under swing_quick_t (COMBAT 4.9)');
+  if (c.bare_windup_ms > c.swing_quick_ms) perr('bare_windup_ms', 'a strike lands inside its own swing: keep bare_windup_ms at or under swing_quick_ms (COMBAT 4.9)');
 
   const cap = b.params.hp_cap * 1000;
   for (const [id, k] of byId(Object.entries(b.map.creatures?.kinds ?? {}))) {
@@ -40,10 +50,14 @@ export function checkFight(b: Bundle, origin: Record<string, string>): Issue[] {
     if (k.protected) err(at, 'a young animal or a pet is never struck: a protected kind carries no fight (HUNTING 10)');
     const names = new Set<string>();
     for (const [i, m] of f.moves.entries()) {
+      const mat = `${at}.moves.${i}`;
       if (names.has(m.id)) err(`${at}.moves.${i}.id`, `a second move named "${m.id}"`);
       names.add(m.id);
-      if (m.windup_t < c.windup_min_t || m.windup_t > c.windup_max_t) {
-        err(`${at}.moves.${i}.windup_t`, `${m.id} winds up ${m.windup_t} ticks: nobody falls unwarned and no telegraph is so slow that hard is easy, so ${c.windup_min_t} to ${c.windup_max_t} (COMBAT 4.9, G31)`);
+      wholePulse(`${mat}.windup_ms`, m.windup_ms, err);
+      wholePulse(`${mat}.recover_ms`, m.recover_ms, err);
+      wholePulse(`${mat}.cooldown_ms`, m.cooldown_ms, err);
+      if (m.windup_ms < c.windup_min_ms || m.windup_ms > c.windup_max_ms) {
+        err(`${mat}.windup_ms`, `${m.id} winds up ${m.windup_ms} ms: nobody falls unwarned and no telegraph is so slow that hard is easy, so ${c.windup_min_ms} to ${c.windup_max_ms} ms (COMBAT 4.9, G31)`);
       }
       if (m.breath > f.breath) err(`${at}.moves.${i}.breath`, `${m.id} costs ${m.breath} breath and the foe has ${f.breath}: it could never start it`);
     }
@@ -80,6 +94,9 @@ export function checkFight(b: Bundle, origin: Record<string, string>): Issue[] {
         if (pay > capMg) warn(`${at}`, `its drops are worth ${pay} mg at the trader's price and its pattern needs ${idiv(slowest, 1000)} s, a cap of ${capMg} mg at ${c.pay_per_s_mg} mg a second (HUNTING 9, G85)`);
       }
     }
+  }
+  for (const [id, item] of Object.entries(b.items)) {
+    if (item.weapon) wholePulse(`items.${id}.weapon.windup_ms`, item.weapon.windup_ms, (where, message) => err(where, message));
   }
   return issues;
 }

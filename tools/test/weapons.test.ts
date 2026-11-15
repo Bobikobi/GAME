@@ -58,8 +58,8 @@ describe('the source', () => {
     expect(source.parts).toHaveLength(9);
     expect(source.ammo).toHaveLength(6);
     expect(source.params.matrix.hit_ties_open.pairs).toHaveLength(44);
-    expect(Object.keys(source.params.built)).toHaveLength(14);
-    expect(anchored(source)).toHaveLength(12);
+    expect(Object.keys(source.params.built)).toHaveLength(15);
+    expect(anchored(source)).toHaveLength(13);
   });
 
   it('refuses a form of an unknown class and a tie that is not a triple', () => {
@@ -88,7 +88,7 @@ describe('the default variant', () => {
     const report = run(source);
     expect(report.errors).toEqual([]);
     expect(report.notes.checksRun).toHaveLength(35);
-    expect(report.notes.builtCompared).toBe(12);
+    expect(report.notes.builtCompared).toBe(13);
     expect(report.notes.builtRecipes).toBe(22);
     expect(report.notes.hitTies).toBe(44);
     expect(report.notes.launcherPairs).toBe(732);
@@ -211,10 +211,10 @@ describe('a mutation fails its own check', () => {
     expectError(src, /^flint-hatchet: block \('quick', 7, 1, 12, None, None, 14\) out of the field bounds$/);
   });
 
-  it('WM-GRID: the wind-up from bare_windup_t', () => {
+  it('WM-GRID: the wind-up from bare_windup_ms', () => {
     const src = raw();
     src.params.matrix.feels.quick.snap = 2;
-    expectError(src, /^flint-knife: wind-up 2 outside bare_windup_t 3 to swing_quick_t 8$/);
+    expectError(src, /^flint-knife: wind-up 2 ticks outside bare_windup_ms 300 to swing_quick_ms 800$/);
   });
 
   it('harm under the cell', () => {

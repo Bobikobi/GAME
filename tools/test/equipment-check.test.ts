@@ -64,7 +64,7 @@ const items = (...list: object[]) => ({ ...envelope('items', 'items'), items: li
 /** A worn work piece of class garment. */
 const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
 const club = (extra: object = {}) =>
-  item('club', { kind: 'tool', class: 'tool', wear: { slot: 'hand' }, weapon: { tempo: 'standard', windup_t: 4, reach: 1, harm: 100 }, ...extra });
+  item('club', { kind: 'tool', class: 'tool', wear: { slot: 'hand' }, weapon: { tempo: 'standard', windup_ms: 400, reach: 1, harm: 100 }, ...extra });
 
 const NEW_ROWS = [
   'waits for combat', 'a teacher', 'tier 1 only', 'wear requirement', 'attribute bonus', 'garment trait', 'binds', 'bind',

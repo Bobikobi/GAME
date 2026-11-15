@@ -1,7 +1,7 @@
 /** Shared, deterministic workloads; no State is fabricated for the cost measurement. */
 import {
   type Action, type Bundle, type FightInput, type FightWorld, type State,
-  bagCapacity, bagUsed, drawBasisPoints, fightCreature, fightPlayer, newState, step,
+  bagCapacity, bagUsed, drawBasisPoints, fightCreature, fightPlayer, newState, pulseDurations, step,
 } from '@game/kernel';
 
 /** The existing fight test's open meadow, enlarged to one 64 x 64 presence chunk. */
@@ -85,7 +85,7 @@ export function scriptWorld(b: Bundle, script: FightScript): FightWorld {
     if (script.foes === 2) {
       // The existing give-up boundary case: both sides within the den's leash,
       // outside sight, with stagger holding the foes still until after give-up.
-      f.home = [12, 12]; f.away = { 'account/0': 0 }; f.stagger = b.params.combat.give_up_t + 10;
+      f.home = [12, 12]; f.away = { 'account/0': 0 }; f.stagger = pulseDurations(b.params).combat.give_up_t + 10;
     }
     w.creatures[f.spot] = f;
   }
