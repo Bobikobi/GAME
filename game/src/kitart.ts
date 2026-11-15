@@ -6,6 +6,7 @@
  */
 import type * as Phaser from 'phaser';
 import { app } from './app';
+import type { ClipSprite } from './clips';
 
 type Art = Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
 
@@ -22,11 +23,13 @@ export function unitOf(ref: string): { w: number; h: number } | undefined {
 
 /**
  * Where the feet stand in a sprite's frame, as a share of its height, for the sprite's origin: the bottom row (1) for a
- * sprite drawn to its feet, the ground point a stride sheet names (tools/anim/anim.json `frame.anchor`) for one with room below.
+ * sprite drawn to its feet, the ground point a stride sheet (tools/anim/anim.json `frame.anchor`) or a clip names for one with room below.
  */
 export function footOrigin(ref: string): number {
-  const info = app.bundle?.sprites[ref];
-  return info?.stride ? info.stride.anchor[1] / info.h : 1;
+  const info = app.bundle?.sprites[ref] as ClipSprite | undefined;
+  // a stride sheet names its ground point, and so does a clip (kit `clip.anchor`, #742)
+  const anchor = info?.stride?.anchor ?? info?.clip?.anchor;
+  return info && anchor ? anchor[1] / info.h : 1;
 }
 
 /** The scale an image of this texture shows at with no effect on it. */
