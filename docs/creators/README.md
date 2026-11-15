@@ -57,7 +57,7 @@ mkdir -p content/extensions
 cp -r templates/extension content/extensions/<your-handle>
 ```
 
-The template holds a townsperson (`npcs/wren.json`: Wren the mender) and three optional extras: a quest Wren gives (`quests/`), a fruit bush (`resources/`) and a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)). For a townsperson alone, delete `quests/`, `resources/`, `reactions/` and the template's `README.md`, and keep `npcs/wren.json`. You come back to the quest in [Your next step](#your-next-step).
+The template holds a townsperson (`npcs/wren.json`: Wren the mender) and three examples for later: a quest Wren gives (`quests/`), a fruit bush (`resources/`) and a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)). For a townsperson alone, delete `quests/`, `resources/`, `reactions/` and the template's `README.md`, and keep `npcs/wren.json`. You come back to the quest in [Your next step](#your-next-step).
 
 In every file you keep, replace `your-handle` with your handle (`grep -rn your-handle content/extensions/<your-handle>` lists every place). Everything you add has an id that starts with it, so two creators can never clash.
 
@@ -68,7 +68,7 @@ Rename `content/extensions/<your-handle>/npcs/wren.json` to your character's nam
 - the top-level `title` (up to 40 characters, the character's name and what they do) and `description` (what a reviewer reads first).
 - `npc.name` - the name above the dialogue box.
 - `npc.sprite` - how they look. It points at a frame of the core art: `core/base-kit:chars/woman_idle_down` is a standing figure, and the other `*_idle_down` frames in `content/kit/core/chars/` are the same kind. `elder` and `trader` belong to Maru and Pell: leave those two to them.
-- `npc.place.slot` - where they stand. It must be a slot of the kind `npc` that no one has filled. Today that is `core/trainers-stall` (in town, three tiles north of Pell's stall), which is why the template uses it. One extension per slot, so if another townsperson is already waiting for review there, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots still free; the others on the map are kept for the core (the player's stall, the traveller's camp). A shop is the core's: leave `shop` out.
+- `npc.place.slot` - where they stand. It must be a slot of the kind `npc` that no one has filled. The template uses the currently free `core/trainers-stall` (in town, three tiles north of Pell's stall). If you move them, ask the `slots` tool of the MCP server (below) for the current list. One extension per slot, so if another townsperson is already waiting for review there, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). A shop is the core's: leave `shop` out.
 - `npc.dialogue` - what they say: one list of boxes for each standing the player has with them, which grows as the player comes back.
   - `first`: the first time the player talks to them (at most three boxes).
   - `stranger`, `acquaintance`, `friend`: one box or two each, said as the player returns and the standing grows.
@@ -90,7 +90,7 @@ A townsperson has no price, stat or reward of their own. What they ask of the pl
 pnpm check
 ```
 
-Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout of the game already prints dozens of them (about the core map, the core art and the core quests, none from your files). It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
+Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout may already print warnings about core files; read any line from your folder. It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
 
 ## 5. See it in the game (3 minutes)
 
@@ -117,6 +117,8 @@ Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; 
 
 ## Your next step
 
+Read [the standards developers build against today](../STANDARDS.md) before moving from one content file into the fight, weapons, figures or maps.
+
 Once the townsperson stands, the valley can start to need them. Each of these is a small pull request of its own, built on the files you have:
 
 1. **A quest your townsperson gives.** Copy `templates/extension/quests/a-coin-for-the-road.json` into `content/extensions/<your-handle>/quests/`, replace `your-handle`, and set `quest.giver` to your character (`<your-handle>/<name>`; the template already names Wren). It sends the player to dig an old coin out of the gate rubble (a `find` step: the journal shows a clue, never a count), and pays one mended cup, the item defined in the character's file. Rewrite `summary` and `clue` in your character's voice. A reward must give the player something new to do: an item, a recipe or a place opened. Gold and reputation alone fail the check. The check may also warn that your quest's `type` can be open together with a core quest of the same type (G17): choose another of the fourteen kinds in [GAME_RULES.md](../design/GAME_RULES.md) if it does. Step kinds that exist today: `bring`, `make`, `find`, `riddle`, `visit`, `restore`, `build` and `tend`. The quest brings a `Quest review:` into your pull request (the quest-designer skill, `.claude/skills/quest-designer`).
@@ -125,11 +127,11 @@ Once the townsperson stands, the valley can start to need them. Each of these is
 4. **A camp part.** A thing a player builds at their camp, with the inputs it takes ([A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
 5. **Your own art** for the character: [Your own art](#your-own-art-optional).
 
-Not yet possible today: a new place on the map, a new ruin to restore (every restore slot is taken), a second townsperson (one npc slot waits), anything that needs the core map. If your idea needs one of those, open a "Request for the valley" issue: the community votes it into an open call, and the core team adds the slot.
+Not yet possible today: a new place on the map, a new ruin to restore (every restore slot is taken), a new resource (every resource slot is taken), anything that needs the core map. For another townsperson, ask the `slots` tool for the current free npc slots. If your idea needs a core slot, open a "Request for the valley" issue: the community votes it into an open call, and the core team adds the slot.
 
 ## Smaller things: a fruit, a herb, a recipe
 
-A fruit bush in an empty slot of the map is the smallest useful thing, and it works the same way: steps 1, 2, 4, 5 and 6 above. In step 2 keep `resources/wild-plums.json` and delete `npcs/`, `quests/` and `reactions/` instead. The pull request then reads "no quest changed", "no story text changed" and "no new picture". The bushes grow in the glade west of where you wake up, and its sign reads "Added by <your-handle>".
+A fruit bush is the smallest useful resource, but every resource slot is filled today. The file below is a starting point for the next resource open call, not a pull request that can pass now. When the `slots` tool lists a free resource slot, follow steps 1, 2, 4, 5 and 6 above; in step 2 keep `resources/wild-plums.json`, delete `npcs/`, `quests/` and `reactions/`, and replace its old slot as well as its handle. The pull request then reads "no quest changed", "no story text changed" and "no new picture".
 
 ### The fruit file
 
@@ -152,7 +154,7 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
 - `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
 - `node.place.water` - optional. `true` puts the node on the slot's water tiles beside the bank, for a fishing spot; the slot needs water in it. Left out, a node stands on the ground.
-- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot: the fruit in this guide goes to the glade, so if another fruit is already waiting there for review, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots that are still free.
+- `node.place.slot` - where it grows. The template still names `core/west-glade`, now filled by glade figs; replace it with the resource slot named by the open call. One extension per slot, and the `slots` tool of the MCP server (below) is the current list.
 
 You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
 
