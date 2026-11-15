@@ -306,13 +306,13 @@
             "type": "object",
             "required": [
               "tempo",
-              "windup_t",
+              "windup_ms",
               "reach",
               "harm"
             ],
             "properties": {
               "tempo": {
-                "description": "The swing, the hand's one cooldown: quick, standard or heavy, each a combat param in ticks (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.",
+                "description": "The swing, the hand's one cooldown: quick, standard or heavy, each a combat duration in milliseconds (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.",
                 "anyOf": [
                   {
                     "const": "quick",
@@ -328,10 +328,10 @@
                   }
                 ]
               },
-              "windup_t": {
-                "minimum": 2,
-                "maximum": 10,
-                "description": "Ticks from the press to the landing, inside the swing (WEAPONS 3).",
+              "windup_ms": {
+                "minimum": 200,
+                "maximum": 1000,
+                "description": "Game milliseconds from the press to the landing, inside the swing (WEAPONS 3).",
                 "type": "integer"
               },
               "reach": {

@@ -32,7 +32,7 @@ describe('fight arithmetic', () => {
 
   it('never fells a foe whose pattern opens no window', () => {
     const f = structuredClone(b.map.creatures!.kinds['core/wolf']!.fight!);
-    for (const m of f.moves) m.recover_t = 1;
+    for (const m of f.moves) m.recover_ms = 100;
     expect(feltMs(b.params, f, f.patterns[0]!)).toBe(Number.POSITIVE_INFINITY);
   });
 });

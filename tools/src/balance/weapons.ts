@@ -15,7 +15,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Bundle, idiv, idivUp } from '@game/kernel';
+import { type Bundle, durationTicks, idiv, idivUp } from '@game/kernel';
 import type { ParamsBody } from '@game/schema';
 import { REPO_ROOT } from '../load';
 
@@ -287,8 +287,8 @@ export function rateAt(ctx: Ctx, tier: number): number {
   return ctx.variant === 'rate-10-3000' ? must(r[r.length - 1], 'an empty rate table') : ctx.src.params.matrix.hand_rate_max_permille_tier_10.value;
 }
 
-/** #598's built swing ticks: the matrix reads them, never proposes them. */
-export const swingOf = (ctx: Ctx, tempo: Tempo): number => builtValue(ctx, `swing_${tempo}_t`);
+/** #598's built swing duration resolved on the fight pulse: the matrix reads it, never proposes it. */
+export const swingOf = (ctx: Ctx, tempo: Tempo): number => durationTicks(builtValue(ctx, `swing_${tempo}_ms`), builtValue(ctx, 'tick_ms'));
 export const bareBase = (ctx: Ctx): number => builtValue(ctx, 'bare_base');
 
 /** WEAPONS 4: harmAt(share(r), t) with a floor of 0; a ranged hand reads the range share first. */
@@ -590,9 +590,9 @@ export function runChecks(ctx: Ctx, recs: Row[]): Checks {
       if (1000 - r.price < X.share_floor) errors.push(`${rid}: price ${r.price} under the share floor`);
       const inBounds = 2 <= blk[1] && blk[1] <= 10 && 1 <= blk[2] && blk[2] <= 2 && 0 <= blk[3] && blk[3] <= 1000 && 0 <= blk[6] && blk[6] <= 12;
       if (!inBounds || (blk[4] !== null && !(2 <= blk[4] && blk[4] <= 12))) errors.push(`${rid}: block ${pyTuple(blk)} out of the field bounds`);
-      // WM-GRID: a form's wind-up is never under the bare hand's (#598's bare_windup_t) and ends before its tempo's swing
-      const bw = builtValue(ctx, 'bare_windup_t');
-      if (!(bw <= blk[1] && blk[1] < swingOf(ctx, blk[0]))) errors.push(`${rid}: wind-up ${blk[1]} outside bare_windup_t ${bw} to swing_${blk[0]}_t ${swingOf(ctx, blk[0])}`);
+      // WM-GRID: a form's wind-up is never under the bare hand's (#598's bare_windup_ms) and ends before its tempo's swing
+      const bw = durationTicks(builtValue(ctx, 'bare_windup_ms'), builtValue(ctx, 'tick_ms'));
+      if (!(bw <= blk[1] && blk[1] < swingOf(ctx, blk[0]))) errors.push(`${rid}: wind-up ${blk[1]} ticks outside bare_windup_ms ${builtValue(ctx, 'bare_windup_ms')} to swing_${blk[0]}_ms ${builtValue(ctx, `swing_${blk[0]}_ms`)}`);
       if (r.harm > r.cell) errors.push(`${rid}: harm ${r.harm} over its cell ${r.cell}`);
       if (r.harm < 0) errors.push(`${rid}: launcher harm below 0`);
       if (CLOSE.has(r.cls)) {
@@ -826,7 +826,7 @@ export function runChecks(ctx: Ctx, recs: Row[]): Checks {
       'bows, staves and spears past tier 3 by Woodcraft',
       'share floor',
       'block field bounds',
-      "wind-up from bare_windup_t to under the tempo's swing (WM-GRID; #598's built values)",
+      "wind-up from bare_windup_ms to under the tempo's swing (WM-GRID; #598's built values)",
       'harm under the cell',
       'launcher harm 0 or more',
       'close rate at or over the bare hand',

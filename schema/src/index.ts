@@ -251,7 +251,7 @@ export const Wear = Type.Object(
   },
 );
 
-/** The swing of a hand that strikes: quick, standard or heavy, each a combat param in ticks (WEAPONS 3; COMBAT 4.9). */
+/** The swing of a hand that strikes: quick, standard or heavy, each a combat duration in milliseconds (WEAPONS 3; COMBAT 4.9). */
 export const WEAPON_TEMPOS = ['quick', 'standard', 'heavy'] as const;
 /**
  * A hand that strikes (WEAPONS 3). Closed, like the `tool` block, and with no class field: the class is the item's own.
@@ -261,9 +261,9 @@ export const WEAPON_TEMPOS = ['quick', 'standard', 'heavy'] as const;
 export const Weapon = Type.Object(
   {
     tempo: Type.Union(WEAPON_TEMPOS.map((t) => Type.Literal(t)), {
-      description: 'The swing, the hand\'s one cooldown: quick, standard or heavy, each a combat param in ticks (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.',
+      description: 'The swing, the hand\'s one cooldown: quick, standard or heavy, each a combat duration in milliseconds (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.',
     }),
-    windup_t: Int(2, 10, 'Ticks from the press to the landing, inside the swing (WEAPONS 3).'),
+    windup_ms: Int(200, 1000, 'Game milliseconds from the press to the landing, inside the swing (WEAPONS 3).'),
     reach: Int(1, 2, 'Tiles, no diagonal; 2 is a long hand (WEAPONS 3).'),
     harm: Int(0, 1000, 'The hand\'s bonus in points, counted as harm + hand_offset (WEAPONS 3, 4).'),
     range: Type.Optional(Int(2, 12, 'Tiles, only on a hand that throws or shoots (WEAPONS 3).')),
@@ -1802,8 +1802,8 @@ export const ParamsBody = Type.Object(
     ),
     wild: Type.Object(
       {
-        tick_ms: { ...Bounded, description: 'Game milliseconds of one world tick (COMBAT section 4.9). Fixed: every duration below is whole ticks or whole think steps.' },
-        think_ticks: { ...Bounded, description: 'Ticks between two think steps of one animal, staggered by its id (HUNTING section 1): 8 ticks of 100 ms, a think step of 800 ms.' },
+        tick_ms: { ...Bounded, description: 'Game milliseconds of one world pulse (COMBAT section 4.9). Every fight and animal duration is stated in milliseconds and becomes ceil(duration / tick_ms) pulses.' },
+        think_ms: { ...Bounded, description: 'Game milliseconds between two think steps of one animal, staggered by its id (HUNTING section 1): 800 ms.' },
         wake_tiles: { ...Bounded, description: 'An animal is stepped only while a player is within this many tiles; beyond it its group is kept as an anchor and a count (HUNTING section 1).' },
         awake_max: { ...Bounded, description: 'The most animals stepped round one player at once (BESTIARY section 1).' },
         catchup_max_steps: { ...Bounded, description: 'A gap longer than this many think steps settles each animal to its rest pose at once instead of stepping it, so one action never pays for an hour of the wild.' },
@@ -1831,45 +1831,45 @@ export const ParamsBody = Type.Object(
     combat: Type.Object(
       {
         enabled: { ...Bounded, description: "Whether fights exist at all: 0 in the demo (G35). With 0 nothing engages and the wild brain keeps its bluff." },
-        swing_quick_t: { ...Bounded, description: "Ticks of a quick hand's whole swing, wind-up to the next strike (COMBAT 4.9, memo 4). Bare hands swing quick." },
-        swing_standard_t: { ...Bounded, description: "Ticks of a standard hand's swing." },
-        swing_heavy_t: { ...Bounded, description: "Ticks of a heavy hand's swing." },
-        swing_floor_t: { ...Bounded, description: "No hand swings faster than this, whatever its tier or a technique." },
-        bare_windup_t: { ...Bounded, description: "Ticks from a bare-handed strike's start to its landing." },
+        swing_quick_ms: { ...Bounded, description: "Game milliseconds of a quick hand's whole swing, wind-up to the next strike (COMBAT 4.9, memo 4). Bare hands swing quick." },
+        swing_standard_ms: { ...Bounded, description: "Game milliseconds of a standard hand's swing." },
+        swing_heavy_ms: { ...Bounded, description: "Game milliseconds of a heavy hand's swing." },
+        swing_floor_ms: { ...Bounded, description: "Game milliseconds of the fastest hand swing, whatever its tier or a technique." },
+        bare_windup_ms: { ...Bounded, description: "Game milliseconds from a bare-handed strike's start to its landing." },
         bare_base: { ...Bounded, description: "Points a strike of the bare hand takes from a foe; a foe's tier is counted in these (T1 falls in 2)." },
-        windup_min_t: { ...Bounded, description: "The shortest wind-up a foe's move may have (G31: nobody falls unwarned)." },
-        windup_max_t: { ...Bounded, description: "The longest wind-up a foe's move may have: no telegraph so slow that hard is easy." },
-        active_t: { ...Bounded, description: "Ticks a foe's move hits whoever stands in its reach, after its wind-up." },
-        rehit_t: { ...Bounded, description: "Ticks before one swing may hit the same target again; one swing hits one target once." },
+        windup_min_ms: { ...Bounded, description: "Game milliseconds of the shortest wind-up a foe's move may have (G31: nobody falls unwarned)." },
+        windup_max_ms: { ...Bounded, description: "Game milliseconds of the longest wind-up a foe's move may have: no telegraph so slow that hard is easy." },
+        active_ms: { ...Bounded, description: "Game milliseconds a foe's move hits whoever stands in its reach, after its wind-up." },
+        rehit_ms: { ...Bounded, description: "Game milliseconds before one swing may hit the same target again; one swing hits one target once." },
         bite_div: { ...Bounded, description: "A foe's default harm to a player is the health cap divided by this: six unanswered bites fell a player." },
         behind_permille: { ...Bounded, description: "A strike from the side the target does not face does this share of its harm, against 1000." },
         weak_permille: { ...Bounded, description: "A strike inside a foe's recovery after its weak move does this share of its harm, against 1000." },
-        mercy_t: { ...Bounded, description: "Ticks after a hit on a player in which nothing harms them." },
-        stun_t: { ...Bounded, description: "Ticks after a hit in which the one hit can do nothing." },
+        mercy_ms: { ...Bounded, description: "Game milliseconds after a hit on a player in which nothing harms them." },
+        stun_ms: { ...Bounded, description: "Game milliseconds after a hit in which the one hit can do nothing." },
         knockback_tiles: { ...Bounded, description: "Tiles a hit pushes the one hit away from its source, never into a solid tile or across a level change." },
         dodge_tiles: { ...Bounded, description: "Tiles a dodge moves the body." },
-        dodge_t: { ...Bounded, description: "Ticks a dodge takes." },
-        dodge_cooldown_t: { ...Bounded, description: "Ticks after a dodge before the next." },
+        dodge_ms: { ...Bounded, description: "Game milliseconds a dodge takes." },
+        dodge_cooldown_ms: { ...Bounded, description: "Game milliseconds after a dodge before the next." },
         breath_base: { ...Bounded, description: "The breath bar's base top, in points; stamina adds breath_per_stamina each." },
         breath_per_stamina: { ...Bounded, description: "Points of breath each point of stamina adds." },
         breath_refill: { ...Bounded, description: "Points of breath standing still refills each tick." },
-        breath_hold_t: { ...Bounded, description: "Ticks after any verb but a move in which breath does not refill." },
+        breath_hold_ms: { ...Bounded, description: "Game milliseconds after any verb but a move in which breath does not refill." },
         attack_breath: { ...Bounded, description: "Breath a strike costs." },
         guard_drain: { ...Bounded, description: "Breath a held guard costs each tick." },
         guard_hit_breath: { ...Bounded, description: "Breath a blow into the guard costs the guard." },
         dodge_breath: { ...Bounded, description: "Breath a dodge costs." },
-        breath_stagger_t: { ...Bounded, description: "Ticks a figure out of breath can neither strike nor guard." },
-        guard_stagger_t: { ...Bounded, description: "Ticks the striker is staggered after a strike into a guard." },
+        breath_stagger_ms: { ...Bounded, description: "Game milliseconds a figure out of breath can neither strike nor guard." },
+        guard_stagger_ms: { ...Bounded, description: "Game milliseconds the striker is staggered after a strike into a guard." },
         engage_tiles: { ...Bounded, description: "A foe heeds a player within this many tiles." },
         leash_tiles: { ...Bounded, description: "A foe never goes farther than this from its spot; past it a chase ends and the foe goes home." },
-        give_up_t: { ...Bounded, description: "Ticks out of sense before a chase ends." },
-        claim_lock_t: { ...Bounded, description: "Ticks the first player whose strike lands holds a foe; each hit the holder deals or takes renews it." },
+        give_up_ms: { ...Bounded, description: "Game milliseconds out of sense before a chase ends." },
+        claim_lock_ms: { ...Bounded, description: "Game milliseconds the first player whose strike lands holds a foe; each hit the holder deals or takes renews it." },
         pay_per_s_mg: { ...Bounded, description: "Milli-gold a second of a foe's pattern may be worth in drops at the trader's price (HUNTING 9)." },
       },
       {
         additionalProperties: false,
         description:
-          'The fight (docs/design/COMBAT.md section 4.9): every duration a whole number of world ticks (wild.tick_ms). Nothing reads it while enabled is 0 (G35). Damage is exact: no chance decides a hit inside a fight (G79).',
+          'The fight (docs/design/COMBAT.md section 4.9): durations are game milliseconds and the kernel turns each into ceil(ms / wild.tick_ms) pulses. Nothing reads it while enabled is 0 (G35). Damage is exact: no chance decides a hit inside a fight (G79).',
       },
     ),
     starting_gold_mg: Bounded,
@@ -2238,12 +2238,12 @@ const MoveName = Type.String({ pattern: '^[a-z][a-z0-9_-]{0,23}$' });
 const FightMove = Type.Object(
   {
     id: MoveName,
-    windup_t: Int(1, 20, 'Ticks the pose shows before the move lands. The check holds it to combat.windup_min_t and windup_max_t.'),
+    windup_ms: Int(100, 2000, 'Game milliseconds the pose shows before the move lands. The check holds it to combat.windup_min_ms and windup_max_ms.'),
     reach: Int(1, 3, 'Tiles in a line in front of the foe the move reaches.'),
     harm_div: Type.Optional(Int(2, 24, 'The move takes the health cap divided by this. Absent: combat.bite_div.')),
     breath: Int(0, 40, 'Breath the move costs the foe.'),
-    recover_t: Int(1, 20, 'Ticks the foe stands open after the move; a strike that lands then does extra if this is the weak move.'),
-    cooldown_t: Int(0, 200, 'Ticks before the same move may start again.'),
+    recover_ms: Int(100, 2000, 'Game milliseconds the foe stands open after the move; a strike that lands then does extra if this is the weak move.'),
+    cooldown_ms: Int(0, 20000, 'Game milliseconds before the same move may start again.'),
   },
   { additionalProperties: false },
 );

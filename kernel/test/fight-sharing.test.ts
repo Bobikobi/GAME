@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { type Bundle, type FightWorld, fightCreature, fightPlayer, fightTick, hashOf, lastBellAt, newState, visitNight } from '@game/kernel';
+import { type Bundle, type FightWorld, fightCreature, fightPlayer, fightTick, hashOf, lastBellAt, newState, pulseDurations, visitNight } from '@game/kernel';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import golden from './fixtures/fight-golden.json';
 import { fightArena, fightScripts, playedState, scriptInputs, scriptWorld } from './fight-scripts.js';
@@ -25,9 +25,13 @@ function developEvents(events: ReturnType<typeof fightTick>['events']): unknown[
 
 /** The fixture's hashes were recorded under the kernel string of the day (#711); the new tick's worlds differ from develop's in that string alone. */
 const RECORDED_KERNEL = '0.27.0';
+const RECORDED_CONTENT = '8316c46193598c5d';
 function developWorld(world: FightWorld): FightWorld {
   const old = structuredClone(world);
-  for (const player of Object.values(old.players)) player.state.kernel = RECORDED_KERNEL;
+  for (const player of Object.values(old.players)) {
+    player.state.kernel = RECORDED_KERNEL;
+    player.state.content = RECORDED_CONTENT;
+  }
   return old;
 }
 
@@ -64,7 +68,7 @@ describe('fight tick golden identity and purity', () => {
     expect(golden.scripts.find((s) => s.name === 'one-on-one')!.counts.fall).toBeGreaterThan(0);
     expect(golden.scripts.find((s) => s.name === 'four-on-one')!.counts.foe_fall).toBeGreaterThan(0);
     const script = fightScripts[2], w = scriptWorld(b, script);
-    const c = b.params.combat;
+    const c = pulseDurations(b.params).combat;
     expect(fightTick(b, w, [], c.give_up_t - 1).events.some((e) => e.e === 'disengage')).toBe(false);
     expect(fightTick(b, w, [], c.give_up_t).events).toContainEqual({ e: 'disengage', player: 'account/0' });
   });

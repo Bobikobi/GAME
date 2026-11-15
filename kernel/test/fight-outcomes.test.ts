@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { type Bundle, type FightInput, type FightWorld, fightTick } from '@game/kernel';
+import { type Bundle, type FightInput, type FightWorld, fightTick, movePulseTimeline, pulseDurations } from '@game/kernel';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { fightArena, fightScripts, scriptInputs, scriptWorld } from './fight-scripts.js';
 import { fightYard, fuzzAccounts, fuzzInputs, fuzzWorld } from './fight-fuzz.js';
@@ -35,7 +35,7 @@ class Ledger {
   constructor(private b: Bundle) {}
 
   tick(label: string, before: FightWorld, tick: number, inputs: readonly { player: string; v: string; dir: unknown }[], r: Result): void {
-    const c = this.b.params.combat, kinds = this.b.map.creatures!.kinds;
+    const c = pulseDurations(this.b.params).combat, kinds = this.b.map.creatures!.kinds;
     const told = r.events.filter(isTold), strict = !r.events.some((e) => e.e === 'disengage');
     if (strict) this.strictTicks++; else this.endedTicks++;
     const once = (key: string): void => { expect(this.told.has(key), `${label}: ${key} told twice`).toBe(false); this.told.add(key); };
@@ -70,6 +70,7 @@ class Ledger {
     for (const [fid, f] of Object.entries(before.creatures)) {
       const after = r.world.creatures[fid]!;
       const def = kinds[f.kind]!.fight!, move = def.moves.find((m) => m.id === f.move);
+      const mt = move ? movePulseTimeline(this.b.params, move) : undefined;
       const mine = told.filter((e) => e.striker.side === 'foe' && e.striker.id === fid);
       const key = `${fid}|${f.since}|${f.move}`;
       const row = this.moves.get(key) ?? { hits: new Set<string>(), dodges: new Set<string>(), misses: 0 };
@@ -93,11 +94,11 @@ class Ledger {
       if (strict) for (const id of grew) expect(blows.filter((e) => e.struck.id === id), `${label}: ${fid} blow on ${id}`).toHaveLength(1);
 
       // A move's last active tick is the one that tells it met nobody, or who dodged it.
-      const resolves = move && f.phase === 'active' && tick === f.since + move.windup_t + c.active_t - 1;
+      const resolves = mt && f.phase === 'active' && tick === f.since + mt.recovery_since_t - 1;
       const silent = mine.filter((e) => e.e === 'fight_miss' || e.e === 'fight_dodge');
       if (!resolves) expect(silent, `${label}: ${fid} told a miss or dodge outside the end of its active phase`).toEqual([]);
       if (move && resolves) {
-        const activeSince = f.since + move.windup_t;
+        const activeSince = f.since + mt!.active_since_t;
         for (const e of silent) {
           expect(e.move, label).toBe(f.move);
           if (e.e === 'fight_miss') row.misses++;

@@ -69,7 +69,7 @@ A shield: PROGRESSION.md names Guard (shield, brace, the breath) but the slots h
 Item
   kind, rarity, class, tier, weight, sprite            as built
   tool    { kind, tier, uses? }                        as built
-  weapon  { tempo, windup_t, reach, harm, range?,      new: WEAPONS.md 3 fixes the fields, in ticks
+  weapon  { tempo, windup_ms, reach, harm, range?,     new: WEAPONS.md 3 fixes the fields, in game ms
             ammo?, noise? }                            and points, the class the item's own,
                                                        no `uses` on WEAPONS.md question 7's
                                                        default A (a hand never wears; answer B

@@ -30,8 +30,8 @@ describe('the fight rows', () => {
   });
 
   it('refuse a wind-up outside the band', () => {
-    expect(rows((f) => (f.moves[0]!.windup_t = 1)).join('\n')).toMatch(/winds up 1 ticks/);
-    expect(rows((f) => (f.moves[0]!.windup_t = 11)).join('\n')).toMatch(/winds up 11 ticks/);
+    expect(rows((f) => (f.moves[0]!.windup_ms = 100)).join('\n')).toMatch(/winds up 100 ms/);
+    expect(rows((f) => (f.moves[0]!.windup_ms = 1100)).join('\n')).toMatch(/winds up 1100 ms/);
   });
 
   it('refuse a pattern that names a move the foe lacks, and a weakness that is not a move', () => {
@@ -41,7 +41,7 @@ describe('the fight rows', () => {
 
   it('refuse a pattern that never opens a window', () => {
     const out = rows((f) => {
-      for (const m of f.moves) m.recover_t = 1;
+      for (const m of f.moves) m.recover_ms = 100;
     });
     expect(out.join('\n')).toMatch(/leaves the foe open long enough/);
   });
@@ -88,10 +88,20 @@ describe('the fight rows', () => {
 
   it('refuse combat numbers that contradict each other', () => {
     const b = structuredClone(core);
-    b.params.combat.windup_min_t = 12;
-    b.params.combat.swing_quick_t = 13;
+    b.params.combat.windup_min_ms = 1200;
+    b.params.combat.swing_quick_ms = 1300;
     const out = checkFight(b, {}).map((i) => i.message).join('\n');
-    expect(out).toMatch(/windup_min_t to windup_max_t/);
-    expect(out).toMatch(/swing_floor_t <= quick/);
+    expect(out).toMatch(/windup_min_ms to windup_max_ms/);
+    expect(out).toMatch(/swing_floor_ms <= quick/);
+  });
+
+  it('refuses a duration that is not a whole pulse and names the parameter', () => {
+    const b = structuredClone(core);
+    b.params.combat.bare_windup_ms = 301;
+    const errors = checkFight(b, {}).filter((i) => i.level === 'error');
+    expect(errors).toContainEqual(expect.objectContaining({
+      where: 'params.combat.bare_windup_ms',
+      message: expect.stringContaining('bare_windup_ms is 301 ms, not a whole number of 100 ms pulses'),
+    }));
   });
 });

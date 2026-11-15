@@ -18,14 +18,14 @@ const hand = (weapon: object) => ({
   wear: { slot: 'hand' },
   weapon,
 });
-const base = { tempo: 'standard', windup_t: 4, reach: 1, harm: 100 };
+const base = { tempo: 'standard', windup_ms: 400, reach: 1, harm: 100 };
 const check = (weapon: object) => validateFile(items(hand(weapon)));
 const pathsOf = (weapon: object) => check(weapon).map((i) => i.path);
 
 describe('the weapon block', () => {
   it('accepts a weapon block at every bound (WEAPONS 3)', () => {
     for (const tempo of WEAPON_TEMPOS) expect(check({ ...base, tempo })).toEqual([]);
-    for (const windup_t of [2, 10]) expect(check({ ...base, windup_t })).toEqual([]);
+    for (const windup_ms of [200, 1000]) expect(check({ ...base, windup_ms })).toEqual([]);
     for (const reach of [1, 2]) expect(check({ ...base, reach })).toEqual([]);
     for (const harm of [0, 1000]) expect(check({ ...base, harm })).toEqual([]);
     for (const range of [2, 12]) expect(check({ ...base, range })).toEqual([]);
@@ -36,8 +36,8 @@ describe('the weapon block', () => {
   it('refuses a weapon block past each bound, with the path at the field', () => {
     expect(check(base)).toEqual([]);
     const past: [string, number][] = [
-      ['windup_t', 1],
-      ['windup_t', 11],
+      ['windup_ms', 199],
+      ['windup_ms', 1001],
       ['reach', 0],
       ['reach', 3],
       ['harm', -1],
