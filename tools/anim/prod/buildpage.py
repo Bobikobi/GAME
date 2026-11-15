@@ -15,7 +15,7 @@ import gates
 HERE = Path(__file__).resolve().parent
 DEFAULT_HALO = {"peak": 0.54, "tau": 3.5, "breath": 0.12, "period_ms": 3200}
 RACES = ["skeleton", "human", "elf"]
-MOTIONS = ["strike", "guard", "dodge", "hit", "fell", "quarry", "fish", "pickup"]
+MOTIONS = ["strike", "guard", "dodge", "hit", "fell", "quarry", "fish", "pickup", "dig", "idle"]
 VIEWS = ["left", "front", "back"]
 
 

@@ -1,6 +1,6 @@
 # Contributing
 
-Welcome. Loomvale is built by the people who play it, and a first contribution is worth more than a perfect one: reviewers help you get it over the line. There are two ways to help: add something to the valley (content), or improve the game itself (code). Most people start with content. Where the game is going, and where help is most welcome now, is in [ROADMAP.md](ROADMAP.md).
+Welcome. Loomvale is built by the people who play it, and a first contribution is worth more than a perfect one: reviewers help you get it over the line. There are two ways to help: add something to the valley (content), or improve the game itself (code). Most people start with content. [ROADMAP.md](ROADMAP.md) says where help is most welcome, and [docs/STANDARDS.md](docs/STANDARDS.md) says what the working systems expect today.
 
 ## Adding content
 
@@ -15,7 +15,7 @@ Welcome. Loomvale is built by the people who play it, and a first contribution i
 This section is written for content, but a pull request that changes code is merged the same way: a green check, then the owner's approval, then a squash. "Who merges", under "Changing the game", and [Your first code pull request](docs/team/ONBOARDING.md) cover what is different for code.
 
 - The check is green, and the opening still plays in Chrome (CI does this too).
-- Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` prints a `!` line for each rule it can test, and a reviewer answers the checklist in its section 7.
+- Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` names every rule breach it can test, errors stop the check, and a reviewer answers the checklist in its section 7.
 - Reviewers approve, each going through the reviewer checklist in the pull request. Until five creators have had an extension merged, one approval is enough and the owner gives it; from then on, three reviewers approve.
 - One extension per slot. When two proposals compete for the same request or slot, both stay open until the vote on the request decides.
 
