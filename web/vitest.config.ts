@@ -4,5 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['test/**/*.test.ts'],
+    // a hook gets the same 30 s as the root config's: the default 10 s fails on a busy machine (15.11)
+    hookTimeout: 30000,
   },
 });
