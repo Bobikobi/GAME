@@ -31,6 +31,7 @@
     { "id": "back", "count": 1, "cats": ["carry", "sustain"] },
     { "id": "legs", "count": 1, "cats": ["move", "health"] },
     { "id": "feet", "count": 1, "cats": ["move", "carry"] },
+    { "id": "hands", "count": 1, "cats": ["work", "carry"] },
     { "id": "hand", "count": 1, "cats": ["work", "find"] },
     { "id": "jewelry", "count": 2, "cats": ["find", "sense", "sustain", "work"] }
   ],
