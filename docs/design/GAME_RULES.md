@@ -514,7 +514,8 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   stations, one tier per station step, every action inside the action cap.
   The journal shows the question, not the whole chain (G3).
 - **G44 Worn things help work, a little.** A hat, a top, trousers or one full
-  outfit, shoes, two pieces of jewelry and the tool in hand. Each gives a
+  outfit, shoes, gloves, two pieces of jewelry, a back piece and the tool in
+  hand. Each gives a
   small bonus to gathering or crafting from the closed list of effects, a full
   set a little more, all through the one calculator under the level's power
   cap; nothing raises the output of a craft (R9). A look layer sits on the

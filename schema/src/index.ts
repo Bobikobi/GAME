@@ -151,10 +151,10 @@ export const Output = Type.Object(
  * The slots an item names: jewelry takes either of two places on the character, an outfit takes the top and the legs,
  * and the back holds one bag or one quiver (DECISIONS.md, 2026-10-23: races, weight and bags).
  */
-export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry', 'hand', 'back'] as const;
+export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'hands', 'jewelry', 'hand', 'back'] as const;
 export const WornSlot = Type.Union(WORN_SLOTS.map((k) => Type.Literal(k)), {
   description:
-    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).',
+    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, hands (gloves), jewelry (two places), hand (a tool) or back (one bag or one quiver).',
 });
 
 /** The effects a worn item may carry: rates of work, never the output of a craft (rule R9). Every one is in EFFECTS too. */
@@ -165,7 +165,7 @@ export const WornEffect = Type.Union(WORN_EFFECTS.map((k) => Type.Literal(k)), {
 
 /**
  * The garment traits (BODY_CLOCKS 6.1): what a piece is worn against, each on the places the table names.
- * `ice_grip` sits on the feet only while no hands place exists (CLOTHING question 1).
+ * `ice_grip` sits on the hands place (CLOTHING question 1, the owner's pick of 2026-11-12).
  */
 export const TRAITS = ['cold_proof', 'snow_shod', 'storm_proof', 'ice_grip', 'heat_ward'] as const;
 export const GarmentTrait = Type.Union(TRAITS.map((k) => Type.Literal(k)), {
@@ -175,7 +175,7 @@ export const TRAIT_SLOTS: Readonly<Record<(typeof TRAITS)[number], readonly (typ
   cold_proof: ['top', 'back', 'head'],
   snow_shod: ['feet'],
   storm_proof: ['back', 'top'],
-  ice_grip: ['feet'],
+  ice_grip: ['hands'],
   heat_ward: ['head', 'top'],
 };
 
@@ -1791,6 +1791,7 @@ export const ParamsBody = Type.Object(
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
         meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
         hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },
+        tan_cure_d: { ...Bounded, description: 'Game days a scraped hide cures on a tanning rack.' },
         grade2_bp: { ...Bounded, description: 'Basis points of animals that appear fine (grade 2).' },
         grade3_bp: { ...Bounded, description: 'Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain.' },
       },

@@ -549,6 +549,12 @@
         "max": 12,
         "step": 1
       },
+      "tan_cure_d": {
+        "value": 1,
+        "min": 1,
+        "max": 5,
+        "step": 1
+      },
       "grade2_bp": {
         "value": 2500,
         "min": 0,
