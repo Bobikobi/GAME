@@ -1,5 +1,7 @@
 # Loomvale
 
+[![Loomvale key art: an elf, a wanderer and a skeleton above a misty valley of ruins and a river town. Click to play in the browser.](web/public/keyart/hero-poster.jpg)](https://loomvale.vercel.app)
+
 **WAKE BY THE BROKEN BRIDGE. FOLLOW THE LANTERNS. LEAVE YOUR MARK ON THE MIST.**
 
 Loomvale is a free pixel-art adventure about a valley that is never finished. Gather, cook and dig through ruins whose names are lost. Stay near the fire after dark - the eyes beyond it are patient.
