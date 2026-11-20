@@ -139,7 +139,7 @@ What the check enforces: a character with a `route` has `hours` and no `shop`, n
 - With the forge's first phase (open end 3): the inn, the hours, the night faces; the square's size.
 - With the first ring's town: A1's routes (his word, 20.10).
 - Numbers to measure before the step ships, in PRESENCE section 9's way: traces per chunk in a week of play, how many a screen shows in the wild and in town, the share of players who tap a trace, and the share of a session spent in town at dusk.
-- Not done here: the figures' routes and names (content); the stills of a town at dusk and of a trace on the ground (a direction decision of its own, two or three phone stills before any sprite); copies of the world (W1, on a measurement); the relay's part (PRESENCE build a); chat (last).
+- Not done here: the figures' routes and names (content); the stills of a town at dusk and of a trace on the ground (a direction decision of its own, two or three full-frame stills at 1920 x 1080, STYLE 1, before any sprite); copies of the world (W1, on a measurement); the relay's part (PRESENCE build a); chat (last).
 - Pages this page touches when its rules pull request lands: GRUNT CR-100 (closed by his answer of 20.10: the trade line out, the route line in); W11's list of traces (the moment added); PRESENCE section 10 (pointed here); SETTLEMENT (the square); REACTIONS.md section 10's open line (after #223, the pointer pull request).
 
 ## Sources

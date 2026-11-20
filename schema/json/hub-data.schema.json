@@ -457,6 +457,10 @@
                 "type": "string"
               },
               {
+                "const": "set",
+                "type": "string"
+              },
+              {
                 "const": "shop",
                 "type": "string"
               },
@@ -482,6 +486,10 @@
               },
               {
                 "const": "school",
+                "type": "string"
+              },
+              {
+                "const": "story",
                 "type": "string"
               }
             ]

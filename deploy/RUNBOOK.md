@@ -147,7 +147,7 @@ replaced by taking the next month's name and sha256 into `deploy/Dockerfile` and
 The players counter (DECISIONS 2026-10-31). In this mode the API answers `GET /stats` with two counts, open accounts
 and the ones opened in the last 7 days. Each count is read from the database at most once a minute, and no id is
 in the answer. The nginx file proxies that one path; `dev-header` has no accounts and answers it 404. The hub's
-hourly refresh reads it through the repository variable `GAME_SERVER_ORIGIN` (Settings, Variables, Actions), which
+hourly refresh and the site build on Vercel (deploy.yml, `--build-env`) read it through the repository secret `GAME_SERVER_ORIGIN` (Settings, Secrets, Actions), which
 holds the box's https origin. It is written there and never in this repository, and setting it is the owner's
 step. Unset, unreachable, an error or more than 5 s, the board says "unknown", never 0.
 Verify: `curl -s https://<name>/stats` prints `{"accounts":N,"new_7d":M}`, and a second call within a minute prints the

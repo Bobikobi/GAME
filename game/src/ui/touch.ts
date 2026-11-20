@@ -10,18 +10,24 @@
  * it, Sneak above-left, and the bag, journal and menu in a small arc above A. The body's `landscape` class comes from
  * the orientation query, never from the user agent; the stylesheet shows one layout or the other.
  *
+ * Settings may mirror the two sides and scale the action buttons and stick ring. The choices arrive as data
+ * attributes from settings-apply.ts; the stylesheet mirrors, and the layout here responds without a reload.
+ *
  * Shown on touch screens, and on any device after its first touch.
  */
 import { app } from '../app';
 import { type Button, type Dir, stickFrom } from '../input';
+import { BUTTON_SCALE, BUTTON_SIZES, type StickSide } from '../settings';
 import { h } from './dom';
 import { TAP, buzz } from './haptics';
 import { type ControlsLayout, FloatingStick, type Placed, controlsLayout, stickZone } from './stick';
 
-/** The one line a portrait phone may show once, after it wakes (dismissable, never over the world's middle). */
-export const ROTATE_HINT = 'Turn your phone for the full view';
-const HINT_KEY = 'loomvale.rotate-hint';
-const HINT_MS = 10_000;
+export const LANDSCAPE_CARD = 'Turn your phone on its side';
+
+/** Touch is the device signal: a tall desktop window must keep playing normally. */
+export function needsLandscapeCard(width: number, height: number, touch: boolean): boolean {
+  return touch && width < height;
+}
 
 /** The column's glyphs, drawn in the button's own colour: a satchel, a bound book, the menu's three lines. */
 const ICONS = {
@@ -53,31 +59,31 @@ export function mountTouch(root: HTMLElement): void {
   const el = h('div', { class: 'touch' }, zone, stick, pad, h('div', { class: 'tbtns' }, sneak, b, a, bag, journal, menu));
   root.append(el);
 
-  const show = () => document.body.classList.add('touch-on');
+  const show = () => {
+    document.body.classList.add('touch-on');
+    window.dispatchEvent(new Event('resize'));
+  };
   if (matchMedia('(pointer: coarse)').matches) show();
   window.addEventListener('touchstart', show, { once: true, passive: true });
 
-  // the portrait hint, once a device: under the tracker, gone at its cross, at a turn, or after ten seconds
-  const hint = h(
+  const orientationCard = h(
     'div',
-    { class: 'rotate-hint', hidden: true },
-    h('span', null, ROTATE_HINT),
-    h('button', { class: 'rotate-hint-x', type: 'button', 'aria-label': 'Dismiss' }, '×'),
+    { class: 'layer panel-layer orientation-card-layer' },
+    h(
+      'section',
+      { class: 'panel ui-window orientation-card', role: 'dialog', 'aria-modal': 'true', 'aria-label': LANDSCAPE_CARD },
+      h('header', null, h('div', { class: 'panel-head' }, h('h2', { class: 'ui-plaque' }, LANDSCAPE_CARD))),
+      h('div', { class: 'panel-body' }, h('p', null, 'The valley waits while you do.')),
+    ),
   );
-  const top = root.querySelector('.top');
-  top?.insertBefore(hint, top.querySelector('.toasts'));
-  function hideHint(): void {
-    hint.hidden = true;
-  }
-  hint.querySelector('button')?.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    hideHint();
-  });
   const floating = new FloatingStick();
+  const rootData = document.documentElement.dataset;
+  const side = (): StickSide => (rootData.stickSide === 'right' ? 'right' : 'left');
+  const scale = (): number => BUTTON_SCALE[BUTTON_SIZES.find((v) => v === rootData.buttonSize) ?? 'medium'];
   const placed: [HTMLElement, keyof ControlsLayout][] = [[a, 'a'], [b, 'b'], [sneak, 'sneak'], [bag, 'bag'], [journal, 'journal'], [menu, 'menu']];
   // every size of the landscape controls is a share of the screen's height (controlsLayout)
   const layOut = () => {
-    const at = controlsLayout(window.innerHeight);
+    const at = controlsLayout(window.innerHeight, scale());
     for (const [btn, name] of placed) {
       const p = at[name] as Placed;
       btn.style.setProperty('--cx', `${p.right}px`);
@@ -86,18 +92,28 @@ export function mountTouch(root: HTMLElement): void {
     }
     el.style.setProperty('--ring', `${at.ring}px`);
     el.style.setProperty('--knob', `${at.knob}px`);
+    el.style.setProperty('--btn-scale', String(scale()));
     document.body.style.setProperty('--cluster', `${at.cluster}px`);
+    document.body.style.setProperty('--column-clear', `${Math.ceil(at.bag.right + at.bag.d / 2 + 8)}px`);
     floating.ring = at.ring;
   };
 
   const landscape = matchMedia('(orientation: landscape)');
   const setLandscape = () => {
     document.body.classList.toggle('landscape', landscape.matches);
-    if (landscape.matches) hideHint();
+    const blocked = needsLandscapeCard(window.innerWidth, window.innerHeight, document.body.classList.contains('touch-on'));
+    // mounted only while it is asked for: a hidden layer left in #ui would still be the top window and take A (input.ts topWindow)
+    if (blocked) root.append(orientationCard);
+    else orientationCard.remove();
+    app.controls.setPaused(blocked);
     layOut();
   };
   landscape.addEventListener('change', setLandscape);
-  window.addEventListener('resize', layOut);
+  window.addEventListener('resize', setLandscape);
+  new MutationObserver(layOut).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-stick-side', 'data-button-size'],
+  });
   setLandscape();
 
   const setStick = (v: readonly [number, number] | null) => {
@@ -146,7 +162,7 @@ export function mountTouch(root: HTMLElement): void {
   };
   zone.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    if (!floating.down(e.pointerId, e.clientX, e.clientY, stickZone(window.innerWidth, window.innerHeight, bandBottom()))) return;
+    if (!floating.down(e.pointerId, e.clientX, e.clientY, stickZone(window.innerWidth, window.innerHeight, bandBottom(), side()))) return;
     zone.setPointerCapture(e.pointerId);
     stick.style.left = `${e.clientX}px`;
     stick.style.top = `${e.clientY}px`;
@@ -204,26 +220,6 @@ export function mountTouch(root: HTMLElement): void {
   // lifting would land on the window A just opened (and close it)
   for (const el of [pad, zone, a, b, sneak, bag, journal, menu]) el.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
 
-  const offerHint = () => {
-    if (!document.body.classList.contains('touch-on') || landscape.matches || !top) return;
-    try {
-      if (localStorage.getItem(HINT_KEY)) return;
-      localStorage.setItem(HINT_KEY, '1');
-    } catch {
-      return;
-    }
-    hint.hidden = false;
-    window.setTimeout(hideHint, HINT_MS);
-  };
-
-  // the world is entered once the title closes: there a portrait phone may offer its hint (the full view is asked
-  // earlier, by the tap on Continue or Wake up itself, in title.ts)
-  let atTitle = document.body.classList.contains('at-title');
-  new MutationObserver(() => {
-    const now = document.body.classList.contains('at-title');
-    if (atTitle && !now) offerHint();
-    atTitle = now;
-  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 }
 
 /**

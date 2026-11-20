@@ -63,6 +63,8 @@ The question: what are the moves a player has, and on what clock do they land, s
 
 **The owner's word (20.10): "real time, like a regular multiplayer game, like League of Legends."** His own answer, not one of the three. Read as (proposed): the model every live multiplayer game runs on, the server as the only simulation. The server advances every fight on a fixed tick of its own, `combat.tick_ms`; the phone sends its inputs as it makes them, over the live socket, and draws what the server sends back, predicting only its own walk as it does today (DECISIONS 2026-10-20 "A drawn outcome"); abilities have a wind-up and a cooldown in milliseconds, movement is continuous, and a hit lands when the server says it did. One shape for a creature and for the zone, since both run on the server. What it supersedes: the client-played encounter batch of NEXT 18 a and the "client-played" reading of the `encounter` kind PRESENCE section 6 reserved, both written as proposals he had not seen; the reserved kind is not needed for fights. What it costs, accepted with the answer: a fight needs the live connection (there is no fight on a dropped line, as there is no game on one, NEXT 18 c); the server simulates every fight, so its load grows with the fights running at once and is measured before the step ships (PRESENCE section 9's kind of numbers); a hit shows on the phone a round trip after the press, which the tick and the prediction of one's own walk keep short. Kernel-review 6e is kept whole: nothing is lockstep, no phone holds a simulation of outcomes.
 
+**The owner's word (14.11): the fight is free action in real time in an open world with many players, every character strikes whenever it wants, with Wild Rift as his reference; and he asked whether the pulse can rise from 10 a second to 20-60.** The rate is left at 100 ms until the fight has a screen and can be felt on a phone; all durations are milliseconds now, so that later pick is one dial rather than a rebalance of every window.
+
 ### Q2. What a fall costs in the zone, and who takes the pack
 
 The question: W8 leaves one detail to this frame, whether the one who caused a fall takes the finds. SETTLEMENT 3.9 (9.10) says the finds go to the one who brought the player down; the open ends of 19.10 say the finds lie as a pack anyone may take, first come. One rule has to hold.
@@ -92,6 +94,14 @@ The question: G77 keeps every chance, level, difficulty, danger and time left of
 - Cost: a word is a number in disguise, unreadable at speed on a phone, and one more string per language.
 
 **The owner's word (20.10): B, a bar over every head.** Read as (proposed): a foe carries its health and its breath as two small bars over its head while it is engaged, and so does the other player inside the marked zone; outside the zone no bar stands over another player, and nothing about their health travels, so PRESENCE section 4 keeps its list with this one exception, inside the zone and only while the fight runs. No number is printed on any bar (G77 holds for numbers). The poses of A are not lost: a wind-up is still drawn before a move lands (G31, nobody falls unwarned; the telegraph of NEXT 12 c), blood still shows where a hit lands at the sprite's size (TONE section 3), and the weakness still opens as a pose; the bars add to the figure, they do not replace it. The player's own bar stays as it is, and gains a breath meter of its own.
+
+**The owner's word (14.11), which replaces the reading above:**
+
+- On every hit an animated number pops above the foe, by kind: attack, guard, dodge, miss, critical.
+- Under the foe or animal: a small health bar with a number, how much is left of the whole.
+- Later: combos of different moves and tools.
+
+Read as: `attack` is a landed strike outside the weak window, including a larger strike from behind; `critical` is a player's strike in the foe's weak recovery; `miss` is a player's ended wind-up with no foe ahead (a fallen foe not yet back, or one on safe ground, counts as none), or one foe move whose active phase met nobody (told on the move's last active tick); `guard` is a foe blow met by a guard held toward it, with zero harm through today; `dodge` is a foe blow whose reach the player's dodge movement escaped (told on the same tick, and only when the tile the dodge began on can be rebuilt for certain, never falsely). Mercy and safe ground remain silent. These are rules the tick already has, never draws.
 
 ### Q4. A foe's attention: does noise turn a head?
 
@@ -182,16 +192,16 @@ A phone sends an input as it makes it, over the live socket, as a frame `{ k: 'i
 | Verb | Shape | Breath | What the server does on its tick |
 |---|---|---|---|
 | `move` | `{ v: 'move', dir }`, held or released | none | Walks the figure one tile per `walk_step_ms` in `dir` (eight ways, G56's walk rules, never onto a solid or across a level change without a crossing, G68), spending the movement credit as a report does; the phone predicts this one and snaps back when refused, as today |
-| `attack` | `{ v: 'attack', dir }` | `combat.attack_breath` | Starts the hand's strike: `windup_ms` of the weapon (bare hands `combat.bare_windup_ms`), then it lands on the figure within the hand's reach in `dir`, unless that figure guards that side; harm is the hand's `harm_pct` of the target's health cap, times `behind_permille` on an unwatched side, times `weak_permille` inside the foe's `recover_ms` after its weak move; a strike into a guard staggers the striker for `combat.guard_stagger_ms` and costs the guard `combat.guard_hit_breath`; then the weapon's `cooldown_ms` |
+| `attack` | `{ v: 'attack', dir }` | `combat.attack_breath` | Starts the hand's strike: the weapon's `windup_ms` (bare hands `combat.bare_windup_ms`), then it lands on the figure within the hand's reach in `dir`, unless that figure guards that side; harm is the hand's strike in points (the weapon's `harm` counted with `hand_offset`, 4.9), times `behind_permille` on an unwatched side, times `weak_permille` inside the foe's `recover_ms` after its weak move; a strike into a guard staggers the striker for `combat.guard_stagger_ms` and costs the guard `combat.guard_hit_breath`; then the rest of the hand's one swing, its `tempo` in milliseconds (`combat.swing_quick_ms`, `swing_standard_ms`, `swing_heavy_ms`). Amended by the gear wave (WEAPONS.md 3 and 15): the weapon block is milliseconds and points, as 4.9 decided |
 | `guard` | `{ v: 'guard', dir }`, held or released | `combat.guard_drain` per tick while held | The side `dir` takes no harm while held; breath does not refill; at zero breath the guard breaks and the figure staggers |
 | `dodge` | `{ v: 'dodge', dir }` | `combat.dodge_breath` | Two tiles in `dir` over `combat.dodge_ms`, during which a strike misses; then `combat.dodge_cooldown_ms`; never through a solid or a level change (the gap study's warning: the window is short and it costs) |
 | `tech` | `{ v: 'tech', slot, dir }` | the technique's | The technique in that active slot, an ability of the growth frame: its cost, its wind-up, its effect from a closed list, its cooldown; two combine when one's `after` opens the other's window (GROWTH.md fixes the format) |
 
-Standing still refills breath by `combat.breath_refill` per tick; any verb but `move` stops the refill for `combat.breath_hold_ms`. Breath cap: `combat.breath_base + per_point.breath * attrs.stamina`. A figure at zero breath staggers for `combat.stagger_ms` and can neither strike nor guard; agility shortens the stagger and the dodge's cooldown by `per_point.agility_pct`. Senses lengthen nothing in the rule; they let the phone show the wind-up pose earlier by `per_point.senses` ticks of lead, which the server sends as the foe's `phase` (a display of the same truth, G24).
+Standing still refills breath by `combat.breath_refill` per pulse; any verb but `move` stops the refill for `combat.breath_hold_ms`. Breath cap: `combat.breath_base + per_point.breath * attrs.stamina`. A figure at zero breath staggers for `combat.breath_stagger_ms` and can neither strike nor guard; agility shortens the stagger and the dodge's cooldown by `per_point.agility_pct`. Senses lengthen nothing in the rule; they let the phone show the wind-up pose earlier by `per_point.senses` pulses of lead, which the server sends as the foe's `phase` (a display of the same truth, G24).
 
 A foe's heed (round 4): on toward the player who last hit it or last made noise within its `hearing`; its moves land ahead of its facing; a strike from the side it does not face lands harder. Noise (a strike that lands, felling, digging, running) within `hearing` turns a foe's heading, and within `hazard.noise_tiles` a predator's, for `hazard.noise_ms`.
 
-Ending: a figure is engaged from the first strike or the first move a foe starts toward a player within `combat.engage_tiles`, and disengaged when it reaches a safe place (G30; a foe never enters one and stops at the line as the chase does), when the sides stand farther apart than `combat.break_tiles` for `combat.break_ms` (the run is always possible), when a side falls, or at an expedition's last bell (G49: the walk-out comes first). A foe left standing keeps its health until its `respawn_ms` on the spot's node (`nodes[id].readyAt`), the way a dug spot rests; a foe that fell rests the same way.
+Ending: a figure is engaged from the first strike or the first move a foe starts toward a player within `combat.engage_tiles`, and disengaged when it reaches a safe place (G30; a foe never enters one and stops at the line as the chase does), when the player stands farther than `combat.leash_tiles` from the foe's den or stays out of its sight for `combat.give_up_ms` (4.9, which replaced the frame's `break_tiles` and `break_ms`; the run is always possible), when a side falls, or at an expedition's last bell (G49: the walk-out comes first). A foe left standing is whole again the moment its fight ends (4.9: a foe that crosses back resets its health), so a run ends a fight and coming back gains nothing. A foe that fell rests on the spot's node (`nodes[id].readyAt`) for its kind's refill, the way a dug spot rests.
 
 ### 4.4 The wire: frames, prediction, a dropped line
 
@@ -227,7 +237,7 @@ pack: { at: Tile, items: { item: qty }, until: tick }   // a world object the se
 
 ### 4.7 Events and quests
 
-New kernel events: `{ e: 'engage', foe | zone }`, `{ e: 'hit', by: 'player' | 'foe' | 'other', harm, at }`, `{ e: 'stagger', side }`, `{ e: 'foe_fall', foe, at, drops }`, `{ e: 'disengage' }`, `{ e: 'pack', at, until }` on a fall, `{ e: 'take', pack, items }`. The `hurt` and `fall` events stay as they are. `defeat { foe, count }` counts `foe_fall` events the player's hits earned (the last hit, or any hit above `combat.credit_permille` of the foe's health, so a group shares a kill), `hold { place, bells }` counts the side still standing, `escort { npc, from, to }` fails on the companion's fall by the fall rule of 8.10 (QUEST_GRAMMAR 3.7, SETTLEMENT 3.7).
+New kernel events: `{ e: 'engage', foe | zone }`; the existing `{ e: 'hit', player, by, harm, at }`, now also carrying `kind`, `number`, `move`, `striker`, `struck` and, when a foe was struck, `{ foe: { left, whole } }`; `{ e: 'fight_miss' | 'fight_guard' | 'fight_dodge', kind, number, at, move, striker, struck }`; `{ e: 'stagger', side }`; `{ e: 'foe_fall', foe, at, drops }`; `{ e: 'disengage' }`; `{ e: 'pack', at, until }` on a fall; `{ e: 'take', pack, items }`. `hit` remains the landed-outcome event so its old readers keep every field they use; the three new names cannot be mistaken for damage by an old reader. The `hurt` and `fall` events stay as they are. `defeat { foe, count }` counts `foe_fall` events the player's hits earned (the last hit, or any hit above `combat.credit_permille` of the foe's health, so a group shares a kill), `hold { place, bells }` counts the side still standing, `escort { npc, from, to }` fails on the companion's fall by the fall rule of 8.10 (QUEST_GRAMMAR 3.7, SETTLEMENT 3.7).
 
 ### 4.8 What a fight may break
 
@@ -235,67 +245,75 @@ A strike or a technique whose effect is `fire` or `break` may break a thing mark
 
 ### 4.9 Parameters and caps: the numbers in one table (revised 29.10)
 
-A `combat` group in `content/core/params.json`, each number with a range and a step as every number has. The table reconciles the frame of 20.10 with the recommendations of the combat memo ([research-combat.md](../research/research-combat.md), its recommendation steps 0 to 13, cited "memo n"). Every duration is a whole number of fight ticks (memo 0: a duration in milliseconds becomes `ceil(ms / tick_ms)` ticks), so the frame's `_ms` names become `_t` names; where sections 4.1 to 4.4 still name a value in milliseconds, the tick count in this table is the number. Where the frame and the memo disagreed, the source column says which won and why, in one line. Nothing here is built: the group enters `params.json` with the fight's first kernel pull request.
+A `combat` group in `content/core/params.json`, each number with a range and a step as every number has. The table reconciles the frame of 20.10 with the recommendations of the combat memo ([research-combat.md](../research/research-combat.md), its recommendation steps 0 to 13, cited "memo n"). Every duration is written in game milliseconds. The kernel derives its pulse count in one place by `ceil(ms / tick_ms)` (memo 0); `pnpm check` refuses a duration that is not a whole number of pulses at the `tick_ms` in the file, naming that duration. Where the frame and the memo disagreed, the source column says which won and why, in one line. The group is built but inert while `combat.enabled` is 0 (G35).
 
 | Name | Value | Range | Step | Source |
 |---|---|---|---|---|
-| `tick_ms` | 100 | 50 to 200 | 50 | Owner (round 1: the server's own tick); frame's value. Memo 0 won the range over the frame's 33 to 250: every duration below is a count of ticks, and 50 to 200 keeps a press to a drawn hit at 100 to 300 ms on a 100 ms line. |
+| `tick_ms` | 100 | 33 to 200 | 1 | Owner (round 1: the server's own pulse); 100 is unchanged. The fine end admits 50 ms (20 a second) and 33 ms (about 30 a second); the rate is picked by hand on a phone when the fight has a screen. |
 | fight state | integers only; per figure `hp`, `breath`, a stance (idle, windup, active, recovery, stun) and one `stance_until` tick | fixed | none | Frame 4.2 (R1) and memo 1 agree. |
 | order inside a tick | inputs by arrival tick, then distance to the target, then account id; players resolve before foes; the same order decides a pack two players reach on one tick | fixed | none | Memo 2 over the frame's arrival order alone: first come (round 2) needs a written tie rule. |
 | authority | the server decides every hit and every bar; the phone predicts its own walk and shows its own wind-up pose, nothing else; no lag compensation, no rollback | fixed | none | Owner (round 1); memo 3. The frame was silent on lag compensation; slow, telegraphed foes make it unneeded, and round 1's retry clause brings any prediction rule back to the owner. |
-| `swing_quick_t` | 8 | 6 to 10 | 1 | Memo 4. Agrees with the frame's `bare_cooldown_ms` 800. |
-| `swing_standard_t` | 10 | 8 to 12 | 1 | Memo 4. |
-| `swing_heavy_t` | 12 | 12 to 15 | 1 | Memo 4. |
-| `swing_floor_t` | 6 | 4 to 8 | 1 | Memo 4: no hand swings faster than this, whatever its tier or a technique. |
+| `swing_quick_ms` | 800 | 600 to 1000 | 100 | Memo 4. Agrees with the frame's `bare_cooldown_ms` 800. |
+| `swing_standard_ms` | 1000 | 800 to 1200 | 100 | Memo 4. |
+| `swing_heavy_ms` | 1200 | 1200 to 1500 | 100 | Memo 4. |
+| `swing_floor_ms` | 600 | 400 to 800 | 100 | Memo 4: no hand swings faster than this, whatever its tier or a technique. |
 | one cooldown for the hand | the next strike waits for the last one's swing; a swap of the thing in hand never skips it | fixed | none | Memo 4 over the frame's cooldown per weapon: a quick hand and a heavy one swapped would double the output (memo pitfalls). |
-| `bare_windup_t` | 3 | 2 to 5 | 1 | Frame (`bare_windup_ms` 300); the memo is silent on the player's wind-up. |
+| `bare_windup_ms` | 300 | 200 to 500 | 100 | Frame; the memo is silent on the player's wind-up. |
 | reach | 1 tile, no diagonal; 2 for a long hand | 1 to 2 | 1 | Memo 4; the frame's "the hand's reach" agrees. |
-| `windup_t` (a foe's move) | 5 | 2 to 10 | 1 | Memo 5 for the value; the frame's 200 to 1000 ms is the same range in ticks. The wind-up is longer than a press's round trip, so a player who reacts can step out (G31). |
-| `active_t` | 2 | 1 to 3 | 1 | Memo 5 over the frame, which had no active window: a move hits whoever stands in its reach on its active ticks, a rule and not a roll (G34). |
-| `recovery_t` | 8 | 4 to 12 | 1 | Memo 5; the frame's `recover_ms` per move is the same window. |
-| `rehit_t` | 2 | 1 to 3 | 1 | Memo 5: one swing hits one target once. |
+| `windup_ms` (a foe's move) | 500 | 200 to 1000 | 100 | Memo 5 for the value. The wind-up is longer than a press's round trip, so a player who reacts can step out (G31). |
+| `active_ms` | 200 | 100 to 300 | 100 | Memo 5 over the frame, which had no active window: a move hits whoever stands in its reach during this window, a rule and not a roll (G34). |
+| `recover_ms` (a foe's move) | 800 | 400 to 1200 | 100 | Memo 5; the frame's recovery window. |
+| `rehit_ms` | 200 | 100 to 300 | 100 | Memo 5: one swing hits one target once. |
 | damage | exact: a strike takes `bare_base` points (the hand's, plus its bonus later), at least 1 after defence; no draw | fixed | none | Memo 6 over the frame's `harm_pct` for a player's strike: points let a tier be counted in hits. Revised 1.11: memo 6's Stardew band (`base div 8` either side, a draw) is dropped, because G79 allows no chance inside a fight (only the pattern at appear and the drops are drawn) and a band breaks "T1 falls in exactly 2 hits", which the check and the hard-and-possible test count on. |
-| hand compression | the hand's bonus counts as `bonus + 64` | 64 | none | Memo 6: a bonus eleven times larger moves the hit under two times, so every tier stays under the one power cap (round 5). |
+| hand compression, `hand_offset` | 128: the hand's bonus counts as `bonus + hand_offset` | 96 to 256 | 32 | Memo 6: a bonus eleven times larger moves the hit under two times, so every tier stays under the one power cap (round 5). Amended by the gear wave (WEAPONS.md 4 and 15), with the owner's yes of 1.11 (DECISIONS 2026-11-02 "The hand's bonus offset is 128"): memo 6's 64 was an outside game's maximum-hit constant, so the offset is our own number, chosen by its job. |
 | a foe's harm to a player | a share of the bar, written as a divisor of `hp_cap` | fixed | none | Frame (`harm_pct`), kept: the bar is the one bar (G32) and a share reads the same at every level. |
 | `bite_div` | 6 (a bite takes `hp_cap div 6`) | 4 to 8 | 1 | Memo 8: six unanswered bites fell a player. The hazard's `bite_pct` 25 stays the hazard's (G34) and does not change. |
 | `behind_permille`, `weak_permille` | 2000, 2000 | 1000 to 3000 | 250 | Frame; the memo is silent. |
 | `credit_permille` | 250 | 100 to 500 | 50 | Frame: a group shares a `defeat`. The claim below decides whose foe it is, not who shares the credit. |
-| `mercy_t` | 8 | 6 to 10 | 1 | Memo 7 over the frame, which had none: without it two foes land in one tick on a slow line and a fall is never read. |
-| `stun_t` | 3 | 2 to 5 | 1 | Memo 7: no input for three ticks after a hit. |
+| `mercy_ms` | 800 | 600 to 1000 | 100 | Memo 7 over the frame, which had none: without it two foes land in one pulse on a slow line and a fall is never read. |
+| `stun_ms` | 300 | 200 to 500 | 100 | Memo 7: no input during this window after a hit. |
 | `knockback_tiles` | 1 | 0 to 1 | 1 | Memo 7: one tile from the source, never into a solid tile or across a level change (G68). |
 | invulnerability frames | none | fixed | none | Memo 7 over the frame's 250 ms dodge in which "a strike misses": Hyper Light Drifter cut its dash frames three days after adding them, and G34's answer is a run, never a trick. |
-| dodge | two tiles over 3 ticks, then `dodge_cooldown_t` 15 | 10 to 20 | 1 | Frame (`dodge_ms` 250, `dodge_cooldown_ms` 1500, in ticks), without its miss window (the row above): a dodge moves the body out of reach and nothing else. |
+| dodge | two tiles over `dodge_ms` 300, then `dodge_cooldown_ms` 1500 | cooldown 1000 to 2000 | 100 | Frame, without its miss window (the row above): a dodge moves the body out of reach and nothing else. |
 | `breath_base` | 60 | 40 to 100 | 5 | Frame; the memo is silent. |
 | `breath_refill` | 2 a tick | 1 to 4 | 1 | Frame. |
-| `breath_hold_t` | 6 | 3 to 10 | 1 | Frame (`breath_hold_ms` 600). |
+| `breath_hold_ms` | 600 | 300 to 1000 | 100 | Frame. |
 | `attack_breath`, `guard_drain`, `guard_hit_breath`, `dodge_breath` | 15, 1 a tick, 8, 12 | 5 to 30, 1 to 3, 4 to 16, 5 to 24 | 1 | Frame. |
 | `per_point.breath` | 8 | 4 to 12 | 1 | Frame; the key it reads waits for the attribute map that round 5's note of 22.10 redoes with the combat wave. |
-| `breath_stagger_t` | 12 | 8 to 15 | 1 | Frame (`stagger_ms` 1200): out of breath, no strike and no guard. It is not memo 7's stun, which follows a hit; both stay, named apart. |
-| `guard_stagger_t` | 6 | 4 to 8 | 1 | Frame (`guard_stagger_ms` 600): the striker into a guard. |
+| `breath_stagger_ms` | 1200 | 800 to 1500 | 100 | Frame: out of breath, no strike and no guard. It is not memo 7's stun, which follows a hit; both stay, named apart. |
+| `guard_stagger_ms` | 600 | 400 to 800 | 100 | Frame: the striker into a guard. |
 | tier T1 | felled in 2 hits of a starter hand | 2 | none | Memo 8 (the first knight of A Link to the Past). |
 | tier T2 | 6 to 8 hits | 6 to 8 | 1 | Memo 8. |
-| tier T3 | 20 hits and more, wind-up 8 ticks | 20 to 30 | 1 | Memo 8. |
+| tier T3 | 20 hits and more, wind-up 800 ms | 20 to 30 | 1 | Memo 8. |
 | `engage_tiles` | 6 | 4 to 8 | 1 | Frame; the memo starts a hunt on the cone, the smell or a noise, which [HUNTING.md](HUNTING.md) section 3 keeps for animals. |
 | `leash_tiles` | 7, from the foe's spot or den | 5 to 10 | 1 | Memo 9 over the frame's `break_tiles` 8 from the player: a line measured from the den is a place a player can learn, and a foe that crosses back resets its health, so a run always ends a fight. |
-| `give_up_t` | 50 | 30 to 80 | 10 | Memo 9 over the frame's `break_ms` 3000: five seconds out of sight ends a chase, and the leash is the hard line behind it. |
-| `linger_t` | 30 | 20 to 50 | 10 | Frame (`linger_ms` 3000): a figure on a dropped line. |
+| `give_up_ms` | 5000 | 3000 to 8000 | 1000 | Memo 9 over the frame's `break_ms` 3000: five seconds out of sight ends a chase, and the leash is the hard line behind it. |
+| `linger_ms` | 3000 | 2000 to 5000 | 1000 | Frame: a figure on a dropped line. |
 | noise, by gait | still 2, sneak 3, walk 5, run 8 | 0 to 4, 1 to 6, 2 to 9, 4 to 12 | 1 | The gait params on develop (`gait.noise_still`, `noise_sneak`, `noise_walk`, `noise_run`, read by the kernel's `noiseRadius`), quoted. They hold over the memo's walk 0 and run 3 and over the frame's one `hazard.noise_tiles` 6: the table was built after both. |
 | noise, a strike that lands | 4 | 2 to 6 | 1 | Memo 9; a new row of the gait group. |
 | noise, felling or digging | 5 | 3 to 8 | 1 | Memo 9; a new row of the gait group. |
-| `noise_turn_t` | 30 | 20 to 50 | 10 | Memo 9 over the frame's `hazard.noise_ms` 4000: three seconds is long enough to draw and read the turn, and shorter keeps a stealth crossing open after someone else's noise (round 4's retry clause). |
-| `claim_lock_t` | 48 | 30 to 60 | 6 | Memo 10; the frame was silent. The first account whose strike lands holds the foe; each hit the holder deals or takes refreshes the lock; the bar turns grey for the rest. It never stops another from fighting. |
-| bars | a 31 by 4 px frame, fill inset 1 px, 29 px at full; health over breath; at least 1 px of fill while alive; no number | fixed | none | Owner (round 3: two bars, no number); memo 11 for the size. The look is a direction: phone-size stills go to the owner before a sprite is drawn. |
-| `bar_linger_t` | 50 | 30 to 80 | 10 | Memo 11: the bars stay 5 seconds after the lock ends. |
+| `noise_attention_ms` | 3000 | 2000 to 5000 | 1000 | Memo 9 over the frame's `hazard.noise_ms` 4000: three seconds is long enough to draw and read the attention, and shorter keeps a stealth crossing open after someone else's noise (round 4's retry clause). |
+| `claim_lock_ms` | 4800 | 3000 to 6000 | 600 | Memo 10; the frame was silent. The first account whose strike lands holds the foe; each hit the holder deals or takes refreshes the lock; the bar goes grey for the rest. It never stops another from fighting. |
+| bars | a 31 by 4 px frame, fill inset 1 px, 29 px at full; health over breath; at least 1 px of fill while alive; no number | fixed | none | Owner (round 3: two bars, no number); memo 11 for the size. The look is a direction: full-frame stills (1920 x 1080, STYLE 1) go to the owner before a sprite is drawn. |
+| `bar_linger_ms` | 5000 | 3000 to 8000 | 1000 | Memo 11: the bars stay 5 seconds after the lock ends. |
 | `zone_min_d` | 5 | 3 to 8 | 1 | Frame. |
 | `pay_per_s_mg` | 50 | 25 to 100 | 5 | Frame: the cap on what a fight pays, read through the value solver; a hunted drop needs the solver's fifth source, `hunt`, which does not exist yet ([HUNTING.md](HUNTING.md) section 9). No drop carries a price of its own. |
 
 What else caps what one fight can pay: one pack per foe and the foe's `respawn_ms` on the spot's node (farming a boar is throttled like a bush); a drawn drop never passes the rarity budget of the area (`rarity_budget_permille`); drops join the outing and a fall loses them; the trader's day cap (`trader_day_cap`) is where hours turn into gold whatever the source.
 
-The check (section 8 of GAME_RULES gains rows): every move has a wind-up of 2 to 10 ticks; every pattern has at least one recovery window per cycle in which a strike can land, and a cycle's total harm is below the health cap of a player at the foe's level, so a player at level with bare hands can win by reading the pattern (the "hard and possible" of G34's run, restated for a fight); a foe's level fits its area's `d`; a foe's tier fits its hits (T1 2, T2 6 to 8, T3 20 and more, counted against a starter hand); no foe on level 0, in a town, on a camp or inside a fire's safe tiles; a zone's `d` at or above `zone_min_d`, a sign at every entry tile, no town and no camp slot inside; a `defeat` step's foe stands within the quest's area; a drop table's value under `pay_per_s_mg` times the kill's seconds; a stealth quest's target reachable without a noisy act inside a watch (round 4).
+The check (section 8 of GAME_RULES gains rows): every move has a wind-up of 200 to 1000 ms; every fight and animal duration is a whole number of the pulse configured in the file; every pattern has at least one recovery window per cycle in which a strike can land, and a cycle's total harm is below the health cap of a player at the foe's level, so a player at level with bare hands can win by reading the pattern (the "hard and possible" of G34's run, restated for a fight); a foe's level fits its area's `d`; a foe's tier fits its hits (T1 2, T2 6 to 8, T3 20 and more, counted against a starter hand); no foe on level 0, in a town, on a camp or inside a fire's safe tiles; a zone's `d` at or above `zone_min_d`, a sign at every entry tile, no town and no camp slot inside; a `defeat` step's foe stands within the quest's area; a drop table's value under `pay_per_s_mg` times the kill's seconds; a stealth quest's target reachable without a noisy act inside a watch (round 4).
 
 ### 4.10 What the screen reads (for the art and the client, not decided here)
 
-The foe's two bars over its head, no number on them; the other player's two bars inside the zone only; the player's own bar as today and a breath meter of their own; the foe's wind-up pose and its open pose; blood where a hit lands at the sprite's size and a limp after (TONE); a predator's head turning to a noise; the death card of TONE section 4 with the pack line; the zone's line drawn as stones or banners and its sign; the pack in the grass. A direction decision (the frame of a fight on screen) goes to the owner as two or three phone-size stills before a sprite is drawn, as every direction does (AGENTS.md).
+On every hit an animated number pops above the foe, by kind: attack, guard, dodge, miss, critical; under the foe or animal, a small health bar with a number says how much is left of the whole; later come combos of different moves and tools. The other player's two bars inside the zone only; the player's own bar as today and a breath meter of their own; the foe's wind-up pose and its open pose; blood where a hit lands at the sprite's size and a limp after (TONE); a predator's head turning to a noise; the death card of TONE section 4 with the pack line; the zone's line drawn as stones or banners and its sign; the pack in the grass. A direction decision (the frame of a fight on screen) goes to the owner as two or three full-frame stills (1920 x 1080, STYLE 1) before a sprite is drawn, as every direction does (AGENTS.md).
+
+### 4.11 Lasting effects: the harm that stays (the owner, 12.11; designed at the combat stage, not now)
+
+The owner, on the weapons page's `bleed` card, 12.11: "על הכל, יהיו רעלים מלכודות ועוד שמשפיעים על ההחלמה הטבעית או ממשיכים את הדרדרות הבריאות ואת יכולות השחקן (מהירות, דיוק, שחייה וכו׳)" (everything is affected; there will be poisons, traps and more that act on natural recovery, or keep health falling, or lower the player's abilities: speed, aim, swimming and the like).
+
+The manager's reading of his note: lasting harm applies to everything, animals included, and is one family and not only bleeding. Each effect does one of three things: it slows natural healing, it keeps health falling, or it lowers an ability of the player (speed, aim, swimming and the like). Poisons and traps are in the family. It is a system of its own and nothing of it is designed here: it waits for combat (G35) and for its own page. When it is designed it answers: how an effect ends (a time, a cure, a rest), how effects stack, and which of them reach a person, an animal or both. G34 holds: a hunting hazard is still answered by a run, and an effect is a result of a hit, a trap or a poison, never a roll.
+
+Predators (the owner's note on the weapons page's `predators` card, 12.11, "גם לחימה בסדר אך קשה מאד בהתחלה בלי נשק": fighting is fine but very hard at the start without a weapon): when combat opens a predator can be fought, the run stays an answer, and a fight without a weapon is very hard (the manager's reading of his note). The line in section 4.1 that a predator never joins a fight is the demo stage's rule.
 
 ## 5. Rule lines proposed, in the form GAME_RULES uses
 

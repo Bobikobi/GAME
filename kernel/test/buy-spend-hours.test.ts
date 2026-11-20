@@ -82,7 +82,7 @@ function nodeOf(source: string): string {
 function gatherAt(source: string, hour: number): StepResult {
   const s = started();
   const node = nodeOf(source);
-  return step(b, s, { t: 'gather', node, grade: 3, at: beside([b.instances[node]!.x, b.instances[node]!.y], s) }, hourTick(hour));
+  return step(b, s, { t: 'gather', node, at: beside([b.instances[node]!.x, b.instances[node]!.y], s) }, hourTick(hour));
 }
 
 // ------------------------------------------------------------------ buy
@@ -203,11 +203,12 @@ describe('a gather follows its hours window', () => {
 
     const inFirst = gatherAt(source, first);
     expect(inFirst.ok, `hour ${first}`).toBe(true);
-    if (inFirst.ok) expect(inFirst.state.player.bag[output]).toBe(b.resources[source]!.yield);
+    // one unit a press (DECISIONS.md, 2026-11-20)
+    if (inFirst.ok) expect(inFirst.state.player.bag[output]).toBe(1);
 
     const inLast = gatherAt(source, last === 0 ? 23 : last - 1); // the last full hour inside the window
     expect(inLast.ok, `hour ${last === 0 ? 23 : last - 1}`).toBe(true);
-    if (inLast.ok) expect(inLast.state.player.bag[output]).toBe(b.resources[source]!.yield);
+    if (inLast.ok) expect(inLast.state.player.bag[output]).toBe(1);
 
     const before = gatherAt(source, oneBefore);
     expect(before.ok, `hour ${oneBefore}`).toBe(false);
@@ -237,7 +238,7 @@ describe('a gather follows its hours window', () => {
       const s = started();
       grantForagingLv2(s);
       const node = nodeOf(source);
-      return step(b, s, { t: 'gather', node, grade: 3, at: beside([b.instances[node]!.x, b.instances[node]!.y], s) }, hourTick(hour));
+      return step(b, s, { t: 'gather', node, at: beside([b.instances[node]!.x, b.instances[node]!.y], s) }, hourTick(hour));
     };
     for (const hour of [17, 9]) {
       const r = grant(hour);

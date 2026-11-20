@@ -482,7 +482,7 @@ Nothing is built on it until then. Its art side (grounds and height carried as d
 
 **Smaller calls.** Each goes to the owner on its own. The first four were listed in section 3 as analogies before.
 - **A region checklist.** A list of finds to tick off is the counter that pillar 3 rules out ("A counter is not a question", GAME_RULES.md:40-41). Recommended: none; finds count on the exploration board (dec 678).
-- **The discovery banner** (G63). It is UI frame and words (NEXT:21; pillar 2, GAME_RULES.md:36-37). Recommended: two or three phone stills first.
+- **The discovery banner** (G63). It is UI frame and words (NEXT:21; pillar 2, GAME_RULES.md:36-37). Recommended: two or three full-frame stills (1920 x 1080, STYLE 1) first.
 - **Caves and interiors.**
   - They are planned only on the 3D track, as GLB scenes behind portals (docs/3d/world-notes.md:22-29).
   - In 2D they need a kernel portal, which is dec 1345-1346's question.

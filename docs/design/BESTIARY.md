@@ -55,7 +55,7 @@ Notes on the table.
 6. **A hunter never stands on d0.** Ground at danger level 0 is safe at every hour (G30). Defenders start at d1, hunters at d2.
 7. **Animals go to ground at dusk.** Prey is awake from 05:00 to 22:00 and no later: the owner's default (question a). Predators and the boar keep the other hours. Dark runs 20:00 to 05:00 (G30), so the last two prey hours are the dusk ramp. Small animals go to ground when the dark starts. At dusk the burrow, the roost or the cover tile shows; the animal does not vanish.
 8. **Noise by gait.** Still 2, sneak 3, walk 5, run 8 tiles. An animal hears a gait at that radius plus its ear. Chopping, digging and butchering are 9; a bell or horn 14. These are the memo's proposals.
-9. **Every reaction has a tell.** A phone shows about 6 by 13 tiles (STYLE.md 1), so a notice radius of 8 or 10 reaches off screen. Any animal that reacts to something unseen shows it on screen first: a head up, a lift of birds, a sound icon.
+9. **Every reaction has a tell.** The full frame shows 30 by 16.9 tiles, and 15 by 8.4 at the closer step the game draws today (STYLE.md 1), so a notice radius of 8 or 10 reaches the edge of the screen or past it. Any animal that reacts to something unseen shows it on screen first: a head up, a lift of birds, a sound icon.
 10. **A hunter is escaped by construction.** Its speed is no higher than the player's walk and it gives up. Contact before combat exists has no damage (question c).
 11. **No world emptied.** Spawn is by anchor with a count; a lost member returns after one game day if no player is within 20 tiles.
 12. **No lore from the narrator.** Any line about an animal is present tense and states nothing about the past (STORY.md S1 and S2). A line about the past needs a named speaker, or it is left out.
@@ -66,7 +66,7 @@ Sparrow, crow, trout, hare and roe deer are in the map today: 34 spots, five kin
 
 ## 4. What this page does not decide
 
-- **The look of each animal.** The owner picks from stills at phone size, the roe deer first. The table's look line is a brief, not a design (AGENTS.md, a direction is the owner's).
+- **The look of each animal.** The owner picks from stills at the full frame (1920 x 1080, STYLE 1), the roe deer first. The table's look line is a brief, not a design (AGENTS.md, a direction is the owner's).
 - **The behavior code.** The state machine, flee map, think steps and wind are the combat stream's.
 - **The content JSON.** The creature schema holds it (`map.creatures.kinds` in `content/core/map.json`): the hare, the crow, the roe deer and the wolf, with the numbers of this page and HUNTING.md 8, the ear in HUNTING 3's steps: this page's dull 0 and keen +2 are the same numbers there (HUNTING 3 names the 0 normal), so the notice column stands. A number changed here is changed there too.
 - **The hunt value source.** What a good is worth and how a kill pays comes from HUNTING.md and the values lock.

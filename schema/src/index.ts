@@ -47,7 +47,8 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
 });
 
 /**
- * A staff, a hammer and a pick are worn in the hand for what they help; no work asks for one yet.
+ * A staff, a hammer and a pick are worn in the hand for what they help. No work asks for a staff; a mined node
+ * (`work: "mine"`) may require a hammer or a pick, a dig spot never (QUARRYING 2).
  * The hammer and the pick are the human's and the skeleton's outfit tools (DECISIONS.md, 2026-10-22).
  */
 export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick', 'rod'] as const;
@@ -150,10 +151,10 @@ export const Output = Type.Object(
  * The slots an item names: jewelry takes either of two places on the character, an outfit takes the top and the legs,
  * and the back holds one bag or one quiver (DECISIONS.md, 2026-10-23: races, weight and bags).
  */
-export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry', 'hand', 'back'] as const;
+export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'hands', 'jewelry', 'hand', 'back'] as const;
 export const WornSlot = Type.Union(WORN_SLOTS.map((k) => Type.Literal(k)), {
   description:
-    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).',
+    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, hands (gloves), jewelry (two places), hand (a tool) or back (one bag or one quiver).',
 });
 
 /** The effects a worn item may carry: rates of work, never the output of a craft (rule R9). Every one is in EFFECTS too. */
@@ -161,6 +162,61 @@ export const WORN_EFFECTS = ['gather_speed_pct', 'dig_speed_pct', 'craft_speed_p
 export const WornEffect = Type.Union(WORN_EFFECTS.map((k) => Type.Literal(k)), {
   description: 'What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.',
 });
+
+/** The bonus a complete clothing set gives, declared once by the set's creator. */
+export const WearSet = Type.Object(
+  {
+    id: Id,
+    effect: WornEffect,
+    value: Int(1, 100, 'Whole percentage points added while every piece of the set is worn.'),
+  },
+  {
+    additionalProperties: false,
+    description: 'A clothing set and the one bonus that belongs to it. Different sets may give different effects and values.',
+  },
+);
+
+/**
+ * The garment traits (BODY_CLOCKS 6.1): what a piece is worn against, each on the places the table names.
+ * `ice_grip` sits on the hands place (CLOTHING question 1, the owner's pick of 2026-11-12).
+ */
+export const TRAITS = ['cold_proof', 'snow_shod', 'storm_proof', 'ice_grip', 'heat_ward'] as const;
+export const GarmentTrait = Type.Union(TRAITS.map((k) => Type.Literal(k)), {
+  description: 'What the piece is worn against: a place\'s condition (BODY_CLOCKS 6.1). Refused in content until G34\'s rewrite and the first place condition.',
+});
+export const TRAIT_SLOTS: Readonly<Record<(typeof TRAITS)[number], readonly (typeof WORN_SLOTS)[number][]>> = {
+  cold_proof: ['top', 'back', 'head'],
+  snow_shod: ['feet'],
+  storm_proof: ['back', 'top'],
+  ice_grip: ['hands'],
+  heat_ward: ['head', 'top'],
+};
+
+/** Attribute points a worn piece asks or gives, each key at most once (PROGRESSION 5.6; CLOTHING 7.4, 7.5). */
+export const WornAttrs = Type.Object(
+  {
+    might: Type.Optional(Int(1, 100)),
+    senses: Type.Optional(Int(1, 100)),
+    agility: Type.Optional(Int(1, 100)),
+    luck: Type.Optional(Int(1, 100)),
+    stamina: Type.Optional(Int(1, 100)),
+    spirit: Type.Optional(Int(1, 100)),
+  },
+  { additionalProperties: false, minProperties: 1 },
+);
+
+/** A soft requirement on a worn piece (PROGRESSION 5.6; CLOTHING 7.4; EQUIPMENT 3.3). */
+export const WearReq = Type.Object(
+  {
+    school: { ...Id, description: 'The profession whose level the piece asks (CLOTHING 7.4).' },
+    level: Int(1, 100, 'The level asked: exactly wear_req_level of the piece\'s tier.'),
+    attr: Type.Optional({ ...WornAttrs, description: 'Base attribute points the piece asks too; worn bonuses never count toward them.' }),
+  },
+  {
+    additionalProperties: false,
+    description: 'A soft requirement: below it the piece counts up to what gear one tier above the wearer\'s own gives (PROGRESSION 5.6; CLOTHING 7.4). Read by nothing yet.',
+  },
+);
 
 export const Wear = Type.Object(
   {
@@ -181,7 +237,7 @@ export const Wear = Type.Object(
     ),
     set: Type.Optional({
       ...Id,
-      description: 'A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.',
+      description: 'A set declared in content: when every piece is worn, that set\'s own effect and value apply.',
     }),
     places: Type.Optional(
       Int(
@@ -193,6 +249,13 @@ export const Wear = Type.Object(
     load_bonus: Type.Optional(
       Int(1, 100, 'A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.'),
     ),
+    req: Type.Optional(WearReq),
+    attrs: Type.Optional({
+      ...WornAttrs,
+      description:
+        'Bonuses on top of the base attributes, each at most attr_bonus_max of the piece\'s tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them.',
+    }),
+    trait: Type.Optional(GarmentTrait),
   },
   {
     additionalProperties: false,
@@ -200,6 +263,37 @@ export const Wear = Type.Object(
       'Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).',
   },
 );
+
+/** The swing of a hand that strikes: quick, standard or heavy, each a combat duration in milliseconds (WEAPONS 3; COMBAT 4.9). */
+export const WEAPON_TEMPOS = ['quick', 'standard', 'heavy'] as const;
+/**
+ * A hand that strikes (WEAPONS 3). Closed, like the `tool` block, and with no class field: the class is the item's own.
+ * No `uses`: a hand never wears (WEAPONS 7, owner question 7).
+ * Every weapon block in content is refused until combat (G35, G44); the grammar lands first.
+ */
+export const Weapon = Type.Object(
+  {
+    tempo: Type.Union(WEAPON_TEMPOS.map((t) => Type.Literal(t)), {
+      description: 'The swing, the hand\'s one cooldown: quick, standard or heavy, each a combat duration in milliseconds (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.',
+    }),
+    windup_ms: Int(200, 1000, 'Game milliseconds from the press to the landing, inside the swing (WEAPONS 3).'),
+    reach: Int(1, 2, 'Tiles, no diagonal; 2 is a long hand (WEAPONS 3).'),
+    harm: Int(0, 1000, 'The hand\'s bonus in points, counted as harm + hand_offset (WEAPONS 3, 4).'),
+    range: Type.Optional(Int(2, 12, 'Tiles, only on a hand that throws or shoots (WEAPONS 3).')),
+    ammo: Type.Optional({
+      ...ItemClass,
+      description: 'The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with the first shot (WEAPONS 6).',
+    }),
+    noise: Type.Optional(Int(0, 12, 'Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).')),
+  },
+  {
+    additionalProperties: false,
+    description: 'A hand that strikes (WEAPONS 3). No class field: the class is the item\'s own. Every weapon block in content is refused until combat (G35, G44).',
+  },
+);
+
+/** Who may hold an item (EQUIPMENT 3.6). */
+export const BINDS = ['none', 'account', 'character'] as const;
 
 export const ItemDef = Type.Object(
   {
@@ -243,6 +337,7 @@ export const ItemDef = Type.Object(
         { additionalProperties: false },
       ),
     ),
+    weapon: Type.Optional(Weapon),
     fragment: Type.Optional(
       Type.Object({ unlocks: Id }, { additionalProperties: false, description: 'A found scrap that teaches a recipe.' }),
     ),
@@ -264,6 +359,12 @@ export const ItemDef = Type.Object(
       Type.Boolean({
         description:
           'Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).',
+      }),
+    ),
+    bind: Type.Optional(
+      Type.Union(BINDS.map((k) => Type.Literal(k)), {
+        description:
+          'Who may hold it: none trades, account never trades or sells, character never trades; left out, none (EQUIPMENT 3.6). Only a look binds; power is never bound. Read by nothing yet.',
       }),
     ),
   },
@@ -293,7 +394,7 @@ const Place = Type.Object(
 export const ResourceBody = Type.Object(
   {
     output: Id,
-    yield: Int(1, 20, 'Units gathered per execution at perfect timing.'),
+    yield: Int(1, 20, 'Units the node gives before it is out: one each work interval, the node\'s time shared out among them (QUARRYING 10).'),
     active_ms: Ms('Time the player is busy gathering once.'),
     respawn_ms: Ms('Time before the same plant gives again. Waiting is never paid.'),
     count: Int(1, 12, 'How many of these nodes the slot holds.'),
@@ -334,13 +435,13 @@ export const ResourceBody = Type.Object(
     work: Type.Optional(
       Type.Literal('mine', {
         description:
-          'How the node is worked when it needs no tool. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.',
+          'How the node is worked. "mine": broken with blows, as felling does; it trains digging. With no tool, bare hands do it and a pick or a hammer in the bag makes it faster (the best one, worn a little each time); with a tool (a pick, a hammer or a trowel) that tool is required, and the check refuses such a tool without "mine". Every node is worked the one way (QUARRYING 10): a click starts it, a repeating animation plays, one unit comes each work interval, until the player stops or the node is out. This only says which animation.',
       }),
     ),
     level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.'),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap'), Type.Literal('fish')], {
-        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants), "snap" (press fast, for wood) or "fish" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).',
+        description: 'Retired (QUARRYING 10): no minigame is played and no timing is read. Still accepted, and ignored, so an older file loads.',
       }),
     ),
     hours: Type.Optional(
@@ -385,7 +486,7 @@ export const TreasureBody = Type.Object(
     count: Int(1, 8),
     tool: Type.Optional({
       ...ToolKind,
-      description: 'The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn.',
+      description: 'The tool the dig asks for and wears. Left out: the find is picked up by hand, with no tool worn.',
     }),
     level: Int(1, 20, 'Digging level required.'),
     finds: Type.Array(Find, { minItems: 1, maxItems: 8 }),
@@ -421,7 +522,7 @@ export const SearchBody = Type.Object(
   },
   {
     additionalProperties: false,
-    description: 'A searchable: a table of rows drawn once a day. It takes no tool and has no timing window. A treasure file carries `search` or `dig`, never both.',
+    description: 'A searchable: a table of rows drawn once a day. It takes no tool. A treasure file carries `search` or `dig`, never both.',
   },
 );
 
@@ -1113,14 +1214,14 @@ const ReactionWhen = Type.Object(
 const AppearNode = Type.Object(
   {
     output: Id,
-    yield: Int(1, 20, 'Units gathered per execution at perfect timing.'),
+    yield: Int(1, 20, 'Units the node gives before it is out: one each work interval, the node\'s time shared out among them (QUARRYING 10).'),
     active_ms: Ms('Time the player is busy gathering it once.'),
     respawn_ms: Ms('Time before it can show again once taken, while its condition still holds. Waiting is never paid.'),
     level: Int(1, 20, 'Foraging level required.'),
     tool: Type.Optional(ToolKind),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
-        description: 'The minigame played when gathering it, as a resource\'s `game`.',
+        description: 'Retired, as a resource\'s `game`: accepted and ignored.',
       }),
     ),
     sprite: SpriteRef,
@@ -1160,7 +1261,6 @@ export const ReactionBody = Type.Object(
 
 export const EFFECTS = [
   'see_ripe',
-  'timing_window_pct',
   'second_hint',
   'rare_find_pct',
   'craft_speed_pct',
@@ -1534,9 +1634,20 @@ export const ParamsBody = Type.Object(
       description:
         'The largest value of one effect on a worn item, by the item\'s tier from tier 1; the last entry holds for the tiers above it. Never falls with the tier.',
     }),
-    wear_set_bonus_pct: {
+    wear_req_level: Type.Array(Type.Integer({ minimum: 1, maximum: 100 }), {
+      minItems: 1,
+      maxItems: 20,
+      description:
+        'The level a worn piece of each tier asks in its `req`, from tier 1; the last entry holds for the tiers above it. Never falls with the tier (PROGRESSION 5.6; CLOTHING 7.4).',
+    }),
+    attr_bonus_max: Type.Array(Type.Integer({ minimum: 0, maximum: 100 }), {
+      minItems: 1,
+      maxItems: 20,
+      description: 'The largest attribute bonus a worn piece of each tier gives, from tier 1. Never falls with the tier (PROGRESSION 5.6).',
+    }),
+    attr_bonus_step: {
       ...Bounded,
-      description: 'How much a full set adds to the effects of its pieces, in percent of their sum, rounded down.',
+      description: 'Past the attr_bonus_max table, what each further tier adds to the largest attribute bonus (PROGRESSION 5.6: then +2 a tier).',
     },
     rarity_bonus_ms: Type.Object(
       { common: Type.Integer(), uncommon: Type.Integer(), rare: Type.Integer(), legendary: Type.Integer() },
@@ -1688,6 +1799,7 @@ export const ParamsBody = Type.Object(
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
         meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
         hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },
+        tan_cure_d: { ...Bounded, description: 'Game days a scraped hide cures on a tanning rack.' },
         grade2_bp: { ...Bounded, description: 'Basis points of animals that appear fine (grade 2).' },
         grade3_bp: { ...Bounded, description: 'Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain.' },
       },
@@ -1699,8 +1811,8 @@ export const ParamsBody = Type.Object(
     ),
     wild: Type.Object(
       {
-        tick_ms: { ...Bounded, description: 'Game milliseconds of one world tick (COMBAT section 4.9). Fixed: every duration below is whole ticks or whole think steps.' },
-        think_ticks: { ...Bounded, description: 'Ticks between two think steps of one animal, staggered by its id (HUNTING section 1): 8 ticks of 100 ms, a think step of 800 ms.' },
+        tick_ms: { ...Bounded, description: 'Game milliseconds of one world pulse (COMBAT section 4.9). Every fight and animal duration is stated in milliseconds and becomes ceil(duration / tick_ms) pulses.' },
+        think_ms: { ...Bounded, description: 'Game milliseconds between two think steps of one animal, staggered by its id (HUNTING section 1): 800 ms.' },
         wake_tiles: { ...Bounded, description: 'An animal is stepped only while a player is within this many tiles; beyond it its group is kept as an anchor and a count (HUNTING section 1).' },
         awake_max: { ...Bounded, description: 'The most animals stepped round one player at once (BESTIARY section 1).' },
         catchup_max_steps: { ...Bounded, description: 'A gap longer than this many think steps settles each animal to its rest pose at once instead of stepping it, so one action never pays for an hour of the wild.' },
@@ -1728,45 +1840,46 @@ export const ParamsBody = Type.Object(
     combat: Type.Object(
       {
         enabled: { ...Bounded, description: "Whether fights exist at all: 0 in the demo (G35). With 0 nothing engages and the wild brain keeps its bluff." },
-        swing_quick_t: { ...Bounded, description: "Ticks of a quick hand's whole swing, wind-up to the next strike (COMBAT 4.9, memo 4). Bare hands swing quick." },
-        swing_standard_t: { ...Bounded, description: "Ticks of a standard hand's swing." },
-        swing_heavy_t: { ...Bounded, description: "Ticks of a heavy hand's swing." },
-        swing_floor_t: { ...Bounded, description: "No hand swings faster than this, whatever its tier or a technique." },
-        bare_windup_t: { ...Bounded, description: "Ticks from a bare-handed strike's start to its landing." },
+        swing_quick_ms: { ...Bounded, description: "Game milliseconds of a quick hand's whole swing, wind-up to the next strike (COMBAT 4.9, memo 4). Bare hands swing quick." },
+        swing_standard_ms: { ...Bounded, description: "Game milliseconds of a standard hand's swing." },
+        swing_heavy_ms: { ...Bounded, description: "Game milliseconds of a heavy hand's swing." },
+        swing_floor_ms: { ...Bounded, description: "Game milliseconds of the fastest hand swing, whatever its tier or a technique." },
+        bare_windup_ms: { ...Bounded, description: "Game milliseconds from a bare-handed strike's start to its landing." },
         bare_base: { ...Bounded, description: "Points a strike of the bare hand takes from a foe; a foe's tier is counted in these (T1 falls in 2)." },
-        windup_min_t: { ...Bounded, description: "The shortest wind-up a foe's move may have (G31: nobody falls unwarned)." },
-        windup_max_t: { ...Bounded, description: "The longest wind-up a foe's move may have: no telegraph so slow that hard is easy." },
-        active_t: { ...Bounded, description: "Ticks a foe's move hits whoever stands in its reach, after its wind-up." },
-        rehit_t: { ...Bounded, description: "Ticks before one swing may hit the same target again; one swing hits one target once." },
+        tool_strike_permille: { ...Bounded, description: "A tool-only hand's share of bare-hand strike harm, against 1000 (WEAPONS 17 question 3, owner 12.11)." },
+        windup_min_ms: { ...Bounded, description: "Game milliseconds of the shortest wind-up a foe's move may have (G31: nobody falls unwarned)." },
+        windup_max_ms: { ...Bounded, description: "Game milliseconds of the longest wind-up a foe's move may have: no telegraph so slow that hard is easy." },
+        active_ms: { ...Bounded, description: "Game milliseconds a foe's move hits whoever stands in its reach, after its wind-up." },
+        rehit_ms: { ...Bounded, description: "Game milliseconds before one swing may hit the same target again; one swing hits one target once." },
         bite_div: { ...Bounded, description: "A foe's default harm to a player is the health cap divided by this: six unanswered bites fell a player." },
         behind_permille: { ...Bounded, description: "A strike from the side the target does not face does this share of its harm, against 1000." },
         weak_permille: { ...Bounded, description: "A strike inside a foe's recovery after its weak move does this share of its harm, against 1000." },
-        mercy_t: { ...Bounded, description: "Ticks after a hit on a player in which nothing harms them." },
-        stun_t: { ...Bounded, description: "Ticks after a hit in which the one hit can do nothing." },
+        mercy_ms: { ...Bounded, description: "Game milliseconds after a hit on a player in which nothing harms them." },
+        stun_ms: { ...Bounded, description: "Game milliseconds after a hit in which the one hit can do nothing." },
         knockback_tiles: { ...Bounded, description: "Tiles a hit pushes the one hit away from its source, never into a solid tile or across a level change." },
         dodge_tiles: { ...Bounded, description: "Tiles a dodge moves the body." },
-        dodge_t: { ...Bounded, description: "Ticks a dodge takes." },
-        dodge_cooldown_t: { ...Bounded, description: "Ticks after a dodge before the next." },
+        dodge_ms: { ...Bounded, description: "Game milliseconds a dodge takes." },
+        dodge_cooldown_ms: { ...Bounded, description: "Game milliseconds after a dodge before the next." },
         breath_base: { ...Bounded, description: "The breath bar's base top, in points; stamina adds breath_per_stamina each." },
         breath_per_stamina: { ...Bounded, description: "Points of breath each point of stamina adds." },
         breath_refill: { ...Bounded, description: "Points of breath standing still refills each tick." },
-        breath_hold_t: { ...Bounded, description: "Ticks after any verb but a move in which breath does not refill." },
+        breath_hold_ms: { ...Bounded, description: "Game milliseconds after any verb but a move in which breath does not refill." },
         attack_breath: { ...Bounded, description: "Breath a strike costs." },
         guard_drain: { ...Bounded, description: "Breath a held guard costs each tick." },
         guard_hit_breath: { ...Bounded, description: "Breath a blow into the guard costs the guard." },
         dodge_breath: { ...Bounded, description: "Breath a dodge costs." },
-        breath_stagger_t: { ...Bounded, description: "Ticks a figure out of breath can neither strike nor guard." },
-        guard_stagger_t: { ...Bounded, description: "Ticks the striker is staggered after a strike into a guard." },
+        breath_stagger_ms: { ...Bounded, description: "Game milliseconds a figure out of breath can neither strike nor guard." },
+        guard_stagger_ms: { ...Bounded, description: "Game milliseconds the striker is staggered after a strike into a guard." },
         engage_tiles: { ...Bounded, description: "A foe heeds a player within this many tiles." },
         leash_tiles: { ...Bounded, description: "A foe never goes farther than this from its spot; past it a chase ends and the foe goes home." },
-        give_up_t: { ...Bounded, description: "Ticks out of sense before a chase ends." },
-        claim_lock_t: { ...Bounded, description: "Ticks the first player whose strike lands holds a foe; each hit the holder deals or takes renews it." },
+        give_up_ms: { ...Bounded, description: "Game milliseconds out of sense before a chase ends." },
+        claim_lock_ms: { ...Bounded, description: "Game milliseconds the first player whose strike lands holds a foe; each hit the holder deals or takes renews it." },
         pay_per_s_mg: { ...Bounded, description: "Milli-gold a second of a foe's pattern may be worth in drops at the trader's price (HUNTING 9)." },
       },
       {
         additionalProperties: false,
         description:
-          'The fight (docs/design/COMBAT.md section 4.9): every duration a whole number of world ticks (wild.tick_ms). Nothing reads it while enabled is 0 (G35). Damage is exact: no chance decides a hit inside a fight (G79).',
+          'The fight (docs/design/COMBAT.md section 4.9): durations are game milliseconds and the kernel turns each into ceil(ms / wild.tick_ms) pulses. Nothing reads it while enabled is 0 (G35). Damage is exact: no chance decides a hit inside a fight (G79).',
       },
     ),
     starting_gold_mg: Bounded,
@@ -1775,7 +1888,7 @@ export const ParamsBody = Type.Object(
       {
         additionalProperties: false,
         description:
-          'What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
+          'What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), a fifth of a fight blow\'s percent off every work interval, inside the power cap (agility), permille on rare and legendary finds inside the power cap (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
       },
     ),
     growth: Type.Optional(
@@ -1827,6 +1940,28 @@ export const RampBody = Type.Object(
     }),
   },
   { additionalProperties: false, description: 'A material or region ramp, declared by the kit that draws with it.' },
+);
+
+/** The views of a character clip: the right side is the left one flipped, as the walk's is (the front faces the viewer, the back faces away). */
+export const CLIP_VIEWS = ['left', 'front', 'back'] as const;
+/** The verbs a character clip plays: the fight's outcome kinds (kernel/src/events.ts, #726) and the work actions. Display only. */
+export const CLIP_VERBS = ['strike', 'guard', 'dodge', 'hit', 'fell', 'quarry', 'fish', 'pickup', 'dig'] as const;
+
+/**
+ * A named character clip (#742): one sheet that plays one verb for one race in one view. The sheet's `frames` is the clip's
+ * frame count; `frame_ms` is its own speed, so changing one clip's time moves that clip only. The figure code finds it by
+ * verb + race + view; with none it keeps today's walk sheet or code-drawn motion. A clip is display only: the kernel
+ * decides when a strike lands and how long an action takes.
+ */
+export const ClipBody = Type.Object(
+  {
+    race: Type.String({ pattern: ID_PATTERN, maxLength: 80, description: 'The race id the clip is drawn for, for example "core/human".' }),
+    view: Type.Union(CLIP_VIEWS.map((v) => Type.Literal(v)), { description: 'left, front or back; the right side is the left one flipped.' }),
+    verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup or dig.' }),
+    frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
+    anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
+  },
+  { additionalProperties: false },
 );
 
 export const KitBody = Type.Object(
@@ -1894,6 +2029,7 @@ export const KitBody = Type.Object(
               },
             ),
           ),
+          clip: Type.Optional(ClipBody),
           scale: Type.Optional(
             Type.Number({
               minimum: 0.1,
@@ -2135,12 +2271,12 @@ const MoveName = Type.String({ pattern: '^[a-z][a-z0-9_-]{0,23}$' });
 const FightMove = Type.Object(
   {
     id: MoveName,
-    windup_t: Int(1, 20, 'Ticks the pose shows before the move lands. The check holds it to combat.windup_min_t and windup_max_t.'),
+    windup_ms: Int(100, 2000, 'Game milliseconds the pose shows before the move lands. The check holds it to combat.windup_min_ms and windup_max_ms.'),
     reach: Int(1, 3, 'Tiles in a line in front of the foe the move reaches.'),
     harm_div: Type.Optional(Int(2, 24, 'The move takes the health cap divided by this. Absent: combat.bite_div.')),
     breath: Int(0, 40, 'Breath the move costs the foe.'),
-    recover_t: Int(1, 20, 'Ticks the foe stands open after the move; a strike that lands then does extra if this is the weak move.'),
-    cooldown_t: Int(0, 200, 'Ticks before the same move may start again.'),
+    recover_ms: Int(100, 2000, 'Game milliseconds the foe stands open after the move; a strike that lands then does extra if this is the weak move.'),
+    cooldown_ms: Int(0, 20000, 'Game milliseconds before the same move may start again.'),
   },
   { additionalProperties: false },
 );
@@ -2192,6 +2328,54 @@ const CreatureKind = Type.Object(
   },
   { additionalProperties: false },
 );
+
+/** A spot's rank: how strong the creatures there are against their kind's norm (DECISIONS 2026-11-08, the generator's five axes). */
+export const SPOT_RANKS = ['regular', 'elite', 'rare', 'boss'] as const;
+/** A spot's shape: how its creatures stand: alone, as a pack, as a camp with a leader, or on a patrol route. */
+export const SPOT_SHAPES = ['lone', 'pack', 'camp', 'patrol'] as const;
+const AffixId = Type.String({
+  pattern: '^[a-z][a-z0-9_-]{0,23}$',
+  description: 'An affix word the fight reads (fast, armoured, venom, ember...): a small change to the kind\'s norm, never a new kind.',
+});
+
+/**
+ * A creature spot: where a kind sits until the player comes close. The map holds its spots in world tiles, a chunk
+ * in its own tiles. The first three fields are the spot; the rest are the generator's five axes (DECISIONS
+ * 2026-11-08), every one optional: left out, the spot is a regular one of the kind's own group class.
+ */
+const CreatureSpot = (max: number) =>
+  Type.Object(
+    {
+      kind: Id,
+      x: Int(0, max),
+      y: Int(0, max),
+      rank: Type.Optional(
+        Type.Union(SPOT_RANKS.map((k) => Type.Literal(k)), {
+          description: 'How strong the spot\'s creatures are against the kind\'s norm. Left out: regular. At most one boss on a map.',
+        }),
+      ),
+      shape: Type.Optional(
+        Type.Union(SPOT_SHAPES.map((k) => Type.Literal(k)), {
+          description: 'How they stand: alone, as a pack, as a camp around a leader, or walking a route. Left out: the kind\'s own group class.',
+        }),
+      ),
+      count: Type.Optional(
+        Type.Tuple([Int(1, 16), Int(1, 16)], { description: 'How many are drawn at the spot, the fewest then the most. Left out: the kind\'s own band.' }),
+      ),
+      affixes: Type.Optional(
+        Type.Array(AffixId, { maxItems: 3, uniqueItems: true, description: 'The affix words of the spot\'s creatures; a regular spot carries none.' }),
+      ),
+      leader: Type.Optional({ ...Id, description: 'A camp only: the kind standing at its middle, one of the map\'s kinds.' }),
+      route: Type.Optional(
+        Type.Array(Type.Tuple([Int(0, 1023), Int(0, 1023)]), {
+          minItems: 2,
+          maxItems: 64,
+          description: 'A patrol only: the tiles it walks, in order, each a path tile four-adjacent to the one before. World tiles, in a chunk too, so a beat may cross a seam.',
+        }),
+      ),
+    },
+    { additionalProperties: false },
+  );
 
 /** The closed list of climates a region may declare (NATURE section 2). The tables live in content/core/climates.json. */
 export const CLIMATES = ['temperate', 'dry', 'cold', 'wet'] as const;
@@ -2323,6 +2507,16 @@ const Prop = (max: number) =>
       crossing: Type.Optional(
         Type.Literal(true, { description: 'Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.' }),
       ),
+      portal: Type.Optional(
+        Type.Object(
+          { x: Int(0, 1023), y: Int(0, 1023) },
+          {
+            additionalProperties: false,
+            description:
+              'A way through: a player who steps onto this non-solid prop\'s footprint stands on that world tile instead (a cave mouth, a hollow tree, an old well, the way back up). The tile is walkable and the check proves it. It needs an id. A chunk\'s portal names a world tile, not a chunk tile.',
+          },
+        ),
+      ),
       lit_by: Type.Optional({
         ...Id,
         description: 'Id of the fire prop while whose fire burns this prop\'s note and sign may be read.',
@@ -2358,6 +2552,41 @@ const Prop = (max: number) =>
     { additionalProperties: false },
   );
 
+/** What may drift in a region's air (the owner, 8.11: fireflies and pollen in the elf wood, ash over the undead land). Rain is the weather's, not the air's. */
+export const PARTICLE_KINDS = ['fireflies', 'pollen', 'ash', 'embers', 'leaves', 'birds', 'snow'] as const;
+const Rgb = Type.Tuple([Int(0, 255), Int(0, 255), Int(0, 255)], { description: 'Red, green, blue.' });
+
+/**
+ * A region's air, read by the light layer (DECISIONS 2026-11-04, the engine's layers): the sun's tint, the night's
+ * depth and what drifts in the air. The mist stays the weather's (`weather.fog`, `look.fog`): only the valley has
+ * it. The owner's three lands (8.11): the human land pastoral under a plain sun, the elf wood bright with shafts,
+ * pollen and fireflies, the undead land under a redder sun and a darker night with ash in the air.
+ */
+const Atmosphere = Type.Object(
+  {
+    sun: Type.Object(
+      { day: Rgb, dusk: Rgb },
+      {
+        additionalProperties: false,
+        description: 'The tint the light layer gives the day and the dusk. [255, 255, 255] by day leaves the valley\'s light as it is; a redder day is the undead land\'s.',
+      },
+    ),
+    night_depth: Int(0, 100, 'How far the night falls: 0 the lightest night the layer draws, 100 its darkest. The valley\'s own night is about 50.'),
+    particles: Type.Array(
+      Type.Object(
+        {
+          kind: Type.Union(PARTICLE_KINDS.map((k) => Type.Literal(k))),
+          density: Int(1, 10, 'How much of it drifts: 1 a few, 10 a cloud.'),
+        },
+        { additionalProperties: false },
+      ),
+      { maxItems: 4, description: 'What drifts in the air, each kind once.' },
+    ),
+    shafts: Type.Optional(Type.Boolean({ description: 'Sun shafts between the trees by day (the elf wood). Left out: none.' })),
+  },
+  { additionalProperties: false },
+);
+
 /** The ambience beds a region card may name until the owner's sound pick (#464): the day and night beds the client has. */
 export const AMBIENCE_BEDS = ['day', 'night'] as const;
 const AmbienceBed = Type.Union(AMBIENCE_BEDS.map((k) => Type.Literal(k)));
@@ -2389,6 +2618,7 @@ export const RegionCard = Type.Object(
       { day: AmbienceBed, night: AmbienceBed },
       { additionalProperties: false, description: 'The sound bed by day and by night; the existing beds until the owner\'s sound pick (#464).' },
     ),
+    atmosphere: Type.Optional({ ...Atmosphere, description: 'The region\'s air: its sun, its night and what drifts in it. Left out: the valley\'s own light, as the layer draws it today.' }),
   },
   { additionalProperties: false },
 );
@@ -2404,14 +2634,11 @@ export const MapBody = Type.Object(
       Type.Object(
         {
           kinds: Type.Record(Id, CreatureKind),
-          spots: Type.Array(
-            Type.Object({ kind: Id, x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
-            { maxItems: 200 },
-          ),
+          spots: Type.Array(CreatureSpot(1023), { maxItems: 200 }),
         },
         {
           additionalProperties: false,
-          description: 'Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A kind with "hunt" is the kernel\'s too: it dresses its carcasses and the value table prices its goods, with its spots as the source\'s capacity (HUNTING sections 5-9). A kind with "behaviour" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den\'s mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).',
+          description: 'Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A spot may carry a rank, a shape, a count, affixes, a leader and a route (the generator\'s axes, DECISIONS 2026-11-08); left out, it is a regular spot of the kind\'s own group class. A kind with "hunt" is the kernel\'s too: it dresses its carcasses and the value table prices its goods, with its spots as the source\'s capacity (HUNTING sections 5-9). A kind with "behaviour" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den\'s mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).',
         },
       ),
     ),
@@ -2469,6 +2696,11 @@ export const MapBody = Type.Object(
               ...Name,
               description: 'The name the banner shows on the first entry (G63). Left out: the region still counts as found, under its id made readable.',
             }),
+            underground: Type.Optional(
+              Type.Literal(true, {
+                description: 'Below the ground, reached through a portal: no sky over it (no weather, no sun, its card\'s night all day), and the chart draws it only once entered. Left out: open air.',
+              }),
+            ),
           },
           { additionalProperties: false },
         ),
@@ -2545,6 +2777,12 @@ export const ChunkBody = Type.Object(
     ),
     props: Type.Array(Prop(63), { description: 'The chunk\'s props, in chunk coordinates.' }),
     stamps: Type.Array(Stamp, { description: 'The hand-made places stamped onto the chunk.' }),
+    spawns: Type.Optional(
+      Type.Array(CreatureSpot(63), {
+        maxItems: 64,
+        description: 'The chunk\'s creature spots, in chunk coordinates, each of a kind the map\'s `creatures.kinds` names. The generator writes them (tools/src/gen); no client draws them yet. Absent: none.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -2567,6 +2805,75 @@ export const CreatorBody = Type.Object(
         },
         { additionalProperties: false },
       ),
+    ),
+  },
+  { additionalProperties: false },
+);
+
+// ---------------------------------------------------------------- a story: the generator's input (DECISIONS 2026-11-08)
+
+/** The three worlds a land belongs to (DECISIONS 2026-10-22, decision 11): each has its own ground, trees, creatures and air. */
+export const STORY_WORLDS = ['human', 'elf', 'undead'] as const;
+/** The sides of a land a road may come in from. */
+export const SIDES = ['n', 'e', 's', 'w'] as const;
+
+/** The kinds of settlement a story may ask for, as the big games sort them: from a walled city to a lone tower. */
+export const SETTLEMENT_KINDS = ['city', 'town', 'village', 'hamlet', 'farm', 'outpost', 'keep'] as const;
+
+/** One settlement of a land: its kind, and how big within its kind. */
+const Settlement = Type.Object(
+  {
+    kind: Type.Union(SETTLEMENT_KINDS.map((k) => Type.Literal(k)), {
+      description:
+        'What stands there: a city (walls and gates, a main street, districts of narrow streets), a town (a market square and streets, a wall perhaps), a village (houses round a square), a hamlet (a few houses), a farm (a house, a barn, fields), an outpost (a tower and a fence), a keep (a wall and a hall on a height).',
+    }),
+    size: Type.Optional(Int(1, 3, 'Within its kind: 1 small, 2 the usual, 3 huge. Left out: 2.')),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * A story: what the owner tells the generator about a land, as data (the owner, 8.11: "I give it a story and it
+ * makes a beautiful map"). The generator (tools/src/gen, `pnpm gen`) reads it and writes the land's chunks; the
+ * same story gives the same land, always. The envelope's `description` holds the owner's words about the place.
+ * Every number is an integer; the words name sets the generator knows, never a sprite.
+ */
+export const StoryBody = Type.Object(
+  {
+    seed: Type.String({ minLength: 1, maxLength: 60, description: 'The seed word: the same word gives the same land, always.' }),
+    world: Type.Union(STORY_WORLDS.map((w) => Type.Literal(w)), { description: 'Whose land it is: its ground, trees, creatures and air.' }),
+    origin: Type.Object(
+      { cx: Int(0, 15), cy: Int(0, 15) },
+      { additionalProperties: false, description: 'The land\'s top-left chunk in the world grid of 64-tile chunks (G51).' },
+    ),
+    size: Type.Object({ w: Int(1, 8), h: Int(1, 8) }, { additionalProperties: false, description: 'The land in chunks, wide and high.' }),
+    forest: Int(0, 100, 'How much of the land is wood: 0 open meadow, 100 a wall of trees with few glades.'),
+    relief: Int(0, 100, 'How much the ground rises: 0 flat, 100 terraces and crags everywhere.'),
+    water: Int(0, 100, 'Lakes and streams: 0 none, 100 a wet land.'),
+    caves: Int(0, 8, 'How many hidden doors the deep wood holds, each the way down to the land below.'),
+    below: Type.Optional(
+      Type.Object(
+        { cx: Int(0, 15), cy: Int(0, 15) },
+        {
+          additionalProperties: false,
+          description: 'The top-left chunk of the land below: the caves the doors lead down to, one chunk high and one wide per door up to the land\'s width, in a part of the grid no land above uses. Left out: the doors lead nowhere yet, so none is placed.',
+        },
+      ),
+    ),
+    entries: Type.Array(Type.Union(SIDES.map((s) => Type.Literal(s))), {
+      minItems: 1,
+      maxItems: 4,
+      uniqueItems: true,
+      description: 'The sides a road comes in from.',
+    }),
+    ruins: Type.Optional(Int(0, 6, 'Small ruins off the roads. Left out: 1.')),
+    life: Type.Optional(Int(0, 100, 'How full of creatures the land is, as a share of the kinds\' caps: 0 empty, 100 at the cap. Left out: 25.')),
+    settlements: Type.Optional(
+      Type.Array(Settlement, {
+        maxItems: 8,
+        description:
+          'The settlements of the land, the largest first: the first stands at the hub where the roads meet, the rest the generator places apart from it and joins by road. Each world builds them its own way (the owner, 8.11: varied, in many sizes, as the big games do; a human city huge in its own right, with great walls, old Dubrovnik). Left out: a clearing at the hub.',
+      }),
     ),
   },
   { additionalProperties: false },
@@ -2603,6 +2910,7 @@ export const TreasureFile = Type.Object(
   { additionalProperties: false, $id: 'treasure' },
 );
 export const RecipeFile = record('recipe', 'recipe', RecipeBody);
+export const SetFile = record('set', 'set', WearSet);
 export const TemplateFile = record('template', 'template', TemplateBody);
 export const NpcFile = record('npc', 'npc', NpcBody);
 export const QuestFile = record('quest', 'quest', QuestBody);
@@ -2623,9 +2931,11 @@ export const MapFile = record('map', 'map', MapBody);
 export const ChunkFile = record('chunk', 'chunk', ChunkBody);
 export const PocketFile = record('pocket', 'pocket', PocketBody);
 export const SchoolFile = record('school', 'school', SchoolBody);
+/** A story file is core-only: the generator's input, never in the bundle (the chunks it writes are). */
+export const StoryFile = record('story', 'story', StoryBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction', 'set'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school', 'story'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,
@@ -2649,10 +2959,13 @@ export const ExtensionFile = Type.Union([
   MapFile,
   PocketFile,
   SchoolFile,
+  StoryFile,
 ]);
 
+export type ClipInfo = Static<typeof ClipBody>;
 export type ItemDef = Static<typeof ItemDef>;
 export type ClassDef = Static<typeof ClassDef>;
+export type WearSetDef = Static<typeof WearSet>;
 export type ClassInput = Static<typeof ClassInput>;
 export type BaseClassName = (typeof BASE_CLASSES)[number];
 export type Stack = Static<typeof Stack>;
@@ -2710,6 +3023,10 @@ export type SchoolNodeDef = Static<typeof SchoolNode>;
 export type NodeSizeName = (typeof NODE_SIZES)[number];
 export type TreeTint = (typeof TREE_TINTS)[number];
 export type SchoolFile = Static<typeof SchoolFile>;
+export type Story = Static<typeof StoryBody>;
+export type StoryFile = Static<typeof StoryFile>;
+export type StoryWorld = (typeof STORY_WORLDS)[number];
+export type Side = (typeof SIDES)[number];
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
@@ -2717,8 +3034,13 @@ export type Ramp = Static<typeof RampBody>;
 export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
 export type RegionCardDef = Static<typeof RegionCard>;
+export type AtmosphereDef = Static<typeof Atmosphere>;
+export type ParticleKind = (typeof PARTICLE_KINDS)[number];
 export type AmbienceBedName = (typeof AMBIENCE_BEDS)[number];
 export type CreatureKindDef = Static<typeof CreatureKind>;
+export type CreatureSpotDef = Static<ReturnType<typeof CreatureSpot>>;
+export type SpotRank = (typeof SPOT_RANKS)[number];
+export type SpotShape = (typeof SPOT_SHAPES)[number];
 export type HuntDef = Static<typeof Hunt>;
 export type BehaviourDef = Static<typeof Behaviour>;
 export type ChunkFile = Static<typeof ChunkFile>;
@@ -2729,6 +3051,12 @@ export type WornEffectName = (typeof WORN_EFFECTS)[number];
 export type WornSlotName = (typeof WORN_SLOTS)[number];
 export type BodyEffectName = (typeof BODY_EFFECTS)[number];
 export type WearDef = Static<typeof Wear>;
+export type WeaponDef = Static<typeof Weapon>;
+export type WeaponTempo = (typeof WEAPON_TEMPOS)[number];
+export type WornAttrsDef = Static<typeof WornAttrs>;
+export type WearReqDef = Static<typeof WearReq>;
+export type Trait = (typeof TRAITS)[number];
+export type Bind = (typeof BINDS)[number];
 export type ToolKind = (typeof TOOL_KINDS)[number];
 export type StationKind = (typeof STATIONS)[number];
 export type RarityName = (typeof RARITIES)[number];
@@ -2738,6 +3066,7 @@ export const SCHEMAS = {
   resource: ResourceFile,
   treasure: TreasureFile,
   recipe: RecipeFile,
+  set: SetFile,
   template: TemplateFile,
   npc: NpcFile,
   quest: QuestFile,
@@ -2757,6 +3086,7 @@ export const SCHEMAS = {
   chunk: ChunkFile,
   pocket: PocketFile,
   school: SchoolFile,
+  story: StoryFile,
 } as const;
 
 export { validateFile, type SchemaIssue } from './validate';

@@ -8,8 +8,8 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
-import { solveMinigame } from './minigame';
 import { FreeWalk, VEC, type Dir } from './walk';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -217,9 +217,10 @@ class StealthPlayer {
     if (at[0] !== x || at[1] !== y) throw new Error(`walk to ${what} ended at ${at.join(',')}`);
   }
 
-  async solveMinigame(): Promise<void> {
-    await solveMinigame(this.page, true, 'the moonreed minigame');
-    await this.page.waitFor('!__stealth.state().busy && !__stealth.state().blocking', 'the moonreed gather to finish', 10_000);
+  /** The moonreed is picked by itself after the press: the player only watches it come home (QUARRYING 10). */
+  async watchWork(): Promise<void> {
+    await this.page.waitFor('__game.world.working', 'the moonreed work to start by itself', 3000);
+    await this.page.waitFor('!__game.world.working && !__stealth.state().busy && !__stealth.state().blocking', 'the moonreed gather to finish', 20_000);
   }
 
   async handleLevelUp(): Promise<void> {
@@ -304,7 +305,7 @@ async function run(page: Page, url: string): Promise<void> {
   const at = (await me.state()).pos;
   if (Math.max(Math.abs(node.x - at[0]), Math.abs(node.y - at[1])) !== 1) throw new Error(`moonreed ${node.x},${node.y} is not beside the crossing at ${at.join(',')}`);
   await page.press('Enter');
-  await me.solveMinigame();
+  await me.watchWork();
   await me.handleLevelUp();
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the moonreed crossing started a chase');
   if ((await page.eval<number>(`__game.session.state.player.bag['core/moonreed'] ?? 0`)) < 1) throw new Error('the moonreed is not in the bag');
@@ -360,7 +361,7 @@ async function run(page: Page, url: string): Promise<void> {
 }
 
 async function play(browser: Browser, url: string): Promise<void> {
-  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
+  const page = await browser.newPage(PHONE);
   try {
     await run(page, url);
   } catch (error) {

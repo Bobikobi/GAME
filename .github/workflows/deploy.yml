@@ -119,16 +119,20 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           TARGET: ${{ needs.plan.outputs.target }}
+          # the players counter (tools/src/hub/accounts.ts): a repository secret, the same one the hourly refresh reads
+          # (loop.yml), handed to the build on Vercel so the deployed hub-data.json carries the count; empty, the
+          # option below is left out and the build runs as before (count null, the page says unknown)
+          GAME_SERVER_ORIGIN: ${{ secrets.GAME_SERVER_ORIGIN }}
         run: |
           # the source goes up and Vercel builds it with vercel.json's commands. Not a build on this runner:
           # Vercel never hands the project's sensitive values (the Redis pair the hub's usage section reads) to
           # the CLI, so `vercel pull` writes "[SENSITIVE]" in their place and `pnpm build` dies in hub:data
           # (issue #596, run 41296298595)
-          if [ "$TARGET" = production ]; then
-            url=$(vercel deploy --prod --yes --token="$VERCEL_TOKEN")
-          else
-            url=$(vercel deploy --yes --token="$VERCEL_TOKEN")
-          fi
+          # --build-env sets a value for the build only (`vercel deploy --help`, CLI 64.5.0); never echoed
+          args=(--yes --token="$VERCEL_TOKEN")
+          if [ -n "$GAME_SERVER_ORIGIN" ]; then args+=(--build-env "GAME_SERVER_ORIGIN=$GAME_SERVER_ORIGIN"); fi
+          if [ "$TARGET" = production ]; then args+=(--prod); fi
+          url=$(vercel deploy "${args[@]}")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed $TARGET: $url" >> "$GITHUB_STEP_SUMMARY"
       - name: Point the develop address at it

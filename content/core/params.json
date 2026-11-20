@@ -130,11 +130,25 @@
       8,
       12
     ],
-    "wear_set_bonus_pct": {
-      "value": 20,
-      "min": 0,
-      "max": 50,
-      "step": 5
+    "wear_req_level": [
+      1,
+      6,
+      11,
+      16,
+      21
+    ],
+    "attr_bonus_max": [
+      1,
+      2,
+      3,
+      4,
+      6
+    ],
+    "attr_bonus_step": {
+      "value": 2,
+      "min": 1,
+      "max": 4,
+      "step": 1
     },
     "rarity_bonus_ms": {
       "common": 0,
@@ -529,6 +543,12 @@
         "max": 12,
         "step": 1
       },
+      "tan_cure_d": {
+        "value": 1,
+        "min": 1,
+        "max": 5,
+        "step": 1
+      },
       "grade2_bp": {
         "value": 2500,
         "min": 0,
@@ -545,14 +565,14 @@
     "wild": {
       "tick_ms": {
         "value": 100,
-        "min": 100,
-        "max": 100,
-        "step": 0
+        "min": 33,
+        "max": 200,
+        "step": 1
       },
-      "think_ticks": {
-        "value": 8,
-        "min": 8,
-        "max": 8,
+      "think_ms": {
+        "value": 800,
+        "min": 800,
+        "max": 800,
         "step": 0
       },
       "wake_tiles": {
@@ -1087,35 +1107,35 @@
         "max": 1,
         "step": 1
       },
-      "swing_quick_t": {
-        "value": 8,
-        "min": 6,
-        "max": 10,
-        "step": 1
+      "swing_quick_ms": {
+        "value": 800,
+        "min": 600,
+        "max": 1000,
+        "step": 100
       },
-      "swing_standard_t": {
-        "value": 10,
-        "min": 8,
-        "max": 12,
-        "step": 1
+      "swing_standard_ms": {
+        "value": 1000,
+        "min": 800,
+        "max": 1200,
+        "step": 100
       },
-      "swing_heavy_t": {
-        "value": 12,
-        "min": 12,
-        "max": 15,
-        "step": 1
+      "swing_heavy_ms": {
+        "value": 1200,
+        "min": 1200,
+        "max": 1500,
+        "step": 100
       },
-      "swing_floor_t": {
-        "value": 6,
-        "min": 4,
-        "max": 8,
-        "step": 1
+      "swing_floor_ms": {
+        "value": 600,
+        "min": 400,
+        "max": 800,
+        "step": 100
       },
-      "bare_windup_t": {
-        "value": 3,
-        "min": 2,
-        "max": 5,
-        "step": 1
+      "bare_windup_ms": {
+        "value": 300,
+        "min": 200,
+        "max": 500,
+        "step": 100
       },
       "bare_base": {
         "value": 8,
@@ -1123,29 +1143,35 @@
         "max": 16,
         "step": 1
       },
-      "windup_min_t": {
-        "value": 2,
-        "min": 1,
-        "max": 4,
-        "step": 1
+      "tool_strike_permille": {
+        "value": 1050,
+        "min": 1000,
+        "max": 1500,
+        "step": 50
       },
-      "windup_max_t": {
-        "value": 10,
-        "min": 6,
-        "max": 12,
-        "step": 1
+      "windup_min_ms": {
+        "value": 200,
+        "min": 100,
+        "max": 400,
+        "step": 100
       },
-      "active_t": {
-        "value": 2,
-        "min": 1,
-        "max": 3,
-        "step": 1
+      "windup_max_ms": {
+        "value": 1000,
+        "min": 600,
+        "max": 1200,
+        "step": 100
       },
-      "rehit_t": {
-        "value": 2,
-        "min": 1,
-        "max": 3,
-        "step": 1
+      "active_ms": {
+        "value": 200,
+        "min": 100,
+        "max": 300,
+        "step": 100
+      },
+      "rehit_ms": {
+        "value": 200,
+        "min": 100,
+        "max": 300,
+        "step": 100
       },
       "bite_div": {
         "value": 6,
@@ -1165,17 +1191,17 @@
         "max": 3000,
         "step": 250
       },
-      "mercy_t": {
-        "value": 8,
-        "min": 6,
-        "max": 10,
-        "step": 1
+      "mercy_ms": {
+        "value": 800,
+        "min": 600,
+        "max": 1000,
+        "step": 100
       },
-      "stun_t": {
-        "value": 3,
-        "min": 2,
-        "max": 5,
-        "step": 1
+      "stun_ms": {
+        "value": 300,
+        "min": 200,
+        "max": 500,
+        "step": 100
       },
       "knockback_tiles": {
         "value": 1,
@@ -1189,17 +1215,17 @@
         "max": 3,
         "step": 1
       },
-      "dodge_t": {
-        "value": 3,
-        "min": 2,
-        "max": 5,
-        "step": 1
+      "dodge_ms": {
+        "value": 300,
+        "min": 200,
+        "max": 500,
+        "step": 100
       },
-      "dodge_cooldown_t": {
-        "value": 15,
-        "min": 10,
-        "max": 20,
-        "step": 1
+      "dodge_cooldown_ms": {
+        "value": 1500,
+        "min": 1000,
+        "max": 2000,
+        "step": 100
       },
       "breath_base": {
         "value": 60,
@@ -1219,11 +1245,11 @@
         "max": 4,
         "step": 1
       },
-      "breath_hold_t": {
-        "value": 6,
-        "min": 3,
-        "max": 10,
-        "step": 1
+      "breath_hold_ms": {
+        "value": 600,
+        "min": 300,
+        "max": 1000,
+        "step": 100
       },
       "attack_breath": {
         "value": 15,
@@ -1249,17 +1275,17 @@
         "max": 24,
         "step": 1
       },
-      "breath_stagger_t": {
-        "value": 12,
-        "min": 8,
-        "max": 15,
-        "step": 1
+      "breath_stagger_ms": {
+        "value": 1200,
+        "min": 800,
+        "max": 1500,
+        "step": 100
       },
-      "guard_stagger_t": {
-        "value": 6,
-        "min": 4,
-        "max": 8,
-        "step": 1
+      "guard_stagger_ms": {
+        "value": 600,
+        "min": 400,
+        "max": 800,
+        "step": 100
       },
       "engage_tiles": {
         "value": 6,
@@ -1273,17 +1299,17 @@
         "max": 10,
         "step": 1
       },
-      "give_up_t": {
-        "value": 50,
-        "min": 30,
-        "max": 80,
-        "step": 10
+      "give_up_ms": {
+        "value": 5000,
+        "min": 3000,
+        "max": 8000,
+        "step": 1000
       },
-      "claim_lock_t": {
-        "value": 48,
-        "min": 30,
-        "max": 60,
-        "step": 6
+      "claim_lock_ms": {
+        "value": 4800,
+        "min": 3000,
+        "max": 6000,
+        "step": 600
       },
       "pay_per_s_mg": {
         "value": 50,

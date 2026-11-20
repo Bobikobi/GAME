@@ -68,10 +68,18 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   // a world that changed may have moved the hazards and the safe ground: nothing carries over
   p.outing = null;
   p.chase = null;
+  p.fight ??= null;
   // a crossing under way whose passage or drawn event left the content puts in at the jetty it left
   if (p.aboard && !bundle.passages[p.aboard.passage]?.events[p.aboard.event]) p.aboard = null;
   // a node a reaction makes appear keeps its state under its own id, as long as the reaction stays
   state.nodes = keepKeys(state.nodes, { ...bundle.instances, ...Object.fromEntries(appearSlots(bundle)) });
+  // `ice_grip` moved from feet to the new gloves place. An older save keeps the piece worn,
+  // in its new place, instead of having it silently removed by the fit check below.
+  const oldIceGrip = p.worn.feet === undefined ? undefined : bundle.items[p.worn.feet];
+  if (oldIceGrip?.wear?.slot === 'hands' && oldIceGrip.wear.trait === 'ice_grip' && p.worn.hands === undefined) {
+    p.worn.hands = p.worn.feet;
+    delete p.worn.feet;
+  }
   // a worn item that is gone, or no longer fits its place, comes off
   fitWorn(bundle, state);
   state.content = bundle.tag;

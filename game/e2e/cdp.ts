@@ -67,7 +67,7 @@ export const sleep = async (ms: number): Promise<void> => {
 /**
  * E2E_WARP=<k> (k > 1) lets the game's clock run k times faster than the wall's while a script only waits on it
  * (`Page.waitFor`): a dig, a felling or a cooking that holds the player for N game seconds, the wait for dusk.
- * Walks, taps, minigames and every sleep stay at the real pace, and game durations are unchanged (the tick is
+ * Walks, taps and every sleep stay at the real pace, and game durations are unchanged (the tick is
  * the game's own, so a dig still takes its game seconds); what shrinks is only the wall time spent looking at
  * the clock. Set by the runner (run.ts) for the scripts that wait on the clock; unset, nothing is wrapped.
  * The wrap is in the page's performance.now(), which Phaser's loop reads for its delta; the frame cap on the
@@ -87,8 +87,7 @@ const WARP_CLOCK = `(() => {
   let virt = real(), last = virt, gain = 0, since = 0, safe = false;
   window.__warp = 1;
   // safe when the world has run long enough for the device settings to settle (120 frames, about 10 s of play clock
-  // even on a slow runner; cached per 50 ms) and no minigame is open (asked at every call: a minigame times its
-  // frames on this clock, and a press is timed in real ms from its ring, so it must see one clock from its start)
+  // even on a slow runner; cached per 50 ms)
   const settled = (r) => {
     if (r - since > 50) {
       since = r;
@@ -99,7 +98,7 @@ const WARP_CLOCK = `(() => {
   };
   performance.now = () => {
     const r = real();
-    const k = window.__warp > 1 && settled(r) && !document.querySelector('.minigame-layer') ? window.__warp : 1;
+    const k = window.__warp > 1 && settled(r) ? window.__warp : 1;
     virt += (r - last) * k;
     gain += (r - last) * (k - 1);
     last = r;

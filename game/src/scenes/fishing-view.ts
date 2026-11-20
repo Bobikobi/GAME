@@ -1,11 +1,10 @@
 /**
  * Fishing in the 2D world, drawn in code with the world's palette (DECISIONS.md, 2026-10-25: fishing): dark fish
  * shapes under each spot that has fish, and, while a cast is on, a rod in the player's hand, an elastic line and a
- * red and white float. The minigame says which state the cast is in; fishing.ts says where everything is.
+ * red and white float. The work says which stage the cast is in; fishing.ts says where everything is.
  */
 import Phaser from 'phaser';
-import { FISH_LOST_MS, FISH_REEL_MS, type Pt, floatAt, linePoints, sagAt, silhouettes } from '../fishing';
-import type { FishPhase } from '../ui/games/shared';
+import { FISH_REEL_MS, type FishPhase, type Pt, floatAt, linePoints, sagAt, silhouettes } from '../fishing';
 
 export interface FishingColours {
   ink: number;
@@ -37,9 +36,10 @@ export class FishingView {
     this.over = scene.add.graphics().setDepth(depths.over);
   }
 
-  /** The minigame moved on: a new state starts its own clock. */
+  /** The cast moved on: a new stage starts its own clock; the same stage asked again changes nothing. */
   phase(node: string, phase: FishPhase, now: number): void {
-    const ring = phase === 'bite' || (this.cast?.phase === 'cast' && phase === 'wait');
+    if (this.cast?.node === node && this.cast.phase === phase) return;
+    const ring = this.cast?.phase === 'cast' && phase === 'wait';
     this.cast = { node, phase, since: now, ringAt: ring ? now : (this.cast?.ringAt ?? -1e9) };
   }
 
@@ -57,7 +57,7 @@ export class FishingView {
     const cast = this.cast;
     if (cast) {
       const ms = now - cast.since;
-      if ((cast.phase === 'reel' && ms > FISH_REEL_MS) || (cast.phase === 'lost' && ms > FISH_LOST_MS)) this.cast = null;
+      if (cast.phase === 'reel' && ms > FISH_REEL_MS) this.cast = null;
     }
     const live = this.cast;
     const tip = { x: hand.x + toward * 9, y: hand.y - 11 };
@@ -70,7 +70,7 @@ export class FishingView {
 
     this.under.clear();
     spots.forEach((spot, n) => {
-      const hooked = live && spot.id === live.node && (live.phase === 'bite' || live.phase === 'reel') ? float : undefined;
+      const hooked = live && spot.id === live.node && live.phase === 'reel' ? float : undefined;
       for (const f of silhouettes(now, spot.at, 2, n + spot.id.length, hooked)) {
         // a body and a forked tail, pointing the way it swims: dark under the surface, never a sprite
         const hx = Math.cos(f.heading);
@@ -93,13 +93,13 @@ export class FishingView {
     this.over.moveTo(pts[0]!.x, pts[0]!.y);
     for (const p of pts.slice(1)) this.over.lineTo(p.x, p.y);
     this.over.strokePath();
-    // a ring spreads where the float lands and where the fish takes it
+    // a ring spreads where the float lands
     const ringMs = now - live.ringAt;
     if (spotAt && ringMs >= 0 && ringMs < 600) {
       const k = ringMs / 600;
       this.over.lineStyle(1, c.paper, 0.8 * (1 - k)).strokeEllipse(spotAt.x, spotAt.y + 2, 4 + 10 * k, 2 + 4 * k);
     }
-    // the float: red over white, half of it gone under on the bite
+    // the float: red over white, half of it gone under as the catch comes in
     const r = 2;
     this.over.fillStyle(c.paper, 1).fillCircle(float.x, float.y, r * (1 - 0.4 * float.dip));
     if (float.dip < 0.9) this.over.fillStyle(c.red, 1).fillRect(float.x - r, float.y - r, r * 2, r * (1 - float.dip));

@@ -8,7 +8,7 @@ export const WAKE_SEEDS = { 'core/west-bank': 6, 'core/north-meadow': 3, 'core/s
 export type WakePocket = keyof typeof WAKE_SEEDS;
 
 /**
- * A west-bank seed whose first draw on one spot of the collapsed hall is under the whole bowl's chance at the worst timing:
+ * A west-bank seed whose first draw on one spot of the collapsed hall is under the whole bowl's chance:
  * the lucky digger who finds the bowl on the first dig, so the wait for the grove at 17:00 is the longest it can be.
  */
 export const LUCKY_BOWL = { seed: 487, pocket: 'core/west-bank', spot: 'core/ruins-hall#0' } as const;

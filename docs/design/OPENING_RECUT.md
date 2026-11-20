@@ -6,8 +6,8 @@ A one-page recut of the opening, as ordered on 9.10 (`DECISIONS.md`, "The owner 
 
 ## The brief
 
-- In the first ten minutes, five kinds of question, each with a different hand: one taught strike, one find by the senses, one real choice, one riddle, and one maze or night discovery.
-- The minigame window appears once or twice in those ten minutes, not at every pick.
+- In the first ten minutes, five kinds of question, each with a different hand: one taught work (a click, then watching), one find by the senses, one real choice, one riddle, and one maze or night discovery.
+- Since 20.11 (DECISIONS 2026-11-20) there is no timing window at all: every work is one click and a repeating animation, and the taught beat of the opening is "click the tree or the stone, watch, stop when you like". No beat below depends on a strip.
 - Every beat is content that both valleys read: quests, steps, map slots, props and nodes. The 2D client and the 3D client draw the same beats, and no beat depends on one engine.
 - What stays fixed: no fighting (G35), no gear tiers against hazards (9.10), a choice is real (G12), two quests in a row never share a type (G17), and getting an item is never one motion (G18).
 
@@ -15,8 +15,8 @@ A one-page recut of the opening, as ordered on 9.10 (`DECISIONS.md`, "The owner 
 
 | Order | Beat | Type | The hand | Windows |
 |---|---|---|---|---|
-| 1 | Three river stones mend the bridge | `skill` | strike | 3 |
-| 2 | Three branches and two berries, a fire, a berry mash | `mastery` | snap, pick, cook | 3 |
+| 1 | Three river stones mend the bridge | `skill` | click and watch | 0 |
+| 2 | Three branches and two berries, a fire, a berry mash | `mastery` | watch, cook | 0 |
 | 3 | Follow the smoke to the town square | `investigation` | walk | 0 |
 | 4 | Maru's bellberry, behind the ruins, by day | `fetch_twist` | pick | 1 |
 | 5 | Pell's stall: the basket or the trowel | the choice | buy | 0 |

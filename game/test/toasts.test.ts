@@ -170,15 +170,15 @@ describe('the band: two toasts at most, the rest in line', () => {
     band.add('+1 Reed');
     band.add('New in your journal');
     band.run(0, false);
-    band.add('Jackpot');
+    band.add('Found a find');
     // the bite comes 100ms later, behind a calm line that waits
     band.add('Bitten', { urgent: true });
     expect(band.run(100, false)).toEqual({ show: [], fade: ['+1 Reed'], remove: [], next: 100 + fade });
-    // up within one fade of the bite, ahead of the jackpot
+    // up within one fade of the bite, ahead of the calm line
     expect(band.run(100 + fade, false)).toEqual({ show: ['Bitten'], fade: [], remove: ['+1 Reed'], next: least });
     // then the calm line again: the oldest makes way once read
     expect(band.run(least, false)).toEqual({ show: [], fade: ['New in your journal'], remove: [], next: least + fade });
-    expect(band.run(least + fade, false)).toEqual({ show: ['Jackpot'], fade: [], remove: ['New in your journal'], next: 100 + fade + life });
+    expect(band.run(least + fade, false)).toEqual({ show: ['Found a find'], fade: [], remove: ['New in your journal'], next: 100 + fade + life });
   });
 
   test('urgent lines keep their own order, and an urgent toast up is not pushed out by the next', () => {
@@ -255,5 +255,33 @@ describe('a named area is named once (G63)', () => {
 
   test('the first entry tells no toast of its own: the banner is its word', () => {
     expect(eventToasts(bundle, newState(bundle, 1), [{ e: 'place', id: 'core/town-square' }])).toEqual([]);
+  });
+});
+
+describe('the second line of a gain toast: the profession and what the kernel gave it (gap 3)', () => {
+  const s = (): State => newState(bundle, 1);
+  const gain: GameEvent = { e: 'gain', item: 'core/log', qty: 1 };
+
+  test('a gain with experience reads as one box of two lines: the item, then the profession and the seconds', () => {
+    const t = eventToasts(bundle, s(), [gain], { 'core/woodcutting': 1000 });
+    expect(t).toHaveLength(1);
+    expect(t[0]!.lines).toEqual(['+1 Log', 'Woodcutting +1']);
+    expect(t[0]!.lines.length).toBeLessThanOrEqual(2); // G14
+    expect(t[0]!.tone).toBe('good');
+  });
+
+  test('a part of a second shows one decimal, as the clock does', () => {
+    expect(eventToasts(bundle, s(), [gain], { 'core/foraging': 1500 })[0]!.lines[1]).toBe('Foraging +1.5');
+  });
+
+  test('no experience, no second line; a batch with no gain carries none', () => {
+    expect(eventToasts(bundle, s(), [gain], {})[0]!.lines).toEqual(['+1 Log']);
+    expect(eventToasts(bundle, s(), [{ e: 'drop', item: 'core/log', qty: 1 }], { 'core/woodcutting': 1000 })[0]!.lines).toHaveLength(1);
+  });
+
+  test('two gains in one batch tell it once, on the first; two professions tell the bigger', () => {
+    const t = eventToasts(bundle, s(), [gain, { e: 'gain', item: 'core/stone', qty: 1 }], { 'core/woodcutting': 1000, 'core/digging': 3000 });
+    expect(t.map((x) => x.lines.length)).toEqual([2, 1]);
+    expect(t[0]!.lines[1]).toBe('Digging +3');
   });
 });

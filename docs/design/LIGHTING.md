@@ -4,11 +4,13 @@ DECISIONS 2026-10-22 (decision 6) makes the engine's light one deep session: the
 
 The owner picked C on 30.10 (A no, B yes, C yes: the whole ladder) and answered the three questions in section 5; the build of section 6 followed the same day (DECISIONS.md, 2026-10-30, "Lighting: the ladder is C"). Section 7 records what was built, its stills and its measurements.
 
+Since 2026-11-04 (DECISIONS "Foundations alignment"): the measure is the full frame, 1920 x 1080 at one art pixel per device pixel, not the 390 x 844 phone these stills were made at; the engine's layers are continuous, so the step ladders below are the built state of 30.10, not a cap; and the cast's direction, its edge and the body light are under A/B, picked from full-frame pairs. The numbers below record the build as it stands.
+
 ## 1. Already decided, not up for a pick
 
 | Decided | Where | In the stills |
 |---|---|---|
-| Cast shadows C: the caster's silhouette sheared away from a south sun, `#1b1a2e` at 30%, the contact line at 45%, 0.8 to 1.1 of the height at 16:30, up-right in the evening | STYLE 4, DECISIONS 2026-10-18 "Shadows" and 2026-10-21 (GK2 B) | Already built (`game/src/cast.ts`, `game/src/cast-layer.ts`), so all three stills carry them as the game draws them at 17:30 |
+| Cast shadows C: the caster's silhouette sheared away from a south sun, `#1b1a2e` at 30%, the contact line at 45%, 0.8 to 1.1 of the height at 16:30, up-right in the evening (the direction is under A/B since 2026-11-04: down-left or down-right, never up-screen) | STYLE 4, DECISIONS 2026-10-18 "Shadows" and 2026-10-21 (GK2 B) | Already built (`game/src/cast.ts`, `game/src/cast-layer.ts`), so all three stills carry them as the game draws them at 17:30 |
 | Body light: 4 art px on the side away from the light one step darker, the side toward it one step lighter | STYLE 4 | Decided, not built. B and C add it |
 | The night: one darkness at 92%, every light cuts a pool in two hard steps, the town lit by lamps and windows, the wild dark | STYLE 5, DECISIONS 2026-10-18 "The night" | Not shown: 17:30 is before the night. The pools here are the same lights earlier in the evening |
 | Lit windows: a second image with only the window pixels in the fire ramp, on the buildings the player uses | STYLE 5 | B and C light Pell's window; the small house stays dark (houses are paused) |

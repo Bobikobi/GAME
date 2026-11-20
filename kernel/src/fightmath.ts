@@ -3,6 +3,7 @@
  * The check, the fight and the cost-gate test all read these, so they cannot drift apart. Damage is exact (G79): no
  * chance decides a hit, so a tier is a count of hits and a pattern's harm is a sum.
  */
+import type { ItemDef } from '@game/schema';
 import type { Bundle, Params } from './bundle';
 import { idiv, idivUp } from './num';
 
@@ -10,9 +11,73 @@ export type CreatureKindDef = NonNullable<Bundle['map']['creatures']>['kinds'][s
 export type FightDef = NonNullable<CreatureKindDef['fight']>;
 export type MoveDef = FightDef['moves'][number];
 
+/** One duration in game milliseconds, rounded up to the pulse that can finish it (COMBAT 4.9). */
+export function durationTicks(ms: number, tickMs: number): number {
+  return idivUp(ms, tickMs);
+}
+
+/**
+ * The one pulse dial. Content and the bundle keep durations in milliseconds; the fight and the animal scheduler
+ * read their pulse counts from this conversion and nowhere else.
+ */
+export function pulseDurations(params: Params) {
+  const t = (ms: number): number => durationTicks(ms, params.wild.tick_ms);
+  const c = params.combat;
+  return {
+    wild: { ...params.wild, think_t: t(params.wild.think_ms) },
+    combat: {
+      ...c,
+      swing_quick_t: t(c.swing_quick_ms),
+      swing_standard_t: t(c.swing_standard_ms),
+      swing_heavy_t: t(c.swing_heavy_ms),
+      swing_floor_t: t(c.swing_floor_ms),
+      bare_windup_t: t(c.bare_windup_ms),
+      windup_min_t: t(c.windup_min_ms),
+      windup_max_t: t(c.windup_max_ms),
+      active_t: t(c.active_ms),
+      rehit_t: t(c.rehit_ms),
+      mercy_t: t(c.mercy_ms),
+      stun_t: t(c.stun_ms),
+      dodge_t: t(c.dodge_ms),
+      dodge_cooldown_t: t(c.dodge_cooldown_ms),
+      breath_hold_t: t(c.breath_hold_ms),
+      breath_stagger_t: t(c.breath_stagger_ms),
+      guard_stagger_t: t(c.guard_stagger_ms),
+      give_up_t: t(c.give_up_ms),
+      claim_lock_t: t(c.claim_lock_ms),
+    },
+  };
+}
+
+/** A foe move's millisecond content resolved on the same pulse dial. */
+export function movePulseDurations(params: Params, move: MoveDef) {
+  return {
+    ...move,
+    windup_t: durationTicks(move.windup_ms, params.wild.tick_ms),
+    recover_t: durationTicks(move.recover_ms, params.wild.tick_ms),
+    cooldown_t: durationTicks(move.cooldown_ms, params.wild.tick_ms),
+  };
+}
+
+/** Phase boundaries from one move start; cumulative rounding prevents three phase ceilings from stacking. */
+export function movePulseTimeline(params: Params, move: MoveDef) {
+  return {
+    active_since_t: durationTicks(move.windup_ms, params.wild.tick_ms),
+    recovery_since_t: durationTicks(move.windup_ms + params.combat.active_ms, params.wild.tick_ms),
+    idle_since_t: durationTicks(move.windup_ms + params.combat.active_ms + move.recover_ms, params.wild.tick_ms),
+  };
+}
+
 /** Hits of a starter hand that fell a foe: its health over the bare hand's points. */
 export function hitsToFell(params: Params, fight: FightDef): number {
   return idivUp(fight.hp, params.combat.bare_base);
+}
+
+/** Harm of the thing in the hand: only a tool without a weapon block steps above the unchanged bare base. */
+export function handStrikeHarm(params: Params, hand: Pick<ItemDef, 'tool' | 'weapon'> | undefined): number {
+  if (!hand?.tool || hand.weapon) return params.combat.bare_base;
+  // Per-mille combat arithmetic is integer-only; a fractional point is deliberately floored.
+  return idiv(params.combat.bare_base * params.combat.tool_strike_permille, 1000);
 }
 
 /** The health a move takes from a player whose bar tops at `cap` milli-points: the cap over the move's divisor. */
@@ -22,12 +87,12 @@ export function moveHarm(params: Params, cap: number, move: MoveDef): number {
 
 /** Ticks a move holds the foe: wind-up, the active window, then the open recovery. */
 export function moveTicks(params: Params, move: MoveDef): number {
-  return move.windup_t + params.combat.active_t + move.recover_t;
+  return movePulseTimeline(params, move).idle_since_t;
 }
 
 /** Whether a bare-handed strike started in a move's recovery can land inside it. */
 export function opensWindow(params: Params, move: MoveDef): boolean {
-  return move.recover_t >= params.combat.bare_windup_t;
+  return move.recover_ms >= params.combat.bare_windup_ms;
 }
 
 /** The moves a pattern names, in order; an unknown name is skipped (the check names it). */

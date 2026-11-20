@@ -1,7 +1,8 @@
 /**
  * Puts a change of the settings (settings.ts) to work at once, for the Settings window (ui/settings-window.ts):
  * the record is kept, the frame cap goes to the loop (perf.ts applyCap), the quality groups are redrawn into RICH,
- * and the text size and reduced motion go to the page as two attributes the stylesheet reads (ui/settings.css).
+ * and the text size, reduced motion and controls choices go to the page as attributes the stylesheets and touch
+ * controls read (ui/settings.css, style.css and ui/touch.ts).
  * The window holds no rule of its own: it asks this and shows what comes back.
  */
 import { RICH } from './config';
@@ -11,15 +12,17 @@ import {
   type Settings, type SettingsStorage,
 } from './settings';
 
-/** The page's root, as far as it is touched: two data attributes. */
+/** The page's root, as far as settings touch it. */
 export interface Root {
   dataset: Record<string, string | undefined>;
 }
 
-/** The text size and the motion preference as attributes on the page root. */
+/** Display and touch-control preferences as attributes on the page root. */
 export function applyDisplay(root: Root, s: Settings, phoneAsks = phoneAsksReducedMotion()): void {
   root.dataset.textSize = String(s.textSize);
   root.dataset.motion = motionReduced(s, phoneAsks) ? 'reduced' : 'full';
+  root.dataset.stickSide = s.stickSide;
+  root.dataset.buttonSize = s.buttonSize;
 }
 
 export interface Host {

@@ -5,7 +5,7 @@
  * (textview.ts), and a failure prints every moment so far. STEALTH_VIEW=1 prints them on a pass too.
  *
  * What it leaves to the e2e: the dialogue with Pell (the quest is accepted by its kernel action), the
- * moonreed minigame (the gather is sent with a grade), the keys, and everything drawn.
+ * moonreed work (watched on screen, with no input), the keys, and everything drawn.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 

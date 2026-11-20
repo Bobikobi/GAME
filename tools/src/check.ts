@@ -6,8 +6,21 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
-import { type Bundle, DRESS_PART_STEPS, computeValues, huntGoods, idiv, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
-import { GOODS, RARITIES, type ParamsBody } from '@game/schema';
+import {
+  type Bundle,
+  DRESS_PART_STEPS,
+  attrBonusMax,
+  computeValues,
+  huntGoods,
+  idiv,
+  itemCategory,
+  minChargeFor,
+  missOutcome,
+  rarityBudget,
+  rarityRank,
+  wearReqLevel,
+} from '@game/kernel';
+import { GOODS, RARITIES, TRAIT_SLOTS, type ChunkFile, type ParamsBody } from '@game/schema';
 import { checkFight } from './fight';
 import { checkWild } from './wild';
 import { assemble, type Assembled } from './assemble';
@@ -62,9 +75,14 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkEconomy(b, assembled.origin));
     issues.push(...checkReactions(b, assembled.origin));
     issues.push(...checkCrafting(b, assembled.origin));
+    issues.push(...checkNodeTools(b, assembled.origin));
     issues.push(...checkWear(b));
+    issues.push(...checkEquipment(b));
     issues.push(...checkHunt(b, assembled.origin));
-    issues.push(...checkWild(b, assembled.origin));
+    const chunks = files
+      .filter((f) => (f.data as { type: string }).type === 'chunk')
+      .map((f) => ({ chunk: (f.data as unknown as ChunkFile).chunk, file: toRepoPath(f.abs) }));
+    issues.push(...checkWild(b, assembled.origin, chunks));
     issues.push(...checkFight(b, assembled.origin));
     issues.push(...checkDrift(b));
     issues.push(...checkRetiredWords());
@@ -305,6 +323,59 @@ function checkEconomy(b: Bundle, origin: Record<string, string>): Issue[] {
 const PARAMS_FILE = 'content/core/params.json';
 /** From this tier up an item comes only from a gated source (DECISIONS.md, 2026-10-09). */
 const GATED_TIER = 3;
+/** From this tier up no shop sells a tool, a weapon or ammunition: a better one is made, found or earned (DECISIONS.md, 2026-10-09; WEAPONS 13). */
+const SOLD_TOOL_TIER = 2;
+
+/** The tools that mark a node as mined: it trains digging only when it says `work: "mine"` (kernel/src/state.ts nodeVerb). */
+const MINED_TOOLS: readonly string[] = ['pick', 'hammer', 'trowel'];
+
+/**
+ * The tools a node names (QUARRYING 2, 16 rows 1 and 2). A node that names a pick, a hammer or a trowel says
+ * `work: "mine"`, or it would be gathered and train Foraging; this row alone reads a pick or a hammer on a resource
+ * node (starts.ts keeps only the staff off one). A node a reaction makes appear has no `work` field, so it names none
+ * of the three: it would train Foraging, and with a pick or a trowel it would also run by itself. And a tool a node
+ * or a dig spot requires is one every race can reach: a shop sells one at tier 1, or a start-known recipe makes one;
+ * a race's outfit does not count, since only that race starts with it. The axe keeps its stricter row in starts.ts: a
+ * shop sells it, since a broken axe must be bought again before the first fire.
+ */
+export function checkNodeTools(b: Bundle, origin: Record<string, string>): Issue[] {
+  const issues: Issue[] = [];
+  const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
+  const firstTier = (item: string, kind: string) => {
+    const tool = b.items[item]?.tool;
+    return tool !== undefined && tool.kind === kind && tool.tier === 1;
+  };
+  const sold = Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item));
+  const made = Object.values(b.recipes)
+    .filter((r) => r.known === 'start')
+    .flatMap((r) => r.outputs.map((o) => o.item));
+  const reachable = (kind: string) => sold.some((item) => firstTier(item, kind)) || made.some((item) => firstTier(item, kind));
+  const a = (kind: string) => `${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}`;
+  const locked = (id: string, kind: string) =>
+    `"${id}" requires ${a(kind)}, but no shop sells one and no start-known recipe makes one at tier 1: no race may be locked out of a node (QUARRYING 2)`;
+
+  for (const [id, r] of Object.entries(b.resources)) {
+    const file = origin[id] ?? r.file;
+    if (r.tool === undefined) continue;
+    if (MINED_TOOLS.includes(r.tool) && r.work !== 'mine') {
+      err(file, 'node.tool', `"${id}" names ${a(r.tool)} but not work: "mine", so it would be gathered and train Foraging (kernel/src/state.ts nodeVerb): name work: "mine" (QUARRYING 2)`);
+    }
+    if (!reachable(r.tool)) err(file, 'node.tool', locked(id, r.tool));
+  }
+  for (const [id, x] of Object.entries(b.reactions)) {
+    const tool = 'appear' in x.then ? x.then.appear.tool : undefined;
+    if (tool === undefined) continue;
+    const file = origin[id] ?? x.file;
+    if (MINED_TOOLS.includes(tool)) {
+      err(file, 'reaction.then.appear.tool', `"${id}" makes a node appear that names ${a(tool)}, but an appearing node cannot say work: "mine", so it would train Foraging (kernel/src/state.ts nodeVerb): name a basket, an axe or a rod, or none (QUARRYING 2)`);
+    }
+    if (!reachable(tool)) err(file, 'reaction.then.appear.tool', locked(id, tool));
+  }
+  for (const [id, d] of Object.entries(b.treasures)) {
+    if (d.tool !== undefined && !reachable(d.tool)) err(origin[id] ?? d.file, 'dig.tool', locked(id, d.tool));
+  }
+  return issues;
+}
 
 /**
  * The material grammar and the two ladders (DECISIONS.md, 2026-10-09: the
@@ -341,6 +412,16 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   for (let i = 1; i < wornCaps.length; i++) {
     if (wornCaps[i]! < wornCaps[i - 1]!) err(PARAMS_FILE, `params.wear_effect_max_pct.${i}`, 'the cap on a worn effect never falls with the tier');
   }
+  // the wear requirement starts at level 1 and the attribute bonus cap never falls (PROGRESSION 5.6; CLOTHING 7.4, 7.5)
+  const reqLevels = p.wear_req_level;
+  if (reqLevels[0] !== 1) err(PARAMS_FILE, 'params.wear_req_level.0', 'tier 1 asks level 1');
+  for (let i = 1; i < reqLevels.length; i++) {
+    if (reqLevels[i]! < reqLevels[i - 1]!) err(PARAMS_FILE, `params.wear_req_level.${i}`, 'the wear requirement never falls with the tier');
+  }
+  const attrCaps = p.attr_bonus_max;
+  for (let i = 1; i < attrCaps.length; i++) {
+    if (attrCaps[i]! < attrCaps[i - 1]!) err(PARAMS_FILE, `params.attr_bonus_max.${i}`, 'the largest attribute bonus never falls with the tier');
+  }
   // the three paces run light, steady, heavy, and the hard edge lies beyond the limit (DECISIONS.md, 2026-10-23)
   if (!(p.load.light_step_ms <= p.walk_step_ms && p.walk_step_ms <= p.load.heavy_step_ms)) {
     err(PARAMS_FILE, 'params.load', 'the paces run light, steady, heavy: load.light_step_ms <= walk_step_ms <= load.heavy_step_ms');
@@ -357,6 +438,8 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
 
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;
+    // WEAPONS 3, 16: the grammar is ready, every weapon waits for the fight (G35, G44)
+    if (it.weapon) err(it.file, `${where}.weapon`, 'a weapon waits for combat: no weapon block yet (G35, G44)');
     if (it.class === undefined || it.tier === undefined) {
       err(it.file, where, 'every item names a "class" and a "tier"; see "Classes and tiers" in docs/creators/README.md');
       continue;
@@ -410,6 +493,11 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     }
   }
 
+  // the kernel teaches a recipe in two places only: a fragment's unlocks (learn) and a quest reward's recipes (applyReward)
+  const taught = new Set<string>([
+    ...Object.values(b.items).flatMap((it) => (it.fragment ? [it.fragment.unlocks] : [])),
+    ...Object.values(b.quests).flatMap((q) => q.reward.recipes ?? []),
+  ]);
   for (const [id, c] of Object.entries(b.recipes)) {
     const file = at(id);
     const w = c.template ? 'template' : 'recipe';
@@ -427,6 +515,10 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     if (prof === undefined) err(file, `${w}.station`, named(`no profession works the ${c.station}: name one in "profession"`));
     else if (pr && pr.verb !== 'craft') err(file, `${w}.profession`, named(`${pr.name} trains "${pr.verb}", not "craft"`));
     else if (pr && c.level > pr.xp_levels.length + 1) err(file, `${w}.level`, named(`${pr.name} stops at level ${pr.xp_levels.length + 1}`));
+    // a dug-up recipe is taught by something in the world (DECISIONS.md, 2026-10-10: higher tiers are dug up; WEAPONS 5)
+    if (c.known === 'found' && !taught.has(id)) {
+      err(file, `${w}.known`, named('a found recipe needs a teacher: no fragment\'s "unlocks" and no quest reward\'s "recipes" names it (DECISIONS.md, 2026-10-10)'));
+    }
     const has = stationTier[c.station];
     if (has === undefined) err(file, `${w}.station`, named(`no camp part provides a ${c.station}`));
     else if (has < tier) err(file, `${w}.station`, named(`a tier ${tier} recipe needs a ${c.station} of tier ${tier}; the best camp part gives tier ${has}`));
@@ -464,7 +556,16 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   for (const s of Object.values(b.shops)) {
     s.sells.forEach((o, i) => {
       const t = tierOf(o.item);
+      const sold = b.items[o.item];
+      const cat = sold ? itemCategory(sold) : undefined;
       if (t >= GATED_TIER) err(at(s.id), `shop.sells.${i}`, `${o.item} is tier ${t}: from tier ${GATED_TIER} up a thing is found, made or earned, never sold`);
+      else if (t >= SOLD_TOOL_TIER && (cat === 'tool' || cat === 'weapon')) {
+        err(
+          at(s.id),
+          `shop.sells.${i}`,
+          `${o.item} is a tier ${t} ${cat}: a shop sells a tool, a weapon or ammunition at tier 1 only; a better one is made, found or earned (DECISIONS.md, 2026-10-09)`,
+        );
+      }
     });
   }
 
@@ -482,6 +583,13 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   return issues;
 }
 
+/** Somewhere in the game gives it: a value (a node, a dig spot, a recipe, a hunt), a shop for gold, or a quest or expedition reward (G39). */
+function inGameSources(b: Bundle): (id: string) => boolean {
+  const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
+  const rewarded = rewardItems([...Object.values(b.quests), ...Object.values(b.expeditions)].map((x) => x.reward));
+  return (id) => b.values[id] !== undefined || sold.has(id) || rewarded.has(id);
+}
+
 /**
  * Worn items and the premium marker (DECISIONS.md, 2026-10-09: the upgrade;
  * crafting and money): a worn item fits its class and its place, a work piece
@@ -493,8 +601,7 @@ function checkWear(b: Bundle): Issue[] {
   const issues: Issue[] = [];
   const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
   const caps = b.params.wear_effect_max_pct;
-  const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
-  const rewarded = rewardItems([...Object.values(b.quests), ...Object.values(b.expeditions)].map((x) => x.reward));
+  const fromGame = inGameSources(b);
   const sets: Record<string, string[]> = {};
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;
@@ -533,11 +640,14 @@ function checkWear(b: Bundle): Issue[] {
     });
     if (w.set) {
       if (!w.set.startsWith(`${it.creator}/`)) err(it.file, `${where}.wear.set`, `a set holds one creator's pieces: its id starts with "${it.creator}/"`);
+      const set = b.sets[w.set];
+      if (!set) err(it.file, `${where}.wear.set`, `no set "${w.set}": declare its effect and value in a content sets row`);
+      else if (set.creator !== it.creator) err(it.file, `${where}.wear.set`, `the set "${w.set}" belongs to ${set.creator}, not ${it.creator}`);
       if (!w.look) (sets[w.set] ??= []).push(id);
     }
     if (it.premium_later) {
       if (!w.look || w.effects) err(it.file, `${where}.premium_later`, 'only a look item with no effect may carry the premium marker (G39)');
-      else if (b.values[id] === undefined && !sold.has(id) && !rewarded.has(id)) {
+      else if (!fromGame(id)) {
         err(it.file, `${where}.premium_later`, 'a look with the premium marker stays obtainable in the game: a node, a dig spot, a recipe, a shop for gold, a quest or an expedition gives it (G39)');
       }
     }
@@ -559,6 +669,84 @@ function checkWear(b: Bundle): Issue[] {
       .filter((slot) => per[slot]! > (slot === 'jewelry' ? 2 : 1));
     if (per.outfit && (per.top || per.legs)) crowded.push('outfit');
     if (crowded.length > 0) err(first.file, where, `the set "${set}" cannot be worn whole: too many pieces for the ${crowded.join(', ')} (G44)`);
+    const bonus = b.sets[set];
+    if (bonus) {
+      const highestTier = Math.max(...pieces.map((id) => b.items[id]!.tier ?? 1));
+      const cap = caps[Math.min(highestTier, caps.length) - 1] ?? 0;
+      const pieceValue = pieces.reduce(
+        (sum, id) => sum + (b.items[id]!.wear!.effects ?? []).filter((e) => e.effect === bonus.effect).reduce((n, e) => n + e.value, 0),
+        0,
+      );
+      if (pieceValue + bonus.value > pieces.length * cap) {
+        err(bonus.file, `sets.${set}.value`, `the set "${set}" gives ${pieceValue + bonus.value}% ${bonus.effect}; ${pieces.length} pieces give at most ${pieces.length * cap}% at tier ${highestTier} (G44)`);
+      }
+    }
+  }
+  for (const [id, set] of Object.entries(b.sets).sort(([x], [y]) => (x < y ? -1 : 1))) {
+    if (!sets[id]) err(set.file, `sets.${id}`, `the set "${id}" has no pieces`);
+  }
+  return issues;
+}
+
+/**
+ * The equipment foundations (EQUIPMENT 3.3, 3.6; CLOTHING 7.4, 7.5, 7.6, 11; DECISIONS.md, 2026-11-01): a worn
+ * piece's soft requirement asks its tier's level, worn attributes and garment traits wait for their readers and
+ * keep to their caps and places, and only a look binds: power is never bound (EQUIPMENT 3.6).
+ */
+function checkEquipment(b: Bundle): Issue[] {
+  const issues: Issue[] = [];
+  const err = (file: string, where: string, message: string, level: Issue['level'] = 'error') => issues.push({ file, where, message, level });
+  const fromGame = inGameSources(b);
+  for (const [id, it] of Object.entries(b.items)) {
+    const where = `items.${id}`;
+    const w = it.wear;
+    const tier = it.tier ?? 1;
+    if (w?.req) {
+      if (w.look) err(it.file, `${where}.wear.req`, 'a look has no wear requirement');
+      const asked = wearReqLevel(b, tier);
+      if (w.req.level !== asked) {
+        err(it.file, `${where}.wear.req.level`, `a tier ${tier} piece asks level ${asked} (wear_req_level), not ${w.req.level} (PROGRESSION 5.6)`);
+      }
+      const pr = b.professions[w.req.school];
+      if (pr && w.req.level > pr.xp_levels.length + 1) {
+        err(
+          it.file,
+          `${where}.wear.req.level`,
+          `level ${w.req.level} is above ${pr.name}'s top level ${pr.xp_levels.length + 1}: below it the piece counts up to what a piece one tier above the wearer's own gives`,
+          'warning',
+        );
+      }
+    }
+    if (w?.attrs) {
+      err(it.file, `${where}.wear.attrs`, 'an attribute bonus waits for its reader: no verb reads worn attributes yet (PROGRESSION 5.6)');
+      if (w.look) err(it.file, `${where}.wear.attrs`, 'a look shows and counts for nothing: no attribute bonus (G44)');
+      const cap = attrBonusMax(b, tier);
+      for (const [a, v] of Object.entries(w.attrs)) {
+        if (v !== undefined && v > cap) err(it.file, `${where}.wear.attrs.${a}`, `a tier ${tier} piece gives at most ${cap} (attr_bonus_max), not ${v} (PROGRESSION 5.6)`);
+      }
+    }
+    if (w?.trait) {
+      err(it.file, `${where}.wear.trait`, 'a garment trait waits for its reader: no place condition is built yet (BODY_CLOCKS 9; G34)');
+      const places = TRAIT_SLOTS[w.trait];
+      if (!places.includes(w.slot)) err(it.file, `${where}.wear.trait`, `${w.trait} goes on the ${places.join(', ')}, not the ${w.slot} (BODY_CLOCKS 6.1)`);
+      if (w.look) err(it.file, `${where}.wear.trait`, 'a look carries no trait');
+    }
+    // binding (EQUIPMENT 3.6): left out or none, the item trades
+    if (it.bind === undefined || it.bind === 'none') continue;
+    if (it.weapon) {
+      err(it.file, `${where}.bind`, 'a weapon is never bound (WEAPONS 13; EQUIPMENT 3.6)');
+      continue;
+    }
+    if (w?.look !== true) {
+      err(it.file, `${where}.bind`, 'only a look binds; power is never bound (EQUIPMENT 3.6)');
+      continue;
+    }
+    if (it.bind === 'character') continue;
+    if (it.premium_later) {
+      err(it.file, `${where}.bind`, 'the premium marker is on the copy found in the game, which trades (G39)');
+    } else if (fromGame(id)) {
+      err(it.file, `${where}.bind`, 'the found copy trades (G39): a look bought with money is its own item, bound to the account; this one comes from the game');
+    }
   }
   return issues;
 }

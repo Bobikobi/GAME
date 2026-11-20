@@ -20,7 +20,7 @@ import { openingQuests } from './play';
 export const KIT_BAND_PCT = 25;
 /** The slowest (race, pocket) pair reaches the bridge with its axe in at most this much more time than the fastest (C1: one band of effort). */
 export const EFFORT_BAND_PCT = 50;
-/** Tool kinds worn in the hand for what they help, that no work asks for. */
+/** Tool kinds worn in the hand for what they help, that no dig asks for (a resource node may ask for a mined pick or hammer). */
 const WORN_ONLY: ReadonlySet<string> = new Set(['staff', 'hammer', 'pick']);
 /** One tile of walking, in ms: the client's step time. */
 export const WALK_MS = 190;
@@ -110,7 +110,7 @@ function firstMend(b: Bundle): string | undefined {
 /**
  * The walk and the work from the wake tile to the first mending: the pocket's ground tools picked up first, then its own
  * first task step by step (an own spot for a find, the nearest node for a bring), then the road. The race counts through
- * its outfit's worn speed; its agility widens timing windows and changes no time at perfect timing.
+ * its outfit's worn speed. Agility also shortens a work interval now (DECISIONS.md, 2026-11-20) and a bring takes one unit, not a node; neither is counted, so the figure is the slowest honest one.
  */
 function pairEffort(b: Bundle, raceId: string, pocketId: string): { ms: number; lost: boolean } | undefined {
   const race = b.races[raceId];
@@ -182,9 +182,10 @@ export function checkStarts(b: Bundle, origin: Record<string, string>): Issue[] 
     });
   }
 
-  // a staff, a hammer and a pick are worn for what they help: no work asks for one
+  // a staff, a hammer and a pick are worn for what they help: no dig asks for one. On a resource node only the staff
+  // stays refused: a pick or a hammer there is mined work, which check.ts checkNodeTools reads (QUARRYING 2, 16 row 1)
   for (const r of Object.values(b.resources)) {
-    if (r.tool && WORN_ONLY.has(r.tool)) err(at(r.id), 'node.tool', `no work asks for a ${r.tool}, it is worn for what it helps: a basket, a trowel or an axe`);
+    if (r.tool === 'staff') err(at(r.id), 'node.tool', 'no work asks for a staff, it is worn for what it helps: a basket, an axe or a rod, or a pick, a hammer or a trowel with work: "mine"');
   }
   for (const t of Object.values(b.treasures)) {
     if (t.tool && WORN_ONLY.has(t.tool)) err(at(t.id), 'dig.tool', `no work asks for a ${t.tool}, it is worn for what it helps: a trowel, or nothing for a find picked up by hand`);

@@ -5,13 +5,15 @@
  * only advances while playing) and luck is a draw from rng.ts.
  *
  * An action happens at once and keeps the player busy until busyUntil; the
- * client plays the animation for that long. The timing grade (0-4) comes
- * from the minigame and can only lower the goods below perfect play (D2), so
- * a client that always claims "perfect" earns what the economy already
- * assumes. Grade 4, the jackpot, is a thin strip inside "perfect": the same
- * goods and the same experience, told as a `jackpot` event. Experience is the
- * active time at every grade (PROGRESSION 4.7, red line B), so no grade
- * speeds up levels.
+ * client plays the animation for that long. Work has no timing window and no
+ * grade (DECISIONS.md, 2026-11-20): a click starts it, and the client asks for
+ * the next unit when the last one ends, until the player moves, starts something
+ * else, the node runs out, the bag is full or danger stops it. Each gather takes
+ * ONE unit of the node's `yield` and is busy for that unit's share of the node's
+ * time, so a node's goods and its experience (the active time, PROGRESSION 4.7,
+ * red line B) are what they always were when it is worked to the end, and the
+ * units already taken stay when the player stops. A `grade` an old log carries is
+ * set aside, never refused (G102).
  *
  * A craft can miss (G40): skill against the recipe's level sets the chance,
  * luck only tilts it, and a miss keeps something. The value table prices a
@@ -76,7 +78,6 @@ import { campTile, findSlot, inRect, makeStepRule, makeWalkable, near, npcTile, 
 import { exitRect, passageOpen, seaEventIndex, seaNow, seaWindow } from './sea';
 
 export type Tile = [number, number];
-export type Grade = 0 | 1 | 2 | 3 | 4;
 
 export type Action =
   /**
@@ -85,8 +86,10 @@ export type Action =
    */
   | { t: 'start'; race?: string; starter?: string; name: string; look?: number }
   | { t: 'carve'; name: string }
-  | { t: 'gather'; node: string; grade: Grade; at: Tile }
-  | { t: 'dig'; spot: string; grade: Grade; at: Tile }
+  /** work one unit of a node (the client asks again when the unit ends, until the player stops); `grade` is a field of format-1 logs, read and set aside */
+  | { t: 'gather'; node: string; grade?: number; at: Tile }
+  /** dig a spot; `grade` likewise */
+  | { t: 'dig'; spot: string; grade?: number; at: Tile }
   /** look inside a searchable (docs/design/SEARCH.md): its contents are drawn once a day and kept */
   | { t: 'search'; spot: string; at: Tile }
   /** move one row of a searched searchable (`row`, a place in its list) or all its rows into the bag */
@@ -127,6 +130,7 @@ export type Action =
   | { t: 'move'; at: Tile; gait?: Gait };
 
 export type GameEvent =
+  | import('./events').FightEvent
   | { e: 'gain'; item: string; qty: number }
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
@@ -151,7 +155,6 @@ export type GameEvent =
   | { e: 'nothing'; verb: string }
   /** a searchable was looked into: what it holds now, one item per row (empty: nothing here) */
   | { e: 'search'; spot: string; rows: string[] }
-  | { e: 'jackpot'; verb: string }
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
   /** the player entered a place for the first time (G63, G66): a map region or a named area, by id; the banner shows its name (`placeName`) */
@@ -194,18 +197,6 @@ export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok:
 export interface StepOptions {
   /** Enforce server-side four-way reachability for reported and action tiles (G56). */
   validateTravel?: boolean;
-}
-
-/** Output share per timing grade: miss, ok, good, perfect, jackpot. A missed dig keeps a quarter of its chances. */
-export const GRADE_PCT = [25, 50, 80, 100, 100] as const;
-/** A missed gather still brings one unit home this often, in basis points, before luck: a miss is a gamble, not a wall. */
-export const MISS_KEEP_BP = 5000;
-/** Luck never makes a miss a sure thing. */
-export const MISS_KEEP_MAX_BP = 9000;
-
-/** How often a missed gather still brings one unit home, in basis points: luck raises it. */
-export function missKeepBp(bundle: Bundle, state: PublicState): number {
-  return Math.min(MISS_KEEP_MAX_BP, MISS_KEEP_BP + 10 * bundle.params.per_point.luck_permille * attrAt(bundle, state, 'luck'));
 }
 
 /** The multiplier on rare and legendary dig chances, in permille: luck, techniques and worn items, inside the power cap. */
@@ -480,12 +471,13 @@ function perform(ctx: Ctx, a: Action): void {
 }
 
 function act(ctx: Ctx, a: Action): void {
+  if (ctx.s.player.fight != null && (a.t === 'craft' || a.t === 'kindle' || a.t === 'restore')) refuse('Not during a fight.');
   switch (a.t) {
     case 'gather':
-      return gather(ctx, a.node, a.grade, a.at);
+      return gather(ctx, a.node, a.at);
     case 'dig':
       // a logged dig from format 1 may name a spot by its old source id
-      return dig(ctx, ctx.b.instances[a.spot] ? a.spot : legacyNodeId(a.spot), a.grade, a.at);
+      return dig(ctx, ctx.b.instances[a.spot] ? a.spot : legacyNodeId(a.spot), a.at);
     case 'search':
       return search(ctx, a.spot, a.at);
     case 'take':
@@ -624,14 +616,13 @@ function start(ctx: Ctx, a: Extract<Action, { t: 'start' }>): void {
   }
 }
 
-function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
+function gather(ctx: Ctx, nodeId: string, at: Tile): void {
   const { b, s } = ctx;
   // a placed node, or one a reaction makes appear beside it (docs/design/REACTIONS.md)
   const inst = placedAt(b, nodeId);
   if (!inst || inst.kind !== 'resource') refuse('There is nothing to gather here.');
   const r = resourceOf(b, nodeId)!;
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
-  checkGrade(grade);
   const waits = nodeWait(b, s, r);
   if (waits !== undefined) refuse(waits);
   const appear = appearSlot(b, nodeId);
@@ -652,31 +643,32 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (weightRoom(b, s, r.output) < 1) refuse(TOO_HEAVY);
 
   const toolBonus = tool ? 150 * (toolTier(ctx, tool) - 1) : helper ? 150 * toolTier(ctx, helper) : 0;
-  const ms = duration(ctx, r.active_ms, speedPermille(ctx, toolBonus + 10 * effectValue(b, s, 'gather_speed_pct')));
-  let qty = gradeYield(r.yield, grade);
-  if (grade === 0) {
-    if (drawBasisPoints(s.seed, nodeId, node.draws) < missKeepBp(b, s)) qty = 1;
-    node.draws += 1;
-  }
-  if (qty > 0) take(ctx, r.output, qty);
-  else ctx.events.push({ e: 'nothing', verb: 'gather' });
-  if (tool) wearTool(ctx, tool);
-  if (helper) wearTool(ctx, helper);
-  node.readyAt = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
+  const speed = speedPermille(ctx, toolBonus + agilityBonus(ctx) + 10 * effectValue(b, s, 'gather_speed_pct'));
+  // the node's whole time, split into one share per unit: worked to the end it costs what it always did (D2)
+  const total = duration(ctx, r.active_ms, speed);
+  const done = node.taken ?? 0;
+  const ms = unitShare(total, r.yield, done);
+  take(ctx, r.output, 1);
+  const last = done + 1 >= r.yield;
+  if (last) {
+    // the node is worked out: the tool wears once for the whole node, and the respawn starts
+    if (tool) wearTool(ctx, tool);
+    if (helper) wearTool(ctx, helper);
+    node.readyAt = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
+    delete node.taken;
+  } else node.taken = done + 1;
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
-  gainXp(ctx, verb, r.active_ms);
-  if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'gather' });
+  gainXp(ctx, verb, unitShare(r.active_ms, r.yield, done));
 }
 
-function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
+function dig(ctx: Ctx, spotId: string, at: Tile): void {
   const { b, s } = ctx;
   const inst = b.instances[spotId];
   if (!inst || inst.kind !== 'treasure') refuse('There is nothing to dig here.');
   const d = b.treasures[inst.source]!;
   if (d.pocket !== undefined && d.pocket !== s.player.pocket) refuse('There is nothing to dig here.');
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
-  checkGrade(grade);
   const wait = waitPermille(b, s, spotId, ctx.tick);
   const node = s.nodes[spotId] ?? { readyAt: 0, draws: 0 };
   if (!spotOpen(b, s, spotId)) refuse('There is nothing more here.');
@@ -688,16 +680,16 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   if (d.finds.every((f) => placeRoom(b, s, f.item) < 1)) refuse('Your bag is full.');
   if (loadWeight(b, s) >= loadMax(b, s)) refuse(TOO_HEAVY);
 
-  const ms = duration(ctx, d.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'dig_speed_pct')));
+  const ms = duration(ctx, d.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + agilityBonus(ctx) + 10 * effectValue(b, s, 'dig_speed_pct')));
   // luck and the rare-find technique raise only rare and legendary chances, inside the power cap
   const luck = rareFindPermille(b, s);
   const roll = drawBasisPoints(s.seed, spotId, node.draws);
   node.draws += 1;
   let edge = 0;
-  // a pocket's own spot always gives its one find, whatever the timing: no start ends at a wall
+  // a pocket's own spot always gives its one find: no start ends at a wall
   let found: string | undefined = d.pocket !== undefined ? d.finds[0]?.item : undefined;
   for (const f of found ? [] : d.finds) {
-    let bp = mulDiv(f.chance_pct * 100, GRADE_PCT[grade], 100);
+    let bp = f.chance_pct * 100;
     if (rarityRank(b.items[f.item]?.rarity ?? 'common') >= 2) bp = mulDiv(bp, luck, 1000);
     edge = Math.min(10_000, edge + bp);
     if (roll < edge) {
@@ -712,7 +704,6 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   s.nodes[spotId] = node;
   busy(ctx, 'dig', ms);
   gainXp(ctx, 'dig', d.active_ms);
-  if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'dig' });
   solveRiddles(ctx, { kind: 'dig', treasure: inst.source });
 }
 
@@ -1836,16 +1827,13 @@ function fall(ctx: Ctx): void {
   p.busyUntil = ctx.tick;
   p.hp = hpCap(b, s);
   p.chase = null;
+  p.fight = null;
   p.outing = null;
   ctx.fell = true;
   ctx.events.push({ e: 'fall', from, at, lost });
 }
 
 // ------------------------------------------------------------------ helpers
-
-function checkGrade(grade: number): void {
-  if (!Number.isSafeInteger(grade) || grade < 0 || grade > 4) refuse('Bad timing grade.');
-}
 
 function checkAt(ctx: Ctx, at: Tile, target: Rect): void {
   if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) {
@@ -1861,10 +1849,24 @@ function inHours(hour: number, [from, to]: readonly [number, number]): boolean {
   return from < to ? hour >= from && hour < to : hour >= from || hour < to;
 }
 
-/** Units for a grade; a miss is 0 here, and gather() may still bring one home. */
-export function gradeYield(base: number, grade: Grade): number {
-  if (grade === 0) return 0;
-  return Math.max(1, mulDiv(base, GRADE_PCT[grade], 100));
+/** What a unit of a node's time is: `total` split into `parts` whole-millisecond shares that add up to it exactly; `i` is the unit (0-based). */
+export function unitShare(total: number, parts: number, i: number): number {
+  return idiv(total * (i + 1), parts) - idiv(total * i, parts);
+}
+
+/** Agility speeds work: a point takes a fifth of what it takes off a blow's time in a fight (params.per_point.agility_pct), in permille, before the power cap. */
+export function agilityWorkPermille(bundle: Bundle, state: PublicState): number {
+  return idiv(10 * bundle.params.per_point.agility_pct * attrAt(bundle, state, 'agility'), AGILITY_WORK_DIVISOR);
+}
+const AGILITY_WORK_DIVISOR = 5;
+
+/** How fast agility alone makes work go, in permille, inside the power cap (R9): what the stats list shows. */
+export function workSpeedPermille(bundle: Bundle, state: PublicState): number {
+  return clamp(1000 + agilityWorkPermille(bundle, state), 1000, powerCap(bundle, state));
+}
+
+function agilityBonus(ctx: Ctx): number {
+  return agilityWorkPermille(ctx.b, ctx.s);
 }
 
 /** Rule R9: every speed bonus goes through this one clamp. */
@@ -1891,14 +1893,18 @@ function toolTier(ctx: Ctx, itemId: string): number {
 /** The tool kinds that help break a mined node; none is needed. */
 const MINE_TOOLS: readonly string[] = ['pick', 'hammer'];
 
-/** The highest-tier tool of these kinds in the bag (by id on a tie), or none. */
+/**
+ * The highest-tier tool of these kinds in the bag; on a tier tie a lasting one (no `uses`) wins, then the first id
+ * (QUARRYING 6), so a made tool never wears while a lasting one of its tier lies in the bag. None: undefined.
+ */
 function bestTool(ctx: Ctx, kinds: readonly string[]): string | undefined {
   const { b, s } = ctx;
   let best: string | undefined;
   for (const id of Object.keys(s.player.bag).sort()) {
     const tool = b.items[id]?.tool;
     if (!tool || !kinds.includes(tool.kind) || (s.player.bag[id] ?? 0) < 1) continue;
-    if (!best || tool.tier > toolTier(ctx, best)) best = id;
+    const held = best === undefined ? undefined : b.items[best]?.tool;
+    if (!held || tool.tier > held.tier || (tool.tier === held.tier && tool.uses === undefined && held.uses !== undefined)) best = id;
   }
   return best;
 }
@@ -2069,4 +2075,24 @@ function gainProfessionXp(ctx: Ctx, id: string, ms: number): void {
 /** Stable text of a state, for saves and for comparing two runs. */
 export function serialize(state: State): string {
   return canonical(state);
+}
+
+/** Combat uses the same hurt and fall path as hazards. Time here is game milliseconds. Pure. */
+export function fightHurt(bundle: Bundle, state: State, amount: number, foe: string, tick: number): { state: State; events: GameEvent[] } {
+  const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [], hurt: false, fell: false };
+  ctx.s.tick = tick;
+  hurt(ctx, amount, 'foe', foe);
+  fallIfDown(ctx);
+  return { state: ctx.s, events: ctx.events };
+}
+
+/** G49 at the fight boundary: reuse expedition accounting and the existing walk-out. */
+export function fightBell(bundle: Bundle, state: State, tick: number): { state: State; events: GameEvent[] } | undefined {
+  const ctx: Ctx = { b: bundle, s: state, tick, events: [], hurt: false, fell: false };
+  ctx.walkOut = walkOutDue(ctx);
+  if (!ctx.walkOut) return undefined;
+  ctx.s = structuredClone(state);
+  ctx.s.tick = tick;
+  expeditions(ctx);
+  return { state: ctx.s, events: ctx.events };
 }

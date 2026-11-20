@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/knapped-pick",
+  "title": "Knapped pick",
+  "creator": "core",
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 4000,
+    "level": 2,
+    "inputs": [
+      {
+        "item": "core/stone-flakes",
+        "qty": 1
+      },
+      {
+        "item": "core/branch",
+        "qty": 1
+      },
+      {
+        "item": "core/reed-cord",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/knapped-pick",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}
