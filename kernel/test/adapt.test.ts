@@ -44,6 +44,22 @@ describe('adaptState', () => {
     expect(serialize(saved)).toBe(before);
   });
 
+  test('moves ice_grip from its old feet place to hands', () => {
+    const bundle = structuredClone(b);
+    bundle.items['test/ice-gloves'] = {
+      ...structuredClone(bundle.items['core/reed-hat']!),
+      id: 'test/ice-gloves',
+      name: 'ice gloves',
+      wear: { slot: 'hands', trait: 'ice_grip' },
+    };
+    const saved = olderWorld();
+    saved.player.bag['test/ice-gloves'] = 1;
+    saved.player.worn.feet = 'test/ice-gloves';
+    const adapted = adaptState(bundle, saved)!;
+    expect(adapted.player.worn).toMatchObject({ hands: 'test/ice-gloves' });
+    expect(adapted.player.worn.feet).toBeUndefined();
+  });
+
   test('gives an outfit piece the save never held once, and never again one it sold or dropped', () => {
     const started = step(b, newState(b, 17), { t: 'start', race: 'core/elf', name: 'Tess' }, 0);
     if (!started.ok) throw new Error(started.error);

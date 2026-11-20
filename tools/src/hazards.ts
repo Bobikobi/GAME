@@ -172,7 +172,7 @@ export function checkHazards(b: Bundle, origin: Record<string, string>): Issue[]
     }
     if (!worst) continue;
     const where = `map.props.${b.map.props.findIndex((p) => p.id === h.id)}.hazard`;
-    const name = rule('G34', 'A hazard is a rule, not a roll');
+    const name = rule('G34', "Gear answers a place's condition; a predator is answered by a run");
     if (!Number.isFinite(worst.steps)) {
       mapErr(where, `${name}: a player hunted by "${h.id}" at (${worst.at[0]}, ${worst.at[1]}) has no road to a safe place; the chase never ends`);
       continue;

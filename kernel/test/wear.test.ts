@@ -37,6 +37,7 @@ beforeAll(() => {
   wearable('x/cap', 'garment', { slot: 'head', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'x/field' });
   wearable('x/smock', 'garment', { slot: 'top', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'x/field' });
   wearable('x/trousers', 'garment', { slot: 'legs' });
+  wearable('x/gloves', 'garment', { slot: 'hands', trait: 'ice_grip' });
   wearable('x/overall', 'garment', { slot: 'outfit', effects: [{ effect: 'dig_speed_pct', value: 5 }] });
   wearable('x/ring', 'jewelry', { slot: 'jewelry', effects: [{ effect: 'craft_chance_pct', value: 5 }] });
   wearable('x/crown', 'garment', { slot: 'head', look: true }, { premium_later: true });
@@ -120,6 +121,10 @@ describe('wearing', () => {
     expect(act(one, { t: 'wear', item: 'x/ring' })).toEqual({ ok: false, error: 'You are already wearing every one you have.' });
     one.player.bag['x/ring'] = 2;
     expect(wear(one, 'x/ring').player.worn).toEqual({ jewelry1: 'x/ring', jewelry2: 'x/ring' });
+  });
+
+  test('a piece is worn on the hands place', () => {
+    expect(wear(started({ 'x/gloves': 1 }), 'x/gloves').player.worn).toEqual({ hands: 'x/gloves' });
   });
 
   test('an outfit takes the top and the legs, and a top takes the outfit off', () => {
