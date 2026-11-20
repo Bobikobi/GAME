@@ -56,6 +56,11 @@ describe('B2: a clip is found by verb, race and view', () => {
     expect(times.size).toBe(27);
   });
 
+  test('the clip\'s display fit (permille) rides through the schema and the assembler to the bundle, and a clip with none has none', () => {
+    expect(sprites['core/clip-fixture:chars/human_strike_left']?.clip?.fit_permille).toBe(700);
+    expect(sprites['core/clip-fixture:chars/human_strike_front']?.clip?.fit_permille).toBeUndefined();
+  });
+
   test('the right side is the left sheet, flipped', () => {
     for (const verb of CLIP_VERBS) {
       const right = clipFor(sprites, verb, HUMAN, 'right')!;
