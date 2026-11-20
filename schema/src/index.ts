@@ -2934,7 +2934,7 @@ export const SchoolFile = record('school', 'school', SchoolBody);
 export const StoryFile = record('story', 'story', StoryBody);
 
 export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school', 'story'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school', 'story', 'set'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,

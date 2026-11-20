@@ -487,6 +487,10 @@
               {
                 "const": "story",
                 "type": "string"
+              },
+              {
+                "const": "set",
+                "type": "string"
               }
             ]
           },
