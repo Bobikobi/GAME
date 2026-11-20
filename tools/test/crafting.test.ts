@@ -90,6 +90,10 @@ const item = (name: string, extra: object = {}) => ({
   ...extra,
 });
 const items = (...list: object[]) => ({ ...envelope('items', 'items'), items: list });
+const set = (name: string, effect = 'gather_speed_pct', value = 2) => ({
+  ...envelope('set', name),
+  set: { id: `tester/${name}`, effect, value },
+});
 const recipe = (name: string, body: object) => ({
   ...envelope('recipe', name),
   recipe: { station: 'fire', active_ms: 4000, level: 1, known: 'start', ...body },
@@ -220,6 +224,7 @@ describe('a world that uses the grammar', () => {
 describe('a world that wears, misses and builds over a part', () => {
   const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
   const result = world({
+    'sets/field.json': set('field'),
     'items.json': items(
       garment('cap', { slot: 'head', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'tester/field' }),
       garment('smock', {
@@ -272,6 +277,7 @@ describe('a world that wears, misses and builds over a part', () => {
 describe('worn items the check refuses', () => {
   const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
   const result = world({
+    'sets/field.json': set('field'),
     'items.json': items(
       item('tunic', { class: 'garment' }),
       item('belt', { class: 'garment', wear: { slot: 'jewelry' } }),
@@ -290,6 +296,8 @@ describe('worn items the check refuses', () => {
       garment('scarf', { slot: 'top', set: 'core/borrowed' }),
       garment('hood', { slot: 'head', set: 'tester/crowd' }),
       garment('helm', { slot: 'head', set: 'tester/crowd' }),
+      garment('field-cap', { slot: 'head', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'tester/field' }),
+      garment('field-smock', { slot: 'top', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'tester/field' }),
       item('badge', { class: 'jewelry', wear: { slot: 'jewelry', effects: [{ effect: 'craft_chance_pct', value: 1 }] }, premium_later: true }),
       item('pin', { premium_later: true }),
       item('tiara', { class: 'jewelry', wear: { slot: 'jewelry', look: true }, premium_later: true }),
@@ -313,9 +321,11 @@ describe('worn items the check refuses', () => {
     expect(said).toContain('gather_speed_pct is named twice: each effect once');
   });
   it('a set of one piece, of another creator, or that cannot be worn whole', () => {
+    expect(said).toContain('no set "tester/lonely": declare its effect and value in a content sets row');
     expect(said).toContain('the set "tester/lonely" has one piece: a set has two at least');
     expect(said).toContain('a set holds one creator\'s pieces: its id starts with "tester/"');
     expect(said).toContain('the set "tester/crowd" cannot be worn whole: too many pieces for the head (G44)');
+    expect(said).toContain('the set "tester/field" gives 12% gather_speed_pct; 2 pieces give at most 10% at tier 1 (G44)');
   });
   it('the premium marker anywhere but on an obtainable look with no effect', () => {
     expect(said.filter((m) => m === 'only a look item with no effect may carry the premium marker (G39)')).toHaveLength(2);
