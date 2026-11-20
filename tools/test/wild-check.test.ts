@@ -53,6 +53,26 @@ const kind = (id: string, patch: Json, behaviour: Json = {}, group: Json = {}): 
     kindsOf(m)[id] = { ...k, ...patch, behaviour: { ...be, ...behaviour, group: { ...(be.group as Json), ...group } } };
   });
 const spots = (change: (s: { kind: string; x: number; y: number }[]) => void): Edit => editCore<MapFile>('map.json', (m) => change(m.map.creatures!.spots));
+const chunkSpawn = (x: number, y: number): Edit => (root) => {
+  writeFileSync(
+    join(root, 'core', 'chunk-0-0.json'),
+    JSON.stringify({
+      format: 1,
+      type: 'chunk',
+      id: 'core/chunk-0-0',
+      title: 'Chunk (0, 0)',
+      creator: 'core',
+      chunk: {
+        x: 0,
+        y: 0,
+        grounds: Array.from({ length: 64 }, () => '.'.repeat(64)),
+        props: [],
+        stamps: [],
+        spawns: [{ kind: SPARROW, x, y }],
+      },
+    }),
+  );
+};
 const wildParam = (key: string, value: number): Edit =>
   editCore<ParamsFile>('params.json', (p) => {
     (p.params.wild as unknown as Record<string, { value: number }>)[key]!.value = value;
@@ -305,6 +325,18 @@ describe('animals keep their spots (QUARRYING 8, 16 row 7)', () => {
     });
     const r = world([cosmetic, spots((s) => s.push({ kind: SPARROW, x: slot.x, y: slot.y }))]);
     expect(errorsOf(r)).toEqual([expect.stringContaining(`map.creatures.spots.${core.assembled.bundle!.map.creatures!.spots.length}: node ${id} stands on core/sparrow's spot at ${slot.x},${slot.y}: ${STANDS}`)]);
+  });
+
+  it('refuses a node on a generated chunk spawn spot', () => {
+    const { x, y } = core.assembled.bundle!.instances['core/river-stones#0']!;
+    const r = world([chunkSpawn(x, y)]);
+    expect(errorsOf(r)).toEqual([`chunk.spawns.0: node core/river-stones#0 stands on core/sparrow's spot at ${x},${y}: ${STANDS}, ${MOVES}`]);
+  });
+
+  it('passes a node beside a generated chunk spawn spot', () => {
+    const { x, y } = core.assembled.bundle!.instances['core/river-stones#0']!;
+    const r = world([chunkSpawn(x + 1, y)]);
+    expect(errorsOf(r).filter((l) => l.includes(STANDS))).toEqual([]);
   });
 });
 

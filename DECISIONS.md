@@ -4500,3 +4500,7 @@ The kernel reads no grade (an old log's `grade` is accepted and set aside; no mi
 **Owner flags:** the luck "of misses" stat row leaves (no misses exist); agility now means work speed and is renamed "Quick hands".
 **Old saves and logs:** a save carries its state (a node with no `taken` counts 0; a saved `grade` is ignored); a log from before 0.30 no longer replays to the same state, because one gather is now one unit, not a whole node. Not proven: the start solver is conservative (it ignores agility and one-unit brings); the bell-bush `t_min_ms` floor applies per whole node.
 **Retry when:** play shows a work too slow or too automatic to be a game, or hunting and fighting need a hand of their own (then it is the owner's direction call). Model: claude-sonnet-5-5. Link: #713, QUARRYING.md 9-10, GAME_RULES G15.
+## 2026-11-20 ✅ Wild-node checks include generated chunk spawns
+**What:** QUARRYING 8 now checks merged laid and appear nodes against both the map's creature spots and every generated chunk spawn; 2 focused cases cover a shared tile refusing and the neighbouring tile passing.
+**Why:** since generated chunks are content, an animal's chunk-local spawn must keep its spot by the same rule as the map's authored list.
+**Retry when:** chunks enter the runtime bundle or nodes are streamed per chunk. **Model:** Codex. **Link:** public tracker #700.
