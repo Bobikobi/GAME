@@ -17,8 +17,8 @@ interface Choice<T> {
 }
 
 /** A group of buttons of which one is on, as a radio group. */
-function segmented<T>(name: string, choices: readonly Choice<T>[], current: T, onPick: (v: T) => void): HTMLElement {
-  const group = h('div', { class: 'set-seg', role: 'radiogroup', 'aria-label': name });
+function segmented<T>(name: string, choices: readonly Choice<T>[], current: T, onPick: (v: T) => void, className = ''): HTMLElement {
+  const group = h('div', { class: `set-seg${className ? ` ${className}` : ''}`, role: 'radiogroup', 'aria-label': name });
   for (const c of choices) {
     const b = button(c.label, () => onPick(c.value), `set-opt${c.value === current ? ' on' : ''}`);
     b.setAttribute('role', 'radio');
@@ -88,7 +88,7 @@ export function settingsBody(
       ] : []),
       h('h3', null, 'Accessibility'),
       row('Reduced motion', s.reducedMotion ? null : 'Off follows your phone', toggle('Reduced motion', s.reducedMotion, (reducedMotion) => change({ reducedMotion }))),
-      row('Text size', null, segmented<TextSize>('Text size', TEXT_SIZES.map((t) => ({ value: t, label: String(t) })), s.textSize, (textSize) => change({ textSize }))),
+      row('Text size', null, segmented<TextSize>('Text size', TEXT_SIZES.map((t) => ({ value: t, label: String(t) })), s.textSize, (textSize) => change({ textSize }), 'text-size-options')),
       h('div', { class: 'set-foot' }, button('Reset to Auto', () => {
         apply.reset();
         draw();
