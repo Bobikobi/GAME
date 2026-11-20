@@ -4494,6 +4494,11 @@ Why: a loop and a cut are the two things a player does not notice in a repeated 
 The card `web/public/og/card.png` still read "Openfold" and `theopenfold.vercel.app`, which answers 404, so every link to the game shared on Reddit, X or a chat showed the old name and a dead address (kept on purpose by the rename, "the lettering of the card is the owner's call", entry of the name change). The new card keeps everything else: the bridge frame on the right is pixel-identical to the old card (difference bbox: none), the tagline lines render byte-identical in DejaVu Sans Bold 28, and the name is set in the same DejaVu Sans Bold 86 at the same left margin and ink top. The owner approves the lettering by putting `land-ok` on the pull request. The redraw of the frame itself still waits for PRE_RICH_REDRAW row 30.
 **Retry when:** the rich redraw of rows 1, 2, 4 and 13 lands (a new frame), or the owner wants another lettering. Model: claude-opus-5-5.
 
+## 2026-11-20 ✅ One changed-test route grows from related tests to every suite
+**What:** `pnpm test:changed` reads paths against `origin/develop`: build runs related tests, handover runs each touched package suite, and all runs the root and web suites; every group prints its command and reason first.
+**Numbers and why:** one entry point, three stages, two Vitest workspaces; an unknown path widens to both so no unlinked change is silently dropped.
+**Retry when:** another test workspace or runner enters the repository, or a path now classed unknown gains a proven test link. **Model:** Codex.
+**Link:** public tracker #702, tools audit item 15; owner yes 12.11.
 ## 2026-11-20 ✅ Every clothing set owns its bonus
 **What:** a set is a content row with one worn effect and a whole-number bonus; the kernel reads that row only when every piece is worn. `core/reed-walker` now owns `gather_speed_pct` +2, exactly the 10 + 20% = 12 it gave before; no item value or balance number moved.
 **Why:** a set can now give a worthwhile bonus no other set gives, instead of every set sharing `wear_set_bonus_pct`; the shared parameter is gone.

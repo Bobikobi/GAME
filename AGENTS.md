@@ -35,6 +35,7 @@ Learned on the first three days of building, each line from a real cost.
 
 | Tool | Stage: when it runs |
 |---|---|
+| `pnpm test:changed [--stage build|handover|all]` | Select tests from the change against `origin/develop`: related tests while building, touched-package suites at handover, every suite at the end. |
 | `pnpm streams` | CI runs it on every pull request and writes it to the run summary (it informs, never fails). Run it yourself before you start, with [docs/team/PARALLEL.md](docs/team/PARALLEL.md): it shows the other streams and who touches the same files. Reads refs and GitHub only. |
 | integrator skill (`.claude/skills/integrator`) | When the merge order, a collision between branches or the state of the streams is in question, or when the session's job is integration. |
 | quest-designer skill (`.claude/skills/quest-designer`) | Any new or changed quest, and a review of the quests in a pull request. It proposes pitches, the owner picks; every pitch starts from the skill tree and names the schools it trains and the nodes it needs or opens. CI refuses a pull request that changes a quest file unless its body has a line `Quest review: <the skill's verdict>`; the `Tree:` line beside it carries the schools and nodes. |
