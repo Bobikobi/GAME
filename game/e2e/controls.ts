@@ -286,7 +286,8 @@ async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
   const local = remote ? null : await serve();
   const browser = await Browser.launch();
-  const page = await browser.newPage({ width: VIEWS[0]!.width, height: VIEWS[0]!.height, mobile: true });
+  // the page starts on its side: an upright touch phone asks for landscape and its card covers the title (the cards are proved in landscape.ts)
+  const page = await browser.newPage({ width: VIEWS[1]!.width, height: VIEWS[1]!.height, mobile: true });
   try {
     await page.goto(`${remote ?? local?.url ?? ''}?debug&rich=none${seedQuery('core/west-bank')}`);
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
@@ -426,9 +427,9 @@ async function main(): Promise<void> {
     console.log('K2 landscape: with the stick on the left a thumb raises it in the left half only, on the right in the right half only');
     await choose(page, 'left', 'medium');
 
-    // K5 and the live case: the real Settings window, upright, a side and a size chosen with a tap
-    await turn(page, VIEWS[0]!);
-    await page.tap('.hud-menu', 'Menu');
+    // K5 and the live case: the real Settings window, on its side (an upright phone shows the card, not the game), a side and a size chosen with a tap
+    await turn(page, VIEWS[1]!);
+    await page.tap('.tbtn.menu');
     await page.tap('.menu-list button', 'Settings');
     await page.waitFor(`!![...document.querySelectorAll('.set-body h3')].find((h) => h.textContent === 'Controls')`, 'the Controls section');
     const words = await page.eval<{ text: string; px: number }[]>(`(() => {
@@ -448,7 +449,7 @@ async function main(): Promise<void> {
 
     const before = (await settled(page, 'left', 'medium')).boxes;
     await page.eval(`[...document.querySelectorAll('.set-body h3')].find((h) => h.textContent === 'Controls').scrollIntoView({ block: 'start' })`);
-    await page.screenshot(join(OUT, 'settings-controls-portrait.png'));
+    await page.screenshot(join(OUT, 'settings-controls-landscape.png'));
     const pick = (label: string, name: string) => `[...document.querySelectorAll('[aria-label="${label}"] button')].find((b) => b.textContent === '${name}') || null`;
     await page.tapWhere(pick('Stick side', 'Right'), 'the Right option');
     await page.tapWhere(pick('Button size', 'Large'), 'the Large option');
@@ -458,7 +459,7 @@ async function main(): Promise<void> {
     if (record.stickSide !== 'right' || record.buttonSize !== 'large') fail(`the choices are not kept: ${stored}`);
     const a0 = before.a!;
     const a1 = live.boxes.a!;
-    if (!near(a1.w, a0.w * 1.2, 1) || a1.x + a1.w / 2 > VIEWS[0]!.width / 2) fail(`the live choice left A at ${fmt(a1)}, from ${fmt(a0)}`);
+    if (!near(a1.w, a0.w * 1.2, 1) || a1.x + a1.w / 2 > VIEWS[1]!.width / 2) fail(`the live choice left A at ${fmt(a1)}, from ${fmt(a0)}`);
     const wasOn = await page.eval<number>(`document.querySelectorAll('[aria-label="Stick side"] .on, [aria-label="Button size"] .on').length`);
     if (wasOn !== 2) fail(`the window shows ${wasOn} chosen options in the two rows, not 2`);
     console.log(`K5: a tap on Right and Large in the open window moved A from ${fmt(a0)} to ${fmt(a1)} at once, no reload, and kept ${stored}`);

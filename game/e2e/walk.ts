@@ -305,11 +305,14 @@ export class FreeWalk {
     if (this.pushed) await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     this.pushed = [ux, uy];
     // the stick rises under the thumb where it lands and reads no walk; the push is the move from there
-    await this.page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...this.anchor, id: 1 }] });
-    await this.page.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x: this.anchor.x + ux * STICK_OUT, y: this.anchor.y + uy * STICK_OUT, id: 1 }],
-    });
+    // sent together, in order: one wait for both, not one per event (a walk's time is the run's clock)
+    await Promise.all([
+      this.page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...this.anchor, id: 1 }] }),
+      this.page.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: this.anchor.x + ux * STICK_OUT, y: this.anchor.y + uy * STICK_OUT, id: 1 }],
+      }),
+    ]);
   }
 
   /** The page's own hook that lets go of the walk on the right frame. */
