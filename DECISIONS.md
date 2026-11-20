@@ -4533,6 +4533,10 @@ The card `clothing-look-1120` showed the same human in the same outfit three way
 **Not built now** (engine first, figure details wait): the build is a production item on public #754. The cost of B by drawing is over the PixelLab balance (3,788 on 20.11), so the build starts with the layer from a 3D render or key frames plus mask, measured on one clip first.
 **Retry when:** the owner picks one of the three outright, or a measured clip shows layers cost more than whole drawings per outfit. Model: claude-opus-5-5 (manager). Link: public #754, the card's stills in `feat-clothing-look/.scratch/clothing-look/final/`.
 
+## 2026-11-20 ✅ Phones are measured on their side; an upright phone is asked to turn it (#720)
+All phone tests and stills use one 844 x 390 viewport; portrait touch play shows the existing framed UI as a quiet orientation card and pauses input behind it. The site's home page is unchanged.
+This follows the owner's 14.11 direction that the game, apart from its home page, is played with the phone on its side. Three camera expectations were re-pinned for the sideways 3x canvas: width, height and integer zoom.
+**Retry when:** phone hardware or browser chrome changes the chosen measured viewport, or the owner changes the phone direction. **Model:** Codex. **Link:** public tracker #720.
 ## 2026-11-21 ✅ Only the spear is dual; the sling and the bow fight as their own items (#710)
 **What and why:** `dual_use_max` is one and the spear's first rung is its only member; the sling and the bow remain separate hunt take tools and fight hands, following the owner's 12.11 answer to WEAPONS 17 question 2, pick C.
 **Retry when:** the owner changes which take tools also fight, or a later named recipe needs a second dual slot. **Model:** Codex. **Link:** public tracker #710.

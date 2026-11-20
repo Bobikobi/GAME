@@ -64,6 +64,7 @@ function topWindow(): Element | null {
 export const RUN_HOLD_MS = 400;
 
 export class Controls {
+  private paused = false;
   private held: Dir[] = [];
   /** the phone's stick, with a length of 0 to 1; null while no finger is on it */
   private stick: readonly [number, number] | null = null;
@@ -88,6 +89,7 @@ export class Controls {
 
   /** The direction being held right now, if any: the stick's leading axis, or the last key pressed. */
   direction(): Dir | null {
+    if (this.paused) return null;
     if (this.stick) {
       const [x, y] = this.stick;
       if (x === 0 && y === 0) return null;
@@ -101,6 +103,7 @@ export class Controls {
    * line (NEXT 22 a). Opposite keys cancel. A length of 1 is full speed.
    */
   vector(): [number, number] {
+    if (this.paused) return [0, 0];
     if (this.stick) return [this.stick[0], this.stick[1]];
     const on = (d: Dir) => (this.held.includes(d) ? 1 : 0);
     const x = on('right') - on('left');
@@ -111,6 +114,7 @@ export class Controls {
 
   /** The phone's stick: a vector of length 0 to 1, or null when the finger lifts. */
   setStick(v: readonly [number, number] | null): void {
+    if (this.paused) return;
     const pushing = v !== null && (v[0] !== 0 || v[1] !== 0);
     if (!pushing) this.pushedAt = null;
     else if (this.pushedAt === null) this.pushedAt = performance.now();
@@ -119,7 +123,18 @@ export class Controls {
 
   /** The sneak toggle: on, every step is a sneak until it is turned off (a thumb is busy steering). */
   setSneak(on: boolean): void {
+    if (this.paused) return;
     this.sneaking = on;
+  }
+
+  /** Stops every game control while a modal outside the ordinary window stack has the screen. */
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+    if (!paused) return;
+    this.held = [];
+    this.stick = null;
+    this.pushedAt = null;
+    this.shift = false;
   }
 
   get sneak(): boolean {
@@ -131,6 +146,7 @@ export class Controls {
    * for `RUN_HOLD_MS` (or Shift is down), a walk otherwise.
    */
   gait(now: number): Gait {
+    if (this.paused) return 'walk';
     if (this.sneaking) return 'sneak';
     if (this.shift) return 'run';
     return this.pushedAt !== null && now - this.pushedAt >= RUN_HOLD_MS ? 'run' : 'walk';
@@ -141,6 +157,7 @@ export class Controls {
   }
 
   press(button: Button): void {
+    if (this.paused) return;
     for (const fn of this.handlers) if (fn(button) === true) return;
   }
 
