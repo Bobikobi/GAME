@@ -163,6 +163,19 @@ export const WornEffect = Type.Union(WORN_EFFECTS.map((k) => Type.Literal(k)), {
   description: 'What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.',
 });
 
+/** The bonus a complete clothing set gives, declared once by the set's creator. */
+export const WearSet = Type.Object(
+  {
+    id: Id,
+    effect: WornEffect,
+    value: Int(1, 100, 'Whole percentage points added while every piece of the set is worn.'),
+  },
+  {
+    additionalProperties: false,
+    description: 'A clothing set and the one bonus that belongs to it. Different sets may give different effects and values.',
+  },
+);
+
 /**
  * The garment traits (BODY_CLOCKS 6.1): what a piece is worn against, each on the places the table names.
  * `ice_grip` sits on the hands place (CLOTHING question 1, the owner's pick of 2026-11-12).
@@ -224,7 +237,7 @@ export const Wear = Type.Object(
     ),
     set: Type.Optional({
       ...Id,
-      description: 'A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.',
+      description: 'A set declared in content: when every piece is worn, that set\'s own effect and value apply.',
     }),
     places: Type.Optional(
       Int(
@@ -1621,10 +1634,6 @@ export const ParamsBody = Type.Object(
       description:
         'The largest value of one effect on a worn item, by the item\'s tier from tier 1; the last entry holds for the tiers above it. Never falls with the tier.',
     }),
-    wear_set_bonus_pct: {
-      ...Bounded,
-      description: 'How much a full set adds to the effects of its pieces, in percent of their sum, rounded down.',
-    },
     wear_req_level: Type.Array(Type.Integer({ minimum: 1, maximum: 100 }), {
       minItems: 1,
       maxItems: 20,
@@ -2900,6 +2909,7 @@ export const TreasureFile = Type.Object(
   { additionalProperties: false, $id: 'treasure' },
 );
 export const RecipeFile = record('recipe', 'recipe', RecipeBody);
+export const SetFile = record('set', 'set', WearSet);
 export const TemplateFile = record('template', 'template', TemplateBody);
 export const NpcFile = record('npc', 'npc', NpcBody);
 export const QuestFile = record('quest', 'quest', QuestBody);
@@ -2923,7 +2933,7 @@ export const SchoolFile = record('school', 'school', SchoolBody);
 /** A story file is core-only: the generator's input, never in the bundle (the chunks it writes are). */
 export const StoryFile = record('story', 'story', StoryBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'passage', 'restore', 'camp', 'race', 'items', 'creator', 'reaction', 'set'] as const;
 export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school', 'story'] as const;
 
 export const ExtensionFile = Type.Union([
@@ -2954,6 +2964,7 @@ export const ExtensionFile = Type.Union([
 export type ClipInfo = Static<typeof ClipBody>;
 export type ItemDef = Static<typeof ItemDef>;
 export type ClassDef = Static<typeof ClassDef>;
+export type WearSetDef = Static<typeof WearSet>;
 export type ClassInput = Static<typeof ClassInput>;
 export type BaseClassName = (typeof BASE_CLASSES)[number];
 export type Stack = Static<typeof Stack>;
@@ -3054,6 +3065,7 @@ export const SCHEMAS = {
   resource: ResourceFile,
   treasure: TreasureFile,
   recipe: RecipeFile,
+  set: SetFile,
   template: TemplateFile,
   npc: NpcFile,
   quest: QuestFile,

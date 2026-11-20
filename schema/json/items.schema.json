@@ -542,7 +542,7 @@
               "set": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
-                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "description": "A set declared in content: when every piece is worn, that set's own effect and value apply.",
                 "type": "string"
               },
               "places": {
