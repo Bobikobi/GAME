@@ -206,6 +206,7 @@ export function flattenParams(p: ParamsBody): Params {
       swing_floor_ms: p.combat.swing_floor_ms.value,
       bare_windup_ms: p.combat.bare_windup_ms.value,
       bare_base: p.combat.bare_base.value,
+      tool_strike_permille: p.combat.tool_strike_permille.value,
       windup_min_ms: p.combat.windup_min_ms.value,
       windup_max_ms: p.combat.windup_max_ms.value,
       active_ms: p.combat.active_ms.value,

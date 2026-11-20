@@ -1143,6 +1143,12 @@
         "max": 16,
         "step": 1
       },
+      "tool_strike_permille": {
+        "value": 1050,
+        "min": 1000,
+        "max": 1500,
+        "step": 50
+      },
       "windup_min_ms": {
         "value": 200,
         "min": 100,

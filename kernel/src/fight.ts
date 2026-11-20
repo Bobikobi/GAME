@@ -11,7 +11,7 @@
  */
 import type { Bundle } from './bundle';
 import { dangerAt, isSafe } from './danger';
-import { type FightDef, type MoveDef, moveHarm, movePulseDurations, movePulseTimeline, patternMoves, pulseDurations } from './fightmath';
+import { type FightDef, type MoveDef, handStrikeHarm, moveHarm, movePulseDurations, movePulseTimeline, patternMoves, pulseDurations } from './fightmath';
 import { breathRefillPermille, walkStepMs } from './load';
 import { assertInt, idiv, mulDiv, MILLI, PERCENT } from './num';
 import { attrAt, hpCap, type State } from './state';
@@ -510,7 +510,8 @@ export function fightTick(bundle: Bundle, world: FightWorld, inputs: readonly Fi
     for (const [fid, f] of foes()) {
       if (f.health === 0 || ms < f.readyAt || safe(f.at) || !ahead(p.state.player.at, f.at, p.facing, 1)) continue;
       const def = bundle.map.creatures!.kinds[f.kind]!.fight!;
-      let harm = c.bare_base;
+      const handId = p.state.player.worn.hand;
+      let harm = handStrikeHarm(bundle.params, handId === undefined ? undefined : bundle.items[handId]);
       if (!same(direction(f.at, p.state.player.at), f.facing)) harm = mulDiv(harm, c.behind_permille, MILLI);
       const weak = f.phase === 'recovery' && f.move === def.weak?.after;
       if (weak) harm = mulDiv(harm, c.weak_permille, MILLI);

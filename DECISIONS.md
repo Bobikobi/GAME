@@ -4524,6 +4524,9 @@ The owner ruled on 19.11 (22:1x): the start is a discovery of a world, the ways 
 Not built: a fishing spot moved onto the way of a task (the nearest, (13,8), (15,11), (15,6), lies 5-10 tiles off the walk, so no node was moved), gaps 1 and 4.
 **Retry when:** play shows the stripped lines leave a first-time player with nowhere to go (then add a place on the way, not words), or the owner wants a day-time rehearsal (the window is night only). Model: claude-sonnet-5-5. Link: the PR of this entry, DECISIONS 2026-11-20 "One work rule".
 
+## 2026-11-20 ❌ The 200-pair fight pulse has no half-pulse cause to fix
+At 20, 50, 100 and 200 simultaneous pairs, the 50 ms pulse measured 0.545, 2.058, 4.742 and 11.953 ms: superlinear, not quadratic. The largest profiled phase was fight ending at 38.26%; proximity and engagement lookup was 21.82%, so the suspected all-account rest-clock write did not own half the pulse and the kernel stayed replay-identical.
+Retry when finer phase timers identify one cause above 50% or the rule permits a coordinated multi-phase optimization; the 5 ms bar remains open. Model: Codex. Link: #549, #745.
 ## 2026-11-20 ✅ Clothes on the figure: layers by place, colour by mask, whole drawings for fixed sets (the owner liked A, B and C)
 The card `clothing-look-1120` showed the same human in the same outfit three ways: A drawn whole by PixelLab (about 420 generations an outfit on all 418 frames by the cheap edit), B one layer per piece on the bare figure (about 2,500 generations a piece on all frames), C a colour swap through a per-frame mask (0 generations). The owner liked all three (20.11 10:06), with two notes: B "only the hat is not good, the rest is good"; C "the shirt rode up over the chin, otherwise good".
 **The manager's reading (the owner corrects):** the frame is B, layers by wear place, because ten places mix freely (CLOTHING; DECISIONS 2026-11-12 "a tenth place"); a piece's colours come by C's mask, so a hide's colour passes into the garment with no new drawing (DECISIONS 2026-11-12 "a hide's colour is final"); A is kept for fixed outfits, full sets and the world's people. His two notes are bars for the build: a hat's shape reads as a hat, not the hair; no piece covers the chin or the face.
@@ -4534,3 +4537,7 @@ The card `clothing-look-1120` showed the same human in the same outfit three way
 All phone tests and stills use one 844 x 390 viewport; portrait touch play shows the existing framed UI as a quiet orientation card and pauses input behind it. The site's home page is unchanged.
 This follows the owner's 14.11 direction that the game, apart from its home page, is played with the phone on its side. Three camera expectations were re-pinned for the sideways 3x canvas: width, height and integer zoom.
 **Retry when:** phone hardware or browser chrome changes the chosen measured viewport, or the owner changes the phone direction. **Model:** Codex. **Link:** public tracker #720.
+## 2026-11-21 ✅ A work tool fights one small step above bare hands (#710)
+
+Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
+The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).
