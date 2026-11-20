@@ -14,7 +14,7 @@ Two rules stand over all of it:
 
 | Decided | Where |
 |---|---|
-| The character is the measure: a frame of 1 x 1.5 tiles, the body about 80 px; the proportions table for trees, houses, props; bigger is open | STYLE 1b, DECISIONS 2026-10-18 |
+| The character is the measure: a frame of 1 x 1.5 tiles, the body 73 px (STYLE 1b); the proportions table for trees, houses, props; bigger is open | STYLE 1b, DECISIONS 2026-10-18 |
 | Shadows C, the night at 92% with light pools, lit windows, height T2, the six depth cues (reflections, into the grass, cloud shadows, footprints, a shadow that stays down, height) | STYLE 4 to 7 |
 | The light is one module with an hour table in `params.json`; the hour's tints wait for the L2 pick | ART_SYSTEM 2, #234, #241 |
 | Ramps per material and per region, declared and checked; a region's look is a table, not a redraw | ART_SYSTEM 3, #230 |
@@ -25,7 +25,7 @@ Two rules stand over all of it:
 
 ## 1. Scale: everything is measured in characters
 
-STYLE 1b gives the floor for trees, houses and props. This section adds what it leaves out: people, animals, and the things a monster is allowed to break. The unit is one character's height (about 80 px of body at 64 px per tile). A number is a floor and the size of the common one; bigger is open (STYLE 1b).
+STYLE 1b gives the floor for trees, houses and props. This section adds what it leaves out: people, animals, and the things a monster is allowed to break. The unit is one character's height (the adult human's 73 px of body at 64 px per tile, STYLE 1b). A number is a floor and the size of the common one; bigger is open (STYLE 1b).
 
 | Thing | Height in characters | Footprint (tiles) | Note |
 |---|---|---|---|
@@ -69,7 +69,7 @@ A region (one map file, OPEN_WORLD G51) declares one `climate`. The climate is a
 - **Mixing:** a region has one climate. The crossing between two climates is a band of two to four tiles where the ground's ramp steps from one table to the other, on the ragged line STYLE 3 already draws between grounds; the trees of both may stand in the band.
 - **A town carries its climate:** a pastoral town is green and full (gardens, a well, washing lines, chickens); a desert town is walled, shaded and bare (awnings, water jars, a shaded square). The stamps a creator adds (ART_SYSTEM 5) say which climates they fit.
 - **Data (proposal):** `climate` on the region's map body, one of a closed list; the tables above as `content/core/climates.json` (ramp set, densities, allowed kinds, air defaults, sound beds). The valley gets `temperate` in the same change and nothing on screen moves until a second climate exists.
-- **Kind:** direction, once. The still: one scene of the same layout (a well, a house, a tree, a path, water) rendered in each of the four climates at phone size, four frames (section 8). After the pick, a climate's numbers are polish.
+- **Kind:** direction, once. The still: one scene of the same layout (a well, a house, a tree, a path, water) rendered in each of the four climates at the full frame (1920 x 1080, STYLE 1), four frames (section 8). After the pick, a climate's numbers are polish.
 
 ## 3. The seasons of the year
 
@@ -108,6 +108,7 @@ REACTIONS phase B decides the day's weather from the seed, a day ahead, shown in
 - **Weather is a look and a sound.** Nothing in the table changes a rule: a player walks, gathers and crafts the same in a storm. The two reads the kernel keeps are the ones already decided: the `weather` condition on a reaction, and fog on a predator's sight.
 - **The mix per climate and season** lives in the climate table (section 2) as weights: temperate winter `rain 40, overcast 25, wind 15, clear 10, fog 10`; temperate summer `clear 60, overcast 20, wind 10, storm 5, rain 5`; dry summer `clear 85, wind 15`; cold winter `snow 40, overcast 25, fog 15, clear 10, wind 10`. The seed draws from the weights, so the same day is the same weather on every replay (REACTIONS phase B).
 - **One sky for the whole region,** as decided; a player who crosses to another region crosses into its weather at the climate band (section 2).
+- **Each region's own sky** (issue 581, built 1.11): a region card (`map.cards`, one per row of [FIRST_MAP](FIRST_MAP.md)'s region table, titled as the row) holds its days of rain and fog in basis points (`weather`), how much of the decided look it shows in permille (`look`), and its two ambience beds; `map.card` is the valley's, and a region of the map names its own with `card`. `pnpm check` refuses a region of the table with no card. The valley card keeps the odds the kernel had (rain 2000, fog 1000), so no day the valley drew changes. A fog day keeps the banks of #238 across the view all day, at least 35% of their dawn weight times the card's look; the fog's pale light of the table is not seen yet and is not drawn. The beds are the two there are until the owner's sound pick (#464), and rain has no sound until then. The streak's shape on the rich grid: DECISIONS 2026-11-01, "Each region of the first map has its own sky".
 - **What never dims:** a signal a rule needs stays at least as visible as today under every weather (ART_SYSTEM 2): the wolf's eyes, the player's pool, the fire's stage, the glint, the lantern post, the path. The e2e colour checks run under the darkest weather too (storm at 19:00).
 - **Phones:** every weather layer sits behind `RICH.light` or `RICH.motion` and falls back by group; the plain valley is clear and still.
 - **Kind:** overcast, rain and fog at 12:00 on the square are one sheet of three stills (section 8); the rest is polish inside them.

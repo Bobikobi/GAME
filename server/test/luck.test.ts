@@ -6,7 +6,7 @@
  *
  * The runs below are played through the real API, over HTTP, one request at a time (see
  * `support/phone.ts`): a start, the start's own task, the keystone, the bridge, a felled oak, the
- * trader's stall for one payment and one sale, and one careless strike whose one log is the seed's.
+ * trader's stall for one payment and one sale, and one look into a hollow log whose day is the seed's.
  * Nothing is placed by hand and no state is written directly, so the log these tests replay is a log
  * the server itself accepted.
  */
@@ -18,7 +18,6 @@ import {
   type GameEvent,
   type State,
   drawBasisPoints,
-  missKeepBp,
   newState,
   publicState,
   salePrice,
@@ -137,20 +136,22 @@ describe('the ledger and the replay (NEXT 18 f)', () => {
     expect(replayed.join(' ')).toMatch(/does not (land on the stored state|play again)/);
   });
 
-  test("the luck is the secret seed's: a careless strike falls on the seed's own draw", async () => {
+  test("the luck is the secret seed's: a look into a hollow log shows the day the seed's own draws give", async () => {
     const run = await scriptedRun(STARTS[0]);
-    // the kernel's rule, read here: a careless gather pays nothing by itself, and one unit falls when
-    // drawBasisPoints(seed, node, draws) stands under the miss-keeps line
-    const keepBp = missKeepBp(bundle, run.store.record.state);
-    const kept = drawBasisPoints(SEED, run.careless, 0) < keepBp;
-    expect(run.store.record.state.nodes[run.careless]?.draws).toBe(1);
-    expect(run.drawn).toBe(kept ? 1 : 0);
+    const state = run.store.record.state;
+    const held = required(state.searched[run.searched], 'The look left no book.');
+    // the kernel's rule, read here: each row of a searchable is drawn on its own from f(seed, searchable and item, dawn);
+    // these rows are common or uncommon, so the luck's tilt leaves them as they are
+    const rows = bundle.searchables[run.searched]!.rows;
+    const shown = (seed: typeof SEED): string[] => rows.filter((row) => drawBasisPoints(seed, `search:${run.searched}:${row.item}`, held.dawn) < row.chance_pct * 100).map((row) => row.item);
+    for (const row of rows) expect(['common', 'uncommon']).toContain(bundle.items[row.item]!.rarity);
+    expect(run.rows).toEqual(shown(SEED));
 
-    // and a seed on the other side of that same draw cannot have written this state
+    // and a seed on the other side of those same draws cannot have written this state
     const other = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597]
       .map(widenSeed)
-      .find((seed) => (drawBasisPoints(seed, run.careless, 0) < keepBp) !== kept);
-    expect(other, 'no seed of this list lands on the other side of the draw').toBeDefined();
+      .find((seed) => shown(seed).join() !== run.rows.join());
+    expect(other, 'no seed of this list shows another day').toBeDefined();
     const problems = checkAccount(bundle, booksOf(run.store, { seed: other! }));
     expect(problems.some((problem) => problem.includes('does not land on the stored state'))).toBe(true);
   });

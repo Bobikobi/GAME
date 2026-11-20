@@ -223,7 +223,7 @@ Algorithm, move check (stage 2a):
 
 ### 1.5 Density
 
-**G62. Pillar 1 gets a static check.**
+**G62. Pillar 1 gets a static check.** *(Built: `tools/src/paygap.ts`, in `pnpm check`; a region pays only where a walker can come in from outside it.)*
 - Pillar 1 carries its own test: "time the gaps in a recording" (GAME_RULES.md:35). That test stays the measure.
 - This check is a proxy. It catches a map that cannot pass the recording test, before anyone records.
 - The rule: no walkable tile may lie farther than `floor(pay_gap_ms / (2 x walk_step_ms)) + sight` steps (4-way) from a pay.
@@ -255,7 +255,7 @@ Algorithm:
 
 **G64. Danger rises with distance from town, area by area.**
 - Each area carries `d` in 0..9: "Every area of the map carries a danger level `d`, from 0 in the town upward, set in the content and checked by the checker against the area's distance from town and the levels its nodes ask" (SETTLEMENT 70; scale at dec 590-598).
-- No area carries one yet (GRUNT 1142, CR-38).
+- Every area of the valley carries one since issue 578, set from the difficulty reckoning (`pnpm map:difficulty`): the town square and the night ruins' doorstep at 0, the other areas at 1. `pnpm check` runs the order check below and the border cues as warnings (`tools/src/danger.ts`).
 - A region only groups areas. Where d is stored is CR-38's build. This draft assumes an optional `danger` on `area` slots (G67), with ground in no area slot at level 1, wild (kernel-review 237).
 - Level 0 holds the town, the opening's ground and the night ruins' entrance (dec 1141; SETTLEMENT 66). On level 0:
   - it is safe at every hour (G30, GAME_RULES.md:301);
@@ -482,7 +482,7 @@ Nothing is built on it until then. Its art side (grounds and height carried as d
 
 **Smaller calls.** Each goes to the owner on its own. The first four were listed in section 3 as analogies before.
 - **A region checklist.** A list of finds to tick off is the counter that pillar 3 rules out ("A counter is not a question", GAME_RULES.md:40-41). Recommended: none; finds count on the exploration board (dec 678).
-- **The discovery banner** (G63). It is UI frame and words (NEXT:21; pillar 2, GAME_RULES.md:36-37). Recommended: two or three phone stills first.
+- **The discovery banner** (G63). It is UI frame and words (NEXT:21; pillar 2, GAME_RULES.md:36-37). Recommended: two or three full-frame stills (1920 x 1080, STYLE 1) first.
 - **Caves and interiors.**
   - They are planned only on the 3D track, as GLB scenes behind portals (docs/3d/world-notes.md:22-29).
   - In 2D they need a kernel portal, which is dec 1345-1346's question.

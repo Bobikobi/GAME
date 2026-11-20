@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/hammerstone",
+  "title": "Hammerstone",
+  "creator": "core",
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 2000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/stone",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/hammerstone",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

@@ -7,6 +7,7 @@ import type { GameSession } from '../session-surface';
 import { ATTRIBUTE_LABEL, ATTRIBUTE_TEXT } from '../text';
 import { say } from './dialog';
 import { gameServer, offerSignup } from './signup';
+import { enterFullView } from './touch';
 import { standingFrame } from '../work';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
@@ -121,6 +122,8 @@ export function showTitle(ui: UI): Promise<void> {
 
     /** Continue: the server's game where the build names a server and the browser is signed in, else the demo's save. */
     const resume = async () => {
+      // the full view is asked inside the tap itself: a browser refuses it once the server's answer has outlasted the tap
+      enterFullView();
       if (server === undefined) {
         resumeLocal();
         return;
@@ -232,6 +235,7 @@ export function showTitle(ui: UI): Promise<void> {
         // one start at a time: a second tap or Enter while the first waits starts nothing more
         if (starting) return;
         starting = true;
+        enterFullView();
         // a start that comes before the probe's answer waits for it, so a signed-in account never starts in the browser
         if (!remote && probe) {
           error.textContent = 'Waiting for the connection.';
@@ -287,7 +291,7 @@ async function intro(ui: UI, lines: string[] | undefined): Promise<void> {
   const waking = lines ?? [
     'You wake up in the tall grass beside a river. The sun stands high.',
     'Across the water, smoke rises over a town. The old bridge between is broken.',
-    'Its keystone lies in the shallows by the bridge. Strike it free, and the bridge can be mended.',
+    'Its keystone lies in the shallows by the bridge, and the bridge can be mended.',
   ];
   // two lines or fewer are one box and one tap (OPENING_REVIEW criterion 7); a longer start keeps paging
   await say(ui, null, waking, [], { page: waking.length <= 2 });

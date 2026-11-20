@@ -6,6 +6,7 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { appearSlots } from '@game/kernel';
 import type { MapFile, ParamsFile } from '@game/schema';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type CheckResult, runCheck } from '../src/check';
@@ -52,6 +53,26 @@ const kind = (id: string, patch: Json, behaviour: Json = {}, group: Json = {}): 
     kindsOf(m)[id] = { ...k, ...patch, behaviour: { ...be, ...behaviour, group: { ...(be.group as Json), ...group } } };
   });
 const spots = (change: (s: { kind: string; x: number; y: number }[]) => void): Edit => editCore<MapFile>('map.json', (m) => change(m.map.creatures!.spots));
+const chunkSpawn = (x: number, y: number): Edit => (root) => {
+  writeFileSync(
+    join(root, 'core', 'chunk-0-0.json'),
+    JSON.stringify({
+      format: 1,
+      type: 'chunk',
+      id: 'core/chunk-0-0',
+      title: 'Chunk (0, 0)',
+      creator: 'core',
+      chunk: {
+        x: 0,
+        y: 0,
+        grounds: Array.from({ length: 64 }, () => '.'.repeat(64)),
+        props: [],
+        stamps: [],
+        spawns: [{ kind: SPARROW, x, y }],
+      },
+    }),
+  );
+};
 const wildParam = (key: string, value: number): Edit =>
   editCore<ParamsFile>('params.json', (p) => {
     (p.params.wild as unknown as Record<string, { value: number }>)[key]!.value = value;
@@ -247,12 +268,15 @@ describe('the line home (HUNT_FAMILIES 3.1 and 8)', () => {
 });
 
 describe('the spots (HUNTING 8, CREATURE_BEHAVIOUR 4)', () => {
+  /** Where a spot pushed onto the core's list lands. */
+  const PUSHED = `map.creatures.spots.${(JSON.parse(readFileSync(join(CONTENT_DIR, 'core', 'map.json'), 'utf8')) as MapFile).map.creatures!.spots.length}`;
+
   it('refuses a spot for a kind at danger 2 until the fight', () => {
-    expect(has(world([spots((s) => s.push({ kind: WOLF, x: 44, y: 16 }))]), 'map.creatures.spots.34', 'hunts the player (danger 2)')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: WOLF, x: 44, y: 16 }))]), PUSHED, 'hunts the player (danger 2)')).toBe(true);
   });
 
   it('refuses a wild spot within 12 tiles of the town square, or on safe ground', () => {
-    expect(has(world([spots((s) => s.push({ kind: HARE, x: 20, y: 15 }))]), 'map.creatures.spots.34', 'within 12 tiles of core/town-square')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: HARE, x: 20, y: 15 }))]), PUSHED, 'within 12 tiles of core/town-square')).toBe(true);
     const safe = editCore<MapFile>('map.json', (m) => {
       m.map.slots.push({ id: 'core/test-safe', kind: 'area', x: 42, y: 14, w: 5, h: 5, safe: true } as MapFile['map']['slots'][number]);
     });
@@ -260,15 +284,59 @@ describe('the spots (HUNTING 8, CREATURE_BEHAVIOUR 4)', () => {
   });
 
   it('refuses a drinker with no water within its roam', () => {
-    expect(has(world([spots((s) => s.push({ kind: ROE, x: 44, y: 11 }))]), 'map.creatures.spots.34', 'drinks but no water')).toBe(true);
+    expect(has(world([spots((s) => s.push({ kind: ROE, x: 44, y: 11 }))]), PUSHED, 'drinks but no water')).toBe(true);
   });
 
   it('refuses a second anchor of one kind on one tile, since the anchor id keys every draw', () => {
     const r = world([spots((s) => s.push({ kind: HARE, x: 44, y: 16 }))]);
-    expect(has(r, 'map.creatures.spots.34', 'a second core/hare anchor on 44,16, after spot 14')).toBe(true);
+    expect(has(r, PUSHED, 'a second core/hare anchor on 44,16, after spot 14')).toBe(true);
     expect(lines(r).some((l) => l.startsWith('map.creatures.spots.14: '))).toBe(false);
     // two kinds on one tile are two anchors with two ids
     expect(lines(world([spots((s) => s.push({ kind: ROE, x: 44, y: 16 }))])).some((l) => l.includes('a second'))).toBe(false);
+  });
+});
+
+describe('animals keep their spots (QUARRYING 8, 16 row 7)', () => {
+  const STANDS = 'animals keep their spots';
+  const MOVES = "so the later arrival moves, a laid node by its slot's place, size or count, an appear node by its reaction's appear.at, a new spot to a free tile (QUARRYING 8)";
+  const errorsOf = (r: CheckResult) => r.issues.filter((i) => i.level === 'error').map((i) => `${i.where}: ${i.message}`);
+
+  it('passes the shipped world with its extensions: every laid and appear node against every spot, no shared tile', () => {
+    const shipped = runCheck();
+    const b = shipped.assembled.bundle!;
+    // counted, not pinned: develop adds nodes and spots, and the row holds on any world (80 laid, 9 appear, 41 spots on 2.11)
+    expect(Object.keys(b.instances).length).toBeGreaterThan(0);
+    expect(appearSlots(b).size).toBeGreaterThan(0);
+    expect(b.map.creatures!.spots.length).toBeGreaterThan(0);
+    expect(errorsOf(shipped).filter((l) => l.includes(STANDS))).toEqual([]);
+    expect(errorsOf(core).filter((l) => l.includes(STANDS))).toEqual([]);
+  });
+
+  it('refuses a spot laid on a placed node\'s tile, and that is the only error', () => {
+    const { x, y } = core.assembled.bundle!.instances['core/river-stones#0']!;
+    const r = world([spots((s) => s.push({ kind: SPARROW, x, y }))]);
+    expect(errorsOf(r)).toEqual([`map.creatures.spots.${core.assembled.bundle!.map.creatures!.spots.length}: node core/river-stones#0 stands on core/sparrow's spot at ${x},${y}: ${STANDS}, ${MOVES}`]);
+  });
+
+  it('refuses a spot laid on an appear node\'s tile, also of a kind with no behaviour', () => {
+    const [id, slot] = [...appearSlots(core.assembled.bundle!)].sort(([a], [b]) => (a < b ? -1 : 1))[0]!;
+    const cosmetic = editCore<MapFile>('map.json', (m) => {
+      delete kindsOf(m)[SPARROW]!.behaviour;
+    });
+    const r = world([cosmetic, spots((s) => s.push({ kind: SPARROW, x: slot.x, y: slot.y }))]);
+    expect(errorsOf(r)).toEqual([expect.stringContaining(`map.creatures.spots.${core.assembled.bundle!.map.creatures!.spots.length}: node ${id} stands on core/sparrow's spot at ${slot.x},${slot.y}: ${STANDS}`)]);
+  });
+
+  it('refuses a node on a generated chunk spawn spot', () => {
+    const { x, y } = core.assembled.bundle!.instances['core/river-stones#0']!;
+    const r = world([chunkSpawn(x, y)]);
+    expect(errorsOf(r)).toEqual([`chunk.spawns.0: node core/river-stones#0 stands on core/sparrow's spot at ${x},${y}: ${STANDS}, ${MOVES}`]);
+  });
+
+  it('passes a node beside a generated chunk spawn spot', () => {
+    const { x, y } = core.assembled.bundle!.instances['core/river-stones#0']!;
+    const r = world([chunkSpawn(x + 1, y)]);
+    expect(errorsOf(r).filter((l) => l.includes(STANDS))).toEqual([]);
   });
 });
 

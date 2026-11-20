@@ -15,11 +15,14 @@ The docs say "the owner", "the lead" and "a core maintainer". Today all three ar
 3. [WORKFLOW.md](WORKFLOW.md): the core team's page, optional for you. Everything an outside developer needs from it is on this page: the branch names, who is who, the steps, and [what a reviewer checks](#what-the-reviewer-checks). Its worktree and merge steps assume write access, so skip those.
 4. [GAME_RULES.md](../design/GAME_RULES.md): the rules of play. Read it before you touch quests, camps, map props, lines a character says, rewards, timing or the opening. A change that collides with a rule goes to the owner first (its section 6).
 5. [STORY.md](../design/STORY.md): before you write any text about the valley's past or a new character.
+6. [STANDARDS.md](../STANDARDS.md): the current fight, weapons, figures and maps, and what is open to build.
 
 ## What you need
 
 - Node 24 (the version in `.nvmrc`; with nvm, `nvm install` in the checkout reads it) and pnpm 10 (`npm install -g pnpm@10`).
 - Git, and a GitHub account. The [GitHub CLI](https://cli.github.com/) (`gh`) is optional; every step below also works on the GitHub website.
+
+Check the installed versions before you install dependencies: `node --version` must start with `v24`, and `pnpm --version` with `10`.
 
 ## The steps
 

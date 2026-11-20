@@ -505,7 +505,7 @@ export interface PictureOptions extends CollectOptions {
 
 /**
  * Loose pictures from a study, with no manifest: each file is its own raw picture. A `<stem>.json` beside it may
- * carry the prompt, the tool and the date (`{prompt, tool, date}`); what is not known stays null.
+ * carry the prompt, the tool, the date and the seed (`{prompt, tool, date, seed}`); what is not known stays null.
  */
 export function collectPictures(files: readonly string[], opts: PictureOptions): Collected[] {
   return files.flatMap((file) => {
@@ -521,10 +521,11 @@ export function collectPictures(files: readonly string[], opts: PictureOptions):
     const text = (k: string): string | null => (typeof side?.[k] === 'string' ? (side[k] as string) : null);
     const name = basename(file, extname(file));
     const date = text('date');
+    const seed = typeof side?.['seed'] === 'number' && Number.isInteger(side['seed']) ? (side['seed'] as number) : null;
     return [{
       record: {
         id: draftId(raw), pool: opts.pool ?? null, name, spec: null, round: null, route: opts.route ?? null, recipe: text('tool'),
-        model: null, model_version: null, seed: null, denoise: null, canvas: isPng ? pngDims(raw) : null, asked: null, ramps: null,
+        model: null, model_version: null, seed, denoise: null, canvas: isPng ? pngDims(raw) : null, asked: null, ramps: null,
         prompt: text('prompt'), negative: null, warnings: [], errors: [], run: null,
         files: { raw: fileRef(raw, ext), full: null, imported: null }, stored: null, review: 'unreviewed', at: date,
         sources: [{ label: opts.label, spec: null, run: basename(dirname(file)), file: basename(file), at: date, provenance: opts.provenance ?? null }],
@@ -575,7 +576,7 @@ export const pacing = {
 const RATE_LIMITED = /rate limit exceeded/i;
 
 /** Retry a gh call; a rate-limited answer waits and asks again (the window of the asset endpoint is its own, so poll rather than trust a reported reset). */
-function retry(gh: Gh, args: readonly string[], times = 3): GhResult {
+export function retry(gh: Gh, args: readonly string[], times = 3): GhResult {
   let last: GhResult = { status: null, stdout: '', stderr: '' };
   let limited = 0;
   for (let i = 0; i < times; i += 1) {

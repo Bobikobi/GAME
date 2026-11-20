@@ -56,3 +56,7 @@ export function mulDivUp(a: number, b: number, c: number): number {
 export function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
+
+/** Representation units, not tuning values. */
+export const MILLI = 1000;
+export const PERCENT = 100;

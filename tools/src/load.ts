@@ -11,6 +11,8 @@ import { validateFile, type ExtensionFile, type SchemaIssue } from '@game/schema
 export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const CONTENT_DIR = join(REPO_ROOT, 'content');
 export const LOCK_FILE = join(CONTENT_DIR, 'values.lock.json');
+/** The world lock (G59): the opening's legs and pays, written by `pnpm world:lock` (tools/src/lock.ts). Not content. */
+export const WORLD_LOCK_FILE = join(CONTENT_DIR, 'world.lock.json');
 /** The creators board, written by `pnpm board` (tools/src/board.ts). Not content. */
 export const BOARD_PATH = join(CONTENT_DIR, 'board.json');
 
@@ -41,11 +43,12 @@ function walk(dir: string, out: string[]): void {
   }
 }
 
-/** Every JSON content file, in a stable order. The value lock and the board are not content. */
+/** Every JSON content file, in a stable order. The two locks and the board are not content. */
 export function listContentFiles(root = CONTENT_DIR): string[] {
   const out: string[] = [];
   walk(root, out);
-  return out.filter((f) => f !== LOCK_FILE && f !== BOARD_PATH && !f.endsWith(`${sep}package.json`));
+  const world = join(root, 'world.lock.json');
+  return out.filter((f) => f !== LOCK_FILE && f !== world && f !== BOARD_PATH && !f.endsWith(`${sep}package.json`));
 }
 
 export function toRepoPath(abs: string): string {

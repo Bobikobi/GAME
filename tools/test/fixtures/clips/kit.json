@@ -1,0 +1,489 @@
+{
+  "$schema": "../../../../schema/json/kit.schema.json",
+  "format": 1,
+  "type": "kit",
+  "id": "core/clip-fixture",
+  "title": "Clip fixture kit",
+  "creator": "core",
+  "description": "Tests only: one clip sheet per verb and view for the human, one for the elf. Never content: no PNGs, never listed under content/.",
+  "kit": {
+    "sprites": {
+      "chars/human_strike_left": {
+        "file": "chars/human_strike_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "strike",
+          "frame_ms": 107,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_strike_front": {
+        "file": "chars/human_strike_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "strike",
+          "frame_ms": 114,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_strike_back": {
+        "file": "chars/human_strike_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "strike",
+          "frame_ms": 121,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_guard_left": {
+        "file": "chars/human_guard_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "guard",
+          "frame_ms": 128,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_guard_front": {
+        "file": "chars/human_guard_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "guard",
+          "frame_ms": 135,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_guard_back": {
+        "file": "chars/human_guard_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "guard",
+          "frame_ms": 142,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_dodge_left": {
+        "file": "chars/human_dodge_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "dodge",
+          "frame_ms": 149,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_dodge_front": {
+        "file": "chars/human_dodge_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "dodge",
+          "frame_ms": 156,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_dodge_back": {
+        "file": "chars/human_dodge_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "dodge",
+          "frame_ms": 163,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_hit_left": {
+        "file": "chars/human_hit_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "hit",
+          "frame_ms": 170,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_hit_front": {
+        "file": "chars/human_hit_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "hit",
+          "frame_ms": 177,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_hit_back": {
+        "file": "chars/human_hit_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "hit",
+          "frame_ms": 184,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_fell_left": {
+        "file": "chars/human_fell_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "fell",
+          "frame_ms": 191,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_fell_front": {
+        "file": "chars/human_fell_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "fell",
+          "frame_ms": 198,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_fell_back": {
+        "file": "chars/human_fell_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "fell",
+          "frame_ms": 205,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_quarry_left": {
+        "file": "chars/human_quarry_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "quarry",
+          "frame_ms": 212,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_quarry_front": {
+        "file": "chars/human_quarry_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "quarry",
+          "frame_ms": 219,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_quarry_back": {
+        "file": "chars/human_quarry_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "quarry",
+          "frame_ms": 226,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_fish_left": {
+        "file": "chars/human_fish_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "fish",
+          "frame_ms": 233,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_fish_front": {
+        "file": "chars/human_fish_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "fish",
+          "frame_ms": 240,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_fish_back": {
+        "file": "chars/human_fish_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "fish",
+          "frame_ms": 247,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_pickup_left": {
+        "file": "chars/human_pickup_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "pickup",
+          "frame_ms": 254,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_pickup_front": {
+        "file": "chars/human_pickup_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "pickup",
+          "frame_ms": 261,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_pickup_back": {
+        "file": "chars/human_pickup_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "pickup",
+          "frame_ms": 268,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_dig_left": {
+        "file": "chars/human_dig_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "dig",
+          "frame_ms": 275,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_dig_front": {
+        "file": "chars/human_dig_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "dig",
+          "frame_ms": 282,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_dig_back": {
+        "file": "chars/human_dig_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "dig",
+          "frame_ms": 289,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/elf_dig_front": {
+        "file": "chars/elf_dig_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 6,
+        "density": 4,
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "dig",
+          "frame_ms": 333,
+          "anchor": [
+            60,
+            88
+          ]
+        }
+      }
+    }
+  }
+}

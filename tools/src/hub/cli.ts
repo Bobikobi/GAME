@@ -4,7 +4,7 @@
  * Builds the hub-data document from the checkout and GitHub, validates it and writes it (default
  * web/public/api/hub-data.json, which the site publishes at /api/hub-data.json). The token comes from
  * HUB_GITHUB_TOKEN, else GITHUB_TOKEN; without one the GitHub sections are empty and sources.github is null.
- * The players count comes from the game server GAME_SERVER_ORIGIN names; without it `accounts` is null.
+ * The players count comes from the game server GAME_SERVER_ORIGIN (a repository secret) names; without it `accounts` is null.
  * `--from` downloads a published document instead of building one, validates it and writes it.
  * Exits 1 when the document does not validate, with the issues printed.
  */

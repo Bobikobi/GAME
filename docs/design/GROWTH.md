@@ -43,7 +43,7 @@ A school may have a **door**: a lean threshold (section 5.3) or a quest. A door 
 ### 3.2 A node
 
 Three sizes, as the gap study read them in Dimraeth:
-- **Small:** moves one number of a closed list (today's effects: gather, dig or craft speed, the timing window, the rare find, the meal's fill, a second hint). Cheap, one point, always on once learned, no slot. Several in a school.
+- **Small:** moves one number of a closed list (today's effects: gather, dig or craft speed, the rare find, the meal's fill, a second hint). Cheap, one point, always on once learned, no slot. Several in a school.
 - **Major:** changes a verb or teaches a technique. The examples of 19.10 are the kind, for the stills only: digging shows how deep the find lies; a tree falls the way you face, and across a stream it is a bridge; ripe plants glow after dark; a predator's eyes show their cone for a beat when it turns; a meal cooked at the camp keeps through a night. Two points. A major node that teaches a technique needs a slot for the technique to work (3.3); a major node that changes a verb is always on.
 - **Corner:** the node where the trunk meets a school, one per starter and school, three points, a technique of its own (the forager who digs reads roots; the digger who forages finds the buried stem). It is the reason two players of the same school differ.
 
@@ -88,7 +88,7 @@ Every name is proposed. Additive; `FORMAT_VERSION` unchanged; integer math (R1).
   "door": null,
   "nodes": [
     { "id": "steady", "size": "small", "cost": 1, "needs": [], "key": {},
-      "effect": "timing_window_pct", "value": 10, "text": "The dig game's good zone is a little wider." },
+      "effect": "dig_speed_pct", "value": 10, "text": "Digging goes a little faster." },
     { "id": "depth-sense", "size": "major", "cost": 2, "needs": ["steady"], "key": { "senses": 3 },
       "technique": "core/depth-sense" },
     { "id": "roots", "size": "corner", "cost": 3, "needs": ["depth-sense"], "key": {}, "starter": "forager",
@@ -183,7 +183,7 @@ Recommended: S1, the wings, with the strip at the foot, because it answers the o
 
 The owner's word of 19.10, recorded in this pull request (DECISIONS 2026-10-20 ❌ "The crafting workshop screen as built is a hosted list"): the workshop screen is "a hosted list", uncomfortable and ugly, and it is rebuilt only after a stills ladder of its own. What is built is the station panel (`game/src/ui/panels.ts`, the station function): a row per known recipe with the output's sprite, the title, the needs as item names with counts, a class-and-seconds line, the gate line (the kernel's own refusal, never a level, CR-17) and a Make button; the upgrades as cards under the rows; one muted line at the end. A list that hosts rows, which is what he saw.
 
-The ladder, specified here and made before any rebuild, the same way as section 6 (three stills, 390x844 at 3x, one difference each, the same content in all three: the workbench at tier 2, the handcraft recipes of the stone and reed chains, the same bag, the same gate on one recipe):
+The ladder, specified here and made before any rebuild, the same way as section 6 (three full-frame stills at 1920 x 1080 (STYLE 1), one difference each, the same content in all three: the workbench at tier 2, the handcraft recipes of the stone and reed chains, the same bag, the same gate on one recipe):
 
 | Still | Tests | What the eye should find |
 |---|---|---|

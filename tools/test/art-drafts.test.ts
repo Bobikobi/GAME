@@ -170,6 +170,16 @@ describe('draft ids and what a run line becomes', () => {
     });
   });
 
+  test('loose pictures: a seed in the json beside it is kept, anything but a whole number is not', () => {
+    const dir = folder('seeds');
+    writeFileSync(join(dir, 'a.png'), picture(11));
+    writeFileSync(join(dir, 'a.json'), JSON.stringify({ prompt: 'p', tool: 'pixellab /create-image-pixflux {}', date: '2026-11-02', seed: 1234 }));
+    writeFileSync(join(dir, 'b.png'), picture(12));
+    writeFileSync(join(dir, 'b.json'), JSON.stringify({ seed: '7' }));
+    const items = collectPictures([join(dir, 'a.png'), join(dir, 'b.png')], { label: 'pixellab-x', route: 'pixellab' });
+    expect(items.map((i) => i.record.seed)).toEqual([1234, null]);
+  });
+
   test('loose pictures: the stem is the name, a json beside it gives the prompt and date, the rest stays null', () => {
     const dir = folder('study');
     writeFileSync(join(dir, 'meadow-a.png'), picture(5));

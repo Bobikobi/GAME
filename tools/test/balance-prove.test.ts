@@ -153,9 +153,9 @@ describe('walls (BODY_CLOCKS 5-7)', () => {
     expect(status(proveOnly({ ...cat, walls: [mild] }), 'wall_not_cheesable:mild')).toBe('fail');
   });
 
-  it('deep snow and ice at band 3 for six game hours cannot be walked, even by its witness: red', () => {
+  it('extreme deep snow and ice at band 3 for six game hours cannot be walked, even by its witness: red', () => {
     const feet = cat.pieces.find((p) => p.slot === 'feet' && p.tier === 3 && p.trait !== undefined)!;
-    const hard: Wall = { id: 'hard', band: 3, conditions: ['deep_snow', 'ice'], grade: 3, lengthMin: 360, by: 'move', witness: { pieces: [feet.id], dishes: [] } };
+    const hard: Wall = { id: 'hard', band: 3, conditions: ['deep_snow', 'ice'], grade: 4, lengthMin: 360, by: 'move', witness: { pieces: [feet.id], dishes: [] } };
     const p = proveOnly({ ...cat, walls: [hard] });
     expect(status(p, 'wall_solvable:hard')).toBe('fail');
     expect(status(p, 'wall_not_cheesable:hard')).toBe('pass');

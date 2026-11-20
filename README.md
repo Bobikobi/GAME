@@ -1,5 +1,7 @@
 # Loomvale
 
+[![Loomvale key art: an elf, a wanderer and a skeleton above a misty valley of ruins and a river town. Click to play in the browser.](web/public/keyart/hero-poster.jpg)](https://loomvale.vercel.app)
+
 **WAKE BY THE BROKEN BRIDGE. FOLLOW THE LANTERNS. LEAVE YOUR MARK ON THE MIST.**
 
 Loomvale is a free pixel-art adventure about a valley that is never finished. Gather, cook and dig through ruins whose names are lost. Stay near the fire after dark - the eyes beyond it are patient.
@@ -7,6 +9,8 @@ Loomvale is a free pixel-art adventure about a valley that is never finished. Ga
 Every herb, quest, stranger and ruin was made by a player. The next one is yours.
 
 **[Enter the valley](https://loomvale.vercel.app)** - free, in any browser, on a phone or a computer. No install, no account.
+
+A project by [Elad Saadon](https://www.eladsaadon.dev) - [see more projects](https://www.eladsaadon.dev/projects).
 
 **Stage 1 is a demo.** Progress is saved in your browser only and will not move to an account later; demo players get a title and a cosmetic item instead.
 
@@ -16,17 +20,17 @@ The valley grows in stages, each opened by a condition, not a date: accounts and
 
 ## What is in the demo
 
-- Three races, the human, the elf and the skeleton, each waking in a wake pocket the seed draws, with its own first task, and six attributes, seven points each: might (carrying and heavy work), senses (how far you notice hidden things), agility (how forgiving the timing is), luck (rare finds), stamina (how much food you can hold) and spirit (potions, spells and the hidden layer).
-- The opening: wake up at noon, strike the bridge's keystone free with the timing minigame, mend the bridge for a purse of gold, fell a tree for the first fire, meet the town, and choose whom to help first: Elder Maru's berries, which he pays for with his old trowel, or Pell's herbs, which she pays for with a recipe and coin. The trowel then digs up Maru's coin under the lantern the stones name, which glows at dusk. After dark, a way opens under the broken arch.
+- Three races, the human, the elf and the skeleton, each waking in a wake pocket the seed draws, with its own first task, and six attributes, seven points each: might (carrying and heavy work), senses (how far you notice hidden things), agility (how quick your hands are at work), luck (rare finds), stamina (how much food you can hold) and spirit (potions, spells and the hidden layer).
+- The opening: wake up at noon, take the bridge's keystone from the shallows with one click and a few moments of watching, mend the bridge for a purse of gold, fell a tree for the first fire, meet the town, and choose whom to help first: Elder Maru's berries, which he pays for with his old trowel, or Pell's herbs, which she pays for with a recipe and coin. The trowel then digs up Maru's coin under the lantern the stones name, which glows at dusk. After dark, a way opens under the broken arch.
 - Foraging, digging, felling and cooking, each with levels and techniques; a workshop that climbs three tiers; a camp with three places to build and a fourth waiting for a reason; a day and night clock.
 - Empty places in the mist, each waiting for a creator, with a link to the guide below.
 - Phones (a touch stick to walk in any direction, and A and B buttons) and keyboards (arrows or WASD to walk, in eight directions; Space, E, Z or Enter to act; Esc or X to go back; I for the bag, J for the journal, M for the menu). Menu > Controls lists them in the game.
 
 ## Add to the valley
 
-You do not need permission or an invitation. If it fits the valley, you can make it: a fruit or a herb, a recipe, a tool or something to wear, a treasure, a townsperson with their own words, a quest, a ruin to restore, a camp part, your own pixel art, or models for the 3D door. The [rules of play](docs/design/GAME_RULES.md) keep the game fair and fit for every age; inside them the ideas are yours. An idea the content format cannot hold yet goes in a "Request for the valley" issue, and the community votes it into an open call.
+You do not need permission or an invitation. If it fits the valley, you can make it: a recipe, a tool or something to wear, a treasure, a townsperson with their own words, a quest, a camp part or your own pixel art. The [rules of play](docs/design/GAME_RULES.md) keep the game fair and fit for every age, and [the standards page](docs/STANDARDS.md) says what developers can build on today. A fruit, a herb, a ruin or another place needs an open slot; an idea the current map or content format cannot hold goes in a "Request for the valley" issue, and the community votes it into an open call.
 
-Start with **[Add a townsperson in 15 minutes](docs/creators/README.md)**, then read [CONTRIBUTING.md](CONTRIBUTING.md). Open your pull request against the `develop` branch, not `main`: `main` is the default branch because it holds releases, and a release is `develop` merged into `main`. The first pull request asks you to sign the [contributor agreement](CLA.md) once, by a comment. Every pull request gets the same automatic check you can run yourself, and a preview of the game with your change. An AI tool can help: the guide shows how to point it at the rules, and a read-only MCP server (`pnpm mcp`) checks content from a clone.
+Start with **[Add a townsperson in 15 minutes](docs/creators/README.md)**, then read [CONTRIBUTING.md](CONTRIBUTING.md). Open your pull request against the `develop` branch, not `main`: `main` is the default branch because it holds releases, and a release is `develop` merged into `main`. The first pull request asks you to sign the [contributor agreement](CLA.md) once, by a comment. Every pull request gets the same automatic check you can run yourself. A preview from a fork may need a maintainer's approval and may not appear; say how you checked the change locally. An AI tool can help: the guide shows how to point it at the rules, and a read-only MCP server (`pnpm mcp`) checks content from a clone.
 
 What you get when it is merged: your name and signature on what you added in the game, a creator page on the site, points on the public board and a line in [CREDITS.md](CREDITS.md) ([ROADMAP.md](ROADMAP.md) has the details and what is planned later).
 

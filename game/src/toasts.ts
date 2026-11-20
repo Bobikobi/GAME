@@ -13,7 +13,7 @@
  * them: while it is open nothing new goes up and the ones up stand still.
  */
 import type { Bundle, GameEvent, PublicState } from '@game/kernel';
-import { describe } from './text';
+import { describe, xpLine } from './text';
 
 export type Tone = 'good' | 'bad' | 'info';
 
@@ -30,6 +30,8 @@ export interface Line {
   tone?: Tone;
   icon?: string;
   task?: 'done' | 'active';
+  /** a second line of the same box: what a training action earned (G14: two lines at most) */
+  second?: string;
 }
 
 /**
@@ -54,14 +56,23 @@ export function urgent(t: Toast): boolean {
  * The toasts of one batch of events. A fall says it all in its one box: the calls to run from
  * the hunt that ended stay down. A task that opens and closes in the same step is told once, as done.
  */
-export function eventToasts(b: Bundle, s: PublicState, events: readonly GameEvent[]): Toast[] {
+export function eventToasts(b: Bundle, s: PublicState, events: readonly GameEvent[], earned: Readonly<Record<string, number>> = {}): Toast[] {
   const fell = events.some((e) => e.e === 'fall');
   const lines: Line[] = [];
+  // a training action's first gain carries the profession and the experience the kernel gave it, as its second line; the biggest when two came
+  const trained = Object.entries(earned)
+    .filter(([, ms]) => ms > 0)
+    .sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]))[0];
+  let told = trained === undefined;
   events.forEach((e, i) => {
     if (fell && e.e === 'hurt') return;
     if (e.e === 'quest' && e.state === 'active' && events.slice(i + 1).some((x) => x.e === 'quest' && x.quest === e.quest && x.state === 'done')) return;
     const d = describe(b, s, e);
-    if (d) lines.push(e.e === 'quest' ? { ...d, task: e.state } : d);
+    if (!d) return;
+    if (e.e === 'gain' && !told && trained) {
+      told = true;
+      lines.push({ ...d, second: xpLine(b, trained[0], trained[1]) });
+    } else lines.push(e.e === 'quest' ? { ...d, task: e.state } : d);
   });
   return mergeTasks(lines);
 }
@@ -72,7 +83,7 @@ export function eventToasts(b: Bundle, s: PublicState, events: readonly GameEven
  * lines first, then the new ones, green when a task was done.
  */
 export function mergeTasks(lines: readonly Line[]): Toast[] {
-  const one = (l: Line): Toast => ({ lines: [l.text], tone: l.tone ?? 'info', ...(l.icon ? { icon: l.icon } : {}) });
+  const one = (l: Line): Toast => ({ lines: l.second ? [l.text, l.second] : [l.text], tone: l.tone ?? 'info', ...(l.icon ? { icon: l.icon } : {}) });
   const tasks = lines.filter((l) => l.task);
   if (tasks.length < 2) return lines.map(one);
   const merged: Toast = {

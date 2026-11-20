@@ -2,3 +2,6 @@
 # stopping on a conflict (docs/team/PARALLEL.md). GitHub's own merge button ignores this line,
 # so merge origin/develop into your branch on your machine before the pull request lands.
 DECISIONS.md merge=union
+# The PixelLab ledger is append-only: both sides' lines are kept (docs/art/DRAWERS.md).
+tools/kit-gen/pixellab-ledger.jsonl merge=union
+tools/kit-gen/pixellab/nightly-log.jsonl merge=union

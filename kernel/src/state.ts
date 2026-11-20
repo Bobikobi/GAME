@@ -3,13 +3,13 @@
  * integers, strings, arrays and plain objects only, so its canonical text is
  * stable and a save is just that text.
  */
-import type { SchoolNodeDef } from '@game/schema';
+import type { ItemDef, SchoolNodeDef } from '@game/schema';
 import type { BodyEffectName, Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.23.0';
+export const KERNEL_VERSION = '0.30.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -48,7 +48,7 @@ export function legacyNodeId(id: string): string {
 }
 
 /** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs; the back holds a bag or a quiver (2026-10-23). */
-export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
+export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'hands', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
 export type WearSlot = (typeof WEAR_SLOTS)[number];
 
 const SLOTS_OF: Record<string, readonly WearSlot[]> = {
@@ -57,6 +57,7 @@ const SLOTS_OF: Record<string, readonly WearSlot[]> = {
   legs: ['legs'],
   outfit: ['outfit'],
   feet: ['feet'],
+  hands: ['hands'],
   jewelry: ['jewelry1', 'jewelry2'],
   hand: ['hand'],
   back: ['back'],
@@ -72,6 +73,8 @@ export interface NodeState {
   readyAt: number;
   /** draws taken from this entity so far (rule R4) */
   draws: number;
+  /** units already taken from this node's stock in the working under way; left out when none (a node is worked a unit at a time, DECISIONS.md, 2026-11-20) */
+  taken?: number;
 }
 
 /**
@@ -87,6 +90,8 @@ export interface Outing {
   visited: string[];
   /** quests open when a predator bit on this outing, sorted: they join `Player.bitten` when it ends safe, and a fall drops them */
   bitten?: string[];
+  /** places first found on this outing and not yet counted (G63): they join `Player.explored` when it ends safe, and a fall drops them */
+  found?: string[];
 }
 
 /** A hunt in progress: the predator that has the player's scent. It bites by the clock until a safe place or dawn. */
@@ -188,6 +193,10 @@ export interface Player {
   journal: string[];
   made: Record<string, number>;
   visited: string[];
+  /** places entered, sorted (G66): the regions and named areas whose name the banner showed once; a fall never takes one back. Absent until the first */
+  seen?: string[];
+  /** places found and brought home, sorted (G63): the exploration board counts these. Absent until the first */
+  explored?: string[];
   restored: string[];
   camp: string[];
   rep: Record<string, number>;
@@ -206,6 +215,8 @@ export interface Player {
   outing: Outing | null;
   /** the hunt the player is in, if any */
   chase: Chase | null;
+  /** Live combat marker; old saves have none. The chunk owns the fight itself. */
+  fight: { foe?: string; since: number } | null;
   /** quests that were open when a predator bit the player on an outing that came home (not in a fall), sorted: the giver's line at the hand-in may say so */
   bitten: string[];
   /** tended fires by map prop id */
@@ -222,8 +233,26 @@ export interface Player {
   expeditions: Record<string, ExpeditionState>;
   /** falls so far: the draw counter of the tile they wake on (rule R4) */
   falls: number;
+  /** the boat the player is on, if any (docs/design/SEA_CROSSING.md); absent or null on land */
+  aboard?: Aboard | null;
+  /** boats boarded so far: the draw counter of each crossing's event (rule R4); absent before the first */
+  crossings?: number;
   /** tick of the last arrival: a position report, or an action at a tile */
   movedAt: number;
+}
+
+/** A crossing under way: the passage, how far it has come, and the one event drawn for it at boarding. */
+export interface Aboard {
+  passage: string;
+  /** segments sailed so far: 0 at the jetty, the passage's `segments` at the far end */
+  segment: number;
+  /** the drawn event, its place in the passage's table */
+  event: number;
+  /** answers given to it so far: a `tend` counts one a segment */
+  answers: number;
+  /** the segment of the last answer, -1 before any: one answer a segment */
+  answeredAt: number;
+  outcome: 'open' | 'met' | 'missed';
 }
 
 /**
@@ -299,6 +328,7 @@ export function newState(bundle: Bundle, seed: Seed | number): State {
       town: '',
       outing: null,
       chase: null,
+      fight: null,
       bitten: [],
       fires: {},
       own: null,
@@ -324,6 +354,7 @@ export function migrateState(saved: State): State {
   const s = structuredClone(saved) as State & { player: Player & { starter?: string; attrs: Record<string, number> } };
   // kernel 0.15: the bound balance is a field of its own; a save without it holds none
   s.player.boundGold ??= 0;
+  s.player.fight ??= null;
   // a save from before kernel 0.17 has searched nothing: it reads as empty, whatever its format
   s.searched ??= {};
   // kernel 0.19: the health bar is named hp and has no clock; a save from before it carries its satiety over
@@ -390,6 +421,60 @@ export function gradeShift(bundle: Bundle, state: PublicState, attr: Attribute, 
  */
 export function attrAt(bundle: Bundle, state: PublicState, attr: Attribute): number {
   return Math.max(0, (state.player.attrs[attr] ?? 0) + gradeShift(bundle, state, attr));
+}
+
+/** The level a worn piece of this tier asks in its `req` (PROGRESSION 5.6; CLOTHING 7.4); past the table, its last entry. */
+export function wearReqLevel(bundle: Bundle, tier: number): number {
+  const table = bundle.params.wear_req_level;
+  return table[Math.min(Math.max(tier, 1), table.length) - 1] ?? 1;
+}
+
+/** The largest bonus a worn piece of this tier gives one attribute (PROGRESSION 5.6); past the table, its last entry plus attr_bonus_step a tier. */
+export function attrBonusMax(bundle: Bundle, tier: number): number {
+  const table = bundle.params.attr_bonus_max;
+  const n = table.length;
+  if (tier <= n) return table[Math.max(tier, 1) - 1] ?? 0;
+  return (table[n - 1] ?? 0) + (tier - n) * bundle.params.attr_bonus_step;
+}
+
+/**
+ * The tier a worn piece works at for this wearer (CLOTHING 7.4; PROGRESSION 5.6): its own when its `req` is met in
+ * full, else the highest tier whose wear_req_level the wearer's level in the piece's school meets. The attribute
+ * thresholds read the base (`attrAt`), never worn bonuses, so gear never lifts a wearer into the gear above it.
+ * Read by no step yet.
+ */
+export function wearOwnTier(bundle: Bundle, state: PublicState, piece: Pick<ItemDef, 'tier' | 'wear'>): number {
+  const tier = piece.tier ?? 1;
+  const req = piece.wear?.req;
+  if (!req) return tier;
+  const level = professionLevel(bundle, state, req.school);
+  const attrsMet = ATTRIBUTES.every((a) => attrAt(bundle, state, a) >= (req.attr?.[a] ?? 0));
+  if (level >= req.level && attrsMet) return tier;
+  for (let t = tier - 1; t > 1; t--) if (level >= wearReqLevel(bundle, t)) return t;
+  return 1;
+}
+
+/** The part of a worn attribute bonus that counts (PROGRESSION 5.6): all of it at the piece's own tier, else at most what one tier above the wearer's gives. */
+export function activeAttr(bundle: Bundle, state: PublicState, piece: Pick<ItemDef, 'tier' | 'wear'>, bonus: number): number {
+  const own = wearOwnTier(bundle, state, piece);
+  return own >= (piece.tier ?? 1) ? bonus : Math.min(bonus, attrBonusMax(bundle, own + 1));
+}
+
+/**
+ * An attribute with the work clothes' bonuses on top (CLOTHING 7.5): `attrAt` plus the active part of each worn work
+ * piece's `attrs`, slot by slot as `wornValue` reads effects. A look never counts and a set adds nothing to an attribute. Read by no verb yet:
+ * every rule still reads `attrAt`, and the check refuses `attrs` in content until a reader lands.
+ */
+export function attrTotal(bundle: Bundle, state: PublicState, attr: Attribute): number {
+  let total = attrAt(bundle, state, attr);
+  for (const slot of WEAR_SLOTS) {
+    const id = state.player.worn[slot];
+    const piece = id === undefined ? undefined : bundle.items[id];
+    const bonus = piece?.wear?.attrs?.[attr];
+    if (!piece || piece.wear?.look || bonus === undefined) continue;
+    total += activeAttr(bundle, state, piece, bonus);
+  }
+  return total;
 }
 
 /** The health bar's top, in milli-points: the base cap plus what stamina adds. */
@@ -649,10 +734,10 @@ export function setComplete(bundle: Bundle, state: PublicState, set: string): bo
   return pieces.length > 1 && pieces.every((id) => worn.includes(id));
 }
 
-/** Sum of an effect from the work clothes: each worn piece once, and a full set a little more (rounded down). */
+/** Sum of an effect from the work clothes: each worn piece once, plus each complete set's own bonus. */
 export function wornValue(bundle: Bundle, state: PublicState, effect: string): number {
   let total = 0;
-  const bySet: Record<string, number> = {};
+  const wornSets = new Set<string>();
   for (const slot of WEAR_SLOTS) {
     const id = state.player.worn[slot];
     const w = id === undefined ? undefined : bundle.items[id]?.wear;
@@ -660,11 +745,12 @@ export function wornValue(bundle: Bundle, state: PublicState, effect: string): n
     for (const e of w.effects ?? []) {
       if (e.effect !== effect) continue;
       total += e.value;
-      if (w.set) bySet[w.set] = (bySet[w.set] ?? 0) + e.value;
     }
+    if (w.set) wornSets.add(w.set);
   }
-  for (const set of Object.keys(bySet).sort()) {
-    if (setComplete(bundle, state, set)) total += mulDiv(bySet[set]!, bundle.params.wear_set_bonus_pct, 100);
+  for (const id of [...wornSets].sort()) {
+    const set = bundle.sets[id];
+    if (set?.effect === effect && setComplete(bundle, state, id)) total += set.value;
   }
   return total;
 }

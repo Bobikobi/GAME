@@ -1,5 +1,5 @@
 /** What stands where: read from the bundle, shared by the world and the menus. */
-import { inRect, type Bundle, type Slot } from '@game/kernel';
+import { inRect, placeName, regionAt, type Bundle, type Slot } from '@game/kernel';
 
 export interface PlaceInfo {
   id: string;
@@ -124,4 +124,27 @@ export function localMapState(s: unknown): LocalMapState | undefined {
   return m.seen instanceof Set && m.seenChunks instanceof Set
     ? { seen: m.seen, seenChunks: m.seenChunks, stall: typeof m.stall === 'string' ? m.stall : undefined }
     : undefined;
+}
+
+/** A region of the map on the chart: its whole rect, and a name only once the player has entered it (G66). */
+export interface MapRegion {
+  /** the place id, `${map.id}/${region.id}` */
+  id: string;
+  /** undefined until entered: the chart shows where a region lies, never what it is called */
+  title?: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  current: boolean;
+}
+
+/** Every region of the map in map order, named only where the player's seen list holds it. */
+export function mapRegions(b: Bundle, seen: readonly string[] | undefined, at: readonly [number, number]): MapRegion[] {
+  const known = new Set(seen);
+  const here = regionAt(b.map, at[0], at[1]);
+  return (b.map.regions ?? []).map((region) => {
+    const id = `${b.map.id}/${region.id}`;
+    return { id, title: known.has(id) ? placeName(b.map, id) : undefined, x: region.x, y: region.y, w: region.w, h: region.h, current: here === region };
+  });
 }

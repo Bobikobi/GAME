@@ -36,7 +36,9 @@ A stream is one unit of work, often several branches: what it advances in the or
 (`docs/spec/product-spec-v4.6.html` section 9 and 16, a GRUNT item, a decision), its
 branches, and the session that holds it. Starting a stream means adding its line to
 `streams.json` in a small `docs/` pull request. The owner column stays `null` until the
-owner names the session; nobody guesses it. A branch that is ahead of `develop` and listed in
+owner names the session; nobody guesses it. The source of truth for what is open is the tracker
+(issues with the label `track`); `streams.json` is its view for contributors, so it lists only
+streams with an open tracker issue, a finished stream is removed and a parked one says so. A branch that is ahead of `develop` and listed in
 no stream shows up as a stray in the picture.
 
 ## Shared files

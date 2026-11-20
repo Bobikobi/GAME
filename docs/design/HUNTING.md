@@ -28,7 +28,7 @@ Ten states. The animal's tier (section 8) decides what ALERT turns into.
 | FLEE | Runs away along a map of distance from the threat, away from dead ends; birds fly over water and fences | Its distance reaches sight + 4, or it is out of sight 8 steps -> WANDER, away from that tile for 60 steps |
 | DEFEND | Holds its ground facing the player; if the player stays within 2 tiles for 2 steps, or it is cornered or hit, it charges up to 5 tiles in a line and rests 6 steps; never more than 6 tiles from its spot | The player is beyond its sight -> RETURN. Until the fight is built a d1 animal bluffs: ALERT and its pose, never DEFEND (section 11, question 1) |
 | STALK | Approaches from cover at half the walk's pace and holds still while the player faces it | Within 3 tiles, or on first notice for a pack -> CHASE; the player faces it 2 steps within 4 tiles -> RETURN |
-| CHASE | Follows at the player's walk, never faster | Out of sight 50 ticks (`give_up_t`), or past its leash of 7 tiles from its den (`leash_tiles`) -> RETURN |
+| CHASE | Follows at the player's walk, never faster | Out of sight 5000 ms (`give_up_ms`), or past its leash of 7 tiles from its den (`leash_tiles`) -> RETURN |
 | RETURN | Walks back to its anchor and forgets the target | At the anchor -> IDLE |
 
 Speeds come from the walk the kernel already has: a step is `walk_step_ms` (190 in the core); a run is that divided by `gait.run_div` (2); a sneak that times `gait.sneak_mul` (2). Small and medium prey flee at the run, so a chase never catches them: a trap, a sling, bait or an unaware strike does. A hunter chases at the walk, so a player who keeps walking away is never caught (memo pitfalls, "danger rule"). The STALK and CHASE states wait for the fight; until then no hunting animal is placed (section 8).
@@ -64,7 +64,7 @@ Quoted from `content/core/params.json` (the `gait` group, read by the kernel's `
 | A strike that lands | 4 | a new row of the gait group ([COMBAT.md](COMBAT.md) 4.9) |
 | Felling or digging | 5 | a new row of the gait group (COMBAT.md 4.9) |
 
-A tool's own noise (a sling's crack, a bow, a snare set) gets its row with the tool, in the creature schema's pull request; until then a tool's strike is the strike row. Field-dressing a carcass is a felling-sized act, 5. A noise turns the heads of every animal and every predator that hears it, toward the sound, for `noise_turn_t` (30 ticks), and the turn is drawn (round 4).
+A tool's own noise (a sling's crack, a bow, a snare set) gets its row with the tool, in the creature schema's pull request; until then a tool's strike is the strike row. Field-dressing a carcass is a felling-sized act, 5. A noise turns the heads of every animal and every predator that hears it, toward the sound, for `noise_attention_ms` (3000 ms), and the turn is drawn (round 4).
 
 ## 5. The tools, by tier
 

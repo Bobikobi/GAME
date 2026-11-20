@@ -302,6 +302,129 @@
               }
             }
           },
+          "weapon": {
+            "additionalProperties": false,
+            "description": "A hand that strikes (WEAPONS 3). No class field: the class is the item's own. Every weapon block in content is refused until combat (G35, G44).",
+            "type": "object",
+            "required": [
+              "tempo",
+              "windup_ms",
+              "reach",
+              "harm"
+            ],
+            "properties": {
+              "tempo": {
+                "description": "The swing, the hand's one cooldown: quick, standard or heavy, each a combat duration in milliseconds (WEAPONS 3; COMBAT 4.9). Read by nothing until combat.",
+                "anyOf": [
+                  {
+                    "const": "quick",
+                    "type": "string"
+                  },
+                  {
+                    "const": "standard",
+                    "type": "string"
+                  },
+                  {
+                    "const": "heavy",
+                    "type": "string"
+                  }
+                ]
+              },
+              "windup_ms": {
+                "minimum": 200,
+                "maximum": 1000,
+                "description": "Game milliseconds from the press to the landing, inside the swing (WEAPONS 3).",
+                "type": "integer"
+              },
+              "reach": {
+                "minimum": 1,
+                "maximum": 2,
+                "description": "Tiles, no diagonal; 2 is a long hand (WEAPONS 3).",
+                "type": "integer"
+              },
+              "harm": {
+                "minimum": 0,
+                "maximum": 1000,
+                "description": "The hand's bonus in points, counted as harm + hand_offset (WEAPONS 3, 4).",
+                "type": "integer"
+              },
+              "range": {
+                "minimum": 2,
+                "maximum": 12,
+                "description": "Tiles, only on a hand that throws or shoots (WEAPONS 3).",
+                "type": "integer"
+              },
+              "ammo": {
+                "description": "The ammunition class a launcher spends (WEAPONS 3, 6). Not the item-level ammunition block, which comes with the first shot (WEAPONS 6).",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                ]
+              },
+              "noise": {
+                "minimum": 0,
+                "maximum": 12,
+                "description": "Tiles a landed strike is heard; left out, wild.strike_noise (WEAPONS 3).",
+                "type": "integer"
+              }
+            }
+          },
           "fragment": {
             "additionalProperties": false,
             "description": "A found scrap that teaches a recipe.",
@@ -327,7 +450,7 @@
             ],
             "properties": {
               "slot": {
-                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, hands (gloves), jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                 "anyOf": [
                   {
                     "const": "head",
@@ -347,6 +470,10 @@
                   },
                   {
                     "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hands",
                     "type": "string"
                   },
                   {
@@ -417,7 +544,7 @@
               "set": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
-                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "description": "A set declared in content: when every piece is worn, that set's own effect and value apply.",
                 "type": "string"
               },
               "places": {
@@ -431,6 +558,130 @@
                 "maximum": 100,
                 "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
                 "type": "integer"
+              },
+              "req": {
+                "additionalProperties": false,
+                "description": "A soft requirement: below it the piece counts up to what gear one tier above the wearer's own gives (PROGRESSION 5.6; CLOTHING 7.4). Read by nothing yet.",
+                "type": "object",
+                "required": [
+                  "school",
+                  "level"
+                ],
+                "properties": {
+                  "school": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "The profession whose level the piece asks (CLOTHING 7.4).",
+                    "type": "string"
+                  },
+                  "level": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "The level asked: exactly wear_req_level of the piece's tier.",
+                    "type": "integer"
+                  },
+                  "attr": {
+                    "additionalProperties": false,
+                    "minProperties": 1,
+                    "type": "object",
+                    "properties": {
+                      "might": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "senses": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "agility": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "luck": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "stamina": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      },
+                      "spirit": {
+                        "minimum": 1,
+                        "maximum": 100,
+                        "type": "integer"
+                      }
+                    },
+                    "description": "Base attribute points the piece asks too; worn bonuses never count toward them."
+                  }
+                }
+              },
+              "attrs": {
+                "additionalProperties": false,
+                "minProperties": 1,
+                "type": "object",
+                "properties": {
+                  "might": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "senses": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "agility": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "luck": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "stamina": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  },
+                  "spirit": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "type": "integer"
+                  }
+                },
+                "description": "Bonuses on top of the base attributes, each at most attr_bonus_max of the piece's tier (PROGRESSION 5.6; CLOTHING 7.5). Refused in content until a verb and the stats panel read them."
+              },
+              "trait": {
+                "description": "What the piece is worn against: a place's condition (BODY_CLOCKS 6.1). Refused in content until G34's rewrite and the first place condition.",
+                "anyOf": [
+                  {
+                    "const": "cold_proof",
+                    "type": "string"
+                  },
+                  {
+                    "const": "snow_shod",
+                    "type": "string"
+                  },
+                  {
+                    "const": "storm_proof",
+                    "type": "string"
+                  },
+                  {
+                    "const": "ice_grip",
+                    "type": "string"
+                  },
+                  {
+                    "const": "heat_ward",
+                    "type": "string"
+                  }
+                ]
               }
             }
           },
@@ -460,6 +711,23 @@
           "premium_later": {
             "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
             "type": "boolean"
+          },
+          "bind": {
+            "description": "Who may hold it: none trades, account never trades or sells, character never trades; left out, none (EQUIPMENT 3.6). Only a look binds; power is never bound. Read by nothing yet.",
+            "anyOf": [
+              {
+                "const": "none",
+                "type": "string"
+              },
+              {
+                "const": "account",
+                "type": "string"
+              },
+              {
+                "const": "character",
+                "type": "string"
+              }
+            ]
           }
         }
       }
@@ -578,7 +846,9 @@
         "craft_luck_max_permille",
         "craft_miss_keep_pct",
         "wear_effect_max_pct",
-        "wear_set_bonus_pct",
+        "wear_req_level",
+        "attr_bonus_max",
+        "attr_bonus_step",
         "rarity_bonus_ms",
         "drift_budget_permille",
         "hp_cap",
@@ -593,6 +863,7 @@
         "gait",
         "hunt",
         "wild",
+        "combat",
         "starting_gold_mg",
         "per_point"
       ],
@@ -1170,7 +1441,29 @@
             "type": "integer"
           }
         },
-        "wear_set_bonus_pct": {
+        "wear_req_level": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The level a worn piece of each tier asks in its `req`, from tier 1; the last entry holds for the tiers above it. Never falls with the tier (PROGRESSION 5.6; CLOTHING 7.4).",
+          "type": "array",
+          "items": {
+            "minimum": 1,
+            "maximum": 100,
+            "type": "integer"
+          }
+        },
+        "attr_bonus_max": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The largest attribute bonus a worn piece of each tier gives, from tier 1. Never falls with the tier (PROGRESSION 5.6).",
+          "type": "array",
+          "items": {
+            "minimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          }
+        },
+        "attr_bonus_step": {
           "additionalProperties": false,
           "type": "object",
           "required": [
@@ -1195,7 +1488,7 @@
               "type": "integer"
             }
           },
-          "description": "How much a full set adds to the effects of its pieces, in percent of their sum, rounded down."
+          "description": "Past the attr_bonus_max table, what each further tier adds to the largest attribute bonus (PROGRESSION 5.6: then +2 a tier)."
         },
         "rarity_bonus_ms": {
           "additionalProperties": false,
@@ -1353,6 +1646,60 @@
             }
           },
           "description": "The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32."
+        },
+        "pay_gap_ms": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "Pillar 1's ceiling: the longest a walk may go without a pay, in game milliseconds. The pay-gap check (G62, docs/design/OPEN_WORLD.md 1.5) allows floor(pay_gap_ms / (2 x walk_step_ms)) + pay_sight_tiles steps from any walkable tile to the nearest pay. Defaults to 90000."
+        },
+        "pay_sight_tiles": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "How many tiles away a pay is already on screen, added to the pay-gap check's allowance (G62). Defaults to 5."
         },
         "hp_low_pct": {
           "additionalProperties": false,
@@ -1527,6 +1874,239 @@
                 }
               },
               "description": "How much faster a log of the player's own fire burns for each step of the area's danger d, in percent (G30, G48)."
+            },
+            "flicker": {
+              "additionalProperties": false,
+              "description": "A living fire (GRUNT CR-110): how a burning fire moves, flickers and crackles. Read by the client only; the kernel decides every burn.",
+              "type": "object",
+              "required": [
+                "band_pct",
+                "step_min_ms",
+                "step_max_ms",
+                "frame_jitter_pct",
+                "start_spread_ms",
+                "ember_per_s",
+                "spark_gap_min_s",
+                "spark_gap_max_s"
+              ],
+              "properties": {
+                "band_pct": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How far a fire's light moves around the lighting ladder's value, in percent: its strength by this much either way, its pool's radius by half of it."
+                },
+                "step_min_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The shortest wait before a fire's flicker takes a new value, in milliseconds of the wall clock."
+                },
+                "step_max_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The longest wait before a fire's flicker takes a new value, in milliseconds of the wall clock."
+                },
+                "frame_jitter_pct": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How far each of a flame's frame times moves around its base, in percent, drawn per frame from the fire's own seed."
+                },
+                "start_spread_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The longest delay before a fire's first frame step, drawn from its own seed, so two fires never start as one."
+                },
+                "ember_per_s": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Embers a full fire lets drift up a second; a settled or low fire fewer."
+                },
+                "spark_gap_min_s": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The shortest wait between two sparks that pop from a burning fire, in seconds."
+                },
+                "spark_gap_max_s": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The longest wait between two sparks that pop from a burning fire, in seconds."
+                }
+              }
             }
           }
         },
@@ -2644,6 +3224,7 @@
             "dress_step_ms",
             "meat_spoil_d",
             "hide_spoil_d",
+            "tan_cure_d",
             "grade2_bp",
             "grade3_bp"
           ],
@@ -2729,6 +3310,33 @@
               },
               "description": "Game days a carcass keeps anything: dressed later, nothing is left of it."
             },
+            "tan_cure_d": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game days a scraped hide cures on a tanning rack."
+            },
             "grade2_bp": {
               "additionalProperties": false,
               "type": "object",
@@ -2791,7 +3399,7 @@
           "type": "object",
           "required": [
             "tick_ms",
-            "think_ticks",
+            "think_ms",
             "wake_tiles",
             "awake_max",
             "catchup_max_steps",
@@ -2836,9 +3444,9 @@
                   "type": "integer"
                 }
               },
-              "description": "Game milliseconds of one world tick (COMBAT section 4.9). Fixed: every duration below is whole ticks or whole think steps."
+              "description": "Game milliseconds of one world pulse (COMBAT section 4.9). Every fight and animal duration is stated in milliseconds and becomes ceil(duration / tick_ms) pulses."
             },
-            "think_ticks": {
+            "think_ms": {
               "additionalProperties": false,
               "type": "object",
               "required": [
@@ -2863,7 +3471,7 @@
                   "type": "integer"
                 }
               },
-              "description": "Ticks between two think steps of one animal, staggered by its id (HUNTING section 1): 8 ticks of 100 ms, a think step of 800 ms."
+              "description": "Game milliseconds between two think steps of one animal, staggered by its id (HUNTING section 1): 800 ms."
             },
             "wake_tiles": {
               "additionalProperties": false,
@@ -3326,6 +3934,1023 @@
             }
           }
         },
+        "combat": {
+          "additionalProperties": false,
+          "description": "The fight (docs/design/COMBAT.md section 4.9): durations are game milliseconds and the kernel turns each into ceil(ms / wild.tick_ms) pulses. Nothing reads it while enabled is 0 (G35). Damage is exact: no chance decides a hit inside a fight (G79).",
+          "type": "object",
+          "required": [
+            "enabled",
+            "swing_quick_ms",
+            "swing_standard_ms",
+            "swing_heavy_ms",
+            "swing_floor_ms",
+            "bare_windup_ms",
+            "bare_base",
+            "tool_strike_permille",
+            "windup_min_ms",
+            "windup_max_ms",
+            "active_ms",
+            "rehit_ms",
+            "bite_div",
+            "behind_permille",
+            "weak_permille",
+            "mercy_ms",
+            "stun_ms",
+            "knockback_tiles",
+            "dodge_tiles",
+            "dodge_ms",
+            "dodge_cooldown_ms",
+            "breath_base",
+            "breath_per_stamina",
+            "breath_refill",
+            "breath_hold_ms",
+            "attack_breath",
+            "guard_drain",
+            "guard_hit_breath",
+            "dodge_breath",
+            "breath_stagger_ms",
+            "guard_stagger_ms",
+            "engage_tiles",
+            "leash_tiles",
+            "give_up_ms",
+            "claim_lock_ms",
+            "pay_per_s_mg"
+          ],
+          "properties": {
+            "enabled": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Whether fights exist at all: 0 in the demo (G35). With 0 nothing engages and the wild brain keeps its bluff."
+            },
+            "swing_quick_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds of a quick hand's whole swing, wind-up to the next strike (COMBAT 4.9, memo 4). Bare hands swing quick."
+            },
+            "swing_standard_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds of a standard hand's swing."
+            },
+            "swing_heavy_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds of a heavy hand's swing."
+            },
+            "swing_floor_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds of the fastest hand swing, whatever its tier or a technique."
+            },
+            "bare_windup_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds from a bare-handed strike's start to its landing."
+            },
+            "bare_base": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Points a strike of the bare hand takes from a foe; a foe's tier is counted in these (T1 falls in 2)."
+            },
+            "tool_strike_permille": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A tool-only hand's share of bare-hand strike harm, against 1000 (WEAPONS 17 question 3, owner 12.11)."
+            },
+            "windup_min_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds of the shortest wind-up a foe's move may have (G31: nobody falls unwarned)."
+            },
+            "windup_max_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds of the longest wind-up a foe's move may have: no telegraph so slow that hard is easy."
+            },
+            "active_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds a foe's move hits whoever stands in its reach, after its wind-up."
+            },
+            "rehit_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds before one swing may hit the same target again; one swing hits one target once."
+            },
+            "bite_div": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A foe's default harm to a player is the health cap divided by this: six unanswered bites fell a player."
+            },
+            "behind_permille": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A strike from the side the target does not face does this share of its harm, against 1000."
+            },
+            "weak_permille": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A strike inside a foe's recovery after its weak move does this share of its harm, against 1000."
+            },
+            "mercy_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds after a hit on a player in which nothing harms them."
+            },
+            "stun_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds after a hit in which the one hit can do nothing."
+            },
+            "knockback_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Tiles a hit pushes the one hit away from its source, never into a solid tile or across a level change."
+            },
+            "dodge_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Tiles a dodge moves the body."
+            },
+            "dodge_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds a dodge takes."
+            },
+            "dodge_cooldown_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds after a dodge before the next."
+            },
+            "breath_base": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The breath bar's base top, in points; stamina adds breath_per_stamina each."
+            },
+            "breath_per_stamina": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Points of breath each point of stamina adds."
+            },
+            "breath_refill": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Points of breath standing still refills each tick."
+            },
+            "breath_hold_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds after any verb but a move in which breath does not refill."
+            },
+            "attack_breath": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Breath a strike costs."
+            },
+            "guard_drain": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Breath a held guard costs each tick."
+            },
+            "guard_hit_breath": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Breath a blow into the guard costs the guard."
+            },
+            "dodge_breath": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Breath a dodge costs."
+            },
+            "breath_stagger_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds a figure out of breath can neither strike nor guard."
+            },
+            "guard_stagger_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds the striker is staggered after a strike into a guard."
+            },
+            "engage_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A foe heeds a player within this many tiles."
+            },
+            "leash_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A foe never goes farther than this from its spot; past it a chase ends and the foe goes home."
+            },
+            "give_up_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds out of sense before a chase ends."
+            },
+            "claim_lock_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds the first player whose strike lands holds a foe; each hit the holder deals or takes renews it."
+            },
+            "pay_per_s_mg": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Milli-gold a second of a foe's pattern may be worth in drops at the trader's price (HUNTING 9)."
+            }
+          }
+        },
         "starting_gold_mg": {
           "additionalProperties": false,
           "type": "object",
@@ -3354,7 +4979,7 @@
         },
         "per_point": {
           "additionalProperties": false,
-          "description": "What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
+          "description": "What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), a fifth of a fight blow's percent off every work interval, inside the power cap (agility), permille on rare and legendary finds inside the power cap (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
           "type": "object",
           "required": [
             "might",

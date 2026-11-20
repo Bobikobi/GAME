@@ -168,8 +168,8 @@ describe('what a node does', () => {
       if (!r.ok) throw new Error(r.error);
       s = r.state;
     }
-    // Quick trowel is small: on at once
-    expect(effectValue(b, s, 'dig_speed_pct')).toBe(before + treeNode(b, QUICK)!.node.value);
+    // Steady and Quick trowel are small: on at once (Steady is a digging speed too since 2026-11-20)
+    expect(effectValue(b, s, 'dig_speed_pct')).toBe(before + treeNode(b, STEADY)!.node.value + treeNode(b, QUICK)!.node.value);
     const hint = effectValue(b, s, 'second_hint');
     const put = act(s, { t: 'equip', node: OLD_SIGNS, slot: 0, at: safe });
     if (!put.ok) throw new Error(put.error);

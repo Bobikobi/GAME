@@ -16,9 +16,11 @@ import {
   type MergePatch,
   type PublicState,
   type Tile,
+  WEATHER_ODDS,
   applyStatePatch,
   hourOf,
 } from '@game/kernel';
+import type { WeatherName } from '@game/schema';
 
 import { SEEN_CONTENT_KEY } from './config';
 import { LONGEST_FRAME_MS } from './session';
@@ -32,6 +34,8 @@ export interface StateReply {
   version: number;
   /** the appear nodes standing now, as the server drew them */
   appears: string[];
+  /** the day's weather over the player, as the server drew it (issue 581); an old server sends none */
+  sky?: string;
 }
 
 export interface ChangeReply {
@@ -40,6 +44,8 @@ export interface ChangeReply {
   version: number;
   /** the appear nodes standing now, as the server drew them */
   appears: string[];
+  /** the day's weather over the player, as the server drew it (issue 581); an old server sends none */
+  sky?: string;
 }
 
 /** The wire the phone talks over. A test passes a fake that answers the same four shapes. */
@@ -164,6 +170,7 @@ export class RemoteSession implements GameSession {
   tail: LogEntry[] = [];
   /** the appear nodes the server says stand now: drawn on the phone, never drawn from a seed here */
   private appearing = new Set<string>();
+  private weather: WeatherName | undefined;
   /**
    * The server keeps the state and fits it to new content itself (`adaptState`); this says that it did since
    * this browser last showed the world, so the game can say the valley was updated, as it does for a save.
@@ -240,6 +247,11 @@ export class RemoteSession implements GameSession {
   /** A node a reaction raises: the server drew it, and this phone only reads that it stands. */
   appears(id: string): boolean {
     return this.appearing.has(id);
+  }
+
+  /** The day's weather the server drew over the player at its last answer; none from a server that does not send it. */
+  sky(): WeatherName | undefined {
+    return this.weather;
   }
 
   /** False once the line dropped: the game waits for `resume()` rather than play on. */
@@ -515,6 +527,8 @@ export class RemoteSession implements GameSession {
   private land(reply: StateReply | ChangeReply): void {
     this.state = 'patch' in reply ? applyStatePatch(this.state, reply.patch) : reply.state;
     this.appearing = new Set(reply.appears);
+    // a word this phone does not know is no weather: the sky stays as the day's clouds draw it
+    this.weather = WEATHER_ODDS.find(([w]) => w === reply.sky)?.[0];
     this.version = reply.version;
   }
 

@@ -3,6 +3,7 @@
  *
  *   check    validate every content file (schema, references, economy, sprites), NEXT.md's Status lines and the shrink-only lists
  *   values   re-anchor content/values.lock.json (core maintainers only) and print gold per hour of making
+ *   lock     re-anchor content/world.lock.json, the opening's legs and pays (G59; only with the owner's yes)
  *   bundle   build game/src/generated/bundle.json and copy the kits for the client
  *   credits  write CREDITS.md from the content (--verify: fail when it is stale)
  *   board    write content/board.json, creator points and commits, from the git history
@@ -15,6 +16,7 @@ import { characterCredits } from './anim/sheets';
 import { boardIsCurrent, computeBoard, readCommits, readPoints, squashedCommits, writeBoard } from './board';
 import { formatIssues, runCheck, runRepoCheck } from './check';
 import { LOCK_FILE, REPO_ROOT } from './load';
+import { writeLock } from './lock';
 import { formatMaking, makingReport } from './making';
 
 const [command, ...args] = process.argv.slice(2);
@@ -44,6 +46,22 @@ switch (command) {
     writeFileSync(LOCK_FILE, `${JSON.stringify({ format: 1, note: 'Value anchor (rule R11). Re-anchored only by core maintainers.', values: sorted }, null, 2)}\n`);
     console.log(`anchored ${Object.keys(sorted).length} values in content/values.lock.json`);
     console.log(`\ngold per hour of making, an average try at the recipe's own level (CR-22):\n${formatMaking(makingReport(b))}`);
+    break;
+  }
+  case 'lock': {
+    const b = runCheck().assembled.bundle;
+    if (!b) {
+      console.error('The content does not assemble; run "pnpm check" first.');
+      process.exit(1);
+    }
+    const lock = writeLock(b);
+    const lost = Object.entries(lock.legs).filter(([, leg]) => leg.steps < 0);
+    for (const [id, leg] of Object.entries(lock.legs)) console.log(`${id}: ${leg.from} to ${leg.to}, ${leg.steps < 0 ? 'no walk' : `${leg.steps} steps`}`);
+    console.log(`anchored ${Object.keys(lock.legs).length} legs and ${Object.keys(lock.pays).length} pays in content/world.lock.json`);
+    if (lost.length > 0) {
+      console.error(`\n${lost.length} leg(s) cannot be walked: fix the map before committing the lock.`);
+      process.exit(1);
+    }
     break;
   }
   case 'bundle': {

@@ -183,6 +183,10 @@ describe('dressing a taken animal', () => {
     });
   });
 
+  test('pins a hide cure to one game day', () => {
+    expect(b.params.hunt.tan_cure_d * b.params.day_length_ms).toBe(b.params.day_length_ms);
+  });
+
   test('lays what the bag cannot carry on the tile the player stands on, and says so once', () => {
     const heavy = structuredClone(b);
     heavy.items['test/hare-meat']!.weight = 20;

@@ -12,6 +12,7 @@ import {
   type ItemInfo,
   type MapDef,
   type Meta,
+  type Flicker,
   type Params,
   type RecipeDef,
   type SpriteInfo,
@@ -21,7 +22,7 @@ import {
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type ClipInfo, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
 import { chunkProblems, levelsProblems } from './chunks';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems, startFinds } from './play';
@@ -35,7 +36,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; source?: { spec: string; manifest: string } }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; clip?: ClipInfo; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -49,9 +50,11 @@ type RecordKey =
   | 'treasures'
   | 'searchables'
   | 'recipes'
+  | 'sets'
   | 'npcs'
   | 'quests'
   | 'expeditions'
+  | 'passages'
   | 'restores'
   | 'camps'
   | 'races'
@@ -64,9 +67,11 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   resource: 'resources',
   treasure: 'treasures',
   recipe: 'recipes',
+  set: 'sets',
   npc: 'npcs',
   quest: 'quests',
   expedition: 'expeditions',
+  passage: 'passages',
   restore: 'restores',
   camp: 'camps',
   race: 'races',
@@ -80,10 +85,12 @@ const BODY_OF: Record<string, string> = {
   resource: 'node',
   treasure: 'dig',
   recipe: 'recipe',
+  set: 'set',
   template: 'template',
   npc: 'npc',
   quest: 'quest',
   expedition: 'expedition',
+  passage: 'passage',
   restore: 'restore',
   camp: 'camp',
   race: 'race',
@@ -129,12 +136,16 @@ export function flattenParams(p: ParamsBody): Params {
     craft_luck_max_permille: p.craft_luck_max_permille.value,
     craft_miss_keep_pct: p.craft_miss_keep_pct.value,
     wear_effect_max_pct: [...p.wear_effect_max_pct],
-    wear_set_bonus_pct: p.wear_set_bonus_pct.value,
+    wear_req_level: [...p.wear_req_level],
+    attr_bonus_max: [...p.attr_bonus_max],
+    attr_bonus_step: p.attr_bonus_step.value,
     drift_budget_permille: p.drift_budget_permille.value,
     hp_cap: p.hp_cap.value,
     day_length_ms: p.day_length_ms.value,
     walk_step_ms: p.walk_step_ms.value,
     move_reach_max: p.move_reach_max?.value ?? 32,
+    pay_gap_ms: p.pay_gap_ms?.value ?? 90000,
+    pay_sight_tiles: p.pay_sight_tiles?.value ?? 5,
     hp_low_pct: p.hp_low_pct.value,
     fire: {
       cap: p.fire.cap.value,
@@ -142,6 +153,7 @@ export function flattenParams(p: ParamsBody): Params {
       warn_min: p.fire.warn_min.value,
       safe_tiles: p.fire.safe_tiles.value,
       burn_pct_per_d: p.fire.burn_pct_per_d.value,
+      ...(p.fire.flicker ? { flicker: Object.fromEntries(Object.entries(p.fire.flicker).map(([k, v]) => [k, v.value])) as unknown as Flicker } : {}),
     },
     hazard: {
       predator: {
@@ -182,12 +194,51 @@ export function flattenParams(p: ParamsBody): Params {
       dress_step_ms: p.hunt.dress_step_ms.value,
       meat_spoil_d: p.hunt.meat_spoil_d.value,
       hide_spoil_d: p.hunt.hide_spoil_d.value,
+      tan_cure_d: p.hunt.tan_cure_d.value,
       grade2_bp: p.hunt.grade2_bp.value,
       grade3_bp: p.hunt.grade3_bp.value,
     },
+    combat: {
+      enabled: p.combat.enabled.value,
+      swing_quick_ms: p.combat.swing_quick_ms.value,
+      swing_standard_ms: p.combat.swing_standard_ms.value,
+      swing_heavy_ms: p.combat.swing_heavy_ms.value,
+      swing_floor_ms: p.combat.swing_floor_ms.value,
+      bare_windup_ms: p.combat.bare_windup_ms.value,
+      bare_base: p.combat.bare_base.value,
+      tool_strike_permille: p.combat.tool_strike_permille.value,
+      windup_min_ms: p.combat.windup_min_ms.value,
+      windup_max_ms: p.combat.windup_max_ms.value,
+      active_ms: p.combat.active_ms.value,
+      rehit_ms: p.combat.rehit_ms.value,
+      bite_div: p.combat.bite_div.value,
+      behind_permille: p.combat.behind_permille.value,
+      weak_permille: p.combat.weak_permille.value,
+      mercy_ms: p.combat.mercy_ms.value,
+      stun_ms: p.combat.stun_ms.value,
+      knockback_tiles: p.combat.knockback_tiles.value,
+      dodge_tiles: p.combat.dodge_tiles.value,
+      dodge_ms: p.combat.dodge_ms.value,
+      dodge_cooldown_ms: p.combat.dodge_cooldown_ms.value,
+      breath_base: p.combat.breath_base.value,
+      breath_per_stamina: p.combat.breath_per_stamina.value,
+      breath_refill: p.combat.breath_refill.value,
+      breath_hold_ms: p.combat.breath_hold_ms.value,
+      attack_breath: p.combat.attack_breath.value,
+      guard_drain: p.combat.guard_drain.value,
+      guard_hit_breath: p.combat.guard_hit_breath.value,
+      dodge_breath: p.combat.dodge_breath.value,
+      breath_stagger_ms: p.combat.breath_stagger_ms.value,
+      guard_stagger_ms: p.combat.guard_stagger_ms.value,
+      engage_tiles: p.combat.engage_tiles.value,
+      leash_tiles: p.combat.leash_tiles.value,
+      give_up_ms: p.combat.give_up_ms.value,
+      claim_lock_ms: p.combat.claim_lock_ms.value,
+      pay_per_s_mg: p.combat.pay_per_s_mg.value,
+    },
     wild: {
       tick_ms: p.wild.tick_ms.value,
-      think_ticks: p.wild.think_ticks.value,
+      think_ms: p.wild.think_ms.value,
       wake_tiles: p.wild.wake_tiles.value,
       awake_max: p.wild.awake_max.value,
       catchup_max_steps: p.wild.catchup_max_steps.value,
@@ -251,6 +302,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const err = (f: Loaded | string, where: string, message: string) =>
     issues.push({ file: typeof f === 'string' ? f : toRepoPath(f.abs), where, message, level: 'error' });
 
+  const kitFiles: Record<string, string> = {};
   const items: Record<string, ItemInfo> = {};
   const classes: Record<string, ClassInfo> = {};
   const templates: TemplateDef[] = [];
@@ -259,9 +311,11 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     treasures: {},
     searchables: {},
     recipes: {},
+    sets: {},
     npcs: {},
     quests: {},
     expeditions: {},
+    passages: {},
     restores: {},
     camps: {},
     races: {},
@@ -337,7 +391,10 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     } else if ((d as { type: string }).type === 'chunk') {
       // a chunk is not in the bundle yet (NEXT section 19 b streams it); its shape is checked here all the same
       for (const p of chunkProblems((d as unknown as ChunkFile).chunk)) err(f, p.where, p.message);
+    } else if (d.type === 'story') {
+      // a story is the generator's input (tools/src/gen); the chunks it writes are the content, the story itself is not in the bundle
     } else if (d.type === 'kit') {
+      kitFiles[d.id] = toRepoPath(f.abs);
       kits[d.id] = {
         dir: dirname(f.abs),
         rel: toRepoPath(dirname(f.abs)),
@@ -352,6 +409,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
               ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
+              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number] } } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -372,7 +430,23 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const sprites: Record<string, SpriteInfo> = {};
   for (const [kitId, kit] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
-      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density, ...(s.stride ? { stride: s.stride } : {}) };
+      // `clip` rides on the entry for the client (game/src/clips.ts reads it); the kernel's SpriteInfo does not name it
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density, ...(s.stride ? { stride: s.stride } : {}), ...(s.clip ? { clip: s.clip } : {}) };
+    }
+  }
+
+  // a clip is found by verb + race + view (game/src/clips.ts): two sheets for one lookup would leave the figure to guess, and a race that is not one plays nothing
+  const clipAt = new Map<string, string>();
+  for (const [kitId, kit] of Object.entries(kits)) {
+    for (const [name, s] of Object.entries(kit.sprites)) {
+      if (!s.clip) continue;
+      const where = `kit.sprites.${name}.clip`;
+      const file = kitFiles[kitId]!;
+      if (!records.races[s.clip.race]) issues.push({ file, where: `${where}.race`, message: `"${s.clip.race}" is not a race`, level: 'error' });
+      const lookup = `${s.clip.verb} ${s.clip.race} ${s.clip.view}`;
+      const other = clipAt.get(lookup);
+      if (other) issues.push({ file, where, message: `${other} already plays ${lookup}: a clip is one sheet for one verb, race and view`, level: 'error' });
+      else clipAt.set(lookup, `${kitId}:${name}`);
     }
   }
 
@@ -531,7 +605,9 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (it.fragment && !b.recipes[it.fragment.unlocks]) err(id, 'fragment.unlocks', `no recipe "${it.fragment.unlocks}"`);
     if (it.kind === 'food' && !it.food) err(id, 'food', 'a food item needs "food": { "satiety": n }');
     if (it.food && it.food.satiety === 0 && it.food.hurt === undefined) err(id, 'food', 'a food feeds ("satiety" above 0) or hurts ("hurt"): this one does neither');
-    if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier }, and "uses" when it wears out');
+    // a weapon-only hand is an item of kind "tool" with a weapon block in place of the tool block (WEAPONS 1)
+    if (it.kind === 'tool' && !it.tool && !it.weapon) err(id, 'tool', 'a tool item needs "tool": { kind, tier }, and "uses" when it wears out');
+    if (it.wear?.req && !b.professions[it.wear.req.school]) err(id, 'wear.req.school', `no profession "${it.wear.req.school}"`);
     if (it.kind === 'fragment' && !it.fragment) err(id, 'fragment', 'a fragment item needs "fragment": { "unlocks": recipe id }');
   }
   for (const [id, res] of Object.entries(b.resources)) {
@@ -677,6 +753,23 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     });
     (x.reward.opens ?? []).forEach((rid, i) => {
       if (!b.restores[rid]) err(id, `expedition.reward.opens.${i}`, `no restore "${rid}"`);
+    });
+  }
+  const exits = new Set((b.map.plan?.exits ?? []).map((x) => x.id));
+  for (const [id, p] of Object.entries(b.passages)) {
+    if (!exits.has(p.from)) err(id, 'passage.from', `no exit "${p.from}" in the map plan`);
+    if (p.to !== undefined && !exits.has(p.to)) err(id, 'passage.to', `no exit "${p.to}" in the map plan`);
+    if (p.fare) item(id, 'passage.fare.item', p.fare.item);
+    (p.requires ?? []).forEach((r, i) => {
+      if (!b.quests[r]) err(id, `passage.requires.${i}`, `no quest "${r}"`);
+    });
+    p.events.forEach((e, i) => {
+      const w = `passage.events.${i}`;
+      if (e.act.kind === 'bring') item(id, `${w}.act.item`, e.act.item);
+      (e.reward.items ?? []).forEach((s, k) => {
+        item(id, `${w}.reward.items.${k}`, s.item);
+        if (s.instead !== undefined) item(id, `${w}.reward.items.${k}.instead`, s.instead);
+      });
     });
   }
   const opened = new Set([

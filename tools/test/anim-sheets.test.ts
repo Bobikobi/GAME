@@ -2,10 +2,12 @@
  * The races' walk sheets in content/kit/core/chars (pnpm anim sheets): the clothed-width rule on the committed pictures,
  * the stride rule of the kit check, and the pieces the sheets are made of.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { describe, expect, test } from 'vitest';
+
+import { GUST, MOVES } from '../../game/src/richground';
 
 import { readSettings } from '../src/anim/clip';
 import { plantSlide, widestRow } from '../src/anim/measure';
@@ -103,5 +105,28 @@ describe('the bob on top of the poses', () => {
     for (const target of Object.values(settings.targets)) {
       if (target.ships?.bob === false) expect(travel[target.ships.sheet], target.ships.sheet).toBeGreaterThan(human);
     }
+  });
+});
+
+describe('the wind leaves a body alone', () => {
+  // The sway shader (game/src/motion.ts) leans any screen pixel within GUST.tolerance of a colour in MOVES, whatever drew it,
+  // so a figure drawn in one of those colours would lean like grass or drift like water (the elf's cloak, 2.11). richground.ts
+  // says a body never moves; this holds every shipped character and creature sheet to it, with no one to remember to run it.
+  const moving = [...MOVES.meadow, ...MOVES.water].map((c) => [(c >> 16) & 255, (c >> 8) & 255, c & 255] as const);
+  const limit = GUST.tolerance * 255;
+  const near = (r: number, g: number, b: number) => moving.some(([mr, mg, mb]) => Math.abs(r - mr) < limit && Math.abs(g - mg) < limit && Math.abs(b - mb) < limit);
+
+  test('no pixel of a shipped character or creature sheet is within the sway tolerance of a colour that moves', () => {
+    const found: string[] = [];
+    for (const dir of ['chars', 'creatures']) {
+      const root = join(SHEET_DIR, '..', dir);
+      for (const file of readdirSync(root).filter((f) => f.endsWith('.png'))) {
+        const png = PNG.sync.read(readFileSync(join(root, file)));
+        let hits = 0;
+        for (let i = 0; i < png.data.length; i += 4) if ((png.data[i + 3] ?? 0) >= 128 && near(png.data[i] ?? 0, png.data[i + 1] ?? 0, png.data[i + 2] ?? 0)) hits += 1;
+        if (hits > 0) found.push(`${dir}/${file}: ${hits} px`);
+      }
+    }
+    expect(found).toEqual([]);
   });
 });

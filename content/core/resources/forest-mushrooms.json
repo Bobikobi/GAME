@@ -37,7 +37,18 @@
       10
     ],
     "place": {
-      "slot": "core/forest-mushrooms"
+      "slot": "core/forest-mushrooms",
+      "scatter": [
+        "core/lone-mushrooms-1",
+        "core/lone-mushrooms-2",
+        "core/lone-mushrooms-3",
+        "core/lone-mushrooms-4",
+        "core/lone-mushrooms-5",
+        "core/lone-mushrooms-6",
+        "core/lone-mushrooms-7",
+        "core/lone-mushrooms-8",
+        "core/lone-mushrooms-9"
+      ]
     }
   }
 }
