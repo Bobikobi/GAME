@@ -1683,6 +1683,30 @@
         }
       },
       {
+        "id": "core/camp-wolf",
+        "sprite": "core/base-kit:props/hazard_wolf",
+        "x": 28,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "hazard": {
+          "kind": "predator",
+          "window": [
+            "night"
+          ]
+        }
+      },
+      {
+        "id": "core/wolf-tracks",
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 29,
+        "y": 14,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
         "id": "core/bank-wolf",
         "sprite": "core/base-kit:props/hazard_wolf",
         "x": 8,

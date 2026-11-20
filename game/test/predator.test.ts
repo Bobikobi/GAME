@@ -66,8 +66,8 @@ describe('the wolf by day', () => {
   const b = loadBundle();
   const rules = hazardsOf(b).filter((h) => h.kind === 'predator');
 
-  test('both wolves are away by day and out at night, and a hunt or a run home keeps one drawn', () => {
-    expect(rules.map((r) => r.id).sort()).toEqual(['core/bank-wolf', 'core/ruins-wolf']);
+  test('every wolf is away by day and out at night, and a hunt or a run home keeps one drawn', () => {
+    expect(rules.map((r) => r.id).sort()).toEqual(['core/bank-wolf', 'core/camp-wolf', 'core/ruins-wolf']);
     const noon = 0;
     const night = nightFalls(b, 0) + 1000;
     for (const r of rules) {

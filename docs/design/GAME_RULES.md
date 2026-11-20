@@ -312,6 +312,16 @@ already handles that and the e2e run checks it.
   item, a place or time. What must stay unknown is drawn from the server's
   seed or learned by playing (G47), and a client that sends a change the
   kernel did not make is refused (PLATFORM.md 9.6; GRUNT CR-115).
+- **G103 The start is a world to discover, not a lesson.** The opening teaches
+  as little as it can (owner, 19.11). Each opening task is one point task whose
+  doing puts the player in front of an option they were not told about: a
+  place lies on the way, a track leads somewhere, a creature is met at the edge
+  of safe ground. No "first steps" chain, no tracker list of what to learn, no
+  toast or line that names a verb or lists professions or tools, and no task
+  text that explains how to do what the task asks. A line says where or when,
+  never how. A rehearsal of a danger is met, not told: the wolf's eyes near the
+  camp at night show "seen, run" once, one step back is safe, and nothing is
+  lost (G34, G35).
 - **G70 A race changes how, never whether.** The valley speaks to each race
   in its own lines, and a quest may offer a race a step variant or a harder
   way through; no quest step, door or reward closes to a race (G12, G28).
