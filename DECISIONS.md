@@ -4488,3 +4488,8 @@ Why: a loop and a cut are the two things a player does not notice in a repeated 
 
 The card `web/public/og/card.png` still read "Openfold" and `theopenfold.vercel.app`, which answers 404, so every link to the game shared on Reddit, X or a chat showed the old name and a dead address (kept on purpose by the rename, "the lettering of the card is the owner's call", entry of the name change). The new card keeps everything else: the bridge frame on the right is pixel-identical to the old card (difference bbox: none), the tagline lines render byte-identical in DejaVu Sans Bold 28, and the name is set in the same DejaVu Sans Bold 86 at the same left margin and ink top. The owner approves the lettering by putting `land-ok` on the pull request. The redraw of the frame itself still waits for PRE_RICH_REDRAW row 30.
 **Retry when:** the rich redraw of rows 1, 2, 4 and 13 lands (a new frame), or the owner wants another lettering. Model: claude-opus-5-5.
+
+## 2026-11-20 ✅ Wild-node checks include generated chunk spawns
+**What:** QUARRYING 8 now checks merged laid and appear nodes against both the map's creature spots and every generated chunk spawn; 2 focused cases cover a shared tile refusing and the neighbouring tile passing.
+**Why:** since generated chunks are content, an animal's chunk-local spawn must keep its spot by the same rule as the map's authored list.
+**Retry when:** chunks enter the runtime bundle or nodes are streamed per chunk. **Model:** Codex. **Link:** public tracker #700.
