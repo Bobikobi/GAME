@@ -51,6 +51,15 @@ export function gold(mg: number): string {
   return `${whole}.${String(rest).padStart(2, '0').replace(/0$/, '')}`;
 }
 
+/**
+ * The second line of a gain toast: the profession and the seconds of work the kernel gave it ("Woodcutting +1", "Foraging +1.5").
+ * Experience is the active time (PROGRESSION 3.6), so the number is seconds, whole when it can be.
+ */
+export function xpLine(b: Bundle, profession: string, ms: number): string {
+  const s = ms / 1000;
+  return `${b.professions[profession]?.name ?? profession} +${Number.isInteger(s) ? s : s.toFixed(1)}`;
+}
+
 export function seconds(ms: number): string {
   const s = ms / 1000;
   return Number.isInteger(s) ? `${s}s` : `${s.toFixed(1)}s`;

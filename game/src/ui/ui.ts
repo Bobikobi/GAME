@@ -102,6 +102,8 @@ export class UI {
   /** the toasts up and in line (two at most up); its one timer brings it to its next change */
   private band = new ToastBand<HTMLElement>();
   private bandTimer = 0;
+  /** each profession's experience as the last batch of events left it (the toasts' second line reads the difference) */
+  private xpSeen: Record<string, number> = {};
   private promptEl: HTMLElement;
   /** the crossing card aboard (SEA_CROSSING.md): not a layer, so the clock runs under it and a segment's sailing ends */
   private seaEl: HTMLElement;
@@ -234,10 +236,15 @@ export class UI {
   begin(session: GameSession): void {
     app.session = session;
     app.world?.bind(session);
+    this.xpSeen = { ...session.state.player.xp };
     session.on('events', (events) => {
       // a fall says it all in its one box: the calls to run from a hunt that has ended come down
       if (events.some((e) => e.e === 'fall')) this.clearToasts();
-      for (const t of eventToasts(app.bundle, session.state, events)) this.queueToast(t);
+      // what the kernel gave each profession since the last batch: the second line of a gain toast
+      const earned: Record<string, number> = {};
+      for (const [id, xp] of Object.entries(session.state.player.xp)) if (xp > (this.xpSeen[id] ?? 0)) earned[id] = xp - (this.xpSeen[id] ?? 0);
+      this.xpSeen = { ...session.state.player.xp };
+      for (const t of eventToasts(app.bundle, session.state, events, earned)) this.queueToast(t);
       feedback(this.root, events);
       void this.afterEvents(events);
       // after the story beats begin: on a phone a box they opened holds this batch's toasts until it closes

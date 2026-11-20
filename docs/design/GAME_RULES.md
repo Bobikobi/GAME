@@ -141,7 +141,10 @@ and G10 are the ones `pnpm check` can test today (section 8).
   sound, a number. A reward lands with a beat: the jingle, the item's name,
   where it went.
 - **G14 Two lines, one box.** At most two lines per box, one box per beat, no
-  box in the middle of a timed action.
+  box in the middle of a timed action. A training action's gain toast is one such
+  box: the item, then the profession and the seconds of work the kernel gave it
+  ("Woodcutting +1"). Progress is told there and in the profession bar, never as a
+  number floating over the work.
 - **G15 Work has no timing, no grade and no miss.** One rule for every work
   action (a gather, a dig, a felling, a quarrying, a cast): a click starts it, a
   repeating animation plays, and the kernel gives one unit at the end of each
