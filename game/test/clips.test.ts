@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { assemble } from '../../tools/src/assemble';
 import { readBoard } from '../../tools/src/board';
 import { REPO_ROOT, loadAll } from '../../tools/src/load';
-import { ClipPlayer, VERB_OF_AUTO, VERB_OF_WORK, clipFor, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
 import type { Dir } from '../src/input';
 
 /**
@@ -164,9 +164,8 @@ describe('which verb answers what', () => {
 
   test('every work kind the game has names a verb the kit may hold, and the five work verbs are all reachable', () => {
     const verbs = new Set<string>(CLIP_VERBS);
-    for (const v of [...Object.values(VERB_OF_WORK), ...Object.values(VERB_OF_AUTO)]) expect(verbs.has(v)).toBe(true);
-    expect(new Set([...Object.values(VERB_OF_WORK), ...Object.values(VERB_OF_AUTO)])).toEqual(new Set(['fell', 'quarry', 'fish', 'pickup', 'dig']));
-    expect(Object.keys(VERB_OF_WORK).sort()).toEqual(['dig', 'fish', 'pick', 'snap', 'strike', 'timing']);
-    expect(Object.keys(VERB_OF_AUTO).sort()).toEqual(['dig', 'fell', 'mine']);
+    for (const v of Object.values(VERB_OF_AUTO)) expect(verbs.has(v)).toBe(true);
+    expect(new Set(Object.values(VERB_OF_AUTO))).toEqual(new Set(['fell', 'quarry', 'fish', 'pickup', 'dig']));
+    expect(Object.keys(VERB_OF_AUTO).sort()).toEqual(['dig', 'fell', 'fish', 'mine', 'pick']);
   });
 });

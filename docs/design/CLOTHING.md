@@ -223,7 +223,7 @@ The equipment foundations pull request builds the field `wear.attrs` (one or mor
 | boiled-leather cap | 2, uncommon | dig 5 | `senses` 1 | a head piece for the one who looks around (`senses` is read at kernel/src/reactions.ts:144) |
 | boiled-leather boots | 2, uncommon | dig 5 | `might` 1 | 10 more load (`per_point.might` 10, content/core/params.json:723-729) |
 | fur-lined cloak | 2, uncommon | craft 5 | `stamina` 1 | waits also for the health rule below |
-| woven reed coat | 3, uncommon | gather 8 | `agility` 2 | light reed (`agility` widens the minigame's zone, game/src/text.ts:90) |
+| woven reed coat | 3, uncommon | gather 8 | `agility` 2 | light reed (`agility` shortens every work, game/src/text.ts) |
 | hardened jerkin | 3, rare | dig 9, rare find 9 | `might` 2 | leather on the shoulders carries: 20 more load |
 | hardened breeches | 3, rare | dig 9, rare find 9 | `stamina` 2 | waits also for the rule on health above a lowered cap when a stamina piece comes off (kernel/src/state.ts:420-422) |
 

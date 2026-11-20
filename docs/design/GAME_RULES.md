@@ -65,7 +65,7 @@ the valley's, never the calendar's.
 | Stage | The beat | The payoff | Never |
 |---|---|---|---|
 | 0:00-0:15 | The player wakes in one of the wake pockets, drawn at random, and does that pocket's own first task: picks herbs on the west bank, digs the axe out of the slid bank, or follows the senses to the axe in the grass by the bridge from the north meadow. The pocket's tool lies on the ground by the wake tile, found, not worn. | Something in the bag at once, found the pocket's own way. | A lore screen, a naming wizard, more than one box of text. |
-| 0:15-1:00 | The first strike, at the bridge's keystone in the shallows. | The strike minigame, taught once; level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
+| 0:15-1:00 | The first work, at the bridge's keystone in the shallows. | One click and the hands go on by themselves: the stone is the player's; level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
 | 1-5 min | The bridge mends; a tree is felled with the axe each pocket gives; the fire is built. | A tile changes, a sign carries the player's name, a purse: the price of one tool, in gold only. | A build that only opens a panel. |
 | 5-8 min | The town: whom to help first, Maru or Pell; then Maru's coin; at dusk, the riddle. | A real choice: Maru pays with his old trowel, Pell with a recipe and coin, and Pell's shop says what each tool opens. Both plants are open from noon until dark, so neither order waits. From 19:00 the hill lantern lights the tile to dig. | A fetch with a counter and nothing to notice. |
 | 8-10 min | After dark, the broken arch at the edge of the ruins. | A way under the arch that rubble filled by day, to the threshold of the night ruins: a place that opens, the first sight of the expeditions (G36). | Something to fight or something that hunts (G35). |
@@ -142,13 +142,16 @@ and G10 are the ones `pnpm check` can test today (section 8).
   where it went.
 - **G14 Two lines, one box.** At most two lines per box, one box per beat, no
   box in the middle of a timed action.
-- **G15 A miss turns up something, never an empty hand.** A missed strike
-  gives something other than the node's item, from the node's own miss table:
-  a bruised fruit, grit, now and then a rare find, now and then only a thorn.
-  Every row of a table is a thing with a value. The jackpot strip stays the
-  reward for precision. Three misses in a row show a hint. A creator adds a
-  surprise by adding a row (DECISIONS.md, 10.10). Until the kernel reads the
-  tables (CR-60) a miss keeps one unit half the time.
+- **G15 Work has no timing, no grade and no miss.** One rule for every work
+  action (a gather, a dig, a felling, a quarrying, a cast): a click starts it, a
+  repeating animation plays, and the kernel gives one unit at the end of each
+  work interval, every time, until the player moves, starts something else, the
+  node or spot runs out, the bag is full or danger stops it. What was gathered is
+  the player's the moment it is taken, and they stop whenever they like. Nothing
+  on the screen asks for a press at the right moment; a better tool, a higher
+  profession level and agility shorten the interval, inside the power cap. A
+  craft is a different action and can still miss (G40). The owner's words of
+  14.11 and 19.11 (DECISIONS.md, 2026-11-20).
 
 ### Session
 
@@ -191,7 +194,7 @@ what it looks like in the valley.
 | `discovery` | Goes where nothing sends them and finds a place. | "I found it myself." | Autonomy, wonder | Skyrim's far peaks and cave mouths | A place in the mist that opens when you stand at the arch at night. |
 | `fetch_twist` | Brings a thing that is not where it should be, or that someone else wants too. | "So that is where it was." | Competence, surprise | Fallout's "simple" deliveries | The berries grow only where the bells rang (three-fruits after P-3). |
 | `dilemma` | Chooses between two answers with no right one; both lead on. | "That was my call." | Autonomy, meaning | The Witcher 3's choices; Fallout's water chip | Give the old coin to Maru, or trade it with Pell; the valley remembers either. |
-| `skill` | Beats a timing or precision challenge with a harder window. | "Nailed it." | Competence, hard fun | Skyrim's lockpicking; Fallout's VATS | A rare node whose strike window is half the usual; a miss turns up something from the node's miss table (G15). |
+| `skill` | Beats a challenge of nerve and reading that the world sets, never a work: the right moment to cross is the player's to find. | "Nailed it." | Competence, hard fun | Skyrim's sneaking; Fallout's VATS | A moonreed crossing while the wolf's eyes are turned (G35). |
 | `collection` | Completes a set shown in one place. | "One more." | Completion, ownership | Skyrim's Stones of Barenziah; Fallout's bobbleheads | A set of treasures on a shelf that NPCs notice when it is full (the shelf's future, section 5 row 1). |
 | `tending` | Keeps something alive or safe over time. | "They needed me." | Relatedness, care | Companions in Skyrim; animals in Stardew Valley | Keep the fire lit through one night; a sapling watered three mornings. |
 | `riddle` | Reads clues in the world and answers with an action. | "Aha." | Insight, hard fun | Skyrim's pillar puzzles; The Witcher 3's riddles | The three ruin stones and the dig under the hill-facing statue. |
@@ -298,8 +301,8 @@ already handles that and the e2e run checks it.
 - **G29 Playable by more people.** Text at 16 px or more and dialogue at 18
   (FTUE); colour is never the only signal (a glint has a shape, a tone has a
   word); reduced motion is honoured by every effect; one hand is enough on a
-  phone; the strike window grows with agility so a slower hand still wins
-  (G15).
+  phone; work needs no quick hand: it runs by itself after one
+  tap (G15).
 - **G102 The code tells the odds, the server tells the result.** Nothing in
   the open repository is a secret a rule leans on: every value, rule and
   chance may be read, and a reading gains a player knowledge, never gold, an
@@ -472,7 +475,7 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
 
 - **G38 Crafting is a road, not the road.** A player who never crafts
   progresses by the roads already written: hard quests, treasure and digging,
-  riddles, mastery of the minigames, the expedition and reputation, fenced by a
+  riddles, the mastery of a school in the skill tree, the expedition and reputation, fenced by a
   profession or character level where a road needs it. War, theft and robbery
   stay out (G35, G28), except later in the areas between players that a player
   chooses to enter, once combat comes ([SETTLEMENT.md](SETTLEMENT.md) 3.9).
@@ -487,7 +490,7 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   Gold never turns into money either: the creators' money fund and the gold
   pool of D5 stay apart (DECISIONS.md, the entry on prices and gold).
 - **G40 A craft can miss, and a miss keeps something.** Skill decides the
-  chance and luck only tilts it; a miss is never nothing (G15): it keeps part
+  chance and luck only tilts it; a miss is never nothing: it keeps part
   of the inputs and makes nothing else. The value table prices a recipe at
   perfect execution, and luck closes the gap to that output without passing
   it (R9). A recipe's level is no wall: each missing level takes a step off
@@ -633,7 +636,7 @@ Named so a review can point at one in two words.
 | Breadcrumb | A death that leaves more than its pack: a stash, a pin on the map, or a line beyond the death card's. | G33 |
 | Hunger clock | A bar that empties by the clock, awake or asleep (the drain is 0 since P-5c). | G32, G28 |
 | Gear answer | A thing bought or made as the answer to a hunting hazard (a predator, a pit, a trap, deep water at night): oil, a rope, an antidote. A torch or a garment against a place's condition (cold, snow, the dark) is allowed (amended 2026-11-12). | G34 |
-| Empty miss | A missed strike that gives nothing at all. | G15 |
+| Timed work | A work action with a window to hit, a grade, a strip or a miss draw. | G15 |
 | Quiz talk | A topic list with one right pick, or a line that exists to explain. | G19, G23 |
 
 ## 5. Known breaches on 2026-10-07
@@ -740,7 +743,7 @@ test stays with the checklist above.
 | G17 | A quest with no `type`; two consecutive quests of one type in a `requires` chain; fewer than five types among the first ten quests. | error |
 | G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | error |
 | G30 | A hazard prop (predator, pit, trap, deep water) with no id or touching safe ground (the town's cobbles, a slot marked `safe`, the first camp slot); a pit, trap or deep water that is solid, or any but a predator with a reach. The schema refuses a hazard with no window (`night`; `mist` comes with P-6); a bad fruit or herb needs none. | error |
-| G15 | A node with no miss table, or a miss row that is not a thing with a value. | needs the miss tables (CR-60) |
+| G15 | A work action that reads a timing, a grade or a miss draw: held by `tools/test/work-rule.test.ts`, which also keeps the jackpot and the timing window out of every live source. | test |
 | G34 | A predator with a walkable tile in its reach from which no road leads to a safe place, or from which the run to the nearest one costs a whole fall in bites. No field of the schema can name an item as the answer to a hunting hazard; a place's condition may name its gear (amended 2026-11-12). | error |
 | G36 | An expedition whose place is not an area slot, whose chain repeats a type, has a quest with no type, counts fewer than three or more than five or does not run each quest on the one before, with no hazard inside its place, with a bell outside the night or out of ring order, a quest of its chain with a giver or in another expedition's chain or opening a restore outside the place, a reward that opens something that is not a restore, a step of its chain outside its place (a visit's slot, a restore, a build, a riddle's props or its answer, a tend step's fire) or a find in it whose item nothing inside the place gives, an exit that is not safe ground (the camp's ground is not: no part of it may stand yet), a place that can be walked into from anywhere but its exit (on the map by day, and once every passable restore of the valley is mended) or whose exit leads into none of it by day, an exit whose corner tile, where the walk-out sets the player, cannot be stood on, or a climax slot outside its place. | error since the `expedition` kind (NEXT 14a) |
 | G37 | A quest of the opening or of another creator in an expedition's chain; a restore whose input only an expedition gives (its reward or a quest of its chain), or a restore that opens by no hand and only an expedition's reward names, unless a quest outside every chain opens the place; a quest outside every chain that requires a quest of a chain, or that brings or finds what only an expedition gives. | error since the `expedition` kind (NEXT 14a) |

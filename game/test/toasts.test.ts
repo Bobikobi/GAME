@@ -170,15 +170,15 @@ describe('the band: two toasts at most, the rest in line', () => {
     band.add('+1 Reed');
     band.add('New in your journal');
     band.run(0, false);
-    band.add('Jackpot');
+    band.add('Found a find');
     // the bite comes 100ms later, behind a calm line that waits
     band.add('Bitten', { urgent: true });
     expect(band.run(100, false)).toEqual({ show: [], fade: ['+1 Reed'], remove: [], next: 100 + fade });
-    // up within one fade of the bite, ahead of the jackpot
+    // up within one fade of the bite, ahead of the calm line
     expect(band.run(100 + fade, false)).toEqual({ show: ['Bitten'], fade: [], remove: ['+1 Reed'], next: least });
     // then the calm line again: the oldest makes way once read
     expect(band.run(least, false)).toEqual({ show: [], fade: ['New in your journal'], remove: [], next: least + fade });
-    expect(band.run(least + fade, false)).toEqual({ show: ['Jackpot'], fade: [], remove: ['New in your journal'], next: 100 + fade + life });
+    expect(band.run(least + fade, false)).toEqual({ show: ['Found a find'], fade: [], remove: ['New in your journal'], next: 100 + fade + life });
   });
 
   test('urgent lines keep their own order, and an urgent toast up is not pushed out by the next', () => {

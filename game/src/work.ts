@@ -1,16 +1,52 @@
 /**
- * Work that runs by itself after one press (DECISIONS.md, 2026-10-11): felling with the axe,
- * digging with the trowel, mining with the pick. The kernel decides how long it lasts and
- * what it yields, and says which nodes work this way (kernel/src/work.ts, QUARRYING 10); this
- * file says how the time splits into swings. Pure, so the rhythm can be tested without a scene.
+ * Work that runs on after one press (DECISIONS.md, 2026-11-20): felling with the axe, digging with
+ * the trowel, mining with the pick, fishing with the rod, picking by hand. The kernel decides how long
+ * a unit lasts and what it yields, and says what each node's work is called (kernel/src/work.ts,
+ * QUARRYING 10); this file says how the time splits into swings. Pure, so the rhythm can be tested without a scene.
  */
-import type { AutoKind } from '@game/kernel';
+import type { Action, WorkKind } from '@game/kernel';
+import type { ActResult } from './session-surface';
 import { ART_PX } from './walking';
 
-export { autoKind, resourceKind, treasureKind, type AutoKind } from '@game/kernel';
+export { resourceKind, treasureKind, type WorkKind } from '@game/kernel';
 
 /** The pose sheets a work kind uses, in the order they are tried: the kind's own first, the axe swing last. */
-export const POSES: Readonly<Record<AutoKind, readonly string[]>> = { fell: ['work'], mine: ['pick', 'work'], dig: ['dig', 'work'] };
+export const POSES: Readonly<Record<WorkKind, readonly string[]>> = { fell: ['work'], mine: ['pick', 'work'], dig: ['dig', 'work'], fish: ['work'], pick: ['work'] };
+
+/** What the work asks of the session, so both worlds and a test drive the same rule. */
+export interface WorkHands {
+  /** the thing still has something to give */
+  ready(): boolean;
+  act(action: Action): ActResult | Promise<ActResult>;
+}
+
+/** What follows a unit that has ended: the next one begins (`go`, lasting `ms`), or the work is over and why. */
+export type Next =
+  | { kind: 'go'; ms: number }
+  /** the thing ran out: the tree falls, the stone splits, the spot is dug */
+  | { kind: 'out' }
+  /** the player asked to leave: every unit already taken stays */
+  | { kind: 'left' }
+  /** the kernel refused the next unit (a full bag, a level, the hour; `error` is its words) or danger broke in */
+  | { kind: 'stopped'; error?: string };
+
+/** The events that end work on the spot: hurt, a fall, seen by a predator. */
+const DANGER: readonly string[] = ['hurt', 'fall', 'seen'];
+
+/**
+ * A unit is done and stays taken (DECISIONS.md, 2026-11-20). With no input the next one is asked for, until the player
+ * leaves, the thing runs out, the kernel refuses or danger breaks in: one rule for the work of every kind and both doors.
+ */
+export async function nextUnit(hands: WorkHands, action: Action, leaving: boolean): Promise<Next> {
+  const out = !hands.ready();
+  if (out) return { kind: 'out' };
+  if (leaving) return { kind: 'left' };
+  const res = await hands.act(action);
+  if (!res.ok) return { kind: 'stopped', error: res.error };
+  const busy = res.events.find((e) => e.e === 'busy');
+  if (!busy || busy.e !== 'busy' || res.events.some((e) => DANGER.includes(e.e))) return { kind: 'stopped' };
+  return { kind: 'go', ms: busy.ms };
+}
 
 /** One swing lasts about this long; the work is cut into a whole number of them. */
 export const SWING_MS = 520;

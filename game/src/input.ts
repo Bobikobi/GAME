@@ -2,7 +2,7 @@
  * Keyboard and touch in one place. Directions are held: the walk reads them as
  * one vector (two arrows at once walk a diagonal, the phone's stick any angle),
  * and a menu reads the last one pressed. Buttons are presses that the app routes
- * to whatever is on top: the minigame, a dialogue, a menu, or the world.
+ * to whatever is on top: a dialogue, a menu, or the world.
  */
 import type { Gait } from '@game/kernel';
 

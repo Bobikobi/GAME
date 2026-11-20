@@ -79,12 +79,13 @@ window.__clips = (() => {
       return Object.keys(sprites).filter((k) => sprites[k].clip).length;
     },
     race() { return g().session.state.player.race; },
-    /** One beat of a minigame on the real scene, the way the figure is told of it: facing down, the view the sheets are drawn for. */
+    /** One beat of a work on the real scene, the way the figure is told of it: facing down, the view the sheets are drawn for. */
     play(kind) {
       log.length = 0;
       drawn.length = 0;
       g().session.facing = 'down';
-      world.beat('none', kind, 3);
+      const verb = { fell: 'fell', mine: 'quarry', dig: 'dig', fish: 'fish', pick: 'pickup' }[kind];
+      world.playClip(verb);
       clearInterval(timer);
       // the sprite's own texture and frame, read straight off the player's image every 15 ms: what is on the screen, not what was asked of it
       timer = setInterval(() => drawn.push([world.player.texture.key, Number(world.player.frame.name)]), 15);

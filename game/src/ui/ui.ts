@@ -1,13 +1,12 @@
 /**
  * Everything drawn as page elements over the canvas: the HUD, toasts, the
- * action prompt, dialogue, menus and the timing minigame. Layers stack; the
+ * action prompt, dialogue and menus. Layers stack; the
  * top one gets the buttons, and while any is open the game clock stops.
  */
 import { offerSignup } from './signup';
 import {
   OWN_FIRE,
   type GameEvent,
-  type Grade,
   characterLevel,
   doneLines,
   findSlot,
@@ -15,14 +14,10 @@ import {
   isNight,
   minuteOfDay,
   pickRemark,
-  playsMinigame,
-  resourceKind,
-  resourceOf,
   rewardItem,
   hpCap,
   skillPoints,
   talkLines,
-  treasureKind,
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
@@ -37,10 +32,8 @@ import {
   itemName,
   lanternNight,
   nightCountdown,
-  nodeAction,
   questSteps,
   readyToHandIn,
-  windowScalePct,
 } from '../text';
 import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
 import { localMapState } from '../places';
@@ -51,8 +44,6 @@ import { carveName } from './carve';
 import { button, h, sprite } from './dom';
 import { miniMapSvg } from './map';
 import { feedback } from './feedback';
-import { type Minigame, fish, pick, snap, strike, timing } from './games';
-import { BEAT, buzz } from './haptics';
 import { openLevelUp } from './levelup';
 import { FULL_BAG, HEAVY_LINE, flashFull, loadChip, loadView, paintLoad, turnedHeavy } from './load';
 import {
@@ -71,11 +62,6 @@ import {
 } from './panels';
 import { showTitle } from './title';
 import { mountTouch } from './touch';
-
-/** What the hands are doing, for the world's animation and sound. */
-export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig' | 'fish';
-
-const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap' | 'fish', Minigame> = { timing, strike, pick, snap, fish };
 
 export interface Layer {
   el: HTMLElement;
@@ -679,20 +665,13 @@ export class UI {
     await say(this, npc.name, [...named(talkLines(b, s.state, questId, 'waiting', s.tick) ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
   }
 
+  /** A click on a node starts the work; the world runs it on, one unit after another, until the player stops (DECISIONS.md, 2026-11-20). */
   async gather(nodeId: string): Promise<void> {
     const s = app.session;
-    const b = app.bundle;
     if (!s) return;
-    const r = resourceOf(b, nodeId)!;
-    const why = s.check({ t: 'gather', node: nodeId, grade: 3, at: s.pos });
+    const why = s.check({ t: 'gather', node: nodeId, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    // a node worked with a tool runs by itself after this one press: no pop-up, no bar
-    if (resourceKind(r)) return app.world?.startWork(nodeId);
-    const game = r.game ?? 'timing';
-    const grade = await this.play(GAMES[game], nodeAction(b, r), nodeId, game, b.items[r.output]?.sprite ?? r.sprite);
-    if (grade === null) return;
-    const res = await s.act({ t: 'gather', node: nodeId, grade, at: s.pos });
-    if (!res.ok) this.toast(res.error, 'bad');
+    return app.world?.startWork(nodeId);
   }
 
   /** Pick a thing put down back up, from the tile the player stands on. */
@@ -706,20 +685,10 @@ export class UI {
   async dig(spotId: string): Promise<void> {
     const s = app.session;
     if (!s) return;
-    const why = s.check({ t: 'dig', spot: spotId, grade: 3, at: s.pos });
+    const why = s.check({ t: 'dig', spot: spotId, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    // a find picked up by hand has no timing window (the kernel's rule: QUARRYING 10)
-    const treasure = app.bundle.treasures[app.bundle.instances[spotId]?.source ?? ''];
-    if (treasure && treasureKind(treasure)) {
-      // the trowel digs by itself; the catch (G6) is said once the hands stop
-      app.world?.startWork(spotId, () => this.digCatch(spotId));
-      return;
-    }
-    const grade = treasure && playsMinigame('treasure', treasure) ? await this.play(timing, 'Dig', spotId, 'dig') : 3;
-    if (grade === null) return;
-    const res = await s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
-    if (!res.ok) return this.toast(res.error, 'bad');
-    if (!res.events.some((e) => e.e === 'riddle')) this.digCatch(spotId, res.events.find((e) => e.e === 'busy'));
+    // the catch (G6) is said once the hands stop
+    return app.world?.startWork(spotId, () => this.digCatch(spotId));
   }
 
   /** Look inside a searchable: the kernel draws or keeps today's contents, and a small window shows them (docs/design/SEARCH.md). */
@@ -764,21 +733,6 @@ export class UI {
     const s = app.session;
     if (!s || !digRiddleOpen(app.bundle, s.state, app.bundle.instances[spotId]!.source)) return;
     window.setTimeout(() => this.toast('Not here. Read the stones again.', 'info'), busy?.e === 'busy' ? busy.ms : 0);
-  }
-
-  /** A minigame for one action; every beat swings the arm and makes its sound in the world. */
-  private play(game: Minigame, title: string, nodeId: string, kind: WorkKind, art?: string): Promise<Grade | null> {
-    const s = app.session!;
-    return game(this, {
-      title,
-      scalePct: windowScalePct(app.bundle, s.state),
-      sprite: art,
-      onBeat: (_i, grade) => {
-        buzz(BEAT[grade]);
-        app.world?.beat(nodeId, kind, grade);
-      },
-      onPhase: (phase) => app.world?.fishPhase?.(nodeId, phase),
-    });
   }
 
   craft(station: string): void {

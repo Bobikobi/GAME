@@ -28,8 +28,16 @@ function beside(bundle: Bundle, state: State, node: string): [number, number] {
   throw new Error(`No standing place next to ${node}.`);
 }
 
-function fell(bundle: Bundle, state: State, node: string, tick: number, grade: 0 | 1 | 2 | 3 | 4 = 3): StepResult {
-  return step(bundle, state, { t: 'gather', node, grade, at: beside(bundle, state, node) }, tick);
+/** One unit of a tree: a press takes one log. */
+function fell(bundle: Bundle, state: State, node: string, tick: number): StepResult {
+  return step(bundle, state, { t: 'gather', node, at: beside(bundle, state, node) }, tick);
+}
+
+/** The tree worked to its end, a unit after the last one ended, as the client does with no input. */
+function fellAll(bundle: Bundle, state: State, node: string, tick: number): StepResult {
+  let r = fell(bundle, state, node, tick);
+  while (r.ok && r.state.nodes[node]?.taken !== undefined) r = fell(bundle, r.state, node, r.state.player.busyUntil);
+  return r;
 }
 
 beforeAll(() => {
@@ -57,10 +65,9 @@ describe('felling', () => {
 
   test('felling gives logs, trains woodcutting only and wears the axe', () => {
     const s = begin(b);
-    const r = fell(b, s, tree, 1000);
+    const r = fellAll(b, s, tree, 1000);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.events).toContainEqual({ e: 'gain', item: 'core/log', qty: 3 });
     expect(r.state.player.bag['core/log']).toBe(3);
     expect(r.state.player.xp['core/woodcutting']).toBe(3000);
     expect(r.state.player.xp['core/foraging']).toBeUndefined();
@@ -68,7 +75,7 @@ describe('felling', () => {
   });
 
   test('a felled tree does not give again before it has grown back', () => {
-    const first = fell(b, begin(b), tree, 1000);
+    const first = fellAll(b, begin(b), tree, 1000);
     if (!first.ok) throw new Error(first.error);
     const again = fell(b, first.state, tree, first.state.player.busyUntil);
     expect(again).toEqual({ ok: false, error: 'It has not grown back yet.' });

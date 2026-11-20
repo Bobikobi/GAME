@@ -47,7 +47,6 @@ export interface TreeMemo {
 /** The words for each effect a node can carry, for the number shown when asked for. */
 const EFFECT_WORDS: Record<string, string> = {
   see_ripe: 'Ripe plants show after dark',
-  timing_window_pct: 'Wider good zone in a timing game',
   second_hint: 'A second hint, further away',
   rare_find_pct: 'Rare finds',
   craft_speed_pct: 'Making speed',

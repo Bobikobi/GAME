@@ -106,7 +106,7 @@ What the check does not verify today, and a crafting core needs: that some camp 
 | a tool's tier and uses | tier 1 to 5 ("Better tools work faster"), uses 1 to 1000 | `schema/src/index.ts:101-102` |
 | a recipe | station, active_ms, level 1 to 20 ("Cooking level required."), 1 to 6 inputs, 1 to 4 outputs with `share_pct`, known start or found | `schema/src/index.ts:168-180` |
 | a camp part | slot fire, storage, workshop or shelf; 1 to 6 inputs; an optional station it provides; an optional bag bonus | `schema/src/index.ts:334-344` |
-| technique effects | see_ripe, timing_window_pct, second_hint, rare_find_pct, craft_speed_pct, meal_fill_pct | `schema/src/index.ts:366` |
+| technique effects | see_ripe, gather_speed_pct, dig_speed_pct, second_hint, rare_find_pct, craft_speed_pct, meal_fill_pct | `schema/src/index.ts:366` |
 | a quest | up to 4 required quests, a reward of rep, gold (up to 10,000,000 mg), items and up to 4 recipes; no level gate | `schema/src/index.ts:307-313` |
 | items per file | 40 | `schema/src/index.ts:549` |
 | creator file types | resource, treasure, recipe, npc, quest, restore, camp, starter, items, creator | `schema/src/index.ts:574` |
@@ -263,7 +263,7 @@ All twelve were asked on 2026-10-09 and answered the same day; each answer is an
 | D-CRAFT-9 | Q7 | Where does rare value come from? | "Rare value comes from capacity and gates, paid by work and chance". Count, respawn, hours, level, tool and find tables, under the 10% budget; no event timers. | R6, R7, 8.2, G28 | kernel, check (wave 1) |
 | D-CRAFT-10 | Q10 | What does the workshop make? | "The workshop makes better tools that no shop sells; the 30-gold tools stay". Higher-tier tools come from recipes only; the basket and the trowel keep their price; R8 is untouched. | R8, DECISIONS 2026-10-07 (parked entry) | content (wave 3), docs |
 | D-CRAFT-11 | Q1 | What may money ever buy around crafting? | "Crafting and money: power is never sold; a look may carry a marker for a later premium sale". Nothing crafted is sold or gated for money; a marker is allowed only on look items with no effect, and the check enforces that; the recipe itself is always obtainable in the game. | G28, spec 5:157, 17:765, 6:205 | schema, check (wave 2), roadmap (stage 6) |
-| D-CRAFT-12 | Q2 | How does a non-crafter progress? | "Crafting is optional: a player who never crafts progresses by the roads already written". Hard quests, treasure and digging, riddles, mastery of the minigames, the expedition and reputation; combat comes after the foundation (DECISIONS 2026-10-19, G35); theft only in areas between players once combat comes. | G35, G36, G37, G28, D6 | docs (G38), roadmap |
+| D-CRAFT-12 | Q2 | How does a non-crafter progress? | "Crafting is optional: a player who never crafts progresses by the roads already written". Hard quests, treasure and digging, riddles, the mastery of a school in the skill tree, the expedition and reputation; combat comes after the foundation (DECISIONS 2026-10-19, G35); theft only in areas between players once combat comes. | G35, G36, G37, G28, D6 | docs (G38), roadmap |
 
 ## 6. The build waves, adjusted to the answers
 

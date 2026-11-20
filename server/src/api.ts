@@ -178,16 +178,14 @@ export function isAction(value: unknown): value is Action {
     case 'gather':
       return hasOnlyKeys(value, ['t', 'node', 'grade', 'at'])
         && typeof value.node === 'string'
-        && Number.isSafeInteger(value.grade)
-        && (value.grade as number) >= 0
-        && (value.grade as number) <= 4
+        // a work action carries no grade any more (QUARRYING 10); an old log's grade is still read, and set aside by the kernel
+        && (value.grade === undefined || (Number.isSafeInteger(value.grade) && (value.grade as number) >= 0 && (value.grade as number) <= 4))
         && isTile(value.at);
     case 'dig':
       return hasOnlyKeys(value, ['t', 'spot', 'grade', 'at'])
         && typeof value.spot === 'string'
-        && Number.isSafeInteger(value.grade)
-        && (value.grade as number) >= 0
-        && (value.grade as number) <= 4
+        // a work action carries no grade any more (QUARRYING 10); an old log's grade is still read, and set aside by the kernel
+        && (value.grade === undefined || (Number.isSafeInteger(value.grade) && (value.grade as number) >= 0 && (value.grade as number) <= 4))
         && isTile(value.at);
     case 'search':
       return hasOnlyKeys(value, ['t', 'spot', 'at']) && typeof value.spot === 'string' && isTile(value.at);

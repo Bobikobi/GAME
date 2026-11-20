@@ -29,9 +29,9 @@
       {
         "level": 4,
         "name": "Steady hands",
-        "effect": "timing_window_pct",
+        "effect": "gather_speed_pct",
         "value": 20,
-        "text": "The timing window is 20% wider."
+        "text": "Gathering goes 20% faster."
       }
     ]
   }

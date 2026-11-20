@@ -22,12 +22,12 @@
       {
         "id": "steady-pick",
         "name": "Steady pick",
-        "text": "The good zone of every timing game is wider.",
+        "text": "Every gathering goes faster.",
         "size": "major",
         "needs": [
           "quick-fingers"
         ],
-        "effect": "timing_window_pct",
+        "effect": "gather_speed_pct",
         "value": 15,
         "slot": true,
         "icon": "core/berry"
@@ -35,12 +35,12 @@
       {
         "id": "sure-grip",
         "name": "Sure grip",
-        "text": "The good zone of a timing game is a little wider.",
+        "text": "Gathering goes a little faster.",
         "size": "small",
         "needs": [
           "steady-pick"
         ],
-        "effect": "timing_window_pct",
+        "effect": "gather_speed_pct",
         "value": 5,
         "icon": "core/mushroom"
       },
@@ -77,12 +77,12 @@
       {
         "id": "forest-born",
         "name": "Forest born",
-        "text": "Born under the trees: a timing game hardly hurries you.",
+        "text": "Born under the trees: the picking goes quicker.",
         "size": "corner",
         "needs": [
           "steady-pick"
         ],
-        "effect": "timing_window_pct",
+        "effect": "gather_speed_pct",
         "value": 20,
         "slot": true,
         "race": "core/elf",
