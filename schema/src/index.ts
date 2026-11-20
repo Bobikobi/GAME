@@ -1846,6 +1846,7 @@ export const ParamsBody = Type.Object(
         swing_floor_ms: { ...Bounded, description: "Game milliseconds of the fastest hand swing, whatever its tier or a technique." },
         bare_windup_ms: { ...Bounded, description: "Game milliseconds from a bare-handed strike's start to its landing." },
         bare_base: { ...Bounded, description: "Points a strike of the bare hand takes from a foe; a foe's tier is counted in these (T1 falls in 2)." },
+        tool_strike_permille: { ...Bounded, description: "A tool-only hand's share of bare-hand strike harm, against 1000 (WEAPONS 17 question 3, owner 12.11)." },
         windup_min_ms: { ...Bounded, description: "Game milliseconds of the shortest wind-up a foe's move may have (G31: nobody falls unwarned)." },
         windup_max_ms: { ...Bounded, description: "Game milliseconds of the longest wind-up a foe's move may have: no telegraph so slow that hard is easy." },
         active_ms: { ...Bounded, description: "Game milliseconds a foe's move hits whoever stands in its reach, after its wind-up." },
