@@ -20,7 +20,7 @@ import {
   rarityRank,
   wearReqLevel,
 } from '@game/kernel';
-import { GOODS, RARITIES, TRAIT_SLOTS, type ParamsBody } from '@game/schema';
+import { GOODS, RARITIES, TRAIT_SLOTS, type ChunkFile, type ParamsBody } from '@game/schema';
 import { checkFight } from './fight';
 import { checkWild } from './wild';
 import { assemble, type Assembled } from './assemble';
@@ -79,7 +79,10 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkWear(b));
     issues.push(...checkEquipment(b));
     issues.push(...checkHunt(b, assembled.origin));
-    issues.push(...checkWild(b, assembled.origin));
+    const chunks = files
+      .filter((f) => (f.data as { type: string }).type === 'chunk')
+      .map((f) => ({ chunk: (f.data as unknown as ChunkFile).chunk, file: toRepoPath(f.abs) }));
+    issues.push(...checkWild(b, assembled.origin, chunks));
     issues.push(...checkFight(b, assembled.origin));
     issues.push(...checkDrift(b));
     issues.push(...checkRetiredWords());

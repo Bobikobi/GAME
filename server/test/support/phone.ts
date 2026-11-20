@@ -126,22 +126,24 @@ abstract class Player {
     return this.sendAction(action, tick);
   }
 
-  async gather(node: string, grade: number): Promise<GameEvent[]> {
+  /** A node worked to its end: one request a unit, each the moment the last unit ended, as the client repeats it (QUARRYING 10). */
+  async gather(node: string): Promise<GameEvent[]> {
     const instance = this.bundle.instances[node]!;
     const resource = this.bundle.resources[instance.source]!;
     await this.walkNear({ x: instance.x, y: instance.y, w: 1, h: 1 });
-    const ready = Math.max(this.state.tick, this.state.player.busyUntil, this.state.nodes[node]?.readyAt ?? 0);
-    return this.act(
-      { t: 'gather', node, grade: grade as 0 | 1 | 2 | 3 | 4, at: this.state.player.at },
-      firstOpenTick(this.bundle, ready, resource.hours),
-    );
+    const events: GameEvent[] = [];
+    do {
+      const ready = Math.max(this.state.tick, this.state.player.busyUntil, this.state.nodes[node]?.readyAt ?? 0);
+      events.push(...(await this.act({ t: 'gather', node, at: this.state.player.at }, firstOpenTick(this.bundle, ready, resource.hours))));
+    } while (this.state.nodes[node]?.taken !== undefined);
+    return events;
   }
 
-  async dig(spot: string, grade: number): Promise<GameEvent[]> {
+  async dig(spot: string): Promise<GameEvent[]> {
     const instance = this.bundle.instances[spot]!;
     await this.walkNear({ x: instance.x, y: instance.y, w: 1, h: 1 });
     const ready = Math.max(this.state.tick, this.state.player.busyUntil, this.state.nodes[spot]?.readyAt ?? 0);
-    return this.act({ t: 'dig', spot, grade: grade as 0 | 1 | 2 | 3 | 4, at: this.state.player.at }, ready);
+    return this.act({ t: 'dig', spot, at: this.state.player.at }, ready);
   }
 }
 
@@ -240,10 +242,10 @@ export type Start = (typeof STARTS)[number];
 
 /** What one played run leaves behind besides its books. */
 export interface PlayedRun {
-  /** the reeds the careless pull fell on: its draw is the one number the seed decides alone */
-  careless: string;
-  /** the reeds that pull paid, one or none */
-  drawn: number;
+  /** the searchable the last look fell on: what it held is the one thing the seed decides alone */
+  searched: string;
+  /** the items its day showed, in the order its rows are listed */
+  rows: string[];
 }
 
 function instancesOf(bundle: Bundle, source: string): [string, Bundle['instances'][string]][] {
@@ -262,10 +264,9 @@ function required<T>(value: T | undefined, message: string): T {
  * reward, one felled oak, and at the stall one payment and one sale. Every request is a phone's, in a
  * phone's order, so the log it leaves is a log the server accepted.
  *
- * The last action is one careless pull at the reeds: grade 0 pays nothing by itself, and the draw
- * under it decides whether a reed comes home. It comes last so that the luck shows in the books without
- * changing what the rest of the run costs. The reeds play a minigame; an oak is felled by itself, which
- * reads every grade as 3 and never misses (QUARRYING 10).
+ * The last action is a look into a hollow log: the draws under its rows decide what the day shows. It comes
+ * last so that the luck shows in the books without changing what the rest of the run costs. Work is a click
+ * and a repeating animation, so a node is worked a unit at a time to its end (QUARRYING 10).
  */
 export async function playOpening(wire: Player, start: Start): Promise<PlayedRun> {
   const { bundle } = wire;
@@ -273,19 +274,19 @@ export async function playOpening(wire: Player, start: Start): Promise<PlayedRun
   if (wire.state.player.race !== LEGACY_STARTERS[start.starter]?.race) throw new Error(`The server did not start ${start.starter}.`);
 
   const [own, instance] = required(instancesOf(bundle, start.place)[0], `The map has no ${start.place}.`);
-  if (instance.kind === 'resource') await wire.gather(own, 3);
-  else await wire.dig(own, 3);
+  if (instance.kind === 'resource') await wire.gather(own);
+  else await wire.dig(own);
   if (wire.state.player.quests[start.own] !== 'done') throw new Error(`${start.own} is not done after its own task.`);
 
   const [keystone] = required(instancesOf(bundle, 'core/keystone')[0], 'The map has no keystone.');
-  await wire.gather(keystone, 3);
+  await wire.gather(keystone);
   const bridge = required(findSlot(bundle.map, 'core/old-bridge'), 'The bridge slot is missing.');
   await wire.walkNear(bridge);
   await wire.act({ t: 'restore', restore: 'core/old-bridge', at: wire.state.player.at });
 
   const oaks = instancesOf(bundle, 'core/oak-trees');
   const [oak] = required(oaks[0], 'The map has no oak.');
-  await wire.gather(oak, 3);
+  await wire.gather(oak);
   if ((wire.state.player.bag['core/log'] ?? 0) < 1) throw new Error('The oak gave no log.');
 
   const trader = required(npcTile(bundle, 'core/trader'), 'The trader is missing.');
@@ -295,8 +296,9 @@ export async function playOpening(wire: Player, start: Start): Promise<PlayedRun
   required(salePrice(bundle, wire.state, 'core/log', 1), 'The trader does not buy a log.');
   await wire.act({ t: 'sell', npc: 'core/trader', item: 'core/log', qty: 1, at });
 
-  const careless = required(instancesOf(bundle, 'core/reed-bank')[0], 'The map has no reeds.')[0];
-  const before = wire.state.player.bag['core/reed'] ?? 0;
-  await wire.gather(careless, 0);
-  return { careless, drawn: (wire.state.player.bag['core/reed'] ?? 0) - before };
+  const searched = 'core/hollow-log';
+  const prop = required(bundle.map.props.find((p) => p.id === bundle.searchables[searched]?.place.prop), 'The map has no hollow log.');
+  await wire.walkNear(prop);
+  await wire.act({ t: 'search', spot: searched, at: wire.state.player.at });
+  return { searched, rows: [...(wire.state.searched[searched]?.rows ?? [])] };
 }

@@ -108,6 +108,7 @@ const SLOT_LABEL: Record<WearSlot, string> = {
   legs: 'Legs',
   outfit: 'Outfit',
   feet: 'Feet',
+  hands: 'Gloves',
   jewelry1: 'Jewel 1',
   jewelry2: 'Jewel 2',
   hand: 'Hand',

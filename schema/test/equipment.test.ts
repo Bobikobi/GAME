@@ -4,7 +4,7 @@
  * then the refusals with the path at the field. The check, not the schema, refuses attrs and traits in content.
  */
 import { describe, expect, it } from 'vitest';
-import { FORMAT_VERSION, TRAITS, validateFile } from '../src/index';
+import { FORMAT_VERSION, TRAITS, TRAIT_SLOTS, validateFile } from '../src/index';
 
 const items = (...list: object[]) => ({ format: FORMAT_VERSION, type: 'items', id: 'tester/items', title: 'Items', creator: 'tester', items: list });
 const piece = (wear: object, extra: object = {}) => ({
@@ -50,6 +50,11 @@ describe('the equipment foundation fields', () => {
     expect(TRAITS).toEqual(['cold_proof', 'snow_shod', 'storm_proof', 'ice_grip', 'heat_ward']);
     for (const trait of TRAITS) expect(check({ slot: 'top', trait })).toEqual([]);
     expect(pathsOf({ slot: 'top', trait: 'fire_proof' })).toContain('/items/0/wear/trait');
+  });
+
+  it('takes hands as the tenth wear place and puts ice grip there', () => {
+    expect(check({ slot: 'hands' })).toEqual([]);
+    expect(TRAIT_SLOTS.ice_grip).toEqual(['hands']);
   });
 
   it('a core-shaped item without the new fields still validates (regression guard, passes before by design)', () => {

@@ -7,7 +7,7 @@
   "creator": "core",
   "quest": {
     "type": "mastery",
-    "summary": "Fell a tree for logs and build a campfire across the river. A camp starts with a fire.",
+    "summary": "Build a campfire across the river.",
     "requires": [
       "core/fix-the-bridge"
     ],

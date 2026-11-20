@@ -153,22 +153,26 @@ export class Player {
     return slot as Rect & { id: string };
   }
 
-  /** A gather, waiting for the plant's hours and the node's rest, at the timing grade a player aims for. */
+  /** A node worked to its end, a unit at a time and each the moment the last one ended, waiting for the plant's hours and the node's rest (QUARRYING 10). */
   async gather(node: string): Promise<GameEvent[]> {
     const instance = this.bundle.instances[node];
     if (!instance) throw new Error(`The bundle places no ${node}.`);
     const resource = this.bundle.resources[instance.source];
     if (!resource) throw new Error(`${node} is not a resource.`);
-    const minimum = Math.max(this.tick, this.state.player.busyUntil, this.state.nodes[node]?.readyAt ?? 0);
-    const tick = firstOpenTick(this.bundle, minimum, resource.hours);
-    return this.actNear(this.rectOf(node), (at) => ({ t: 'gather', node, grade: 3, at }), tick);
+    const events: GameEvent[] = [];
+    do {
+      const minimum = Math.max(this.tick, this.state.player.busyUntil, this.state.nodes[node]?.readyAt ?? 0);
+      const tick = firstOpenTick(this.bundle, minimum, resource.hours);
+      events.push(...(await this.actNear(this.rectOf(node), (at) => ({ t: 'gather', node, at }), tick)));
+    } while (this.state.nodes[node]?.taken !== undefined);
+    return events;
   }
 
   async dig(spot: string): Promise<GameEvent[]> {
     const instance = this.bundle.instances[spot];
     if (!instance) throw new Error(`The bundle places no ${spot}.`);
     const minimum = Math.max(this.tick, this.state.player.busyUntil, this.state.nodes[spot]?.readyAt ?? 0);
-    return this.actNear(this.rectOf(spot), (at) => ({ t: 'dig', spot, grade: 3, at }), minimum);
+    return this.actNear(this.rectOf(spot), (at) => ({ t: 'dig', spot, at }), minimum);
   }
 
   async visit(slotId: string, tick?: number): Promise<GameEvent[]> {

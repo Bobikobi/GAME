@@ -16,7 +16,6 @@ import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
 import { FreeWalk, VEC, type Dir } from './walk';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
-import { solveMinigame } from './minigame';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ROOTS: Record<string, string> = { '/play/': join(GAME_DIR, 'dist'), '/play3d/': join(GAME_DIR, 'dist-3d') };
@@ -211,9 +210,10 @@ class Door {
     throw new Error(`could not walk to ${what}`);
   }
 
-  async solveMinigame(): Promise<void> {
-    const shown = await solveMinigame(this.page, this.touch);
-    console.log(`[${this.name}] minigame: ${shown.join(' / ')}`);
+  /** The work one press starts runs by itself: the player only watches it to the node's end (QUARRYING 10). */
+  async watchWork(): Promise<void> {
+    await this.page.waitFor('window.__world3d.working', 'the work to start by itself', 3000);
+    await this.page.waitFor('!window.__world3d.working', 'the work to run out', 60_000);
   }
 
   /** The A button: Enter on a keyboard, the round A on a phone. */
@@ -294,14 +294,14 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     check(moved, 'the character walks in 3D');
     await me.snap('walked3d');
 
-    // 4. gather: walk to a node, the prompt names it, A opens the minigame, the bag grows
+    // 4. gather: walk to a node, the prompt names it, A starts the work, it runs by itself, the bag grows
     // the nearest few, tried in turn: the nearest by distance can lie across water with no way round
     const targets = await page.eval<{ id: string; x: number; y: number; source: string; item: string }[]>(`(() => {
       const g = window.__game, s = g.session, b = g.bundle;
       const near = (i) => Math.abs(i.x - s.pos[0]) + Math.abs(i.y - s.pos[1]);
       const nodes = Object.entries(b.instances)
-        // a minigame node open to anyone at any hour: no tool, no quest it waits on (the keystone), no hours (the moon reeds)
-        .filter(([id, i]) => { const r = b.resources[i.source]; return i.kind === 'resource' && r.game !== undefined && !r.tool && !r.opens_after && !r.hours && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick; })
+        // a node open to anyone at any hour: no tool, no quest it waits on (the keystone), no hours (the moon reeds)
+        .filter(([id, i]) => { const r = b.resources[i.source]; return i.kind === 'resource' && !r.tool && r.work === undefined && !r.opens_after && !r.hours && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick; })
         .sort((x, y) => near(x[1]) - near(y[1]));
       return nodes.slice(0, 6).map((n) => ({ id: n[0], x: n[1].x, y: n[1].y, source: n[1].source, item: b.resources[n[1].source].output }));
     })()`);
@@ -323,10 +323,9 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     check(/^(Gather|Pick|Fell|Dig|Strike|Snap)/i.test(st.prompt), `the prompt names the work: "${st.prompt}"`);
     await me.snap('node3d');
     await me.a();
-    await me.solveMinigame();
+    await me.watchWork();
     await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking', 'the work to end', 45_000);
     const got = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(target.item)}] ?? 0`);
-    // a missed try turns up something else, never nothing: the bag as a whole must have grown
     const total = await page.eval<number>(`Object.values(window.__game.session.state.player.bag).reduce((a, n) => a + n, 0)`);
     check(total > bagBefore, `the work ran under the kernel (${total - bagBefore} item(s) gained; ${target.item}: ${had} -> ${got})`);
     await me.snap('gathered3d');
@@ -349,7 +348,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
       await me.a();
       await page.waitFor('window.__game.session.busy', 'the felling to begin', 8000);
       check(true, 'one press starts the felling and the player is busy');
-      await page.waitFor('!window.__game.session.busy', 'the felling to end', 30_000);
+      await page.waitFor('!window.__world3d.working', 'the felling to run out', 60_000);
       const wood2 = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(tree.item)}] ?? 0`);
       check(wood2 > wood, `the felling ran by itself (${tree.item}: ${wood} -> ${wood2})`);
       await me.snap('felled3d');

@@ -50,8 +50,8 @@ Waits on the kernel fix (GAP_RS_GEAR 11), merged 01.11 (#592), and for its conte
 
 | # | Kind | Id | Page and section | Lands |
 |---|---|---|---|---|
-| 7 | kernel function | the one work predicate, with `playsMinigame` | QUARRYING 10 | QUARRYING pull request 2 |
-| 8 | kernel function | grade 3 on automatic work | QUARRYING 10 | pull request 2 |
+| 7 | kernel function | the one work predicate (built 20.11 as `resourceKind` and `treasureKind` in kernel/src/work.ts; no `playsMinigame`, QUARRYING 10) | QUARRYING 10 | built, DECISIONS 2026-11-20 |
+| 8 | kernel function | ~~grade 3 on automatic work~~ (not built: the kernel reads no grade, QUARRYING 9 and 10) | QUARRYING 10 | none |
 | 9 | kernel function | `bestTool` tie rule | QUARRYING 6 | pull request 2, before rows 14 to 17 |
 | 10 | check row | tool without `work: "mine"` | QUARRYING 2, 16 row 1 | pull request 2 |
 | 11 | check row | required tool reachable | QUARRYING 2, 16 row 2 | pull request 2 |
@@ -63,9 +63,9 @@ Waits on the kernel fix (GAP_RS_GEAR 11), merged 01.11 (#592), and for its conte
 | 17 | recipe | `core/knapped-pick` | QUARRYING 6 | pull request 2 |
 | 18 | schema field | `ResourceBody.finds` | QUARRYING 4.2 | QUARRYING pull request 3 |
 | 19 | kernel function | `pickFind(finds, roll, gradePct, luckPermille, rankOf)` | QUARRYING 4.2 | pull request 3 |
-| 20 | kernel function | side finds in `gather` | QUARRYING 4.2, 9 (the jackpot's one more draw) | pull request 3 |
+| 20 | kernel function | side finds in `gather` (one roll a unit; no jackpot draw) | QUARRYING 4.2 | pull request 3 |
 | 21 | kernel function | `activitiesOf` for nodes with finds | QUARRYING 4.2 | pull request 3 |
-| 22 | param | `jackpot_find_rolls` | QUARRYING 4.2, 9 | pull request 3 |
+| 22 | param | ~~`jackpot_find_rolls`~~ (not built: no jackpot, QUARRYING 9) | QUARRYING 4.2, 9 | none |
 | 23 | check row | finds shape | QUARRYING 4, 16 rows 3-4 | pull request 3 |
 | 24 | check row | V-2 counts node finds | QUARRYING 4, 16 row 5 | pull request 3 |
 | 25 | class | `core/gem` | QUARRYING 3 | QUARRYING pull request 4 |

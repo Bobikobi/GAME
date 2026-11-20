@@ -57,6 +57,7 @@ describe('hazard rules', () => {
     b.params.hazard.predator.bite_pct = 60;
     const text = checkHazards(b, {}).map((i) => i.message).join('\n');
     expect(text).toContain('G34');
+    expect(text).toContain("Gear answers a place's condition; a predator is answered by a run");
   });
 
   it('a predator right at the edge of the town leaves a short run and passes', () => {
