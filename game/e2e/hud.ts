@@ -1,16 +1,16 @@
 /**
- * Proves the HUD's toasts in a real browser, on a phone and on a desktop: the bridge's
- * story box holds the mend's toasts on a phone and lets them go when it closes, two at a
- * time and none dropped, while a desktop shows them beside the box; a bad line goes up
- * ahead of a pickup's calm lines; every toast goes up clear of the player and of the action
- * prompt (on a phone, below the player's feet); and on a phone the chips take the whole width
- * under the meter and the buttons. Every check waits on a condition, never on a fixed time.
+ * Proves the HUD's toasts in a real browser, on a phone on its side and on a desktop: the bridge's
+ * story box never has a toast on top of it, and the mend's toasts go up two at a time and none
+ * dropped; a bad line goes up ahead of a pickup's calm lines; every toast goes up clear of the
+ * player and of the action prompt; and on the phone the chips sit on one line in the top band.
+ * Every check waits on a condition, never on a fixed time.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,6 +54,8 @@ interface Seen {
   most: number;
   /** the most that stood while a dialogue box was open */
   underBox: number;
+  /** toasts that stood on top of the dialogue box's own rectangle */
+  overBox: number;
   /** toasts that went up over the player (the feet's tile and the one above it) */
   onPlayer: number;
   /** toasts that went up over the action prompt */
@@ -73,7 +75,7 @@ window.__hud = (() => {
   const g = () => window.__game;
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const inRect = (x, y, r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
-  const seen = { shown: [], most: 0, underBox: 0, onPlayer: 0, onPrompt: 0, above: 0 };
+  const seen = { shown: [], most: 0, underBox: 0, overBox: 0, onPlayer: 0, onPrompt: 0, above: 0 };
   const known = new Set();
   const cuts = (r, x0, y0, x1, y1) => r.right > x0 && r.left < x1 && r.bottom > y0 && r.top < y1;
   // a toast that goes up must leave the player and the action prompt in view
@@ -85,6 +87,9 @@ window.__hud = (() => {
     const half = (feet.y - head.y) / 4;
     if (cuts(r, feet.x - half, head.y, feet.x + half, feet.y)) seen.onPlayer += 1;
     if (r.top < feet.y) seen.above += 1;
+    const box = document.querySelector('.dialog');
+    const br = box ? box.getBoundingClientRect() : null;
+    if (br && br.height > 0 && cuts(r, br.left, br.top, br.right, br.bottom)) seen.overBox += 1;
     const p = document.querySelector('.prompt');
     const pr = p && !p.hidden ? p.getBoundingClientRect() : null;
     if (pr && pr.height > 0 && cuts(r, pr.left, pr.top, pr.right, pr.bottom)) seen.onPrompt += 1;
@@ -97,7 +102,7 @@ window.__hud = (() => {
   }).observe(document.body, { subtree: true, childList: true });
   return {
     seen() { return seen; },
-    reset() { seen.shown = []; seen.most = 0; seen.underBox = 0; seen.onPlayer = 0; seen.onPrompt = 0; seen.above = 0; },
+    reset() { seen.shown = []; seen.most = 0; seen.underBox = 0; seen.overBox = 0; seen.onPlayer = 0; seen.onPrompt = 0; seen.above = 0; },
     toasts() { return document.querySelectorAll('.toast').length; },
     prompt() { const p = document.querySelector('.prompt'); return p && !p.hidden ? p.textContent : ''; },
     dialog() {
@@ -128,12 +133,12 @@ window.__hud = (() => {
       }
       return null;
     },
-    /** On a phone the chips take the HUD's whole width, under the meter and the buttons. */
+    /** On a phone on its side the meter and the chips sit in one band along the top (style.css .touch-on.landscape .top): the chips stay on one line and inside the screen. */
     chipsRow() {
-      const hud = document.querySelector('.hud').getBoundingClientRect();
-      const row = document.querySelector('.hud-row').getBoundingClientRect();
-      const buttons = document.querySelector('.hud-right').getBoundingClientRect();
-      return { full: row.width >= hud.width - 1, under: row.top >= buttons.bottom };
+      const row = document.querySelector('.hud-row');
+      const kids = [...row.children].map((c) => c.getBoundingClientRect()).filter((r) => r.height > 0);
+      const first = kids[0];
+      return { one: kids.length > 0 && kids.every((r) => Math.abs(r.top - first.top) <= 2), inside: row.getBoundingClientRect().right <= window.innerWidth, chips: kids.length };
     },
   };
 })();
@@ -199,8 +204,9 @@ async function run(page: Page, url: string, phone: boolean): Promise<void> {
   await readThrough(page, 'the opening');
 
   if (phone) {
-    const row = await page.eval<{ full: boolean; under: boolean }>('__hud.chipsRow()');
-    if (!row.full || !row.under) throw new Error(`the chips do not take the width under the meter and the buttons: ${JSON.stringify(row)}`);
+    // re-pinned for the phone on its side (#720): the upright layout put the chips in a row under the meter, the sideways one keeps them on one line in the band
+    const row = await page.eval<{ one: boolean; inside: boolean; chips: number }>('__hud.chipsRow()');
+    if (!row.one || !row.inside) throw new Error(`the chips do not sit on one line inside the screen: ${JSON.stringify(row)}`);
   }
 
   // the bridge mended: one action, its story box, and the toasts it brings
@@ -226,15 +232,17 @@ async function run(page: Page, url: string, phone: boolean): Promise<void> {
   // the box stays open while each of its lines is typed and read: long enough for the toasts to show if they would
   await readThrough(page, 'the story of the bridge');
   const box = await page.eval<Seen>('__hud.seen()');
-  if (phone && box.underBox > 0) throw new Error(`a toast stood over the story box on a phone: ${box.shown.join(' | ')}`);
-  if (!phone && box.underBox === 0) throw new Error('no toast went up beside the story box on a desktop');
+  // re-pinned for the phone on its side (#720): its toasts stand in the band beside the tracker, as on a desktop, not in the low band the
+  // upright phone held back while a box was open; the rule that stays for both is that a toast never stands on the box itself
+  if (box.overBox > 0) throw new Error(`a toast stood on top of the story box: ${box.shown.join(' | ')}`);
+  if (box.underBox === 0) throw new Error('no toast went up beside the story box');
 
   // once the box is closed the mend's toasts go up, two at a time, and every one of them is read
   await page.waitFor(`__hud.toasts() === 0 && __hud.seen().shown.length >= 3`, 'the mend toasts to go up and leave', 20_000);
   const mend = await page.eval<Seen>('__hud.seen()');
   if (mend.most > 2) throw new Error(`${mend.most} toasts stood at once: ${mend.shown.join(' | ')}`);
   if (mend.onPlayer > 0 || mend.onPrompt > 0) throw new Error(`a mend toast went up over the player (${mend.onPlayer}) or the prompt (${mend.onPrompt})`);
-  if (phone && mend.above > 0) throw new Error(`${mend.above} mend toasts went up above the player's feet on a phone, where they sit low`);
+  if (mend.overBox > 0) throw new Error(`${mend.overBox} mend toasts stood on a box`);
   for (const line of ['Old bridge restored', '+30 gold']) {
     if (!mend.shown.includes(line)) throw new Error(`the mend never showed "${line}": ${mend.shown.join(' | ')}`);
   }
@@ -256,7 +264,7 @@ async function run(page: Page, url: string, phone: boolean): Promise<void> {
   const after = await page.eval<Seen>('__hud.seen()');
   if (after.most > 2) throw new Error(`${after.most} toasts stood at once: ${after.shown.join(' | ')}`);
   if (after.onPlayer > 0 || after.onPrompt > 0) throw new Error(`a pickup toast went up over the player (${after.onPlayer}) or the prompt (${after.onPrompt})`);
-  if (phone && after.above > 0) throw new Error(`${after.above} pickup toasts went up above the player's feet on a phone, where they sit low`);
+  if (after.overBox > 0) throw new Error(`${after.overBox} pickup toasts stood on a box`);
   if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
 }
 
@@ -268,7 +276,7 @@ async function main(): Promise<void> {
   const browser = await Browser.launch();
   try {
     for (const [name, viewport] of [
-      ['phone', { width: 390, height: 844, mobile: true }],
+      ['phone', PHONE],
       ['desktop', { width: 1440, height: 900, mobile: false }],
     ] as [string, Viewport][]) {
       const page = await browser.newPage(viewport);
