@@ -68,7 +68,7 @@ export function mountTouch(root: HTMLElement): void {
 
   const orientationCard = h(
     'div',
-    { class: 'layer panel-layer orientation-card-layer', hidden: true },
+    { class: 'layer panel-layer orientation-card-layer' },
     h(
       'section',
       { class: 'panel ui-window orientation-card', role: 'dialog', 'aria-modal': 'true', 'aria-label': LANDSCAPE_CARD },
@@ -76,7 +76,6 @@ export function mountTouch(root: HTMLElement): void {
       h('div', { class: 'panel-body' }, h('p', null, 'The valley waits while you do.')),
     ),
   );
-  root.append(orientationCard);
   const floating = new FloatingStick();
   const rootData = document.documentElement.dataset;
   const side = (): StickSide => (rootData.stickSide === 'right' ? 'right' : 'left');
@@ -103,7 +102,9 @@ export function mountTouch(root: HTMLElement): void {
   const setLandscape = () => {
     document.body.classList.toggle('landscape', landscape.matches);
     const blocked = needsLandscapeCard(window.innerWidth, window.innerHeight, document.body.classList.contains('touch-on'));
-    orientationCard.hidden = !blocked;
+    // mounted only while it is asked for: a hidden layer left in #ui would still be the top window and take A (input.ts topWindow)
+    if (blocked) root.append(orientationCard);
+    else orientationCard.remove();
     app.controls.setPaused(blocked);
     layOut();
   };

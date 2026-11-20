@@ -106,7 +106,7 @@ async function main(): Promise<void> {
   const browser = await Browser.launch();
   const portrait = await browser.newPage(PORTRAIT_PHONE);
   await portrait.goto(`${remote ?? local?.url ?? ''}?debug&rich=none`);
-  await portrait.waitFor(`!document.querySelector('.orientation-card-layer')?.hidden`, 'the upright-phone card');
+  await portrait.waitFor(`!!document.querySelector('#ui > .orientation-card-layer')`, 'the upright-phone card');
   const words = await portrait.eval<string>(`document.querySelector('.orientation-card')?.textContent ?? ''`);
   if (!words.includes('Turn your phone on its side')) throw new Error(`the upright-phone card reads "${words}"`);
   portrait.close();
@@ -114,8 +114,7 @@ async function main(): Promise<void> {
   const page = await browser.newPage(PHONE);
   try {
     await page.goto(`${remote ?? local?.url ?? ''}?debug&rich=none${seedQuery('core/west-bank')}`);
-    await page.waitFor(`!!document.querySelector('.orientation-card-layer')`, 'the orientation card to mount');
-    if (!(await page.eval<boolean>(`document.querySelector('.orientation-card-layer').hidden`))) throw new Error('the orientation card shows on a phone on its side');
+    if (await page.eval<boolean>(`!!document.querySelector('.orientation-card-layer')`)) throw new Error('the orientation card shows on a phone on its side');
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
     await start(page);
     // the tap on Wake up asks for the full view itself (best effort, so a refusal is told, not failed)

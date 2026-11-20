@@ -18,8 +18,8 @@ const ARROW: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'Ar
 /** Art pixels per tile, and the middle of one (`walking.ts` ART_PX). */
 export const ART_PX = 64;
 const MIDDLE = ART_PX / 2;
-/** How far out on the pad the stick is pushed: past the 40% of its width that walks at full speed (`input.ts`). */
-const STICK_OUT = 0.45;
+/** How far the thumb is pushed from where it landed, in CSS px: past the full-speed share of the floating ring (`stick.ts`, the ring is at least 96 px); landscape.ts pushes 60. */
+const STICK_OUT = 60;
 /** How often the feet are read while a direction is held, in ms. */
 const POLL = 25;
 
@@ -119,7 +119,8 @@ export class FreeWalk {
   private held = new Set<Dir>();
   /** the stick's push, while a finger is on the pad */
   private pushed: [number, number] | null = null;
-  private pad: { cx: number; cy: number; w: number } | null = null;
+  /** where the thumb lands to raise the floating stick: left half, below the HUD's band (set once) */
+  private anchor: { x: number; y: number } | null = null;
   private installed = false;
 
   constructor(
@@ -284,7 +285,7 @@ export class FreeWalk {
     }
   }
 
-  /** The phone's stick: a finger at 45% of the pad's width, in the axes' direction; a direction change starts a new one. */
+  /** The phone's floating stick: a finger raised in the left half and pushed 60 px, in the axes' direction; a direction change starts a new one. */
   private async push(ax: number, ay: number): Promise<void> {
     if (ax === 0 && ay === 0) {
       if (!this.pushed) return;
@@ -296,17 +297,18 @@ export class FreeWalk {
     const ux = ax / length;
     const uy = ay / length;
     if (this.pushed && Math.abs(this.pushed[0] - ux) < 1e-9 && Math.abs(this.pushed[1] - uy) < 1e-9) return;
-    if (!this.pad) {
-      this.pad = await this.page.eval<{ cx: number; cy: number; w: number }>(
-        `(() => { const r = document.querySelector('.pad').getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width }; })()`,
+    if (!this.anchor) {
+      this.anchor = await this.page.eval<{ x: number; y: number }>(
+        `(() => { let band = 0; for (const e of document.querySelectorAll('.top > .hud, .top > .tracker')) { const r = e.getBoundingClientRect(); if (r.height > 0) band = Math.max(band, r.bottom); } return { x: 170, y: Math.round((band + window.innerHeight) / 2) + 20 }; })()`,
       );
     }
     if (this.pushed) await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     this.pushed = [ux, uy];
-    const out = this.pad.w * STICK_OUT;
+    // the stick rises under the thumb where it lands and reads no walk; the push is the move from there
+    await this.page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...this.anchor, id: 1 }] });
     await this.page.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: this.pad.cx + ux * out, y: this.pad.cy + uy * out, id: 1 }],
+      type: 'touchMove',
+      touchPoints: [{ x: this.anchor.x + ux * STICK_OUT, y: this.anchor.y + uy * STICK_OUT, id: 1 }],
     });
   }
 
