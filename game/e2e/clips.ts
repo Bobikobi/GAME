@@ -84,7 +84,8 @@ window.__clips = (() => {
       log.length = 0;
       drawn.length = 0;
       g().session.facing = 'down';
-      world.beat('none', kind, 3);
+      const verb = { fell: 'fell', mine: 'quarry', dig: 'dig', fish: 'fish', pick: 'pickup' }[kind];
+      world.playClip(verb);
       clearInterval(timer);
       // the sprite's own texture and frame, read straight off the player's image every 15 ms: what is on the screen, not what was asked of it
       timer = setInterval(() => drawn.push([world.player.texture.key, Number(world.player.frame.name)]), 15);

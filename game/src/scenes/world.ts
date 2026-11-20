@@ -3279,7 +3279,10 @@ export class WorldScene extends Phaser.Scene {
   /** The dark shapes under every fishing spot that has fish, and the line while a cast is on. */
   private drawFishing(s: GameSession, time: number): void {
     if (!this.fishing) return;
-    this.fishSpots ??= Object.keys(this.b.instances).filter((id) => resourceKind(this.b.resources[this.b.instances[id]!.source]!) === 'fish');
+    this.fishSpots ??= Object.keys(this.b.instances).filter((id) => {
+      const r = this.b.resources[this.b.instances[id]!.source];
+      return r !== undefined && resourceKind(r) === 'fish';
+    });
     const view = this.cameras.main.worldView;
     const spots: { id: string; at: { x: number; y: number } }[] = [];
     for (const id of this.fishSpots) {

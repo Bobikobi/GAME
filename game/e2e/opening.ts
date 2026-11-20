@@ -1014,7 +1014,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
     await me.expectWorking('the first swings');
     await sleep(1100);
     await me.snap('swing');
-    // a step away: the work stops, nothing was cut, the tree stands ready
+    // a step away: the work stops, what was cut stays, the tree stands for the rest
     const facing = (await me.state()).facing;
     const away = [OPPOSITE[facing], ...(Object.keys(VEC) as Dir[]).filter((d) => d !== facing && d !== OPPOSITE[facing])];
     let left = false;
@@ -1028,9 +1028,13 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
     }
     if (!left) throw new Error('no free tile to step away to from the tree');
     if (await page.eval<boolean>('__e2e.working()')) throw new Error('the work went on after a step away');
-    if ((await me.bag('core/log')) !== logs0) throw new Error('a step away still cut logs');
+    // what was cut before the step stays in the bag (the tree is not given in one lump), and the tree is not all down
+    const kept = (await me.bag('core/log')) - logs0;
+    if (kept < 0 || kept >= 3) throw new Error(`a step away left ${kept} logs of a tree that holds 3`);
+    await sleep(1500);
+    if ((await me.bag('core/log')) - logs0 !== kept) throw new Error('logs kept coming after a step away');
     if (!(await page.eval<{ id: string; ready: boolean }[]>('__e2e.nodes("core/oak-trees")')).find((n) => n.ready && n.id === oak.id)) throw new Error('the tree is not ready after a step away');
-    log('a step away stopped the felling: no logs, the tree still standing');
+    log(`a step away stopped the felling: ${kept} logs kept, the tree still standing`);
     // one press, no further input: the tree comes down and its logs are in the bag
     await me.walkTo({ x: oak.x, y: oak.y, w: 1, h: 1 }, oak.id);
     await me.expectPrompt(/^Fell tree/, oak.id);
