@@ -12,6 +12,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, type Page } from './cdp';
+import { PHONE, PORTRAIT_PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -26,8 +27,8 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
 };
 
-const W = 800;
-const H = 360;
+const W = PHONE.width;
+const H = PHONE.height;
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -103,9 +104,18 @@ async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
   const local = remote ? null : await serve();
   const browser = await Browser.launch();
-  const page = await browser.newPage({ width: W, height: H, mobile: true });
+  const portrait = await browser.newPage(PORTRAIT_PHONE);
+  await portrait.goto(`${remote ?? local?.url ?? ''}?debug&rich=none`);
+  await portrait.waitFor(`!document.querySelector('.orientation-card-layer')?.hidden`, 'the upright-phone card');
+  const words = await portrait.eval<string>(`document.querySelector('.orientation-card')?.textContent ?? ''`);
+  if (!words.includes('Turn your phone on its side')) throw new Error(`the upright-phone card reads "${words}"`);
+  portrait.close();
+
+  const page = await browser.newPage(PHONE);
   try {
     await page.goto(`${remote ?? local?.url ?? ''}?debug&rich=none${seedQuery('core/west-bank')}`);
+    await page.waitFor(`!!document.querySelector('.orientation-card-layer')`, 'the orientation card to mount');
+    if (!(await page.eval<boolean>(`document.querySelector('.orientation-card-layer').hidden`))) throw new Error('the orientation card shows on a phone on its side');
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
     await start(page);
     // the tap on Wake up asks for the full view itself (best effort, so a refusal is told, not failed)

@@ -8,6 +8,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 import { FreeWalk, VEC, type Dir } from './walk';
 
@@ -360,7 +361,7 @@ async function run(page: Page, url: string): Promise<void> {
 }
 
 async function play(browser: Browser, url: string): Promise<void> {
-  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
+  const page = await browser.newPage(PHONE);
   try {
     await run(page, url);
   } catch (error) {

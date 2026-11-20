@@ -1,6 +1,6 @@
 /**
  * Proves the touch controls' side and size in a real browser (issue #562, Settings > Controls). A phone upright
- * (390 by 844 CSS px) and on its side (844 by 390), touch emulation on, the same page turned between the two. At each
+ * upright and on its side, touch emulation on, the same page rotated between the two. At each
  * view and for every side and size it reads the computed boxes of the stick (the pad upright, the stick zone and its
  * ring on its side), A, B, Sneak, the Bag / Journal / Menu column, and the HUD, and holds them to the bars:
  *
@@ -20,6 +20,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, type Page } from './cdp';
+import { PHONE, PORTRAIT_PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -46,8 +47,8 @@ type Size = 'small' | 'medium' | 'large';
 type ViewName = 'portrait' | 'landscape';
 
 const VIEWS: { name: ViewName; width: number; height: number }[] = [
-  { name: 'portrait', width: 390, height: 844 },
-  { name: 'landscape', width: 844, height: 390 },
+  { name: 'portrait', width: PORTRAIT_PHONE.width, height: PORTRAIT_PHONE.height },
+  { name: 'landscape', width: PHONE.width, height: PHONE.height },
 ];
 const SIDES: Side[] = ['left', 'right'];
 const SCALE: Record<Size, number> = { small: 0.85, medium: 1, large: 1.2 };
@@ -57,7 +58,7 @@ const FLOOR = 44;
 
 /**
  * Develop's own boxes with nothing stored (K1), in CSS px, read from a build of develop's `game/src` (the branch's
- * source change reversed) by `E2E_DUMP=<file> tsx game/e2e/controls.ts` on 2026-11-14, at 390 x 844 and 844 x 390.
+ * source change reversed) by `E2E_DUMP=<file> tsx game/e2e/controls.ts` on 2026-11-14 at both phone orientations.
  * The stick's ring (landscape) is read for its size only (its place is wherever a thumb raises it, so x and y are 0 here).
  */
 const DEVELOP: Record<ViewName, Boxes> = {

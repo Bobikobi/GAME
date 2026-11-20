@@ -2,8 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { STICK_DEAD, STICK_FULL, stickFrom } from '../src/input';
 import { BUTTON_SCALE } from '../src/settings';
 import { FloatingStick, GAP, MIN_TAP, type Placed, STICK_RING, controlsLayout, inZone, stickZone } from '../src/ui/stick';
+import { needsLandscapeCard } from '../src/ui/touch';
 
 const zone = stickZone(800, 360, 90);
+
+describe('the phone orientation card', () => {
+  it('shows only for an upright touch viewport', () => {
+    expect(needsLandscapeCard(390, 844, true)).toBe(true);
+    expect(needsLandscapeCard(844, 390, true)).toBe(false);
+    expect(needsLandscapeCard(390, 844, false)).toBe(false);
+  });
+});
 
 describe('the floating stick', () => {
   it('takes the left half below the HUD band', () => {

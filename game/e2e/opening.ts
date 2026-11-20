@@ -22,6 +22,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { PHONE } from './viewports';
 import { FreeWalk, OPPOSITE, VEC, type Dir } from './walk';
 import { LUCKY_BOWL, type WakePocket, seedQuery } from './wakes';
 
@@ -1454,11 +1455,11 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
 }
 
 const RUNS: Run[] = [
-  { name: 'phone', viewport: { width: 390, height: 844, mobile: true }, race: 'Elf', pocket: 'core/west-bank' },
+  { name: 'phone', viewport: PHONE, race: 'Elf', pocket: 'core/west-bank' },
   { name: 'desktop', viewport: { width: 1280, height: 800, mobile: false }, race: 'Human', pocket: 'core/north-meadow' },
   { name: 'slid-bank', viewport: { width: 1280, height: 800, mobile: false }, race: 'Skeleton', pocket: 'core/slid-bank', toBridge: true },
   // E2E_ONLY=phone-lucky: the phone run on the lucky-bowl seed, to the stew
-  { name: 'phone-lucky', viewport: { width: 390, height: 844, mobile: true }, race: 'Elf', pocket: LUCKY_BOWL.pocket, lucky: true },
+  { name: 'phone-lucky', viewport: PHONE, race: 'Elf', pocket: LUCKY_BOWL.pocket, lucky: true },
 ];
 
 async function main(): Promise<void> {

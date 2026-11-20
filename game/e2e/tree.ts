@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import type { Bundle } from '@game/kernel';
 import { bigTree } from '../../tools/test/helpers/bigtree';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { PHONE_3X } from './viewports';
 import { TAKE_GROUND, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -357,7 +358,7 @@ async function desktop(page: Page, url: string): Promise<void> {
 
 async function phone(page: Page, url: string): Promise<void> {
   const log = (msg: string) => console.log(`[phone] ${msg}`);
-  await newGame(page, url, { width: 390, height: 844, mobile: true, scale: 3 }, 'Elf');
+  await newGame(page, url, PHONE_3X, 'Elf');
   await toTown(page, url);
   const facts = await treeFacts(page);
   await openTree(page);
@@ -469,7 +470,7 @@ async function main(): Promise<void> {
   try {
     for (const [name, viewport, run] of [
       ['desktop', { width: 1440, height: 900, mobile: false }, desktop],
-      ['phone', { width: 390, height: 844, mobile: true, scale: 3 }, phone],
+      ['phone', PHONE_3X, phone],
     ] as [string, Viewport, (page: Page, url: string) => Promise<void>][]) {
       const page = await browser.newPage(viewport);
       try {

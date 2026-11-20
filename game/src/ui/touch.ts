@@ -22,10 +22,12 @@ import { h } from './dom';
 import { TAP, buzz } from './haptics';
 import { type ControlsLayout, FloatingStick, type Placed, controlsLayout, stickZone } from './stick';
 
-/** The one line a portrait phone may show once, after it wakes (dismissable, never over the world's middle). */
-export const ROTATE_HINT = 'Turn your phone for the full view';
-const HINT_KEY = 'loomvale.rotate-hint';
-const HINT_MS = 10_000;
+export const LANDSCAPE_CARD = 'Turn your phone on its side';
+
+/** Touch is the device signal: a tall desktop window must keep playing normally. */
+export function needsLandscapeCard(width: number, height: number, touch: boolean): boolean {
+  return touch && width < height;
+}
 
 /** The column's glyphs, drawn in the button's own colour: a satchel, a bound book, the menu's three lines. */
 const ICONS = {
@@ -57,26 +59,24 @@ export function mountTouch(root: HTMLElement): void {
   const el = h('div', { class: 'touch' }, zone, stick, pad, h('div', { class: 'tbtns' }, sneak, b, a, bag, journal, menu));
   root.append(el);
 
-  const show = () => document.body.classList.add('touch-on');
+  const show = () => {
+    document.body.classList.add('touch-on');
+    window.dispatchEvent(new Event('resize'));
+  };
   if (matchMedia('(pointer: coarse)').matches) show();
   window.addEventListener('touchstart', show, { once: true, passive: true });
 
-  // the portrait hint, once a device: under the tracker, gone at its cross, at a turn, or after ten seconds
-  const hint = h(
+  const orientationCard = h(
     'div',
-    { class: 'rotate-hint', hidden: true },
-    h('span', null, ROTATE_HINT),
-    h('button', { class: 'rotate-hint-x', type: 'button', 'aria-label': 'Dismiss' }, '×'),
+    { class: 'layer panel-layer orientation-card-layer', hidden: true },
+    h(
+      'section',
+      { class: 'panel ui-window orientation-card', role: 'dialog', 'aria-modal': 'true', 'aria-label': LANDSCAPE_CARD },
+      h('header', null, h('div', { class: 'panel-head' }, h('h2', { class: 'ui-plaque' }, LANDSCAPE_CARD))),
+      h('div', { class: 'panel-body' }, h('p', null, 'The valley waits while you do.')),
+    ),
   );
-  const top = root.querySelector('.top');
-  top?.insertBefore(hint, top.querySelector('.toasts'));
-  function hideHint(): void {
-    hint.hidden = true;
-  }
-  hint.querySelector('button')?.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    hideHint();
-  });
+  root.append(orientationCard);
   const floating = new FloatingStick();
   const rootData = document.documentElement.dataset;
   const side = (): StickSide => (rootData.stickSide === 'right' ? 'right' : 'left');
@@ -102,11 +102,13 @@ export function mountTouch(root: HTMLElement): void {
   const landscape = matchMedia('(orientation: landscape)');
   const setLandscape = () => {
     document.body.classList.toggle('landscape', landscape.matches);
-    if (landscape.matches) hideHint();
+    const blocked = needsLandscapeCard(window.innerWidth, window.innerHeight, document.body.classList.contains('touch-on'));
+    orientationCard.hidden = !blocked;
+    app.controls.setPaused(blocked);
     layOut();
   };
   landscape.addEventListener('change', setLandscape);
-  window.addEventListener('resize', layOut);
+  window.addEventListener('resize', setLandscape);
   new MutationObserver(layOut).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-stick-side', 'data-button-size'],
@@ -217,26 +219,6 @@ export function mountTouch(root: HTMLElement): void {
   // lifting would land on the window A just opened (and close it)
   for (const el of [pad, zone, a, b, sneak, bag, journal, menu]) el.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
 
-  const offerHint = () => {
-    if (!document.body.classList.contains('touch-on') || landscape.matches || !top) return;
-    try {
-      if (localStorage.getItem(HINT_KEY)) return;
-      localStorage.setItem(HINT_KEY, '1');
-    } catch {
-      return;
-    }
-    hint.hidden = false;
-    window.setTimeout(hideHint, HINT_MS);
-  };
-
-  // the world is entered once the title closes: there a portrait phone may offer its hint (the full view is asked
-  // earlier, by the tap on Continue or Wake up itself, in title.ts)
-  let atTitle = document.body.classList.contains('at-title');
-  new MutationObserver(() => {
-    const now = document.body.classList.contains('at-title');
-    if (atTitle && !now) offerHint();
-    atTitle = now;
-  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 }
 
 /**
