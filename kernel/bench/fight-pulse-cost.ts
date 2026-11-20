@@ -4,9 +4,16 @@ import { type FightInput, type FightWorld, fightCreature, fightPlayer, fightTick
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { fightArena, playedState } from '../test/fight-scripts.js';
 
-const warmup = 200, samples = 2000, players = 200;
+const selected = (name: string, fallback: number[]): number[] =>
+  (process.env[name]?.split(',').map(Number) ?? fallback).map((n) => {
+    if (!Number.isSafeInteger(n) || n <= 0) throw new Error(`${name} must contain positive integers.`);
+    return n;
+  });
+const warmup = selected('FIGHT_PULSE_WARMUP', [200])[0]!;
+const samples = selected('FIGHT_PULSE_SAMPLES', [2000])[0]!;
+const runs = selected('FIGHT_PULSE_RUNS', [5])[0]!;
 
-function observation(tickMs: number): number {
+function observation(tickMs: number, players: number): number {
   const b = fightArena(loadBundle());
   b.params.wild.tick_ms = tickMs;
   let world: FightWorld = { players: {}, creatures: {} };
@@ -47,11 +54,13 @@ function observation(tickMs: number): number {
   return timings[Math.ceil(samples / 2) - 1]!;
 }
 
-for (const tickMs of [100, 50, 33]) {
-  const runs = Array.from({ length: 5 }, () => observation(tickMs));
-  const sorted = [...runs].sort((a, z) => a - z);
-  const median = sorted[2]!;
-  const hz = 1000 / tickMs;
-  const core = median * hz / 10000;
-  process.stdout.write(`${tickMs} ms | runs ${runs.map((n) => n.toFixed(2)).join(', ')} us | median ${median.toFixed(2)} us | ${hz.toFixed(3)} pulses/s | ${core.toFixed(3)}% core\n`);
+for (const players of selected('FIGHT_PULSE_PAIRS', [200])) {
+  for (const tickMs of selected('FIGHT_PULSE_MS', [100, 50, 33])) {
+    const observations = Array.from({ length: runs }, () => observation(tickMs, players));
+    const sorted = [...observations].sort((a, z) => a - z);
+    const median = sorted[Math.ceil(runs / 2) - 1]!;
+    const hz = 1000 / tickMs;
+    const core = median * hz / 10000;
+    process.stdout.write(`${players} pairs | ${tickMs} ms | runs ${observations.map((n) => n.toFixed(2)).join(', ')} us | median ${median.toFixed(2)} us | ${hz.toFixed(3)} pulses/s | ${core.toFixed(3)}% core\n`);
+  }
 }

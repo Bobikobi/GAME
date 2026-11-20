@@ -92,3 +92,42 @@ The existing balance concern is left as recorded: one 8-point bare-hand strike
 in the wolf's lunge-recovery window is doubled to 16 and fells its full 16 HP
 (the unchanged weak-window test at tick 9 is the smallest case). No new combat
 rule fault was found.
+
+## 20 November 2026 - the pulse at 200 pairs
+
+Measured on a 13th Gen Intel Core i5-13420H under Linux x86_64 with Node
+v22.22.1. Each observation has 200 warm-up pulses and 2,000 measured pulses;
+each row below is the median of five observations. Times are observations,
+never test assertions. The selectable bench command was:
+`FIGHT_PULSE_PAIRS=20,50,100,200 FIGHT_PULSE_MS=50 node --import tsx kernel/bench/fight-pulse-cost.ts`.
+
+| pairs | median µs | relative to 20 pairs |
+| ---: | ---: | ---: |
+| 20 | 544.69 | 1.00× |
+| 50 | 2057.74 | 3.78× |
+| 100 | 4742.24 | 8.71× |
+| 200 | 11953.38 | 21.94× |
+
+The growth is superlinear but not quadratic: ten times the pairs cost 21.94
+times as much (an empirical exponent of about 1.34), not the 100 times a
+quadratic shape would predict. A separate run of the unchanged default bench
+at 200 pairs measured 12.797, 19.845 and 14.400 ms medians for 100, 50 and 33
+ms pulse lengths respectively; the configured pulse length does not own the
+work.
+
+A V8 CPU profile used one 100-pulse warm-up and 500 measured 50 ms pulses at
+200 pairs. Shares below are normalized to samples inside `fightTick`: `finish`
+38.26%, `nearbyPlayers` 21.82%, `fightTick` self-time 6.30%, `engage` 1.81%,
+and `patternMoves` 0.98%. The fallen-foe rest-clock writes are inside `finish`,
+so the suspected cause cannot own more than its 38.26% phase. No single cause
+owned half the pulse; by the profiling brief, the kernel was not changed.
+
+| state | 200-pair median | result |
+| --- | ---: | --- |
+| before | 11.953 ms | above the 5 ms target |
+| after | not measured | no qualifying cause and no kernel change |
+
+The next step is to split `finish` and proximity/engagement into finer phase
+timers, then optimize only a phase that independently crosses the half-pulse
+bar. The existing structural-sharing test already pins the rule that a fallen
+foe's rest reaches every account while preserving its old node map and bag.
