@@ -543,7 +543,7 @@ WEAPONS 5.3 makes its 18 hands the first slice and lets the matrix rename them. 
 | WEAPONS 6.1, a launcher's harm half its cell | Priced shapes push the top pair past the priced cell | The priced cell minus the tier's top (section 2). |
 | WEAPONS 6.2 and HUNT_FAMILIES 3a :256: shaped stones at the workbench | A recipe names a station kind and needs a part of at least its tier (kernel/src/step.ts:792; tools/src/check.ts:432); it cannot name the workbench | The workshop kind at tier 1: the work stone or any better workshop. |
 | WEAPONS 13 and 16, no shop sells a weapon of tier 2 or more; the built tier-3 shop row (tools/src/check.ts:455-467) | None | Kept: five tier-1 forms are sold (the knife, the club, the quarterstaff, the throwing stones, the sling); shops by town rank are owner question 10. |
-| WEAPONS owner question 2 (duals) with `dual_use_max` 4 and `tool.tier` 1 to 5 (schema/src/index.ts:238) | A dual at every tier of three forms would pass both | Duals on the first rungs only: the sling at 1, the spear at 2, the bow at 3 (owner question 12). |
+| WEAPONS owner question 2 (duals) with `dual_use_max` 1 and `tool.tier` 1 to 5 (schema/src/index.ts:238) | More than one dual would pass the old cap | The spear's first rung alone is dual; the sling and the bow are separate fight hands (owner question 12). |
 | `Word`: a family is lowercase, at most 24 characters (schema/src/index.ts:117); an id matches `ID_PATTERN` (:18) | 49 form names as family words; 407 ids | Checked: every form name fits, every id matches. |
 | HUNT_LADDER's spear (tools/src/balance/hunt-ladder.json) | Its inputs break the skeleton into tier 3 | The spear's tier 2 to 3 is the skeleton's one exception. |
 
