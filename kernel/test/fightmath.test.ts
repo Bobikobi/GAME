@@ -1,6 +1,6 @@
 /** The arithmetic of a fight that content is held to (COMBAT 4.9), on the core's wolf. */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { type Bundle, cycleHarm, cycleTicks, feltMs, hitsToFell, moveHarm, windowsPerCycle } from '@game/kernel';
+import { type Bundle, cycleHarm, cycleTicks, feltMs, handStrikeHarm, hitsToFell, moveHarm, windowsPerCycle } from '@game/kernel';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
 let b: Bundle;
@@ -9,6 +9,17 @@ beforeAll(() => {
 });
 
 describe('fight arithmetic', () => {
+  it('reads bare, tool-only and weapon hands without changing bare or weapon harm', () => {
+    const params = structuredClone(b.params);
+    params.combat.bare_base = 21;
+    const bare = params.combat.bare_base;
+    const tool = b.items['core/walking-staff']!;
+    const weapon = { ...tool, weapon: { tempo: 'quick' as const, windup_ms: 300, reach: 1, harm: 32 } };
+    expect(handStrikeHarm(params, undefined)).toBe(bare);
+    expect(handStrikeHarm(params, tool)).toBe(22);
+    expect(handStrikeHarm(params, weapon)).toBe(bare);
+  });
+
   it('counts the wolf in hits of a starter hand', () => {
     const f = b.map.creatures!.kinds['core/wolf']!.fight!;
     expect(hitsToFell(b.params, f)).toBe(2);

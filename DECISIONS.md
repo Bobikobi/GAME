@@ -4536,3 +4536,7 @@ The card `clothing-look-1120` showed the same human in the same outfit three way
 ## 2026-11-21 ✅ Only the spear is dual; the sling and the bow fight as their own items (#710)
 **What and why:** `dual_use_max` is one and the spear's first rung is its only member; the sling and the bow remain separate hunt take tools and fight hands, following the owner's 12.11 answer to WEAPONS 17 question 2, pick C.
 **Retry when:** the owner changes which take tools also fight, or a later named recipe needs a second dual slot. **Model:** Codex. **Link:** public tracker #710.
+## 2026-11-21 ✅ A work tool fights one small step above bare hands (#710)
+
+Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
+The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).

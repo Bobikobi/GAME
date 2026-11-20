@@ -20778,6 +20778,7 @@
                 "swing_floor_ms",
                 "bare_windup_ms",
                 "bare_base",
+                "tool_strike_permille",
                 "windup_min_ms",
                 "windup_max_ms",
                 "active_ms",
@@ -20996,6 +20997,33 @@
                     }
                   },
                   "description": "Points a strike of the bare hand takes from a foe; a foe's tier is counted in these (T1 falls in 2)."
+                },
+                "tool_strike_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A tool-only hand's share of bare-hand strike harm, against 1000 (WEAPONS 17 question 3, owner 12.11)."
                 },
                 "windup_min_ms": {
                   "additionalProperties": false,
