@@ -27,6 +27,7 @@ import type {
   SeaEventDef as SeaEventBody,
   Shop,
   Treasure,
+  WearSetDef,
 } from '@game/schema';
 
 export type { BodyEffectName } from '@game/schema';
@@ -43,6 +44,8 @@ export interface Meta {
 export type ItemInfo = ItemDef & { creator: string; file: string };
 /** A class an extension declares under a base class (DECISIONS.md, 2026-10-09). */
 export type ClassInfo = ClassDef & { creator: string; file: string };
+/** A clothing set's content-owned full-set bonus. */
+export type WearSetInfo = WearSetDef & { creator: string; file: string };
 export type ResourceDef = Meta & Resource;
 export type TreasureDef = Meta & Treasure;
 export type SearchDef = Meta & Search;
@@ -131,8 +134,6 @@ export interface Params {
   craft_miss_keep_pct: number;
   /** the largest value of one worn effect, by item tier from tier 1 (the last entry holds above) */
   wear_effect_max_pct: number[];
-  /** what a full set adds to its pieces' effects, in percent */
-  wear_set_bonus_pct: number;
   /** the level a worn piece's `req` asks, by item tier from tier 1 (the last entry holds above; PROGRESSION 5.6) */
   wear_req_level: number[];
   /** the largest bonus a worn piece gives one attribute, by item tier from tier 1 (PROGRESSION 5.6) */
@@ -288,6 +289,8 @@ export interface Bundle {
   tag: string;
   params: Params;
   items: Record<string, ItemInfo>;
+  /** Clothing sets and the bonus unique to each one, by set id. */
+  sets: Record<string, WearSetInfo>;
   /** Classes declared by extensions, by id. The base classes are fixed in the schema. */
   classes: Record<string, ClassInfo>;
   resources: Record<string, ResourceDef>;

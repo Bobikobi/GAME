@@ -731,10 +731,10 @@ export function setComplete(bundle: Bundle, state: PublicState, set: string): bo
   return pieces.length > 1 && pieces.every((id) => worn.includes(id));
 }
 
-/** Sum of an effect from the work clothes: each worn piece once, and a full set a little more (rounded down). */
+/** Sum of an effect from the work clothes: each worn piece once, plus each complete set's own bonus. */
 export function wornValue(bundle: Bundle, state: PublicState, effect: string): number {
   let total = 0;
-  const bySet: Record<string, number> = {};
+  const wornSets = new Set<string>();
   for (const slot of WEAR_SLOTS) {
     const id = state.player.worn[slot];
     const w = id === undefined ? undefined : bundle.items[id]?.wear;
@@ -742,11 +742,12 @@ export function wornValue(bundle: Bundle, state: PublicState, effect: string): n
     for (const e of w.effects ?? []) {
       if (e.effect !== effect) continue;
       total += e.value;
-      if (w.set) bySet[w.set] = (bySet[w.set] ?? 0) + e.value;
     }
+    if (w.set) wornSets.add(w.set);
   }
-  for (const set of Object.keys(bySet).sort()) {
-    if (setComplete(bundle, state, set)) total += mulDiv(bySet[set]!, bundle.params.wear_set_bonus_pct, 100);
+  for (const id of [...wornSets].sort()) {
+    const set = bundle.sets[id];
+    if (set?.effect === effect && setComplete(bundle, state, id)) total += set.value;
   }
   return total;
 }

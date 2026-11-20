@@ -51,6 +51,24 @@ describe('worn items', () => {
   });
 });
 
+describe('clothing sets', () => {
+  const set = (body: object) => ({
+    format: FORMAT_VERSION,
+    type: 'set',
+    id: 'tester/field',
+    title: 'Field set',
+    creator: 'tester',
+    set: body,
+  });
+
+  it('accepts one content-owned worn effect and a positive whole-number bonus', () => {
+    expect(validateFile(set({ id: 'tester/field', effect: 'gather_speed_pct', value: 2 }))).toEqual([]);
+    expect(validateFile(set({ id: 'tester/field', effect: 'meal_fill_pct', value: 2 }))).not.toEqual([]);
+    expect(validateFile(set({ id: 'tester/field', effect: 'gather_speed_pct', value: 0 }))).not.toEqual([]);
+    expect(validateFile(set({ id: 'tester/field', effect: 'gather_speed_pct', value: 1.5 }))).not.toEqual([]);
+  });
+});
+
 describe('the miss', () => {
   it('accepts a share of the inputs', () => {
     expect(validateFile(recipe({ keep_pct: 25 }))).toEqual([]);

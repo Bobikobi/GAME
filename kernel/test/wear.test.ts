@@ -14,7 +14,6 @@ import {
   WEAR_SLOTS,
   type WearSlot,
   effectValue,
-  mulDiv,
   newState,
   npcTile,
   setComplete,
@@ -30,6 +29,8 @@ let trader: string;
 
 beforeAll(() => {
   b = structuredClone(loadBundle());
+  b.sets['x/field'] = { id: 'x/field', effect: 'gather_speed_pct', value: 2, creator: 'x', file: 'test' };
+  b.sets['x/workshop'] = { id: 'x/workshop', effect: 'craft_speed_pct', value: 3, creator: 'x', file: 'test' };
   const wearable = (id: string, cls: string, wear: WearDef, extra: object = {}) => {
     b.items[id] = { ...structuredClone(b.items['core/branch']!), id, name: id, class: cls, tier: 1, wear, ...extra };
     b.values[id] = b.values['core/branch']! * 4;
@@ -37,6 +38,8 @@ beforeAll(() => {
   wearable('x/cap', 'garment', { slot: 'head', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'x/field' });
   wearable('x/smock', 'garment', { slot: 'top', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'x/field' });
   wearable('x/trousers', 'garment', { slot: 'legs' });
+  wearable('x/work-trousers', 'garment', { slot: 'legs', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'x/workshop' });
+  wearable('x/work-boots', 'garment', { slot: 'feet', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'x/workshop' });
   wearable('x/overall', 'garment', { slot: 'outfit', effects: [{ effect: 'dig_speed_pct', value: 5 }] });
   wearable('x/ring', 'jewelry', { slot: 'jewelry', effects: [{ effect: 'craft_chance_pct', value: 5 }] });
   wearable('x/crown', 'garment', { slot: 'head', look: true }, { premium_later: true });
@@ -165,18 +168,27 @@ describe('wearing', () => {
 });
 
 describe('worn effects', () => {
-  test('add up through the one calculator, and a full set adds its bonus', () => {
+  test('a full set applies its own bonus, while a half set applies none', () => {
     const cap = wear(started({ 'x/cap': 1, 'x/smock': 1, 'core/basket': 1 }), 'x/cap');
     expect(wornValue(b, cap, 'gather_speed_pct')).toBe(5);
     expect(setComplete(b, cap, 'x/field')).toBe(false);
     const set = wear(cap, 'x/smock');
     expect(setComplete(b, set, 'x/field')).toBe(true);
-    const bonus = mulDiv(10, b.params.wear_set_bonus_pct, 100);
-    expect(wornValue(b, set, 'gather_speed_pct')).toBe(10 + bonus);
+    expect(wornValue(b, set, 'gather_speed_pct')).toBe(12);
     const hand = wear(set, 'core/basket');
     expect(hand.player.worn.hand).toBe('core/basket');
-    expect(effectValue(b, hand, 'gather_speed_pct')).toBe(15 + bonus);
+    expect(effectValue(b, hand, 'gather_speed_pct')).toBe(17);
     expect(effectValue(b, hand, 'craft_chance_pct')).toBe(0);
+  });
+
+  test('two complete sets give different bonuses, and only on their own effects', () => {
+    const half = wear(started({ 'x/work-trousers': 1, 'x/work-boots': 1 }), 'x/work-trousers');
+    expect(wornValue(b, half, 'gather_speed_pct')).toBe(5);
+    expect(wornValue(b, half, 'craft_speed_pct')).toBe(0);
+    const whole = wear(half, 'x/work-boots');
+    expect(wornValue(b, whole, 'gather_speed_pct')).toBe(10);
+    expect(wornValue(b, whole, 'craft_speed_pct')).toBe(3);
+    expect(b.sets['x/workshop']!.value).not.toBe(b.sets['x/field']!.value);
   });
 
   test('speed the work only inside the power cap', () => {

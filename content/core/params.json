@@ -130,12 +130,6 @@
       8,
       12
     ],
-    "wear_set_bonus_pct": {
-      "value": 20,
-      "min": 0,
-      "max": 50,
-      "step": 5
-    },
     "wear_req_level": [
       1,
       6,
