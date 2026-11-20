@@ -4532,3 +4532,7 @@ The card `clothing-look-1120` showed the same human in the same outfit three way
 **The manager's reading (the owner corrects):** the frame is B, layers by wear place, because ten places mix freely (CLOTHING; DECISIONS 2026-11-12 "a tenth place"); a piece's colours come by C's mask, so a hide's colour passes into the garment with no new drawing (DECISIONS 2026-11-12 "a hide's colour is final"); A is kept for fixed outfits, full sets and the world's people. His two notes are bars for the build: a hat's shape reads as a hat, not the hair; no piece covers the chin or the face.
 **Not built now** (engine first, figure details wait): the build is a production item on public #754. The cost of B by drawing is over the PixelLab balance (3,788 on 20.11), so the build starts with the layer from a 3D render or key frames plus mask, measured on one clip first.
 **Retry when:** the owner picks one of the three outright, or a measured clip shows layers cost more than whole drawings per outfit. Model: claude-opus-5-5 (manager). Link: public #754, the card's stills in `feat-clothing-look/.scratch/clothing-look/final/`.
+## 2026-11-21 ✅ A work tool fights one small step above bare hands (#710)
+
+Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
+The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).

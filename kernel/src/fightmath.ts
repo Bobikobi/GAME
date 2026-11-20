@@ -3,6 +3,7 @@
  * The check, the fight and the cost-gate test all read these, so they cannot drift apart. Damage is exact (G79): no
  * chance decides a hit, so a tier is a count of hits and a pattern's harm is a sum.
  */
+import type { ItemDef } from '@game/schema';
 import type { Bundle, Params } from './bundle';
 import { idiv, idivUp } from './num';
 
@@ -70,6 +71,13 @@ export function movePulseTimeline(params: Params, move: MoveDef) {
 /** Hits of a starter hand that fell a foe: its health over the bare hand's points. */
 export function hitsToFell(params: Params, fight: FightDef): number {
   return idivUp(fight.hp, params.combat.bare_base);
+}
+
+/** Harm of the thing in the hand: only a tool without a weapon block steps above the unchanged bare base. */
+export function handStrikeHarm(params: Params, hand: Pick<ItemDef, 'tool' | 'weapon'> | undefined): number {
+  if (!hand?.tool || hand.weapon) return params.combat.bare_base;
+  // Per-mille combat arithmetic is integer-only; a fractional point is deliberately floored.
+  return idiv(params.combat.bare_base * params.combat.tool_strike_permille, 1000);
 }
 
 /** The health a move takes from a player whose bar tops at `cap` milli-points: the cap over the move's divisor. */
