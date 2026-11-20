@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schema/json/set.schema.json",
+  "format": 1,
+  "type": "set",
+  "id": "core/reed-walker",
+  "title": "Reed-walker set",
+  "creator": "core",
+  "set": {
+    "id": "core/reed-walker",
+    "effect": "gather_speed_pct",
+    "value": 2
+  }
+}

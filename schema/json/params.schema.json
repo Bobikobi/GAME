@@ -544,7 +544,7 @@
               "set": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
-                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "description": "A set declared in content: when every piece is worn, that set's own effect and value apply.",
                 "type": "string"
               },
               "places": {
@@ -846,7 +846,6 @@
         "craft_luck_max_permille",
         "craft_miss_keep_pct",
         "wear_effect_max_pct",
-        "wear_set_bonus_pct",
         "wear_req_level",
         "attr_bonus_max",
         "attr_bonus_step",
@@ -1441,33 +1440,6 @@
             "maximum": 100,
             "type": "integer"
           }
-        },
-        "wear_set_bonus_pct": {
-          "additionalProperties": false,
-          "type": "object",
-          "required": [
-            "value",
-            "min",
-            "max",
-            "step"
-          ],
-          "properties": {
-            "value": {
-              "type": "integer"
-            },
-            "min": {
-              "type": "integer"
-            },
-            "max": {
-              "type": "integer"
-            },
-            "step": {
-              "minimum": 0,
-              "description": "Largest change one decision may make.",
-              "type": "integer"
-            }
-          },
-          "description": "How much a full set adds to the effects of its pieces, in percent of their sum, rounded down."
         },
         "wear_req_level": {
           "minItems": 1,
