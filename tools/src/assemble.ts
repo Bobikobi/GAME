@@ -194,6 +194,7 @@ export function flattenParams(p: ParamsBody): Params {
       dress_step_ms: p.hunt.dress_step_ms.value,
       meat_spoil_d: p.hunt.meat_spoil_d.value,
       hide_spoil_d: p.hunt.hide_spoil_d.value,
+      tan_cure_d: p.hunt.tan_cure_d.value,
       grade2_bp: p.hunt.grade2_bp.value,
       grade3_bp: p.hunt.grade3_bp.value,
     },

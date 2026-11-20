@@ -12,7 +12,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   type Action,
   type Bundle,
-  type Grade,
   type Slot,
   campTile,
   findSlot,
@@ -27,11 +26,11 @@ import {
   spotOpen,
   treasureKind,
   walkStepMs,
-  type AutoKind,
+  type WorkKind,
 } from '@game/kernel';
 import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
-import { sound, type Heard, type SfxId } from '../audio';
+import { sound, type Heard } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE } from '../config';
 import { DIRS, type Dir } from '../input';
@@ -47,9 +46,8 @@ import { stoneView } from '../stone';
 import { heightOf, questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { beatAt, blowsDue } from '../work';
+import { beatAt, blowsDue, nextUnit } from '../work';
 import { ART_PX, StandingReports, Walker, canEnter, facedTile, facingFor, landStep } from '../walking';
-import type { WorkKind } from '../ui/ui';
 
 const NEIGHBOURS: readonly [number, number][] = [
   [0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1],
@@ -60,8 +58,6 @@ const ZOOM_MAX = 18;
 const PITCH = 0.62;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
-const SWING_MS = 520;
-const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig', fish: 'plop' };
 
 export interface Target {
   label: string;
@@ -235,11 +231,8 @@ export class World3D implements WorldView {
 
   private busyFrom = 0;
   private busyMs = 0;
-  private work: { node: string; kind: WorkKind } | null = null;
-  private swingUntil = 0;
-  private nextSwing = 0;
   private refreshIn = 0;
-  private auto: { node: string; kind: AutoKind; start: number; ms: number; hits: number; facing: Dir; underfoot: boolean; onDone?: () => void } | null = null;
+  private auto: { node: string; kind: WorkKind; action: Action; start: number; ms: number; hits: number; unit: number; units: number; pending: boolean; facing: Dir; underfoot: boolean; onDone?: () => void } | null = null;
   private readonly held = new Set<string>();
   private lanternFor: number | undefined;
   /** the reports a player standing still owes the kernel while a hunt runs; the 3D door has no walking predators to watch with */
@@ -563,7 +556,6 @@ export class World3D implements WorldView {
     for (const off of this.unbind) off();
     this.session = session;
     this.body.place(session.pos);
-    this.work = null;
     this.auto = null;
     this.held.clear();
     this.lanternFor = undefined;
@@ -573,7 +565,6 @@ export class World3D implements WorldView {
       session.on('busy', ({ ms }) => {
         this.busyFrom = session.tick;
         this.busyMs = ms;
-        this.nextSwing = 0;
       }),
       session.on('change', () => void this.refresh()),
       // a fall takes the player to town: the walk and the work are over, the place they stand in is new
@@ -1048,16 +1039,6 @@ export class World3D implements WorldView {
 
   // ------------------------------------------------------------ working
 
-  /** One beat of a minigame: the thing shakes and sounds. */
-  beat(nodeId: string, kind: WorkKind, grade: Grade): void {
-    const s = this.session;
-    if (!s) return;
-    this.work = { node: nodeId, kind };
-    this.faceNode(s, nodeId);
-    this.swingUntil = performance.now() + 160;
-    this.impact(nodeId, kind, grade);
-  }
-
   private faceNode(s: GameSession, nodeId: string): void {
     const inst = this.b.instances[nodeId];
     if (!inst) return;
@@ -1069,29 +1050,15 @@ export class World3D implements WorldView {
     this.yaw = Math.atan2(dx, dy);
   }
 
-  private impact(nodeId: string, kind: WorkKind, grade?: Grade): void {
-    const inst = this.b.instances[nodeId];
-    if (!inst) return;
-    const at = this.screenOf(inst.x, inst.y);
-    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, window.innerWidth) - 0.5) * 1.2));
-    sound.sfx(WORK_SOUND[kind], { pan, gain: grade === 0 ? 0.6 : 1 });
-    if (grade === 0) sound.sfx('miss', { pan, gain: 0.5 });
-    if (grade === 4) sound.sfx('perfect', { pan });
-    const art = this.nodes.get(nodeId)?.art;
-    if (art) {
-      const x0 = inst.x + 0.5;
-      art.position.x = x0 + 0.06;
-      setTimeout(() => (art.position.x = x0), 70);
-    }
+  /** Whether work started by one press is under way (read by the e2e). */
+  get working(): boolean {
+    return this.auto !== null;
   }
 
   private drawBusy(s: GameSession): void {
     if (!s.busy || this.busyMs <= 0) {
       this.bar.visible = false;
-      if (!s.busy && this.busyMs > 0) {
-        this.busyMs = 0;
-        this.work = null;
-      }
+      if (!s.busy && this.busyMs > 0) this.busyMs = 0;
       return;
     }
     const k = Math.min(1, (s.tick - this.busyFrom) / this.busyMs);
@@ -1104,26 +1071,25 @@ export class World3D implements WorldView {
     (this.bar.material.map as THREE.Texture).needsUpdate = true;
     this.bar.position.set(this.pos.x, this.pos.y + CHAR_HEIGHT + 0.4, this.pos.z);
     this.bar.visible = true;
-    if (this.work) {
-      const phase = (s.tick - this.busyFrom) % SWING_MS;
-      if (phase > SWING_MS * 0.55 && performance.now() >= this.nextSwing) {
-        this.nextSwing = performance.now() + SWING_MS * 0.9;
-        this.impact(this.work.node, this.work.kind);
-      }
-    }
   }
 
   /**
-   * One press starts the work (DECISIONS.md, 2026-10-11): the kernel takes the action now and keeps the player busy for as
-   * long as it lasts, and the blows are shown on the thing. A step away takes the action back (GameSession.cancelWork).
+   * One press starts the work (DECISIONS.md, 2026-11-20), as in the pixel game: the kernel takes one unit now and keeps the
+   * player busy for its share of the time, the next is asked for when it ends, until the player steps away or starts something
+   * else, the thing runs out, the bag is full or danger breaks in. A step away takes back only the unit under way.
    */
   async startWork(nodeId: string, onDone?: () => void): Promise<void> {
     const s = this.session;
     const inst = this.b.instances[nodeId];
-    if (!s || !inst || this.auto) return;
+    if (!s || !inst) return;
+    if (this.auto) {
+      if (this.auto.node === nodeId) return;
+      this.dropWork();
+    }
     const kind = inst.kind === 'resource' ? resourceKind(this.b.resources[inst.source]!) : treasureKind(this.b.treasures[inst.source]!);
-    if (!kind) return;
-    const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
+    const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, at: s.pos } : { t: 'dig', spot: nodeId, at: s.pos };
+    const units = inst.kind === 'resource' ? this.b.resources[inst.source]!.yield : 1;
+    const unit = s.state.nodes[nodeId]?.taken ?? 0;
     // an action on the server waits for its reply, so the work starts when the answer comes
     const res = await s.act(action);
     if (!res.ok) return app.ui.toast(res.error, 'bad');
@@ -1133,7 +1099,7 @@ export class World3D implements WorldView {
     const underfoot = inst.x === s.pos[0] && inst.y === s.pos[1];
     // a dig that solved a riddle says nothing of the catch (G6)
     const solved = res.events.some((e) => e.e === 'riddle');
-    this.auto = { node: nodeId, kind, start: s.tick, ms: busy.ms, hits: 0, facing: s.facing, underfoot, onDone: solved ? undefined : onDone };
+    this.auto = { node: nodeId, kind, action, start: s.tick, ms: busy.ms, hits: 0, unit, units, pending: false, facing: s.facing, underfoot, onDone: solved ? undefined : onDone };
     this.held.add(nodeId);
   }
 
@@ -1145,20 +1111,38 @@ export class World3D implements WorldView {
 
   private workTick(s: GameSession): void {
     const w = this.auto;
-    if (!w) return;
+    if (!w || w.pending) return;
     const elapsed = s.tick - w.start;
-    // the end comes first: a level-up window opening as the work ends must not undo it
-    if (elapsed >= w.ms) return this.finishWork(w);
+    // the end comes first: a level-up window opening as the unit ends must not undo it
+    if (elapsed >= w.ms) return void this.nextUnit(s, w);
     const dir = app.controls.direction();
     if (s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing))) return this.stopWork(s, w);
     const beat = beatAt(elapsed, w.ms);
     if (blowsDue(beat) > w.hits) {
       w.hits = blowsDue(beat);
-      this.blow(w, beat.progress);
+      this.blow(w, (w.unit + beat.progress) / w.units);
     }
   }
 
-  /** Walked away, or something opened: the work is dropped as if it had not begun. */
+  /** A unit is done and stays taken: the next is asked for unless the thing ran out, the player leaves or the kernel refuses. */
+  private async nextUnit(s: GameSession, w: NonNullable<World3D['auto']>): Promise<void> {
+    const dir = app.controls.direction();
+    const leaving = s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing));
+    w.pending = true;
+    const next = await nextUnit({ ready: () => this.ready(s, w.node), act: (a) => s.act(a) }, w.action, leaving);
+    w.pending = false;
+    if (this.auto !== w) return;
+    if (next.kind !== 'go') {
+      if (next.kind === 'stopped' && next.error) app.ui.toast(next.error, 'bad');
+      return this.finishWork(w, next.kind === 'out');
+    }
+    w.unit += 1;
+    w.start = s.tick;
+    w.ms = next.ms;
+    w.hits = 0;
+  }
+
+  /** Walked away, or something opened: the unit under way is dropped as if it had not begun; the ones before it stay. */
   private stopWork(s: GameSession, w: NonNullable<World3D['auto']>): void {
     this.endWork(w);
     s.cancelWork();
@@ -1175,9 +1159,10 @@ export class World3D implements WorldView {
     }
   }
 
-  private finishWork(w: NonNullable<World3D['auto']>): void {
+  private finishWork(w: NonNullable<World3D['auto']>, out: boolean): void {
     this.endWork(w);
     void this.refreshNodes();
+    if (!out) return;
     if (w.kind === 'fell') {
       sound.sfx('crack', { gain: 0.9 });
       setTimeout(() => sound.sfx('thud'), 450);
@@ -1198,7 +1183,9 @@ export class World3D implements WorldView {
     } else if (w.kind === 'mine') {
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
       else sound.sfx('strike', { pan, gain: BLOW_GAIN.strike });
-    } else sound.sfx('dig', { pan, gain: BLOW_GAIN.dig });
+    } else if (w.kind === 'pick') sound.sfx('pluck', { pan, gain: 0.7 });
+    else if (w.kind === 'fish') sound.sfx('plop', { pan, gain: 0.7 });
+    else sound.sfx('dig', { pan, gain: BLOW_GAIN.dig });
     const art = this.nodes.get(w.node)?.art;
     if (!art) return;
     const x0 = inst.x + 0.5;

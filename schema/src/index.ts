@@ -151,10 +151,10 @@ export const Output = Type.Object(
  * The slots an item names: jewelry takes either of two places on the character, an outfit takes the top and the legs,
  * and the back holds one bag or one quiver (DECISIONS.md, 2026-10-23: races, weight and bags).
  */
-export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry', 'hand', 'back'] as const;
+export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'hands', 'jewelry', 'hand', 'back'] as const;
 export const WornSlot = Type.Union(WORN_SLOTS.map((k) => Type.Literal(k)), {
   description:
-    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).',
+    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, hands (gloves), jewelry (two places), hand (a tool) or back (one bag or one quiver).',
 });
 
 /** The effects a worn item may carry: rates of work, never the output of a craft (rule R9). Every one is in EFFECTS too. */
@@ -178,7 +178,7 @@ export const WearSet = Type.Object(
 
 /**
  * The garment traits (BODY_CLOCKS 6.1): what a piece is worn against, each on the places the table names.
- * `ice_grip` sits on the feet only while no hands place exists (CLOTHING question 1).
+ * `ice_grip` sits on the hands place (CLOTHING question 1, the owner's pick of 2026-11-12).
  */
 export const TRAITS = ['cold_proof', 'snow_shod', 'storm_proof', 'ice_grip', 'heat_ward'] as const;
 export const GarmentTrait = Type.Union(TRAITS.map((k) => Type.Literal(k)), {
@@ -188,7 +188,7 @@ export const TRAIT_SLOTS: Readonly<Record<(typeof TRAITS)[number], readonly (typ
   cold_proof: ['top', 'back', 'head'],
   snow_shod: ['feet'],
   storm_proof: ['back', 'top'],
-  ice_grip: ['feet'],
+  ice_grip: ['hands'],
   heat_ward: ['head', 'top'],
 };
 
@@ -394,7 +394,7 @@ const Place = Type.Object(
 export const ResourceBody = Type.Object(
   {
     output: Id,
-    yield: Int(1, 20, 'Units gathered per execution at perfect timing.'),
+    yield: Int(1, 20, 'Units the node gives before it is out: one each work interval, the node\'s time shared out among them (QUARRYING 10).'),
     active_ms: Ms('Time the player is busy gathering once.'),
     respawn_ms: Ms('Time before the same plant gives again. Waiting is never paid.'),
     count: Int(1, 12, 'How many of these nodes the slot holds.'),
@@ -435,13 +435,13 @@ export const ResourceBody = Type.Object(
     work: Type.Optional(
       Type.Literal('mine', {
         description:
-          'How the node is worked. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging. With no tool, bare hands do it and a pick or a hammer in the bag makes it faster (the best one, worn a little each time); with a tool (a pick, a hammer or a trowel) that tool is required, and the check refuses such a tool without "mine" (a hammer node still plays the minigame of `game`: only a pick or a trowel runs by itself). Left out: gathered by hand with the minigame of `game`.',
+          'How the node is worked. "mine": broken with blows, as felling does; it trains digging. With no tool, bare hands do it and a pick or a hammer in the bag makes it faster (the best one, worn a little each time); with a tool (a pick, a hammer or a trowel) that tool is required, and the check refuses such a tool without "mine". Every node is worked the one way (QUARRYING 10): a click starts it, a repeating animation plays, one unit comes each work interval, until the player stops or the node is out. This only says which animation.',
       }),
     ),
     level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.'),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap'), Type.Literal('fish')], {
-        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants), "snap" (press fast, for wood) or "fish" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).',
+        description: 'Retired (QUARRYING 10): no minigame is played and no timing is read. Still accepted, and ignored, so an older file loads.',
       }),
     ),
     hours: Type.Optional(
@@ -486,7 +486,7 @@ export const TreasureBody = Type.Object(
     count: Int(1, 8),
     tool: Type.Optional({
       ...ToolKind,
-      description: 'The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn.',
+      description: 'The tool the dig asks for and wears. Left out: the find is picked up by hand, with no tool worn.',
     }),
     level: Int(1, 20, 'Digging level required.'),
     finds: Type.Array(Find, { minItems: 1, maxItems: 8 }),
@@ -522,7 +522,7 @@ export const SearchBody = Type.Object(
   },
   {
     additionalProperties: false,
-    description: 'A searchable: a table of rows drawn once a day. It takes no tool and has no timing window. A treasure file carries `search` or `dig`, never both.',
+    description: 'A searchable: a table of rows drawn once a day. It takes no tool. A treasure file carries `search` or `dig`, never both.',
   },
 );
 
@@ -1214,14 +1214,14 @@ const ReactionWhen = Type.Object(
 const AppearNode = Type.Object(
   {
     output: Id,
-    yield: Int(1, 20, 'Units gathered per execution at perfect timing.'),
+    yield: Int(1, 20, 'Units the node gives before it is out: one each work interval, the node\'s time shared out among them (QUARRYING 10).'),
     active_ms: Ms('Time the player is busy gathering it once.'),
     respawn_ms: Ms('Time before it can show again once taken, while its condition still holds. Waiting is never paid.'),
     level: Int(1, 20, 'Foraging level required.'),
     tool: Type.Optional(ToolKind),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
-        description: 'The minigame played when gathering it, as a resource\'s `game`.',
+        description: 'Retired, as a resource\'s `game`: accepted and ignored.',
       }),
     ),
     sprite: SpriteRef,
@@ -1261,7 +1261,6 @@ export const ReactionBody = Type.Object(
 
 export const EFFECTS = [
   'see_ripe',
-  'timing_window_pct',
   'second_hint',
   'rare_find_pct',
   'craft_speed_pct',
@@ -1800,6 +1799,7 @@ export const ParamsBody = Type.Object(
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
         meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
         hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },
+        tan_cure_d: { ...Bounded, description: 'Game days a scraped hide cures on a tanning rack.' },
         grade2_bp: { ...Bounded, description: 'Basis points of animals that appear fine (grade 2).' },
         grade3_bp: { ...Bounded, description: 'Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain.' },
       },
@@ -1887,7 +1887,7 @@ export const ParamsBody = Type.Object(
       {
         additionalProperties: false,
         description:
-          'What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
+          'What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), a fifth of a fight blow\'s percent off every work interval, inside the power cap (agility), permille on rare and legendary finds inside the power cap (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
       },
     ),
     growth: Type.Optional(

@@ -163,7 +163,7 @@ The chains, world to product ([BUILT], [PLANNED], [#609], [HOLE] on each):
 
 - river stones (gather/mine: no tool, pick or hammer helps, Digging 1, 2500 ms) -> river stone [BUILT]
 - hollow tree / branch heap (search, once a day) -> river stone at 40 / 30 [BUILT]
-- keystone node (gather: strike minigame, Foraging 1, after two quests) -> keystone -> restore (hand, 4000 ms) -> the old bridge [BUILT]
+- keystone node (gather: one click and the picking loop, Foraging 1, after two quests) -> keystone -> restore (hand, 4000 ms) -> the old bridge [BUILT]
 - river stone x4 -> build work stone (workshop tier 1, 4000 ms) [BUILT]; river stone x4 + log x3 -> storage chest [BUILT]
 - river stone x2 -> knap (workshop tier 1, Handcraft 1, 3000 ms) -> stone flakes [BUILT]
 - stone flakes x2 + branch (oak felled with an axe, log split at the fire) -> craft (workbench tier 2, Handcraft 3, 5000 ms) -> stone blade [BUILT]
@@ -544,7 +544,7 @@ Histogram: length 0: 2, length 1: 13, length 2: 91, length 3: 28, length 4: 22, 
 | gather (mine) | 17 | 4 | gather (mine) (9); gather (mine), pick required (4); gather (mine) + knap (1); gather (mine) with a side find (1); dig (mine with a trowel) (1) |
 | craft (another word for it) | 14 | 4 | knap (craft) (2); trim and bind (1); stuff and quilt (1); grind and bind (craft) (1); craft (Stonework) (1) |
 | take + dress (a compound pointer) | 11 | 0 | take and dress (the Hare bone row, steps 1 to 2) (4); take and dress (the Roe sinew row, steps 1 to 2) (3); take, dress, scrape, tan (1); gather or take and dress (the feather row, steps 1 to 3) (1); take and dress (the ground fowl down row, steps 1 to 2) (1) |
-| gather | 10 | 6 | gather (3); gather (snap) (3); gather (strike minigame) (1); fell or forage (1); grow or gather flax (1) |
+| gather | 10 | 6 | gather (3); gather (3); gather (1); fell or forage (1); grow or gather flax (1) |
 | twist | 10 | 4 | twist (split and twist) (3); twist (craft) (3); twist (two threads into a cord) (2); twist (two cords into a string) (1); twist (1) |
 | fell | 9 | 8 | fell (5); fell (gather with an axe) (2); fell + split (1); fell, then split (1) |
 | weave, spin, felt (cloth) | 7 | 1 | weave (craft) (1); spin, then weave (1); weave linen (1); keep sheep and shear (1); spin and weave, or felt (1) |

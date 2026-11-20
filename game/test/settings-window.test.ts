@@ -224,13 +224,13 @@ describe("the stored preferences reach the rules the phone's own setting reaches
     }
     return out;
   };
-  it('mirrors every reduced-motion selector of style.css and games.css under the attribute', () => {
-    const sels = [...reduced(read('style.css')), ...reduced(read('ui/games/games.css'))];
+  it('mirrors every reduced-motion selector of style.css under the attribute', () => {
+    const sels = reduced(read('style.css'));
     expect(sels.length).toBeGreaterThan(10);
     for (const sel of sels) expect(settings, sel).toContain(`:root[data-motion='reduced'] ${sel}`);
   });
-  it('scales the px sizes of the windows (dialog, minigames, search, notes) with the chosen size', () => {
-    for (const sel of ['.dialog-text', '.md p', '.version', '.row .muted', '.panel.search .search-row', '.minigame-title']) {
+  it('scales the px sizes of the windows (dialog, search, notes) with the chosen size', () => {
+    for (const sel of ['.dialog-text', '.md p', '.version', '.row .muted', '.panel.search .search-row']) {
       expect(settings, sel).toContain(`:root[data-text-size='20'] ${sel}`);
     }
   });

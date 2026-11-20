@@ -13,9 +13,9 @@
       {
         "id": "steady",
         "name": "Steady",
-        "text": "Every timing game's good zone is a little wider.",
+        "text": "Digging goes a little faster.",
         "size": "small",
-        "effect": "timing_window_pct",
+        "effect": "dig_speed_pct",
         "value": 5,
         "icon": "core/stone"
       },

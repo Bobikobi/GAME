@@ -10,7 +10,6 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
-import { solveMinigame } from './minigame';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -51,8 +50,9 @@ window.__fish = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const phases = [];
   const world = g().world;
-  const own = world.fishPhase.bind(world);
-  world.fishPhase = (node, phase) => { phases.push(phase); own(node, phase); };
+  const view = world.fishing;
+  const own = view.phase.bind(view);
+  view.phase = (node, phase, now) => { if (phases[phases.length - 1] !== phase) phases.push(phase); own(node, phase, now); };
   return {
     phases() { return phases; },
     dialog() { return !!document.querySelector('.dialog'); },
@@ -134,9 +134,11 @@ async function run(page: Page, url: string, touch: boolean): Promise<void> {
   await page.waitFor(`__fish.phases().includes('wait')`, 'the float to land', 5000);
   await page.waitFor('__fish.drawn().over > 0', 'the line and float drawn in the world', 5000);
   await page.screenshot(join(OUT, `fishing-${touch ? 'phone' : 'desktop'}-wait.png`));
-  const shown = await solveMinigame(page, touch, 'the fishing minigame');
+  // the line is worked by itself: no pop-up, nothing to time; the catch is drawn in at the end of a unit
+  if (await page.eval<boolean>('!!document.querySelector(".minigame-layer, .minigame")')) throw new Error('the cast opened a minigame');
+  await page.waitFor(`__fish.phases().includes('reel')`, 'the reel at the end of the wait', 20_000);
   const phases = await page.eval<string[]>('__fish.phases()');
-  const order = ['cast', 'wait', 'nibble', 'bite', 'reel'];
+  const order = ['cast', 'wait', 'reel'];
   const seen = order.map((p) => phases.indexOf(p));
   if (seen.some((i) => i < 0) || seen.some((i, n) => n > 0 && i < seen[n - 1]!)) throw new Error(`the cast went ${phases.join(' > ')}, not ${order.join(' > ')}`);
 
@@ -146,7 +148,7 @@ async function run(page: Page, url: string, touch: boolean): Promise<void> {
     10_000,
   );
   if (after.xp <= 0) throw new Error('the catch trained no fishing');
-  console.log(`fishing: ${shown.join(' / ')}; ${after.fish} fish, ${after.xp} fishing xp`);
+  console.log(`fishing: ${phases.join(' > ')}; ${after.fish} fish, ${after.xp} fishing xp`);
   if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
 }
 

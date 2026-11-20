@@ -450,7 +450,7 @@
             ],
             "properties": {
               "slot": {
-                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, hands (gloves), jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                 "anyOf": [
                   {
                     "const": "head",
@@ -470,6 +470,10 @@
                   },
                   {
                     "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hands",
                     "type": "string"
                   },
                   {
@@ -3248,6 +3252,7 @@
             "dress_step_ms",
             "meat_spoil_d",
             "hide_spoil_d",
+            "tan_cure_d",
             "grade2_bp",
             "grade3_bp"
           ],
@@ -3332,6 +3337,33 @@
                 }
               },
               "description": "Game days a carcass keeps anything: dressed later, nothing is left of it."
+            },
+            "tan_cure_d": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game days a scraped hide cures on a tanning rack."
             },
             "grade2_bp": {
               "additionalProperties": false,
@@ -4947,7 +4979,7 @@
         },
         "per_point": {
           "additionalProperties": false,
-          "description": "What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
+          "description": "What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), a fifth of a fight blow's percent off every work interval, inside the power cap (agility), permille on rare and legendary finds inside the power cap (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
           "type": "object",
           "required": [
             "might",

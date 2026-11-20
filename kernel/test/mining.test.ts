@@ -29,7 +29,7 @@ function beside(bundle: Bundle, state: State, node: string): [number, number] {
 }
 
 function mine(state: State, tick = 1000): StepResult {
-  return step(b, state, { t: 'gather', node: stones, grade: 3, at: beside(b, state, stones) }, tick);
+  return step(b, state, { t: 'gather', node: stones, at: beside(b, state, stones) }, tick);
 }
 
 function busyMs(r: StepResult): number {
@@ -129,7 +129,7 @@ describe('the tie rule: a lasting tool before a worn one (QUARRYING 6)', () => {
     const s = race(picky, 'core/skeleton');
     expect(s.player.bag['core/rust-pick']).toBe(1);
     s.player.bag['core/knapped-pick'] = 1;
-    const r = step(picky, s, { t: 'gather', node: stones, grade: 3, at: beside(picky, s, stones) }, 1000);
+    const r = step(picky, s, { t: 'gather', node: stones, at: beside(picky, s, stones) }, 1000);
     if (!r.ok) throw new Error(r.error);
     expect(r.state.player.wear['core/knapped-pick']).toBeUndefined();
   });
@@ -139,7 +139,7 @@ describe('the tie rule: a lasting tool before a worn one (QUARRYING 6)', () => {
     better.items['test/pick-2'] = { ...better.items['core/knapped-pick']!, id: 'test/pick-2', tier: 2, tool: { kind: 'pick', tier: 2, uses: 10 } };
     const s = race(better, 'core/skeleton');
     s.player.bag['test/pick-2'] = 1;
-    const r = step(better, s, { t: 'gather', node: stones, grade: 3, at: beside(better, s, stones) }, 1000);
+    const r = step(better, s, { t: 'gather', node: stones, at: beside(better, s, stones) }, 1000);
     if (!r.ok) throw new Error(r.error);
     expect(r.state.player.wear['test/pick-2']).toBe(1);
   });
@@ -150,6 +150,8 @@ describe('the hammerstone and the knapped pick (QUARRYING 6)', () => {
   function atLevel(s: State, level: 1 | 2 | 3): State {
     const t = structuredClone(s);
     t.player.worn = {};
+    // agility speeds work too (DECISIONS.md, 2026-11-20): this reads the tool's bonus alone
+    t.player.attrs.agility = 0;
     const levels = b.professions['core/cooking']!.xp_levels;
     if (level > 1) t.player.xp['core/cooking'] = levels[level - 2]! * 1000;
     return t;
