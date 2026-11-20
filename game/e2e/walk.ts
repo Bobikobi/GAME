@@ -122,6 +122,9 @@ export class FreeWalk {
   /** where the thumb lands to raise the floating stick: left half, below the HUD's band (set once) */
   private anchor: { x: number; y: number } | null = null;
   private installed = false;
+  /** whether the finger that holds the floating stick is down (it stays down between walks) */
+  private fingerDown = false;
+  private flip = 0;
 
   constructor(
     readonly page: Page,
@@ -285,12 +288,18 @@ export class FreeWalk {
     }
   }
 
-  /** The phone's floating stick: a finger raised in the left half and pushed 60 px, in the axes' direction; a direction change starts a new one. */
+  /**
+   * The phone's floating stick: a finger raised in the left half and pushed 60 px, in the axes' direction. The finger stays
+   * down between walks (the page lets the walk go on the tile's own frame), so a walk costs one touch event, not a lift and a
+   * landing; a push is a move, and a move to the very same point is not sent by the browser, so the push alternates by 2 px.
+   */
   private async push(ax: number, ay: number): Promise<void> {
     if (ax === 0 && ay === 0) {
       if (!this.pushed) return;
       this.pushed = null;
-      await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      // the page let go on the tile; where the walk ended any other way (a box, a timeout) the finger goes back to the middle
+      const still = await this.page.eval<boolean>(`(() => { const v = __game.controls.vector(); return v[0] !== 0 || v[1] !== 0; })()`);
+      if (still && this.fingerDown && this.anchor) await this.page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...this.anchor, id: 1 }] });
       return;
     }
     const length = Math.hypot(ax, ay);
@@ -302,16 +311,24 @@ export class FreeWalk {
         `(() => { let band = 0; for (const e of document.querySelectorAll('.top > .hud, .top > .tracker')) { const r = e.getBoundingClientRect(); if (r.height > 0) band = Math.max(band, r.bottom); } return { x: 170, y: Math.round((band + window.innerHeight) / 2) + 20 }; })()`,
       );
     }
-    if (this.pushed) await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     this.pushed = [ux, uy];
-    // the stick rises under the thumb where it lands and reads no walk; the push is the move from there
-    // sent together, in order: one wait for both, not one per event (a walk's time is the run's clock)
+    this.flip = 1 - this.flip;
+    const out = STICK_OUT + 2 * this.flip;
+    const to = { x: this.anchor.x + ux * out, y: this.anchor.y + uy * out, id: 1 };
+    // a tap by anything else ends every finger: a move with none down is refused by the browser, and the finger lands again
+    if (this.fingerDown) {
+      try {
+        await this.page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to] });
+        return;
+      } catch {
+        this.fingerDown = false;
+      }
+    }
+    this.fingerDown = true;
+    // the stick rises under the thumb where it lands and reads no walk; the push is the move from there (both sent at once, in order)
     await Promise.all([
       this.page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...this.anchor, id: 1 }] }),
-      this.page.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
-        touchPoints: [{ x: this.anchor.x + ux * STICK_OUT, y: this.anchor.y + uy * STICK_OUT, id: 1 }],
-      }),
+      this.page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to] }),
     ]);
   }
 
