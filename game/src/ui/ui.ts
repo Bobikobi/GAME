@@ -14,13 +14,10 @@ import {
   isNight,
   minuteOfDay,
   pickRemark,
-  resourceKind,
-  resourceOf,
   rewardItem,
   hpCap,
   skillPoints,
   talkLines,
-  treasureKind,
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
@@ -35,7 +32,6 @@ import {
   itemName,
   lanternNight,
   nightCountdown,
-  nodeAction,
   questSteps,
   readyToHandIn,
 } from '../text';

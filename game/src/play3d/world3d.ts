@@ -30,7 +30,7 @@ import {
 } from '@game/kernel';
 import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
-import { sound, type Heard, type SfxId } from '../audio';
+import { sound, type Heard } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE } from '../config';
 import { DIRS, type Dir } from '../input';

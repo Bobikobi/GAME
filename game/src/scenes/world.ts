@@ -49,7 +49,7 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { Piles, pileAt } from './piles';
-import { sound, type Heard, type Owner, type SfxId, type SongId } from '../audio';
+import { sound, type Heard, type Owner, type SongId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
