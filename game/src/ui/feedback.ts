@@ -95,10 +95,6 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
       case 'bag_full':
         add({ sfx: 'back' });
         break;
-      case 'jackpot':
-        add({ sfx: 'perfect', detune: 500 });
-        banner(root, 'Jackpot!', 'jackpot');
-        break;
       case 'place': {
         // a place names itself once, on its first entry (G63): a plaque of frame D, quiet, and no cheer
         const name = placeName(app.bundle.map, e.id);
@@ -121,7 +117,7 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
 }
 
 /** A word across the middle of the screen that rises and fades. */
-export function banner(root: HTMLElement, text: string, kind: 'level' | 'jackpot' | 'point' | 'place'): void {
+export function banner(root: HTMLElement, text: string, kind: 'level' | 'point' | 'place'): void {
   // a place's name is read, not cheered: no burst behind it, and it stands longest
   root.querySelector('.banner.place')?.remove();
   const el = h('div', { class: `banner ${kind}` }, h('span', null, text), kind === 'place' ? null : h('i', { class: 'burst' }));
@@ -130,7 +126,7 @@ export function banner(root: HTMLElement, text: string, kind: 'level' | 'jackpot
 }
 
 /** How long each banner stands, in ms: its CSS animation runs as long. */
-const BANNER_MS = { level: 2400, jackpot: 1600, point: 1600, place: 3200 } as const;
+const BANNER_MS = { level: 2400, point: 1600, place: 3200 } as const;
 
 function purse(): DOMRect | undefined {
   return document.querySelector('.hud .chip.gold')?.getBoundingClientRect();

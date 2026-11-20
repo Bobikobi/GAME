@@ -15,7 +15,6 @@ import {
   type Action,
   type Bundle,
   type GameEvent,
-  type Grade,
   attrAt,
   type Hazard,
   type Slot,
@@ -46,7 +45,7 @@ import {
   gaitStepMs,
   treasureKind,
   windowOpen,
-  type AutoKind,
+  type WorkKind,
 } from '@game/kernel';
 import { app } from '../app';
 import { Piles, pileAt } from './piles';
@@ -90,11 +89,10 @@ import { nodeLook } from '../growth';
 import { peekOnStep, type Tile } from '../peek';
 import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
-import type { FishPhase } from '../ui/games/shared';
+import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import type { WorkKind } from '../ui/ui';
-import { ClipPlayer, VERB_OF_AUTO, VERB_OF_WORK, clipFor, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
-import { STRIDE, POSES, beatAt, blowsDue, poseFrame, standingFrame, strideFrame } from '../work';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
+import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
@@ -111,8 +109,6 @@ const LIGHT = LIGHT_POOL;
 const NEIGHBOURS: readonly [number, number][] = [
   [0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1],
 ];
-/** One swing of the arm while working. */
-const SWING_MS = 520;
 /** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
 const WHEEL_GLIDE_MS = 160;
 const WHEEL_GAP_MS = 180;
@@ -150,12 +146,20 @@ export interface Target {
   top: number;
 }
 
-/** Work that runs by itself after one press: a tree being felled, a spot being dug (game/src/work.ts). */
+/** Work that runs on after one press: a tree being felled, a spot being dug, a bush picked, a river fished (game/src/work.ts). */
 interface Auto {
   node: string;
-  kind: AutoKind;
+  kind: WorkKind;
+  /** the kernel action that takes the next unit */
+  action: Action;
+  /** the unit under way began at this tick and lasts `ms` */
   start: number;
   ms: number;
+  /** the unit under way (0-based) of the `units` the thing holds, so the lean and the shake grow over the whole of it */
+  unit: number;
+  units: number;
+  /** the next unit has been asked for and the answer has not come */
+  pending: boolean;
   /** blows landed so far */
   hits: number;
   /** the way the player faces the thing; a different direction held is a step away */
@@ -470,16 +474,13 @@ export class WorldScene extends Phaser.Scene {
   private paceMs: number | undefined;
   private busyFrom = 0;
   private busyMs = 0;
-  private work: { node: string; kind: WorkKind } | null = null;
   /** the line, float and fish shapes of fishing, drawn in code */
   private fishing?: FishingView;
   /** the fishing spots, found once */
   private fishSpots?: string[];
-  private swingUntil = 0;
   private auto: Auto | null = null;
   /** nodes whose look the work keeps: a tree stays a tree until it falls */
   private held = new Set<string>();
-  private nextSwing = 0;
   private refreshIn = 0;
   /** what the player put down, drawn on its tiles */
   private piles?: Piles;
@@ -2151,7 +2152,6 @@ export class WorldScene extends Phaser.Scene {
       this.outside();
     }
     this.session = session;
-    this.work = null;
     this.auto = null;
     this.held.clear();
     this.look = session.facing;
@@ -2173,7 +2173,6 @@ export class WorldScene extends Phaser.Scene {
       session.on('busy', ({ ms }) => {
         this.busyFrom = session.tick;
         this.busyMs = ms;
-        this.nextSwing = 0;
       }),
       session.on('events', (events) => {
         this.biteDrawn(events);
@@ -2531,7 +2530,7 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.motion) this.idle(s, time);
     this.workTick(s);
     this.drawFishing(s, time);
-    this.drawBusy(s, time);
+    this.drawBusy(s);
     this.drawClip(time);
     this.updatePrompt(s);
     this.haunt(s, time);
@@ -2810,7 +2809,7 @@ export class WorldScene extends Phaser.Scene {
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: GameSession, time: number): void {
     if (this.falling) return;
-    const still = !this.body.moving && !s.busy && !this.work && !this.auto && this.swingUntil === 0 && !this.figure.active;
+    const still = !this.body.moving && !s.busy && !this.auto && !this.figure.active;
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
@@ -3277,36 +3276,10 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ working
 
-  /** One beat of a minigame: the arm comes down, the thing shakes and sounds, dust flies. */
-  beat(nodeId: string, kind: WorkKind, grade: Grade): void {
-    const s = this.session;
-    if (!s) return;
-    this.work = { node: nodeId, kind };
-    this.faceNode(s, nodeId);
-    this.workFrame(true);
-    this.playClip(VERB_OF_WORK[kind]);
-    this.swingUntil = this.time.now + 160;
-    this.impact(nodeId, kind, grade);
-  }
-
-  /** A cast moved on: the player faces the water, the arm comes over on the cast, and the view draws the rest. */
-  fishPhase(nodeId: string, phase: FishPhase): void {
-    const s = this.session;
-    if (!s) return;
-    this.faceNode(s, nodeId);
-    if (phase === 'cast' || phase === 'reel') {
-      this.work = { node: nodeId, kind: 'fish' };
-      this.workFrame(true);
-      this.playClip(VERB_OF_WORK.fish);
-      this.swingUntil = this.time.now + 220;
-    }
-    this.fishing?.phase(nodeId, phase, this.time.now);
-  }
-
   /** The dark shapes under every fishing spot that has fish, and the line while a cast is on. */
   private drawFishing(s: GameSession, time: number): void {
     if (!this.fishing) return;
-    this.fishSpots ??= Object.keys(this.b.instances).filter((id) => this.b.resources[this.b.instances[id]!.source]?.game === 'fish');
+    this.fishSpots ??= Object.keys(this.b.instances).filter((id) => resourceKind(this.b.resources[this.b.instances[id]!.source]!) === 'fish');
     const view = this.cameras.main.worldView;
     const spots: { id: string; at: { x: number; y: number } }[] = [];
     for (const id of this.fishSpots) {
@@ -3314,9 +3287,9 @@ export class WorldScene extends Phaser.Scene {
       const x = inst.x * T + T / 2;
       const y = inst.y * T + T / 2;
       if (x < view.x - T || x > view.right + T || y < view.y - T || y > view.bottom + T) continue;
-      if (this.ready(s, id) || this.work?.node === id) spots.push({ id, at: { x, y } });
+      if (this.ready(s, id) || this.auto?.node === id) spots.push({ id, at: { x, y } });
     }
-    const node = this.work?.kind === 'fish' ? placedAt(this.b, this.work.node) : undefined;
+    const node = this.auto?.kind === 'fish' ? placedAt(this.b, this.auto.node) : undefined;
     const toward = node && node.x * T + T / 2 < this.player.x ? -1 : 1;
     this.fishing.draw(time, spots, { x: this.player.x + toward * 3, y: this.player.y - 9 }, toward);
   }
@@ -3329,27 +3302,6 @@ export class WorldScene extends Phaser.Scene {
     if (dx === 0 && dy === 0) return;
     const dir: Dir = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
     s.facing = dir;
-  }
-
-  private impact(nodeId: string, kind: WorkKind, grade?: Grade): void {
-    const inst = placedAt(this.b, nodeId);
-    if (!inst) return;
-    const x = inst.x * T + T / 2;
-    const y = inst.y * T + T * 0.6;
-    const at = this.worldToPage(x, y);
-    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
-    sound.sfx(WORK_SOUND[kind], { pan, gain: grade === 0 ? 0.6 : 1 });
-    if (grade === 0) sound.sfx('miss', { pan, gain: 0.5 });
-    if (grade === 4) sound.sfx('perfect', { pan });
-    this.burst(WORK_DUST[kind], x, y, grade === 0 ? 3 : 7);
-    if (grade !== undefined && grade >= 3) this.burst('fx-spark', x, y - 4, grade === 4 ? 10 : 4);
-    const img = this.nodes.get(nodeId) ?? this.digs.get(nodeId);
-    if (img) {
-      this.tweens.killTweensOf(img);
-      const x0 = inst.x * T + T / 2;
-      img.x = x0;
-      this.tweens.add({ targets: img, x: x0 + (kind === 'pick' ? 0 : 1), scaleY: rel(img, 1, kind === 'pick' ? 0.92 : 1).y, duration: 50, yoyo: true, repeat: 1, onComplete: () => setRel(img.setX(x0), 1) });
-    }
   }
 
   private burst(texture: string, x: number, y: number, n: number): void {
@@ -3371,19 +3323,13 @@ export class WorldScene extends Phaser.Scene {
     emitter.explode(n, x, y);
   }
 
-  private drawBusy(s: GameSession, time: number): void {
+  private drawBusy(s: GameSession): void {
     this.bar.clear();
     if (this.auto) return;
     if (!s.busy) {
       if (this.busyMs > 0) {
         this.busyMs = 0;
-        this.work = null;
         this.faceFrame();
-      } else if (this.swingUntil > 0 && time >= this.swingUntil) {
-        // the arm goes back up after a minigame beat
-        this.swingUntil = 0;
-        if (app.ui.blocking && this.work) this.workFrame(false);
-        else this.faceFrame();
       }
       return;
     }
@@ -3393,15 +3339,7 @@ export class WorldScene extends Phaser.Scene {
     const y = this.player.y - 31;
     this.bar.fillStyle(0x1b1a2e, 1).fillRect(x, y, 18, 4);
     this.bar.fillStyle(0xf8de62, 1).fillRect(x + 1, y + 1, Math.round(16 * k), 2);
-    if (!this.work) return this.faceFrame(Math.floor(s.tick / 160) % 2 === 0 ? 0 : 2);
-    // a steady rhythm of blows while the work lasts
-    const phase = (s.tick - this.busyFrom) % SWING_MS;
-    const down = phase > SWING_MS * 0.55;
-    this.workFrame(down);
-    if (time >= this.nextSwing && down) {
-      this.nextSwing = time + SWING_MS * 0.9;
-      this.impact(this.work.node, this.work.kind);
-    }
+    this.faceFrame(Math.floor(s.tick / 160) % 2 === 0 ? 0 : 2);
   }
 
   // ------------------------------------------------------------ danger
@@ -3563,8 +3501,6 @@ export class WorldScene extends Phaser.Scene {
     this.figure.stop();
     // work under way is not taken back: it is simply over (the session drops its undo)
     if (this.auto) this.endWork(this.auto);
-    this.work = null;
-    this.swingUntil = 0;
     // the fall ends any work: nothing may put the standing frame back while the body sinks
     this.busyMs = 0;
     this.placePlayer(from[0], from[1]);
@@ -3613,20 +3549,27 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  // ------------------------------------------------------------ work that runs by itself
+  // ------------------------------------------------------------ work
 
   /**
-   * One press starts the work (DECISIONS.md, 2026-10-11): the kernel takes the action now and keeps
-   * the player busy for as long as it lasts, and the swings, chips and the thing's own shaking show
-   * it. A step away takes the action back (GameSession.cancelWork), so nothing was yielded.
+   * One press starts the work (DECISIONS.md, 2026-11-20): the kernel takes one unit of the thing now and keeps the player busy
+   * for that unit's share of the time, and the swings, chips and the thing's own shaking show it. When the unit ends the next
+   * is asked for, with no input, until the player steps away or starts something else, the thing runs out, the bag is full or
+   * danger breaks in. A step away takes back only the unit under way (GameSession.cancelWork): what was already taken stays.
    */
   async startWork(nodeId: string, onDone?: () => void): Promise<void> {
     const s = this.session;
     const inst = placedAt(this.b, nodeId);
-    if (!s || !inst || this.auto) return;
+    if (!s || !inst) return;
+    // a second press on the same thing changes nothing; another thing takes over from the first
+    if (this.auto) {
+      if (this.auto.node === nodeId) return;
+      this.dropWork();
+    }
     const kind = inst.kind === 'resource' ? resourceKind(resourceOf(this.b, nodeId)!) : treasureKind(this.b.treasures[inst.source]!);
-    if (!kind) return;
-    const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
+    const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, at: s.pos } : { t: 'dig', spot: nodeId, at: s.pos };
+    const units = inst.kind === 'resource' ? resourceOf(this.b, nodeId)!.yield : 1;
+    const unit = s.state.nodes[nodeId]?.taken ?? 0;
     // an action on the server waits for its reply, so the work starts when the answer comes
     const res = await s.act(action);
     if (!res.ok) return app.ui.toast(res.error, 'bad');
@@ -3637,11 +3580,17 @@ export class WorldScene extends Phaser.Scene {
     const underfoot = inst.x === s.pos[0] && inst.y === s.pos[1];
     // a dig that solved a riddle says nothing of the catch (G6)
     const solved = res.events.some((e) => e.e === 'riddle');
-    this.auto = { node: nodeId, kind, start: s.tick, ms: busy.ms, hits: 0, facing: s.facing, underfoot, onDone: solved ? undefined : onDone };
+    this.auto = { node: nodeId, kind, action, start: s.tick, ms: busy.ms, hits: 0, unit, units, facing: s.facing, underfoot, pending: false, onDone: solved ? undefined : onDone };
     this.held.add(nodeId);
+    this.beginUnit(this.auto);
+  }
+
+  /** The unit that just began: the figure's loop runs for its length, and a cast goes out over the water. */
+  private beginUnit(w: Auto): void {
     this.workFrame(false);
-    // the kernel's `busy` ms is how long the work lasts: a clip loops until then and is cut there, never the other way round
-    this.playClip(VERB_OF_AUTO[kind], busy.ms);
+    // the kernel's `busy` ms is how long the unit lasts: a clip loops until then and is cut there, never the other way round
+    this.playClip(VERB_OF_AUTO[w.kind], w.ms);
+    this.fishing?.phase(w.node, 'cast', this.time.now);
   }
 
   /** Drops the work under way, if any, before a panel reads the state. */
@@ -3657,21 +3606,52 @@ export class WorldScene extends Phaser.Scene {
 
   private workTick(s: GameSession): void {
     const w = this.auto;
-    if (!w) return;
+    if (!w || w.pending) return;
     const elapsed = s.tick - w.start;
-    // the end comes first: a level-up window opening as the work ends must not undo it
-    if (elapsed >= w.ms) return this.finishWork(s, w);
+    // the end comes first: a level-up window opening as the unit ends must not undo it
+    if (elapsed >= w.ms) return void this.nextUnit(s, w);
     const dir = app.controls.direction();
     if (s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing))) return this.stopWork(s, w);
+    if (w.kind === 'fish') {
+      // no blows on the water: the float rides, and the catch is drawn in at the end of the unit
+      if (w.ms - elapsed <= FISH_REEL_MS) this.fishing?.phase(w.node, 'reel', this.time.now);
+      else if (elapsed > FISH_CAST_MS) this.fishing?.phase(w.node, 'wait', this.time.now);
+      return;
+    }
     const beat = beatAt(elapsed, w.ms);
     this.workFrame(beat.down);
     if (blowsDue(beat) > w.hits) {
       w.hits = blowsDue(beat);
-      this.blow(w, beat.progress);
+      this.blow(w, (w.unit + beat.progress) / w.units);
     }
   }
 
-  /** Walked away, or something opened: the work is dropped as if it had not begun. */
+  /**
+   * A unit is done and stays taken. The work goes on with the next one unless the thing has run out, the player has asked to
+   * leave, or the kernel refuses (a full bag, a level, the hour) or danger breaks in; a refusal is said in the kernel's words.
+   */
+  private async nextUnit(s: GameSession, w: Auto): Promise<void> {
+    const dir = app.controls.direction();
+    const leaving = s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing));
+    // a unit that ended with the thing out needs no answer; the fish comes up either way
+    if (w.kind === 'fish' && !leaving && this.ready(s, w.node)) sound.sfx('plop', { gain: 0.8 });
+    w.pending = true;
+    const next = await nextUnit({ ready: () => this.ready(s, w.node), act: (a) => s.act(a) }, w.action, leaving);
+    w.pending = false;
+    // the work was dropped or the player fell while the answer was on its way
+    if (this.auto !== w) return;
+    if (next.kind !== 'go') {
+      if (next.kind === 'stopped' && next.error) app.ui.toast(next.error, 'bad');
+      return this.finishWork(s, w, next.kind === 'out');
+    }
+    w.unit += 1;
+    w.start = s.tick;
+    w.ms = next.ms;
+    w.hits = 0;
+    this.beginUnit(w);
+  }
+
+  /** Walked away, or something opened: the unit under way is dropped as if it had not begun; the ones before it stay. */
   private stopWork(s: GameSession, w: Auto): void {
     this.endWork(w);
     s.cancelWork();
@@ -3683,6 +3663,8 @@ export class WorldScene extends Phaser.Scene {
     this.figure.stop();
     this.busyMs = 0;
     this.held.delete(w.node);
+    // the line is drawn in whenever the cast ends
+    if (w.kind === 'fish') this.fishing?.phase(w.node, 'reel', this.time.now);
     const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
     if (img) {
       this.tweens.killTweensOf(img);
@@ -3691,16 +3673,20 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  private finishWork(s: GameSession, w: Auto): void {
+  /** The work is over; `out` when the thing ran out (the tree falls, the stone splits, the spot is dug), else the player or the kernel ended it. */
+  private finishWork(s: GameSession, w: Auto, out: boolean): void {
     const img = this.nodes.get(w.node);
     // the tree that falls is a copy of the standing one, so the stump can be there under it at once
-    const ghost = w.kind === 'fell' && img ? kitSprite(this, img.x, img.y, img.texture.key, img.frame.name).setOrigin(0.5, 1).setDepth(img.depth + 1).setAngle(img.angle) : undefined;
+    const ghost = out && w.kind === 'fell' && img ? kitSprite(this, img.x, img.y, img.texture.key, img.frame.name).setOrigin(0.5, 1).setDepth(img.depth + 1).setAngle(img.angle) : undefined;
     this.endWork(w);
     this.refreshNodes();
     this.faceFrame();
+    if (!out) return;
+    const inst = placedAt(this.b, w.node)!;
     if (ghost) this.fall(ghost, w.facing, w.node);
     else if (w.kind === 'mine') this.breakStone(w.node);
-    else this.burst(w.kind === 'dig' ? 'fx-dirt' : 'fx-dust', (placedAt(this.b, w.node)!.x + 0.5) * T, (placedAt(this.b, w.node)!.y + 0.6) * T, 8);
+    else if (w.kind === 'dig') this.burst('fx-dirt', (inst.x + 0.5) * T, (inst.y + 0.6) * T, 8);
+    else if (w.kind === 'pick') this.burst('fx-leaf', (inst.x + 0.5) * T, (inst.y + 0.5) * T, 5);
     w.onDone?.();
   }
 
@@ -3727,6 +3713,9 @@ export class WorldScene extends Phaser.Scene {
       this.burst('fx-dust', x, y, 5);
       this.burst('fx-spark', x, y - 4, 3);
       this.burst('fx-chip', x, y - 2, 2 + Math.round(progress * 4));
+    } else if (w.kind === 'pick') {
+      sound.sfx('pluck', { pan, gain: 0.7 });
+      this.burst('fx-leaf', x, y - 2, 4);
     } else {
       sound.sfx('dig', { pan, gain: BLOW_GAIN.dig });
       this.burst('fx-dirt', x, y, 6);
@@ -4207,8 +4196,6 @@ export interface SignInfo {
 const SIGN_SPRITE = 'core/base-kit:props/sign';
 const DIRS_4: readonly [number, number][] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
-const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig', fish: 'plop' };
-const WORK_DUST: Record<WorkKind, string> = { strike: 'fx-dust', pick: 'fx-leaf', snap: 'fx-chip', timing: 'fx-leaf', dig: 'fx-dirt', fish: 'fx-drop' };
 
 function key(x: number, y: number): string {
   return `${x},${y}`;

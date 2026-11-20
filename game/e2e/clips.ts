@@ -79,7 +79,7 @@ window.__clips = (() => {
       return Object.keys(sprites).filter((k) => sprites[k].clip).length;
     },
     race() { return g().session.state.player.race; },
-    /** One beat of a minigame on the real scene, the way the figure is told of it: facing down, the view the sheets are drawn for. */
+    /** One beat of a work on the real scene, the way the figure is told of it: facing down, the view the sheets are drawn for. */
     play(kind) {
       log.length = 0;
       drawn.length = 0;

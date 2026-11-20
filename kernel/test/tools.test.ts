@@ -76,10 +76,15 @@ function gatherHerbs(start: State, times: number): { state: State; events: GameE
   for (let i = 0; i < times; i++) {
     const [node, instance] = nodes[i % nodes.length]!;
     const tick = Math.max(s.tick, s.player.busyUntil, s.nodes[node]?.readyAt ?? 0);
-    const r = step(b, s, { t: 'gather', node, grade: 3, at: beside(s, [instance.x, instance.y]) }, tick);
-    if (!r.ok) throw new Error(r.error);
-    events.push(...r.events);
-    s = r.state;
+    // a node worked to its end: a unit after the last one ended
+    let t = tick;
+    do {
+      const r = step(b, s, { t: 'gather', node, at: beside(s, [instance.x, instance.y]) }, t);
+      if (!r.ok) throw new Error(r.error);
+      events.push(...r.events);
+      s = r.state;
+      t = s.player.busyUntil;
+    } while (s.nodes[node]?.taken !== undefined);
     delete s.player.bag[herb];
   }
   return { state: s, events };
@@ -104,7 +109,7 @@ describe('a lasting tool', () => {
     const herb = b.resources['core/wild-herbs']!.output;
     const { state, events } = gatherHerbs(started({ 'core/fine-basket': 1 }), most + 1);
     expect(events.filter((e) => e.e === 'tool_broke')).toEqual([]);
-    expect(events.filter((e) => e.e === 'gain' && e.item === herb)).toHaveLength(most + 1);
+    expect(events.filter((e) => e.e === 'gain' && e.item === herb)).toHaveLength((most + 1) * b.resources['core/wild-herbs']!.yield);
     expect(state.player.bag['core/fine-basket']).toBe(1);
     expect(state.player.wear['core/fine-basket']).toBeUndefined();
   });

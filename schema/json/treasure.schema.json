@@ -891,7 +891,7 @@
               "type": "string"
             }
           ],
-          "description": "The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn."
+          "description": "The tool the dig asks for and wears. Left out: the find is picked up by hand, with no tool worn."
         },
         "level": {
           "minimum": 1,
@@ -959,7 +959,7 @@
     },
     "search": {
       "additionalProperties": false,
-      "description": "A searchable: a table of rows drawn once a day. It takes no tool and has no timing window. A treasure file carries `search` or `dig`, never both.",
+      "description": "A searchable: a table of rows drawn once a day. It takes no tool. A treasure file carries `search` or `dig`, never both.",
       "type": "object",
       "required": [
         "rows",

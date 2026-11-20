@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.29.0';
+export const KERNEL_VERSION = '0.30.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -73,6 +73,8 @@ export interface NodeState {
   readyAt: number;
   /** draws taken from this entity so far (rule R4) */
   draws: number;
+  /** units already taken from this node's stock in the working under way; left out when none (a node is worked a unit at a time, DECISIONS.md, 2026-11-20) */
+  taken?: number;
 }
 
 /**

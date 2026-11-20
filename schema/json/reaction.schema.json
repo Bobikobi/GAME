@@ -1072,7 +1072,7 @@
                     "yield": {
                       "minimum": 1,
                       "maximum": 20,
-                      "description": "Units gathered per execution at perfect timing.",
+                      "description": "Units the node gives before it is out: one each work interval, the node's time shared out among them (QUARRYING 10).",
                       "type": "integer"
                     },
                     "active_ms": {
@@ -1126,7 +1126,7 @@
                       ]
                     },
                     "game": {
-                      "description": "The minigame played when gathering it, as a resource's `game`.",
+                      "description": "Retired, as a resource's `game`: accepted and ignored.",
                       "anyOf": [
                         {
                           "const": "timing",

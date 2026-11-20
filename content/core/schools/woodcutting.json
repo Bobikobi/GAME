@@ -13,9 +13,9 @@
       {
         "id": "sure-swing",
         "name": "Sure swing",
-        "text": "Your swing finds the good zone more easily.",
+        "text": "Your swing finds its mark: felling goes a little faster.",
         "size": "small",
-        "effect": "timing_window_pct",
+        "effect": "gather_speed_pct",
         "value": 5,
         "icon": "core/branch"
       },
@@ -77,12 +77,12 @@
       {
         "id": "tree-speaker",
         "name": "Tree speaker",
-        "text": "The tree tells you when to strike.",
+        "text": "The tree tells you where to strike: felling goes faster.",
         "size": "corner",
         "needs": [
           "felling-line"
         ],
-        "effect": "timing_window_pct",
+        "effect": "gather_speed_pct",
         "value": 15,
         "slot": true,
         "race": "core/elf",

@@ -7,10 +7,10 @@
  * One rule for every verb: a clip starts at its first frame, shows each frame for its own `frame_ms`, and
  *  - while an action that has a length (felling, quarrying, digging: the kernel's `busy` ms) is under way it loops, and the
  *    action's end cuts it, so a clip longer than its action is cut and a shorter one repeats, as a swing repeats;
- *  - an action with no length of its own (a fight outcome, one beat of a minigame) plays the clip once.
+ *  - an action with no length of its own (a fight outcome) plays the clip once.
  * With no clip for a verb, race and view the figure keeps today's walk sheet or code-drawn motion.
  */
-import type { SpriteInfo } from '@game/kernel';
+import type { SpriteInfo, WorkKind } from '@game/kernel';
 import type { ClipInfo } from '@game/schema';
 import type { Dir } from './input';
 
@@ -75,18 +75,8 @@ export function clipFrame(elapsed: number, frames: number, frameMs: number, last
   return elapsed < lasts ? n % frames : undefined;
 }
 
-/** The verb a work kind of the minigames plays: a stone is quarried, what is pulled, picked or snapped by hand is picked up. */
-export const VERB_OF_WORK: Readonly<Record<'timing' | 'strike' | 'pick' | 'snap' | 'dig' | 'fish', ClipVerb>> = {
-  timing: 'pickup',
-  strike: 'quarry',
-  pick: 'pickup',
-  snap: 'pickup',
-  dig: 'dig',
-  fish: 'fish',
-};
-
-/** The verb the work that runs by itself plays (kernel/src/work.ts `AutoKind`): a mined node is quarried. */
-export const VERB_OF_AUTO: Readonly<Record<'fell' | 'mine' | 'dig', ClipVerb>> = { fell: 'fell', mine: 'quarry', dig: 'dig' };
+/** The verb a work kind plays (kernel/src/work.ts `WorkKind`): a tree is felled, a stone quarried, a spot dug, a river fished, the rest picked up. */
+export const VERB_OF_AUTO: Readonly<Record<WorkKind, ClipVerb>> = { fell: 'fell', mine: 'quarry', dig: 'dig', fish: 'fish', pick: 'pickup' };
 
 /** The part of a fight outcome (kernel/src/events.ts) the figure reads. */
 export interface OutcomeLike {

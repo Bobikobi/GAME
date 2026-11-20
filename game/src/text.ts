@@ -16,7 +16,6 @@ import {
   isNight,
   isSafe,
   minuteOfDay,
-  missKeepBp,
   nightEnds,
   nightFalls,
   offeredTo,
@@ -29,14 +28,14 @@ import {
   salePrice,
   hpCap,
   slotsFor,
-  techniqueValue, type PublicState } from '@game/kernel';
+  workSpeedPermille, type PublicState } from '@game/kernel';
 import { feedTooLate, fireName, tendLine } from './fires';
 
 export function itemName(b: Bundle, id: string): string {
   return b.items[id]?.name ?? id;
 }
 
-/** The verb on a node's prompt and its minigame: a tree is felled, anything else gathered. */
+/** The verb on a node's prompt: a tree is felled, a river fished, a stone mined, anything else gathered. */
 export function nodeAction(b: Bundle, r: Bundle['resources'][string]): string {
   if (r.tool === 'axe') return 'Fell tree';
   if (r.tool === 'rod') return 'Fish';
@@ -67,7 +66,7 @@ export function clock(minuteOfDay: number): string {
 export const ATTRIBUTE_LABEL: Record<string, string> = {
   might: 'Might',
   senses: 'Keen eyes',
-  agility: 'Steady hands',
+  agility: 'Quick hands',
   luck: 'Luck',
   stamina: 'Stamina',
   spirit: 'Spirit',
@@ -76,19 +75,14 @@ export const ATTRIBUTE_LABEL: Record<string, string> = {
 export const ATTRIBUTE_TEXT: Record<string, string> = {
   might: 'Might: a bigger bag, carry more',
   senses: 'Keen eyes: see hidden finds from farther away',
-  agility: 'Steady hands: easier timing in every minigame',
-  luck: 'Luck: a miss keeps something more often, and rare finds come more',
+  agility: 'Quick hands: work goes faster',
+  luck: 'Luck: rare finds come more',
   stamina: 'Stamina: eat less often',
   spirit: 'Spirit: counts for nothing yet; its first use comes in a later update',
 };
 
 /** The most points one attribute can take (the kernel refuses more). */
 export const ATTRIBUTE_MAX = 10;
-
-/** How wide the minigame windows are, in percent of the base. */
-export function windowScalePct(b: Bundle, s: PublicState): number {
-  return 100 + b.params.per_point.agility_pct * attrAt(b, s, 'agility') + techniqueValue(b, s, 'timing_window_pct');
-}
 
 export interface AttributeEffect {
   attr: Attribute;
@@ -106,7 +100,6 @@ export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
   const plus = (a: Attribute): PublicState => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
   // with no hunger clock (G28, G32) a point of stamina is health, not minutes of work
   const points = (st: PublicState) => Math.floor(hpCap(b, st) / 1000);
-  const pct = (bp: number) => `${Math.round(bp / 100)}%`;
   const times = (permille: number) => `x${(permille / 1000).toFixed(2).replace(/0$/, '')}`;
   const luckNext = plus('luck');
   const capped = rareFindPermille(b, luckNext) === rareFindPermille(b, s) && rareFindPermille(b, s) >= powerCap(b, s);
@@ -114,14 +107,14 @@ export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
     // might carries weight, not places (DECISIONS.md, 2026-10-23): the bag on the back gives the places
     { attr: 'might', name: 'Might', what: 'Your load limit', now: `${loadLimit(b, s)}`, next: `${loadLimit(b, plus('might'))}` },
     { attr: 'senses', name: 'Keen eyes', what: 'You see hidden finds from', now: `${hintDistance(b, s)}`, next: `${hintDistance(b, plus('senses'))} steps away` },
-    { attr: 'agility', name: 'Steady hands', what: 'The good zone in a minigame', now: `${windowScalePct(b, s)}%`, next: `${windowScalePct(b, plus('agility'))}% wide` },
+    { attr: 'agility', name: 'Quick hands', what: 'Gathering and digging take', now: times(workSpeedPermille(b, s)), next: `${times(workSpeedPermille(b, plus('agility')))} as fast` },
     {
       attr: 'luck',
       name: 'Luck',
-      what: 'A miss still gives you 1',
-      now: `${pct(missKeepBp(b, s))}`,
-      next: `${pct(missKeepBp(b, luckNext))} of misses`,
-      note: `Rare finds ${times(rareFindPermille(b, s))} -> ${times(rareFindPermille(b, luckNext))}${capped ? ' (held by your level: level up to raise it)' : ''}`,
+      what: 'Rare finds come',
+      now: times(rareFindPermille(b, s)),
+      next: `${times(rareFindPermille(b, luckNext))} as often`,
+      note: capped ? 'Held by your level: level up to raise it' : undefined,
     },
     {
       attr: 'stamina',
@@ -505,8 +498,6 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
       return { text: `Your ${itemName(b, e.item)} broke`, tone: 'bad' };
     case 'attr':
       return { text: `${e.attr[0]?.toUpperCase()}${e.attr.slice(1)} is now ${e.value}`, tone: 'good' };
-    case 'jackpot':
-      return { text: 'Jackpot! Better than perfect', tone: 'good' };
     case 'riddle':
       return { text: `That was it: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'good' };
     case 'visit': {

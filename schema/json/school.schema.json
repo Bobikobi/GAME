@@ -964,10 +964,6 @@
                     "type": "string"
                   },
                   {
-                    "const": "timing_window_pct",
-                    "type": "string"
-                  },
-                  {
                     "const": "second_hint",
                     "type": "string"
                   },

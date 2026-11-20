@@ -4979,7 +4979,7 @@
         },
         "per_point": {
           "additionalProperties": false,
-          "description": "What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
+          "description": "What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), a fifth of a fight blow's percent off every work interval, inside the power cap (agility), permille on rare and legendary finds inside the power cap (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
           "type": "object",
           "required": [
             "might",

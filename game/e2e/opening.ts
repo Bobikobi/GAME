@@ -1,6 +1,6 @@
 /**
  * Plays the whole opening in a real browser, the way a player would: walking
- * tile by tile, the timing minigame, dialogue, menus. One race per wake pocket,
+ * tile by tile, the work of one press, dialogue, menus. One race per wake pocket,
  * each under a fixed seed (wakes.ts): the elf on the west bank on a phone screen
  * with touch only (d-pad, A button, taps), the human in the north meadow on a
  * desktop with the keyboard, and the skeleton on the slid bank on a desktop up
@@ -22,7 +22,6 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
-import { solveMinigame } from './minigame';
 import { FreeWalk, OPPOSITE, VEC, type Dir } from './walk';
 import { LUCKY_BOWL, type WakePocket, seedQuery } from './wakes';
 
@@ -414,9 +413,8 @@ class Player {
       await this.walkTo({ x: node.x, y: node.y, w: 1, h: 1 }, node.id);
       await this.expectPrompt(/^(Fell tree|Gather |Mine )/, node.id);
       await this.a();
-      // a node worked with a tool runs by itself after the press; one picked by hand plays a minigame
-      const mode = await this.page.waitFor<string>(`(() => (document.querySelector('.minigame[data-game]') ? 'play' : __e2e.working() ? 'work' : null))()`, `${node.id} to start`, 3000);
-      if (mode === 'play') await this.solveMinigame();
+      // every work runs by itself after the press, to the node's end
+      await this.watchWork(node.id);
       await this.idle(`taking ${node.id}`);
     }
     throw new Error(`${node.id} at ${node.x},${node.y} still stands in the way`);
@@ -633,9 +631,10 @@ class Player {
     if (pop) throw new Error(`${what} opened a minigame`);
   }
 
-  /** Solves any minigame (timing, strike, pick, snap) by waiting for data-cue="now". */
-  async solveMinigame(): Promise<void> {
-    await solveMinigame(this.page, this.touch);
+  /** Watches the work one press started run to the node's end with no input at all (QUARRYING 10): the player only looks. */
+  async watchWork(what: string): Promise<void> {
+    await this.expectWorking(what);
+    await this.page.waitFor('!__e2e.working()', `${what} to run out`, 60_000);
   }
 
   /** A level brought a point: the window opens about 0.7 s after the jingle. Handle it before doing anything else. */
@@ -670,7 +669,7 @@ class Player {
 
   /** Waits for the current action to finish; dialogue it opens stays open. */
   async done(what: string, timeoutMs = 20_000): Promise<void> {
-    await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.moving; })()', what, timeoutMs);
+    await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.moving && !__e2e.working(); })()', what, timeoutMs);
     await sleep(60);
   }
 
@@ -690,15 +689,15 @@ class Player {
   }
 
   async idle(what: string, timeoutMs = 20_000): Promise<void> {
-    await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.moving; })()', what, timeoutMs);
+    await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.moving && !__e2e.working(); })()', what, timeoutMs);
     await sleep(150); // the story beats run first, then the level-up flag goes up
     await this.settle();
-    await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.blocking && !s.moving; })()', what, timeoutMs);
+    await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.blocking && !s.moving && !__e2e.working(); })()', what, timeoutMs);
   }
 
   /** Gathers from a resource's nodes until the bag holds `want` of its item. */
   async gather(source: string, item: string, want: number): Promise<void> {
-    // a missed minigame can leave a node empty, so wait out a respawn (up to 90 s of game time) on a slow machine
+    // a node another unit emptied needs its respawn: wait it out (up to 90 s of game time) on a slow machine
     const deadline = Date.now() + 150_000;
     while (Date.now() < deadline && (await this.bag(item)) < want) {
       const nodes = await this.page.eval<{ id: string; x: number; y: number; ready: boolean }[]>(`__e2e.nodes(${JSON.stringify(source)})`);
@@ -713,8 +712,7 @@ class Player {
         // a tree is felled, anything else gathered: the prompt must say which
         await this.expectPrompt(source === 'core/oak-trees' ? /^Fell tree/ : /^Gather /, n.id);
         await this.a();
-        if (source === 'core/oak-trees') await this.expectWorking(`felling ${n.id}`);
-        else await this.solveMinigame();
+        await this.watchWork(n.id);
         await this.idle(`gathering ${n.id}`);
       }
     }
@@ -916,7 +914,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       log('dug the axe out of the slid bank');
     }
 
-    // 3. the keystone, the first minigame: one strike, taught in one line
+    // 3. the keystone, the first work: click it, watch, and the stone is yours (no timing, no strike)
     // verify: after the node is gathered, the player can step onto its tile
     const keyNodes = await page.eval<{ id: string; x: number; y: number; ready: boolean }[]>('__e2e.nodes("core/keystone")');
     const keystone = keyNodes.find((n) => n.ready);
@@ -924,7 +922,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
     await me.walkTo({ x: keystone.x, y: keystone.y, w: 1, h: 1 }, keystone.id);
     await me.expectPrompt(/^Gather/, keystone.id);
     await me.a();
-    await me.solveMinigame();
+    await me.watchWork(keystone.id);
     await me.idle(`gathering ${keystone.id}`);
     await me.settle();
     // the rule itself: a gathered node no longer blocks its tile
