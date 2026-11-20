@@ -430,6 +430,15 @@ async function main(): Promise<void> {
     await page.tap('.hud-menu', 'Menu');
     await page.tap('.menu-list button', 'Settings');
     await page.waitFor(`!![...document.querySelectorAll('.set-body h3')].find((h) => h.textContent === 'Controls')`, 'the Controls section');
+    await turn(page, VIEWS[1]!);
+    for (const size of ['16', '18', '20']) {
+      const option = `[aria-label="Text size"] button:nth-child(${size === '16' ? 1 : size === '18' ? 2 : 3})`;
+      await page.tap(option, `Text size ${size}`);
+      const labels = await page.eval<string[]>(`[...document.querySelectorAll('[aria-label="Text size"] button')].map((b) => b.textContent)`);
+      if (labels.join(',') !== '16,18,20') fail(`at text size ${size}, the labels read ${labels.join(',')}, not 16,18,20`);
+    }
+    console.log('Text size landscape: the choices read 16, 18 and 20 at each of the three sizes');
+    await turn(page, VIEWS[0]!);
     const words = await page.eval<{ text: string; px: number }[]>(`(() => {
       const h3 = [...document.querySelectorAll('.set-body h3')].find((h) => h.textContent === 'Controls');
       const rows = [h3.nextElementSibling, h3.nextElementSibling.nextElementSibling];

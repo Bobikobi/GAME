@@ -64,6 +64,11 @@
   margin-left: -1px;
 }
 
+/* Jersey 15 closes the 6 at 16 px until it reads as 8; keep this numeric choice unambiguous. */
+.text-size-options .set-opt {
+  font-family: 'Atkinson Hyperlegible Next', sans-serif;
+}
+
 .panel.settings .btn.set-opt.on,
 .panel.settings .btn.set-switch.on {
   background: var(--kit-brass);
