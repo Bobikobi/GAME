@@ -4479,6 +4479,11 @@ The owner looked at the animation set card of 14.11 on 15.11 and liked all three
 "Some less good" names no clip and no further pick is asked: the manager rules the weaker clips from the gate numbers and by eye in the game, they are redrawn in the polish loop, and the owner corrects at the end.
 Retry when: never needed; if the owner names a clip, rule it again. Model: manager. Link: #742, #716.
 
+## 2026-11-19 ✅ Gear hands, a one-day hide cure, and the G34 check follow the owner's answers
+**What:** `hands` is the tenth wear place, labelled Gloves; `ice_grip` moves there, including an old save that wore it on feet. The declarative tanning cure is 1 game day (`tan_cure_d` 1; `day_length_ms` 1,200,000), and the G34 check says gear answers a place's condition while a predator is answered by a run.
+**Why:** these are the owner's picks of 12.11; the kernel rises from 0.28.0 to 0.29.0 because adapting an old save can move a worn piece. The tanning rack still waits for its build; this pins the value it must read.
+**Retry when:** the tanning rack lands (wire its wait to `tan_cure_d`) or a released save exposes another former feet placement. **Model:** GPT-5 Codex. **Link:** #710.
+
 ## 2026-11-15 ✅ A clip is display only: it loops while its action lasts, is cut where the action ends, and plays once when the action has no length (#742)
 The kit's character clips (verb + race + view, each with its own `frame_ms`) are played by the figure code and nothing else reads them. The kernel decides when a strike lands and how long an action takes; a clip never changes an outcome, a duration or a reward, and nothing in `kernel/` knows of one.
 One rule for every verb: a clip starts at its first frame; while an action with a length (felling, quarrying, digging: the kernel's busy ms) is under way it loops and the action's end cuts it, so a clip longer than its action is cut and a shorter one repeats like a swing; an action with no length (a fight outcome, one beat of a minigame) plays the clip once. Walking away cuts any clip.

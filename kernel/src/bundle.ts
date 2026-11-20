@@ -199,7 +199,7 @@ export interface Params {
    * Dressing a taken animal (docs/design/HUNTING.md sections 5-6): what one step takes, how many game days a carcass
    * keeps its meat and then anything, and how often an animal appears fine or true (basis points).
    */
-  hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; grade2_bp: number; grade3_bp: number };
+  hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; tan_cure_d: number; grade2_bp: number; grade3_bp: number };
   /**
    * The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1):
    * the numbers every kind shares, its own character being the kind's `behaviour`. Durations are game ms.
