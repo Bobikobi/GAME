@@ -27,7 +27,7 @@ tools/src/kit/ink.ts) become the ink #1b1a2e.
 
 A cell whose displayed height or feet are out of the band is REFUSED and listed. With --write each passing cell is written as one
 horizontal strip (`chars/<race>_<verb>_<view>.png`, the take's frames as they are), with the same bytes every run, and with
---write-kit its row (the walk's ramps, the clip block with its fit; no `scale`: a clip sheet owes none, tools/src/kit/scale.ts) is put into the kit's kit.json, replacing the
+--write-kit its row (the walk's ramps, the clip block with its fit; `scale` follows from `pnpm art:scale --declare`, which measures a clip sheet at its fit) is put into the kit's kit.json, replacing the
 rows of an earlier run; without it the rows are printed as JSON. Python 3 with numpy and Pillow only; every path is an argument."""
 import argparse, json, re, sys
 from pathlib import Path

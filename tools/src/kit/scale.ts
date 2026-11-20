@@ -90,8 +90,8 @@ export function scaleKindOf(name: string): ScaleKind | undefined {
  * floor, and a world sprite (anything outside `tiles/` and `items/`) with no height at all. A creature is exempt from the floors - a monster
  * declares its own grade (NATURE section 1) - so it owes the height and nothing more. NATURE 1 asks
  * for one decimal, but STYLE 1b's picks (a dog at 0.45, a child at 0.65, a horse at 1.25) carry two,
- * so the check reads the number as given. A clip sheet (`clip` on the sprite, #742) owes none: it shows at its fit as tall as
- * its race's walk, and that walk is the sprite the floor holds.
+ * so the check reads the number as given. A clip sheet (`clip` on the sprite, #742) owes no floor: it shows at its fit as tall as
+ * its race's walk, and that walk is the sprite the floor holds. Its `scale` is still declared, measured at its fit.
  */
 export function scaleProblems(name: string, scale: number | undefined, isClip = false): string[] {
   if (isClip) return [];
