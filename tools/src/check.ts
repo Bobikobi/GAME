@@ -640,6 +640,9 @@ function checkWear(b: Bundle): Issue[] {
     });
     if (w.set) {
       if (!w.set.startsWith(`${it.creator}/`)) err(it.file, `${where}.wear.set`, `a set holds one creator's pieces: its id starts with "${it.creator}/"`);
+      const set = b.sets[w.set];
+      if (!set) err(it.file, `${where}.wear.set`, `no set "${w.set}": declare its effect and value in a content sets row`);
+      else if (set.creator !== it.creator) err(it.file, `${where}.wear.set`, `the set "${w.set}" belongs to ${set.creator}, not ${it.creator}`);
       if (!w.look) (sets[w.set] ??= []).push(id);
     }
     if (it.premium_later) {
@@ -666,6 +669,21 @@ function checkWear(b: Bundle): Issue[] {
       .filter((slot) => per[slot]! > (slot === 'jewelry' ? 2 : 1));
     if (per.outfit && (per.top || per.legs)) crowded.push('outfit');
     if (crowded.length > 0) err(first.file, where, `the set "${set}" cannot be worn whole: too many pieces for the ${crowded.join(', ')} (G44)`);
+    const bonus = b.sets[set];
+    if (bonus) {
+      const highestTier = Math.max(...pieces.map((id) => b.items[id]!.tier ?? 1));
+      const cap = caps[Math.min(highestTier, caps.length) - 1] ?? 0;
+      const pieceValue = pieces.reduce(
+        (sum, id) => sum + (b.items[id]!.wear!.effects ?? []).filter((e) => e.effect === bonus.effect).reduce((n, e) => n + e.value, 0),
+        0,
+      );
+      if (pieceValue + bonus.value > pieces.length * cap) {
+        err(bonus.file, `sets.${set}.value`, `the set "${set}" gives ${pieceValue + bonus.value}% ${bonus.effect}; ${pieces.length} pieces give at most ${pieces.length * cap}% at tier ${highestTier} (G44)`);
+      }
+    }
+  }
+  for (const [id, set] of Object.entries(b.sets).sort(([x], [y]) => (x < y ? -1 : 1))) {
+    if (!sets[id]) err(set.file, `sets.${id}`, `the set "${id}" has no pieces`);
   }
   return issues;
 }

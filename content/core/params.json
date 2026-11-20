@@ -130,12 +130,6 @@
       8,
       12
     ],
-    "wear_set_bonus_pct": {
-      "value": 20,
-      "min": 0,
-      "max": 50,
-      "step": 5
-    },
     "wear_req_level": [
       1,
       6,
@@ -1148,6 +1142,12 @@
         "min": 4,
         "max": 16,
         "step": 1
+      },
+      "tool_strike_permille": {
+        "value": 1050,
+        "min": 1000,
+        "max": 1500,
+        "step": 50
       },
       "windup_min_ms": {
         "value": 200,

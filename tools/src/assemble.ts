@@ -50,6 +50,7 @@ type RecordKey =
   | 'treasures'
   | 'searchables'
   | 'recipes'
+  | 'sets'
   | 'npcs'
   | 'quests'
   | 'expeditions'
@@ -66,6 +67,7 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   resource: 'resources',
   treasure: 'treasures',
   recipe: 'recipes',
+  set: 'sets',
   npc: 'npcs',
   quest: 'quests',
   expedition: 'expeditions',
@@ -83,6 +85,7 @@ const BODY_OF: Record<string, string> = {
   resource: 'node',
   treasure: 'dig',
   recipe: 'recipe',
+  set: 'set',
   template: 'template',
   npc: 'npc',
   quest: 'quest',
@@ -133,7 +136,6 @@ export function flattenParams(p: ParamsBody): Params {
     craft_luck_max_permille: p.craft_luck_max_permille.value,
     craft_miss_keep_pct: p.craft_miss_keep_pct.value,
     wear_effect_max_pct: [...p.wear_effect_max_pct],
-    wear_set_bonus_pct: p.wear_set_bonus_pct.value,
     wear_req_level: [...p.wear_req_level],
     attr_bonus_max: [...p.attr_bonus_max],
     attr_bonus_step: p.attr_bonus_step.value,
@@ -204,6 +206,7 @@ export function flattenParams(p: ParamsBody): Params {
       swing_floor_ms: p.combat.swing_floor_ms.value,
       bare_windup_ms: p.combat.bare_windup_ms.value,
       bare_base: p.combat.bare_base.value,
+      tool_strike_permille: p.combat.tool_strike_permille.value,
       windup_min_ms: p.combat.windup_min_ms.value,
       windup_max_ms: p.combat.windup_max_ms.value,
       active_ms: p.combat.active_ms.value,
@@ -308,6 +311,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     treasures: {},
     searchables: {},
     recipes: {},
+    sets: {},
     npcs: {},
     quests: {},
     expeditions: {},
