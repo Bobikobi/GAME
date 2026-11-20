@@ -8,12 +8,12 @@
   "quest": {
     "pocket": "core/north-meadow",
     "type": "investigation",
-    "summary": "Something catches the light by the broken bridge. Walk there; your senses will lead you.",
+    "summary": "Something catches the light by the broken bridge. Walk there.",
     "steps": [
       {
         "kind": "find",
         "item": "core/axe",
-        "clue": "It lies in the grass on the near side of the bridge. Pick it up by hand."
+        "clue": "It lies in the grass on the near side of the bridge."
       }
     ],
     "reward": {

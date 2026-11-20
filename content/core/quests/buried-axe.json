@@ -8,12 +8,12 @@
   "quest": {
     "pocket": "core/slid-bank",
     "type": "discovery",
-    "summary": "The bank south of the bridge has slid, and its earth lies loose. Dig in it with your trowel.",
+    "summary": "The bank south of the bridge has slid, and its earth lies loose.",
     "steps": [
       {
         "kind": "find",
         "item": "core/axe",
-        "clue": "The loose earth lies south of the bridge, on the near bank. Your trowel opens it."
+        "clue": "The loose earth lies south of the bridge, on the near bank."
       }
     ],
     "reward": {
