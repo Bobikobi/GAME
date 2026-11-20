@@ -4494,6 +4494,11 @@ Why: a loop and a cut are the two things a player does not notice in a repeated 
 The card `web/public/og/card.png` still read "Openfold" and `theopenfold.vercel.app`, which answers 404, so every link to the game shared on Reddit, X or a chat showed the old name and a dead address (kept on purpose by the rename, "the lettering of the card is the owner's call", entry of the name change). The new card keeps everything else: the bridge frame on the right is pixel-identical to the old card (difference bbox: none), the tagline lines render byte-identical in DejaVu Sans Bold 28, and the name is set in the same DejaVu Sans Bold 86 at the same left margin and ink top. The owner approves the lettering by putting `land-ok` on the pull request. The redraw of the frame itself still waits for PRE_RICH_REDRAW row 30.
 **Retry when:** the rich redraw of rows 1, 2, 4 and 13 lands (a new frame), or the owner wants another lettering. Model: claude-opus-5-5.
 
+## 2026-11-20 ✅ One changed-test route grows from related tests to every suite
+**What:** `pnpm test:changed` reads paths against `origin/develop`: build runs related tests, handover runs each touched package suite, and all runs the root and web suites; every group prints its command and reason first.
+**Numbers and why:** one entry point, three stages, two Vitest workspaces; an unknown path widens to both so no unlinked change is silently dropped.
+**Retry when:** another test workspace or runner enters the repository, or a path now classed unknown gains a proven test link. **Model:** Codex.
+**Link:** public tracker #702, tools audit item 15; owner yes 12.11.
 ## 2026-11-20 ✅ Every clothing set owns its bonus
 **What:** a set is a content row with one worn effect and a whole-number bonus; the kernel reads that row only when every piece is worn. `core/reed-walker` now owns `gather_speed_pct` +2, exactly the 10 + 20% = 12 it gave before; no item value or balance number moved.
 **Why:** a set can now give a worthwhile bonus no other set gives, instead of every set sharing `wear_set_bonus_pct`; the shared parameter is gone.
@@ -4519,8 +4524,23 @@ The owner ruled on 19.11 (22:1x): the start is a discovery of a world, the ways 
 Not built: a fishing spot moved onto the way of a task (the nearest, (13,8), (15,11), (15,6), lies 5-10 tiles off the walk, so no node was moved), gaps 1 and 4.
 **Retry when:** play shows the stripped lines leave a first-time player with nowhere to go (then add a place on the way, not words), or the owner wants a day-time rehearsal (the window is night only). Model: claude-sonnet-5-5. Link: the PR of this entry, DECISIONS 2026-11-20 "One work rule".
 
+## 2026-11-20 ❌ The 200-pair fight pulse has no half-pulse cause to fix
+At 20, 50, 100 and 200 simultaneous pairs, the 50 ms pulse measured 0.545, 2.058, 4.742 and 11.953 ms: superlinear, not quadratic. The largest profiled phase was fight ending at 38.26%; proximity and engagement lookup was 21.82%, so the suspected all-account rest-clock write did not own half the pulse and the kernel stayed replay-identical.
+Retry when finer phase timers identify one cause above 50% or the rule permits a coordinated multi-phase optimization; the 5 ms bar remains open. Model: Codex. Link: #549, #745.
 ## 2026-11-20 ✅ Clothes on the figure: layers by place, colour by mask, whole drawings for fixed sets (the owner liked A, B and C)
 The card `clothing-look-1120` showed the same human in the same outfit three ways: A drawn whole by PixelLab (about 420 generations an outfit on all 418 frames by the cheap edit), B one layer per piece on the bare figure (about 2,500 generations a piece on all frames), C a colour swap through a per-frame mask (0 generations). The owner liked all three (20.11 10:06), with two notes: B "only the hat is not good, the rest is good"; C "the shirt rode up over the chin, otherwise good".
 **The manager's reading (the owner corrects):** the frame is B, layers by wear place, because ten places mix freely (CLOTHING; DECISIONS 2026-11-12 "a tenth place"); a piece's colours come by C's mask, so a hide's colour passes into the garment with no new drawing (DECISIONS 2026-11-12 "a hide's colour is final"); A is kept for fixed outfits, full sets and the world's people. His two notes are bars for the build: a hat's shape reads as a hat, not the hair; no piece covers the chin or the face.
 **Not built now** (engine first, figure details wait): the build is a production item on public #754. The cost of B by drawing is over the PixelLab balance (3,788 on 20.11), so the build starts with the layer from a 3D render or key frames plus mask, measured on one clip first.
 **Retry when:** the owner picks one of the three outright, or a measured clip shows layers cost more than whole drawings per outfit. Model: claude-opus-5-5 (manager). Link: public #754, the card's stills in `feat-clothing-look/.scratch/clothing-look/final/`.
+
+## 2026-11-20 ✅ Phones are measured on their side; an upright phone is asked to turn it (#720)
+All phone tests and stills use one 844 x 390 viewport; portrait touch play shows the existing framed UI as a quiet orientation card and pauses input behind it. The site's home page is unchanged.
+This follows the owner's 14.11 direction that the game, apart from its home page, is played with the phone on its side. Three camera expectations were re-pinned for the sideways 3x canvas: width, height and integer zoom.
+**Retry when:** phone hardware or browser chrome changes the chosen measured viewport, or the owner changes the phone direction. **Model:** Codex. **Link:** public tracker #720.
+## 2026-11-21 ✅ Only the spear is dual; the sling and the bow fight as their own items (#710)
+**What and why:** `dual_use_max` is one and the spear's first rung is its only member; the sling and the bow remain separate hunt take tools and fight hands, following the owner's 12.11 answer to WEAPONS 17 question 2, pick C.
+**Retry when:** the owner changes which take tools also fight, or a later named recipe needs a second dual slot. **Model:** Codex. **Link:** public tracker #710.
+## 2026-11-21 ✅ A work tool fights one small step above bare hands (#710)
+
+Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
+The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).

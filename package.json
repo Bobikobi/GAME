@@ -17,6 +17,7 @@
     "dev": "pnpm bundle && pnpm --filter game dev",
     "build": "pnpm bundle && pnpm --filter game build && pnpm site",
     "test": "vitest run",
+    "test:changed": "tsx tools/src/test-changed.ts",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:migrate": "tsx server/src/migrate-cli.ts",

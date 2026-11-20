@@ -96,6 +96,13 @@ describe('the default variant', () => {
     expect(report.notes.taughtDups[0]).toBe('bow-stave = club (workshop)');
   });
 
+  it('keeps only the spear dual, with sling and bow as separate fight hands', () => {
+    expect(source.params.weapons.dual_use_max).toBe(1);
+    expect(source.forms.filter((form) => form.dual !== undefined).map((form) => [form.form, form.dual])).toEqual([['spear', 2]]);
+    expect(run(source).rows.some((row) => row.id === 'sling' && row.kind === 'hand' && row.tier === 1)).toBe(true);
+    expect(run(source).rows.some((row) => row.id === 'bow' && row.kind === 'hand' && row.tier === 3)).toBe(true);
+  });
+
   it('counts 70 rows at tiers 1 to 3 and 337 at tiers 4 to 10, 407 in all, by class as the page states', () => {
     const report = run(source);
     expect(report.rows).toHaveLength(407);
@@ -342,8 +349,8 @@ describe('a mutation fails its own check', () => {
 
   it('duals', () => {
     const src = raw();
-    src.forms.find((f) => f.form === 'greatsword')!.dual = 6;
-    expectError(src, /^duals \[\('greatsword', 6\), \('spear', 2\), \('bow', 3\), \('sling', 1\)\]: over dual_use_max or past tool\.tier 5$/);
+    src.forms.find((f) => f.form === 'bow')!.dual = 3;
+    expectError(src, /^duals \[\('spear', 2\), \('bow', 3\)\]: over dual_use_max or past tool\.tier 5$/);
   });
 
   it('Q-5 coverage per tier', () => {

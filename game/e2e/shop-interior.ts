@@ -11,6 +11,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, byText, sleep, type Page, type Viewport } from './cdp';
+import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 import { FreeWalk } from './walk';
 
@@ -208,7 +209,7 @@ async function main(): Promise<void> {
   const browser = await Browser.launch();
   try {
     for (const [name, viewport] of [
-      ['phone', { width: 390, height: 844, mobile: true }],
+      ['phone', PHONE],
       ['desktop', { width: 1440, height: 900, mobile: false }],
     ] as [string, Viewport][]) {
       const page = await browser.newPage(viewport);

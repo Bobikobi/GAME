@@ -112,7 +112,6 @@ body {
 
 #ui > .touch .pad,
 #ui > .touch .tbtns,
-#ui > .top > .rotate-hint,
 #ui > .dialog-layer .dialog {
   pointer-events: auto;
 }
@@ -1209,30 +1208,6 @@ body {
   margin-right: 0;
 }
 
-/* ------------------------------------------------------------ the rotate hint */
-
-.rotate-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 2px 4px 2px 10px;
-  font-size: 16px;
-  color: var(--ui-paper);
-  background: var(--ui-black);
-  border: var(--ui-line);
-  pointer-events: auto;
-}
-
-.rotate-hint-x {
-  font: inherit;
-  font-size: 20px;
-  min-width: 44px;
-  min-height: 44px;
-  color: var(--ui-gold-5);
-  background: none;
-  border: 0;
-}
-
 /* ------------------------------------------------------------ layers */
 
 .layer {
@@ -1367,6 +1342,16 @@ body {
 
 .panel.wide {
   width: min(100%, 680px);
+}
+
+.panel.orientation-card {
+  width: min(100%, 420px);
+  text-align: center;
+}
+
+.orientation-card .panel-body p {
+  margin: 8px 0 0;
+  font-size: 18px;
 }
 
 /* the name on its plaque in the middle, the close button set into the right-hand corner over its piece */

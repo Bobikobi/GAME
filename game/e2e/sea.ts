@@ -12,6 +12,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -233,7 +234,7 @@ async function main(): Promise<void> {
     }
   };
   try {
-    await play({ width: 390, height: 844, mobile: true }, 'phone', run);
+    await play(PHONE, 'phone', run);
     await play({ width: 800, height: 360, mobile: true }, 'landscape', runLandscape);
   } finally {
     await browser.close();
