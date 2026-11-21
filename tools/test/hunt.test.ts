@@ -44,8 +44,11 @@ function editCore<T>(rel: string, change: (data: T) => void): Edit {
 
 const errors = (r: CheckResult) => r.issues.filter((i) => i.level === 'error');
 /** The error messages about the hare's hunt, the tester's files or a shop. */
+// A world that swaps the hare's drops takes the hide-chain garments' value with it, so Pell's unpriced offers for them
+// report "has no value" (#769); that is the shelf's rule at work, not what these tests ask about.
 const ours = (r: CheckResult) =>
   errors(r)
+    .filter((i) => !i.message.includes('so its price cannot be left out'))
     .filter((i) => i.where.includes('core/hare') || i.file.includes('tester') || i.where.startsWith('shop.') || i.where.startsWith('items.tester'))
     .map((i) => `${i.where}: ${i.message}`);
 
