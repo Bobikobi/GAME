@@ -1,6 +1,6 @@
 # Skill families: what the tree holds, a first family set fitted to it, and a clean one (2026-11-21)
 
-Status: **picked: A, 21.11; B the later expansion** (#769). The owner answered the card `skill-families-1121`, 21.11 at 09:44: "לגבי המחקר a בהמשך הרחבה לb" (on the survey: A, and later an expansion to B). Set A is built now: Handcraft's families by use (#776), then its family groups and the parity checks F1 to F6 (step C of the clothing wave). Nothing of B is built now, and nothing in A may block it (section 2.4).
+Status: **picked: A, 21.11; B the later expansion** (#769). The owner answered the card `skill-families-1121`, 21.11 at 09:44: "לגבי המחקר a בהמשך הרחבה לb" (on the survey: A, and later an expansion to B). Set A's frame is built on develop (#776): Handcraft's families `wear` and `tools`, the node `family` key, and F6's kernel test (kernel/test/recipe-gate.test.ts, "a family node"). Not built yet, step C of the clothing wave: the node groups, `nodes_max` 12 to 20 (params.json still says 12) and the check rows F1 to F5. Nothing of B is built now, and nothing in A may block it (section 2.4).
 
 The owner, 21.11: "לגבי הפער של עיצוב הביגוד זה עץ נחמד אבל הוא לא יכול להיות קשה מידי לפיתוח לעומת שאר המשפחות, כי יהיה ברזל ואז יהיה שריון מגינים חרבות ועוד שימוש מתכת, אז מי שמתקדם בייצור ביגוד יהיה לו קל מולם, לעומת מי שמייצר נשק ומתקדם בזה יהיה לו קל יותר בנשקים, גם אוכל או כישורים נוספים. תעשה בדיקת עצי סקילים אצל המובילים ותציע לי ערכת משפחות ראשונה, מול מה שיש לנו וגם אלטרנטיבה נקייה בלי מה שאתה יודע על המשחק כבר (חוץ מזה שזה עולם פתוח לחקירה)".
 
@@ -137,7 +137,7 @@ Each craft family gets the same group of 4 nodes on top of its school's shared 7
 | first small | small, 1 | always on | the school's first major | `craft_speed_pct` 5 |
 | second small | small, 1 | always on | the first small | `craft_chance_pct` 5 |
 | first major | major, 2 | a technique: works while in a build slot | the second small | `quality_pct`, when it is built (it waits, CLOTHING 9) |
-| second major | major, 2 | a technique: works while in a build slot | the first major | one rule change from a closed list: a miss keeps one more input; one more from a batch of goods for this family; no wear on this family's tools (an open end) |
+| second major | major, 2 | a technique: works while in a build slot | the first major | one rule change from a closed list: a miss keeps one more input; (open, #784: "one more from a batch of goods for this family" gives output the inputs did not pay for, against G44 and R9 when the craft consumes its inputs; the alignment study settles it in its S4 page, and the node is not built until then; B's Hands branch in SKILL_FAMILIES_CLEAN.md has the same "+1 batch size" and the same conflict) no wear on this family's tools (an open end) |
 
 - A full group costs 6 points. Every family's group costs the same, sits at the same depth in its school and gives the same numbers. Only the names and the text differ.
 - Nodes carry no level of their own today: depth comes from the chain (`needs`) and the points, and the majors from the build's slots. A level band per node (PROGRESSION 3.3's bands of five levels) is a later step for the whole tree, not for families alone.
@@ -185,7 +185,7 @@ The wear family's fix is two edits to designed content that is not built yet (CL
 
 ### 2.4 What keeps B open (the owner: B is the later expansion)
 
-A is built so that growing into B is an addition, never a rewrite of what players hold:
+A is built so that growing into B is mostly an addition: the names, the nodes and the points carry over. It is not free of rewriting: B still replaces the level table and the built schools' node files (section 5, "What it costs to build"), and how a player's saved levels and nodes move is not designed here, because no migration or migration test exists (open, for B's own pull request):
 
 - **The family names carry over.** A's `wear`, `arms` and `remedies` are B's Wear, Arms and Remedies; `food` is Kitchen and `tools` is Fieldcraft. When a family becomes a school of its own, its recipes name that profession, and its nodes and the points spent on them move with it (2.1).
 - **One curve.** F2 keeps one `xp_levels` table for every craft profession. B's 50-level table is then one swap for all of them at once, the way B moves every family's tiers together.
