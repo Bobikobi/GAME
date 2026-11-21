@@ -1015,6 +1015,17 @@
                 "description": "An item whose sprite pictures the node on the tree.",
                 "type": "string"
               },
+              "family": {
+                "pattern": "^[a-z0-9_-]+$",
+                "maxLength": 24,
+                "description": "A craft node only: it helps only the recipes of this family, one its school's profession declares (SKILL_FAMILIES 2.2). Left out, a craft node helps every recipe of its profession.",
+                "type": "string"
+              },
+              "gate": {
+                "description": "\"combat\": closed while the fight is off (params combat.enabled 0, G35). The tree shows it and refuses a point for it, so no point goes to a node whose recipes nobody can make yet (CLOTHING 6.1).",
+                "const": "combat",
+                "type": "string"
+              },
               "cluster": {
                 "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
                 "maxLength": 40,
