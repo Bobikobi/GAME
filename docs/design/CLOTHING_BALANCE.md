@@ -274,8 +274,8 @@ None moves a locked value or writes a price. They are applied to CLOTHING.md in 
 
 ## 9. Owner questions
 
-1. **Pell's shelf.** *A new player reaches Pell with a few coins and his race's clothes, and on the shelf lies a pair of plain hare-leather shoes.* Should Pell sell one plain tier-1 piece for each body place, at 10 times its value? That is the same rule as the satchel, but the price is written into the shop file by hand. Yes: buying becomes a route, as in OSRS and Vintage Story. No: making stays the only route to a garment, as in Valheim.
-2. **The torn page in the rubble.** *A player digging the gate rubble for coins and shards turns up, once in about twenty digs, a torn page: how to boil leather.* Should the four tier-2 hide scraps join the gate rubble? The shard, the coin and the stew scrap would each lose up to 5% of their worth: inside the drift rule (R11, 10%), but locked values move. Yes: the first set takes about an hour, inside the games' band. No: the scraps wait for a spot of their own (as WEAPONS and QUARRYING did), and that spot needs a place card first.
+1. **Pell's shelf.** *A new player reaches Pell with a few coins and their race's clothes, and on the shelf lies a pair of plain hare-leather shoes.* Should Pell sell one plain tier-1 piece for each body place, at 10 times its value? That is the same rule as the satchel, but the price is written into the shop file by hand. Yes: buying becomes a route, as in OSRS and Vintage Story. No: making stays the only route to a garment, as in Valheim. **Answered 21.11: yes** (the owner on the card `clothing-routes-1121`: "קניה ומציאה- כן"). The price is the R8 floor times the item's worth, never written by hand (the manager, 21.11).
+2. **The torn page in the rubble.** *A player digging the gate rubble for coins and shards turns up, once in about twenty digs, a torn page: how to boil leather.* Should the four tier-2 hide scraps join the gate rubble? The shard, the coin and the stew scrap would each lose up to 5% of their worth: inside the drift rule (R11, 10%), but locked values move. Yes: the first set takes about an hour, inside the games' band. No: the scraps wait for a spot of their own (as WEAPONS and QUARRYING did), and that spot needs a place card first. **Answered 21.11: yes** (the same card and words). A found recipe cannot carry the combat gate (CLOTHING 6), so how the pages stay closed while the fight is off goes to the manager before they are built.
 
 ## 10. What is not built here
 
@@ -284,8 +284,8 @@ None moves a locked value or writes a price. They are applied to CLOTHING.md in 
   - the tier-1 pieces only
   - the found tiers with the gate's opening (P1)
   - the gloves with them if the owner agrees (P4)
-- The family nodes wait for the family set (P2).
-- The routes R1 to R3 wait for questions 1 and 2 and for the quest-designer.
+- The family nodes: the owner picked set A on 21.11 (docs/design/SKILL_FAMILIES.md), so Handcraft gets a `wear` group of 4 (CLOTHING 6.1), built after #776 (P2).
+- R1 and R3 were answered yes by the owner on 21.11 (section 9) and are built in pull requests of their own. R2 waits for the quest-designer when the fight opens.
 
 ## 11. Sources
 
