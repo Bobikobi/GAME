@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/garments",
+  "title": "Garment classes",
+  "creator": "core",
+  "description": "The classes of worn pieces by how they are made (docs/design/CLOTHING.md section 3). Reedwork now; leather and fur land with the take verb.",
+  "classes": [
+    {
+      "id": "core/reedwork",
+      "name": "Reedwork",
+      "base": "garment",
+      "description": "Woven from reed cord and mat."
+    }
+  ]
+}
