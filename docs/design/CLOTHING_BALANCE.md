@@ -157,7 +157,7 @@ So if a garment were sold, buying would cost 10 times the value and selling one 
 | R3 | The tier-2 recipes are designed as dug up at the gate rubble, re-splitting its shares | The same, kept: it is the found route that brings the first set inside the band (section 3) | moves the shard, the coin and the stew scrap by up to 5%: **owner question 2** |
 | R4 | (not written) | A found or bought piece is the same item as the made one, never better. That keeps making alive by choice and by growing, as OSRS and Albion do, and avoids NW's tension | nothing: a rule for the content pull requests (CLOTHING 6) |
 
-With R1 to R3 the routes would sit about 60% made, 20% bought, 20% found or given (ESTIMATE): inside the band on all three.
+With R1 to R3 the routes would sit at about 60% made, 20% bought and 20% found or given (ESTIMATE). Making sits at the top of its band (10 to 60%) and buying inside its band (0 to 40%). Finding stays under its band (30 to 85%) until the fight opens and R2 adds the hunter's quest piece.
 
 ## 5. Variety of making
 
