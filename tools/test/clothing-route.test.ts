@@ -13,13 +13,13 @@ const MIN = 60_000;
 describe('the clothing route', () => {
   const { bundle } = loadWorld();
 
-  it('adds the hide chain to a copy only: the world it was given is unchanged', () => {
+  it('overlays the route recipes on a copy only: the world it was given is unchanged', () => {
     const before = JSON.stringify(bundle);
     const chained = withHideChain(bundle, 'found');
     expect(JSON.stringify(bundle)).toBe(before);
     expect(chained.recipes['core/hare-leather-shoes']?.known).toBe('start');
     expect(chained.recipes['core/boiled-leather-cap']?.known).toBe('found');
-    expect(bundle.recipes['core/hare-leather-shoes']).toBeUndefined();
+    expect(bundle.recipes['core/hare-leather-shoes']).toMatchObject({ known: 'start', gate: 'combat' });
   });
 
   it('known from the start: first piece, kit and set in order, in the minutes the page cites', async () => {

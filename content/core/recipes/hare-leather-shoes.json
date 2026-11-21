@@ -9,7 +9,7 @@
     {
       "id": "core/hare-leather-shoes",
       "name": "Hare-leather shoes",
-      "description": "Light shoes of hare leather. A digger stands longer in them.",
+      "description": "Light hare leather shoes stitched with sinew.",
       "kind": "material",
       "rarity": "common",
       "class": "core/leather",

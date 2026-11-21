@@ -9,7 +9,7 @@
     {
       "id": "core/roe-leather-leggings",
       "name": "Roe-leather leggings",
-      "description": "Leggings of roe leather that save the knees on stony ground.",
+      "description": "Roe leather leggings stitched with sinew.",
       "kind": "material",
       "rarity": "common",
       "class": "core/leather",
