@@ -14,10 +14,12 @@ import {
   huntGoods,
   idiv,
   itemCategory,
+  MAX_SHEET_PX,
   minChargeFor,
   missOutcome,
   rarityBudget,
   rarityRank,
+  sheetGrid,
   wearReqLevel,
 } from '@game/kernel';
 import { GOODS, RARITIES, TRAIT_SLOTS, type ChunkFile, type ParamsBody } from '@game/schema';
@@ -985,7 +987,7 @@ export function strideProblem(s: { w: number; h: number; frames: number; stride?
  * V-1: every sprite exists, has the published size, and uses the core palette and its own declared ramps;
  * and it is drawn rich at 64 px per tile unless the core kit still waits to redraw it (DECISIONS.md, 2026-10-23).
  */
-function checkKits(a: Assembled): Issue[] {
+export function checkKits(a: Assembled): Issue[] {
   const issues: Issue[] = [];
   const core = CORE_PALETTE.map((h) => h.toLowerCase());
   for (const [kitId, kit] of Object.entries(a.kits)) {
@@ -1031,11 +1033,23 @@ function checkKits(a: Assembled): Issue[] {
         issues.push({ file: `${kit.rel}/${s.file}`, where: '', message: 'not a readable PNG', level: 'error' });
         continue;
       }
-      if (png.width !== s.w * s.frames || png.height !== s.h) {
+      const grid = sheetGrid(s);
+      if (png.width !== grid.width || png.height !== grid.height) {
         issues.push({
           file: `${kit.rel}/${s.file}`,
           where: '',
-          message: `is ${png.width}x${png.height}, the kit says ${s.w * s.frames}x${s.h} (${s.frames} frame${s.frames > 1 ? 's' : ''} of ${s.w}x${s.h})`,
+          message: `is ${png.width}x${png.height}, the kit says ${grid.width}x${grid.height} (${s.frames} frame${s.frames > 1 ? 's' : ''} of ${s.w}x${s.h}${grid.rows > 1 ? `, ${grid.cols} to a row` : ''})`,
+          level: 'error',
+        });
+      }
+      if (s.cols !== undefined && s.cols >= s.frames) {
+        issues.push({ file: kitFile, where, message: `cols ${s.cols} wraps nothing: the sheet has ${s.frames} frames. Leave cols out for one row.`, level: 'error' });
+      }
+      if (grid.width > MAX_SHEET_PX || grid.height > MAX_SHEET_PX) {
+        issues.push({
+          file: kitFile,
+          where,
+          message: `the sheet is ${grid.width}x${grid.height}, wider or taller than ${MAX_SHEET_PX} px, which a phone's graphics card may refuse. Wrap it into rows with cols.`,
           level: 'error',
         });
       }

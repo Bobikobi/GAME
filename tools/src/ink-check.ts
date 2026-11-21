@@ -25,7 +25,7 @@ export function checkInk(a: Assembled): Issue[] {
       if (name.startsWith('tiles/') || name.startsWith('creatures/')) continue; // ground is seamless; animals wear no outline (pick C, 31.10)
       let share: number;
       try {
-        share = inkShare(readFileSync(join(kit.dir, s.file)), s.w);
+        share = inkShare(readFileSync(join(kit.dir, s.file)), s.w, s.cols === undefined ? undefined : s.h);
       } catch {
         continue; // a missing or unreadable PNG is checkKits' error to report
       }

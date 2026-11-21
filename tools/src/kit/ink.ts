@@ -28,26 +28,32 @@ export interface Raster {
 /**
  * The one definition of the ink edge, used by the kit check, `kit:ink` and the anim tool: an opaque pixel is
  * solid, and a frame's border counts as outside. `frameWidth` splits a strip into frames (a single picture:
- * its width).
+ * its width); `frameHeight` does the same down a wrapped sheet (a single row: the height).
  */
-const solidAt = (r: Raster, x: number, y: number, x0: number, frameWidth: number): boolean =>
-  x >= x0 && x < x0 + frameWidth && y >= 0 && y < r.height && r.data[(y * r.width + x) * 4 + 3] === 255;
+const solidAt = (r: Raster, x: number, y: number, x0: number, frameWidth: number, y0 = 0, frameHeight: number = r.height): boolean =>
+  x >= x0 && x < x0 + frameWidth && y >= y0 && y < y0 + frameHeight && r.data[(y * r.width + x) * 4 + 3] === 255;
 
-function frameCheck(r: Raster, frameWidth: number): void {
+function frameCheck(r: Raster, frameWidth: number, frameHeight: number): void {
   if (!Number.isInteger(frameWidth) || frameWidth <= 0 || r.width % frameWidth !== 0) {
     throw new Error(`frame width ${frameWidth} does not divide the image width ${r.width}`);
+  }
+  if (!Number.isInteger(frameHeight) || frameHeight <= 0 || r.height % frameHeight !== 0) {
+    throw new Error(`frame height ${frameHeight} does not divide the image height ${r.height}`);
   }
 }
 
 /** Edge pixels of a frame: solid pixels with a 4-neighbour that is not solid or lies outside the frame. */
-export function edgePixels(r: Raster, frameWidth: number = r.width): number[] {
-  frameCheck(r, frameWidth);
+export function edgePixels(r: Raster, frameWidth: number = r.width, frameHeight: number = r.height): number[] {
+  frameCheck(r, frameWidth, frameHeight);
   const out: number[] = [];
-  for (let x0 = 0; x0 < r.width; x0 += frameWidth) {
-    for (let y = 0; y < r.height; y++) {
-      for (let x = x0; x < x0 + frameWidth; x++) {
-        if (!solidAt(r, x, y, x0, frameWidth)) continue;
-        if (!solidAt(r, x - 1, y, x0, frameWidth) || !solidAt(r, x + 1, y, x0, frameWidth) || !solidAt(r, x, y - 1, x0, frameWidth) || !solidAt(r, x, y + 1, x0, frameWidth)) out.push(y * r.width + x);
+  const solid = (x: number, y: number, x0: number, y0: number): boolean => solidAt(r, x, y, x0, frameWidth, y0, frameHeight);
+  for (let y0 = 0; y0 < r.height; y0 += frameHeight) {
+    for (let x0 = 0; x0 < r.width; x0 += frameWidth) {
+      for (let y = y0; y < y0 + frameHeight; y++) {
+        for (let x = x0; x < x0 + frameWidth; x++) {
+          if (!solid(x, y, x0, y0)) continue;
+          if (!solid(x - 1, y, x0, y0) || !solid(x + 1, y, x0, y0) || !solid(x, y - 1, x0, y0) || !solid(x, y + 1, x0, y0)) out.push(y * r.width + x);
+        }
       }
     }
   }
@@ -55,14 +61,17 @@ export function edgePixels(r: Raster, frameWidth: number = r.width): number[] {
 }
 
 /** The pixels just outside a silhouette (clear, with a solid 4-neighbour in the frame): where a ring of ink goes. */
-export function ringPixels(r: Raster, frameWidth: number = r.width): number[] {
-  frameCheck(r, frameWidth);
+export function ringPixels(r: Raster, frameWidth: number = r.width, frameHeight: number = r.height): number[] {
+  frameCheck(r, frameWidth, frameHeight);
   const out: number[] = [];
-  for (let x0 = 0; x0 < r.width; x0 += frameWidth) {
-    for (let y = 0; y < r.height; y++) {
-      for (let x = x0; x < x0 + frameWidth; x++) {
-        if (solidAt(r, x, y, x0, frameWidth)) continue;
-        if (solidAt(r, x - 1, y, x0, frameWidth) || solidAt(r, x + 1, y, x0, frameWidth) || solidAt(r, x, y - 1, x0, frameWidth) || solidAt(r, x, y + 1, x0, frameWidth)) out.push(y * r.width + x);
+  const solid = (x: number, y: number, x0: number, y0: number): boolean => solidAt(r, x, y, x0, frameWidth, y0, frameHeight);
+  for (let y0 = 0; y0 < r.height; y0 += frameHeight) {
+    for (let x0 = 0; x0 < r.width; x0 += frameWidth) {
+      for (let y = y0; y < y0 + frameHeight; y++) {
+        for (let x = x0; x < x0 + frameWidth; x++) {
+          if (solid(x, y, x0, y0)) continue;
+          if (solid(x - 1, y, x0, y0) || solid(x + 1, y, x0, y0) || solid(x, y - 1, x0, y0) || solid(x, y + 1, x0, y0)) out.push(y * r.width + x);
+        }
       }
     }
   }
@@ -81,27 +90,27 @@ export function paintInk(r: Raster, p: number): void {
 }
 
 /** The PNG with its edge pixels recoloured to ink, frame by frame. Returns the new bytes. */
-export function applyInk(buffer: Buffer, frameWidth: number): Buffer {
+export function applyInk(buffer: Buffer, frameWidth: number, frameHeight?: number): Buffer {
   const png = PNG.sync.read(buffer);
-  for (const p of edgePixels(png, frameWidth)) paintInk(png, p);
+  for (const p of edgePixels(png, frameWidth, frameHeight)) paintInk(png, p);
   return PNG.sync.write(png);
 }
 
 /** The share (0 to 1) of a sprite's edge pixels that are ink. A sprite with no opaque pixel has no edge: 1. */
-export function inkShare(buffer: Buffer, frameWidth: number): number {
+export function inkShare(buffer: Buffer, frameWidth: number, frameHeight?: number): number {
   const png = PNG.sync.read(buffer);
-  const edge = edgePixels(png, frameWidth);
+  const edge = edgePixels(png, frameWidth, frameHeight);
   if (edge.length === 0) return 1;
   const ink = edge.filter((p) => isInk(png, p)).length;
   return ink / edge.length;
 }
 
 interface KitFile {
-  kit: { sprites: Record<string, { file: string; w: number; density?: number }> };
+  kit: { sprites: Record<string, { file: string; w: number; h?: number; cols?: number; frames?: number; density?: number }> };
 }
 
 /** The sprites `kit:ink` and the check cover: density 4, and neither seamless ground (`tiles/`) nor an animal (`creatures/`, pick C of 31.10). */
-export function inkSprites(sprites: KitFile['kit']['sprites']): [string, { file: string; w: number }][] {
+export function inkSprites(sprites: KitFile['kit']['sprites']): [string, { file: string; w: number; h?: number; cols?: number; frames?: number }][] {
   return Object.entries(sprites).filter(([name, s]) => s.density === 4 && !name.startsWith('tiles/') && !name.startsWith('creatures/'));
 }
 
@@ -112,7 +121,7 @@ export function inkKit(kitDir: string): string[] {
   for (const [, s] of inkSprites(kit.kit.sprites)) {
     const path = join(kitDir, s.file);
     const before = readFileSync(path);
-    const after = applyInk(before, s.w);
+    const after = applyInk(before, s.w, s.cols === undefined ? undefined : s.h);
     if (!PNG.sync.read(before).data.equals(PNG.sync.read(after).data)) {
       writeFileSync(path, after);
       changed.push(s.file);

@@ -71,12 +71,13 @@ export interface Row {
 }
 
 /** Rows of a frame that hold a solid pixel: the opaque height (last row - first row + 1), 0 for an empty frame. */
-export function opaqueHeight(png: PNG, frameWidth: number, frame: number): number {
-  const { width, height, data } = png;
-  const x0 = frame * frameWidth;
+export function opaqueHeight(png: PNG, frameWidth: number, frame: number, frameHeight: number = png.height, cols: number = Number.MAX_SAFE_INTEGER): number {
+  const { width, data } = png;
+  const x0 = (frame % cols) * frameWidth;
+  const y0 = Math.floor(frame / cols) * frameHeight;
   let top = -1;
   let bottom = -1;
-  for (let y = 0; y < height; y++) {
+  for (let y = y0; y < y0 + frameHeight; y++) {
     for (let x = x0; x < Math.min(width, x0 + frameWidth); x++) {
       if ((data[(y * width + x) * 4 + 3] ?? 0) >= SOLID) {
         if (top < 0) top = y;
@@ -89,10 +90,10 @@ export function opaqueHeight(png: PNG, frameWidth: number, frame: number): numbe
 }
 
 /** The tallest opaque height among the frames of a sheet: a walk bobs and a pose bends, the standing frame is the height. */
-export function drawnHeight(png: PNG, frameWidth: number, frames: number): number {
+export function drawnHeight(png: PNG, frameWidth: number, frames: number, frameHeight: number = png.height, cols: number = frames): number {
   const hs: number[] = [];
   for (let f = 0; f < frames; f++) {
-    const h = opaqueHeight(png, frameWidth, f);
+    const h = opaqueHeight(png, frameWidth, f, frameHeight, cols);
     if (h > 0) hs.push(h);
   }
   if (hs.length === 0) return 0;
@@ -124,6 +125,7 @@ interface SpriteEntry {
   w: number;
   h: number;
   frames?: number;
+  cols?: number;
   density?: number;
   /** A clip sheet (#742) is shown at its fit: the height in characters is the height as shown. */
   clip?: { fit_permille?: number };
@@ -147,7 +149,7 @@ export function measureKits(root = KITS_DIR): { adultUnits: number; adultPx: num
   const kits = readKits(root);
   const read = (dir: string, s: SpriteEntry): number => {
     const png = PNG.sync.read(readFileSync(join(dir, s.file)));
-    return drawnHeight(png, s.w, s.frames ?? 1);
+    return drawnHeight(png, s.w, s.frames ?? 1, s.h, s.cols);
   };
   const core = kits.find((k) => k.id === 'core');
   const adultSprite = core?.sprites[ADULT_SPRITE];

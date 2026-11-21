@@ -42,7 +42,9 @@ import {
   riddleSlots,
   sees,
   spotOpen,
+  frameRect,
   gaitStepMs,
+  sheetGrid,
   treasureKind,
   windowOpen,
   type WorkKind,
@@ -1106,14 +1108,19 @@ export class WorldScene extends Phaser.Scene {
     if (this.textures.exists(key)) return key;
     const info = this.b.sprites[ref];
     if (!info || !this.textures.exists(ref)) return undefined;
-    const tex = this.textures.createCanvas(key, info.w * info.frames, info.h);
+    // the copy keeps the sheet's layout, rows included (`cols`): each frame goes where the kernel's grid rule puts it
+    const grid = sheetGrid(info);
+    const tex = this.textures.createCanvas(key, grid.width, grid.height);
     if (!tex) return undefined;
-    for (let f = 0; f < info.frames; f++) tex.drawFrame(ref, info.frames > 1 ? f : undefined, f * info.w, 0, false);
+    for (let f = 0; f < info.frames; f++) {
+      const at = frameRect(info, f);
+      tex.drawFrame(ref, info.frames > 1 ? f : undefined, at.x, at.y, false);
+    }
     const pixels = tex.getData(0, 0, tex.width, tex.height);
     remapTone(pixels.data, tex.width, tone, info.w);
     tex.putData(pixels, 0, 0);
     tex.refresh();
-    if (info.frames > 1) for (let f = 0; f < info.frames; f++) tex.add(f, 0, f * info.w, 0, info.w, info.h);
+    if (info.frames > 1) for (let f = 0; f < info.frames; f++) { const at = frameRect(info, f); tex.add(f, 0, at.x, at.y, info.w, info.h); }
     return key;
   }
 
