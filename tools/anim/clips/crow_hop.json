@@ -1,0 +1,30 @@
+{
+  "about": "The crow's hop: four poses of the body's own Hop (both feet planted and swinging back, then a bound with a wing flare), side-on, down and up, at 850 ms a tile (the pose-rate cap: a hop of 11 to 15 px across the views, drawn in four poses, holds its feet only up to about 80 px/s). Four poses a loop (DECISIONS 2026-10-29).",
+  "target": "crow",
+  "base": {
+    "library": "self:crow",
+    "action": "Hop"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 850
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

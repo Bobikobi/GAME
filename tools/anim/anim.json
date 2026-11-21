@@ -191,6 +191,64 @@
       "leaf": "green",
       "credit": "Boar by Teh_Bucket (created at the request of bloons), OpenGameArt, CC0, https://opengameart.org/content/boar; modified: the mirror, edge-split and triangulate modifiers applied (one whole mesh) and the unused projection-test UV layer and the file's scene properties dropped; the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, the coat lifted from near black to a dark grey-brown with grey bristle tips and the lighter hairs of the rump and the brow brought down to the coat's middle value (written into the map, the tusks left white), the snout's disc and the hooves given a plain dark material; the colour map re-encoded as JPEG (quality 90); turned to face -Y, centred over the origin and scaled to 0.8 m at the withers with the turn and the scale baked into the bones and the mesh, and a tip bone under each hoof (the renderer reads a foot from its bone's tail); Idle (from the rest pose), Walk (a calm four-beat pace; the file's walk, a trot, dropped), Run (a four-beat rotary gallop), Alert (the bluff: the head low, a snort, a toss and a forefoot stamp), Graze (rooting, the snout at the ground) and Lie (down on its belly, the legs folded under it and the chin on the ground, held still; its legs posed bone by bone) keyed in Blender on the rig's leg IK (game/tools/blender/boar_pass.py), every action baked to bone keys and the IK targets and constraints dropped; the file's attack kept as Charge (not rendered); posed with its own actions and rendered to pixels by tools/anim"
     },
+    "hare": {
+      "about": "The hare (animal-hare.glb): a four-legged body that carries its own Idle, Walk and Run and the hunt's held poses Alert, Graze and Lie, so nothing is retargeted ('native'). The feet are the tails of the paw bones. The camera is the forager's; the scale makes the hare about 0.35 m at the ears, sitting.",
+      "model": "game/public3d/models/animal-hare.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 400, "Walk": 26, "Run": 16, "Alert": 96, "Graze": 96, "Lie": 24 },
+      "contacts": { "LB": "BackPaw_L", "RB": "BackPaw_R", "LF": "FrontPaw_L", "RF": "FrontPaw_R" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["wood", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "coats": [
+        {"id": "agouti", "name": "agouti brown", "weight": 40, "map": {}},
+        {"id": "grey-brown", "name": "grey brown", "weight": 14, "map": {"skin": {"steps": ["wood:1", "wood:2", "wood:3", "wood:3", "stone:4", "stone:5"]}, "wood": {"to": "wood"}}},
+        {"id": "dark-brown", "name": "dark brown", "weight": 14, "map": {"skin": {"to": "bark"}, "wood": {"to": "bark", "shift": -1}}},
+        {"id": "ash-grey", "name": "ash grey", "weight": 9, "map": {"skin": {"steps": ["stone:2", "stone:3", "stone:3", "stone:4", "stone:4", "stone:5"]}, "wood": {"to": "stone"}}},
+        {"id": "black", "name": "black", "weight": 6, "map": {"skin": {"steps": ["stone:0", "stone:1", "stone:1", "stone:2", "stone:2", "stone:3"]}, "wood": {"steps": ["stone:0", "stone:0", "stone:1", "stone:1", "stone:2", "stone:2"]}}},
+        {"id": "white", "name": "white", "weight": 3, "map": {"skin": {"steps": ["grey:3", "grey:4", "grey:4", "grey:5", "grey:5", "grey:5"]}, "wood": {"steps": ["grey:1", "grey:2", "grey:3", "grey:4", "grey:5", "grey:5"]}}},
+        {"id": "brown-pied", "name": "brown pied", "weight": 9, "map": {}, "body": "hare-pied"},
+        {"id": "black-pied", "name": "black pied", "weight": 5, "map": {"skin": {"steps": ["stone:0", "stone:1", "stone:1", "stone:2", "stone:2", "stone:3"]}, "wood": {"steps": ["stone:0", "stone:0", "stone:1", "stone:1", "stone:2", "stone:2"]}}, "body": "hare-pied"}
+      ],
+      "credit": "Rabbit by CDmir (with TinyWorlds), OpenGameArt, CC0, https://opengameart.org/content/rabbit-0; modified: the fur-shell mesh, the lights, the camera and the ground plane removed; the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, warmed and lightened toward a sandy hare; scaled to 0.35 m at the ears with the scale baked into the bones, and a tip bone under each paw (the renderer reads a foot from its bone's tail); Guarding renamed Idle; Walk and Run made from Running in Blender (game/tools/blender/hare_pass.py: Walk 1.6x slower with the swings and the bob at 0.3 of the bound's around their means and the paws' lift at 0.55 of it, Run at the bound's tempo with them at 0.5 and the lift at 0.7, the planted paws kept on the ground); Alert, Graze and Lie keyed in Blender on the rig's own controls (the same script: Guarding's sit-up with the ears pricked and the head turning, its crouch with the nose on the floor, and Dying's last frame only, rolled onto its side with the legs drawn in); the other actions dropped; posed with its own actions and rendered to pixels by tools/anim"
+    },
+    "hare-pied": {
+      "about": "The hare's pied body (animal-hare-pied.glb): the hare's model and actions with white patches painted on its colour map in texture space (the back, the flanks and the face from seeded noise, the belly white), so a pied coat has its pattern fixed to the body. The hare's camera, scale, feet and ramps, plus grey for the white. Drawn only as a coat's body (the hare's coats, \"body\": \"hare-pied\").",
+      "model": "game/public3d/models/animal-hare-pied.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 400, "Walk": 26, "Run": 16, "Alert": 96, "Graze": 96, "Lie": 24 },
+      "contacts": { "LB": "BackPaw_L", "RB": "BackPaw_R", "LF": "FrontPaw_L", "RF": "FrontPaw_R" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["wood", "skin", "grey"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Rabbit by CDmir (with TinyWorlds), OpenGameArt, CC0, https://opengameart.org/content/rabbit-0; modified: the same derivative as animal-hare.glb (game/tools/blender/hare_pass.py), with white patches painted on its colour map from seeded noise (the back, the flanks and the face, the belly white) for a pied coat; posed with its own actions and rendered to pixels by tools/anim"
+    },
+    "crow": {
+      "about": "The crow (animal-crow.glb): a two-legged body that carries its own Idle, Hop and Lift, the hunt's held poses Alert, Peck and Lie (and the file's Fly), so nothing is retargeted ('native'). A bird has two feet, so the four contacts name its two toe bones twice. The camera is the forager's; the scale makes the crow about 0.3 m standing.",
+      "model": "game/public3d/models/animal-crow.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 144, "Hop": 12, "Lift": 36, "Fly": 34, "Alert": 48, "Peck": 24, "Lie": 24 },
+      "contacts": { "LB": "toe.L", "RB": "toe.R", "LF": "toe.L", "RF": "toe.R" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["grey", "stone"],
+      "metal": "grey",
+      "leaf": "green",
+      "coats": [
+        {"id": "black", "name": "black", "weight": 70, "map": {}},
+        {"id": "sooty", "name": "sooty brown-black", "weight": 15, "map": {"stone": {"steps": ["wood:0", "wood:1", "wood:2", null, null, null]}}},
+        {"id": "grey-washed", "name": "grey-washed", "weight": 12, "map": {"stone": {"to": "stone", "shift": 2}}},
+        {"id": "leucistic", "name": "pale leucistic", "weight": 3, "map": {"stone": {"steps": ["grey:4", "grey:5", "grey:5", "grey:3", "grey:3", "grey:3"]}}}
+      ],
+      "credit": "Raven by Teh_Bucket, OpenGameArt, CC0, https://opengameart.org/content/raven-0; modified: the mirror and edge-split modifiers applied (one whole mesh); the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, lightened; turned to face -Y and scaled to 0.3 m standing, both baked into the bones, and a tip bone under each foot (the renderer reads a foot from its bone's tail); the tail held up so the bird stands on its feet; Idle, Hop, Lift, Alert, Peck and Lie made in Blender from the file's standing pose and its flight (game/tools/blender/crow_pass.py), the flight kept as Fly; posed with its own actions and rendered to pixels by tools/anim"
+    },
     "deer": {
       "about": "The roe deer (animal-deer.glb): a four-legged body that carries its own Idle, Walk, Run, Alert, Graze and Lie, so nothing is retargeted ('native'). The feet are the tails of the hoof bones. The camera is the forager's; the scale makes the deer about 0.75 m at the withers.",
       "model": "game/public3d/models/animal-deer.glb",
