@@ -27,6 +27,39 @@
   gap: 0;
 }
 
+/* A sideways phone spends its height on the skill map; the right column holds its details. */
+@media (max-width: 899px) {
+  .panel.bag.tree-open {
+    max-width: calc(100vw - 16px);
+  }
+
+  .panel.bag.tree-open > header {
+    min-height: 44px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .panel.bag.tree-open .panel-body {
+    padding-bottom: 8px;
+  }
+
+  .panel.bag.tree-open .kit-tabs {
+    margin-bottom: 0;
+  }
+
+  .panel.bag.tree-open .kit-caption {
+    display: none;
+  }
+
+  .panel.bag.tree-open .kit-body {
+    padding-top: 0;
+  }
+
+  .panel.bag.tree-open .tree-main {
+    gap: 4px;
+  }
+}
+
 /* the pages' tabs: the gold words on one line, the open one underlined */
 .panel.bag .kit-tabs {
   margin: 0 0 6px;

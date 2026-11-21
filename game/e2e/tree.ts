@@ -116,8 +116,28 @@ async function drag(page: Page, mobile: boolean, from: { x: number; y: number },
 }
 
 async function tapNode(page: Page, k: string): Promise<void> {
-  const box = await page.waitFor<Box>(`(() => { const el = document.querySelector('[data-node=${JSON.stringify(k)}]'); if (!el) return null; let r = el.getBoundingClientRect(); const page = el.closest('.tree-page'); if (page && page.scrollHeight > page.clientHeight && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('[data-node]') !== el) { const pr = page.getBoundingClientRect(); page.scrollTop += r.top + r.height / 2 - (pr.top + pr.height / 2); r = el.getBoundingClientRect(); } return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`, `the node ${k}`);
-  // (on the sideways phone the page scrolls: a node out of the visible part is brought to its middle first)
+  // where the node's middle is, and whether the eye can see it there (on the sideways phone the map shows a part of the tree)
+  const find = `(() => { const el = document.querySelector('[data-node=${JSON.stringify(k)}]'); if (!el) return null; const r = el.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2; const seen = x > 0 && y > 0 && x < window.innerWidth && y < window.innerHeight && document.elementFromPoint(x, y)?.closest('[data-node]') === el; return { x, y, seen }; })()`;
+  const first = await page.waitFor<Box & { seen: boolean }>(find, `the node ${k}`);
+  if (!first.seen) {
+    // a player brings a school into view with its button: try each until the node shows
+    const count = await page.eval<number>(`document.querySelectorAll('.tree-school').length`);
+    for (let i = 0; i < count; i++) {
+      const b = await page.eval<Box>(`(() => { const r = document.querySelectorAll('.tree-school')[${i}].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+      await page.tapAt(b.x, b.y);
+      await sleep(250);
+      if ((await page.eval<Box & { seen: boolean }>(find)).seen) break;
+    }
+  }
+  // the map may still be gliding to the school: tap only where the node has stopped
+  let box = await page.waitFor<Box & { seen: boolean }>(`(() => { const r = ${find}; return r && r.seen ? r : null; })()`, `the node ${k} in view`);
+  for (let i = 0; i < 20; i++) {
+    await sleep(150);
+    const again = await page.waitFor<Box & { seen: boolean }>(`(() => { const r = ${find}; return r && r.seen ? r : null; })()`, `the node ${k} in view`);
+    const still = Math.abs(again.x - box.x) < 1 && Math.abs(again.y - box.y) < 1;
+    box = again;
+    if (still) break;
+  }
   await page.tapAt(box.x, box.y);
   await page.waitFor(`document.querySelector('.tree-card')?.dataset.card === ${JSON.stringify(k)}`, `the card of ${k}`);
 }
@@ -221,6 +241,17 @@ async function desktop(page: Page, url: string): Promise<void> {
   await newGame(page, url, { width: 1440, height: 900, mobile: false }, 'Human');
   const facts = await treeFacts(page);
   await openTree(page);
+
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+  await sleep(100);
+  const control = await page.eval<{ window: number; aboveMap: number; map: number; mapFull: number }>(`(() => {
+    const panel = document.querySelector('.panel.bag').getBoundingClientRect(), map = document.querySelector('.tree-view');
+    const mr = map.getBoundingClientRect();
+    return { window: panel.height, aboveMap: mr.top - panel.top, map: mr.height, mapFull: map.scrollHeight };
+  })()`);
+  log(`1280 x 800 control: window ${control.window} px, header and school row ${control.aboveMap} px, map ${control.map}/${control.mapFull} px`);
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await sleep(100);
 
   // the wide window, the whole tree in it
   const width = await page.eval<number>(`document.querySelector('.panel.bag.tree-open')?.getBoundingClientRect().width ?? 0`);
@@ -373,23 +404,39 @@ async function phone(page: Page, url: string): Promise<void> {
   const d = await dataset(page);
   if (d.zoom !== '1.000') throw new Error(`the phone starts at zoom ${d.zoom}`);
 
-  // the phone's column stacks without overlap: schools, map, build, then the card
+  const layout = await page.eval<{ window: number; aboveMap: number; map: number; mapFull: number; client: number; scroll: number; text: number; targets: number }>(`(() => {
+    const panel = document.querySelector('.panel.bag'), tree = document.querySelector('.tree-page'), map = document.querySelector('.tree-view');
+    const pr = panel.getBoundingClientRect(), mr = map.getBoundingClientRect();
+    const shown = (el) => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
+    // a label drawn at 0 px (the close button's words, replaced by its cross) is not text a player reads
+    const text = [...panel.querySelectorAll('*')].filter((el) => shown(el) && [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()) && parseFloat(getComputedStyle(el).fontSize) < 16 && parseFloat(getComputedStyle(el).fontSize) > 0).length;
+    const targets = [...panel.querySelectorAll('button, summary')].filter((el) => shown(el) && !el.classList.contains('tree-node') && (el.getBoundingClientRect().width < 44 || el.getBoundingClientRect().height < 44)).length;
+    return { window: pr.height, aboveMap: mr.top - pr.top, map: mr.height, mapFull: map.scrollHeight, client: tree.clientHeight, scroll: tree.scrollHeight, text, targets };
+  })()`);
+  if (layout.scroll !== layout.client) throw new Error(`the phone tree page scrolls ${layout.scroll} px in ${layout.client} px`);
+  if (layout.map < layout.window * 0.6) throw new Error(`the phone map is ${layout.map} px of a ${layout.window} px window`);
+  if (layout.text > 0 || layout.targets > 0) throw new Error(`the phone tree has ${layout.text} small text runs and ${layout.targets} small targets`);
+  log(`layout: window ${layout.window} px, header and school row ${layout.aboveMap} px, map ${layout.map}/${layout.mapFull} px, page ${layout.scroll}/${layout.client} px; ${layout.text} text runs under 16 px, ${layout.targets} targets under 44 px`);
+
+  await page.screenshot(join(OUT, 'tree-phone.png'));
+
+  // sideways, two columns without overlap: schools over the map on the left, the build then the card on the right
   const stack = await page.eval<string>(`(() => {
-    const r = (sel) => document.querySelector(sel).getBoundingClientRect();
-    const schools = r('.tree-schools'), frame = r('.tree-frame'), build = r('.tree-build'), card = r('.tree-card');
+    const r = (el) => el.getBoundingClientRect();
+    const schools = r(document.querySelector('.tree-schools')), frame = r(document.querySelector('.tree-frame')), card = r(document.querySelector('.tree-card'));
+    const build = r(document.querySelector('.tree-phone-side > .tree-build'));
     if (schools.height < 40) return 'the school row is ' + schools.height + ' px tall';
     if (frame.top < schools.bottom - 1) return 'the map rides over the school row';
-    if (build.top < frame.bottom - 1) return 'the build rides over the map';
+    if (build.width === 0) return 'the build is not shown';
+    if (build.left < frame.right - 1) return 'the build rides over the map';
+    if (card.left < frame.right - 1) return 'the card rides over the map';
     if (card.top < build.bottom - 1) return 'the card rides over the build';
     return '';
   })()`);
   if (stack) throw new Error(stack);
-  log('the column stacks: schools, map, build, card');
+  log('two columns: schools over the map, the build then the card beside it');
 
   // every node in view takes a 44 px tap: 21 px from its middle still lands on it
-  // the sideways phone's window scrolls (the map sits under the school row): bring the map's middle on screen first
-  await page.eval(`document.querySelector('.tree-view').scrollIntoView({ block: 'center' })`);
-  await sleep(300);
   const misses = await page.eval<string[]>(`(() => {
     const v = document.querySelector('.tree-view').getBoundingClientRect();
     const tools = document.querySelector('.tree-tools').getBoundingClientRect();
@@ -438,8 +485,10 @@ async function phone(page: Page, url: string): Promise<void> {
   const seen = await viewBox(page);
   await drag(page, true, { x: seen.x + 20, y: seen.y + 20 }, { x: 80, y: 50 });
   await page.waitFor(`(() => { const el = document.querySelector('[data-node=${JSON.stringify(facts.root)}]'); if (!el) return false; const r = el.getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - ${before.x} - 80) < 3 && Math.abs(r.top + r.height / 2 - ${before.y} - 50) < 3; })()`, 'a finger to pan');
+  // (the school button a tap used to bring its node into view may have left the map at another zoom: the button must raise it)
+  const zoomBefore = Number((await dataset(page)).zoom);
   await page.tap('.tree-zoom-in');
-  await page.waitFor(`Number(document.querySelector('.tree-view').dataset.zoom) > 1.2`, 'the zoom button');
+  await page.waitFor(`Number(document.querySelector('.tree-view').dataset.zoom) > ${zoomBefore} * 1.15`, `the zoom button from ${zoomBefore}`);
   log('a finger pans, the button zooms');
 
   // two fingers pinch: closing them to half the distance halves the zoom

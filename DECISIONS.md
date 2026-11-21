@@ -4544,3 +4544,8 @@ This follows the owner's 14.11 direction that the game, apart from its home page
 
 Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
 The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).
+
+## 2026-11-21 ✅ The skill map fills the sideways phone's window (#720)
+**What:** at 844 x 390 the Skills page no longer scrolls: its 44 px school row sits above a map that takes the remaining left column, while the build and node card scroll independently at its right; text stays at least 16 px and targets at least 44 px.
+**Measured (rendered, headless Chrome at 844 x 390):** before, the page scrolled 949 px in 184 px; after, 271 in 271, the map 223 px of the 370 px window (60%), 0 texts under 16 px, 0 targets under 44 px. The 1280 x 800 desktop control is the same before and after (window 768 px, header and school row 232.3 px, map 423.1 px). The check asserts those bars. The Skills window's tap check now brings a node into view with the school buttons, as a player does.
+**Retry when:** the measured phone viewport changes or a new Skills control no longer fits either column. **Model:** Codex, finished by Claude. **Link:** [#720](https://github.com/Bobikobi/GAME/issues/720).
