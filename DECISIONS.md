@@ -4548,6 +4548,18 @@ This follows the owner's 14.11 direction that the game, apart from its home page
 
 Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
 The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).
+## 2026-11-21 ✅ Clothing's route is measured against seven games: a first piece in 7 to 27 minutes of play, a first outfit in 30 to 90 (#769)
+**What:** OSRS, WoW Classic, Albion, New World, Valheim, Vintage Story and Stardew, with sources (docs/design/CLOTHING_BALANCE.md). Loomvale's row was played on the kernel by `tools/src/balance/clothing-route-cli.ts`: first piece 4.4 minutes passed (3.6 of active play; 0.8 is waiting on a node), tier-1 kit 9.0 (7.7 active), first set 21.3 known (13.4 active) or 64.1 median dug up (16.1 active). Passed counts every minute from the morning after the opening, node waits and the night included; active leaves those two out.
+**Result:** the work is short against the band, and the dug-up set is inside it in minutes passed. Making is the only route (buying and finding are missing), and there are 1.8 pieces a body place against 2.5 to 4.
+**Why:** the work per piece is not raised, because clothing's levels and minutes equal the other families' and its tier-1 piece already takes 2.4 to 2.8 times the work of another tier-1 Handcraft good and is worth 3 to 4 times as much, most of it in the hide (owner, 21.11: the clothing tree may not be harder than the other families). Length comes from found scraps and the day of curing. Buying and finding at tier 1 are the owner's questions 1 and 2 there.
+**Retry when:** the take verb or combat changes the hunt's minutes, the owner answers questions 1 or 2, or the family set changes Handcraft's nodes. **Model:** Opus. **Link:** #769.
+
+## 2026-11-21 ✅ Clothes can be bought and found: Pell's shelf and the torn page in the gate rubble (#769)
+**What:** the balance page (docs/design/CLOTHING_BALANCE.md) found that a garment could only be made, while six of the seven games compared also sell or give one. Two questions went to the owner on the card `clothing-routes-1121`: a comparison picture at 1920 x 1080 and two yes/no items. Q1, Pell's shelf: Pell sells one plain tier-1 piece per body place at ten times its worth. Q2, the torn page: the four tier-2 leather recipe pages are dug up at the gate rubble, which moves the shard, the coin and the stew scrap by up to 5%, inside R11.
+**Result:** the owner, 21.11 09:44: "קניה ומציאה- כן" (buying and finding: yes). Both are to be built, each in its own pull request from develop; the shelf first. The shelf's price is the R8 floor, `r_mg_per_value_ms` times the worth, and never a written number (the manager, 21.11). The torn page waits: a found recipe cannot carry the combat gate (#776), and the owner's word is that a find never waits behind the fight, so the manager rules on it after the alignment study's first page (#784).
+**Why:** with both, the routes sit at about 60% made, 20% bought and 20% found (ESTIMATE). Making is at the top of its band and buying is inside it. Finding stays under its band until the fight opens and the hunter's quest piece comes (R2).
+**Retry when:** the market opens (buying moves to players), or the fight opens (R2 and drops).
+Model: Opus 5.5. Link: #769, #778, the card `clothing-routes-1121`.
 
 ## 2026-11-21 ✅ A phone asks the browser to hold landscape at the first tap that starts play (#638)
 
