@@ -142,9 +142,7 @@ describe('the wear requirement and the attribute bonuses (PROGRESSION 5.6)', () 
     look.player.looks.head = 'x/look-cap';
     look.player.worn.head = 'x/look-cap';
     expect(attrTotal(b, look, 'might')).toBe(attrAt(b, look, 'might'));
-    // a tier-1 work piece adds its bonus whole; two pieces of one set add no set bonus (a sum of 5 at
-    // wear_set_bonus_pct 20 would add 1, so a set bonus copied from wornValue fails here)
-    expect(b.params.wear_set_bonus_pct * 5).toBeGreaterThanOrEqual(100);
+    // a tier-1 work piece adds its bonus whole; a set's worn-effect bonus never raises attributes
     const one = wearer(1, 'x/band');
     expect(attrTotal(b, one, 'might')).toBe(attrAt(b, one, 'might') + 3);
     const pair = wearer(1, 'x/band', 'x/band-boots');

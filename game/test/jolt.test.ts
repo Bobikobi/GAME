@@ -21,7 +21,7 @@ describe('joltOf', () => {
   });
 
   test('no success moves the camera or flashes the screen', () => {
-    const successes = [{ e: 'restore' }, { e: 'build' }, { e: 'quest', state: 'done' }, { e: 'level' }, { e: 'gain' }, { e: 'discover' }, { e: 'jackpot' }];
+    const successes = [{ e: 'restore' }, { e: 'build' }, { e: 'quest', state: 'done' }, { e: 'level' }, { e: 'gain' }, { e: 'discover' }];
     for (const s of successes) for (const motion of [true, false]) expect(joltOf(ev(s), motion)).toBeUndefined();
   });
 

@@ -203,6 +203,14 @@ describe('the window keeps the floor at every text size (G29)', () => {
   it('uses regular hyphens only', () => {
     for (const f of ['settings.css', 'settings-window.ts']) expect(readFileSync(new URL(`../src/ui/${f}`, import.meta.url), 'utf8')).not.toMatch(/[\u2013\u2014]/);
   });
+
+  it('draws the Text size choices as 16, 18 and 20 in a face with distinct digits', () => {
+    miniDom();
+    const body = settingsBody(setup().apply, undefined, undefined, false) as unknown as MiniElement;
+    const group = elements(body).find((el) => el.attributes['aria-label'] === 'Text size');
+    expect(group?.children.map((child) => child.textContent)).toEqual(['16', '18', '20']);
+    expect(css).toMatch(/\.text-size-options\s+\.set-opt\s*{[^}]*font-family:\s*'Atkinson Hyperlegible Next'/s);
+  });
 });
 
 describe("the stored preferences reach the rules the phone's own setting reaches", () => {
@@ -224,13 +232,13 @@ describe("the stored preferences reach the rules the phone's own setting reaches
     }
     return out;
   };
-  it('mirrors every reduced-motion selector of style.css and games.css under the attribute', () => {
-    const sels = [...reduced(read('style.css')), ...reduced(read('ui/games/games.css'))];
+  it('mirrors every reduced-motion selector of style.css under the attribute', () => {
+    const sels = reduced(read('style.css'));
     expect(sels.length).toBeGreaterThan(10);
     for (const sel of sels) expect(settings, sel).toContain(`:root[data-motion='reduced'] ${sel}`);
   });
-  it('scales the px sizes of the windows (dialog, minigames, search, notes) with the chosen size', () => {
-    for (const sel of ['.dialog-text', '.md p', '.version', '.row .muted', '.panel.search .search-row', '.minigame-title']) {
+  it('scales the px sizes of the windows (dialog, search, notes) with the chosen size', () => {
+    for (const sel of ['.dialog-text', '.md p', '.version', '.row .muted', '.panel.search .search-row']) {
       expect(settings, sel).toContain(`:root[data-text-size='20'] ${sel}`);
     }
   });

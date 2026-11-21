@@ -112,7 +112,6 @@ body {
 
 #ui > .touch .pad,
 #ui > .touch .tbtns,
-#ui > .top > .rotate-hint,
 #ui > .dialog-layer .dialog {
   pointer-events: auto;
 }
@@ -1209,30 +1208,6 @@ body {
   margin-right: 0;
 }
 
-/* ------------------------------------------------------------ the rotate hint */
-
-.rotate-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 2px 4px 2px 10px;
-  font-size: 16px;
-  color: var(--ui-paper);
-  background: var(--ui-black);
-  border: var(--ui-line);
-  pointer-events: auto;
-}
-
-.rotate-hint-x {
-  font: inherit;
-  font-size: 20px;
-  min-width: 44px;
-  min-height: 44px;
-  color: var(--ui-gold-5);
-  background: none;
-  border: 0;
-}
-
 /* ------------------------------------------------------------ layers */
 
 .layer {
@@ -1367,6 +1342,16 @@ body {
 
 .panel.wide {
   width: min(100%, 680px);
+}
+
+.panel.orientation-card {
+  width: min(100%, 420px);
+  text-align: center;
+}
+
+.orientation-card .panel-body p {
+  margin: 8px 0 0;
+  font-size: 18px;
 }
 
 /* the name on its plaque in the middle, the close button set into the right-hand corner over its piece */
@@ -1811,81 +1796,6 @@ body {
   color: var(--blue);
 }
 
-/* ------------------------------------------------------------ timing */
-
-.timing-stage {
-  padding: 18px 0 8px;
-}
-
-.timing-bar {
-  position: relative;
-  height: 28px;
-  background: #e9b8a8;
-  border: 3px solid var(--ink);
-  border-radius: 0;
-  overflow: hidden;
-}
-
-.zone {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-}
-
-.zone.ok {
-  background: var(--yellow);
-}
-
-.zone.good {
-  background: var(--green3);
-}
-
-.zone.perfect {
-  background: var(--green);
-}
-
-.zone.jackpot {
-  background: var(--gold);
-  box-shadow:
-    inset 2px 0 0 var(--yellow),
-    inset -2px 0 0 var(--yellow);
-}
-
-.marker {
-  position: absolute;
-  top: -2px;
-  bottom: -2px;
-  background: var(--ink);
-  box-shadow: 0 0 0 2px var(--paper);
-}
-
-.minigame-result.g4 {
-  color: var(--gold);
-  text-shadow: 0 2px 0 var(--ink);
-}
-
-.minigame.jackpot {
-  animation: minigame-jackpot 520ms ease-out;
-}
-
-@keyframes minigame-jackpot {
-  0% {
-    box-shadow:
-      inset 0 0 0 2px var(--paper2),
-      0 0 0 0 var(--gold);
-  }
-  40% {
-    box-shadow:
-      inset 0 0 0 2px var(--yellow),
-      0 0 0 10px color-mix(in srgb, var(--gold) 60%, transparent);
-  }
-  100% {
-    box-shadow:
-      inset 0 0 0 2px var(--paper2),
-      0 0 0 18px transparent;
-  }
-}
-
 /* ------------------------------------------------------------ small labels */
 
 .loading-title {
@@ -2073,7 +1983,7 @@ body {
   margin-top: 12px;
 }
 
-/* rays that turn slowly behind a level-up, a jackpot or a point */
+/* rays that turn slowly behind a level-up or a point */
 .burst {
   position: absolute;
   left: 50%;
@@ -2144,13 +2054,6 @@ body {
 .banner.level span {
   font-size: 48px;
   padding: 8px 24px;
-}
-
-.banner.jackpot span {
-  color: var(--ink);
-  background: var(--gold);
-  border-color: var(--ink);
-  text-shadow: 2px 2px 0 var(--yellow);
 }
 
 .banner.point span {
@@ -2625,7 +2528,6 @@ body {
   .burst,
   .choice.spent,
   .signature.on,
-  .minigame.jackpot,
   .banner,
   .purse-float,
   .whisper {

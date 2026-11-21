@@ -178,7 +178,7 @@ describe('the equipment foundations', () => {
       ),
     });
     expect(at(r, 'items.tester/wrap.wear.trait').map((i) => i.message)).toEqual([gate]);
-    expect(at(r, 'items.tester/spikes.wear.trait').map((i) => i.message)).toEqual([gate, 'ice_grip goes on the feet, not the head (BODY_CLOCKS 6.1)']);
+    expect(at(r, 'items.tester/spikes.wear.trait').map((i) => i.message)).toEqual([gate, 'ice_grip goes on the hands, not the head (BODY_CLOCKS 6.1)']);
     expect(at(r, 'items.tester/charm.wear.trait').map((i) => i.message)).toContain('cold_proof goes on the top, back, head, not the jewelry (BODY_CLOCKS 6.1)');
     expect(at(r, 'items.tester/shawl.wear.trait').map((i) => i.message)).toContain('a look carries no trait');
   });

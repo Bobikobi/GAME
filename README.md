@@ -1,5 +1,7 @@
 # Loomvale
 
+[![Loomvale key art: an elf, a wanderer and a skeleton above a misty valley of ruins and a river town. Click to play in the browser.](web/public/keyart/hero-poster.jpg)](https://loomvale.vercel.app)
+
 **WAKE BY THE BROKEN BRIDGE. FOLLOW THE LANTERNS. LEAVE YOUR MARK ON THE MIST.**
 
 Loomvale is a free pixel-art adventure about a valley that is never finished. Gather, cook and dig through ruins whose names are lost. Stay near the fire after dark - the eyes beyond it are patient.
@@ -18,8 +20,8 @@ The valley grows in stages, each opened by a condition, not a date: accounts and
 
 ## What is in the demo
 
-- Three races, the human, the elf and the skeleton, each waking in a wake pocket the seed draws, with its own first task, and six attributes, seven points each: might (carrying and heavy work), senses (how far you notice hidden things), agility (how forgiving the timing is), luck (rare finds), stamina (how much food you can hold) and spirit (potions, spells and the hidden layer).
-- The opening: wake up at noon, strike the bridge's keystone free with the timing minigame, mend the bridge for a purse of gold, fell a tree for the first fire, meet the town, and choose whom to help first: Elder Maru's berries, which he pays for with his old trowel, or Pell's herbs, which she pays for with a recipe and coin. The trowel then digs up Maru's coin under the lantern the stones name, which glows at dusk. After dark, a way opens under the broken arch.
+- Three races, the human, the elf and the skeleton, each waking in a wake pocket the seed draws, with its own first task, and six attributes, seven points each: might (carrying and heavy work), senses (how far you notice hidden things), agility (how quick your hands are at work), luck (rare finds), stamina (how much food you can hold) and spirit (potions, spells and the hidden layer).
+- The opening: wake up at noon, take the bridge's keystone from the shallows with one click and a few moments of watching, mend the bridge for a purse of gold, fell a tree for the first fire, meet the town, and choose whom to help first: Elder Maru's berries, which he pays for with his old trowel, or Pell's herbs, which she pays for with a recipe and coin. The trowel then digs up Maru's coin under the lantern the stones name, which glows at dusk. After dark, a way opens under the broken arch.
 - Foraging, digging, felling and cooking, each with levels and techniques; a workshop that climbs three tiers; a camp with three places to build and a fourth waiting for a reason; a day and night clock.
 - Empty places in the mist, each waiting for a creator, with a link to the guide below.
 - Phones (a touch stick to walk in any direction, and A and B buttons) and keyboards (arrows or WASD to walk, in eight directions; Space, E, Z or Enter to act; Esc or X to go back; I for the bag, J for the journal, M for the menu). Menu > Controls lists them in the game.

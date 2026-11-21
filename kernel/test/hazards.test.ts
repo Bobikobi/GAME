@@ -17,6 +17,7 @@ import {
   hazardsOf,
   isNight,
   isSafe,
+  isSafeGround,
   makeWalkable,
   newState,
   nightEnds,
@@ -25,6 +26,7 @@ import {
   hpCap,
   serialize,
   step,
+  windowOpen,
 } from '@game/kernel';
 
 import { loadBundle, mulberry32 } from '../../tools/test/helpers/world.js';
@@ -116,9 +118,10 @@ describe('what the vocabularies and the shipped content say', () => {
     expect([...HAZARD_KINDS]).toEqual([...SCHEMA_HAZARD_KINDS]);
   });
 
-  test('the shipped valley has the night-ruins hazards and the bank wolf', () => {
+  test('the shipped valley has the night-ruins hazards, the bank wolf and the camp wolf', () => {
     expect(hazardsOf(base).map((h) => [h.id, h.kind]).sort()).toEqual([
       ['core/bank-wolf', 'predator'],
+      ['core/camp-wolf', 'predator'],
       ['core/doorstep-pit', 'pit'],
       ['core/ruins-wolf', 'predator'],
     ]);
@@ -661,4 +664,35 @@ describe('a long night of wandering', () => {
       expect(falls).toBeGreaterThan(0);
     });
   }
+});
+
+describe('the camp wolf is a rehearsal: seen once at the edge of the cobbles, never bitten there (G34, G35)', () => {
+  test('the cobbles are out of its reach and the first tile off them is in it', () => {
+    const wolf = hazardsOf(base).find((h) => h.id === 'core/camp-wolf')!;
+    const night = nightFalls(base, 0) + 1000;
+    expect(wolf.round).toBeUndefined();
+    const edge: Tile = [27, 13];
+    const off: Tile = [27, 14];
+    expect(isSafeGround(base, edge, false)).toBe(true);
+    expect(isSafeGround(base, off, false)).toBe(false);
+    expect(Math.max(Math.abs(edge[0] - wolf.rect.x), Math.abs(edge[1] - wolf.rect.y))).toBeGreaterThan(wolf.reach);
+    expect(Math.max(Math.abs(off[0] - wolf.rect.x), Math.abs(off[1] - wolf.rect.y))).toBeLessThanOrEqual(wolf.reach);
+    expect(windowOpen(base, wolf, night)).toBe(true);
+    expect(windowOpen(base, wolf, 0)).toBe(false);
+  });
+
+  test('a step off the cobbles at night is told seen and a step back is told safe, with no bite and no loss', () => {
+    const night = nightFalls(base, 0) + 1000;
+    const started = step(base, newState(base, 7), { t: 'start', starter: 'core/forager', name: 'Tess' }, 0);
+    if (!started.ok) throw new Error(started.error);
+    const home: Tile = [27, 13];
+    const there = { ...started.state, tick: night, player: { ...started.state.player, at: home, movedAt: night } };
+    const out = step(base, there, { t: 'move', at: [27, 14] }, night + base.params.walk_step_ms);
+    if (!out.ok) throw new Error(out.error);
+    expect(out.events.some((e) => e.e === 'seen' && e.id === 'core/camp-wolf')).toBe(true);
+    const back = step(base, out.state, { t: 'move', at: home }, night + base.params.walk_step_ms * 2);
+    if (!back.ok) throw new Error(back.error);
+    expect(back.events.some((e) => e.e === 'safe' && e.id === 'core/camp-wolf' && e.bitten === false)).toBe(true);
+    expect(back.state.player.hp).toBe(there.player.hp);
+  });
 });

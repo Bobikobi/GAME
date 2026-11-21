@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.28.0';
+export const KERNEL_VERSION = '0.30.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -48,7 +48,7 @@ export function legacyNodeId(id: string): string {
 }
 
 /** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs; the back holds a bag or a quiver (2026-10-23). */
-export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
+export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'hands', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
 export type WearSlot = (typeof WEAR_SLOTS)[number];
 
 const SLOTS_OF: Record<string, readonly WearSlot[]> = {
@@ -57,6 +57,7 @@ const SLOTS_OF: Record<string, readonly WearSlot[]> = {
   legs: ['legs'],
   outfit: ['outfit'],
   feet: ['feet'],
+  hands: ['hands'],
   jewelry: ['jewelry1', 'jewelry2'],
   hand: ['hand'],
   back: ['back'],
@@ -72,6 +73,8 @@ export interface NodeState {
   readyAt: number;
   /** draws taken from this entity so far (rule R4) */
   draws: number;
+  /** units already taken from this node's stock in the working under way; left out when none (a node is worked a unit at a time, DECISIONS.md, 2026-11-20) */
+  taken?: number;
 }
 
 /**
@@ -731,10 +734,10 @@ export function setComplete(bundle: Bundle, state: PublicState, set: string): bo
   return pieces.length > 1 && pieces.every((id) => worn.includes(id));
 }
 
-/** Sum of an effect from the work clothes: each worn piece once, and a full set a little more (rounded down). */
+/** Sum of an effect from the work clothes: each worn piece once, plus each complete set's own bonus. */
 export function wornValue(bundle: Bundle, state: PublicState, effect: string): number {
   let total = 0;
-  const bySet: Record<string, number> = {};
+  const wornSets = new Set<string>();
   for (const slot of WEAR_SLOTS) {
     const id = state.player.worn[slot];
     const w = id === undefined ? undefined : bundle.items[id]?.wear;
@@ -742,11 +745,12 @@ export function wornValue(bundle: Bundle, state: PublicState, effect: string): n
     for (const e of w.effects ?? []) {
       if (e.effect !== effect) continue;
       total += e.value;
-      if (w.set) bySet[w.set] = (bySet[w.set] ?? 0) + e.value;
     }
+    if (w.set) wornSets.add(w.set);
   }
-  for (const set of Object.keys(bySet).sort()) {
-    if (setComplete(bundle, state, set)) total += mulDiv(bySet[set]!, bundle.params.wear_set_bonus_pct, 100);
+  for (const id of [...wornSets].sort()) {
+    const set = bundle.sets[id];
+    if (set?.effect === effect && setComplete(bundle, state, id)) total += set.value;
   }
   return total;
 }

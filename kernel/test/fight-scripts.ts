@@ -34,28 +34,37 @@ export function playedState(b: Bundle, seed: number, at: [number, number]): Stat
     if (!r.ok) throw new Error(`Account preparation ${a.t}: ${r.error}`);
     s = r.state;
   };
+  /** Work a node to its end, a unit after the last unit has ended (DECISIONS.md, 2026-11-20): the bag is what a whole node gave before. */
+  const work = (node: string, at: [number, number]): void => {
+    do act({ t: 'gather', node, at });
+    while (s.nodes[node]?.taken !== undefined);
+  };
   act({ t: 'start', starter: 'core/forager', name: 'Walker' });
+  // agility speeds work now (DECISIONS.md, 2026-11-20): the preparation runs at the old pace, so the frozen account is the one the hashes were recorded on
+  const agility = s.player.attrs.agility;
+  s.player.attrs.agility = 0;
   for (const source of ['core/wild-herbs', 'core/reed-bank', 'core/berry-bushes', 'core/river-stones']) {
     const node = `${source}#bench`;
     prep.instances[node] = { source, kind: 'resource', x: at[0], y: at[1] };
-    act({ t: 'gather', node, grade: 3, at });
+    work(node, at);
   }
   // Herbs have zero weight in live content: fill places without inventing carry capacity.
   for (let i = 0; bagUsed(prep, s) < bagCapacity(prep, s); i++) {
     if (i > 100) throw new Error('Account bag did not fill.');
     const node = `core/wild-herbs#fill-${i}`;
     prep.instances[node] = { source: 'core/wild-herbs', kind: 'resource', x: at[0], y: at[1] };
-    act({ t: 'gather', node, grade: 3, at });
+    work(node, at);
   }
   // Empty one place, work 36 distinct log nodes, then retrieve the herbs.
   act({ t: 'drop', item: 'core/herb', qty: s.player.bag['core/herb']!, at });
   for (let i = 0; i < 36; i++) {
     const node = `core/fallen-logs#bench-${i}`;
     prep.instances[node] = { source: 'core/fallen-logs', kind: 'resource', x: at[0], y: at[1] };
-    act({ t: 'gather', node, grade: 3, at });
+    work(node, at);
     act({ t: 'drop', item: 'core/log', qty: 1, at });
   }
   act({ t: 'pickup', item: 'core/herb', at });
+  s.player.attrs.agility = agility;
   if (Object.values(s.nodes).filter((n) => n.readyAt > s.tick).length < 36
     || !Object.values(s.player.quests).includes('active') || !Object.values(s.player.quests).includes('done')) {
     throw new Error('Account lacks resting nodes or active/finished quests.');

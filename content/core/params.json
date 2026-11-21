@@ -130,12 +130,6 @@
       8,
       12
     ],
-    "wear_set_bonus_pct": {
-      "value": 20,
-      "min": 0,
-      "max": 50,
-      "step": 5
-    },
     "wear_req_level": [
       1,
       6,
@@ -547,6 +541,12 @@
         "value": 6,
         "min": 2,
         "max": 12,
+        "step": 1
+      },
+      "tan_cure_d": {
+        "value": 1,
+        "min": 1,
+        "max": 5,
         "step": 1
       },
       "grade2_bp": {
@@ -1142,6 +1142,12 @@
         "min": 4,
         "max": 16,
         "step": 1
+      },
+      "tool_strike_permille": {
+        "value": 1050,
+        "min": 1000,
+        "max": 1500,
+        "step": 50
       },
       "windup_min_ms": {
         "value": 200,

@@ -110,7 +110,7 @@ function firstMend(b: Bundle): string | undefined {
 /**
  * The walk and the work from the wake tile to the first mending: the pocket's ground tools picked up first, then its own
  * first task step by step (an own spot for a find, the nearest node for a bring), then the road. The race counts through
- * its outfit's worn speed; its agility widens timing windows and changes no time at perfect timing.
+ * its outfit's worn speed. Agility also shortens a work interval now (DECISIONS.md, 2026-11-20) and a bring takes one unit, not a node; neither is counted, so the figure is the slowest honest one.
  */
 function pairEffort(b: Bundle, raceId: string, pocketId: string): { ms: number; lost: boolean } | undefined {
   const race = b.races[raceId];

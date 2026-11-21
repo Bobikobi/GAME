@@ -11,6 +11,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -484,7 +485,7 @@ async function run(page: Page, url: string): Promise<void> {
   const built = await me.build();
   if (!built.built) throw new Error(`the wild ground refused a fire: ${built.words}`);
   if ((await me.logs()) !== watchLogs - 2) throw new Error(`kindling took ${watchLogs - (await me.logs())} logs, not 2`);
-  if (!(await me.page.eval<boolean>('__tend.sees()'))) throw new Error('the fire six tiles out of the town is not on the 390x844 screen');
+  if (!(await me.page.eval<boolean>('__tend.sees()'))) throw new Error('the fire six tiles out of the town is not on the sideways phone screen');
   if ((await me.stage()) !== 'full') throw new Error(`the new fire is ${await me.stage()}, not full`);
   // the hearth's feed toasts fade before a stage is read: no old clock is caught in the capture
   await page.waitFor(`__tend.toasts().length === 0`, 'the older toasts to fade', 12_000);
@@ -614,7 +615,7 @@ async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
   const local = remote ? null : await serve();
   const browser = await Browser.launch();
-  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
+  const page = await browser.newPage(PHONE);
   try {
     await run(page, remote ?? local?.url ?? '');
   } catch (error) {

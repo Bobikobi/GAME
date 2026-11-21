@@ -450,7 +450,7 @@
             ],
             "properties": {
               "slot": {
-                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, hands (gloves), jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                 "anyOf": [
                   {
                     "const": "head",
@@ -470,6 +470,10 @@
                   },
                   {
                     "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hands",
                     "type": "string"
                   },
                   {
@@ -540,7 +544,7 @@
               "set": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
-                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "description": "A set declared in content: when every piece is worn, that set's own effect and value apply.",
                 "type": "string"
               },
               "places": {
@@ -845,7 +849,7 @@
         "yield": {
           "minimum": 1,
           "maximum": 20,
-          "description": "Units gathered per execution at perfect timing.",
+          "description": "Units the node gives before it is out: one each work interval, the node's time shared out among them (QUARRYING 10).",
           "type": "integer"
         },
         "active_ms": {
@@ -954,7 +958,7 @@
           ]
         },
         "work": {
-          "description": "How the node is worked. \"mine\": broken with blows that run by themselves after one press, as felling does; it trains digging. With no tool, bare hands do it and a pick or a hammer in the bag makes it faster (the best one, worn a little each time); with a tool (a pick, a hammer or a trowel) that tool is required, and the check refuses such a tool without \"mine\" (a hammer node still plays the minigame of `game`: only a pick or a trowel runs by itself). Left out: gathered by hand with the minigame of `game`.",
+          "description": "How the node is worked. \"mine\": broken with blows, as felling does; it trains digging. With no tool, bare hands do it and a pick or a hammer in the bag makes it faster (the best one, worn a little each time); with a tool (a pick, a hammer or a trowel) that tool is required, and the check refuses such a tool without \"mine\". Every node is worked the one way (QUARRYING 10): a click starts it, a repeating animation plays, one unit comes each work interval, until the player stops or the node is out. This only says which animation.",
           "const": "mine",
           "type": "string"
         },
@@ -965,7 +969,7 @@
           "type": "integer"
         },
         "game": {
-          "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants), \"snap\" (press fast, for wood) or \"fish\" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).",
+          "description": "Retired (QUARRYING 10): no minigame is played and no timing is read. Still accepted, and ignored, so an older file loads.",
           "anyOf": [
             {
               "const": "timing",

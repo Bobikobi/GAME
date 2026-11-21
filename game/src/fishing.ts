@@ -1,10 +1,14 @@
 /**
  * Where the line, the float and the fish are at each moment of a cast (DECISIONS.md, 2026-10-25: fishing).
- * The minigame owns the states (cast, wait, nibble, bite, reel, lost); this file turns a state and the time
+ * The work loop owns the states (cast, wait, reel); this file turns a state and the time
  * spent in it into points, so the drawing stays dumb and the motion can be tested without a scene. All of it
  * is drawn in code: no sprite sheets.
  */
-import { FISH_CAST_MS, type FishPhase } from './ui/games/shared';
+/** The stages of a cast the line and the float are drawn in: out, riding, drawn in. There is no bite to catch: the catch is the end of the unit. */
+export type FishPhase = 'cast' | 'wait' | 'reel';
+
+/** The cast goes out over this long. */
+export const FISH_CAST_MS = 650;
 
 export interface Pt {
   x: number;
@@ -13,8 +17,6 @@ export interface Pt {
 
 /** The float comes back to the rod in this long once the fish is hooked. */
 export const FISH_REEL_MS = 700;
-/** A lost fish leaves the float lying slack this long before the line is drawn in. */
-export const FISH_LOST_MS = 500;
 /** How high the float flies over the middle of its cast, in px. */
 const CAST_ARC = 18;
 
@@ -26,7 +28,7 @@ export interface FloatPose extends Pt {
   dip: number;
 }
 
-/** The float: out along an arc, bobbing while it waits, a twitch on a nibble, under on the bite, back on the reel. */
+/** The float: out along an arc, bobbing while it waits, back to the rod on the reel. */
 export function floatAt(phase: FishPhase, ms: number, rod: Pt, spot: Pt): FloatPose {
   const bob = Math.sin(ms / 260) * 0.8;
   switch (phase) {
@@ -35,23 +37,18 @@ export function floatAt(phase: FishPhase, ms: number, rod: Pt, spot: Pt): FloatP
       const e = 1 - (1 - k) * (1 - k);
       return { x: lerp(rod.x, spot.x, e), y: lerp(rod.y, spot.y, e) - CAST_ARC * Math.sin(Math.PI * k), dip: 0 };
     }
-    case 'nibble':
-      return { x: spot.x, y: spot.y + 1.5 * Math.abs(Math.sin(ms / 35)) * Math.exp(-ms / 160), dip: 0.3 };
-    case 'bite':
-      return { x: spot.x, y: spot.y + 2.5, dip: 1 };
     case 'reel': {
       const k = clamp01(ms / FISH_REEL_MS);
       return { x: lerp(spot.x, rod.x, k * k), y: lerp(spot.y + 2.5, rod.y, k * k), dip: 1 - k };
     }
     case 'wait':
-    case 'lost':
       return { x: spot.x, y: spot.y + bob, dip: 0 };
   }
 }
 
 /**
  * How far the middle of the line hangs below the straight run, in px. It pays out loose on the cast, springs
- * and settles once the float lands, hangs slack while the fish nose at it, and goes taut on the bite and reel.
+ * and settles once the float lands, and goes taut on the reel.
  */
 export function sagAt(phase: FishPhase, ms: number): number {
   switch (phase) {
@@ -59,13 +56,8 @@ export function sagAt(phase: FishPhase, ms: number): number {
       return 4 + 6 * Math.sin(Math.PI * clamp01(ms / FISH_CAST_MS));
     case 'wait':
       return 5 + 5 * Math.exp(-ms / 300) * Math.cos(ms / 55);
-    case 'nibble':
-      return 4;
-    case 'bite':
     case 'reel':
       return 0.4 * Math.sin(ms / 20);
-    case 'lost':
-      return 7;
   }
 }
 
