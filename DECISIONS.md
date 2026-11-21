@@ -4561,6 +4561,12 @@ The kernel floors the integer result; bare hands and weapon hands keep their exi
 **Retry when:** the market opens (buying moves to players), or the fight opens (R2 and drops).
 Model: Opus 5.5. Link: #769, #778, the card `clothing-routes-1121`.
 
+## 2026-11-21 ✅ Making families split by use: set A inside the built schools now, the clean set B as the later expansion (#769)
+**What:** the owner asked that no family be harder to grow in than another, and that going deep in one make only that family easier ("מי שמתקדם בייצור ביגוד יהיה לו קל מולם"). Ten games were surveyed. Two sets went to him on the card `skill-families-1121`: one choice, two full-frame stills at 1920 x 1080, switched by buttons. A is fitted to the built tree: Handcraft's families are `wear`, `tools` and later `arms`, Cooking's are `food` and later `remedies`, each family gets one group of 4 nodes (2 small, 2 major), and F1 to F6 are parity checks in numbers. B is the clean kit: six families on one 50-level table with deep slots (docs/design/SKILL_FAMILIES.md, _CLEAN, _SURVEY).
+**Result:** the owner, 21.11 09:44: "לגבי המחקר a בהמשך הרחבה לb" (A, and later an expansion to B). A is picked, together with C1 to C3: families by use, the 6.1 nodes become a wear group and a tools group, and Tailoring and Leatherwork are materials inside `wear`. Built on develop so far: the frame (#776). Step C builds the groups, raises `nodes_max` from 12 to 20 and adds F1 to F5. Nothing of B is built; A keeps B open by carrying names, nodes and points over, while B's level table and node files are a rewrite whose save migration is open (section 2.4). The batch-size bonus is open under #784 (G44, R9).
+**Why:** both sets put armour in the clothier's family when iron comes. A runs on the kernel as built (#776), and its checks run from the first content pull request. B is the right shape for a large tree with a market.
+**Retry when:** the tree nears PROGRESSION's catalogue of 16 schools, or a market opens. Then B's level table, family points and deep slots come in.
+Model: Opus 5.5. Link: #769, the card `skill-families-1121`.
 ## 2026-11-21 ✅ A phone asks the browser to hold landscape at the first tap that starts play (#638)
 
 Continue or Wake up asks once on a phone, by touch (a mouse click or a key press never asks); a failed Continue or a return to the title re-arms the gate, so the next tap asks again. Fullscreen is still asked where the lock API is missing, as before #638. Leaving play releases the lock and leaves fullscreen under the player's control.
