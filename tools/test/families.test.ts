@@ -56,6 +56,21 @@ describe('each row refuses its break', () => {
     expect(rule(x, 'F1')[0]!.message).toContain('1 major');
   });
 
+  test('F1: a pair of majors is a chain from the second small node, each a technique', () => {
+    const pair = (x: Bundle, firstNeeds: string, secondNeeds: string, slot = true) => {
+      const base = handcraft(x).nodes.find((n) => n.id === 'careful-work')!;
+      handcraft(x).nodes.push(
+        { ...structuredClone(base), id: 'maj-a', family: 'wear', needs: [firstNeeds], slot },
+        { ...structuredClone(base), id: 'maj-b', family: 'wear', needs: [secondNeeds], slot },
+      );
+      return x;
+    };
+    expect(rule(pair(copy(), 'steady-needle', 'maj-a'), 'F1')).toEqual([]);
+    expect(rule(pair(copy(), 'quick-seams', 'maj-a'), 'F1')[0]!.message).toContain('maj-a hangs from quick-seams');
+    expect(rule(pair(copy(), 'steady-needle', 'steady-needle'), 'F1')[0]!.message).toContain('maj-b hangs from steady-needle');
+    expect(rule(pair(copy(), 'steady-needle', 'maj-a', false), 'F1')).toHaveLength(2);
+  });
+
   test('F1: a declared family with no group at all', () => {
     const x = copy();
     handcraft(x).nodes = handcraft(x).nodes.filter((n) => n.family !== 'tools');

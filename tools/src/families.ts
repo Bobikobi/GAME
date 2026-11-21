@@ -117,7 +117,7 @@ export function checkFamilies(b: Bundle, origin: Record<string, string>): Issue[
   }
 
   // F1: one shape. Each declared family has its two smalls at 5 (speed, then chance) hanging from the school's first major,
-  // and its majors are none yet (they wait) or two techniques; a pair of majors keeps the order of the smalls.
+  // and its majors are none yet (they wait) or two techniques in a chain: the first hangs from the second small, the second from the first.
   for (const [sid, sc] of Object.entries(b.schools)) {
     const prof = b.professions[sc.profession];
     const families = prof?.families ?? [];
@@ -147,6 +147,10 @@ export function checkFamilies(b: Bundle, origin: Record<string, string>): Issue[
       }
       if ((smalls[1]!.needs ?? []).join() !== smalls[0]!.id) err(sid, here(smalls[1]!), `${smalls[1]!.id} hangs from ${(smalls[1]!.needs ?? []).join(', ') || 'nothing'}: the second small node hangs from the first, ${smalls[0]!.id} (F1)`);
       if (majors.length !== 0 && majors.length !== 2) err(sid, 'school.nodes', `the family "${f}" has ${majors.length} major node: two, or none while they wait (F1)`);
+      if (majors.length === 2) {
+        if ((majors[0]!.needs ?? []).join() !== smalls[1]!.id) err(sid, here(majors[0]!), `${majors[0]!.id} hangs from ${(majors[0]!.needs ?? []).join(', ') || 'nothing'}: the first major hangs from the second small node, ${smalls[1]!.id} (F1)`);
+        if ((majors[1]!.needs ?? []).join() !== majors[0]!.id) err(sid, here(majors[1]!), `${majors[1]!.id} hangs from ${(majors[1]!.needs ?? []).join(', ') || 'nothing'}: the second major hangs from the first, ${majors[0]!.id} (F1)`);
+      }
       for (const m of majors) if (m.slot !== true) err(sid, here(m), `${m.id} is a major family node and a technique: it carries "slot": true (F1)`);
     }
   }

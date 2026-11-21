@@ -128,6 +128,7 @@ describe('the known-short list', () => {
     expect(isAdvisory({ where: 'families.pieces', level: 'warning' })).toBe(true);
     expect(isAdvisory({ where: 'families.pieces', level: 'error' })).toBe(false);
     expect(isAdvisory({ where: 'families.pieces' })).toBe(false);
+    expect(isAdvisory({ where: 'families.other', level: 'warning' })).toBe(false);
     expect(isAdvisory({ where: 'art.scale.core/base-kit:props/new_oak' })).toBe(false);
     expect(isAdvisory({ where: 'kit.sprites.props/chest' })).toBe(false);
     expect(isAdvisory({ where: 'art.ink16' })).toBe(true);

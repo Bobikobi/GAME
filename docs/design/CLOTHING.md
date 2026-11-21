@@ -489,23 +489,23 @@ Size: 60 rows in two parts. Now, 17: 2 schema fields, 1 profession content row, 
 | class | `core/leather` | base `garment` | - | - | "Cut from tanned hide, hair off." | - | garments.json `classes` | `pnpm check`: G45's class row holds |
 | class | `core/fur` | base `garment` | - | - | "Cut from tanned hide, hair on." | - | garments.json | the same |
 | item edit | `core/hare-hide`, `core/roe-hide`, `core/wolf-hide` | `core/hide`, family `hare`, `roe`, `wolf` | 1, 1, 3 | as built | family only | - | content/core/items/goods.json:57, :93, :126 | `pnpm check`; no value moves |
-| item | `core/hare-leather` | `core/hide`, `hare`, `tanned` | 1 | common | weight 1; 24760 | - | garments.json | `pnpm check` |
+| item | `core/hare-leather` | `core/hide`, `hare`, `tanned` | 1 | common | weight 1; 21560 | - | garments.json | `pnpm check` |
 | recipe | `core/tan-hare-leather` | - | 1 | - | `core/hare-hide` 1, `core/stone-flakes` 1, `core/herb` 1 -> 1; 6000; level 1; start; no family | workshop 1; Handcraft | tan-hare-leather.json | CR-16 margin 4800 |
-| item | `core/hare-fur` | `core/hide`, `hare`, tags `tanned`, `fur` | 1 | common | weight 1; 24760 | - | garments.json | `pnpm check` |
+| item | `core/hare-fur` | `core/hide`, `hare`, tags `tanned`, `fur` | 1 | common | weight 1; 21560 | - | garments.json | `pnpm check` |
 | recipe | `core/tan-hare-fur` | - | 1 | - | `core/hare-hide` 1, `core/stone-flakes` 1, `core/herb` 1 -> 1; 6000; level 1; start; no family | workshop 1; Handcraft | tan-hare-fur.json | CR-16 margin 4800 |
-| item | `core/roe-leather` | `core/hide`, `roe`, `tanned` | 1 | common | weight 1; 32440 | - | garments.json | `pnpm check` |
+| item | `core/roe-leather` | `core/hide`, `roe`, `tanned` | 1 | common | weight 1; 29240 | - | garments.json | `pnpm check` |
 | recipe | `core/tan-roe-leather` | - | 1 | - | `core/roe-hide` 1, `core/stone-flakes` 1, `core/herb` 1 -> 1; 6000; level 1; start; no family | workshop 1; Handcraft | tan-roe-leather.json | CR-16 margin 4800 |
 | item | `core/sinew-thread` | `core/sinew`, no family (docs/design/MATERIALS.md:21), tag `thread` | 1 | common | weight 0; 3630 | - | garments.json; owned here, WEAPONS 5.4 cites it and builds `core/sinew-cord` on it | `pnpm check` |
 | recipe | `core/sinew-thread` | - | 1 | - | `core/roe-sinew` 1 -> 2; 3000; level 1; start; no family | workshop 1; Handcraft | sinew-thread.json | CR-16 margin 2400 |
 | item | `core/boiled-leather` | `core/hide`, `roe`, `tanned`, `boiled` | 2 | uncommon | weight 1; 38040 | - | garments.json | V-2: computed uncommon (found, +1) |
 | recipe | `core/boil-leather` | - | 2 | - | `core/roe-leather` 1, `core/branch` 1 -> 1; 5000; level 3; found; no family | workshop 2; Handcraft | boil-leather.json | band 3-5; one-tier climb; CR-16 margin 3880 |
-| item | `core/hare-fur-hood` | `core/fur`, family `hare` | 1 | common | `wear { head, craft_speed_pct 5 }`, weight 1; 32390 | - | garments.json | checkWear: under the tier-1 cap; a kernel test wears it: `wornValue('craft_speed_pct')` 5 |
+| item | `core/hare-fur-hood` | `core/fur`, family `hare` | 1 | common | `wear { head, craft_speed_pct 5 }`, weight 1; 29190 | - | garments.json | checkWear: under the tier-1 cap; a kernel test wears it: `wornValue('craft_speed_pct')` 5 |
 | recipe | `core/hare-fur-hood` | - | 1 | - | `core/hare-fur` 1, `core/sinew-thread` 1 -> 1; 5000; level 1; start; `wear` | workshop 1; Handcraft | hare-fur-hood.json | CR-16 margin 4000 |
-| item | `core/roe-leather-jerkin` | `core/leather`, `roe` | 1 | common | `wear { top, dig_speed_pct 5 }`, weight 1; 44500 | - | garments.json | checkWear |
+| item | `core/roe-leather-jerkin` | `core/leather`, `roe` | 1 | common | `wear { top, dig_speed_pct 5 }`, weight 1; 37670 | - | garments.json | checkWear |
 | recipe | `core/roe-leather-jerkin` | - | 1 | - | `core/roe-leather` 1, `core/sinew-thread` 1 -> 1; 6000; level 2; start; `wear` | workshop 1; Handcraft | roe-leather-jerkin.json | CR-16 margin 4800 |
-| item | `core/roe-leather-leggings` | `core/leather`, `roe` | 1 | common | `wear { legs, dig_speed_pct 5 }`, weight 1; 44500 | - | garments.json | checkWear |
+| item | `core/roe-leather-leggings` | `core/leather`, `roe` | 1 | common | `wear { legs, dig_speed_pct 5 }`, weight 1; 37670 | - | garments.json | checkWear |
 | recipe | `core/roe-leather-leggings` | - | 1 | - | as the jerkin | workshop 1; Handcraft | roe-leather-leggings.json | CR-16 margin 4800 |
-| item | `core/hare-leather-shoes` | `core/leather`, `hare` | 1 | common | `wear { feet, dig_speed_pct 5 }`, weight 1; 32390 | - | garments.json | checkWear |
+| item | `core/hare-leather-shoes` | `core/leather`, `hare` | 1 | common | `wear { feet, dig_speed_pct 5 }`, weight 1; 29190 | - | garments.json | checkWear |
 | recipe | `core/hare-leather-shoes` | - | 1 | - | `core/hare-leather` 1, `core/sinew-thread` 1 -> 1; 5000; level 1; start; `wear` | workshop 1; Handcraft | hare-leather-shoes.json | CR-16 margin 4000; a kernel test runs the chain from a hare and a roe to the worn shoes |
 | item | `core/fur-lined-cloak` | `core/fur`, `hare` | 2 | uncommon | `wear { top, craft_speed_pct 5, req { core/handcraft, 6 } }`, weight 2; 51590 | - | garments.json (`req` after the foundations) | V-2: computed uncommon; checkWear |
 | recipe | `core/fur-lined-cloak` | - | 2 | - | `core/hare-fur` 1, `core/woven-mat` 1, `core/sinew-thread` 1 -> 1; 7000; level 4; found; `wear` | workshop 2; Handcraft | fur-lined-cloak.json | CR-16 margin 1634; weight 2 = inputs 2 |
