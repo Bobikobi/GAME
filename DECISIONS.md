@@ -4554,6 +4554,12 @@ The kernel floors the integer result; bare hands and weapon hands keep their exi
 **Why:** the work per piece is not raised, because clothing's levels and minutes equal the other families' and its tier-1 piece already takes 2.4 to 2.8 times the work of another tier-1 Handcraft good and is worth 3 to 4 times as much, most of it in the hide (owner, 21.11: the clothing tree may not be harder than the other families). Length comes from found scraps and the day of curing. Buying and finding at tier 1 are the owner's questions 1 and 2 there.
 **Retry when:** the take verb or combat changes the hunt's minutes, the owner answers questions 1 or 2, or the family set changes Handcraft's nodes. **Model:** Opus. **Link:** #769.
 
+## 2026-11-21 ✅ A release pull request is exempt from the body rule and the merge rule
+
+A release promotes this repository's `develop` into `main`.
+The body job passes with a notice, and the community loop reports `release: develop into main` as a success.
+Each change already went through both rules in its own pull request into `develop`.
+The v0.1.12 release surfaced both redundant failures in [#781](https://github.com/Bobikobi/GAME/pull/781).
 ## 2026-11-21 ✅ Clothes can be bought and found: Pell's shelf and the torn page in the gate rubble (#769)
 **What:** the balance page (docs/design/CLOTHING_BALANCE.md) found that a garment could only be made, while six of the seven games compared also sell or give one. Two questions went to the owner on the card `clothing-routes-1121`: a comparison picture at 1920 x 1080 and two yes/no items. Q1, Pell's shelf: Pell sells one plain tier-1 piece per body place at ten times its worth. Q2, the torn page: the four tier-2 leather recipe pages are dug up at the gate rubble, which moves the shard, the coin and the stew scrap by up to 5%, inside R11.
 **Result:** the owner, 21.11 09:44: "קניה ומציאה- כן" (buying and finding: yes). Both are to be built, each in its own pull request from develop; the shelf first. The shelf's price is the R8 floor, `r_mg_per_value_ms` times the worth, and never a written number (the manager, 21.11). The torn page waits: a found recipe cannot carry the combat gate (#776), and the owner's word is that a find never waits behind the fight, so the manager rules on it after the alignment study's first page (#784).
