@@ -84,11 +84,11 @@ describe('the clothing check rows', () => {
   });
 
   it('a recipe family its profession declares passes; another one is refused', () => {
-    const fine = world({ 'hood.json': recipe('hood', {}, { family: 'reed' }) });
+    const fine = world({ 'hood.json': recipe('hood', {}, { family: 'wear' }) });
     expect(at(fine, 'recipe.family')).toEqual([]);
     const r = world({ 'hood.json': recipe('hood', {}, { family: 'silk' }) });
     expect(at(r, 'recipe.family')).toEqual([
-      '"silk" is not one of Handcraft\'s families (cloth, leather, reed): name a family its profession declares (CLOTHING 6)',
+      '"silk" is not one of Handcraft\'s families (wear, tools): name a family its profession declares (CLOTHING 6)',
     ]);
   });
 

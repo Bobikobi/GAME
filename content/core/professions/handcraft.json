@@ -12,9 +12,8 @@
       "workshop"
     ],
     "families": [
-      "cloth",
-      "leather",
-      "reed"
+      "wear",
+      "tools"
     ],
     "xp_levels": [
       4,

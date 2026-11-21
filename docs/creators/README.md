@@ -224,7 +224,7 @@ A material you gather comes from a resource, like the fruit above. `content/core
 - The station has to reach the tier: a tier 2 recipe needs a camp part that provides its station at tier 2 or higher. At the workshop that is the workbench (see [A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
 - `known` - `start` if every player knows it, `found` if a dig or a quest teaches it. A `found` recipe needs a teacher: a found scrap's `unlocks` or a quest reward's `recipes` names it.
 - `active_ms` - how long one try takes, 1000 to 15000 ms.
-- `family` - optional: the craft family inside the profession, one the profession declares in its `families` (handcraft: `cloth`, `leather`, `reed`). A skill-tree node with the same `family` helps only these recipes.
+- `family` - optional: the craft family inside the profession, one the profession declares in its `families` (handcraft: `wear`, `tools`; `arms` when the weapons open), named by use (docs/design/SKILL_FAMILIES.md). A skill-tree node with the same `family` helps only these recipes.
 - `gate` - optional, `"combat"`: the recipe waits for the fight to open. Nobody knows it and nothing teaches it until then, and it must be `known: "start"`; a player learns it the day the gate opens. For a chain whose first input only a hunt or a fight gives.
 - A worn output never weighs more than its inputs together.
 

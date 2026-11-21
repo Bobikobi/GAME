@@ -86,26 +86,26 @@ describe('a family node', () => {
     const school = Object.values(b.schools).find((sc) => sc.profession === 'core/handcraft')!;
     const base = school.nodes.find((n) => n.slot !== true && (n.needs ?? []).length === 0)!;
     school.nodes.push(
-      { ...structuredClone(base), id: 'x-leather', effect: 'craft_chance_pct', value: 4, family: 'leather', needs: undefined },
+      { ...structuredClone(base), id: 'x-wear', effect: 'craft_chance_pct', value: 4, family: 'wear', needs: undefined },
       { ...structuredClone(base), id: 'x-any', effect: 'craft_chance_pct', value: 1, family: undefined, needs: undefined },
     );
     const s = started(b);
-    s.player.nodes = [nodeKey(school.id, 'x-leather'), nodeKey(school.id, 'x-any')];
+    s.player.nodes = [nodeKey(school.id, 'x-wear'), nodeKey(school.id, 'x-any')];
     const hand = 'core/handcraft';
     const before = effectValue(b, started(b), 'craft_chance_pct', hand);
-    expect(effectValue(b, s, 'craft_chance_pct', hand, 'leather')).toBe(before + 5);
-    expect(effectValue(b, s, 'craft_chance_pct', hand, 'reed')).toBe(before + 1);
+    expect(effectValue(b, s, 'craft_chance_pct', hand, 'wear')).toBe(before + 5);
+    expect(effectValue(b, s, 'craft_chance_pct', hand, 'tools')).toBe(before + 1);
     expect(effectValue(b, s, 'craft_chance_pct', hand)).toBe(before + 1);
   });
 });
 
 describe('a tree node behind the combat gate', () => {
-  /** A handcraft player with points to spend and a gated leather node with no path before it. */
+  /** A handcraft player with points to spend and a gated wear node with no path before it. */
   function setup(enabled: 0 | 1): { b: Bundle; s: State; key: string } {
     const b = gated(enabled);
     const school = Object.values(b.schools).find((sc) => sc.profession === 'core/handcraft')!;
     const base = school.nodes.find((n) => n.slot !== true && (n.needs ?? []).length === 0)!;
-    school.nodes.push({ ...structuredClone(base), id: 'x-hide', effect: 'craft_chance_pct', value: 4, family: 'leather', gate: 'combat', needs: undefined });
+    school.nodes.push({ ...structuredClone(base), id: 'x-hide', effect: 'craft_chance_pct', value: 4, family: 'wear', gate: 'combat', needs: undefined });
     const s = started(b);
     const prof = b.professions['core/handcraft']!;
     s.player.xp['core/handcraft'] = prof.xp_levels[prof.xp_levels.length - 1]! * 1000;
@@ -120,9 +120,9 @@ describe('a tree node behind the combat gate', () => {
   test('gate on: a point can be spent on it, and it helps only its family', () => {
     const { b, s, key } = setup(1);
     expect(nodeRefusal(b, s, key)).toBeUndefined();
-    const before = effectValue(b, s, 'craft_chance_pct', 'core/handcraft', 'leather');
+    const before = effectValue(b, s, 'craft_chance_pct', 'core/handcraft', 'wear');
     s.player.nodes = [...(s.player.nodes ?? []), key];
-    expect(effectValue(b, s, 'craft_chance_pct', 'core/handcraft', 'leather')).toBe(before + 4);
-    expect(effectValue(b, s, 'craft_chance_pct', 'core/handcraft', 'reed')).toBe(effectValue(b, setup(1).s, 'craft_chance_pct', 'core/handcraft', 'reed'));
+    expect(effectValue(b, s, 'craft_chance_pct', 'core/handcraft', 'wear')).toBe(before + 4);
+    expect(effectValue(b, s, 'craft_chance_pct', 'core/handcraft', 'tools')).toBe(effectValue(b, setup(1).s, 'craft_chance_pct', 'core/handcraft', 'tools'));
   });
 });

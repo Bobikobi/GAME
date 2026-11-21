@@ -558,7 +558,7 @@ export const RecipeBody = Type.Object(
       description: '"start": every player knows it. "found": learned from a recipe scrap found by digging, or from a quest.',
     }),
     family: Type.Optional(
-      Word('The craft family inside its profession, one its profession declares in "families" (CLOTHING 6): "leather" for hide work, "cloth" for fur and later spun pieces, "reed" for reed pieces. A tree node with the same family helps it.'),
+      Word('The craft family inside its profession, one its profession declares in "families", named by what the thing is for (SKILL_FAMILIES 2.1): "wear" for what is worn, clothing now and armour with metal; "tools" for tools; "arms" for weapons when they open. The material stays in the family of the item itself. A tree node with the same family helps it.'),
     ),
     gate: Type.Optional(
       Type.Union(GATES.map((g) => Type.Literal(g)), {
@@ -1315,7 +1315,7 @@ export const ProfessionBody = Type.Object(
         minItems: 1,
         maxItems: 12,
         uniqueItems: true,
-        description: 'A craft profession only: the families its recipes are sorted into (CLOTHING 6). A recipe or a tree node of this profession names one of them; when a family grows into its own school, its recipes name that profession instead.',
+        description: 'A craft profession only: the families its recipes are sorted into, by use (SKILL_FAMILIES 2.1). A recipe or a tree node of this profession names one of them; when a family grows into its own school, its recipes name that profession instead.',
       }),
     ),
   },
@@ -1387,7 +1387,7 @@ export const SchoolNode = Type.Object(
     race: Type.Optional({ ...Id, description: 'A corner node only: the race whose node this is. Only a player of that race sees and learns it.' }),
     icon: Type.Optional({ ...Id, description: 'An item whose sprite pictures the node on the tree.' }),
     family: Type.Optional(
-      Word('A craft node only: it helps only the recipes of this family, one its school\'s profession declares (CLOTHING 6.1). Left out, a craft node helps every recipe of its profession.'),
+      Word('A craft node only: it helps only the recipes of this family, one its school\'s profession declares (SKILL_FAMILIES 2.2). Left out, a craft node helps every recipe of its profession.'),
     ),
     gate: Type.Optional(
       Type.Union(GATES.map((g) => Type.Literal(g)), {

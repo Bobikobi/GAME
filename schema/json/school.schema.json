@@ -1018,7 +1018,7 @@
               "family": {
                 "pattern": "^[a-z0-9_-]+$",
                 "maxLength": 24,
-                "description": "A craft node only: it helps only the recipes of this family, one its school's profession declares (CLOTHING 6.1). Left out, a craft node helps every recipe of its profession.",
+                "description": "A craft node only: it helps only the recipes of this family, one its school's profession declares (SKILL_FAMILIES 2.2). Left out, a craft node helps every recipe of its profession.",
                 "type": "string"
               },
               "gate": {
