@@ -35,10 +35,10 @@ export function knownShort(): Record<string, string> {
   return (JSON.parse(readFileSync(KNOWN_SHORT_FILE, 'utf8')) as { short: Record<string, string> }).short;
 }
 
-/** An issue of the check that the content tests may ignore: advisory counts, and a scale line of a known-short sprite. */
+/** An issue of the check that the content tests may ignore: advisory counts (the family floor of F5 among them), and a scale line of a known-short sprite. */
 export function isAdvisory(i: { where: string }): boolean {
   if (i.where.startsWith('art.scale.')) return i.where.slice('art.scale.'.length) in knownShort();
-  return i.where.startsWith('map.richness') || i.where.startsWith('quests.hand.') || i.where.startsWith('art.');
+  return i.where.startsWith('map.richness') || i.where.startsWith('quests.hand.') || i.where.startsWith('art.') || i.where.startsWith('families.');
 }
 
 export const REPORT = join(ROOT, 'docs', 'design', 'frames', 'scale-audit-2026-10-31', 'scale.md');

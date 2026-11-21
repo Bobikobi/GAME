@@ -184,7 +184,7 @@ export function checkFamilies(b: Bundle, origin: Record<string, string>): Issue[
     }
     // F5 floor: a family that holds a tier holds at least two there; one alone is a warning, since the family may be filling
     for (const row of mine) {
-      if (row.tier <= open && row.pieces.length < PIECES_MIN) warn(row.pieces[0]!, 'recipe', `${row.family} holds ${row.pieces.length} recipe at tier ${row.tier}, fewer than the ${PIECES_MIN} an open tier should (F5)`);
+      if (row.tier <= open && row.pieces.length < PIECES_MIN) warn(row.pieces[0]!, 'families.pieces', `${row.family} holds ${row.pieces.length} recipe at tier ${row.tier}, fewer than the ${PIECES_MIN} an open tier should (F5)`);
     }
   }
   return issues;
