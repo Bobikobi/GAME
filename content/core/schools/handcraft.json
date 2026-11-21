@@ -61,6 +61,58 @@
         "icon": "core/fine-basket"
       },
       {
+        "id": "quick-seams",
+        "name": "Quick seams",
+        "text": "Pieces to wear are made a little faster.",
+        "size": "small",
+        "needs": [
+          "careful-work"
+        ],
+        "family": "wear",
+        "effect": "craft_speed_pct",
+        "value": 5,
+        "icon": "core/lucky-charm"
+      },
+      {
+        "id": "steady-needle",
+        "name": "Steady needle",
+        "text": "Pieces to wear fail less often.",
+        "size": "small",
+        "needs": [
+          "quick-seams"
+        ],
+        "family": "wear",
+        "effect": "craft_chance_pct",
+        "value": 5,
+        "icon": "core/hare-fur-hood"
+      },
+      {
+        "id": "deft-grip",
+        "name": "Deft grip",
+        "text": "Tools are made a little faster.",
+        "size": "small",
+        "needs": [
+          "careful-work"
+        ],
+        "family": "tools",
+        "effect": "craft_speed_pct",
+        "value": 5,
+        "icon": "core/hammerstone"
+      },
+      {
+        "id": "sure-edge",
+        "name": "Sure edge",
+        "text": "Tools fail less often.",
+        "size": "small",
+        "needs": [
+          "deft-grip"
+        ],
+        "family": "tools",
+        "effect": "craft_chance_pct",
+        "value": 5,
+        "icon": "core/knapped-pick"
+      },
+      {
         "id": "tinker",
         "name": "Tinker",
         "text": "Good with made things: handcraft fails less often.",

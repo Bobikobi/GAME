@@ -183,6 +183,19 @@ Six rows for `pnpm check` (proposed). Each row reads the content and the bundle'
 
 The wear family's fix is two edits to designed content that is not built yet (CLOTHING's appendix). No locked value moves.
 
+**Built (step C, #769).** `pnpm check` runs F1 to F5 from `tools/src/families.ts` (F6 stays the kernel test of #776). The wear and tools groups are in the Handcraft school file, each with its two smalls (`quick-seams`, `steady-needle`; `deft-grip`, `sure-edge`), and `nodes_max` is 20. The fix above is built as C5: scrape and tan are one 6 s action and the jerkin and leggings take one thread. On the built content the table reads:
+
+| Family | F3 work, tier 1 / 2 / 3 (median) | F4 steps (longest) | F5 pieces, tier 1 / 2 / 3 | Verdict |
+|---|---|---|---|---|
+| wear | 16 s / 17 s / 29 s | 3 | 4 / 4 / 1 | passes; one note: tier 3 holds 1 recipe, fewer than 2 (the hardened pieces wait) |
+| tools | 8 s / 11 s / 30.25 s | 3 | 3 / 2 / 2 | passes |
+
+- **F1 while the majors wait.** The row asks of a group two smalls at 5 (speed, then chance), the first hanging from the school's first major, and then none or two majors that are techniques. The majors `even-cut` and `close-stitch` are not built, so a group of two smalls passes, and a lone major is an error. When they land the row holds them to two.
+- **F3 at the edge.** Wear at tier 1 is exactly 2.0 times the tools' median (16 s against 8 s), the largest the row allows. The row's ceiling is part of the design: a heavier hide piece fails it.
+- **F5's floor is a note.** A tier with one recipe in a family is a `!` line, not an error, because a family fills tier by tier; the ratio to the smallest family is an error.
+- **F2** holds today: Handcraft and Cooking share one `xp_levels` table. `tier_min_level` is one table by construction (one param).
+
+
 ### 2.4 What keeps B open (the owner: B is the later expansion)
 
 A is built so that growing into B is mostly an addition: the names, the nodes and the points carry over. It is not free of rewriting: B still replaces the level table and the built schools' node files (section 5, "What it costs to build"), and how a player's saved levels and nodes move is not designed here, because no migration or migration test exists (open, for B's own pull request):
