@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/hare-fur-hood",
+  "title": "Hare-fur hood",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/hare-fur-hood",
+      "name": "Hare-fur hood",
+      "description": "A snug hood of hare fur. Hands move quicker with warm ears.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/fur",
+      "family": "hare",
+      "tier": 1,
+      "sprite": "core/base-kit:items/basket",
+      "weight": 1,
+      "wear": {
+        "slot": "head",
+        "effects": [
+          {
+            "effect": "craft_speed_pct",
+            "value": 5
+          }
+        ]
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 5000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/hare-fur",
+        "qty": 1
+      },
+      {
+        "item": "core/sinew-thread",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/hare-fur-hood",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start",
+    "gate": "combat",
+    "family": "wear"
+  }
+}

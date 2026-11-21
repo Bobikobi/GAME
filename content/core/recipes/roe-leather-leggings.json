@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/roe-leather-leggings",
+  "title": "Roe-leather leggings",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/roe-leather-leggings",
+      "name": "Roe-leather leggings",
+      "description": "Leggings of roe leather that save the knees on stony ground.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/leather",
+      "family": "roe",
+      "tier": 1,
+      "sprite": "core/base-kit:items/basket",
+      "weight": 1,
+      "wear": {
+        "slot": "legs",
+        "effects": [
+          {
+            "effect": "dig_speed_pct",
+            "value": 5
+          }
+        ]
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 6000,
+    "level": 2,
+    "inputs": [
+      {
+        "item": "core/roe-leather",
+        "qty": 1
+      },
+      {
+        "item": "core/sinew-thread",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/roe-leather-leggings",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start",
+    "gate": "combat",
+    "family": "wear"
+  }
+}

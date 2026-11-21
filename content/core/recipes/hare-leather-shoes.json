@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/hare-leather-shoes",
+  "title": "Hare-leather shoes",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/hare-leather-shoes",
+      "name": "Hare-leather shoes",
+      "description": "Light shoes of hare leather. A digger stands longer in them.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/leather",
+      "family": "hare",
+      "tier": 1,
+      "sprite": "core/base-kit:items/basket",
+      "weight": 1,
+      "wear": {
+        "slot": "feet",
+        "effects": [
+          {
+            "effect": "dig_speed_pct",
+            "value": 5
+          }
+        ]
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 5000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/hare-leather",
+        "qty": 1
+      },
+      {
+        "item": "core/sinew-thread",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/hare-leather-shoes",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start",
+    "gate": "combat",
+    "family": "wear"
+  }
+}
