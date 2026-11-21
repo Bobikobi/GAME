@@ -256,10 +256,10 @@ So 16 rows start known (all tier 1), 4 come from the cache, 44 from 15 quests of
 
 **The skeleton.** From one tier to the next a row swaps at most two input ids (the larger of what leaves and what comes), so the next tier reads as the same thing in the next material and the "almost" hint (one item away; D6 of the unpublished draft, restated in the rule above) points the way. The spear's tier 2 to 3 is the one exception: the tier-2 spear is HUNT_LADDER's take tool, fixed by the hunt (WEAPONS 5.4).
 
-**The try reads sets.** A try is a set of distinct ids (the rule above), so two recipes at one station kind with one input set cannot both be found by it. WM-TRY-SET holds every try-found recipe's set unique at its station kind (the workshop or the forge), against the whole matrix and every built recipe; WM-TRY-SIZE holds every try-found recipe at 2 to 4 distinct inputs. Taught recipes that share a set are reported, not refused, since a known recipe is made by its id: seven sets today, three from WEAPONS' own rows and four built:
+**The try reads sets.** A try is a set of distinct ids (the rule above), so two recipes at one station kind with one input set cannot both be found by it. WM-TRY-SET holds every try-found recipe's set unique at its station kind (the workshop or the forge), against the whole matrix and every built recipe; WM-TRY-SIZE holds every try-found recipe at 2 to 4 distinct inputs. The report lists nine shared sets for taught recipes, three that include a matrix recipe and six entirely from built recipes. A known recipe is made by its id.
 
 ```text
-taught recipes sharing one input set (no try reads them): 7
+taught recipes sharing one input set (no try reads them): 9
   bow-stave = club (workshop)
   shaped-stones = throwing-stones = hammerstone (built) = stone-flakes (built) (workshop)
   greenstone-mace = throwing-axe (workshop)
@@ -267,13 +267,15 @@ taught recipes sharing one input set (no try reads them): 7
   fishing-rod (built) = reed-basket (built) (workshop)
   flint-trowel (built) = stone-blade (built) (workshop)
   reed-sandals (built) = woven-mat (built) (workshop)
+  roe-leather-jerkin (built) = roe-leather-leggings (built) (workshop)
+  tan-hare-fur (built) = tan-hare-leather (built) (workshop)
 ```
 
 **First touch.** The first time a player holds a line material of a new tier (the first bronze bar, the first antler), the bench's hint may say how many of the forms that player knows one tier below take it, never naming a set; a hint computed from content and what the player knows, as the "almost" hint is, never a teach. Owner question 13.
 
 ## 8. Levels, bands and professions
 
-**Bands.** `tier_min_level` is `[1, 3, 6]` today (content/core/params.json:94), one entry per open tier (tools/src/check.ts:331-332); a tier's band runs from its entry to the next one's minus one, the last up to 20 (tools/src/check.ts:334; `RecipeLevel` 1 to 20, schema/src/index.ts:428). The matrix extends it to `[1, 3, 6, 8, 10, 12, 14, 16, 18, 20]` as tiers open (proposed, a core param): tier 3's band narrows from 6..20 to 6..7, which the 20 built recipes pass (checked), and tier 10 is level 20.
+**Bands.** `tier_min_level` is `[1, 3, 6]` today (content/core/params.json:94), one entry per open tier (tools/src/check.ts:331-332); a tier's band runs from its entry to the next one's minus one, the last up to 20 (tools/src/check.ts:334; `RecipeLevel` 1 to 20, schema/src/index.ts:428). The matrix extends it to `[1, 3, 6, 8, 10, 12, 14, 16, 18, 20]` as tiers open (proposed, a core param): tier 3's band narrows from 6..20 to 6..7, and tier 10 is level 20. All 33 built recipes pass the extended bands.
 
 **Entry tier.** A profession's band index is its tier minus its entry tier plus one. Handcraft, Woodcraft and Leatherwork enter at 1 (tiers 1 to 3 hold work of theirs once they land: WEAPONS 5.3 counts about eight of the first slice as Woodcraft's); Smithing enters at 4, so a tier-4 Smithing recipe sits in band 1 (levels 1 and 2) and a tier-10 one in band 7 (14 and 15). A smith starts at level 1, as every crafter does, when metal opens. The check (tools/src/check.ts:334, :424, and its CR-16 chance, :429) and the base chance (kernel/src/step.ts:244, by the recipe's tier) read the band index instead of the tier, both places together: core (owner question 7).
 
@@ -531,7 +533,7 @@ WEAPONS 5.3 makes its 18 hands the first slice and lets the matrix rename them. 
 | The try's candidates as this page defines them (section 7; the discovery draft's D2, unpublished, has candidates: `discover`, this station kind, not yet known) | Without a family condition a guess finds any row whose inputs the player holds, so a quest's or the cache's entry can be skipped | This page's rule adds "whose family the player knows one tier below", so an entry is never a candidate; a match also needs a station of at least the recipe's tier, as a craft does (kernel/src/step.ts:222). |
 | The try as this page defines it (section 7: sets of 2 to 4 distinct ids; the discovery draft's D1, unpublished) against WEAPONS 6.2 | Two arrow rows with one set; two shot rows with one input | WM-TRY-SET and WM-TRY-SIZE; the six arrows and two shots move (section 11). |
 | One band per tier (tools/src/check.ts:334, :424) and the base chance by tier (`craft_chance_bp` [10000, 8000, 6500], content/core/params.json:105; kernel/src/step.ts:244; the check's CR-16 reads it the same way, tools/src/check.ts:441) | Smithing opens at tier 4: a smith would start at level 8 with a 6500 base chance | Band and chance by entry tier, a core change (owner question 7). |
-| `tier_min_level` `[1, 3, 6]` with `open_tiers` 3 (content/core/params.json:88, :94; tools/src/check.ts:331-332; an item above `open_tiers` is refused, :364) | Tiers 4 to 10 have no band | Extend to ten entries as each tier opens; tier 3's band narrows to 6..7 and the 20 built recipes pass it. |
+| `tier_min_level` `[1, 3, 6]` with `open_tiers` 3 (content/core/params.json:88, :94; tools/src/check.ts:331-332; an item above `open_tiers` is refused, :364) | Tiers 4 to 10 have no band | Extend to ten entries as each tier opens; tier 3's band narrows to 6..7 and all 33 built recipes pass the extended bands. |
 | `STATIONS` `fire`, `workshop` (schema/src/index.ts:56); camps up to `open_tiers` (tools/src/check.ts:387-391) | No forge, and no workshop past tier 3 | The city's forge and workshops of the tier (decision 51), a core release before any tier-4 row. |
 | One craft profession per station (tools/src/check.ts:378-383) | Handcraft, Woodcraft and Leatherwork at one workshop | Kept: Woodcraft and Leatherwork name `profession` on each recipe (schema/src/index.ts:429, :449; tools/src/check.ts:425); Handcraft stays the workshop's own. |
 | Handcraft's top, level 9 (eight `xp_levels`; tools/src/check.ts:429) | None: Handcraft's rows reach 7 | Kept. Smithing's curve grows to 15, Woodcraft's and Leatherwork's to 20, when each lands. |

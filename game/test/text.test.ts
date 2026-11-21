@@ -296,7 +296,7 @@ describe('class and tier (crafting wave 4)', () => {
     };
     expect(classLine(withDye, 'test/indigo')).toBe('Dye, tier 2');
     expect(classLine(withDye, 'test/plain')).toBe('Tier 1');
-    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Animal', 'Bone', 'Clay', 'Dye', 'Fibre', 'Garment', 'Hide', 'Jewelry', 'Meal', 'Meat', 'Other', 'Plant', 'Reedwork', 'Relic', 'Sinew', 'Stone', 'Tool', 'Wood']);
+    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Animal', 'Bone', 'Clay', 'Dye', 'Fibre', 'Fur', 'Garment', 'Hide', 'Jewelry', 'Leather', 'Meal', 'Meat', 'Other', 'Plant', 'Reedwork', 'Relic', 'Sinew', 'Stone', 'Tool', 'Wood']);
   });
 
   test('where a recipe is made names the tier past the first', () => {
