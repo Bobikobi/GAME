@@ -2,6 +2,49 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.12 - 2026-11-21
+
+What players notice
+- The river and its shore, the ruin sand, the rubble and the old bridge are drawn in the rich 64 px art too (wave 3b), the river as the owner's approved layered water: painterly teal, deepest in the middle, softer at the shore.
+- Natural things (trees, stumps, bushes, rocks, logs, mushrooms) stand mirrored or not by a hash of their tile, for more variety; the same tile looks the same for every player and after every reload.
+- Fires are alive: each flame runs on its own clock, the light breathes, embers and sparks rise, and the crackle follows.
+- Rain is drawn (long thin slanted streaks, splashes by ground, one cool even light) and each region of the first map has its own odds of rain and fog.
+- A wolf is felt before it is seen: after dark a howl far off now and then, a prowl in the sound that grows as one comes closer, then the alert, and the bite is drawn.
+- The mouse wheel zooms in whole steps closer than the default view and back; the default view stays the farthest.
+- Phone landscape play: a floating stick under the left thumb and the action buttons on the right, in the dark frame's style.
+- Settings gains a Controls section: which side the stick is on (Left, Right) and the buttons' size (Small, Medium, Large), applied at once and kept with the other settings.
+- Every text a player reads is 16 px or more, dialogue 18, on the phone's screen.
+- The bay can be crossed: after Maru's coin is found and brought home, a player on the ferry jetty by day (06:00 to 19:00) can board, sail eight acts of about ten seconds and meet one event on the way (a crate, a passenger, gulls over a shoal, a squall, a bell in the fog). The boat is safe ground; a miss never takes from the bag.
+- Entering a place for the first time names it once and counts it as a find once brought home; a fall does not take the name back. The map screen is ready for the whole first map, regions outlined and named and filled once entered (today's 64 by 64 valley shows its entered areas).
+- Sunleaf mushrooms, a tier 1 meal at the fire, from two forest mushrooms folded in a sunleaf (CeosIsrael). Two stone tools can be made at the workshop: the hammerstone and the knapped pick.
+- The valley has 34 wild spots for its small animals instead of 17, and every phone screen of the valley and the tangle has something that belongs to it; the tangle's dead ends pay (an oak at the tip, mushrooms before it).
+- Work is one click and a repeating animation: felling, mining, digging, fishing and picking no longer show a timing strip. A click starts the work, the game gives one item at the end of each work interval, and it goes on until the player moves, starts something else, the node runs out, the bag is full or danger stops it. Everything already taken stays taken; there is no miss and no jackpot. A better tool, a higher profession level and agility (now called "Quick hands") shorten the interval. The luck "of misses" row leaves the stats.
+- The opening teaches work as "click the tree or the stone, watch, stop when you like", and its first tasks say where to go, not how; a wolf is met at the edge of the cobbles.
+- A gain toast carries a second line: the profession and the experience it gave.
+- Phones are played on their side: a phone held upright shows one quiet card asking to turn it (the home page stays as it was).
+- Settings' Text size choices read 16, 18 and 20 (the pixel face had made the 16 look like an 8).
+- The picture a shared link shows (Reddit, X, WhatsApp, Slack) says Loomvale and loomvale.vercel.app, not the old name.
+- A lost or broken reply from the server pauses the game and reads the state instead of repeating the action; a step out of a tile and back before the server answers is no longer lost; a game played on the server says "The valley was updated since your last visit" like the phone does.
+
+What creators notice
+- Schema, each additive and every existing file valid unchanged: the `passage` file type (a way across water with its sea events inline); an area slot may carry `danger` (0 to 9); the map may declare its `frame` and `moved` offset; a creature spot may carry `rank`, `shape`, `count`; a chunk its spawns; a card its air; a `story` file type (core only, listing settlements by kind and size); portals and the ground below. Params `pay_gap_ms` and `pay_sight_tiles`.
+- `pnpm check` gains: the pay-gap check (no walkable tile past the cap from a pay, G62); the danger checks (G64: d within one of the walk from the town); the passage rows; the fight rows (wind-up range, a window for a bare-handed strike, a cycle's harm under a player's bar); the world lock (`content/world.lock.json` holds the opening's legs and pays); the richness check counts the wild's creatures as movers and, when they flee, as reactors (movers 49 to 62%, reacting 34 to 73%).
+- `pnpm check`'s wild check reads every generated chunk's spawn spots, not only the map's list. `pnpm test:changed` picks related tests while building, touched packages at handover and every suite at the end.
+- Fight data on creature kinds: an optional `fight` block (tier, health, breath, pace, up to four moves, patterns, a weak point) and a `combat` params group; the wolf carries one as inert data. Durations are written in game milliseconds and converted in one place.
+- Equipment foundations: the grammar, the check rows and the pure readers for worn gear, with every field that would carry power refused in content until the thing that reads it lands. One work rule that kernel and client both read (`gather_speed_pct` and `dig_speed_pct` replace `timing_window_pct`; the retired `game` field on a node is still accepted and ignored), and a tie rule for tools. A tenth wear place `hands` (shown as Gloves; `ice_grip` moves to it), a clothing `set` record that declares each set's own bonus (the shared `wear_set_bonus_pct` is gone), and `tan_cure_d` (a hide dries in one game day).
+- Kit clips: a kit sprite may carry a `clip` (race, view, verb) and the kit and the figure play the fight and work clips by name. The animation camera follows the 35 degree law.
+- Art line: `pnpm art:pixellab` (a spec of jobs, safe beside a paid account) and `pnpm art:reduce`; a nightly job on the free accounts' daily generations (`pnpm art:nightly`); `pnpm art:library` builds the image library page, which the owner sorts by hand (keep, parts, rework, archive; keys, multi-select, a saving server); `pnpm art:scale` measures every world sprite against the adult and each declares its scale; `pnpm art:stray` lists art that no drafts index holds; a drafts push rolls to a second release at GitHub's 1000 files and takes jpg, jpeg, webp and glb. The index grows by thousands of drafts (the library holds 3,163).
+- Animation production tools under `tools/anim/prod/`: five gates (feet, identity, size, eye, loop), a manifest with spend, a job list and the owner's card builder.
+- Creatures wear no outline (the ink rule leaves the `creatures/` group); the roe deer's sheet is the first animal in the owner's look. A sprite named in `MASKED` sways by a mask of its own height (none is named yet). `?frame=off` hides the dark frame, to measure the ground's own colour.
+- Frame D's measurables (contrast, tap targets, frame colours) are a test that reads the stylesheets. The loop no longer counts a builder's edit to an extension as a proposal.
+- The developer area gains the project tree (`/hub/tree/`): the game's parts as the branches, a tap grows a part's work on the tree, its data read from a published channel. The players counter's source is one repository secret read by both builds.
+- A newcomer's first fifteen minutes: the guides walked and mended, one page of current standards, and a test that keeps them true. New design pages for the gear wave (clothing, weapons, quarrying), the materials gap report and the weapon matrix; decisions recorded for the camera, the painted scenes, the image tools, the animation routes and the wide world.
+- CI: deploys from CI upload the source and the host builds it (off until the repository variable is set); the owner's own pull requests skip the CLA check; the browser checks lose dead time and keep a time ledger; hooks get 30 s like tests and the speed checks take the fastest batch, so a busy machine no longer fails them; the tree's e2e reads the number while the finger is down.
+
+What changed underneath
+- kernel 0.1.12 (simulation 0.30.0): the pure fight tick (integer, real time at 100 ms, tells the screen each strike's outcome by kind: attack, miss, critical, guard, dodge) lands disabled, `combat.enabled` is 0 and nothing in the client, server or game calls it; it copies only the state a tick changes (with 200 accounts a busy tick went from 160,384 µs to 253 µs at the median). Entering a place (`seen`, `explored`), the sea crossing (`aboard`, `crossings`), a save that moves with the authored valley, the one work rule is built (`gather` and `dig` yield one unit per work interval; the kernel reads no grade and has no jackpot). Hands strike a small step harder when they hold a work tool (`tool_strike_permille` 1050, `handStrikeHarm`) and only the spear is both a hunting and a fighting item; both wait behind the same off switch as the fight tick. Adapting an old save can now move a worn piece (the ice grip to the hands). A log recorded before 0.30 no longer replays to the same state, because one gather is now one unit. The save format is unchanged (3); a v0.1.11 save is adapted on load and loads.
+- Sign-in with Discord is built and stays closed ("not open yet") until its pair of keys is set.
+
 ## v0.1.11 - 2026-10-31
 
 What players notice
