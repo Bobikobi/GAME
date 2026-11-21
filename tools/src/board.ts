@@ -19,10 +19,10 @@
  * board against that (`--verify --base HEAD^1`), so a stale copy or a number
  * written by hand fails the check instead of reaching the site.
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { BoardEntry, Credit } from '@game/kernel';
+import { git } from './git';
 import { BOARD_PATH, REPO_ROOT } from './load';
 
 export const BOARD_FILE = BOARD_PATH;
@@ -105,8 +105,6 @@ export function computeBoard(
   return board;
 }
 
-const GIT_BUFFER = 64 * 1024 * 1024;
-
 /** A commit that only rewrote the board is not work: it does not count. */
 function boardOnly(files: readonly string[]): boolean {
   return files.length > 0 && files.every((f) => f === 'content/board.json');
@@ -115,7 +113,7 @@ function boardOnly(files: readonly string[]): boolean {
 /** Every commit with its time and files, oldest first: the checkout's history, or `ref`'s when given. */
 export function readCommits(cwd = REPO_ROOT, ref?: string): Commit[] {
   const args = ['log', '--reverse', '--name-only', '--format=%x00%ct', ...(ref ? [ref] : []), '--'];
-  const out = execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: GIT_BUFFER });
+  const out = git(cwd, args);
   const commits: Commit[] = [];
   for (const block of out.split('\0').slice(1)) {
     const [head, ...files] = block.split('\n').filter((l) => l.trim() !== '');
@@ -127,10 +125,6 @@ export function readCommits(cwd = REPO_ROOT, ref?: string): Commit[] {
   return commits;
 }
 
-function git(cwd: string, ...args: string[]): string {
-  return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: GIT_BUFFER });
-}
-
 /**
  * The history `base` has once the checkout lands on it as one commit (a squash): the base's
  * commits, then the checkout's own changes since it left the base, as a single commit. The changes
@@ -140,8 +134,8 @@ function git(cwd: string, ...args: string[]): string {
  */
 export function squashedCommits(base: string, cwd = REPO_ROOT): Commit[] {
   const commits = readCommits(cwd, base);
-  const left = git(cwd, 'merge-base', base, 'HEAD').trim();
-  const lines = `${git(cwd, 'diff', '--name-only', left, '--')}\n${git(cwd, 'ls-files', '--others', '--exclude-standard')}`;
+  const left = git(cwd, ['merge-base', base, 'HEAD']).trim();
+  const lines = `${git(cwd, ['diff', '--name-only', left, '--'])}\n${git(cwd, ['ls-files', '--others', '--exclude-standard'])}`;
   const files = [...new Set(lines.split('\n').filter((l) => l.trim() !== ''))].sort();
   if (files.length > 0 && !boardOnly(files)) {
     const last = commits[commits.length - 1];

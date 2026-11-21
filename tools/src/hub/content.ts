@@ -5,12 +5,12 @@
  * The board's counts come from content/board.json, which `pnpm board` writes from the full history and which is
  * committed, because a deploy builds from a shallow clone that cannot see the history (tools/src/board.ts).
  */
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Bundle } from '@game/kernel';
 import type { HubCreator, HubExtension, HubKit, HubParameters, HubSlot } from '@game/schema/hub';
 import type { Assembled } from '../assemble';
+import { git as runGit } from '../git';
 import type { PointsConfig } from '../board';
 import type { LoopConfig } from '../loop/config';
 
@@ -152,7 +152,7 @@ export function parameters(root: string, loop: LoopConfig, points: PointsConfig)
   return { loop, points, game: flattenBounded(params.params), values: { ...lock.values } };
 }
 
-const git = (root: string, args: string[]): string => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+const git = (root: string, args: string[]): string => runGit(root, args).trim();
 
 /** The time a commit was made, in the form the document uses. */
 export const isoOf = (unixSeconds: number): string => new Date(unixSeconds * 1000).toISOString();
