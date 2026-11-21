@@ -15,7 +15,7 @@
       "class": "core/fur",
       "family": "hare",
       "tier": 1,
-      "sprite": "core/base-kit:items/basket",
+      "sprite": "core/base-kit:items/stew-scrap",
       "weight": 1,
       "wear": {
         "slot": "head",
