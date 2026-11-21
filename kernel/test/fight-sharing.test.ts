@@ -23,14 +23,31 @@ function developEvents(events: ReturnType<typeof fightTick>['events']): unknown[
   });
 }
 
-/** The fixture's hashes were recorded under the kernel string of the day (#711); the new tick's worlds differ from develop's in that string alone. */
+// Compare against the unchanged fixture and hashes from #711 by restoring the recorded kernel and content ids
+// and omitting twelve exact recipe ids: two dried-herb variants and ten hide recipes.
 const RECORDED_KERNEL = '0.27.0';
 const RECORDED_CONTENT = '8316c46193598c5d';
+const RECIPES_ADDED_SINCE = new Set([
+  'ceosisrael/dried-herbs+core/herb',
+  'ceosisrael/dried-herbs+core/sunleaf',
+  'core/hare-fur-hood',
+  'core/hare-leather-shoes',
+  'core/roe-leather-jerkin',
+  'core/roe-leather-leggings',
+  'core/scrape-hare-hide',
+  'core/scrape-roe-hide',
+  'core/sinew-thread',
+  'core/tan-hare-fur',
+  'core/tan-hare-leather',
+  'core/tan-roe-leather',
+]);
 function developWorld(world: FightWorld): FightWorld {
   const old = structuredClone(world);
   for (const player of Object.values(old.players)) {
     player.state.kernel = RECORDED_KERNEL;
     player.state.content = RECORDED_CONTENT;
+    // The combat arena starts with the gate open, so it knows the hide recipes added after the recording.
+    player.state.player.recipes = player.state.player.recipes.filter((id) => !RECIPES_ADDED_SINCE.has(id));
   }
   return old;
 }

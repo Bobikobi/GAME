@@ -493,6 +493,11 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     }
   }
 
+  // families sort a craft profession's recipes (CLOTHING 6): a gathering profession has none
+  for (const [id, pr] of Object.entries(b.professions)) {
+    if (pr.families !== undefined && pr.verb !== 'craft') err(at(id), 'profession.families', `${pr.name} trains "${pr.verb}": only a craft profession sorts its recipes into families (CLOTHING 6)`);
+  }
+
   // the kernel teaches a recipe in two places only: a fragment's unlocks (learn) and a quest reward's recipes (applyReward)
   const taught = new Set<string>([
     ...Object.values(b.items).flatMap((it) => (it.fragment ? [it.fragment.unlocks] : [])),
@@ -515,6 +520,31 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     if (prof === undefined) err(file, `${w}.station`, named(`no profession works the ${c.station}: name one in "profession"`));
     else if (pr && pr.verb !== 'craft') err(file, `${w}.profession`, named(`${pr.name} trains "${pr.verb}", not "craft"`));
     else if (pr && c.level > pr.xp_levels.length + 1) err(file, `${w}.level`, named(`${pr.name} stops at level ${pr.xp_levels.length + 1}`));
+    // a recipe's family is one its profession declares (CLOTHING 6, 17 row 1)
+    if (c.family !== undefined && pr) {
+      const families = pr.families ?? [];
+      if (!families.includes(c.family)) {
+        err(
+          file,
+          `${w}.family`,
+          named(`"${c.family}" is not one of ${pr.name}'s families (${families.length > 0 ? families.join(', ') : 'it declares none'}): name a family its profession declares (CLOTHING 6)`),
+        );
+      }
+    }
+    // a closed recipe waits for its gate, and nothing in the world may teach it before (CLOTHING 6, "Before the take verb")
+    if (c.gate !== undefined && c.known !== 'start') {
+      err(file, `${w}.gate`, named(`a recipe behind the ${c.gate} gate is known from the start, never found: nothing in the world teaches a closed recipe (CLOTHING 6)`));
+    }
+    // a made piece never gains weight (MATERIALS M7; CLOTHING 7.7, 17 row 6): worn outputs only, so a meal of weightless herbs stays free
+    const inputWeight = c.inputs.reduce((n, s) => n + s.qty * (b.items[s.item]?.weight ?? 1), 0);
+    c.outputs.forEach((o, i) => {
+      const out = b.items[o.item];
+      if (!out?.wear) return;
+      const weight = o.qty * (out.weight ?? 1);
+      if (weight > inputWeight) {
+        err(file, `${w}.outputs.${i}`, named(`${o.item} is worn and weighs ${weight}, more than its inputs (${inputWeight}): a made piece never gains weight (MATERIALS M7) (CLOTHING 7.7)`));
+      }
+    });
     // a dug-up recipe is taught by something in the world (DECISIONS.md, 2026-10-10: higher tiers are dug up; WEAPONS 5)
     if (c.known === 'found' && !taught.has(id)) {
       err(file, `${w}.known`, named('a found recipe needs a teacher: no fragment\'s "unlocks" and no quest reward\'s "recipes" names it (DECISIONS.md, 2026-10-10)'));
@@ -669,6 +699,16 @@ function checkWear(b: Bundle): Issue[] {
       .filter((slot) => per[slot]! > (slot === 'jewelry' ? 2 : 1));
     if (per.outfit && (per.top || per.legs)) crowded.push('outfit');
     if (crowded.length > 0) err(first.file, where, `the set "${set}" cannot be worn whole: too many pieces for the ${crowded.join(', ')} (G44)`);
+    // a set runs from uncommon to rare (PROGRESSION 5.7; CLOTHING 8 rule 1, 17 row 4): a common piece carries one thing, a legendary one sits at its cap
+    for (const id of pieces) {
+      const piece = b.items[id]!;
+      if (piece.rarity === 'common' || piece.rarity === 'legendary') {
+        err(piece.file, `items.${id}.wear.set`, `a ${piece.rarity} piece belongs to no set: sets run from uncommon to rare (PROGRESSION 5.7) (CLOTHING 8)`);
+      }
+    }
+    // a set is one family of one class (MATERIALS M8; CLOTHING 8 rule 2, 17 row 5)
+    const kinds = [...new Set(pieces.map((id) => `${b.items[id]!.class}${b.items[id]!.family === undefined ? '' : ` (${b.items[id]!.family})`}`))].sort();
+    if (kinds.length > 1) err(first.file, where, `the set "${set}" mixes ${kinds[0]} and ${kinds[1]}: a set is one family of one class (MATERIALS M8) (CLOTHING 8)`);
     const bonus = b.sets[set];
     if (bonus) {
       const highestTier = Math.max(...pieces.map((id) => b.items[id]!.tier ?? 1));

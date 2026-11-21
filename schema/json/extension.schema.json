@@ -3019,6 +3019,17 @@
                   "type": "string"
                 }
               ]
+            },
+            "family": {
+              "pattern": "^[a-z0-9_-]+$",
+              "maxLength": 24,
+              "description": "The craft family inside its profession, one its profession declares in \"families\", named by what the thing is for (SKILL_FAMILIES 2.1): \"wear\" for what is worn, clothing now and armour with metal; \"tools\" for tools; \"arms\" for weapons when they open. The material stays in the family of the item itself. A tree node with the same family helps it.",
+              "type": "string"
+            },
+            "gate": {
+              "description": "\"combat\": closed while the fight is off (params combat.enabled 0, G35). Nobody knows it, nothing teaches it and the craft is refused; a save learns it, if it is start-known, once the gate opens. For a chain whose first input only a hunt or a fight lays in a player's hands (CLOTHING 6, \"Before the take verb\").",
+              "const": "combat",
+              "type": "string"
             }
           }
         }
@@ -16826,6 +16837,19 @@
                   }
                 }
               }
+            },
+            "families": {
+              "minItems": 1,
+              "maxItems": 12,
+              "uniqueItems": true,
+              "description": "A craft profession only: the families its recipes are sorted into, by use (SKILL_FAMILIES 2.1). A recipe or a tree node of this profession names one of them; when a family grows into its own school, its recipes name that profession instead.",
+              "type": "array",
+              "items": {
+                "pattern": "^[a-z0-9_-]+$",
+                "maxLength": 24,
+                "description": "A craft family.",
+                "type": "string"
+              }
             }
           }
         }
@@ -29207,6 +29231,17 @@
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                     "maxLength": 80,
                     "description": "An item whose sprite pictures the node on the tree.",
+                    "type": "string"
+                  },
+                  "family": {
+                    "pattern": "^[a-z0-9_-]+$",
+                    "maxLength": 24,
+                    "description": "A craft node only: it helps only the recipes of this family, one its school's profession declares (SKILL_FAMILIES 2.2). Left out, a craft node helps every recipe of its profession.",
+                    "type": "string"
+                  },
+                  "gate": {
+                    "description": "\"combat\": closed while the fight is off (params combat.enabled 0, G35). The tree shows it and refuses a point for it, so no point goes to a node whose recipes nobody can make yet (CLOTHING 6.1).",
+                    "const": "combat",
                     "type": "string"
                   },
                   "cluster": {
