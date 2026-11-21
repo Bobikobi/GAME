@@ -23991,8 +23991,14 @@
                     },
                     "frames": {
                       "minimum": 1,
-                      "maximum": 16,
-                      "description": "Animation frames laid side by side. Default 1.",
+                      "maximum": 64,
+                      "description": "Animation frames laid side by side, or in rows when `cols` wraps them. Default 1.",
+                      "type": "integer"
+                    },
+                    "cols": {
+                      "minimum": 1,
+                      "maximum": 32,
+                      "description": "Frames per row when the sheet is wrapped into rows (read left to right, then top to bottom): a long clip of 45 frames is too wide for one row (a picture wider than 4096 px is refused). Left out, one row of `frames`.",
                       "type": "integer"
                     },
                     "ramps": {

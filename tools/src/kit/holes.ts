@@ -22,26 +22,29 @@ export const SPECK_MAX = 24;
 export type Picture = { width: number; height: number; data: Uint8Array };
 
 /** A kit sprite as the check reads it. */
-export type HoleSprite = { w: number; frames: number; density: 1 | 4; source?: { spec: string; manifest: string } };
+export type HoleSprite = { w: number; h?: number; frames: number; cols?: number; density: 1 | 4; source?: { spec: string; manifest: string } };
 
 /** One enclosed see-through region: its frame, its size, and its first pixel in reading order, within the frame. */
 export type Pocket = { frame: number; size: number; x: number; y: number };
 
 /**
- * The enclosed see-through regions of each frame of a strip (`frames` frames of `frameWidth` side by side),
+ * The enclosed see-through regions of each frame of a strip (`frames` frames of `frameWidth` side by side, or in rows of `cols` frames
+ * when the sheet wraps, each `frameHeight` tall),
  * largest first within a frame. A pixel is see-through below alpha 128, as the importer reads it.
  */
-export function enclosedPockets(picture: Picture, frameWidth: number, frames: number): Pocket[] {
-  const { width, height, data } = picture;
+export function enclosedPockets(picture: Picture, frameWidth: number, frames: number, frameHeight: number = picture.height, cols: number = frames): Pocket[] {
+  const { width, data } = picture;
+  const height = frameHeight;
   const count = frameWidth * height;
   const reached = new Uint8Array(count);
   const queue = new Int32Array(count);
   const pockets: Pocket[] = [];
   for (let frame = 0; frame < frames; frame += 1) {
-    const left = frame * frameWidth;
+    const left = (frame % cols) * frameWidth;
+    const top = Math.floor(frame / cols) * frameHeight;
     const clear = (index: number): boolean => {
       const x = index % frameWidth;
-      return (data[(((index - x) / frameWidth) * width + left + x) * 4 + 3] ?? 0) < 128;
+      return (data[((top + (index - x) / frameWidth) * width + left + x) * 4 + 3] ?? 0) < 128;
     };
     // flood from the queued pixels through see-through ones, side by side or corner to corner; returns the queue's end
     const flood = (end: number): number => {
@@ -119,7 +122,7 @@ function reimportAdvice(sprite: HoleSprite, file: string): string {
  */
 export function holeProblems(sprite: HoleSprite, picture: Picture, file: string): string[] {
   if (sprite.density !== 4) return [];
-  const specks = enclosedPockets(picture, sprite.w, sprite.frames)
+  const specks = enclosedPockets(picture, sprite.w, sprite.frames, sprite.h, sprite.cols)
     .filter((pocket) => pocket.size <= SPECK_MAX)
     .sort((a, b) => b.size - a.size);
   const largest = specks[0];

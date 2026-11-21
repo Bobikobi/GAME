@@ -2043,7 +2043,8 @@ export const KitBody = Type.Object(
             384,
             'Frame height in pixels. At density 1 tiles/ and items/ are 16, chars/ are 24, a work pose 32 and props up to 64. At density 4 tiles/ and items/ are 64, chars/ are 96, a work pose 128 and props up to 384.',
           ),
-          frames: Type.Optional(Int(1, 16, 'Animation frames laid side by side. Default 1.')),
+          frames: Type.Optional(Int(1, 64, 'Animation frames laid side by side, or in rows when `cols` wraps them. Default 1.')),
+          cols: Type.Optional(Int(1, 32, 'Frames per row when the sheet is wrapped into rows (read left to right, then top to bottom): a long clip of 45 frames is too wide for one row (a picture wider than 4096 px is refused). Left out, one row of `frames`.')),
           ramps: Type.Optional(
             Type.Array(Type.String({ pattern: '^[a-z0-9][a-z0-9-]*$', maxLength: 32 }), {
               minItems: 1,
