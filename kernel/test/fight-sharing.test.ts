@@ -26,11 +26,14 @@ function developEvents(events: ReturnType<typeof fightTick>['events']): unknown[
 /** The fixture's hashes were recorded under the kernel string of the day (#711); the new tick's worlds differ from develop's in that string alone. */
 const RECORDED_KERNEL = '0.27.0';
 const RECORDED_CONTENT = '8316c46193598c5d';
+const RECIPES_ADDED_SINCE = ['ceosisrael/dried-herbs+'];
 function developWorld(world: FightWorld): FightWorld {
   const old = structuredClone(world);
   for (const player of Object.values(old.players)) {
     player.state.kernel = RECORDED_KERNEL;
     player.state.content = RECORDED_CONTENT;
+    // A starting account knows every level 1 recipe, so a recipe added to content after the recording is not part of what a fight hashes.
+    player.state.player.recipes = player.state.player.recipes.filter((id) => !RECIPES_ADDED_SINCE.some((p) => id.startsWith(p)));
   }
   return old;
 }
