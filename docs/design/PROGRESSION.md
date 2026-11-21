@@ -168,6 +168,8 @@ Twenty-two schools in five families: **sixteen in the first full catalogue** (no
 | Remedies | foundation (alchemy without magic; magic is ⏸ 9.10) | `craft_chance_pct`, `brew_strong` (a remedy's effect longer), `second_dose` (two from one brew), `taste_read` (an unknown herb's use shown), `poison_safe` |
 | Tinkering | with the city's machines (decision 20: human technology is made things) | `craft_chance_pct`, `quality_pct`, `clockwork` (a made thing with a timer: a trap, a lamp that lights itself), `salvage` (parts back from a broken made thing), `fit` (a tool fits a second verb) |
 
+**Families inside a craft school (the owner, 21.11: set A of docs/design/SKILL_FAMILIES.md, "לגבי המחקר a בהמשך הרחבה לb").** A craft school sorts its recipes into families by use: `wear` (clothing now, armour with metal), `tools`, `arms` (with the weapons), `food`, `remedies`. Tailoring and Leatherwork above are not separate schools for clothing and armour any more. They are materials inside `wear`, and Smithing's Armour fork moves to `wear` with the metal wave. A family becomes a school of its own only when it holds a path's floor by itself (PATHS), and then it moves whole, nodes and spent points included. The rows above keep their effect lists for that day. Set B there (one 50-level table, deep families) is the later expansion.
+
 **Combat** (planned layer; Q2 = B, the owner: names, shapes, effect lists and slots reserved now, and the tree screen draws the three spokes closed; the nodes are written in the same pull request as the first foe: G35, COMBAT section 6). The effect list is COMBAT 4.3's reserved list and nothing more until then: `strike`, `sweep`, `break_guard`, `step_through`, `mark`, `brace`, `second_wind`, `bleed`.
 
 | School | What it reads |
