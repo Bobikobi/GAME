@@ -17,8 +17,9 @@ import { withoutClips } from './fixtures/clips/without-clips.js';
 
 /**
  * A long clip is a wrapped sheet: 45 frames of 128 px laid in rows of `cols`, because one row of them is 5760 px, wider than the 4096 px a
- * browser's graphics card is promised to take. The layout rule is `sheetGrid`/`frameRect` (kernel); the game's Phaser spritesheet loader
- * cuts a picture into cells row by row, which is the same rule, so a wrapped sheet needs no code in the client beyond the number the kit says.
+ * phone's graphics card can be counted on to take. The layout rule is `sheetGrid`/`frameRect` (kernel); the game's Phaser spritesheet loader
+ * cuts a picture into cells row by row, which is the same rule; the client's own slicing (the interface's sprite element, the toned grass copy)
+ * reads it from those two functions too.
  */
 const W = 128;
 const H = 128;

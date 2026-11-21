@@ -1047,7 +1047,7 @@ export function checkKits(a: Assembled): Issue[] {
         issues.push({
           file: kitFile,
           where,
-          message: `the sheet is ${grid.width}x${grid.height}, wider or taller than ${MAX_SHEET_PX} px, which a browser's graphics card may refuse. Wrap it into rows with cols.`,
+          message: `the sheet is ${grid.width}x${grid.height}, wider or taller than ${MAX_SHEET_PX} px, which a phone's graphics card may refuse. Wrap it into rows with cols.`,
           level: 'error',
         });
       }

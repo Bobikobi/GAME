@@ -9,6 +9,7 @@ import { withoutClips } from '../../tools/test/fixtures/clips/without-clips';
 import { REPO_ROOT, loadAll } from '../../tools/src/load';
 import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
 import type { Dir } from '../src/input';
+import { spriteStyle } from '../src/ui/dom';
 
 /**
  * #742 stage 1: the figure finds a clip by verb + race + view and plays it at the clip's own frame time. The fixture kit
@@ -223,5 +224,18 @@ describe('the packed kit', () => {
     const right = clipFor(real, 'fell', 'core/elf', 'right')!;
     expect(right.key).toBe(left.key);
     expect([left.flip, right.flip]).toEqual([false, true]);
+  });
+});
+
+describe('a wrapped sheet in the interface: the sprite element shows the cell the kernel names', () => {
+  const info = { url: 'x.png', w: 128, h: 128, frames: 45, cols: 16, density: 4 };
+  test('frame 0 is the top left, frame 17 the second row\'s second cell, the background is the whole 2048 x 384 picture at scale', () => {
+    expect(spriteStyle(info, 2, 0)).toBe('width:64px;height:64px;background-image:url("x.png");background-size:1024px 192px;background-position:0px 0px');
+    expect(spriteStyle(info, 2, 17)).toBe('width:64px;height:64px;background-image:url("x.png");background-size:1024px 192px;background-position:-64px -64px');
+    expect(spriteStyle(info, 2, 44)).toContain('background-position:-768px -128px'); // 44 = row 2, column 12
+  });
+  test('a one-row sheet reads as it always did', () => {
+    const one = { url: 'y.png', w: 16, h: 16, frames: 4, density: 1 };
+    expect(spriteStyle(one, 2, 3)).toBe('width:32px;height:32px;background-image:url("y.png");background-size:128px 32px;background-position:-96px 0px');
   });
 });

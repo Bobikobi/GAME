@@ -261,7 +261,7 @@ export interface SpriteInfo {
   cols?: number;
 }
 
-/** The widest or tallest picture a browser's graphics card is promised to take; a sheet wider than this must wrap (`cols`). */
+/** The widest or tallest sheet the game accepts: 4096 px is what practically every phone's graphics card takes (WebGL 2 only guarantees 2048); a sheet wider than this must wrap (`cols`). */
 export const MAX_SHEET_PX = 4096;
 
 /** The grid a sheet's frames lie in: `cols` frames to a row, `rows` rows, and the picture's size. A sheet that does not wrap is one row. */
