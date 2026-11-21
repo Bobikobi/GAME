@@ -11,7 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dir = join(root, 'tools', 'art', 'clothing');
 
 interface Piece { item: string; place: string; bars_places: string[]; ramp: string[]; accent_ramp?: string[] }
-interface SetRow { description_by_race?: Record<string, string>; id: string; order: number; wearable_today: boolean; description: string; pieces: Piece[]; use_view_clauses?: boolean | Record<string, boolean>; head_layer?: Record<string, string> }
+interface SetRow { races: string[]; description_by_race?: Record<string, string>; id: string; order: number; wearable_today: boolean; description: string; pieces: Piece[]; use_view_clauses?: boolean | Record<string, boolean>; head_layer?: Record<string, string> }
 interface Manifest { sets: SetRow[]; view_clauses: Record<string, string> }
 const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8')) as Manifest;
 
