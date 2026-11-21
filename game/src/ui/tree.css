@@ -312,6 +312,13 @@
   gap: 6px;
 }
 
+/* Give each phone slot 44 px and divide the remaining width between the slots. */
+.tree-phone-side > .tree-build .tree-slots {
+  grid-template-columns: repeat(5, 44px);
+  column-gap: 0;
+  justify-content: space-between;
+}
+
 .tree-slot {
   display: flex;
   align-items: center;

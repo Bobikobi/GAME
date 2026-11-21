@@ -250,6 +250,9 @@ async function desktop(page: Page, url: string): Promise<void> {
     return { window: panel.height, aboveMap: mr.top - panel.top, map: mr.height, mapFull: map.scrollHeight };
   })()`);
   log(`1280 x 800 control: window ${control.window} px, header and school row ${control.aboveMap} px, map ${control.map}/${control.mapFull} px`);
+  if (Math.abs(control.window - 768) > 1 || Math.abs(control.aboveMap - 232.3) > 1 || Math.abs(control.map - 423.1) > 1) {
+    throw new Error('the 1280 x 800 desktop control differs from 768 / 232.3 / 423.1 px by more than 1 px');
+  }
   await page.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   await sleep(100);
 
@@ -404,19 +407,20 @@ async function phone(page: Page, url: string): Promise<void> {
   const d = await dataset(page);
   if (d.zoom !== '1.000') throw new Error(`the phone starts at zoom ${d.zoom}`);
 
-  const layout = await page.eval<{ window: number; aboveMap: number; map: number; mapFull: number; client: number; scroll: number; text: number; targets: number }>(`(() => {
+  const layout = await page.eval<{ window: number; aboveMap: number; map: number; mapWidth: number; mapFull: number; client: number; scroll: number; text: number; targets: number }>(`(() => {
     const panel = document.querySelector('.panel.bag'), tree = document.querySelector('.tree-page'), map = document.querySelector('.tree-view');
     const pr = panel.getBoundingClientRect(), mr = map.getBoundingClientRect();
     const shown = (el) => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
     // a label drawn at 0 px (the close button's words, replaced by its cross) is not text a player reads
     const text = [...panel.querySelectorAll('*')].filter((el) => shown(el) && [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()) && parseFloat(getComputedStyle(el).fontSize) < 16 && parseFloat(getComputedStyle(el).fontSize) > 0).length;
-    const targets = [...panel.querySelectorAll('button, summary')].filter((el) => shown(el) && !el.classList.contains('tree-node') && (el.getBoundingClientRect().width < 44 || el.getBoundingClientRect().height < 44)).length;
-    return { window: pr.height, aboveMap: mr.top - pr.top, map: mr.height, mapFull: map.scrollHeight, client: tree.clientHeight, scroll: tree.scrollHeight, text, targets };
+    const targets = [...panel.querySelectorAll('button, summary, .tree-slot')].filter((el) => shown(el) && !el.classList.contains('tree-node') && (el.getBoundingClientRect().width < 44 || el.getBoundingClientRect().height < 44)).length;
+    return { window: pr.height, aboveMap: mr.top - pr.top, map: mr.height, mapWidth: mr.width, mapFull: map.scrollHeight, client: tree.clientHeight, scroll: tree.scrollHeight, text, targets };
   })()`);
   if (layout.scroll !== layout.client) throw new Error(`the phone tree page scrolls ${layout.scroll} px in ${layout.client} px`);
   if (layout.map < layout.window * 0.6) throw new Error(`the phone map is ${layout.map} px of a ${layout.window} px window`);
+  if (layout.mapWidth < 530) throw new Error(`the phone map is ${layout.mapWidth} px wide, expected at least 530 px`);
   if (layout.text > 0 || layout.targets > 0) throw new Error(`the phone tree has ${layout.text} small text runs and ${layout.targets} small targets`);
-  log(`layout: window ${layout.window} px, header and school row ${layout.aboveMap} px, map ${layout.map}/${layout.mapFull} px, page ${layout.scroll}/${layout.client} px; ${layout.text} text runs under 16 px, ${layout.targets} targets under 44 px`);
+  log(`layout: window ${layout.window} px, header and school row ${layout.aboveMap} px, map ${layout.mapWidth} px wide and ${layout.map}/${layout.mapFull} px tall, page ${layout.scroll}/${layout.client} px; ${layout.text} text runs under 16 px, ${layout.targets} targets under 44 px`);
 
   await page.screenshot(join(OUT, 'tree-phone.png'));
 
@@ -504,6 +508,19 @@ async function phone(page: Page, url: string): Promise<void> {
   await page.waitFor(`(() => { const z = Number(document.querySelector('.tree-view').dataset.zoom); return z < ${zp * 0.6} && z > ${zp * 0.4}; })()`, `a pinch to zoom out from ${zp}`);
   log(`a pinch zooms ${zp} -> ${(await dataset(page)).zoom}`);
   hadNoErrors(page);
+
+  // The layout scan checks the unfilled slots. Equip a technique to measure a filled slot as well.
+  await tapNode(page, facts.child);
+  await page.tap('.tree-card .tree-learn', 'Learn');
+  await page.tap('.tree-card .tree-equip', 'Put in the build');
+  const filled = await page.waitFor<{ width: number; height: number }>(`(() => {
+    const slot = document.querySelector('.tree-phone-side .tree-slot.filled[data-slot="0"]');
+    if (!slot) return null;
+    const { width, height } = slot.getBoundingClientRect();
+    return { width, height };
+  })()`, 'the phone filled slot');
+  if (filled.width < 44 || filled.height < 44) throw new Error(`the phone filled slot is ${filled.width} x ${filled.height} px`);
+  log(`the filled slot is ${filled.width} x ${filled.height} px`);
 
   // the big tree on a phone: only what is on screen, and a tap still chooses
   const total = await growBigTree(page);
