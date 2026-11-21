@@ -4544,3 +4544,10 @@ This follows the owner's 14.11 direction that the game, apart from its home page
 
 Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
 The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).
+
+## 2026-11-21 ✅ Making families split by use: set A inside the built schools now, the clean set B as the later expansion (#769)
+**What:** the owner asked that no family be harder to grow in than another, and that going deep in one make only that family easier ("מי שמתקדם בייצור ביגוד יהיה לו קל מולם"). Ten games were surveyed. Two sets went to him on the card `skill-families-1121`: one choice, two full-frame stills at 1920 x 1080, switched by buttons. A is fitted to the built tree: Handcraft's families are `wear`, `tools` and later `arms`, Cooking's are `food` and later `remedies`, each family gets one group of 4 nodes (2 small, 2 major), and F1 to F6 are parity checks in numbers. B is the clean kit: six families on one 50-level table with deep slots (docs/design/SKILL_FAMILIES.md, _CLEAN, _SURVEY).
+**Result:** the owner, 21.11 09:44: "לגבי המחקר a בהמשך הרחבה לb" (A, and later an expansion to B). A is built now, together with C1 to C3: families by use, the 6.1 nodes become a wear group and a tools group, and Tailoring and Leatherwork are materials inside `wear`. `nodes_max` goes from 12 to 20. Nothing of B is built, and A keeps B open (section 2.4).
+**Why:** both sets put armour in the clothier's family when iron comes. A runs on the kernel as built (#776), and its checks run from the first content pull request. B is the right shape for a large tree with a market.
+**Retry when:** the tree nears PROGRESSION's catalogue of 16 schools, or a market opens. Then B's level table, family points and deep slots come in.
+Model: Opus 5.5. Link: #769, the card `skill-families-1121`.
