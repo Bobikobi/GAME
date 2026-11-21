@@ -11,7 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const dir = join(root, 'tools', 'art', 'clothing');
 
 interface Piece { item: string; place: string; bars_places: string[]; ramp: string[]; accent_ramp?: string[] }
-interface SetRow { id: string; order: number; wearable_today: boolean; description: string; pieces: Piece[]; use_view_clauses?: boolean; head_layer?: Record<string, string> }
+interface SetRow { description_by_race?: Record<string, string>; id: string; order: number; wearable_today: boolean; description: string; pieces: Piece[]; use_view_clauses?: boolean | Record<string, boolean>; head_layer?: Record<string, string> }
 interface Manifest { sets: SetRow[]; view_clauses: Record<string, string> }
 const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8')) as Manifest;
 
@@ -38,11 +38,14 @@ describe('the manifest of sets', () => {
     }
   });
 
-  test('a description with its view clause fits the draw API (500 characters)', () => {
+  test('a description with its view clause fits the draw API (500 characters), for every race', () => {
     for (const s of manifest.sets) {
-      for (const v of ['front', 'back', 'left']) {
-        const clause = s.use_view_clauses ? (manifest.view_clauses[v] ?? '') : '';
-        expect((s.description + clause).length).toBeLessThanOrEqual(500);
+      for (const race of s.races) {
+        for (const v of ['front', 'back', 'left']) {
+          const flag = s.use_view_clauses;
+          const clause = (typeof flag === 'object' ? flag[race] : flag) ? (manifest.view_clauses[v] ?? '') : '';
+          expect(((s.description_by_race ?? {})[race] ?? s.description).length + clause.length, `${s.id} ${race} ${v}`).toBeLessThanOrEqual(500);
+        }
       }
     }
   });
@@ -50,7 +53,7 @@ describe('the manifest of sets', () => {
   test('a head-wear set names its hat drawing for every view, a set without head-wear names none', () => {
     for (const s of manifest.sets) {
       const hat = s.pieces.some((p) => p.bars_places.includes('head'));
-      if (hat) expect(Object.keys(s.head_layer ?? {}).sort()).toEqual(['back', 'front', 'left']);
+      if (hat) expect(Object.keys(s.head_layer ?? {})).toEqual(expect.arrayContaining(['back', 'front', 'left']));   // a clip may name its own hat drawing too (idle-left)
       else expect(s.head_layer).toBeUndefined();
     }
   });
@@ -63,6 +66,28 @@ describe('the manifest of sets', () => {
         const recipe = join(root, 'content', p.item.replace('core/', 'core/recipes/') + '.json');
         expect(existsSync(recipe), recipe).toBe(true);
         expect(readFileSync(recipe, 'utf8')).toContain(`"set": "${s.id}"`);
+      }
+    }
+  });
+});
+
+describe('the shipped sheets of the sets', () => {
+  interface Row { file: string; w: number; frames: number; stride?: unknown }
+  const kit = JSON.parse(readFileSync(join(root, 'content', 'kit', 'core', 'kit.json'), 'utf8')) as { kit: { sprites: Record<string, Row> } };
+
+  test('each drawn set has one stride sheet per view, as wide as its frames, at most 16 frames', () => {
+    for (const s of manifest.sets) {
+      const key = s.id.split('/')[1];
+      for (const race of s.races) {
+        for (const view of ['down', 'up', 'left']) {
+          const name = `chars/${race}_${key}_${view}`;
+          const row = kit.kit.sprites[name];
+          expect(row, name).toBeDefined();
+          expect(row!.frames).toBeLessThanOrEqual(16);
+          expect(row!.stride, name).toBeDefined();
+          const png = readFileSync(join(root, 'content', 'kit', 'core', row!.file));
+          expect(png.readUInt32BE(16), name).toBe(row!.frames * row!.w);
+        }
       }
     }
   });

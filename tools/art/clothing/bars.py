@@ -298,6 +298,29 @@ def s4(areas, cyclic=False):
     return dict(max_change=worst, ok=worst <= S4_AREA)
 
 
+def best_combo(options):
+    """For a clip: `options[i]` is the list of garment areas the tries of frame i offer. The index per frame whose cyclic S4 is smallest,
+    found by a minimax chain from each start choice (the same answer as trying every combination, without the product)."""
+    n = len(options)
+    if n == 1:
+        return [0]
+    rel = lambda a, b: abs(a - b) / max(a, b, 1)
+    best = None
+    for s0 in range(len(options[0])):
+        cost = {s0: (0.0, [s0])}
+        for i in range(1, n):
+            nxt = {}
+            for j, a in enumerate(options[i]):
+                c = min(((max(c0, rel(options[i - 1][k], a)), path + [j]) for k, (c0, path) in cost.items()), key=lambda t: t[0])
+                nxt[j] = c
+            cost = nxt
+        for j, (c0, path) in cost.items():
+            total = max(c0, rel(options[-1][j], options[0][s0]))
+            if best is None or total < best[0] - 1e-12:
+                best = (total, path)
+    return best[1]
+
+
 def frame_report(bare, dressed, places, ramp, view='front'):
     lm = landmarks(bare, view)
     g = garment_pixels(bare, dressed, lm, places)

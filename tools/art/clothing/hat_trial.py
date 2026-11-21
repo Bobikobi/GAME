@@ -6,7 +6,6 @@ Writes .scratch/clothing-sets/hat/<set>/<race>/<clip>/fN.png and report.json. No
 """
 import argparse
 import glob
-import itertools
 import json
 import os
 import re
@@ -18,6 +17,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bars  # noqa: E402
 import hatlayer  # noqa: E402
+import pack  # noqa: E402
 import run  # noqa: E402
 
 
@@ -25,7 +25,7 @@ def L(p):
     return np.array(Image.open(p).convert('RGBA'))
 
 
-def trial(set_id, race, src):
+def trial(set_id, race, src, ship=False):
     sdef, places, ramp = run.load_set(set_id)
     key = set_id.split('/')[1]
     K = f'{run.KEPT}/{race}'
@@ -48,6 +48,7 @@ def trial(set_id, race, src):
         view = run.view_of(clip)
         os.makedirs(f'{outdir}/{clip}', exist_ok=True)
         cands = []
+        shipped = pack.shipped_area(set_id, race, view) if ship else None
         for i in range(run.nframes(race, clip)):
             bare = L(f'{K}/{clip}/f{i}.png')
             cs = []
@@ -58,16 +59,11 @@ def trial(set_id, race, src):
                 r = bars.frame_report(bare, d, places, ramp, view)
                 v = run.verdict(r)
                 bad = [k for k in v if not v[k]]
-                cs.append(dict(raw=os.path.basename(rp), d=d, r=r, bad=bad, poke=hatlayer.poke_through(bare, hm)))
+                cs.append(dict(raw=os.path.basename(rp), d=d, r=r, bad=bad, poke=hatlayer.poke_through(bare, hm), area=shipped(d, bare) if shipped else r['garment_area']))
             cands.append(cs)
         opts = [[c for c in cs if not c['bad']] for cs in cands]
         if all(opts):       # every frame has a passing try: the steadiest combination (S4, cyclic)
-            best = None
-            for combo in itertools.product(*opts):
-                m = bars.s4([c['r']['garment_area'] for c in combo], cyclic=True)['max_change']
-                if best is None or m < best[0] - 1e-9:
-                    best = (m, combo)
-            pick = list(best[1])
+            pick = [o[i] for o, i in zip(opts, bars.best_combo([[c['area'] for c in o] for o in opts]))]
         else:               # otherwise each frame's best: passing first, then the fewest failing bars, then the smallest outside change
             pick = [min(cs, key=lambda c: (len(c['bad']), c['r']['S2']['share'])) for cs in cands]
         s4 = bars.s4([c['r']['garment_area'] for c in pick], cyclic=True)
@@ -86,9 +82,10 @@ if __name__ == '__main__':
     ap.add_argument('--set', required=True)
     ap.add_argument('--race', default='human')
     ap.add_argument('--src', default='', help='view=clip/frame,... (default: the manifest set\'s head_layer)')
+    ap.add_argument('--ship', action='store_true', help='choose the steadiest combination on the shipped sheet\'s garment area (pack.shipped_area)')
     a = ap.parse_args()
     sd = run.load_set(a.set)[0]
     src = dict(x.split('=') for x in a.src.split(',')) if a.src else sd.get('head_layer_by_race', {}).get(a.race, sd['head_layer'])
-    rep = trial(a.set, a.race, src)
+    rep = trial(a.set, a.race, src, a.ship)
     for r in rep:
         print(r['clip'], r['i'], r['raw'], r['bad'] or 'PASS', 'S1', r['S1'], 'S2f', r['S2_face'], 'o', r['S2_out'], 'al', r['S2_aligned'], 'S3', r['S3'], 'poke', r['poke'], 'S4', r['S4_clip'])

@@ -145,7 +145,6 @@ def choose_combos(results):
     """Per clip, when every frame has a passing try, the combination of passing tries whose garment area changes least between
     neighbour frames (S4, cyclic): a frame's first passing try is kept unless another combination reads steadier. Sets each
     frame's `seed` to the chosen try's seed."""
-    import itertools
     by = {}
     for r in results:
         by.setdefault(r['clip'], []).append(r)
@@ -154,12 +153,9 @@ def choose_combos(results):
         opts = [[t for t in r['tries'] if t.get('ok')] for r in fr]
         if not all(opts):
             continue
-        best = None
-        for combo in itertools.product(*opts):
-            m = bars.s4([t['garment_area'] for t in combo], cyclic=True)['max_change']
-            if best is None or m < best[0] - 1e-9:
-                best = (m, combo)
-        for r, t in zip(fr, best[1]):
+        pick = bars.best_combo([[t['garment_area'] for t in o] for o in opts])
+        for r, o, i in zip(fr, opts, pick):
+            t = o[i]
             r['seed'] = t['seed']
 
 

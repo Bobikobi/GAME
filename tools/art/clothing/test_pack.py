@@ -73,5 +73,12 @@ class Pack(unittest.TestCase):
         self.assertLessEqual(len(row['ramps']), 4)
 
 
+class Poses(unittest.TestCase):
+    def test_a_sheet_holds_at_most_16_frames_the_stand_included(self):
+        self.assertEqual(pack.walk_poses(4), 4)
+        self.assertEqual(pack.walk_poses(15), 15)
+        self.assertEqual(pack.walk_poses(16), 15)   # the kit schema's frames maximum is 16: the stand takes the last place
+
+
 if __name__ == '__main__':
     unittest.main()

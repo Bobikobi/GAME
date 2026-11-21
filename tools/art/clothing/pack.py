@@ -32,6 +32,7 @@ REPO = pl.REPO
 KIT = os.path.join(REPO, 'content', 'kit', 'core')
 PALETTE_SRC = os.path.join(REPO, 'tools', 'src', 'kit', 'palette.ts')
 FRAME = 128
+MAX_FRAMES = 16          # the kit schema's maximum frames of a sheet
 DENSITY = 4
 INK = (0x1b, 0x1a, 0x2e)
 SPECK_MAX = 24
@@ -201,6 +202,28 @@ def save_png(arr, path):
     Image.fromarray(arr, 'RGBA').save(path, format='PNG', optimize=True)
 
 
+def walk_poses(n):
+    """How many of a clip's poses a sheet keeps: the standing pose takes one of the kit's MAX_FRAMES places, so a longer walk drops its last pose."""
+    return min(n, MAX_FRAMES - 1)
+
+
+def shipped_area(set_id, race, view):
+    """A function (dressed 128 frame, bare 128 frame) -> the garment's area as the shipped sheet frame measures it (after the reduction, the
+    palette and the ink edge). The steadiest combination of tries for the packed sheet is chosen on these numbers (hat_trial.py --ship)."""
+    sdef, places, ramp = run.load_set(set_id)
+    walk = walk_of(race, view)
+    f, ox, oy = plan(load(f'{run.KEPT}/{race}/idle-{view}/f0.png'), walk)
+    row_ramps = list(walk['ramps'])
+    for r in SET_RAMPS.get(set_id, []):
+        if r not in row_ramps:
+            row_ramps.append(r)
+    pal = palette_of(row_ramps)
+
+    def area(d, b):
+        return bars.frame_report(kit_frame(bake(b, f, ox, oy), pal), kit_frame(bake(d, f, ox, oy), pal), places, ramp, view)['garment_area']
+    return area
+
+
 def pack_set(set_id, race, write=False):
     sdef, places, ramp = run.load_set(set_id)
     key = set_id.split('/')[1]
@@ -217,7 +240,7 @@ def pack_set(set_id, race, write=False):
                 row_ramps.append(r)
         pal = palette_of(row_ramps)
         clip_names = [f'walk-{view}', f'idle-{view}']
-        n_walk = run.nframes(race, clip_names[0])
+        n_walk = walk_poses(run.nframes(race, clip_names[0]))
         sources = [(clip_names[0], i) for i in range(n_walk)] + [(clip_names[1], 0)]
         dressed, barefs, vr = [], [], []
         for c, i in sources:

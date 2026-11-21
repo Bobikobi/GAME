@@ -2819,6 +2819,330 @@
           "grey"
         ],
         "scale": 0.9
+      },
+      "chars/human_hardened-leathers_down": {
+        "file": "chars/human_hardened-leathers_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 36070,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1
+      },
+      "chars/human_hardened-leathers_up": {
+        "file": "chars/human_hardened-leathers_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 36325,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1.15
+      },
+      "chars/human_hardened-leathers_left": {
+        "file": "chars/human_hardened-leathers_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 47252,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 0.95
+      },
+      "chars/human_reed-walker_down": {
+        "file": "chars/human_reed-walker_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 36070,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1
+      },
+      "chars/human_reed-walker_up": {
+        "file": "chars/human_reed-walker_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 36325,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1.15
+      },
+      "chars/human_reed-walker_left": {
+        "file": "chars/human_reed-walker_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 47252,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 0.95
+      },
+      "chars/elf_reed-walker_down": {
+        "file": "chars/elf_reed-walker_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "red"
+        ],
+        "stride": {
+          "travel_mpx": 53396,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1.08
+      },
+      "chars/elf_reed-walker_up": {
+        "file": "chars/elf_reed-walker_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "red"
+        ],
+        "stride": {
+          "travel_mpx": 56756,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1.37
+      },
+      "chars/elf_reed-walker_left": {
+        "file": "chars/elf_reed-walker_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "red"
+        ],
+        "stride": {
+          "travel_mpx": 71876,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1.15
+      },
+      "chars/human_digger-leathers_down": {
+        "file": "chars/human_digger-leathers_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 36070,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1
+      },
+      "chars/human_digger-leathers_up": {
+        "file": "chars/human_digger-leathers_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 36325,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 1.15
+      },
+      "chars/human_digger-leathers_left": {
+        "file": "chars/human_digger-leathers_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 47252,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 0.95
+      },
+      "chars/skeleton_reed-walker_down": {
+        "file": "chars/skeleton_reed-walker_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark",
+          "red"
+        ],
+        "stride": {
+          "travel_mpx": 10894,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 0.77
+      },
+      "chars/skeleton_reed-walker_up": {
+        "file": "chars/skeleton_reed-walker_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark",
+          "red"
+        ],
+        "stride": {
+          "travel_mpx": 10140,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 0.93
+      },
+      "chars/skeleton_reed-walker_left": {
+        "file": "chars/skeleton_reed-walker_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 5,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark",
+          "red"
+        ],
+        "stride": {
+          "travel_mpx": 51492,
+          "anchor": [
+            64,
+            90
+          ],
+          "bob": false
+        },
+        "scale": 0.74
       }
     }
   }

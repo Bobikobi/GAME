@@ -4,7 +4,7 @@
  * or a hunt runs (P-5b). The 2D scene and the 3D door both walk by them. Pure apart from the GameSession it is handed, so the walk
  * can be played on the real map without a renderer (game/test/stealth-flow.test.ts).
  */
-import { type Bundle, type Gait, type Hazard, type Tile, type makeWalkable, sees, stepRuleFor, windowOpen } from '@game/kernel';
+import { type Bundle, type Gait, type Hazard, type PublicState, type Tile, type makeWalkable, sees, setComplete, setPieces, stepRuleFor, windowOpen } from '@game/kernel';
 
 import { DIRS, type Dir } from './input';
 import type { GameSession } from './session-surface';
@@ -310,4 +310,18 @@ export function diagonalSheet(stem: string, look: Facing8, facing: Dir, has: (ke
   const mirrored = look.endsWith('_right');
   const key = stem.replace(/_down$/, `_${mirrored ? look.replace(/_right$/, '_left') : look}`);
   return key !== stem && has(key) ? { key, flip: mirrored } : undefined;
+}
+
+/**
+ * The sheet a worn clothing set is drawn on (public #772): when every piece of a set is worn and the kit holds that set's
+ * drawing for this race and view (`chars/human_down` -> `chars/human_reed-walker_down`), the set's sheet; otherwise the
+ * stem as it is, the bare figure. Sets are read in id order, so two complete sets always give the same sheet.
+ */
+export function wornSetSheet(bundle: Bundle, state: PublicState, stem: string, has: (key: string) => boolean): string {
+  for (const id of Object.keys(setPieces(bundle)).sort()) {
+    if (!setComplete(bundle, state, id)) continue;
+    const key = stem.replace(/_down$/, `_${id.slice(id.indexOf('/') + 1)}_down`);
+    if (key !== stem && has(key)) return key;
+  }
+  return stem;
 }

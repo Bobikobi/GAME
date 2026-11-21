@@ -116,5 +116,21 @@ class Bars(unittest.TestCase):
         self.assertTrue(np.array_equal(out[100], hat[100]))       # nothing outside the garment moves
 
 
+class BestCombo(unittest.TestCase):
+    def test_same_as_every_combination(self):
+        import itertools
+        import random
+        rnd = random.Random(7)
+        for _ in range(30):
+            opts = [[rnd.randint(200, 800) for _ in range(rnd.randint(1, 3))] for _ in range(rnd.randint(2, 6))]
+            pick = bars.best_combo(opts)
+            got = bars.s4([o[i] for o, i in zip(opts, pick)], cyclic=True)['max_change']
+            want = min(bars.s4(list(c), cyclic=True)['max_change'] for c in itertools.product(*opts))
+            self.assertAlmostEqual(got, want, places=9)
+
+    def test_one_option_each(self):
+        self.assertEqual(bars.best_combo([[5], [6], [7]]), [0, 0, 0])
+
+
 if __name__ == '__main__':
     unittest.main()
