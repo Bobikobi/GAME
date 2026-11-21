@@ -1,4 +1,9 @@
 /** The body lines a pull request owes the tools that fire on it (tools/src/pr-rules.ts). */
+import { spawnSync } from 'node:child_process';
+import { closeSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { decide, labelled, parseNameStatus, treeForm } from '../src/pr-rules';
 
@@ -9,6 +14,39 @@ const docs = { status: 'M', path: 'AGENTS.md' };
 const tree = 'Tree: none: a test body, nothing a player grows in';
 /** a quest is story too, so a quest's body owes both lines */
 const story = `Story review: clear, every past line has a speaker\n${tree}`;
+
+describe('the body rule script', () => {
+  it.each([
+    ['same-repository release', 'develop', 'mist/vale', 0],
+    ['fork develop into main', 'develop', 'alice/vale', 1],
+    ['same-repository hotfix into main', 'hotfix', 'mist/vale', 1],
+  ])('checks %s', (_case, head, headRepository, status) => {
+    const dir = mkdtempSync(join(tmpdir(), 'pr-rules-'));
+    const diff = join(dir, 'diff');
+    const report = join(dir, 'report');
+    writeFileSync(diff, `M\t${quest.path}\nA\t${sprite.path}\n`);
+    const input = openSync(diff, 'r');
+    const output = openSync(report, 'w');
+    try {
+      const result = spawnSync(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('../src/pr-rules-cli.ts', import.meta.url))], {
+        stdio: [input, output, 'inherit'],
+        env: { ...process.env, BASE: 'main', HEAD_REF: head, HEAD_REPOSITORY: headRepository, GITHUB_REPOSITORY: 'mist/vale', PR_BODY: '' },
+      });
+      const stdout = readFileSync(report, 'utf8');
+      expect(result.status, stdout).toBe(status);
+      if (status === 0) {
+        expect(stdout).toBe('::notice::Release pull request. Each change carried its own lines when it entered develop.\n');
+      } else {
+        expect(stdout.split('\n')[0]).toBe('quest files changed: 1; story files changed: 1; pictures added under content/kit/: 1; tree line: missing');
+        expect(stdout.match(/^::error::/gm)).toHaveLength(4);
+      }
+    } finally {
+      closeSync(input);
+      closeSync(output);
+      rmSync(dir, { recursive: true });
+    }
+  });
+});
 
 describe('the quest review line', () => {
   it('is owed when a quest file changes, core or extension', () => {

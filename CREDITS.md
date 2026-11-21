@@ -14,11 +14,13 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Healing (items) - `content/core/items/healing.json`
 - Maru's house key (items) - `content/core/items/maru-house-key.json`
 - Outfits (items) - `content/core/items/outfits.json`
+- Quarrying (items) - `content/core/items/stone.json`
 - Tools (items) - `content/core/items/tools.json`
 - The valley (map) - `content/core/map.json`
 - Elder Maru (npc) - `content/core/npcs/elder.json`
 - Pell the trader (npc) - `content/core/npcs/trader.json`
 - Game parameters (params) - `content/core/params.json`
+- Across the bay (passage) - `content/core/passages/bay-crossing.json`
 - The north meadow (pocket) - `content/core/pockets/north-meadow.json`
 - The slid bank (pocket) - `content/core/pockets/slid-bank.json`
 - The west bank (pocket) - `content/core/pockets/west-bank.json`
@@ -57,8 +59,10 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Fishing rod (recipe) - `content/core/recipes/fishing-rod.json`
 - Flint trowel (recipe) - `content/core/recipes/flint-trowel.json`
 - Grilled fish (recipe) - `content/core/recipes/grilled-fish.json`
+- Hammerstone (recipe) - `content/core/recipes/hammerstone.json`
 - Herb stew (recipe) - `content/core/recipes/herb-stew.json`
 - Herb tea (recipe) - `content/core/recipes/herb-tea.json`
+- Knapped pick (recipe) - `content/core/recipes/knapped-pick.json`
 - Lucky charm (recipe) - `content/core/recipes/lucky-charm.json`
 - Mushroom skewer (recipe) - `content/core/recipes/mushroom-skewer.json`
 - Reed basket (recipe) - `content/core/recipes/reed-basket.json`
@@ -92,6 +96,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Foraging (school) - `content/core/schools/foraging.json`
 - Handcraft (school) - `content/core/schools/handcraft.json`
 - Woodcutting (school) - `content/core/schools/woodcutting.json`
+- Reed-walker set (set) - `content/core/sets/reed-walker.json`
 - Pell's shop (shop) - `content/core/shops/trader-shop.json`
 - Dyed cord (template) - `content/core/templates/dye-cord.json`
 - An axe on the bank (treasure) - `content/core/treasures/bank-axe.json`
@@ -114,8 +119,10 @@ AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex imag
 ## [ceosisrael](https://github.com/ceosisrael)
 
 - Sunleaf is slow to open in the fog (reaction) - `content/extensions/ceosisrael/reactions/sunleaf-in-fog.json`
+- Sunleaf mushrooms (recipe) - `content/extensions/ceosisrael/recipes/sunleaf-mushrooms.json`
+- Traveller's cap (recipe) - `content/extensions/ceosisrael/recipes/travellers-cap.json`
 - Glade fig bushes (resource) - `content/extensions/ceosisrael/resources/glade-figs.json`
-- Glade fig art (kit) - `content/kit/ceosisrael/kit.json`
+- CeosIsrael's kit art (kit) - `content/kit/ceosisrael/kit.json`
 
 AI tools: Claude (Anthropic); Qwen-Image 2512 (kit:gen, kaggle drawer).
 

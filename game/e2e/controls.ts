@@ -432,6 +432,14 @@ async function main(): Promise<void> {
     await page.tap('.tbtn.menu');
     await page.tap('.menu-list button', 'Settings');
     await page.waitFor(`!![...document.querySelectorAll('.set-body h3')].find((h) => h.textContent === 'Controls')`, 'the Controls section');
+    // #718: the three Text size labels read right at each size; walked 20, 18, 16 so the page ends on the default 16 for the checks below
+    for (const size of ['20', '18', '16']) {
+      const option = `[aria-label="Text size"] button:nth-child(${size === '16' ? 1 : size === '18' ? 2 : 3})`;
+      await page.tap(option, size); // tap's second argument filters by the button's own text, here the size
+      const labels = await page.eval<string[]>(`[...document.querySelectorAll('[aria-label="Text size"] button')].map((b) => b.textContent)`);
+      if (labels.join(',') !== '16,18,20') fail(`at text size ${size}, the labels read ${labels.join(',')}, not 16,18,20`);
+    }
+    console.log('Text size landscape: the choices read 16, 18 and 20 at each of the three sizes');
     const words = await page.eval<{ text: string; px: number }[]>(`(() => {
       const h3 = [...document.querySelectorAll('.set-body h3')].find((h) => h.textContent === 'Controls');
       const rows = [h3.nextElementSibling, h3.nextElementSibling.nextElementSibling];

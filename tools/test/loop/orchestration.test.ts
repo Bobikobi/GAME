@@ -1,11 +1,45 @@
 /** Runs the full loop against an in-memory GitHub repository and checks every write. */
 import { describe, expect, it } from 'vitest';
 import type { LoopClient } from '../../src/loop/github';
-import { readVote, runAll } from '../../src/loop/run';
-import type { Comment, Issue, PullRequest, Reaction } from '../../src/loop/types';
+import { readVote, runAll, runProposals } from '../../src/loop/run';
+import type { ChangedFile, Comment, Issue, PullRequest, Reaction } from '../../src/loop/types';
 import { config } from './helpers';
 
 describe('loop orchestration', () => {
+  it.each([
+    ['same-repository release', 'develop', 'mist/vale', 'success', 'release: develop into main'],
+    ['fork develop into main', 'develop', 'alice/vale', 'failure', 'Files outside your own folders: game/src/main.ts'],
+    ['same-repository hotfix into main', 'hotfix', 'mist/vale', 'failure', 'Files outside your own folders: game/src/main.ts'],
+  ])('posts the merge rule for %s', async (_case, ref, full_name, state, description) => {
+    const pr = {
+      ...proposal(2, 'Change heading into main', 'alice', 'head-a'),
+      base: { ref: 'main' },
+      head: { ref, sha: 'head-a', repo: { full_name } },
+    };
+    const client = new FakeClient([pr], [
+      { filename: 'content/extensions/alice/fruit.json' },
+      { filename: 'game/src/main.ts' },
+    ]);
+    const options = { client, repository: 'mist/vale', config, now: new Date('2026-10-07T12:00:00Z') };
+    const proposals = await runProposals(options);
+
+    expect(client.writes.filter(({ path }) => path.includes('/statuses/')).map(compactWrite)).toEqual([
+      ['POST', '/repos/mist/vale/statuses/head-a', { context: 'merge rule', state, description }],
+    ]);
+    const comment = client.writes.find(({ path }) => path.endsWith('/issues/2/comments'))?.body.body;
+    if (state === 'success') {
+      expect(comment).toBe('<!-- loop:merge-rule -->\nrelease: develop into main\n');
+      expect(client.writes).toHaveLength(2);
+      expect(proposals).toEqual([]);
+      client.writes.length = 0;
+      await runProposals(options);
+      expect(client.writes).toEqual([]);
+    } else {
+      expect(comment).toContain(`- ❌ **Files:** ${description}`);
+      expect(proposals).toHaveLength(1);
+    }
+  });
+
   it('plans the exact labels, statuses, comments, and vote issue for a fixture repository', async () => {
     const client = new FakeClient();
     await runAll({
@@ -129,10 +163,13 @@ class FakeClient implements LoopClient {
     user: { login: 'player' },
     reactions: { '+1': 8 },
   };
-  private readonly pulls: PullRequest[] = [
-    proposal(2, 'Plum bushes', 'alice', 'head-a'),
-    proposal(3, 'Pear trees', 'bob', 'head-b'),
-  ];
+  constructor(
+    private readonly pulls: PullRequest[] = [
+      proposal(2, 'Plum bushes', 'alice', 'head-a'),
+      proposal(3, 'Pear trees', 'bob', 'head-b'),
+    ],
+    private readonly changedFiles?: ChangedFile[],
+  ) {}
 
   async get<T>(path: string): Promise<T> {
     if (path.includes('/contents/')) {
@@ -155,7 +192,7 @@ class FakeClient implements LoopClient {
     if (path.match(/\/pulls\/\d+\/files/)) {
       const number = Number(path.match(/\/pulls\/(\d+)/)?.[1]);
       const author = number === 2 ? 'alice' : 'bob';
-      return [{ filename: `content/extensions/${author}/fruit.json` }] as T[];
+      return (this.changedFiles ?? [{ filename: `content/extensions/${author}/fruit.json` }]) as T[];
     }
     if (path.match(/\/pulls\/\d+\/reviews/)) {
       return ['cara', 'dana', 'eli'].map((login, index) => ({
@@ -240,7 +277,8 @@ function proposal(number: number, title: string, author: string, sha: string): P
     labels: [],
     user: { login: author },
     draft: false,
-    head: { sha, repo: { full_name: `${author}/game` } },
+    base: { ref: 'develop' },
+    head: { ref: 'proposal', sha, repo: { full_name: `${author}/game` } },
   };
 }
 
