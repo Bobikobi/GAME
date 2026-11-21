@@ -32,9 +32,19 @@ export function footOrigin(ref: string): number {
   return info && anchor ? anchor[1] / info.h : 1;
 }
 
+/** The factor a clip sheet shows at on top of its density (kit `clip.fit_permille`, #742): 1 for every other texture. */
+export function fitOf(ref: string): number {
+  return ((app.bundle?.sprites[ref] as ClipSprite | undefined)?.clip?.fit_permille ?? 1000) / 1000;
+}
+
 /** The scale an image of this texture shows at with no effect on it. */
 export function baseScale(ref: string): number {
-  return 1 / densityOf(ref);
+  return fitOf(ref) / densityOf(ref);
+}
+
+/** The sheet pixels the texture shows per world unit as drawn: its density, less the clip's fit. What the shadow layer measures a figure by. */
+export function drawnDensity(ref: string): number {
+  return densityOf(ref) / fitOf(ref);
 }
 
 /** The base scale an object was given, 1 for one that never was. */

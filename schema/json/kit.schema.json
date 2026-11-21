@@ -1111,6 +1111,12 @@
                       "additionalItems": false,
                       "minItems": 2,
                       "maxItems": 2
+                    },
+                    "fit_permille": {
+                      "minimum": 100,
+                      "maximum": 4000,
+                      "description": "The factor the clip shows at on top of its density's base scale (1 / density), in thousandths (the bundle holds whole numbers only): a take drawn larger than the race's walk shows smaller, so its figure stands as tall as the walk's. Left out, 1000. The feet stay on the anchor whatever the fit.",
+                      "type": "integer"
                     }
                   }
                 },

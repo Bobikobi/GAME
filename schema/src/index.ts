@@ -2001,6 +2001,13 @@ export const ClipBody = Type.Object(
     verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup or dig.' }),
     frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
     anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
+    fit_permille: Type.Optional(
+      Int(
+        100,
+        4000,
+        'The factor the clip shows at on top of its density\'s base scale (1 / density), in thousandths (the bundle holds whole numbers only): a take drawn larger than the race\'s walk shows smaller, so its figure stands as tall as the walk\'s. Left out, 1000. The feet stay on the anchor whatever the fit.',
+      ),
+    ),
   },
   { additionalProperties: false },
 );

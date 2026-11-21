@@ -6,6 +6,7 @@ import { describe, expect, test } from 'vitest';
 import { assemble } from '../src/assemble.js';
 import { readBoard } from '../src/board.js';
 import { REPO_ROOT, loadAll } from '../src/load.js';
+import { withoutClips } from './fixtures/clips/without-clips.js';
 
 /**
  * #742: a character clip is a kit sprite entry with a `clip` object (race, view, verb, frame_ms, anchor) and the entry's own
@@ -67,7 +68,7 @@ describe('the assembler carries the clips and refuses two for one lookup', () =>
   const run = (edit?: (data: ReturnType<typeof fixture>) => void) => {
     const data = fixture();
     edit?.(data);
-    return assemble([...loadAll().files, { rel: 'kit/core/clip-fixture.json', abs: FIXTURE, data }], readBoard());
+    return assemble([...withoutClips(loadAll().files), { rel: 'kit/core/clip-fixture.json', abs: FIXTURE, data }], readBoard());
   };
 
   test('each clip sheet reaches the bundle with its clip', () => {
