@@ -29,7 +29,7 @@ def paid_account(pool_path=POOL):
     cfg = json.load(open(pool_path))
     for i, a in enumerate(cfg['accounts']):
         if a.get('plan', 'paid') == 'paid':
-            d = os.path.expanduser(cfg.get('dir') or os.environ.get('PIXELLAB_SECRETS_DIR') or '~/.claude/secrets')
+            d = os.path.expanduser(cfg.get('dir') or os.environ.get('PIXELLAB_SECRETS_DIR') or os.path.join(os.path.expanduser('~'), '.claude', 'secrets'))
             return i, a['label'], os.path.join(d, a['file'])
     raise RuntimeError('pool.json lists no paid account')
 
