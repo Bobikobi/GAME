@@ -131,5 +131,10 @@ describe('the tier-1 hide chain', () => {
     expect(on.state.player.worn.feet).toBe('core/hare-leather-shoes');
     expect(wornValue(open, on.state, 'dig_speed_pct')).toBe(5);
     expect(effectValue(open, on.state, 'dig_speed_pct')).toBeGreaterThanOrEqual(5);
+
+    const hood = step(open, on.state, { t: 'wear', item: 'core/hare-fur-hood' }, on.state.tick);
+    if (!hood.ok) throw new Error(hood.error);
+    expect(hood.state.player.worn.head).toBe('core/hare-fur-hood');
+    expect(wornValue(open, hood.state, 'craft_speed_pct')).toBe(5);
   });
 });
