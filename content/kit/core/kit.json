@@ -2231,7 +2231,8 @@
         "file": "chars/human_dodge_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2242,7 +2243,7 @@
           "race": "core/human",
           "view": "back",
           "verb": "dodge",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
@@ -2255,7 +2256,8 @@
         "file": "chars/human_dodge_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2266,7 +2268,7 @@
           "race": "core/human",
           "view": "front",
           "verb": "dodge",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
@@ -2279,7 +2281,8 @@
         "file": "chars/human_dodge_left.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2290,7 +2293,7 @@
           "race": "core/human",
           "view": "left",
           "verb": "dodge",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             102
@@ -2303,7 +2306,8 @@
         "file": "chars/human_fell_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2314,20 +2318,21 @@
           "race": "core/human",
           "view": "back",
           "verb": "fell",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 740
         },
-        "scale": 1.09
+        "scale": 1
       },
       "chars/human_fell_front": {
         "file": "chars/human_fell_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2338,7 +2343,7 @@
           "race": "core/human",
           "view": "front",
           "verb": "fell",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -2351,7 +2356,8 @@
         "file": "chars/human_fell_left.png",
         "w": 128,
         "h": 128,
-        "frames": 16,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2362,10 +2368,10 @@
           "race": "core/human",
           "view": "left",
           "verb": "fell",
-          "frame_ms": 90,
+          "frame_ms": 32,
           "anchor": [
             64,
-            102
+            103
           ],
           "fit_permille": 719
         },
@@ -2375,7 +2381,8 @@
         "file": "chars/human_fish_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2386,7 +2393,7 @@
           "race": "core/human",
           "view": "front",
           "verb": "fish",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -2423,7 +2430,8 @@
         "file": "chars/human_guard_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2434,7 +2442,7 @@
           "race": "core/human",
           "view": "back",
           "verb": "guard",
-          "frame_ms": 120,
+          "frame_ms": 24,
           "anchor": [
             64,
             103
@@ -2471,7 +2479,8 @@
         "file": "chars/human_guard_left.png",
         "w": 128,
         "h": 128,
-        "frames": 7,
+        "frames": 55,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2482,10 +2491,10 @@
           "race": "core/human",
           "view": "left",
           "verb": "guard",
-          "frame_ms": 110,
+          "frame_ms": 14,
           "anchor": [
             64,
-            102
+            103
           ],
           "fit_permille": 719
         },
@@ -2495,7 +2504,8 @@
         "file": "chars/human_hit_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2506,20 +2516,21 @@
           "race": "core/human",
           "view": "back",
           "verb": "hit",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
-            103
+            101
           ],
           "fit_permille": 740
         },
-        "scale": 0.99
+        "scale": 0.98
       },
       "chars/human_hit_front": {
         "file": "chars/human_hit_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2530,20 +2541,21 @@
           "race": "core/human",
           "view": "front",
           "verb": "hit",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
-            98
+            99
           ],
           "fit_permille": 698
         },
-        "scale": 0.96
+        "scale": 0.97
       },
       "chars/human_hit_left": {
         "file": "chars/human_hit_left.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2554,10 +2566,10 @@
           "race": "core/human",
           "view": "left",
           "verb": "hit",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
-            102
+            100
           ],
           "fit_permille": 719
         },
@@ -2567,7 +2579,8 @@
         "file": "chars/human_pickup_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2578,7 +2591,7 @@
           "race": "core/human",
           "view": "back",
           "verb": "pickup",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
@@ -2615,7 +2628,8 @@
         "file": "chars/human_pickup_left.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2626,7 +2640,7 @@
           "race": "core/human",
           "view": "left",
           "verb": "pickup",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             102
@@ -2639,7 +2653,8 @@
         "file": "chars/human_quarry_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2650,20 +2665,21 @@
           "race": "core/human",
           "view": "back",
           "verb": "quarry",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 740
         },
-        "scale": 1.03
+        "scale": 0.98
       },
       "chars/human_quarry_front": {
         "file": "chars/human_quarry_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2674,7 +2690,7 @@
           "race": "core/human",
           "view": "front",
           "verb": "quarry",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -2711,7 +2727,8 @@
         "file": "chars/human_strike_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2722,7 +2739,7 @@
           "race": "core/human",
           "view": "back",
           "verb": "strike",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -2735,7 +2752,8 @@
         "file": "chars/human_strike_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2746,20 +2764,21 @@
           "race": "core/human",
           "view": "front",
           "verb": "strike",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 698
         },
-        "scale": 0.95
+        "scale": 0.96
       },
       "chars/human_strike_left": {
         "file": "chars/human_strike_left.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2770,7 +2789,7 @@
           "race": "core/human",
           "view": "left",
           "verb": "strike",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             102
@@ -2783,7 +2802,8 @@
         "file": "chars/elf_dodge_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2794,14 +2814,14 @@
           "race": "core/elf",
           "view": "back",
           "verb": "dodge",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             100
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.16
       },
       "chars/elf_dodge_front": {
         "file": "chars/elf_dodge_front.png",
@@ -2831,7 +2851,8 @@
         "file": "chars/elf_dodge_left.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2842,7 +2863,7 @@
           "race": "core/elf",
           "view": "left",
           "verb": "dodge",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -2855,7 +2876,8 @@
         "file": "chars/elf_fell_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2866,20 +2888,21 @@
           "race": "core/elf",
           "view": "back",
           "verb": "fell",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             100
           ],
           "fit_permille": 840
         },
-        "scale": 1.21
+        "scale": 1.19
       },
       "chars/elf_fell_front": {
         "file": "chars/elf_fell_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2890,20 +2913,21 @@
           "race": "core/elf",
           "view": "front",
           "verb": "fell",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             102
           ],
           "fit_permille": 790
         },
-        "scale": 1.17
+        "scale": 1.14
       },
       "chars/elf_fell_left": {
         "file": "chars/elf_fell_left.png",
         "w": 128,
         "h": 128,
-        "frames": 16,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2914,20 +2938,21 @@
           "race": "core/elf",
           "view": "left",
           "verb": "fell",
-          "frame_ms": 90,
+          "frame_ms": 32,
           "anchor": [
             64,
-            103
+            105
           ],
           "fit_permille": 840
         },
-        "scale": 1.27
+        "scale": 1.31
       },
       "chars/elf_fish_back": {
         "file": "chars/elf_fish_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2938,20 +2963,21 @@
           "race": "core/elf",
           "view": "back",
           "verb": "fish",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             100
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.16
       },
       "chars/elf_fish_front": {
         "file": "chars/elf_fish_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -2962,10 +2988,10 @@
           "race": "core/elf",
           "view": "front",
           "verb": "fish",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
-            102
+            103
           ],
           "fit_permille": 790
         },
@@ -3023,7 +3049,8 @@
         "file": "chars/elf_guard_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -3034,7 +3061,7 @@
           "race": "core/elf",
           "view": "front",
           "verb": "guard",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             102
@@ -3071,7 +3098,8 @@
         "file": "chars/elf_hit_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -3082,20 +3110,21 @@
           "race": "core/elf",
           "view": "back",
           "verb": "hit",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             100
           ],
           "fit_permille": 840
         },
-        "scale": 1.21
+        "scale": 1.23
       },
       "chars/elf_hit_front": {
         "file": "chars/elf_hit_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -3106,14 +3135,14 @@
           "race": "core/elf",
           "view": "front",
           "verb": "hit",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
-            88
+            91
           ],
           "fit_permille": 790
         },
-        "scale": 1.08
+        "scale": 1.13
       },
       "chars/elf_hit_left": {
         "file": "chars/elf_hit_left.png",
@@ -3143,7 +3172,8 @@
         "file": "chars/elf_pickup_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -3154,14 +3184,14 @@
           "race": "core/elf",
           "view": "back",
           "verb": "pickup",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             100
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.16
       },
       "chars/elf_pickup_front": {
         "file": "chars/elf_pickup_front.png",
@@ -3215,7 +3245,8 @@
         "file": "chars/elf_quarry_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -3226,7 +3257,7 @@
           "race": "core/elf",
           "view": "back",
           "verb": "quarry",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             100
@@ -3239,7 +3270,8 @@
         "file": "chars/elf_quarry_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -3250,7 +3282,7 @@
           "race": "core/elf",
           "view": "front",
           "verb": "quarry",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             102
@@ -3287,7 +3319,8 @@
         "file": "chars/elf_strike_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -3298,20 +3331,21 @@
           "race": "core/elf",
           "view": "back",
           "verb": "strike",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             100
           ],
           "fit_permille": 840
         },
-        "scale": 1.14
+        "scale": 1.15
       },
       "chars/elf_strike_front": {
         "file": "chars/elf_strike_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "wood",
@@ -3322,14 +3356,14 @@
           "race": "core/elf",
           "view": "front",
           "verb": "strike",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
-            102
+            103
           ],
           "fit_permille": 790
         },
-        "scale": 1.11
+        "scale": 1.14
       },
       "chars/elf_strike_left": {
         "file": "chars/elf_strike_left.png",
@@ -3359,7 +3393,8 @@
         "file": "chars/skeleton_dodge_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3369,20 +3404,21 @@
           "race": "core/skeleton",
           "view": "back",
           "verb": "dodge",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.75
       },
       "chars/skeleton_dodge_front": {
         "file": "chars/skeleton_dodge_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3392,7 +3428,7 @@
           "race": "core/skeleton",
           "view": "front",
           "verb": "dodge",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
@@ -3405,7 +3441,8 @@
         "file": "chars/skeleton_dodge_left.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3415,7 +3452,7 @@
           "race": "core/skeleton",
           "view": "left",
           "verb": "dodge",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -3428,7 +3465,8 @@
         "file": "chars/skeleton_fell_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3438,7 +3476,7 @@
           "race": "core/skeleton",
           "view": "back",
           "verb": "fell",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -3474,7 +3512,8 @@
         "file": "chars/skeleton_fell_left.png",
         "w": 128,
         "h": 128,
-        "frames": 16,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3484,7 +3523,7 @@
           "race": "core/skeleton",
           "view": "left",
           "verb": "fell",
-          "frame_ms": 90,
+          "frame_ms": 32,
           "anchor": [
             64,
             103
@@ -3497,7 +3536,8 @@
         "file": "chars/skeleton_fish_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3507,20 +3547,21 @@
           "race": "core/skeleton",
           "view": "back",
           "verb": "fish",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.75
       },
       "chars/skeleton_fish_front": {
         "file": "chars/skeleton_fish_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3530,7 +3571,7 @@
           "race": "core/skeleton",
           "view": "front",
           "verb": "fish",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -3543,7 +3584,8 @@
         "file": "chars/skeleton_fish_left.png",
         "w": 128,
         "h": 128,
-        "frames": 16,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3553,20 +3595,21 @@
           "race": "core/skeleton",
           "view": "left",
           "verb": "fish",
-          "frame_ms": 90,
+          "frame_ms": 32,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 562
         },
-        "scale": 0.82
+        "scale": 0.85
       },
       "chars/skeleton_guard_back": {
         "file": "chars/skeleton_guard_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3576,7 +3619,7 @@
           "race": "core/skeleton",
           "view": "back",
           "verb": "guard",
-          "frame_ms": 120,
+          "frame_ms": 24,
           "anchor": [
             64,
             103
@@ -3589,7 +3632,8 @@
         "file": "chars/skeleton_guard_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3599,7 +3643,7 @@
           "race": "core/skeleton",
           "view": "front",
           "verb": "guard",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
@@ -3612,7 +3656,8 @@
         "file": "chars/skeleton_guard_left.png",
         "w": 128,
         "h": 128,
-        "frames": 11,
+        "frames": 55,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3622,7 +3667,7 @@
           "race": "core/skeleton",
           "view": "left",
           "verb": "guard",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
@@ -3635,7 +3680,8 @@
         "file": "chars/skeleton_hit_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3645,7 +3691,7 @@
           "race": "core/skeleton",
           "view": "back",
           "verb": "hit",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             100
@@ -3658,7 +3704,8 @@
         "file": "chars/skeleton_hit_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3668,20 +3715,21 @@
           "race": "core/skeleton",
           "view": "front",
           "verb": "hit",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 562
         },
-        "scale": 0.79
+        "scale": 0.81
       },
       "chars/skeleton_hit_left": {
         "file": "chars/skeleton_hit_left.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3691,20 +3739,21 @@
           "race": "core/skeleton",
           "view": "left",
           "verb": "hit",
-          "frame_ms": 120,
+          "frame_ms": 24,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 562
         },
-        "scale": 0.81
+        "scale": 0.76
       },
       "chars/skeleton_pickup_back": {
         "file": "chars/skeleton_pickup_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3714,7 +3763,7 @@
           "race": "core/skeleton",
           "view": "back",
           "verb": "pickup",
-          "frame_ms": 110,
+          "frame_ms": 22,
           "anchor": [
             64,
             103
@@ -3750,7 +3799,8 @@
         "file": "chars/skeleton_pickup_left.png",
         "w": 128,
         "h": 128,
-        "frames": 8,
+        "frames": 44,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3760,7 +3810,7 @@
           "race": "core/skeleton",
           "view": "left",
           "verb": "pickup",
-          "frame_ms": 110,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -3773,7 +3823,8 @@
         "file": "chars/skeleton_quarry_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3783,20 +3834,21 @@
           "race": "core/skeleton",
           "view": "back",
           "verb": "quarry",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
           ],
           "fit_permille": 562
         },
-        "scale": 0.8
+        "scale": 0.81
       },
       "chars/skeleton_quarry_front": {
         "file": "chars/skeleton_quarry_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3806,7 +3858,7 @@
           "race": "core/skeleton",
           "view": "front",
           "verb": "quarry",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -3819,7 +3871,8 @@
         "file": "chars/skeleton_quarry_left.png",
         "w": 128,
         "h": 128,
-        "frames": 12,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3829,10 +3882,10 @@
           "race": "core/skeleton",
           "view": "left",
           "verb": "quarry",
-          "frame_ms": 90,
+          "frame_ms": 24,
           "anchor": [
             64,
-            103
+            104
           ],
           "fit_permille": 562
         },
@@ -3842,7 +3895,8 @@
         "file": "chars/skeleton_strike_back.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3852,7 +3906,7 @@
           "race": "core/skeleton",
           "view": "back",
           "verb": "strike",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
             103
@@ -3865,7 +3919,8 @@
         "file": "chars/skeleton_strike_front.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 45,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3875,20 +3930,21 @@
           "race": "core/skeleton",
           "view": "front",
           "verb": "strike",
-          "frame_ms": 100,
+          "frame_ms": 20,
           "anchor": [
             64,
-            103
+            104
           ],
           "fit_permille": 562
         },
-        "scale": 0.75
+        "scale": 0.76
       },
       "chars/skeleton_strike_left": {
         "file": "chars/skeleton_strike_left.png",
         "w": 128,
         "h": 128,
-        "frames": 8,
+        "frames": 44,
+        "cols": 16,
         "density": 4,
         "ramps": [
           "stone",
@@ -3898,7 +3954,7 @@
           "race": "core/skeleton",
           "view": "left",
           "verb": "strike",
-          "frame_ms": 110,
+          "frame_ms": 20,
           "anchor": [
             64,
             103

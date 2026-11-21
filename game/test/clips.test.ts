@@ -7,7 +7,8 @@ import { assemble } from '../../tools/src/assemble';
 import { readBoard } from '../../tools/src/board';
 import { withoutClips } from '../../tools/test/fixtures/clips/without-clips';
 import { REPO_ROOT, loadAll } from '../../tools/src/load';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
+import { MAX_SHEET_PX, sheetGrid } from '@game/kernel';
+import { ClipPlayer, VERB_OF_AUTO, bootSprites, clipFor, raceClips, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
 import type { Dir } from '../src/input';
 import { spriteStyle } from '../src/ui/dom';
 
@@ -207,8 +208,14 @@ describe('the packed kit', () => {
           expect(hit, `${race} ${verb} ${view}`).toBeDefined();
           expect(hit!.key).toBe(`core/base-kit:chars/${race.slice(5)}_${verb}_${view}`);
           const sprite = real[hit!.key]!;
-          expect(sprite.clip!.frame_ms).toBeGreaterThanOrEqual(80);
+          // a take plays about a second whatever its frame count (the 45-frame ones show each frame 14 to 33 ms, the older 9 to 16 frame ones about 100)
+          expect(sprite.clip!.frame_ms).toBeGreaterThanOrEqual(10);
           expect(sprite.clip!.frame_ms).toBeLessThanOrEqual(130);
+          expect(sprite.frames * sprite.clip!.frame_ms, hit!.key).toBeGreaterThanOrEqual(700);
+          expect(sprite.frames * sprite.clip!.frame_ms, hit!.key).toBeLessThanOrEqual(1500);
+          // no sheet is wider or taller than a browser's graphics card is promised to take
+          const grid = sheetGrid(sprite);
+          expect(Math.max(grid.width, grid.height), hit!.key).toBeLessThanOrEqual(MAX_SHEET_PX);
           expect(sprite.clip!.fit_permille, hit!.key).toBeGreaterThan(0);
           expect(hit!.anchor[1]).toBeGreaterThan(0);
           found++;
@@ -217,6 +224,21 @@ describe('the packed kit', () => {
     }
     expect(found).toBe(71);
     expect(Object.values(real).filter((s) => s.clip && RACES.includes(s.clip.race) && (VERBS as readonly string[]).includes(s.clip.verb))).toHaveLength(71);
+  });
+
+  test('the boot loads no clip sheet; a race\'s clips are the 23 or 24 sheets of that race and nothing of another', () => {
+    const boot = bootSprites(real);
+    expect(boot.some(([, s]) => s.clip !== undefined)).toBe(false);
+    expect(boot.length + Object.values(real).filter((s) => s.clip).length).toBe(Object.keys(real).length);
+    let all = 0;
+    for (const race of RACES) {
+      const own = raceClips(real, race);
+      expect(own.every(([, s]) => s.clip!.race === race), race).toBe(true);
+      expect(own.length, race).toBeGreaterThanOrEqual(23);
+      all += own.length;
+    }
+    expect(all).toBe(71);
+    expect(raceClips(real, 'core/dragon')).toEqual([]);
   });
 
   test('facing right plays the left sheet flipped', () => {

@@ -94,7 +94,7 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
@@ -2178,6 +2178,7 @@ export class WorldScene extends Phaser.Scene {
       this.outside();
     }
     this.session = session;
+    this.loadClips(session.state.player.race);
     this.auto = null;
     this.held.clear();
     this.look = session.facing;
@@ -2334,6 +2335,22 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
+   * Fetches the clip sheets of the player's race, in the background, once: the boot leaves every clip out (clips.ts `bootSprites`).
+   * A clip asked for before its sheet is here is not played (`playClip`), so the figure keeps its walk sheet or code-drawn motion
+   * for those first moments; a sheet that cannot be loaded does the same for good, as a kit without the clip would.
+   */
+  private loadClips(race: string | undefined): void {
+    if (!race) return;
+    let queued = 0;
+    for (const [ref, info] of raceClips(this.b.sprites as ClipSprites, race)) {
+      if (this.textures.exists(ref)) continue;
+      this.load.spritesheet(ref, info.url, { frameWidth: info.w, frameHeight: info.h });
+      queued++;
+    }
+    if (queued > 0 && !this.load.isLoading()) this.load.start();
+  }
+
+  /**
    * Plays the kit's clip for a verb on the player's figure, in the way it faces, at the clip's own frame time (clips.ts has the
    * one rule for how long). True when the kit has one; with none the figure keeps today's walk sheet or code-drawn motion, and
    * a clip still playing is dropped, so a verb with no art never shows the last one's.
@@ -2343,6 +2360,10 @@ export class WorldScene extends Phaser.Scene {
     const race = s?.state.player.race;
     if (!s || !race || this.falling) return false;
     const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing);
+    if (found && !this.textures.exists(found.key)) {
+      this.figure.stop(); // its sheet is still on the way (or never came): today's motion, as with no clip
+      return false;
+    }
     if (!found) {
       this.figure.stop();
       return false;
