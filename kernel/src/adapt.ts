@@ -9,6 +9,7 @@ import { appearSlots } from './reactions';
 import { relocationOf } from './relocate';
 import { placeName } from './world';
 import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, type State } from './state';
+import { startRecipes } from './step';
 
 /**
  * The state as today's content can play it: what still exists is kept, what left the content is dropped,
@@ -35,7 +36,8 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   p.recipes = p.recipes.filter((id) => id in bundle.recipes);
   // a recipe everyone starts with that came with this version is known at once
   if (p.race !== '') {
-    const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
+    // a recipe behind a closed gate is not handed out: it comes the first load after its gate opens
+    const fresh = startRecipes(bundle).filter((id) => !p.recipes.includes(id));
     if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
   }
   // a race whose outfit came with this version: a save that never held an outfit piece gets it once. The journal
