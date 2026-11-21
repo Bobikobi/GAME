@@ -4,7 +4,7 @@ Loomvale is a free pixel-art browser game that its players build together. You c
 
 This page says where the game stands, what comes next, and where help is most welcome. The full rules of play live in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md), and every design choice is logged in [DECISIONS.md](DECISIONS.md).
 
-## Where it stands (v0.1.11)
+## Where it stands (v0.1.12)
 
 Stage 1 is a playable demo. Progress is saved in your browser only. It will not move to an account later; stage 2a plans a title and a cosmetic item for demo players instead.
 
