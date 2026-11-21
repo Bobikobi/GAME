@@ -98,7 +98,7 @@ import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
-import { adopt, baseOf, densityOf, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
+import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraZoom, pixelRatio, wheelStep, wheelZoom, worldToPage } from '../view';
 import { ROOM, doorsOf, type RoomScene } from './room';
 
@@ -1502,7 +1502,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private buildCasters(): void {
     // a density-4 prop casts at the size it is drawn: the layer reads each texture's density
-    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, densityOf);
+    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, drawnDensity);
     // nothing that changes every frame is painted into a layer (cast-layer.ts): a thing that walks casts
     // through its own image, a thing on a beat (a sway, a flame, a blink) from its first frame
     const walks = new Set<Phaser.GameObjects.GameObject>(this.hazards.map((h) => h.spr));

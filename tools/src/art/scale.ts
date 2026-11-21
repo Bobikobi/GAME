@@ -125,6 +125,8 @@ interface SpriteEntry {
   h: number;
   frames?: number;
   density?: number;
+  /** A clip sheet (#742) is shown at its fit: the height in characters is the height as shown. */
+  clip?: { fit_permille?: number };
 }
 
 /** The kits on disk: id, directory and sprites. Reads kit.json of every folder of content/kit. */
@@ -158,7 +160,7 @@ export function measureKits(root = KITS_DIR): { adultUnits: number; adultPx: num
       if (NOT_WORLD.includes(name.split('/')[0] ?? '')) continue;
       const density = s.density ?? 1;
       const px = read(kit.dir, s);
-      const units = px / density;
+      const units = (px * (s.clip?.fit_permille ?? 1000)) / 1000 / density;
       const chars = Math.round((units / adultUnits) * 100) / 100;
       const kind = scaleKindOf(name);
       const range = rangeOf(kind);

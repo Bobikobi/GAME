@@ -80,6 +80,13 @@ describe('the shipped kits', () => {
     for (const r of rows) expect(declared.get(`${r.kit}:${r.name}`), r.name).toBe(r.chars);
   });
 
+  test('a clip sheet is measured at its fit: a take drawn larger than the walk reads as tall as the walk', () => {
+    const walk = rows.find((r) => r.name === 'chars/human_left')!;
+    const clip = rows.find((r) => r.name === 'chars/human_strike_left')!;
+    expect(clip.px).toBeGreaterThan(walk.px);
+    expect(Math.abs(clip.chars - walk.chars)).toBeLessThan(0.1);
+  });
+
   test('ground tiles and inventory icons are not measured', () => {
     expect(rows.some((r) => r.name.startsWith('tiles/') || r.name.startsWith('items/'))).toBe(false);
   });
