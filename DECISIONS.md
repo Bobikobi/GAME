@@ -4544,3 +4544,10 @@ This follows the owner's 14.11 direction that the game, apart from its home page
 
 Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
 The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).
+
+## 2026-11-21 ✅ A release pull request is exempt from the body rule and the merge rule
+
+A release promotes this repository's `develop` into `main`.
+The body job passes with a notice, and the community loop reports `release: develop into main` as a success.
+Each change already went through both rules in its own pull request into `develop`.
+The v0.1.12 release surfaced both redundant failures in [#781](https://github.com/Bobikobi/GAME/pull/781).
