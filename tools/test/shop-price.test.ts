@@ -28,6 +28,6 @@ describe('an unpriced shop offer', () => {
   it('leaves the real content as it was: every core offer still carries a price', () => {
     const { bundle, issues } = assemble(loadAll().files);
     expect(issues.filter((i) => i.message.includes('cannot be left out'))).toEqual([]);
-    for (const s of Object.values(bundle.shops)) for (const o of s.sells) expect(o.price_mg).toBeGreaterThan(0);
+    for (const s of Object.values(bundle!.shops)) for (const o of s.sells) expect(o.price_mg).toBeGreaterThan(0);
   });
 });
