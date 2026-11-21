@@ -6,12 +6,12 @@
  * carry ink on at least INK_MIN_SHARE of its edge pixels, else an error names it. The 16 px (density 1)
  * sprites got their outline from the 18.10 rule: they are reported as one summary warning, never failed.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { Assembled } from './assemble';
 import type { Issue } from './load';
-import { INK_HEX, inkShare } from './kit/ink';
+import { INK_HEX, inkShareOf } from './kit/ink';
+import { readPng } from './pngcache';
 
 /** The least share of a rich sprite's edge pixels that must be ink (decision of 23.10, PR #305). */
 export const INK_MIN_SHARE = 0.95;
@@ -25,7 +25,7 @@ export function checkInk(a: Assembled): Issue[] {
       if (name.startsWith('tiles/') || name.startsWith('creatures/')) continue; // ground is seamless; animals wear no outline (pick C, 31.10)
       let share: number;
       try {
-        share = inkShare(readFileSync(join(kit.dir, s.file)), s.w, s.cols === undefined ? undefined : s.h);
+        share = inkShareOf(readPng(join(kit.dir, s.file)), s.w, s.cols === undefined ? undefined : s.h);
       } catch {
         continue; // a missing or unreadable PNG is checkKits' error to report
       }

@@ -98,7 +98,11 @@ export function applyInk(buffer: Buffer, frameWidth: number, frameHeight?: numbe
 
 /** The share (0 to 1) of a sprite's edge pixels that are ink. A sprite with no opaque pixel has no edge: 1. */
 export function inkShare(buffer: Buffer, frameWidth: number, frameHeight?: number): number {
-  const png = PNG.sync.read(buffer);
+  return inkShareOf(PNG.sync.read(buffer), frameWidth, frameHeight);
+}
+
+/** `inkShare` for a picture already decoded. */
+export function inkShareOf(png: Raster, frameWidth: number, frameHeight?: number): number {
   const edge = edgePixels(png, frameWidth, frameHeight);
   if (edge.length === 0) return 1;
   const ink = edge.filter((p) => isInk(png, p)).length;
