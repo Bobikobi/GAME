@@ -12,7 +12,8 @@
       "description": "Keeps the sun off while you work.",
       "kind": "material",
       "rarity": "uncommon",
-      "class": "garment",
+      "class": "core/reedwork",
+      "family": "reed",
       "tier": 2,
       "sprite": "core/base-kit:items/basket",
       "weight": 1,
@@ -49,6 +50,7 @@
         "share_pct": 100
       }
     ],
-    "known": "start"
+    "known": "start",
+    "family": "wear"
   }
 }
