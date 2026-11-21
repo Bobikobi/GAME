@@ -1,5 +1,5 @@
 /**
- * The one way the tools run git: arguments as a list (no shell), the output as text, a buffer big enough for a
+ * The shared way board, hub and streams run git: arguments as a list (no shell), the output as text, a buffer big enough for a
  * full history, and the error's `status` and `stdout` kept for a caller that treats some exit codes as an answer.
  * `cwd` is the checkout to ask; undefined asks the checkout the process runs in.
  */
