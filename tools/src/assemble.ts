@@ -23,7 +23,7 @@ import {
   layoutInstances,
   minChargeFor,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type ClipInfo, type CreatorProfile, type ParamsBody, type Shop, type Template, type WhenDef } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type ClipInfo, type CreatorProfile, SHOP_PRICE_MAX_MG, type ParamsBody, type Shop, type Template, type WhenDef } from '@game/schema';
 import { chunkProblems, levelsProblems } from './chunks';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems, startFinds } from './play';
@@ -507,7 +507,17 @@ export function fillShopPrices(
         });
         return { item: o.item, price_mg: 1 };
       }
-      return { item: o.item, price_mg: minChargeFor(params, v) };
+      const price = minChargeFor(params, v);
+      if (price > SHOP_PRICE_MAX_MG) {
+        issues.push({
+          file: origin[id] ?? 'content',
+          where: `shop.sells.${i}.price_mg`,
+          message: `${o.item} would be priced ${price} mg at the R8 floor, over the ${SHOP_PRICE_MAX_MG} mg a shop price may carry`,
+          level: 'error',
+        });
+        return { item: o.item, price_mg: SHOP_PRICE_MAX_MG };
+      }
+      return { item: o.item, price_mg: price };
     });
     out[id] = { ...s, sells };
   }

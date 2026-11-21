@@ -682,6 +682,9 @@ export const NpcBody = Type.Object(
   { additionalProperties: false },
 );
 
+/** The highest price a shop offer may carry, in milli-gold: a written price and the one the build computes alike. */
+export const SHOP_PRICE_MAX_MG = 100_000_000;
+
 export const ShopBody = Type.Object(
   {
     sells: Type.Array(
@@ -691,7 +694,7 @@ export const ShopBody = Type.Object(
           price_mg: Type.Optional(
             Int(
               1,
-              100_000_000,
+              SHOP_PRICE_MAX_MG,
               'Price in milli-gold (1000 = 1 gold). Left out, the build sets it to the lowest price R8 allows, `r_mg_per_value_ms` times the item\'s value, so no price is typed by hand; an item with no value cannot be left unpriced.',
             ),
           ),
