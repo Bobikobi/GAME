@@ -5,7 +5,7 @@
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type Rect, type State, drawBasisPoints, makeWalkable, mulDiv, near, newState, rareFindPermille, step } from '@game/kernel';
+import { type Bundle, type Rect, type State, type StepResult, drawBasisPoints, effectValue, makeWalkable, mulDiv, near, newState, nodeKey, rareFindPermille, step } from '@game/kernel';
 
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -65,7 +65,7 @@ function windows(s: State): Record<string, [number, number]> {
 }
 
 /** Dig the deep ruins once with the spot's draw counter set so the roll lands in [lo, hi). */
-function digWithRoll(lo: number, hi: number): State {
+function digWithRoll(lo: number, hi: number): Extract<StepResult, { ok: true }> {
   const s = started();
   const [spot, rect] = spotOf(DEEP);
   const at = standNear(s, rect);
@@ -78,7 +78,7 @@ function digWithRoll(lo: number, hi: number): State {
   s.nodes[spot] = { readyAt: 0, draws };
   const r = step(b, s, { t: 'dig', spot, grade: 3, at }, 0);
   if (!r.ok) throw new Error(r.error);
-  return r.state;
+  return r;
 }
 
 describe('the woven reed coat', () => {
@@ -113,7 +113,7 @@ describe('the woven reed coat', () => {
 
   test('a roll on the page\'s edge digs it up, and reading it teaches the coat', () => {
     const [from, to] = windows(started())[PAGE]!;
-    const s = digWithRoll(from, to);
+    const s = digWithRoll(from, to).state;
     expect(s.player.bag[PAGE]).toBe(1);
     expect(s.player.recipes).not.toContain(COAT);
     const r = step(b, s, { t: 'learn', item: PAGE }, 60_000);
@@ -125,11 +125,27 @@ describe('the woven reed coat', () => {
   test('just below the edge is still the shard, and at its top there is nothing', () => {
     const w = windows(started());
     const [from, to] = w[PAGE]!;
-    const below = digWithRoll(from - 1, from);
+    const below = digWithRoll(from - 1, from).state;
     expect(below.player.bag['core/pottery-shard']).toBe(1);
     expect(below.player.bag[PAGE] ?? 0).toBe(0);
-    const above = digWithRoll(to, to + 1);
+    const top = digWithRoll(to, to + 1);
+    const above = top.state;
+    expect(top.events).toContainEqual({ e: 'nothing', verb: 'dig' });
     expect(above.player.bag[PAGE] ?? 0).toBe(0);
     expect(above.player.bag['core/pottery-shard'] ?? 0).toBe(0);
+  });
+
+  test('the coat, the reed pair and a wear node: the coat\'s recipe is of the wear family, so a wear node counts on it', () => {
+    for (const id of [COAT, 'core/reed-hat', 'core/reed-sandals']) expect(b.recipes[id]!.family, id).toBe('wear');
+    const world = structuredClone(b);
+    const school = Object.values(world.schools).find((sc) => sc.profession === 'core/handcraft')!;
+    const base = school.nodes.find((n) => n.slot !== true && (n.needs ?? []).length === 0)!;
+    school.nodes.push({ ...structuredClone(base), id: 'x-wear', effect: 'craft_chance_pct', value: 4, family: 'wear', needs: undefined });
+    const s = started();
+    const hand = 'core/handcraft';
+    const before = effectValue(world, s, 'craft_chance_pct', hand, 'wear');
+    s.player.nodes = [nodeKey(school.id, 'x-wear')];
+    expect(effectValue(world, s, 'craft_chance_pct', hand, world.recipes[COAT]!.family)).toBe(before + 4);
+    expect(effectValue(world, s, 'craft_chance_pct', hand, world.recipes['core/reed-hat']!.family)).toBe(before + 4);
   });
 });

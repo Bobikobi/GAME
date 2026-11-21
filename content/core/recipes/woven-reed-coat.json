@@ -15,7 +15,7 @@
       "class": "core/reedwork",
       "family": "reed",
       "tier": 3,
-      "sprite": "core/base-kit:items/basket",
+      "sprite": "core/base-kit:items/branch",
       "weight": 2,
       "wear": {
         "slot": "top",
@@ -49,6 +49,7 @@
         "share_pct": 100
       }
     ],
-    "known": "found"
+    "known": "found",
+    "family": "wear"
   }
 }
