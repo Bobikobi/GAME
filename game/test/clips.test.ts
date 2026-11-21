@@ -213,7 +213,7 @@ describe('the packed kit', () => {
           expect(sprite.clip!.frame_ms).toBeLessThanOrEqual(130);
           expect(sprite.frames * sprite.clip!.frame_ms, hit!.key).toBeGreaterThanOrEqual(700);
           expect(sprite.frames * sprite.clip!.frame_ms, hit!.key).toBeLessThanOrEqual(1500);
-          // no sheet is wider or taller than a browser's graphics card is promised to take
+          // no sheet is wider or taller than 4096 px, which practically every phone's graphics card takes (WebGL 2 only guarantees 2048)
           const grid = sheetGrid(sprite);
           expect(Math.max(grid.width, grid.height), hit!.key).toBeLessThanOrEqual(MAX_SHEET_PX);
           expect(sprite.clip!.fit_permille, hit!.key).toBeGreaterThan(0);

@@ -4611,3 +4611,11 @@ Retry when iOS ships the lock API by default. Built by Codex for [#638](https://
 **Why:** proven by the check's own numbers above; the majors `even-cut` and `close-stitch` wait for `quality_pct` and for #784, so F1 asks two smalls and then none or two majors rather than the four the page first named.
 **Retry when:** the quality pull request lands (the first major) or the alignment study settles the second, then F1 holds both.
 **Model:** Claude Sonnet 5.5. **Link:** #769, SKILL_FAMILIES 2.2, 2.3 and C5, CLOTHING 6.1.
+
+## 2026-11-22 ✅ The 56 clips redrawn by the 45-frame route enter the kit, and a race's clip sheets load after the player wakes (#771, #799)
+**What:** the 56 redrawn clips (44 or 45 frames, one of 55, 128 px, wrapped 16 to a row with `cols`) replace their 8-frame sheets; 15 stay on today's frames (12 the bars refused, 3 elf left clips not tried, one parked). The boot no longer loads any clip sheet (`bootSprites`); the world loads the clips of the player's race once the character wakes (`loadClips`), and `playClip` returns false until a sheet is there, so the figure keeps today's motion for those first moments.
+**Result:** kit pictures at boot 2.73 MB -> 1.29 MB; after wake the race's clips add human 1.28, elf 1.14, skeleton 2.09 MB, so a skeleton player ends at 3.38 MB (0.65 MB more than before), a human at 2.58, an elf at 2.44. Texture memory once a race's clips are in: human about 64 MB, elf 53 MB, skeleton 71 MB. The declared `scale` was re-declared by `pnpm art:scale --declare` from the new drawings' height: 22 of the 56 rows moved, the largest by 0.09 (human fell back 1.09 -> 1.0).
+**Test bound changed:** the frame-time check was 80 to 130 ms; a 45-frame take shows each frame 14 to 32 ms, so it is 10 to 130 ms, and a clip must play 700 to 1500 ms in all (frames x `frame_ms`). A frame under 16.7 ms is skipped on a 60 Hz screen (human guard left, 14 ms x 55 frames).
+**Why:** measured sizes above (proven); that a phone carries 53 to 71 MB of clip textures is a hypothesis, not tested on a device.
+**Retry when:** a phone runs out of texture memory or the download of a skeleton player is too heavy -> load a clip's sheet on first use and free the rest, or draw fewer frames a clip (15 frames per #793's trial).
+**Model:** Claude Sonnet 5.5. **Link:** #771, #762, #798, #799.
