@@ -4544,3 +4544,8 @@ This follows the owner's 14.11 direction that the game, apart from its home page
 
 Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
 The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).
+## 2026-11-21 ✅ Clothing's route is measured against five games: a first piece in 7 to 27 minutes of play, a first outfit in 30 to 90 (#769)
+**What:** OSRS, WoW Classic, Albion, New World, Valheim, Vintage Story and Stardew, with sources (docs/design/CLOTHING_BALANCE.md). Loomvale's row was played on the kernel by `tools/src/balance/clothing-route-cli.ts`: first piece 4.4 minutes, tier-1 kit 9.0, first set 21.3 known or 64.1 median dug up (16.1 active).
+**Result:** the work is short against the band, and the dug-up set is inside it in minutes passed. Making is the only route (buying and finding are missing), and there are 1.8 pieces a body place against 2.5 to 4.
+**Why:** the work per piece is not raised, because clothing's levels and minutes equal the other families' and its tier-1 piece already takes 2.4 to 2.8 times the work of another tier-1 Handcraft good and is worth 3 to 4 times as much, most of it in the hide (owner, 21.11: the clothing tree may not be harder than the other families). Length comes from found scraps and the day of curing. Buying and finding at tier 1 are the owner's questions 1 and 2 there.
+**Retry when:** the take verb or combat changes the hunt's minutes, the owner answers questions 1 or 2, or the family set changes Handcraft's nodes. **Model:** Opus. **Link:** #769.
