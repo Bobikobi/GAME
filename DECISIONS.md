@@ -4580,3 +4580,12 @@ Android Chrome locks inside fullscreen (from the specification, unchecked on a d
 iOS Safari has no lock API enabled by default (from the specification, unchecked on a device). The upright-phone card covers unavailable or refused locks.
 An installed web app can set its default orientation in its manifest (from the specification, unchecked on a device). This project has no manifest.
 Retry when iOS ships the lock API by default. Built by Codex for [#638](https://github.com/Bobikobi/GAME/issues/638).
+
+## 2026-11-21 ✅ Content by matrix: weapons, armour and creatures are expanded from tables by rule
+
+**What:** the targets of 2026-11-12 (500 weapons, 400 clothing and armour pieces, 700 monsters and 100 bosses, 90 animals) are reached the way the large games reach them: a table of material or family by tier by kind, expanded by a script into variants by rule. No item is drawn and written by hand one at a time. Old School RuneScape's first metal grade alone holds 33 items by kind (docs/design/GAP_RS_GEAR.md, S11). The owner approved it on 21.11 and asked for the foundations to be built, stage by stage, each stage on a session and model that fits it.
+**Evidence:** today's counts on `develop`: 0 weapon items, 10 wearables (4 more in #788), 0 monsters, 6 animals for decoration, 15 quests. The weapon matrix already expands 52 + 274 hands, 36 parts and 45 ammunition (407 rows) as a report (docs/design/WEAPON_MATRIX.md section 10, tools/src/balance/weapons.ts). Clothing and creatures have no matrix.
+**Why:** at a year's pace the targets need about 10 weapons, 8 garments and 16 creatures a week. Hand-made content does not reach that pace. A rule table does, and each new row is checked by the same tests.
+**Stages** (#789): 1 audit of what the weapon matrix yields and what of it is generic · 2 the armour and creature matrices designed on the weapon model, counted against each target · 3 the armour generator · 4 the creature generator · 5 art by variant: one base sprite per form or family, recoloured by material by script · 6 emit into content, which waits until combat opens. Stages 1-5 write nothing into content (G35). The owner's open questions in WEAPON_MATRIX section 14 stay his.
+**Retry when:** a matrix's first emitted month shows that variants read as copies to players (then fewer rows with more distinct shapes).
+**Model:** Claude Opus 5.5 (manager). **Link:** #789.
