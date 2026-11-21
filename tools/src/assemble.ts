@@ -21,8 +21,9 @@ import {
   computeValues,
   hashText,
   layoutInstances,
+  minChargeFor,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type ClipInfo, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type ClipInfo, type CreatorProfile, SHOP_PRICE_MAX_MG, type ParamsBody, type Shop, type Template, type WhenDef } from '@game/schema';
 import { chunkProblems, levelsProblems } from './chunks';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems, startFinds } from './play';
@@ -477,9 +478,50 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const instances = layoutInstances(map, r.resources, r.treasures);
   // the map goes in for the hunted kinds, the fifth source (docs/design/HUNTING.md section 9)
   const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes, reactions: r.reactions, map });
-  const bundle: Bundle = { format: 1, tag, ...content, instances, values, made, creators, board };
+  // an offer left without a price takes the R8 floor from the value just solved: no price is typed by hand
+  const shops = fillShopPrices(content.shops as unknown as Record<string, Meta & Shop>, values, params, origin, issues);
+  const bundle: Bundle = { format: 1, tag, ...content, shops, instances, values, made, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
+}
+
+/** Gives each shop offer with no `price_mg` the lowest price R8 allows, `r` times the item's value; an item with no value stays an error. */
+export function fillShopPrices(
+  shops: Record<string, Meta & Shop>,
+  values: Bundle['values'],
+  params: Params,
+  origin: Record<string, string>,
+  issues: Issue[],
+): Bundle['shops'] {
+  const out: Bundle['shops'] = {};
+  for (const [id, s] of Object.entries(shops)) {
+    const sells = s.sells.map((o, i): { item: string; price_mg: number } => {
+      if (o.price_mg !== undefined) return { item: o.item, price_mg: o.price_mg };
+      const v = values[o.item];
+      if (v === undefined) {
+        issues.push({
+          file: origin[id] ?? 'content',
+          where: `shop.sells.${i}.price_mg`,
+          message: `${o.item} has no value, so its price cannot be left out: write a price_mg`,
+          level: 'error',
+        });
+        return { item: o.item, price_mg: 1 };
+      }
+      const price = minChargeFor(params, v);
+      if (price > SHOP_PRICE_MAX_MG) {
+        issues.push({
+          file: origin[id] ?? 'content',
+          where: `shop.sells.${i}.price_mg`,
+          message: `${o.item} would be priced ${price} mg at the R8 floor, over the ${SHOP_PRICE_MAX_MG} mg a shop price may carry`,
+          level: 'error',
+        });
+        return { item: o.item, price_mg: SHOP_PRICE_MAX_MG };
+      }
+      return { item: o.item, price_mg: price };
+    });
+    out[id] = { ...s, sells };
+  }
+  return out;
 }
 
 type TemplateDef = Meta & Template;
