@@ -47,6 +47,7 @@ import { checkReach } from './reach';
 import { checkPayGap } from './paygap';
 import { checkMapPlan } from './mapplan';
 import { checkRaces } from './races';
+import { checkFamilies } from './families';
 import { checkSchools } from './schools';
 import { checkHands } from './hands';
 import { checkRichness } from './richness';
@@ -94,6 +95,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkRaces(b, assembled.origin));
     issues.push(...checkSchools(b, assembled.origin));
+    issues.push(...checkFamilies(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkLock(b, assembled.origin, root));
     issues.push(...checkReach(b, assembled.origin));

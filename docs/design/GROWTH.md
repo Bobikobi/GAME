@@ -97,7 +97,7 @@ Every name is proposed. Additive; `FORMAT_VERSION` unchanged; integer math (R1).
 }
 ```
 
-The trunk is a school with `"trunk": "forager"` in place of `profession`. `door` is `{ "lean": { "belief", "min" } }` or `{ "quest" }` or `null`. At most `growth.nodes_max` nodes per school (proposed 12) and `growth.majors_min` majors (proposed 3).
+The trunk is a school with `"trunk": "forager"` in place of `profession`. `door` is `{ "lean": { "belief", "min" } }` or `{ "quest" }` or `null`. At most `growth.nodes_max` nodes per school (proposed 12, 20 since step C of the clothing wave) and `growth.majors_min` majors (proposed 3).
 
 ### 4.2 Content: `technique`
 
@@ -134,7 +134,7 @@ A `growth` group in `content/core/params.json`, each with a range and a step:
 | `key_max` | 5 (3 to 10) | pips per attribute |
 | `cost` | small 1, major 2, corner 3 | points per node |
 | `respec_free`, `respec_mg` | 3, 20000 | unlearning |
-| `nodes_max`, `majors_min` | 12, 3 | a school's size |
+| `nodes_max`, `majors_min` | 20, 3 | a school's size |
 | `school_value_max_permille` | 400 | the share of the tree's priced value one school may hold |
 | `slot_slack` | 2 | techniques learnable at a level, at most this many times the slots at that level |
 | `combo_max` | 2 | the longest `after` chain |

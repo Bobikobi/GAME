@@ -8,6 +8,8 @@ Every number below is computed from one merged data set of three counts (the bui
 
 **Anchors.** Repo-relative `path:line` is `develop` at ebd425b2c (02.11; the re-check below walked every anchor). `X.md:N (#609)` is a line of the open gear pages (CLOTHING, WEAPONS, QUARRYING, GAP_RS_GEAR, BUILD_SET) at their head a8e4915d1; they are not on `develop`.
 
+**As built, 21.11 (#797).** Scrape and tan are one action for the hare and the roe, so scraped hare hide and scraped roe hide are no longer items (rows marked below). The totals on this page are the record of the 02.11 count and still include them; today the count holds 2 fewer processed materials (156 = 17 + 125 + 14). Nothing else here is recomputed.
+
 ## Totals
 
 | Measure | Count |
@@ -176,8 +178,8 @@ Other readings:
 | hare leather | core/hare-leather (proposed) | processed | 1 | planned-landed | tanning rack (new core station); workshop (MATERIALS proposes a tanning rack) | docs/design/MATERIALS.md:86<br>docs/design/MATERIALS.md:199<br>CLOTHING.md:481 (#609) |
 | roe fur | - | processed | 1 | planned-landed | tanning rack (new core station) | docs/design/MATERIALS.md:87<br>docs/design/MATERIALS.md:199 |
 | roe leather | core/roe-leather (proposed) | processed | 1 | planned-landed | tanning rack (new core station); workshop | docs/design/MATERIALS.md:86<br>docs/design/MATERIALS.md:199<br>CLOTHING.md:485 (#609) |
-| scraped hare hide | core/scraped-hare-hide (proposed) | processed | 1 | planned-landed | work stone (workshop t1); workshop tier 1 | docs/design/MATERIALS.md:85<br>docs/design/MATERIALS.md:199<br>CLOTHING.md:477 (#609) |
-| scraped roe hide | core/scraped-roe-hide (proposed) | processed | 1 | planned-landed | work stone (workshop t1); workshop tier 1 | docs/design/MATERIALS.md:85<br>docs/design/MATERIALS.md:199<br>CLOTHING.md:479 (#609) |
+| scraped hare hide | core/scraped-hare-hide (dropped 21.11: tan takes the raw hide, #797) | processed | 1 | planned-landed | work stone (workshop t1); workshop tier 1 | docs/design/MATERIALS.md:85<br>docs/design/MATERIALS.md:199<br>CLOTHING.md:477 (#609) |
+| scraped roe hide | core/scraped-roe-hide (dropped 21.11: tan takes the raw hide, #797) | processed | 1 | planned-landed | work stone (workshop t1); workshop tier 1 | docs/design/MATERIALS.md:85<br>docs/design/MATERIALS.md:199<br>CLOTHING.md:479 (#609) |
 | dust adder leather | - | processed | 2 | planned-landed | tanning rack (new core station) | docs/design/MATERIALS.md:86<br>docs/design/MATERIALS.md:199<br>docs/design/HUNTING.md:100 |
 | highland goat fur | - | processed | 2 | planned-landed | tanning rack (new core station) | docs/design/MATERIALS.md:87<br>docs/design/MATERIALS.md:199 |
 | highland goat leather | - | processed | 2 | planned-landed | tanning rack (new core station) | docs/design/MATERIALS.md:86<br>docs/design/MATERIALS.md:199<br>docs/design/HUNTING.md:100 |
@@ -357,10 +359,10 @@ Other readings:
 - Roe sinew (built) + roe sinew (landed) + roe sinew (gear): same built id core/roe-sinew
 - marmot hide (landed) + marmot hide (gear): same name, same thing
 - wildcat hide (landed) + wildcat hide (gear): same name, same thing
-- scraped hare hide (landed) + scraped hare hide (gear): same name, same thing (gear id core/scraped-hare-hide)
+- scraped hare hide (landed) + scraped hare hide (gear): same name, same thing (gear id core/scraped-hare-hide; not an item since 21.11, #797)
 - hare leather (landed) + hare leather (gear): same name, same thing (gear id core/hare-leather)
 - hare fur (landed) + hare fur (gear): same name, same thing (gear id core/hare-fur)
-- scraped roe hide (landed) + scraped roe hide (gear): same name, same thing (gear id core/scraped-roe-hide)
+- scraped roe hide (landed) + scraped roe hide (gear): same name, same thing (gear id core/scraped-roe-hide; not an item since 21.11, #797)
 - roe leather (landed) + roe leather (gear): same name, same thing (gear id core/roe-leather)
 - wolf leather (landed) + wolf leather (gear): same name, same thing
 - wolf fur (landed) + wolf fur (gear): same name, same thing

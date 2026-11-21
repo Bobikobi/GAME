@@ -34,8 +34,6 @@ const RECIPES_ADDED_SINCE = new Set([
   'core/hare-leather-shoes',
   'core/roe-leather-jerkin',
   'core/roe-leather-leggings',
-  'core/scrape-hare-hide',
-  'core/scrape-roe-hide',
   'core/sinew-thread',
   'core/tan-hare-fur',
   'core/tan-hare-leather',

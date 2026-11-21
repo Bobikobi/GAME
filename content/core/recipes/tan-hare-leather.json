@@ -24,11 +24,15 @@
   ],
   "recipe": {
     "station": "workshop",
-    "active_ms": 4000,
+    "active_ms": 6000,
     "level": 1,
     "inputs": [
       {
-        "item": "core/scraped-hare-hide",
+        "item": "core/hare-hide",
+        "qty": 1
+      },
+      {
+        "item": "core/stone-flakes",
         "qty": 1
       },
       {
