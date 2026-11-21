@@ -968,6 +968,19 @@
               }
             }
           }
+        },
+        "families": {
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "description": "A craft profession only: the families its recipes are sorted into (CLOTHING 6). A recipe or a tree node of this profession names one of them; when a family grows into its own school, its recipes name that profession instead.",
+          "type": "array",
+          "items": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 24,
+            "description": "A craft family.",
+            "type": "string"
+          }
         }
       }
     }

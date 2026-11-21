@@ -224,6 +224,9 @@ A material you gather comes from a resource, like the fruit above. `content/core
 - The station has to reach the tier: a tier 2 recipe needs a camp part that provides its station at tier 2 or higher. At the workshop that is the workbench (see [A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
 - `known` - `start` if every player knows it, `found` if a dig or a quest teaches it. A `found` recipe needs a teacher: a found scrap's `unlocks` or a quest reward's `recipes` names it.
 - `active_ms` - how long one try takes, 1000 to 15000 ms.
+- `family` - optional: the craft family inside the profession, one the profession declares in its `families` (handcraft: `cloth`, `leather`, `reed`). A skill-tree node with the same `family` helps only these recipes.
+- `gate` - optional, `"combat"`: the recipe waits for the fight to open. Nobody knows it and nothing teaches it until then, and it must be `known: "start"`; a player learns it the day the gate opens. For a chain whose first input only a hunt or a fight gives.
+- A worn output never weighs more than its inputs together.
 
 From tier 2 a try can miss. At its own level a tier 2 recipe succeeds 80 times in 100 and a tier 3 recipe 65 (`craft_chance_bp`), and each level above the recipe's adds 5 percent to the chance (`craft_level_step_bp`). Each level below takes the same step off, down to nothing, so a tier 1 recipe tried below its level can miss too, and a try at nothing still runs and misses. The game never shows a chance, a word for the difficulty or the level a recipe wants: players learn it by trying. A miss makes nothing and keeps half of each input, rounded down; when that would keep nothing, one unit of the most valuable input comes back. `miss.keep_pct` sets another share, up to 90 percent.
 

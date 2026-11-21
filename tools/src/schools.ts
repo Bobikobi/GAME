@@ -7,6 +7,9 @@
 import { needKey, nodeKey, type Bundle } from '@game/kernel';
 import type { Issue } from './load';
 
+/** The effects a craft reads with its recipe's family (kernel/src/step.ts, `craft` and `craftChanceBp`): a family node moves one of them. */
+export const FAMILY_EFFECTS: readonly string[] = ['craft_speed_pct', 'craft_chance_pct'];
+
 /**
  * The tree's rules: a school names a profession, one school per profession; node ids are unique in
  * their school; every need names a node that exists (in its school, or in another by its full key)
@@ -57,6 +60,15 @@ export function checkSchools(b: Bundle, origin: Record<string, string>): Issue[]
       } else if (n.race !== undefined) err(id, `${where}.race`, 'only a corner node belongs to a race');
       if (n.slot === true && n.size !== 'major' && n.size !== 'corner') err(id, `${where}.slot`, `a ${n.size} node is always on: only a major or a corner node is a technique`);
       if (n.icon !== undefined && !b.items[n.icon]) err(id, `${where}.icon`, `no item "${n.icon}"`);
+      // a family node helps only its family's recipes (CLOTHING 6.1): a family its profession declares, and an effect a craft reads
+      if (n.family !== undefined) {
+        const pr = b.professions[sc.profession];
+        const families = pr?.families ?? [];
+        if (!families.includes(n.family)) {
+          err(id, `${where}.family`, `"${n.family}" is not one of ${pr?.name ?? sc.profession}'s families (${families.length > 0 ? families.join(', ') : 'it declares none'}): name a family its profession declares (CLOTHING 6.1)`);
+        }
+        if (!FAMILY_EFFECTS.includes(n.effect)) err(id, `${where}.family`, `a family node helps a craft: its effect is ${FAMILY_EFFECTS.join(' or ')}, not ${n.effect} (CLOTHING 6.1)`);
+      }
       if (n.cost !== undefined && growth) {
         const [lo, hi] = growth.cost_band[n.size];
         if (n.cost < lo || n.cost > hi) err(id, `${where}.cost`, `a ${n.size} node costs ${lo} to ${hi} points, not ${n.cost}`);

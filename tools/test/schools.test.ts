@@ -146,4 +146,20 @@ describe('a school that breaks a rule', () => {
     c.params.growth!.slot_levels = [1, 5, 3];
     expect(messages(c)).toContainEqual(expect.stringContaining('a later slot never opens before an earlier one'));
   });
+
+  it('a family node names a family its profession declares, and moves a craft (CLOTHING 6.1)', () => {
+    const craft = (b: Bundle) => Object.values(b.schools).find((sc) => sc.profession === 'core/handcraft')!;
+    const fine = structuredClone(core);
+    const node = craft(fine).nodes.find((n) => n.effect === 'craft_speed_pct' || n.effect === 'craft_chance_pct')!;
+    node.family = 'leather';
+    expect(checkSchools(fine, {})).toEqual([]);
+    const b = structuredClone(core);
+    craft(b).nodes.find((n) => n.id === node.id)!.family = 'silk';
+    expect(messages(b)).toContainEqual(expect.stringContaining('"silk" is not one of Handcraft\'s families (cloth, leather, reed)'));
+    const c = structuredClone(core);
+    dig(c).nodes[0]!.family = 'leather';
+    const m = messages(c);
+    expect(m).toContainEqual(expect.stringContaining('"leather" is not one of Digging\'s families (it declares none)'));
+    expect(m).toContainEqual(expect.stringContaining(`its effect is craft_speed_pct or craft_chance_pct, not ${dig(c).nodes[0]!.effect}`));
+  });
 });

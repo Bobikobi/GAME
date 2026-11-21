@@ -117,6 +117,9 @@ export const ItemClass = Type.Union([...BASE_CLASSES.map((k) => Type.Literal(k))
 });
 const Word = (description: string) => Type.String({ pattern: '^[a-z0-9_-]+$', maxLength: 24, description });
 
+/** What a recipe or a tree node may wait for (RecipeBody.gate, SchoolNode.gate): the fight's switch, under which the hunt waits too (G35). */
+export const GATES = ['combat'] as const;
+
 // ---------------------------------------------------------------- shared parts
 
 export const Stack = Type.Object(
@@ -554,6 +557,15 @@ export const RecipeBody = Type.Object(
     known: Type.Union([Type.Literal('start'), Type.Literal('found')], {
       description: '"start": every player knows it. "found": learned from a recipe scrap found by digging, or from a quest.',
     }),
+    family: Type.Optional(
+      Word('The craft family inside its profession, one its profession declares in "families" (CLOTHING 6): "leather" for hide work, "cloth" for fur and later spun pieces, "reed" for reed pieces. A tree node with the same family helps it.'),
+    ),
+    gate: Type.Optional(
+      Type.Union(GATES.map((g) => Type.Literal(g)), {
+        description:
+          '"combat": closed while the fight is off (params combat.enabled 0, G35). Nobody knows it, nothing teaches it and the craft is refused; a save learns it, if it is start-known, once the gate opens. For a chain whose first input only a hunt or a fight lays in a player\'s hands (CLOTHING 6, "Before the take verb").',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1298,6 +1310,14 @@ export const ProfessionBody = Type.Object(
       ),
       { maxItems: 10 },
     ),
+     families: Type.Optional(
+      Type.Array(Word('A craft family.'), {
+        minItems: 1,
+        maxItems: 12,
+        uniqueItems: true,
+        description: 'A craft profession only: the families its recipes are sorted into (CLOTHING 6). A recipe or a tree node of this profession names one of them; when a family grows into its own school, its recipes name that profession instead.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1366,6 +1386,15 @@ export const SchoolNode = Type.Object(
     ),
     race: Type.Optional({ ...Id, description: 'A corner node only: the race whose node this is. Only a player of that race sees and learns it.' }),
     icon: Type.Optional({ ...Id, description: 'An item whose sprite pictures the node on the tree.' }),
+    family: Type.Optional(
+      Word('A craft node only: it helps only the recipes of this family, one its school\'s profession declares (CLOTHING 6.1). Left out, a craft node helps every recipe of its profession.'),
+    ),
+    gate: Type.Optional(
+      Type.Union(GATES.map((g) => Type.Literal(g)), {
+        description:
+          '"combat": closed while the fight is off (params combat.enabled 0, G35). The tree shows it and refuses a point for it, so no point goes to a node whose recipes nobody can make yet (CLOTHING 6.1).',
+      }),
+    ),
     cluster: Type.Optional({ ...NodeId, description: 'The cluster of its school it belongs to (the school\'s `clusters`): nodes that stand together.' }),
     pos: Type.Optional(
       Type.Object(

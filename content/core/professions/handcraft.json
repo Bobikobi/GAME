@@ -11,6 +11,11 @@
     "stations": [
       "workshop"
     ],
+    "families": [
+      "cloth",
+      "leather",
+      "reed"
+    ],
     "xp_levels": [
       4,
       40,
