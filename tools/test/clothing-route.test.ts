@@ -27,13 +27,12 @@ describe('the clothing route', () => {
     expect(run.failed).toBeUndefined();
     const [piece, kit, set] = run.milestones.map((m) => m.at / MIN);
     expect(run.milestones.map((m) => m.what)).toHaveLength(3);
-    // CLOTHING_BALANCE 3: 4.4, 9.0 and 21.3 minutes from the morning after the opening
-    expect(piece).toBeGreaterThan(3.5);
-    expect(piece).toBeLessThan(5.5);
-    expect(kit).toBeGreaterThan(piece!);
-    expect(kit).toBeLessThan(11);
-    expect(set).toBeGreaterThan(kit!);
-    expect(set).toBeLessThan(25);
+    // CLOTHING_BALANCE 3, pinned to the tenth of a minute: 4.4, 9.0 and 21.3 minutes passed from the morning after the opening
+    const tenth = (ms: number) => Math.round(ms / MIN * 10) / 10;
+    expect([piece, kit, set].map((m) => tenth(m! * MIN))).toEqual([4.4, 9.0, 21.3]);
+    // and the same three as active play: passed minus the waits on nodes and the night, 3.6, 7.7 and 13.4
+    const active = run.milestones.map((m) => tenth(m.at - m.split.wait - m.split.night));
+    expect(active).toEqual([3.6, 7.7, 13.4]);
     expect(formatRoute([run])).toContain('first set worn');
   }, 60_000);
 
@@ -43,6 +42,8 @@ describe('the clothing route', () => {
     expect(run.digs).toBeGreaterThan(0);
     const set = run.milestones[run.milestones.length - 1]!;
     expect(set.split.dig).toBeGreaterThan(0);
-    expect(set.at / MIN).toBeGreaterThan(25);
+    // seed 16 digs 10 times: 31.0 minutes passed. The page's median of 64.1 over seeds 1 to 20 is not pinned here: twenty
+    // found runs take minutes of wall time, too long for a unit test; `clothing-route-cli.ts --found --seeds 1,...,20` reproduces it.
+    expect(Math.round(set.at / MIN * 10) / 10).toBe(31.0);
   }, 120_000);
 });

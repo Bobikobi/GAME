@@ -166,8 +166,8 @@ PATHS (docs/design/PATHS.md, #492) sets a crafting path's floor: 16 recipes with
 
 | Measure | Floor | Handcraft today | After this wave | By family after |
 |---|---|---|---|---|
-| Recipes | 16, top at level 7 | 16, top 7 | 38, top 7: the built 16, this page's 17 and QUARRYING's 5 (GAP_RS_GEAR 3, counted); 22 before the take verb (section 6) | leather 13, cloth 3, reed 1; QUARRYING's 5 and the built 16 carry no family in this wave (section 17, row 1) |
-| Tiers | 3 | 1 to 3 | 1 to 3 | leather 1 to 3, cloth 1 to 2, reed 3 |
+| Recipes | 16, top at level 7 | 16, top 7 | 38, top 7: the built 16, this page's 17 and QUARRYING's 5 (GAP_RS_GEAR 3, counted); 22 before the take verb (section 6) | `wear` holds the worn pieces among the 17 (hide, fur and reed alike); the hide steps and the thread carry no family; QUARRYING's 5 and the built 16 carry none in this wave (section 17, row 1) |
+| Tiers | 3 | 1 to 3 | 1 to 3 | `wear` 1 to 3 |
 | Places | 8 | 3 | 3 | - |
 | Quests from a node | 3 | 0 | 0 | - |
 
@@ -380,7 +380,7 @@ Each row says what this wave builds; most of the section is the road ahead, and 
 | 11. PROGRESSION 5.7: common things are plain | a set bonus on common pieces would be a second effect, and on legendary pieces it passes the cap | sets from uncommon to rare (section 17, row 4) |
 | 12. PROGRESSION 5.7: plain at the band's bottom | the bottom of uncommon tier 2 (4) is under common tier 1 (5) | the plain floor of section 7.2: the higher of the band's bottom and the tier below's cap; PROGRESSION 5.7 amended with the quality pull request |
 | 13. R11: a value moves at most 10 percent from the lock | the scrap rows re-split the dig shares | inside: none now, at most 5 percent with the take verb (section 6); the lock is left to a core maintainer (CONTRIBUTING.md:35) |
-| 14. EQUIPMENT 3.7: cloth from Tailoring, leather from Leatherwork | neither school is open (PROGRESSION 4.2) | Handcraft makes both, by recipe `family`; a family moves to its school by `profession` once it holds the PATHS floor (section 6.2) |
+| 14. EQUIPMENT 3.7: cloth from Tailoring, leather from Leatherwork | neither school is open (PROGRESSION 4.2) | Handcraft makes both, its worn pieces in the `wear` family; a family moves to its school by `profession` once it holds the PATHS floor (section 6.2) |
 | 15. MATERIALS M6 (trait from the material) and BODY_CLOCKS 6.2 (set by the recipe) | two readings of where a trait comes from (MATERIALS question 4) | M6 says which trait, the recipe says whether: a trait piece is its own recipe from the plain piece (section 7.6), so both read the same and no plain piece loses its effect |
 | 16. PROGRESSION 7 (docs/design/PROGRESSION.md:551): "Recipes gain `family: Id`" | this page makes a recipe's family a Word | Word, as ItemDef `family` (schema/src/index.ts:212) and ClassInput `family` (:463); a family is named inside its profession's `families`, so a node names it as profession plus word; PROGRESSION 7 is amended to Word |
 | 17. BODY_CLOCKS 6.1 (docs/design/BODY_CLOCKS.md:143): `ice_grip` on the feet and the hands | the equipment foundations pull request lists `ice_grip` on the feet only until question 1 is answered; it asks no question and proposes no amendment of BODY_CLOCKS | the feet are the start under every answer (the studded shoes, section 7.6); BODY_CLOCKS 6.1 stays as written until question 1 is answered: under A the hands join the trait places with the `hands` place, under C that answer amends 6.1 to the feet only. Question 1 is the only question on it |

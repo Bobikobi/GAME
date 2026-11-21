@@ -8,8 +8,8 @@ The owner, 21.11: "בניית ביגוד וקניה שלו ושלבי ההכנה
 
 | Measure | The band of the games | Loomvale |
 |---|---|---|
-| First worn piece | 7 to 27 minutes of play | 4.4 minutes: short. With the planned day of curing, 24 minutes have passed |
-| First outfit | 30 to 90 minutes of play | the tier-1 kit takes 9 minutes: short. The first bonus set takes 13 to 16 minutes of play, and 64 minutes pass (median) when its recipes are dug up |
+| First worn piece | 7 to 27 minutes of play | 3.6 minutes of active play (4.4 pass, 0.8 of them waiting on a node): short. With the planned day of curing, 24 minutes have passed |
+| First outfit | 30 to 90 minutes of play | the tier-1 kit takes 7.7 minutes of active play (9.0 pass): short. The first bonus set takes 13 to 16 minutes of play, and 64 minutes pass (median) when its recipes are dug up |
 | Ways to get a piece | every game but one gives two or three ways (make, buy, find) | making only. Buying and finding are missing |
 | Pieces per body place by the end of tier 2 | 2.5 to 4 | 1.8: thin. The hands have none |
 | Clothing against the other families | - | the same levels and the same minutes to each tier. A tier-1 leather piece has one step more, 2.4 to 2.8 times the work of another tier-1 Handcraft good, and 3 to 4 times its value. One step less (P3) brings the work inside twice its tier; most of the value gap is the hide, that is the hunt |
@@ -19,7 +19,7 @@ The recommendation is one line. Keep the work per piece as it is, because the pa
 ## 1. How it was measured
 
 - **The games.** Seven games: Old School RuneScape (OSRS), World of Warcraft Classic (WoW), Albion Online, New World (NW), Valheim, Vintage Story (VS) and Stardew Valley. They were chosen because each has early worn gear made from hide, fibre or cloth, and together they span a fast game (OSRS), a quest-led MMO (WoW), market MMOs (Albion, NW), survival crafting (Valheim, VS) and a farm game (Stardew).
-- **What a number is.** Minutes are minutes of active play by someone who knows the way, from the moment the player is free to act. That moment is after the tutorial: OSRS from the mainland, WoW at level 5, Albion after its tutorial. Waits (curing, respawns) are listed apart. Every number has a source in section 11. A number marked **ESTIMATE** is a judgement written from the sources, and **(unchecked)** marks one taken from memory or from a search summary without a fetched page.
+- **What a number is.** Minutes are minutes of active play by someone who knows the way, from the moment the player is free to act. That moment is after the tutorial: OSRS from the mainland, WoW at level 5, Albion after its tutorial. Waits (curing, respawns) are listed apart. Loomvale's own rows give two figures: **passed**, every minute from the morning after the opening, node waits and the night included, and **active**, passed minus the waits on nodes and the night; the comparison with the games uses active. Every number has a source in section 11. A number marked **ESTIMATE** is a judgement written from the sources, and **(unchecked)** marks one taken from memory or from a search summary without a fetched page.
 - **The band.** For each game take the middle of its range, sort the games, and drop the shortest and the longest. The band runs from the second-shortest to the second-longest. One odd game cannot move it.
 - **Loomvale's row.** The route was played on the kernel itself by `pnpm exec tsx tools/src/balance/clothing-route-cli.ts [--seeds 1,2,3] [--found]` (tools/src/balance/clothing-route.ts). It is a measuring tool. It adds the hide chain of CLOTHING's appendix to a copy of the world exactly as the appendix lists it, lays the carcass as the hunt fields state (the take verb is not built, kernel/src/hunt.ts:2-5), and plays every other step through `step`: walking tile by tile, gathering, building, crafting with its chance and misses, dressing and wearing. It writes nothing. Values come from the calculator (kernel/src/values.ts, through `pnpm check`).
 - **The run.** The route starts the morning after the opening: the forager's opening takes 7.0 minutes, then the night is waited out (8.3 minutes), because a camp wolf kills at night. Then it goes on to:
@@ -58,19 +58,19 @@ One row per game for its first cloth or leather piece and its first full outfit.
 
 Seed 1, from the morning after the opening (`clothing-route-cli.ts --seeds 1,2,3,4,5`; seeds 1 to 5 agree within 0.1 minute):
 
-| Milestone | Minutes passed | Where the time went |
+| Milestone | Minutes passed (active) | Where the time went |
 |---|---|---|
-| First piece worn (hare-leather shoes) | 4.4 | hunt 2.6, walk 0.3, gather 0.3, craft 0.4, waiting on a node 0.8; Handcraft level 2 |
-| Tier-1 kit worn (4 pieces) | 9.0 | hunt 5.2, walk 0.6, gather 0.6, craft 1.3, node 1.2 |
-| First set worn, recipes known from the start | 21.3 | hunt 8.8, walk 1.2, gather 1.0, craft 2.3, node 2.1, night 5.8: 13.3 active |
+| First piece worn (hare-leather shoes) | 4.4 (3.6 active) | hunt 2.6, walk 0.3, gather 0.3, craft 0.4, waiting on a node 0.8; Handcraft level 2 |
+| Tier-1 kit worn (4 pieces) | 9.0 (7.7 active) | hunt 5.2, walk 0.6, gather 0.6, craft 1.3, node 1.2 |
+| First set worn, recipes known from the start | 21.3 (13.4 active) | hunt 8.8, walk 1.2, gather 1.0, craft 2.3, node 2.1, night 5.8: 13.4 active |
 | First set worn, recipes dug up (`--found`, seeds 1 to 20) | median 64.1 (29.3 to 208.6) | active median 16.1 (14.1 to 25.6); waiting on the rubble median 23.3; night median 24.6; digs median 36.5 (9 to 160) |
 
 | Link | Band | Loomvale | Verdict |
 |---|---|---|---|
 | Prep steps to the first piece | 2 to 4 | 5 on the main line: hunt, take, scrape, tan, sew. Two side steps: knap flakes, twist sinew thread | **too long** by one step |
 | Stations | 0 to 2 | the work stone (tier 1); the workbench (tier 2) | inside |
-| First piece | 7 to 27 | 4.4 active | **too short** |
-| First outfit | 30 to 90 | tier-1 kit 9.0; bonus set 13.3 (known) or 16.1 active (found, median) | **too short** in work |
+| First piece | 7 to 27 | 3.6 active (4.4 passed, 0.8 of it waiting on a node) | **too short** |
+| First outfit | 30 to 90 | tier-1 kit 7.7 active (9.0 passed, 1.2 of it waiting on a node); bonus set 13.4 (known) or 16.1 active (found, median) | **too short** in work |
 | First bonus set, minutes passed | 30 to 90 | 21.3 (known); 64.1 median (found) | known **too short**; found **inside** |
 | Waits | 0 | the hide's day of curing, 20 real minutes (DECISIONS 2026-11-19; not built, so not in the run) | **long**, on the owner's own decision; passive |
 | Travel | a few minutes (not measured for the games) | 0.3 to 1.2 minutes of walking | short |

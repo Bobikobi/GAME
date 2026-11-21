@@ -52,24 +52,23 @@ interface Row {
   level: number;
   inputs: [string, number][];
   out?: number;
-  recipeFamily: string;
 }
 
 /** CLOTHING appendix, "For the take verb", row by row (values from section 4.3). */
 export const HIDE_CHAIN: readonly Row[] = [
-  { id: 'core/scraped-hare-hide', name: 'Scraped hare hide', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 20960, station: 1, active: 6000, level: 1, inputs: [['core/hare-hide', 1], ['core/stone-flakes', 1]], recipeFamily: 'leather' },
-  { id: 'core/scraped-roe-hide', name: 'Scraped roe hide', cls: 'core/hide', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 28640, station: 1, active: 6000, level: 1, inputs: [['core/roe-hide', 1], ['core/stone-flakes', 1]], recipeFamily: 'leather' },
-  { id: 'core/hare-leather', name: 'Hare leather', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 24760, station: 1, active: 4000, level: 1, inputs: [['core/scraped-hare-hide', 1], ['core/herb', 1]], recipeFamily: 'leather' },
-  { id: 'core/hare-fur', name: 'Hare fur', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 24760, station: 1, active: 4000, level: 1, inputs: [['core/scraped-hare-hide', 1], ['core/herb', 1]], recipeFamily: 'cloth' },
-  { id: 'core/roe-leather', name: 'Roe leather', cls: 'core/hide', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 32440, station: 1, active: 4000, level: 1, inputs: [['core/scraped-roe-hide', 1], ['core/herb', 1]], recipeFamily: 'leather' },
-  { id: 'core/sinew-thread', name: 'Sinew thread', cls: 'core/sinew', tier: 1, rarity: 'common', weight: 0, value: 3630, station: 1, active: 3000, level: 1, inputs: [['core/roe-sinew', 1]], out: 2, recipeFamily: 'leather' },
-  { id: 'core/hare-fur-hood', name: 'Hare-fur hood', cls: 'core/fur', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 32390, wear: { slot: 'head', effects: [{ effect: 'craft_speed_pct', value: 5 }] }, station: 1, active: 5000, level: 1, inputs: [['core/hare-fur', 1], ['core/sinew-thread', 1]], recipeFamily: 'cloth' },
-  { id: 'core/roe-leather-jerkin', name: 'Roe-leather jerkin', cls: 'core/leather', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 44500, wear: { slot: 'top', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 6000, level: 2, inputs: [['core/roe-leather', 1], ['core/sinew-thread', 2]], recipeFamily: 'leather' },
-  { id: 'core/roe-leather-leggings', name: 'Roe-leather leggings', cls: 'core/leather', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 44500, wear: { slot: 'legs', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 6000, level: 2, inputs: [['core/roe-leather', 1], ['core/sinew-thread', 2]], recipeFamily: 'leather' },
-  { id: 'core/hare-leather-shoes', name: 'Hare-leather shoes', cls: 'core/leather', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 32390, wear: { slot: 'feet', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 5000, level: 1, inputs: [['core/hare-leather', 1], ['core/sinew-thread', 1]], recipeFamily: 'leather' },
-  { id: 'core/boiled-leather', name: 'Boiled leather', cls: 'core/hide', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 38040, station: 2, active: 5000, level: 3, inputs: [['core/roe-leather', 1], ['core/branch', 1]], recipeFamily: 'leather' },
-  { id: 'core/boiled-leather-cap', name: 'Boiled-leather cap', cls: 'core/leather', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 46670, wear: { slot: 'head', effects: [{ effect: 'dig_speed_pct', value: 5 }], set: 'core/digger-leathers' }, station: 2, active: 5000, level: 4, inputs: [['core/boiled-leather', 1], ['core/sinew-thread', 1]], recipeFamily: 'leather' },
-  { id: 'core/boiled-leather-boots', name: 'Boiled-leather boots', cls: 'core/leather', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 47670, wear: { slot: 'feet', effects: [{ effect: 'dig_speed_pct', value: 5 }], set: 'core/digger-leathers' }, station: 2, active: 6000, level: 5, inputs: [['core/boiled-leather', 1], ['core/sinew-thread', 1]], recipeFamily: 'leather' },
+  { id: 'core/scraped-hare-hide', name: 'Scraped hare hide', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 20960, station: 1, active: 6000, level: 1, inputs: [['core/hare-hide', 1], ['core/stone-flakes', 1]] },
+  { id: 'core/scraped-roe-hide', name: 'Scraped roe hide', cls: 'core/hide', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 28640, station: 1, active: 6000, level: 1, inputs: [['core/roe-hide', 1], ['core/stone-flakes', 1]] },
+  { id: 'core/hare-leather', name: 'Hare leather', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 24760, station: 1, active: 4000, level: 1, inputs: [['core/scraped-hare-hide', 1], ['core/herb', 1]] },
+  { id: 'core/hare-fur', name: 'Hare fur', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 24760, station: 1, active: 4000, level: 1, inputs: [['core/scraped-hare-hide', 1], ['core/herb', 1]] },
+  { id: 'core/roe-leather', name: 'Roe leather', cls: 'core/hide', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 32440, station: 1, active: 4000, level: 1, inputs: [['core/scraped-roe-hide', 1], ['core/herb', 1]] },
+  { id: 'core/sinew-thread', name: 'Sinew thread', cls: 'core/sinew', tier: 1, rarity: 'common', weight: 0, value: 3630, station: 1, active: 3000, level: 1, inputs: [['core/roe-sinew', 1]], out: 2 },
+  { id: 'core/hare-fur-hood', name: 'Hare-fur hood', cls: 'core/fur', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 32390, wear: { slot: 'head', effects: [{ effect: 'craft_speed_pct', value: 5 }] }, station: 1, active: 5000, level: 1, inputs: [['core/hare-fur', 1], ['core/sinew-thread', 1]] },
+  { id: 'core/roe-leather-jerkin', name: 'Roe-leather jerkin', cls: 'core/leather', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 44500, wear: { slot: 'top', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 6000, level: 2, inputs: [['core/roe-leather', 1], ['core/sinew-thread', 2]] },
+  { id: 'core/roe-leather-leggings', name: 'Roe-leather leggings', cls: 'core/leather', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 44500, wear: { slot: 'legs', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 6000, level: 2, inputs: [['core/roe-leather', 1], ['core/sinew-thread', 2]] },
+  { id: 'core/hare-leather-shoes', name: 'Hare-leather shoes', cls: 'core/leather', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 32390, wear: { slot: 'feet', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 5000, level: 1, inputs: [['core/hare-leather', 1], ['core/sinew-thread', 1]] },
+  { id: 'core/boiled-leather', name: 'Boiled leather', cls: 'core/hide', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 38040, station: 2, active: 5000, level: 3, inputs: [['core/roe-leather', 1], ['core/branch', 1]] },
+  { id: 'core/boiled-leather-cap', name: 'Boiled-leather cap', cls: 'core/leather', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 46670, wear: { slot: 'head', effects: [{ effect: 'dig_speed_pct', value: 5 }], set: 'core/digger-leathers' }, station: 2, active: 5000, level: 4, inputs: [['core/boiled-leather', 1], ['core/sinew-thread', 1]] },
+  { id: 'core/boiled-leather-boots', name: 'Boiled-leather boots', cls: 'core/leather', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 47670, wear: { slot: 'feet', effects: [{ effect: 'dig_speed_pct', value: 5 }], set: 'core/digger-leathers' }, station: 2, active: 6000, level: 5, inputs: [['core/boiled-leather', 1], ['core/sinew-thread', 1]] },
 ];
 
 /**
@@ -115,7 +114,8 @@ export function withHideChain(base: Bundle, teach: Teach = 'start'): Bundle {
       inputs: r.inputs.map(([item, qty]) => ({ item, qty })),
       outputs: [{ item: r.id, qty: r.out ?? 1, share_pct: 100 }],
       known: teach === 'found' && r.tier >= 2 ? 'found' : 'start',
-      family: r.recipeFamily,
+      // CLOTHING 6.1 (#776): a worn piece is of the `wear` family; a hide step or a thread belongs to none
+      ...(r.wear ? { family: 'wear' } : {}),
     } as unknown as RecipeDef;
     b.recipes[r.id] = recipe;
   }
