@@ -4548,3 +4548,11 @@ This follows the owner's 14.11 direction that the game, apart from its home page
 
 Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
 The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).
+
+## 2026-11-21 ✅ A phone asks the browser to hold landscape at the first tap that starts play (#638)
+
+Continue or Wake up asks once on a phone, by touch (a mouse click or a key press never asks); a failed Continue or a return to the title re-arms the gate, so the next tap asks again. Fullscreen is still asked where the lock API is missing, as before #638. Leaving play releases the lock and leaves fullscreen under the player's control.
+Android Chrome locks inside fullscreen (from the specification, unchecked on a device).
+iOS Safari has no lock API enabled by default (from the specification, unchecked on a device). The upright-phone card covers unavailable or refused locks.
+An installed web app can set its default orientation in its manifest (from the specification, unchecked on a device). This project has no manifest.
+Retry when iOS ships the lock API by default. Built by Codex for [#638](https://github.com/Bobikobi/GAME/issues/638).
