@@ -9,6 +9,13 @@
  *  B4 speed per clip: the dig clip's frame time is doubled in the kit: its measured step doubles, the pickup clip's does not move.
  *  and a verb the kit has no clip for (fish) shows no clip at all: today's motion.
  *
+ * Stage 2 (the real kit): first, for each race (Elf, Human, Skeleton), the four work verbs a valley action reaches (fell, quarry, fish,
+ * pickup) are played on the real scene against the sheets the kit now holds, facing the viewer. Two bars each, read off the player's
+ * own image: B3 the sheet's own frames advance (at least 3 distinct frame numbers of that sheet in two seconds of a looping action,
+ * the walk's sheet never standing in for it), and the displayed figure (the opaque height of the sheet's first frame at the scale the
+ * engine really drew it with, `fit` included) stands within 2 art pixels of the same race's walk. CLIPS_BREAK=<sheet name> removes one
+ * sheet from the running page's kit table before those checks, as a kit.json without it would assemble: the bar must then fail.
+ *
  * Every check waits on a condition, never a fixed time. No game/dist content is touched: the sheets exist only in the page.
  */
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -90,6 +97,32 @@ window.__clips = (() => {
       // the sprite's own texture and frame, read straight off the player's image every 15 ms: what is on the screen, not what was asked of it
       timer = setInterval(() => drawn.push([world.player.texture.key, Number(world.player.frame.name)]), 15);
     },
+    /** Drops one sheet from the running kit table (CLIPS_BREAK): a kit.json without it. */
+    drop(key) { const sprites = { ...g().bundle.sprites }; delete sprites[key]; g().bundle.sprites = sprites; return key in g().bundle.sprites; },
+    /** The opaque rows of one frame of a texture: the figure's height in the sheet's pixels. */
+    rows(key, frame, w, h) {
+      let top = -1, bottom = -1;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if ((world.textures.getPixelAlpha(x, y, key, frame) ?? 0) > 0) { if (top < 0) top = y; bottom = y; break; }
+      return top < 0 ? 0 : bottom - top + 1;
+    },
+    /** One real beat of a work facing the viewer, looping for ms: the frames of the sheet the player's image held and the scale it was drawn at. */
+    real(kind, ms) {
+      g().session.facing = 'down';
+      const verb = { fell: 'fell', mine: 'quarry', dig: 'dig', fish: 'fish', pick: 'pickup' }[kind];
+      const found = world.playClip(verb, ms);
+      const rows = [];
+      return new Promise((ok) => {
+        const t0 = performance.now();
+        const timer = setInterval(() => {
+          rows.push([world.player.texture.key, Number(world.player.frame.name), world.player.scaleY]);
+          if (performance.now() - t0 < ms) return;
+          clearInterval(timer);
+          const walkKey = world.playerFrame('down', 'walk').key;
+          const walk = g().bundle.sprites[walkKey];
+          ok({ found, rows, walkKey, walkFrames: walk.frames, walkDensity: walk.density, w: walk.w, h: walk.h });
+        }, 15);
+      });
+    },
     over() { const done = !world.figure.active; if (done) clearInterval(timer); return done; },
     /** The frames of one sheet the player's own image held, in order, without repeats. */
     drawn(key) { return drawn.filter((r) => r[0] === key).map((r) => r[1]).filter((f, i, a) => i === 0 || f !== a[i - 1]); },
@@ -114,14 +147,14 @@ window.__clips = (() => {
 })();
 true`;
 
-async function start(page: Page): Promise<void> {
+async function start(page: Page, race: string): Promise<void> {
   await page.tap('.title-screen button', 'New game');
   const choice = await page.waitFor<string>(
     `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
     'the race cards',
   );
   if (choice === 'ask') await page.tap('.title-screen button', 'Start a new game');
-  await page.tap('.card.race', 'Elf');
+  await page.tap('.card.race', race);
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
   await page.eval(carveIn('Tess'));
@@ -173,20 +206,70 @@ async function measure(page: Page, kind: string, key: string, frames: number, tr
   return { step: median(steps), skipped, texture };
 }
 
-async function run(page: Page, url: string): Promise<void> {
+const RACES = ['Elf', 'Human', 'Skeleton'] as const;
+/** The work verbs a valley action reaches, by the work kind that plays them (clips.ts VERB_OF_AUTO), and the sheet name's verb. */
+const WORK = [
+  { kind: 'fell', verb: 'fell' },
+  { kind: 'mine', verb: 'quarry' },
+  { kind: 'fish', verb: 'fish' },
+  { kind: 'pick', verb: 'pickup' },
+] as const;
+const LOOP_MS = 2000;
+const SHOW_BAND = 2;
+
+/** B3 and the size bar on the real kit, for the race that woke; returns the failures. */
+async function realKit(page: Page, race: string): Promise<string[]> {
+  const failures: string[] = [];
+  const stem = race.toLowerCase();
+  const broken = process.env.CLIPS_BREAK;
+  if (broken) {
+    await page.eval(`__clips.drop(${JSON.stringify(`core/base-kit:chars/${broken}`)})`);
+    console.log(`clips: BROKEN on purpose, ${broken} removed from the running kit table`);
+  }
+  for (const w of WORK) {
+    const key = `core/base-kit:chars/${stem}_${w.verb}_front`;
+    const r = await page.eval<{ found: boolean; rows: [string, number, number][]; walkKey: string; walkFrames: number; walkDensity: number; w: number; h: number }>(`__clips.real(${JSON.stringify(w.kind)}, ${LOOP_MS})`);
+    const own = r.rows.filter((x) => x[0] === key);
+    const distinct = [...new Set(own.map((x) => x[1]))].sort((a, b) => a - b);
+    const fallback = r.rows.filter((x) => x[0] === r.walkKey).length;
+    const framesOk = distinct.length >= 3;
+    console.log(`clips: ${framesOk ? 'PASS' : 'FAIL'} B3 ${race} ${w.verb}: ${distinct.length} distinct frames [${distinct}] of the sheet in ${LOOP_MS} ms (${fallback} samples of the walk sheet)`);
+    if (!framesOk) {
+      failures.push(`${race} ${w.verb} shows ${distinct.length} frames of its sheet`);
+      continue;
+    }
+    // the displayed figure: the first frame of the sheet (the take's stance) at the scale the engine drew it with, against the walk's standing frame at its own
+    const info = await page.eval<{ sheetRows: number; sheetDensity: number; walkRows: number }>(
+      `({ sheetRows: __clips.rows(${JSON.stringify(key)}, 0, 128, 128), sheetDensity: __game.bundle.sprites[${JSON.stringify(key)}].density, walkRows: __clips.rows(${JSON.stringify(r.walkKey)}, ${r.walkFrames - 1}, ${r.w}, ${r.h}) })`,
+    );
+    const scale = own[0]![2];
+    const shown = info.sheetRows * scale;
+    const walk = info.walkRows / r.walkDensity;
+    const sizeOk = Math.abs(shown - walk) <= SHOW_BAND;
+    console.log(`clips: ${sizeOk ? 'PASS' : 'FAIL'} size ${race} ${w.verb}: displayed ${shown.toFixed(2)} px (${info.sheetRows} rows at scale ${scale.toFixed(4)}), the walk ${walk.toFixed(2)} px`);
+    if (!sizeOk) failures.push(`${race} ${w.verb} is displayed ${shown.toFixed(1)} px tall, the walk ${walk.toFixed(1)}`);
+  }
+  return failures;
+}
+
+async function run(page: Page, url: string, race: string, first: boolean): Promise<void> {
   await page.goto(`${url}?debug&rich=none${seedQuery('core/west-bank')}`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
-  await start(page);
+  await start(page, race);
   await readThrough(page);
   await page.eval(IN_PAGE);
+  const real = await realKit(page, race);
+  if (real.length > 0) throw new Error(`clips: ${real.join('; ')}`);
+  // the stage 1 checks (fixture sheets, frame time as data) run once
+  if (!first) return;
 
   const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as { kit: { sprites: Record<string, { w: number; h: number; frames: number; clip: Record<string, unknown> }> } };
   const entries = [...PLAYS.map((p) => p.sheet), 'chars/human_strike_front'].map((name) => ({ key: `${KIT}:${name}`, ...fixture.kit.sprites[name]! }));
-  const race = await page.eval<string>('__clips.race()');
-  const injected = await page.eval<number>(`__clips.inject(${JSON.stringify(entries)}, ${JSON.stringify(race)})`);
+  const raceId = await page.eval<string>('__clips.race()');
+  const injected = await page.eval<number>(`__clips.inject(${JSON.stringify(entries)}, ${JSON.stringify(raceId)})`);
   const display = await page.eval<number>('__clips.display()');
   const tol = Math.max(display, 17);
-  console.log(`clips: race ${race}, ${injected} clip sheets in the running kit, display frame ${display.toFixed(1)} ms (tolerance ${tol.toFixed(1)} ms)`);
+  console.log(`clips: race ${raceId}, ${injected} clip sheets in the running kit, display frame ${display.toFixed(1)} ms (tolerance ${tol.toFixed(1)} ms)`);
 
   // a frame can only be seen as often as the page draws: the kit's times are the fixture's (140 ms for the dig), or three display
   // frames when the machine draws slower than that (software GL on a busy laptop), so every frame of a clip is drawn at least once
@@ -226,12 +309,12 @@ async function run(page: Page, url: string): Promise<void> {
   check('B4 pickup, not touched', pickAfter, pickKit.frame_ms);
   console.log(`clips: dig step ${before[dig.sheet]!.toFixed(1)} -> ${digAfter.toFixed(1)} ms, pickup step ${before[pick.sheet]!.toFixed(1)} -> ${pickAfter.toFixed(1)} ms`);
 
-  // a verb the kit has no clip for plays none: today's motion
+  // a verb the fixture has no clip for shows none of the fixture's
   await page.eval(`__clips.play('fish')`);
   await sleep(1500);
   const shown = await page.eval<string[]>('__clips.shown()');
   const clipShown = shown.filter((k) => k.startsWith(KIT));
-  console.log(`clips: ${clipShown.length === 0 ? 'PASS' : 'FAIL'} fish, no clip in the kit: ${clipShown.length} clip frames shown`);
+  console.log(`clips: ${clipShown.length === 0 ? 'PASS' : 'FAIL'} fish, the fixture has no clip for it: ${clipShown.length} fixture frames shown`);
   if (clipShown.length > 0) failures.push('fish shows a clip it has none of');
 
   mkdirSync(OUT, { recursive: true });
@@ -244,11 +327,13 @@ async function main(): Promise<void> {
   const local = remote ? null : await serve();
   const browser = await Browser.launch();
   try {
-    const page = await browser.newPage({ width: 1440, height: 900, mobile: false });
-    try {
-      await run(page, remote ?? local?.url ?? '');
-    } finally {
-      page.close();
+    for (const [i, race] of RACES.entries()) {
+      const page = await browser.newPage({ width: 1440, height: 900, mobile: false });
+      try {
+        await run(page, remote ?? local?.url ?? '', race, i === 0);
+      } finally {
+        page.close();
+      }
     }
     console.log('clips: passed');
   } finally {
