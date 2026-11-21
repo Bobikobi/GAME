@@ -6,9 +6,9 @@
  * walking the player, L learns, a technique goes into the build, the wheel zooms, a drag pans, Shift and
  * an arrow pan, a number key shows one school and 0 the whole tree. Then a generated tree of about three hundred nodes (tests
  * only, never content) is drawn and panned within a frame's time, only what is on screen. On a phone,
- * once: every node takes a 44 px tap at the starting zoom, a tap chooses, a long press shows the
- * number, Learn works, a finger pans, two fingers pinch to zoom, and the big tree draws only what is on screen.
- * Every check waits on a condition, never a fixed time.
+ * the layout fits the sideways window, sampled nodes have 44 px tap areas at the starting zoom,
+ * a tap chooses, a long press shows the number, Learn works, a finger pans, the zoom button and pinch
+ * change zoom, and the big tree draws only what is on screen.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -77,7 +77,7 @@ const drawnBox = (page: Page, key: string) =>
     return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
   })()`, `the node ${key} drawn`);
 
-/** The map's visible part: its box cut to the scrolling page and the screen (on the sideways phone the page scrolls and the map is taller than what shows). */
+/** The map's visible bounds within the Skills page and viewport. */
 const viewBox = (page: Page) =>
   page.eval<Box>(`(() => {
     const r = document.querySelector('.tree-view').getBoundingClientRect();
@@ -116,28 +116,26 @@ async function drag(page: Page, mobile: boolean, from: { x: number; y: number },
 }
 
 async function tapNode(page: Page, k: string): Promise<void> {
-  // where the node's middle is, and whether the eye can see it there (on the sideways phone the map shows a part of the tree)
-  const find = `(() => { const el = document.querySelector('[data-node=${JSON.stringify(k)}]'); if (!el) return null; const r = el.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2; const seen = x > 0 && y > 0 && x < window.innerWidth && y < window.innerHeight && document.elementFromPoint(x, y)?.closest('[data-node]') === el; return { x, y, seen }; })()`;
-  const first = await page.waitFor<Box & { seen: boolean }>(find, `the node ${k}`);
-  if (!first.seen) {
-    // a player brings a school into view with its button: try each until the node shows
-    const count = await page.eval<number>(`document.querySelectorAll('.tree-school').length`);
-    for (let i = 0; i < count; i++) {
-      const b = await page.eval<Box>(`(() => { const r = document.querySelectorAll('.tree-school')[${i}].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
-      await page.tapAt(b.x, b.y);
-      await sleep(250);
-      if ((await page.eval<Box & { seen: boolean }>(find)).seen) break;
+  const find = `(() => {
+    const el = document.querySelector('[data-node=${JSON.stringify(k)}]');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    return document.elementFromPoint(x, y)?.closest('[data-node]') === el ? { x, y } : null;
+  })()`;
+  let box = await page.eval<Pick<Box, 'x' | 'y'> | null>(find);
+  if (!box) {
+    // Offscreen nodes can be unmounted. Try the school buttons until the node is hittable.
+    const count = await page.eval<number>(`document.querySelectorAll('.tree-schools .tree-school').length`);
+    for (let i = 1; i <= count && !box; i++) {
+      // Page.tap scrolls the button into the school row before measuring its centre.
+      await page.tap(`.tree-schools > .tree-school:nth-child(${i})`);
+      // The school fit queues a draw on the next frame, which can mount the node.
+      await page.eval(`new Promise((resolve) => requestAnimationFrame(() => resolve()))`);
+      box = await page.eval<Pick<Box, 'x' | 'y'> | null>(find);
     }
   }
-  // the map may still be gliding to the school: tap only where the node has stopped
-  let box = await page.waitFor<Box & { seen: boolean }>(`(() => { const r = ${find}; return r && r.seen ? r : null; })()`, `the node ${k} in view`);
-  for (let i = 0; i < 20; i++) {
-    await sleep(150);
-    const again = await page.waitFor<Box & { seen: boolean }>(`(() => { const r = ${find}; return r && r.seen ? r : null; })()`, `the node ${k} in view`);
-    const still = Math.abs(again.x - box.x) < 1 && Math.abs(again.y - box.y) < 1;
-    box = again;
-    if (still) break;
-  }
+  if (!box) throw new Error(`the node ${k} is outside the map after trying the schools`);
   await page.tapAt(box.x, box.y);
   await page.waitFor(`document.querySelector('.tree-card')?.dataset.card === ${JSON.stringify(k)}`, `the card of ${k}`);
 }
@@ -236,14 +234,24 @@ const hadNoErrors = (page: Page) => {
   if (page.errors.length > 0) throw new Error(`the page threw: ${page.errors.join(' | ')}`);
 };
 
+async function resizeDesktopTree(page: Page, width: number, height: number): Promise<void> {
+  await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+  await page.waitFor(`(() => {
+    const view = document.querySelector('.tree-view');
+    const canvas = view.querySelector('canvas');
+    return window.innerWidth === ${width} && window.innerHeight === ${height}
+      && canvas.width === Math.round(view.clientWidth * devicePixelRatio)
+      && canvas.height === Math.round(view.clientHeight * devicePixelRatio);
+  })()`, `the tree redrawn at ${width} x ${height}`);
+}
+
 async function desktop(page: Page, url: string): Promise<void> {
   const log = (msg: string) => console.log(`[desktop] ${msg}`);
   await newGame(page, url, { width: 1440, height: 900, mobile: false }, 'Human');
   const facts = await treeFacts(page);
   await openTree(page);
 
-  await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
-  await sleep(100);
+  await resizeDesktopTree(page, 1280, 800);
   const control = await page.eval<{ window: number; aboveMap: number; map: number; mapFull: number }>(`(() => {
     const panel = document.querySelector('.panel.bag').getBoundingClientRect(), map = document.querySelector('.tree-view');
     const mr = map.getBoundingClientRect();
@@ -253,8 +261,7 @@ async function desktop(page: Page, url: string): Promise<void> {
   if (Math.abs(control.window - 768) > 1 || Math.abs(control.aboveMap - 232.3) > 1 || Math.abs(control.map - 423.1) > 1) {
     throw new Error('the 1280 x 800 desktop control differs from 768 / 232.3 / 423.1 px by more than 1 px');
   }
-  await page.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
-  await sleep(100);
+  await resizeDesktopTree(page, 1440, 900);
 
   // the wide window, the whole tree in it
   const width = await page.eval<number>(`document.querySelector('.panel.bag.tree-open')?.getBoundingClientRect().width ?? 0`);
@@ -407,20 +414,27 @@ async function phone(page: Page, url: string): Promise<void> {
   const d = await dataset(page);
   if (d.zoom !== '1.000') throw new Error(`the phone starts at zoom ${d.zoom}`);
 
+  const slotWidth = 44;
+  const slotHeight = 48;
   const layout = await page.eval<{ window: number; aboveMap: number; map: number; mapWidth: number; mapFull: number; client: number; scroll: number; text: number; targets: number }>(`(() => {
     const panel = document.querySelector('.panel.bag'), tree = document.querySelector('.tree-page'), map = document.querySelector('.tree-view');
     const pr = panel.getBoundingClientRect(), mr = map.getBoundingClientRect();
     const shown = (el) => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
     // a label drawn at 0 px (the close button's words, replaced by its cross) is not text a player reads
     const text = [...panel.querySelectorAll('*')].filter((el) => shown(el) && [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()) && parseFloat(getComputedStyle(el).fontSize) < 16 && parseFloat(getComputedStyle(el).fontSize) > 0).length;
-    const targets = [...panel.querySelectorAll('button, summary, .tree-slot')].filter((el) => shown(el) && !el.classList.contains('tree-node') && (el.getBoundingClientRect().width < 44 || el.getBoundingClientRect().height < 44)).length;
+    const targets = [...panel.querySelectorAll('button, summary, .tree-slot')].filter((el) => {
+      if (!shown(el) || el.classList.contains('tree-node')) return false;
+      const { width, height } = el.getBoundingClientRect();
+      if (el.classList.contains('tree-slot')) return width < ${slotWidth} || height < ${slotHeight};
+      return width < 44 || height < 44;
+    }).length;
     return { window: pr.height, aboveMap: mr.top - pr.top, map: mr.height, mapWidth: mr.width, mapFull: map.scrollHeight, client: tree.clientHeight, scroll: tree.scrollHeight, text, targets };
   })()`);
   if (layout.scroll !== layout.client) throw new Error(`the phone tree page scrolls ${layout.scroll} px in ${layout.client} px`);
   if (layout.map < layout.window * 0.6) throw new Error(`the phone map is ${layout.map} px of a ${layout.window} px window`);
   if (layout.mapWidth < 530) throw new Error(`the phone map is ${layout.mapWidth} px wide, expected at least 530 px`);
   if (layout.text > 0 || layout.targets > 0) throw new Error(`the phone tree has ${layout.text} small text runs and ${layout.targets} small targets`);
-  log(`layout: window ${layout.window} px, header and school row ${layout.aboveMap} px, map ${layout.mapWidth} px wide and ${layout.map}/${layout.mapFull} px tall, page ${layout.scroll}/${layout.client} px; ${layout.text} text runs under 16 px, ${layout.targets} targets under 44 px`);
+  log(`layout: window ${layout.window} px, header and school row ${layout.aboveMap} px, map ${layout.mapWidth} px wide and ${layout.map}/${layout.mapFull} px tall, page ${layout.scroll}/${layout.client} px; ${layout.text} text runs under 16 px, ${layout.targets} controls below their size minimum`);
 
   await page.screenshot(join(OUT, 'tree-phone.png'));
 
@@ -440,7 +454,7 @@ async function phone(page: Page, url: string): Promise<void> {
   if (stack) throw new Error(stack);
   log('two columns: schools over the map, the build then the card beside it');
 
-  // every node in view takes a 44 px tap: 21 px from its middle still lands on it
+  // Sample nodes clear of the edges and other controls at four points 21 px from their centres.
   const misses = await page.eval<string[]>(`(() => {
     const v = document.querySelector('.tree-view').getBoundingClientRect();
     const tools = document.querySelector('.tree-tools').getBoundingClientRect();
@@ -450,9 +464,9 @@ async function phone(page: Page, url: string): Promise<void> {
       const r = el.getBoundingClientRect();
       const x = r.left + r.width / 2, y = r.top + r.height / 2;
       if (x < v.left + 30 || x > v.right - 30 || y < v.top + 30 || y > v.bottom - 30) continue;
-      // on the sideways phone the map is taller than the screen: a point off the screen has no element to hit, so only nodes whose tap box is on it count
+      // Keep all four hit points inside the viewport.
       if (x < 22 || x > window.innerWidth - 22 || y < 22 || y > window.innerHeight - 22) continue;
-      // a node under the window's sticky head or another piece of the page is not in view: only a node the eye can see counts
+      // Skip nodes whose centre is covered by another element.
       if (document.elementFromPoint(x, y)?.closest('[data-node]') !== el) continue;
       if (x + 30 > tools.left && y + 30 > tools.top) continue;
       checked++;
@@ -462,11 +476,11 @@ async function phone(page: Page, url: string): Promise<void> {
         if (hit !== el) out.push(el.dataset.node + ' at ' + dx + ',' + dy + ' (' + Math.round(r.width) + ' px) hit ' + (top ? top.tagName + '.' + top.className : 'nothing') + (hit ? ' node ' + hit.dataset.node : ''));
       }
     }
-    // the starting view holds 3 or more nodes away from the edges (3 with develop's six schools, 354 nodes)
+    // Require enough eligible nodes for the hit test to exercise the starting view.
     return checked >= 3 ? out : ['only ' + checked + ' nodes in view'];
   })()`);
   if (misses.length > 0) throw new Error(`taps miss: ${misses.join('; ')}`);
-  log('every node in view takes a 44 px tap');
+  log('sampled nodes take 44 px taps at the starting zoom');
 
   // a tap chooses, a long press shows the number, Learn learns
   await tapNode(page, facts.root);
@@ -519,7 +533,9 @@ async function phone(page: Page, url: string): Promise<void> {
     const { width, height } = slot.getBoundingClientRect();
     return { width, height };
   })()`, 'the phone filled slot');
-  if (filled.width < 44 || filled.height < 44) throw new Error(`the phone filled slot is ${filled.width} x ${filled.height} px`);
+  if (filled.width < slotWidth || filled.height < slotHeight) {
+    throw new Error(`the phone filled slot is ${filled.width} x ${filled.height} px, expected at least ${slotWidth} x ${slotHeight} px`);
+  }
   log(`the filled slot is ${filled.width} x ${filled.height} px`);
 
   // the big tree on a phone: only what is on screen, and a tap still chooses
