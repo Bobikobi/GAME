@@ -44,13 +44,20 @@ export type ReviewState = (typeof REVIEW_STATES)[number];
 export const FILE_KINDS = ['raw', 'full', 'imported'] as const;
 export type FileKind = (typeof FILE_KINDS)[number];
 
-/** A release has room for 1000 assets; three a draft, and a margin. */
-const DRAFTS_PER_RELEASE = 300;
+/** GitHub holds at most 1000 assets in one release (HTTP 422 `file_count limited to 1000` past it). */
+export const ASSETS_PER_RELEASE = 1000;
 
 export interface FileRef {
   sha256: string;
   bytes: number;
+  /** The file's extension when it is not `.png` (`.jpg`, `.webp`, `.glb`): the asset in the store keeps it. */
+  ext?: string;
 }
+
+/** The extensions a draft may have, as the stray check names them; a PNG is the common case and needs no `ext`. */
+export const DRAFT_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.glb'] as const;
+/** A picture or model over this many bytes is not pushed (a raw photoscan runs to hundreds of megabytes). */
+export const MAX_DRAFT_BYTES = 100 * 1024 * 1024;
 
 export interface Stored {
   repo: string;
@@ -140,8 +147,8 @@ export function pngDims(png: Buffer): [number, number] | null {
   return [png.readUInt32BE(16), png.readUInt32BE(20)];
 }
 
-function fileRef(data: Buffer): FileRef {
-  return { sha256: sha256Hex(data), bytes: data.length };
+function fileRef(data: Buffer, ext = '.png'): FileRef {
+  return { sha256: sha256Hex(data), bytes: data.length, ...(ext === '.png' ? {} : { ext }) };
 }
 
 /* ---- the index: read, fold, append ---- */
@@ -498,25 +505,29 @@ export interface PictureOptions extends CollectOptions {
 
 /**
  * Loose pictures from a study, with no manifest: each file is its own raw picture. A `<stem>.json` beside it may
- * carry the prompt, the tool and the date (`{prompt, tool, date}`); what is not known stays null.
+ * carry the prompt, the tool, the date and the seed (`{prompt, tool, date, seed}`); what is not known stays null.
  */
 export function collectPictures(files: readonly string[], opts: PictureOptions): Collected[] {
   return files.flatMap((file) => {
+    const ext = extname(file).toLowerCase();
     const raw = readIf(file);
-    if (raw === null || pngDims(raw) === null) {
-      opts.skipped?.push({ name: basename(file), why: raw === null ? 'the file is not on disk' : 'not a PNG' });
+    const isPng = ext === '.png';
+    if (raw === null || (isPng && pngDims(raw) === null) || !(DRAFT_EXTENSIONS as readonly string[]).includes(ext) || raw.length > MAX_DRAFT_BYTES) {
+      const why = raw === null ? 'the file is not on disk' : raw.length > MAX_DRAFT_BYTES ? `over the ${MAX_DRAFT_BYTES / 1024 / 1024} MB cap` : isPng ? 'not a PNG' : 'not a picture or model';
+      opts.skipped?.push({ name: basename(file), why });
       return [];
     }
-    const side = readJson(file.replace(/\.png$/, '.json'));
+    const side = readJson(file.slice(0, file.length - ext.length) + '.json');
     const text = (k: string): string | null => (typeof side?.[k] === 'string' ? (side[k] as string) : null);
     const name = basename(file, extname(file));
     const date = text('date');
+    const seed = typeof side?.['seed'] === 'number' && Number.isInteger(side['seed']) ? (side['seed'] as number) : null;
     return [{
       record: {
         id: draftId(raw), pool: opts.pool ?? null, name, spec: null, round: null, route: opts.route ?? null, recipe: text('tool'),
-        model: null, model_version: null, seed: null, denoise: null, canvas: pngDims(raw), asked: null, ramps: null,
+        model: null, model_version: null, seed, denoise: null, canvas: isPng ? pngDims(raw) : null, asked: null, ramps: null,
         prompt: text('prompt'), negative: null, warnings: [], errors: [], run: null,
-        files: { raw: fileRef(raw), full: null, imported: null }, stored: null, review: 'unreviewed', at: date,
+        files: { raw: fileRef(raw, ext), full: null, imported: null }, stored: null, review: 'unreviewed', at: date,
         sources: [{ label: opts.label, spec: null, run: basename(dirname(file)), file: basename(file), at: date, provenance: opts.provenance ?? null }],
       },
       paths: { raw: file, full: null, imported: null },
@@ -551,8 +562,8 @@ export const realGh: Gh = (args) => {
   return { status: run.status, stdout: run.stdout ?? '', stderr: run.stderr ?? '' };
 };
 
-export function assetName(id: string, kind: FileKind): string {
-  return kind === 'raw' ? `${id}.png` : `${id}.${kind}.png`;
+export function assetName(id: string, kind: FileKind, ext = '.png'): string {
+  return kind === 'raw' ? `${id}${ext}` : `${id}.${kind}${ext}`;
 }
 
 /** Waits in seconds; replaced in tests. */
@@ -565,7 +576,7 @@ export const pacing = {
 const RATE_LIMITED = /rate limit exceeded/i;
 
 /** Retry a gh call; a rate-limited answer waits and asks again (the window of the asset endpoint is its own, so poll rather than trust a reported reset). */
-function retry(gh: Gh, args: readonly string[], times = 3): GhResult {
+export function retry(gh: Gh, args: readonly string[], times = 3): GhResult {
   let last: GhResult = { status: null, stdout: '', stderr: '' };
   let limited = 0;
   for (let i = 0; i < times; i += 1) {
@@ -611,8 +622,9 @@ function releaseAssets(gh: Gh, repo: string, tag: string): Set<string> | null {
 }
 
 /**
- * Upload what is not stored yet, one release per tag, and cite it in the index. A draft that already has `stored`
- * is left alone. Nothing is ever replaced (no `--clobber`): an asset that is there stays as it is.
+ * Upload what is not stored yet, one release per tag (rolling to `tag-2`, `tag-3` when a release reaches GitHub's
+ * 1000 assets, counting what it already holds), and cite it in the index. A draft that already has `stored` is left
+ * alone. Nothing is ever replaced (no `--clobber`): an asset that is there stays as it is.
  */
 export function pushCollected(items: readonly Collected[], index: DraftIndex, opts: PushOptions = {}): PushReport {
   const gh = opts.gh ?? realGh;
@@ -634,17 +646,47 @@ export function pushCollected(items: readonly Collected[], index: DraftIndex, op
     pending.set(tag, [...(pending.get(tag) ?? []), item]);
   }
   for (const [base, all] of pending) {
-    for (let part = 0; part * DRAFTS_PER_RELEASE < all.length; part += 1) {
-      const tag = part === 0 ? base : `${base}-${part + 1}`;
-      const chunk = all.slice(part * DRAFTS_PER_RELEASE, (part + 1) * DRAFTS_PER_RELEASE);
-      const uploads = chunk.flatMap((item) => FILE_KINDS.flatMap((kind) => {
-        const path = item.paths[kind];
-        return path === null ? [] : [{ item, kind, path, name: assetName(item.record.id, kind) }];
-      }));
+    const partTag = (part: number): string => (part === 0 ? base : `${base}-${part + 1}`);
+    const filesOf = (item: Collected): { item: Collected; kind: FileKind; path: string; name: string }[] => FILE_KINDS.flatMap((kind) => {
+      const path = item.paths[kind];
+      return path === null ? [] : [{ item, kind, path, name: assetName(item.record.id, kind, item.record.files[kind]?.ext) }];
+    });
+    // what the releases of this tag already hold (tag, tag-2, ...), read until one is missing; a dry run reads nothing
+    const held: Set<string>[] = [];
+    for (let part = 0; opts.dry !== true; part += 1) {
+      const present = releaseAssets(gh, repo, partTag(part));
+      if (present === null) break;
+      held.push(present);
+    }
+    // a draft whose files one release already holds (a push that stopped before the index) goes there; the rest fill the
+    // releases in order by the room each has left, a new one opening when the last is full; a draft's files never split
+    const room = held.map((present) => ASSETS_PER_RELEASE - present.size);
+    const parts: Collected[][] = held.map(() => []);
+    let open = 0;
+    for (const item of all) {
+      const names = filesOf(item).map((u) => u.name);
+      const home = held.findIndex((present) => names.every((name) => present.has(name)));
+      if (home >= 0) {
+        parts[home]!.push(item);
+        continue;
+      }
+      const cost = (part: number): number => names.filter((name) => held[part]?.has(name) !== true).length;
+      while (open < room.length && room[open]! < cost(open)) open += 1;
+      if (open === room.length) {
+        room.push(ASSETS_PER_RELEASE);
+        parts.push([]);
+      }
+      room[open]! -= cost(open);
+      parts[open]!.push(item);
+    }
+    for (const [part, chunk] of parts.entries()) {
+      if (chunk.length === 0) continue;
+      const tag = partTag(part);
+      const uploads = chunk.flatMap(filesOf);
       say(`${tag}: ${chunk.length} drafts, ${uploads.length} files`);
       report.tags.push(tag);
       if (opts.dry === true) continue;
-      let present = releaseAssets(gh, repo, tag);
+      let present = held[part] ?? null;
       if (present === null) {
         const made = retry(gh, ['release', 'create', tag, '--repo', repo, '--title', tag, '--notes', `Drafts of ${tag}: raw pictures, kernel pictures before the grid, and what the importer made, named by draft id. The index is tools/kit-gen/drafts.jsonl in the game repo. Nothing here is ever deleted.`]);
         if (made.status !== 0) throw new Error(`could not create release ${tag}: ${made.stderr.trim()}`);
@@ -675,7 +717,7 @@ export function pushCollected(items: readonly Collected[], index: DraftIndex, op
       if (lost.length > 0) throw new Error(`${tag} is missing ${lost.length} assets after the upload (first: ${lost[0]?.name ?? ''})`);
       for (const item of chunk) {
         const assets: Stored['assets'] = {};
-        for (const kind of FILE_KINDS) if (item.paths[kind] !== null) assets[kind] = assetName(item.record.id, kind);
+        for (const kind of FILE_KINDS) if (item.paths[kind] !== null) assets[kind] = assetName(item.record.id, kind, item.record.files[kind]?.ext);
         index.add({ ...item.record, stored: { repo, tag, assets } });
         report.uploaded += 1;
       }
@@ -688,8 +730,8 @@ export function pushCollected(items: readonly Collected[], index: DraftIndex, op
 
 export interface FetchReport { fetched: number; present: number; missing: { id: string; kind: FileKind; why: string }[] }
 
-function cachePath(cache: string, id: string, kind: FileKind): string {
-  return join(cache, assetName(id, kind));
+function cachePath(cache: string, id: string, kind: FileKind, ext?: string): string {
+  return join(cache, assetName(id, kind, ext));
 }
 
 /** Fill the cache from the releases. Only what is missing is asked for; a file already there is never overwritten. */
@@ -698,11 +740,12 @@ export function fetchDrafts(index: DraftIndex, ids: readonly string[] | null, op
   const cache = opts.cache ?? CACHE_DIR;
   mkdirSync(cache, { recursive: true });
   const report: FetchReport = { fetched: 0, present: 0, missing: [] };
-  const wanted = new Map<string, { id: string; kind: FileKind; asset: string }[]>();
+  const wanted = new Map<string, { id: string; kind: FileKind; asset: string; ext?: string }[]>();
   for (const draft of ids === null ? index.drafts.values() : ids.flatMap((id) => index.drafts.get(id) ?? [])) {
     for (const kind of FILE_KINDS) {
-      if (draft.files[kind] === null) continue;
-      if (existsSync(cachePath(cache, draft.id, kind))) {
+      const ref = draft.files[kind];
+      if (ref === null) continue;
+      if (existsSync(cachePath(cache, draft.id, kind, ref.ext))) {
         report.present += 1;
         continue;
       }
@@ -711,7 +754,7 @@ export function fetchDrafts(index: DraftIndex, ids: readonly string[] | null, op
         report.missing.push({ id: draft.id, kind, why: 'not stored in the drafts repo' });
         continue;
       }
-      wanted.set(draft.stored.tag, [...(wanted.get(draft.stored.tag) ?? []), { id: draft.id, kind, asset }]);
+      wanted.set(draft.stored.tag, [...(wanted.get(draft.stored.tag) ?? []), { id: draft.id, kind, asset, ...(ref.ext === undefined ? {} : { ext: ref.ext }) }]);
     }
   }
   for (const [tag, files] of wanted) {
@@ -720,7 +763,7 @@ export function fetchDrafts(index: DraftIndex, ids: readonly string[] | null, op
       opts.say?.(`fetch ${tag}: ${i + batch.length}/${files.length}`);
       const got = retry(gh, ['release', 'download', tag, '--repo', DRAFTS_REPO, '--dir', cache, ...batch.flatMap((f) => ['-p', f.asset])]);
       for (const f of batch) {
-        if (existsSync(cachePath(cache, f.id, f.kind))) report.fetched += 1;
+        if (existsSync(cachePath(cache, f.id, f.kind, f.ext))) report.fetched += 1;
         else report.missing.push({ id: f.id, kind: f.kind, why: got.status === 0 ? 'the release has no such asset' : `download failed: ${got.stderr.trim().slice(0, 120)}` });
       }
     }
@@ -749,7 +792,7 @@ export function verifyDrafts(index: DraftIndex, ids: readonly string[] | null, o
     for (const kind of FILE_KINDS) {
       const ref = draft.files[kind];
       if (ref === null) continue;
-      const file = readIf(cachePath(cache, draft.id, kind));
+      const file = readIf(cachePath(cache, draft.id, kind, ref.ext));
       if (file === null) {
         if (draft.stored == null) {
           if (!kept && !report.unpushed.includes(draft.id)) report.unpushed.push(draft.id);
@@ -894,7 +937,7 @@ function listPictures(dir: string, recursive: boolean): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = join(dir, e.name);
     if (e.isDirectory()) return recursive ? listPictures(p, true) : [];
-    return e.isFile() && e.name.endsWith('.png') ? [p] : [];
+    return e.isFile() && (DRAFT_EXTENSIONS as readonly string[]).includes(extname(e.name).toLowerCase()) ? [p] : [];
   }).sort();
 }
 
@@ -930,10 +973,15 @@ export function runCli(argv: readonly string[]): number {
       const base = { label, ...(provenance === undefined ? {} : { provenance }), hints, skipped, roundFromFolder: flags.has('round-from-folder') };
       const items: Collected[] = [];
       for (const target of positional) {
-        if (existsSync(join(target, 'manifest.jsonl'))) items.push(...collectRun(target, base));
-        else {
-          const files = statSync(target).isDirectory() ? listPictures(target, flags.has('recursive')) : [target];
-          items.push(...collectPictures(files, { ...base, pool: text('pool') ?? null, route: text('route') ?? null }));
+        const pictureOpts = { ...base, pool: text('pool') ?? null, route: text('route') ?? null };
+        const recursive = flags.has('recursive');
+        if (existsSync(join(target, 'manifest.jsonl'))) {
+          items.push(...collectRun(target, base));
+          // a run folder's own manifest names only its sprites; with --recursive the sub-folders (refinements, references) are read too
+          if (recursive) items.push(...collectPictures(listPictures(target, true), pictureOpts));
+        } else {
+          const files = statSync(target).isDirectory() ? listPictures(target, recursive) : [target];
+          items.push(...collectPictures(files, pictureOpts));
         }
       }
       const tag = text('tag') ?? (flags.has('backfill') ? `run-backfill-${label}` : undefined);

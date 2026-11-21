@@ -44,11 +44,13 @@ services:
       # empty unless .env sets it; dev-header refuses to start without ALLOW_DEV_HEADER=staging-only
       ALLOW_DEV_HEADER: ${ALLOW_DEV_HEADER:-}
       # the session mode (NEXT 18 e); each is empty unless .env sets it, and the API refuses to start in that
-      # mode without the two origins, or with only one of the Google pair
+      # mode without the two origins, or with only one of the Google or the Discord pair
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-}
       APP_ORIGIN: ${APP_ORIGIN:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
       MAILER: ${MAILER:-log}
       # empty unless .env sets it; the log mailer refuses to start without ALLOW_LOG_MAILER=staging-only
       ALLOW_LOG_MAILER: ${ALLOW_LOG_MAILER:-}

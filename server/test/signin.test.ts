@@ -2,14 +2,14 @@ import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { Server } from 'node:http';
 import { isSeed, newState, serialize, step, widenSeed, type Bundle, type Seed, type State } from '@game/kernel';
 
-import { createGameApi, createPlayerRecord, createSignIn, googleProvider, listen, type Mail, type PlayerRecord, type PlayerStore, type SignIn } from '../src';
+import { createGameApi, createPlayerRecord, createSignIn, discordProvider, googleProvider, listen, type Mail, type PlayerRecord, type PlayerStore, type SignIn } from '../src';
 import { countryLookup, type CountryLookup } from '../src/auth/country';
 import { ageGate, ageOn, consentAge, parseBirthDate, UNKNOWN_COUNTRY_AGE } from '../src/auth/age';
 import { takeOpening } from '../src/handover';
 import { LINK_SCRIPT } from '../src/auth/signin';
 import { pkceChallenge, tokenHash } from '../src/auth/tokens';
 import { loadBundle } from '../../tools/test/helpers/world.js';
-import { Browser, CLIENT_ID, CLIENT_SECRET, FakeGoogle, MemoryAuthStore } from './support/auth.js';
+import { Browser, CLIENT_ID, CLIENT_SECRET, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, FakeDiscord, FakeGoogle, MemoryAuthStore } from './support/auth.js';
 import { buildCountryDb, FIXTURE } from './support/mmdb.js';
 import { LocalPhone, STARTS, playOpening } from './support/phone.js';
 
@@ -57,12 +57,13 @@ function started(): State {
 }
 
 /** The API in the session mode, on a free port, with Google, a mail outbox and a clock the test moves. */
-async function ready(options: { google?: boolean; countryHeader?: string; countryLookup?: CountryLookup; addressHeader?: string; googleTimeoutMs?: number; ownKeys?: boolean } = {}) {
+async function ready(options: { google?: boolean; discord?: boolean; discordTimeoutMs?: number; countryHeader?: string; countryLookup?: CountryLookup; addressHeader?: string; googleTimeoutMs?: number; ownKeys?: boolean } = {}) {
   const clock = { now: Date.UTC(2026, 9, 21, 12) };
   const store = new MemoryAuthStore();
   const players = new Players(store);
   const google = new FakeGoogle();
   google.clock = () => clock.now;
+  const discord = new FakeDiscord();
   const outbox: Mail[] = [];
   // the redirect is built on the port, so the sign-in is made once the server listens
   const late: { signIn?: SignIn } = {};
@@ -82,6 +83,7 @@ async function ready(options: { google?: boolean; countryHeader?: string; countr
     ...(options.ownKeys ? {} : { newSeed: () => SECRET_SEED }),
     mailer: { name: 'test', send: (mail) => Promise.resolve(void outbox.push(mail)) },
     google: options.google === false ? undefined : googleProvider({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, fetch: google.fetch, timeoutMs: options.googleTimeoutMs }),
+    discord: options.discord === false ? undefined : discordProvider({ clientId: DISCORD_CLIENT_ID, clientSecret: DISCORD_CLIENT_SECRET, fetch: discord.fetch, timeoutMs: options.discordTimeoutMs }),
     publicOrigin: base,
     appOrigin: APP,
     countryHeader: options.countryHeader,
@@ -90,7 +92,7 @@ async function ready(options: { google?: boolean; countryHeader?: string; countr
     now: () => clock.now,
   });
   // the browser stands on the game's page: its calls carry the game's origin, as a real one's do
-  return { clock, store, players, google, outbox, base, signIn: late.signIn, browser: new Browser(base, APP) };
+  return { clock, store, players, google, discord, outbox, base, signIn: late.signIn, browser: new Browser(base, APP) };
 }
 
 /** The game's address with what happened in the fragment, as the browser is sent back. */
@@ -268,9 +270,9 @@ describe('sign-in with Google (NEXT 18 e)', () => {
     expect(w.store.tickets.size).toBe(0);
   });
 
-  test('Google without its client id is closed, and Discord is a slot that is not open yet: both starts go back to the game', async () => {
+  test('Google and Discord without their client ids are closed: both starts and callbacks go back to the game', async () => {
     // the starts are reached by navigating, so a refusal there is the redirect back, never raw JSON (finding 9)
-    const w = await ready({ google: false });
+    const w = await ready({ google: false, discord: false });
     const google = await w.browser.request('/auth/google/start');
     expect(google.status).toBe(303);
     expect(outcome(google)).toBe('not-open');
@@ -292,6 +294,155 @@ describe('sign-in with Google (NEXT 18 e)', () => {
     expect(callback.status).toBe(303);
     expect(outcome(callback)).toBe('provider');
     expect(w.google.exchanges).toHaveLength(1);
+    expect(w.store.tickets.size).toBe(0);
+    expect(w.store.sessions.size).toBe(0);
+  });
+});
+
+async function discordSignIn(w: Awaited<ReturnType<typeof ready>>, browser = w.browser): Promise<Response> {
+  const start = await browser.request('/auth/discord/start');
+  expect(start.status).toBe(302);
+  const authorize = new URL(start.headers.get('location')!);
+  return browser.request(`/auth/discord/callback?code=a-code&state=${authorize.searchParams.get('state')}`);
+}
+
+describe('sign-in with Discord (gate 4)', () => {
+  test('the start sends the browser to Discord with PKCE S256, a state and the two scopes, and binds the state to a cookie', async () => {
+    const w = await ready();
+    const start = await w.browser.request('/auth/discord/start');
+    const authorize = new URL(start.headers.get('location')!);
+    expect(`${authorize.origin}${authorize.pathname}`).toBe('https://discord.com/oauth2/authorize');
+    const query = Object.fromEntries(authorize.searchParams);
+    expect(query).toMatchObject({
+      client_id: DISCORD_CLIENT_ID,
+      redirect_uri: `${w.base}/auth/discord/callback`,
+      response_type: 'code',
+      scope: 'identify email',
+      code_challenge_method: 'S256',
+    });
+    expect(query.state).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(query).not.toHaveProperty('client_secret');
+    expect(start.headers.getSetCookie().find((line) => line.startsWith('__Host-of_flow='))).toBe(`__Host-of_flow=${query.state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
+  });
+
+  test('a new player signs up through Discord, and comes back through it at once', async () => {
+    const w = await ready();
+    const start = await w.browser.request('/auth/discord/start');
+    const authorize = new URL(start.headers.get('location')!);
+    const callback = await w.browser.request(`/auth/discord/callback?code=a-code&state=${authorize.searchParams.get('state')}`);
+    expect(outcome(callback)).toBe('signup');
+    // the code was exchanged with the secret and the verifier whose S256 is the challenge Discord saw
+    const exchange = w.discord.exchanges[0]!;
+    expect(exchange.get('client_secret')).toBe(DISCORD_CLIENT_SECRET);
+    expect(exchange.get('redirect_uri')).toBe(`${w.base}/auth/discord/callback`);
+    expect(pkceChallenge(exchange.get('code_verifier')!)).toBe(authorize.searchParams.get('code_challenge'));
+    // the identity was asked for with the token Discord handed out
+    expect(w.discord.asked).toEqual(['Bearer discord-access-token']);
+
+    expect(await (await w.browser.request('/auth/signup')).json()).toEqual({ email: 'player@example.com' });
+    expect((await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP })).status).toBe(201);
+    expect([...w.store.identities.keys()]).toEqual(['discord:80351110224678912']);
+
+    const phone = new Browser(w.base, APP);
+    expect(outcome(await discordSignIn(w, phone))).toBe('ok');
+    expect(await (await phone.request('/auth/me')).json()).toEqual({ name: 'Tess', email: 'player@example.com' });
+    expect(w.store.accounts.size).toBe(1);
+  });
+
+  test('an address that already has an account is refused through a new Discord account: never a second account, never a way in', async () => {
+    const w = await ready();
+    await googleSignIn(w);
+    await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
+    const stranger = new Browser(w.base, APP);
+    const refused = await discordSignIn(w, stranger);
+    expect(refused.status).toBe(303);
+    expect(outcome(refused)).toBe('email-taken');
+    expect(stranger.jar.has('__Host-of_session')).toBe(false);
+    expect(stranger.jar.has('__Host-of_signup')).toBe(false);
+    expect(w.store.accounts.size).toBe(1);
+    expect([...w.store.identities.keys()]).toEqual(['google:1234567890']);
+    expect(w.store.tickets.size).toBe(0);
+  });
+
+  test('the address\'s owner takes back an account made through Discord: the Discord way in is gone and its sessions end', async () => {
+    const w = await ready();
+    // someone made an account through a Discord account that carries the address
+    await discordSignIn(w);
+    await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
+    expect((await w.browser.request('/auth/me')).status).toBe(200);
+    // the address's owner proves the mailbox with a link
+    const owner = new Browser(w.base, APP);
+    const link = await emailLink({ ...w, browser: owner }, 'player@example.com');
+    expect(outcome(await followLink(owner, link))).toBe('ok');
+    expect((await owner.request('/auth/me')).status).toBe(200);
+    // the Discord session no longer answers, and Discord no longer leads into the account
+    expect((await w.browser.request('/auth/me')).status).toBe(401);
+    expect([...w.store.identities.keys()]).toEqual(['email:player@example.com']);
+    expect(outcome(await discordSignIn(w))).toBe('email-taken');
+    expect(w.store.accounts.size).toBe(1);
+  });
+
+  test('a Discord sign-in that races the take-back makes no session: the drop lands between its lookup and its session', async () => {
+    const w = await ready();
+    await discordSignIn(w);
+    await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
+    const accountId = [...w.store.accounts.keys()][0]!;
+    const stranger = new Browser(w.base, APP);
+    const create = w.store.createSession.bind(w.store);
+    w.store.createSession = async (...args) => {
+      // the address's owner proves the mailbox at this very moment
+      await w.store.dropIdentities(accountId, ['discord'], w.clock.now);
+      return create(...args);
+    };
+    const raced = await discordSignIn(w, stranger);
+    expect(outcome(raced)).toBe('email-taken');
+    expect(stranger.jar.has('__Host-of_session')).toBe(false);
+  });
+
+  test('a proof of the address that joins an account with no weaker way in leaves its sessions alone', async () => {
+    const w = await ready();
+    await googleSignIn(w);
+    await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
+    const phone = new Browser(w.base, APP);
+    expect(outcome(await followLink(phone, await emailLink({ ...w, browser: phone })))).toBe('ok');
+    expect((await w.browser.request('/auth/me')).status).toBe(200);
+  });
+
+  test.each([
+    ['an address Discord has not verified', { verified: false }, 'email-unverified'],
+    ['no address', { email: null }, 'email-unverified'],
+    ['an empty address', { email: '' }, 'email-unverified'],
+    ['no account id', { id: undefined }, 'provider'],
+    ['an id that is not a Discord id', { id: '../me' }, 'provider'],
+  ] as const)('%s is refused, with nothing made', async (_name, change, reason) => {
+    const w = await ready();
+    w.discord.me = { ...w.discord.me, ...change };
+    expect(outcome(await discordSignIn(w))).toBe(reason);
+    expect(w.store.tickets.size).toBe(0);
+    expect(w.store.identities.size).toBe(0);
+  });
+
+  test('Discord refusing the code, or the player cancelling, sends the player back with nothing made', async () => {
+    const w = await ready();
+    w.discord.tokenStatus = 400;
+    expect(outcome(await discordSignIn(w))).toBe('provider');
+    expect(w.discord.asked).toHaveLength(0);
+    const start = await w.browser.request('/auth/discord/start');
+    const state = new URL(start.headers.get('location')!).searchParams.get('state');
+    expect(outcome(await w.browser.request(`/auth/discord/callback?error=access_denied&state=${state}`))).toBe('provider');
+    expect(w.store.tickets.size).toBe(0);
+  });
+
+  test.each([
+    ['rejects', 'reject'],
+    ['answers a page that is not JSON', 'not-json'],
+    ['never answers', 'hang'],
+  ] as const)('a token call that %s sends the player back to the game, with nothing made (finding 8)', async (_name, fault) => {
+    const w = await ready({ discordTimeoutMs: 50 });
+    w.discord.tokenFault = fault;
+    const callback = await discordSignIn(w);
+    expect(callback.status).toBe(303);
+    expect(outcome(callback)).toBe('provider');
     expect(w.store.tickets.size).toBe(0);
     expect(w.store.sessions.size).toBe(0);
   });

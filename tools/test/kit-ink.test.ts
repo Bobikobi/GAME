@@ -1,7 +1,7 @@
 import { PNG } from 'pngjs';
 import { describe, expect, test } from 'vitest';
 
-import { INK_HEX, applyInk, inkShare } from '../src/kit/ink.js';
+import { INK_HEX, applyInk, inkShare, inkSprites } from '../src/kit/ink.js';
 import { CORE_PALETTE, hexToRgb } from '../src/kit/palette.js';
 import { INK_MIN_SHARE, checkInk } from '../src/ink-check.js';
 import type { Assembled } from '../src/assemble.js';
@@ -86,6 +86,11 @@ describe('the ink check', () => {
     expect(bad[0]!.message).toContain('0%');
     expect(INK_MIN_SHARE).toBe(0.95);
     expect(checkInk(kitWith(applyInk(sprite(), 5), 4))).toEqual([]);
+  });
+
+  test('animals wear no outline: the creatures group is not measured, and kit:ink leaves it alone', () => {
+    expect(checkInk(kitWith(sprite(), 4, 'creatures/roe'))).toEqual([]);
+    expect(inkSprites({ 'creatures/roe': { file: 'x.png', w: 5, density: 4 }, 'props/x': { file: 'y.png', w: 5, density: 4 } }).map(([n]) => n)).toEqual(['props/x']);
   });
 
   test('ground tiles are not measured, and 16 px sprites give one warning', () => {

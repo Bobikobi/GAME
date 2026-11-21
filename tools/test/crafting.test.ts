@@ -8,7 +8,7 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { CampFile, ParamsFile, ProfessionFile, ShopFile } from '@game/schema';
+import type { CampFile, ParamsFile, ProfessionFile, ReactionFile, ShopFile } from '@game/schema';
 import { missOutcome, recipeProfession, recipeTier } from '@game/kernel';
 import { afterAll, describe, expect, it } from 'vitest';
 import { classFits } from '../src/assemble';
@@ -59,6 +59,8 @@ const CORE_WORKSHOP = [
   'camp/workbench.json',
   'camp/workshop.json',
   'recipes/stone-flakes.json',
+  'recipes/hammerstone.json',
+  'recipes/knapped-pick.json',
   'recipes/stone-blade.json',
   'recipes/flint-trowel.json',
   'recipes/stone-trowel.json',
@@ -88,6 +90,10 @@ const item = (name: string, extra: object = {}) => ({
   ...extra,
 });
 const items = (...list: object[]) => ({ ...envelope('items', 'items'), items: list });
+const set = (name: string, effect = 'gather_speed_pct', value = 2) => ({
+  ...envelope('set', name),
+  set: { id: `tester/${name}`, effect, value },
+});
 const recipe = (name: string, body: object) => ({
   ...envelope('recipe', name),
   recipe: { station: 'fire', active_ms: 4000, level: 1, known: 'start', ...body },
@@ -218,6 +224,7 @@ describe('a world that uses the grammar', () => {
 describe('a world that wears, misses and builds over a part', () => {
   const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
   const result = world({
+    'sets/field.json': set('field'),
     'items.json': items(
       garment('cap', { slot: 'head', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'tester/field' }),
       garment('smock', {
@@ -270,6 +277,7 @@ describe('a world that wears, misses and builds over a part', () => {
 describe('worn items the check refuses', () => {
   const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
   const result = world({
+    'sets/field.json': set('field'),
     'items.json': items(
       item('tunic', { class: 'garment' }),
       item('belt', { class: 'garment', wear: { slot: 'jewelry' } }),
@@ -288,6 +296,8 @@ describe('worn items the check refuses', () => {
       garment('scarf', { slot: 'top', set: 'core/borrowed' }),
       garment('hood', { slot: 'head', set: 'tester/crowd' }),
       garment('helm', { slot: 'head', set: 'tester/crowd' }),
+      garment('field-cap', { slot: 'head', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'tester/field' }),
+      garment('field-smock', { slot: 'top', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'tester/field' }),
       item('badge', { class: 'jewelry', wear: { slot: 'jewelry', effects: [{ effect: 'craft_chance_pct', value: 1 }] }, premium_later: true }),
       item('pin', { premium_later: true }),
       item('tiara', { class: 'jewelry', wear: { slot: 'jewelry', look: true }, premium_later: true }),
@@ -311,9 +321,11 @@ describe('worn items the check refuses', () => {
     expect(said).toContain('gather_speed_pct is named twice: each effect once');
   });
   it('a set of one piece, of another creator, or that cannot be worn whole', () => {
+    expect(said).toContain('no set "tester/lonely": declare its effect and value in a content sets row');
     expect(said).toContain('the set "tester/lonely" has one piece: a set has two at least');
     expect(said).toContain('a set holds one creator\'s pieces: its id starts with "tester/"');
     expect(said).toContain('the set "tester/crowd" cannot be worn whole: too many pieces for the head (G44)');
+    expect(said).toContain('the set "tester/field" gives 12% gather_speed_pct; 2 pieces give at most 10% at tier 1 (G44)');
   });
   it('the premium marker anywhere but on an obtainable look with no effect', () => {
     expect(said.filter((m) => m === 'only a look item with no effect may carry the premium marker (G39)')).toHaveLength(2);
@@ -617,5 +629,62 @@ describe('the made share the check refuses (CR-18)', () => {
       .map((i) => i.where)
       .sort();
     expect(where).toEqual(['params.k_craft_permille.max', 'params.k_permille.max']);
+  });
+});
+
+describe('node tools the check refuses (QUARRYING 2, 16)', () => {
+  const ore = item('ore', { class: 'stone' });
+  const mined = /^"tester\/nodes" names an? (pick|hammer) but not work: "mine"/;
+  const locked = (id: string, kind: string) => `"${id}" requires ${kind}, but no shop sells one and no start-known recipe makes one at tier 1`;
+  const core = messages(runCheck());
+
+  /** The errors of the tester's files: the fixture node and its output. */
+  const testers = (r: CheckResult) => errors(r).filter((i) => i.file.includes('tester'));
+
+  it('a node that names a pick or a hammer without work mine fails only this row, and no core node does', () => {
+    for (const tool of ['pick', 'hammer']) {
+      const own = testers(world({ 'resources/nodes.json': node(ore, { tool }) })).map((i) => i.message);
+      expect(own, tool).toEqual([expect.stringMatching(mined)]);
+      expect(own[0], tool).toContain(`names a ${tool} but not work: "mine"`);
+    }
+    expect(core.filter((m) => m.includes('but not work: "mine"'))).toEqual([]);
+  });
+
+  it('a pick or a hammer node with work mine passes once a tier-1 tool of its kind is in, and a pick fails without the recipe', () => {
+    for (const tool of ['pick', 'hammer']) {
+      const r = world({ 'resources/nodes.json': node(ore, { tool, work: 'mine' }) });
+      expect(testers(r), tool).toEqual([]);
+      expect(messages(r).filter((m) => m.includes('tester/nodes') || m.includes(`no work asks for a ${tool}`)), tool).toEqual([]);
+    }
+    const pickNode = { 'resources/nodes.json': node(ore, { tool: 'pick', work: 'mine' }) };
+    const without = testers(world(pickNode, [removeCore('recipes/knapped-pick.json')])).map((i) => i.message);
+    expect(without).toEqual([expect.stringContaining(locked('tester/nodes', 'a pick'))]);
+  });
+
+  it('a node a reaction makes appear may not name a trowel, since it cannot say work mine', () => {
+    const r = world({}, [
+      editCore<ReactionFile>('reactions/mushrooms-after-rain.json', (d) => {
+        if ('appear' in d.reaction.then) d.reaction.then.appear.tool = 'trowel';
+      }),
+    ]);
+    const own = errors(r).filter((i) => i.message.includes('core/mushrooms-after-rain') || i.file.includes('mushrooms-after-rain'));
+    expect(own.map((i) => [i.where, i.message])).toEqual([
+      ['reaction.then.appear.tool', expect.stringContaining('"core/mushrooms-after-rain" makes a node appear that names a trowel, but an appearing node cannot say work: "mine"')],
+    ]);
+    expect(core.filter((m) => m.includes('makes a node appear that names'))).toEqual([]);
+  });
+
+  it('a node whose tool no shop sells and no start-known recipe makes', () => {
+    const said = messages(
+      world({}, [
+        editCore<ShopFile>('shops/trader-shop.json', (d) => {
+          d.shop.sells = d.shop.sells.filter((o) => o.item !== 'core/axe');
+        }),
+      ]),
+    );
+    const axe = said.filter((m) => m.includes('requires an axe'));
+    expect(axe).toContainEqual(expect.stringContaining(locked('core/oak-trees', 'an axe')));
+    expect(axe).toContainEqual(expect.stringContaining(locked('core/fallen-logs', 'an axe')));
+    expect(core.filter((m) => m.includes('no race may be locked out'))).toEqual([]);
   });
 });

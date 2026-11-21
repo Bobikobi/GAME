@@ -7,8 +7,10 @@
  * that proof returns.
  *
  * The measures are CR-40's, read off the verified state alone: worth (gold plus the goods in the bag at
- * the trader's pay today), the collection (what the journal says was discovered), and the levels (every
- * profession's level, added up). Places and camp count nothing while houses and plots are paused.
+ * the trader's pay today), the collection (what the journal says was discovered), the levels (every
+ * profession's level, added up), and the exploration (the places found and brought home, G63; DECISIONS.md,
+ * 2026-10-09: the players' common task is to explore the world). Houses and the camp count nothing while
+ * houses and plots are paused.
  */
 import type { Pool } from 'pg';
 
@@ -17,13 +19,13 @@ import { type Bundle, type PublicState, type State, professionLevel, salePrice }
 import { type AccountBooks, type LedgerRow, type LoggedAction, checkAccount, replayAccount } from './ledger';
 import { seedOfColumn } from './store-pg';
 
-export type BoardName = 'wealth' | 'collection' | 'levels';
+export type BoardName = 'wealth' | 'collection' | 'levels' | 'exploration';
 
-export const BOARDS: readonly BoardName[] = ['wealth', 'collection', 'levels'];
+export const BOARDS: readonly BoardName[] = ['wealth', 'collection', 'levels', 'exploration'];
 
 export interface ScoreRow {
   board: BoardName;
-  /** the measure, in integers: milli-gold for worth, a count for the other two */
+  /** the measure, in integers: milli-gold for worth, a count for the others */
   score: number;
 }
 
@@ -68,6 +70,7 @@ export function scoresOf(bundle: Bundle, state: PublicState): ScoreRow[] {
     { board: 'wealth', score: state.player.gold + goods },
     { board: 'collection', score: state.player.journal.length },
     { board: 'levels', score: levels },
+    { board: 'exploration', score: state.player.explored?.length ?? 0 },
   ];
 }
 

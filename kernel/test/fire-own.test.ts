@@ -180,6 +180,17 @@ describe('kindling', () => {
     const safe = base.map.slots.find((s) => s.safe === true)!;
     expect(dangerAt(base, [safe.x, safe.y])).toBe(0);
   });
+
+  test('an area that carries d hands it out, the smallest covering area wins, safe ground stays 0', () => {
+    const b = world();
+    const slot = (id: string, x: number, y: number, w: number, h: number, danger?: number) => ({ id, kind: 'area' as const, x, y, w, h, ...(danger === undefined ? {} : { danger }) });
+    const slots = [...b.map.slots, slot('t/wide', F[0] - 3, F[1] - 3, 7, 7, 2), slot('t/narrow', F[0], F[1], 1, 1, 3), slot('t/none', F[0] + 6, F[1], 2, 2)];
+    const c = { ...b, map: { ...b.map, slots } };
+    expect(dangerAt(c, F)).toBe(3);
+    expect(dangerAt(c, [F[0] + 1, F[1]])).toBe(2);
+    expect(dangerAt(c, [F[0] + 6, F[1]])).toBe(1);
+    expect(dangerAt(c, TOWN)).toBe(0);
+  });
 });
 
 describe('where it is refused, and the logs stay', () => {

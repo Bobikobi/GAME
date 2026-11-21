@@ -2,32 +2,87 @@ import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vi
 
 import type { Bundle } from '@game/kernel';
 import { Session } from '../src/session';
-import { STRIDE, SWING_MS, WIND_UP, autoKind, beatAt, blowsDue, resourceKind, strideFrame, swingsFor, treasureKind } from '../src/work';
+import { STRIDE, SWING_MS, WIND_UP, beatAt, blowsDue, nextUnit, resourceKind, strideFrame, swingsFor, treasureKind, type WorkHands } from '../src/work';
 import { loadBundle } from '../../tools/test/helpers/world';
 
-describe('which work runs by itself', () => {
-  test('a tool makes it so: the axe fells, the trowel digs, the pick mines', () => {
-    expect(autoKind('axe')).toBe('fell');
-    expect(autoKind('trowel')).toBe('dig');
-    expect(autoKind('pick')).toBe('mine');
+describe('which animation a work plays', () => {
+  test('a tool names it: the axe fells, the trowel digs, the pick mines, the rod fishes', () => {
+    expect(resourceKind({ tool: 'axe' })).toBe('fell');
+    expect(resourceKind({ tool: 'pick' })).toBe('mine');
+    expect(resourceKind({ tool: 'rod' })).toBe('fish');
+    expect(treasureKind({ tool: 'trowel' })).toBe('dig');
   });
 
-  test('herbs, stones and finds by hand keep their own way', () => {
-    expect(autoKind(undefined)).toBeUndefined();
-    expect(autoKind('basket')).toBeUndefined();
+  test('herbs and finds by hand are picked: every work has an animation, none has a timing cue', () => {
+    expect(resourceKind({})).toBe('pick');
+    expect(resourceKind({ tool: 'basket' })).toBe('pick');
+    expect(treasureKind({})).toBe('pick');
   });
 
   test('in the core content: the oaks and logs are felled, the stones are struck, the herbs are picked', () => {
     const b = loadBundle();
     expect(resourceKind(b.resources['core/oak-trees']!)).toBe('fell');
     expect(resourceKind(b.resources['core/fallen-logs']!)).toBe('fell');
-    expect(resourceKind(b.resources['core/keystone']!)).toBeUndefined();
-    // stone is mined: it works by itself with no tool (DECISIONS.md, 2026-10-25)
+    expect(resourceKind(b.resources['core/keystone']!)).toBe('pick');
+    // stone is mined: it works with no tool (DECISIONS.md, 2026-10-25)
     expect(resourceKind(b.resources['core/river-stones']!)).toBe('mine');
     expect(resourceKind({ work: 'mine', tool: undefined })).toBe('mine');
-    expect(resourceKind(b.resources['core/wild-herbs']!)).toBeUndefined();
+    expect(resourceKind(b.resources['core/wild-herbs']!)).toBe('pick');
     expect(treasureKind(b.treasures['core/ruins-gate']!)).toBe('dig');
-    expect(treasureKind(b.treasures['core/bridge-glint']!)).toBeUndefined();
+    expect(treasureKind(b.treasures['core/bridge-glint']!)).toBe('pick');
+  });
+});
+
+describe('the work that runs on by itself (QUARRYING 10)', () => {
+  /** A node of `stock` units: each act takes one and reports its time, as the kernel does. */
+  function node(stock: number, over: Partial<{ error: string; events: string[] }> = {}): WorkHands & { taken: number; acts: number } {
+    const hands = {
+      taken: 0,
+      acts: 0,
+      ready: () => hands.taken < stock,
+      act: (): ReturnType<WorkHands['act']> => {
+        hands.acts += 1;
+        if (over.error !== undefined) return { ok: false, error: over.error };
+        hands.taken += 1;
+        return { ok: true, events: [{ e: 'busy', ms: 900 }, ...(over.events ?? []).map((e) => ({ e }))] } as never;
+      },
+    };
+    return hands;
+  }
+  const action = { t: 'gather', node: 'n', at: [0, 0] } as const;
+
+  test('with no input it asks for the next unit again and again until the thing runs out, and every unit stays', async () => {
+    const hands = node(3);
+    const log: string[] = [];
+    for (;;) {
+      const next = await nextUnit(hands, action, false);
+      log.push(next.kind);
+      if (next.kind !== 'go') break;
+      expect(next.ms).toBe(900);
+    }
+    expect(log).toEqual(['go', 'go', 'go', 'out']);
+    expect(hands.taken).toBe(3);
+  });
+
+  test('the player leaving stops it before the next unit, and what was taken stays taken', async () => {
+    const hands = node(3);
+    expect((await nextUnit(hands, action, false)).kind).toBe('go');
+    expect((await nextUnit(hands, action, true)).kind).toBe('left');
+    expect(hands.taken).toBe(1);
+    expect(hands.acts).toBe(1);
+  });
+
+  test('a full bag, a level or the hour stops it with the kernel\'s words', async () => {
+    expect(await nextUnit(node(3, { error: 'Your bag is full.' }), action, false)).toEqual({ kind: 'stopped', error: 'Your bag is full.' });
+  });
+
+  test('danger stops it: a bite, a fall, a predator that sees you', async () => {
+    for (const e of ['hurt', 'fall', 'seen']) {
+      const hands = node(3, { events: [e] });
+      expect(await nextUnit(hands, action, false)).toEqual({ kind: 'stopped' });
+      // the unit that was taken before the danger is still taken
+      expect(hands.taken).toBe(1);
+    }
   });
 });
 
@@ -110,41 +165,45 @@ describe('walking away from work', () => {
     return { s, node: node[0], at };
   }
 
-  test('the action stands while the work lasts, and taking it back leaves nothing behind', () => {
+  test('a unit is taken at once and stays: the next unit is asked for when it has ended, and nothing is taken back', () => {
     const { s, node, at } = fellingSession();
     const logs = s.state.player.bag['core/log'] ?? 0;
-    const before = JSON.stringify(s.state);
-    const res = s.act({ t: 'gather', node, grade: 3, at });
+    const res = s.act({ t: 'gather', node, at });
     expect(res.ok).toBe(true);
     expect(s.busy).toBe(true);
-    expect(s.state.player.bag['core/log']).toBe(logs + 3);
-    expect(s.state.nodes[node]!.readyAt).toBeGreaterThan(s.tick);
-
-    expect(s.cancelWork()).toBe(true);
-    expect(s.busy).toBe(false);
-    expect(JSON.stringify(s.state)).toBe(before);
-    expect(s.state.player.bag['core/log'] ?? 0).toBe(logs);
-    expect(s.tail.some((e) => e.a.t === 'gather')).toBe(false);
-    // the tree can be felled again at once
-    expect(s.check({ t: 'gather', node, grade: 3, at })).toBeUndefined();
-  });
-
-  test('once the work has run its time there is nothing to take back', () => {
-    const { s, node, at } = fellingSession();
-    s.act({ t: 'gather', node, grade: 3, at });
-    s.advance(250);
+    // one log a unit, not the whole tree
+    expect(s.state.player.bag['core/log']).toBe(logs + 1);
+    expect(s.state.nodes[node]!.taken).toBe(1);
+    // the player stops: the log taken is theirs, and the tree keeps the rest of its stock
+    s.report(at, false);
     for (let i = 0; i < 20; i++) s.advance(250);
     expect(s.busy).toBe(false);
-    expect(s.cancelWork()).toBe(false);
-    expect(s.state.player.bag['core/log']).toBeGreaterThanOrEqual(3);
+    expect(s.state.player.bag['core/log']).toBe(logs + 1);
+    expect(s.state.nodes[node]!.taken).toBe(1);
+    // and the work goes on from where it stood
+    expect(s.check({ t: 'gather', node, at })).toBeUndefined();
   });
 
-  test('a hunt heard during the work changes the world under it, so it can no longer be taken back', () => {
+  test('worked to its end the tree gives its whole yield and grows back after its own time', () => {
     const { s, node, at } = fellingSession();
-    s.act({ t: 'gather', node, grade: 3, at });
+    const logs = s.state.player.bag['core/log'] ?? 0;
+    const yieldOf = bundle.resources['core/oak-trees']!.yield;
+    for (let i = 0; i < yieldOf; i++) {
+      expect(s.act({ t: 'gather', node, at })).toMatchObject({ ok: true });
+      for (let k = 0; k < 40; k++) s.advance(250);
+    }
+    expect(s.state.player.bag['core/log']).toBe(logs + yieldOf);
+    expect(s.state.nodes[node]!.taken).toBeUndefined();
+    expect(s.state.nodes[node]!.readyAt).toBeGreaterThan(s.tick);
+  });
+
+  test('a hunt heard during the work does not take back what was taken', () => {
+    const { s, node, at } = fellingSession();
+    const logs = s.state.player.bag['core/log'] ?? 0;
+    s.act({ t: 'gather', node, at });
     s.report(at, true);
     expect(s.busy).toBe(true);
-    expect(s.cancelWork()).toBe(false);
+    expect(s.state.player.bag['core/log']).toBe(logs + 1);
   });
 });
 

@@ -12,6 +12,7 @@ import type {
   ItemDef,
   NodeSizeName,
   Npc,
+  Passage,
   Pocket,
   Profession,
   Quest,
@@ -23,8 +24,10 @@ import type {
   Restore,
   School,
   Search,
+  SeaEventDef as SeaEventBody,
   Shop,
   Treasure,
+  WearSetDef,
 } from '@game/schema';
 
 export type { BodyEffectName } from '@game/schema';
@@ -41,6 +44,8 @@ export interface Meta {
 export type ItemInfo = ItemDef & { creator: string; file: string };
 /** A class an extension declares under a base class (DECISIONS.md, 2026-10-09). */
 export type ClassInfo = ClassDef & { creator: string; file: string };
+/** A clothing set's content-owned full-set bonus. */
+export type WearSetInfo = WearSetDef & { creator: string; file: string };
 export type ResourceDef = Meta & Resource;
 export type TreasureDef = Meta & Treasure;
 export type SearchDef = Meta & Search;
@@ -49,6 +54,9 @@ export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
 export type QuestDef = Meta & Quest;
 export type ExpeditionDef = Meta & Expedition;
+/** A way across water (docs/design/SEA_CROSSING.md): board at a jetty, sail, meet the one event drawn, land. */
+export type PassageDef = Meta & Passage;
+export type SeaEventDef = SeaEventBody;
 export type RestoreDef = Meta & Restore;
 export type CampDef = Meta & Camp;
 /** A race the player picks at the title (DECISIONS.md, 2026-10-22). */
@@ -62,6 +70,35 @@ export type ShopDef = Meta & Shop;
 export type MapDef = Meta & GameMap;
 /** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
 export type ReactionDef = Meta & Reaction;
+
+/** A living fire's numbers (GRUNT CR-110), read by the client only. */
+export interface Flicker {
+  band_pct: number;
+  step_min_ms: number;
+  step_max_ms: number;
+  frame_jitter_pct: number;
+  start_spread_ms: number;
+  ember_per_s: number;
+  spark_gap_min_s: number;
+  spark_gap_max_s: number;
+}
+
+/** How a predator is heard far off and near, and how its bite is drawn (NEXT.md 12 c). Display only: no rule reads it. */
+export interface Telegraph {
+  howl_tiles: number;
+  howl_pct: number;
+  howl_gap_min_s: number;
+  howl_gap_max_s: number;
+  near_tiles: number;
+  near_pct: number;
+  near_curve: number;
+  dash_ms: number;
+  lunge_ms: number;
+  lunge_px: number;
+  flinch_ms: number;
+  flinch_px: number;
+  hit_ms: number;
+}
 
 export interface Params {
   /** The hours the valley is washed in a colour and the sun's shear (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
@@ -97,8 +134,12 @@ export interface Params {
   craft_miss_keep_pct: number;
   /** the largest value of one worn effect, by item tier from tier 1 (the last entry holds above) */
   wear_effect_max_pct: number[];
-  /** what a full set adds to its pieces' effects, in percent */
-  wear_set_bonus_pct: number;
+  /** the level a worn piece's `req` asks, by item tier from tier 1 (the last entry holds above; PROGRESSION 5.6) */
+  wear_req_level: number[];
+  /** the largest bonus a worn piece gives one attribute, by item tier from tier 1 (PROGRESSION 5.6) */
+  attr_bonus_max: number[];
+  /** past the attr_bonus_max table, what each further tier adds */
+  attr_bonus_step: number;
   drift_budget_permille: number;
   /** the health bar's base top, in whole points (stamina adds to it) */
   hp_cap: number;
@@ -107,13 +148,35 @@ export interface Params {
   walk_step_ms: number;
   /** maximum path length allowed for a move report; defaults to 32 for older content */
   move_reach_max: number;
+  /** pillar 1's ceiling in game milliseconds: the longest walk without a pay the pay-gap check (G62) allows; defaults to 90000 for older content */
+  pay_gap_ms: number;
+  /** tiles away at which a pay is already on screen, added to the pay-gap check's allowance (G62); defaults to 5 for older content */
+  pay_sight_tiles: number;
   /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
   hp_low_pct: number;
   /** safe_tiles: the ring of safe ground around the player's own fire while it burns; burn_pct_per_d: how much faster its logs burn for each step of the area's danger, in percent */
-  fire: { cap: number; log_ms: number; warn_min: number; safe_tiles: number; burn_pct_per_d: number };
+  fire: {
+    cap: number;
+    log_ms: number;
+    warn_min: number;
+    safe_tiles: number;
+    burn_pct_per_d: number;
+    /** how a burning fire moves, flickers and crackles (GRUNT CR-110): display only, the kernel never reads it */
+    flicker?: Flicker;
+  };
   hazard: {
     /** refill_bp: how high a hunt outrun to a safe place lifts health, in basis points of the cap: what its bites took comes back, up to this share */
-    predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number; refill_bp: number };
+    predator: {
+      reach: number;
+      pace_ms: number;
+      eyes: number;
+      catch_ms: number;
+      bite_ms: number;
+      bite_pct: number;
+      refill_bp: number;
+      /** the threat telegraph (NEXT.md 12 c): read by the client only, never by a rule */
+      telegraph?: Telegraph;
+    };
     pit: { harm_pct: number };
     trap: { harm_pct: number };
     deep_water: { harm_pct: number };
@@ -137,14 +200,14 @@ export interface Params {
    * Dressing a taken animal (docs/design/HUNTING.md sections 5-6): what one step takes, how many game days a carcass
    * keeps its meat and then anything, and how often an animal appears fine or true (basis points).
    */
-  hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; grade2_bp: number; grade3_bp: number };
+  hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; tan_cure_d: number; grade2_bp: number; grade3_bp: number };
   /**
    * The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1):
-   * the numbers every kind shares, its own character being the kind's `behaviour`. Ticks, think steps, tiles and game ms.
+   * the numbers every kind shares, its own character being the kind's `behaviour`. Durations are game ms.
    */
   wild: {
     tick_ms: number;
-    think_ticks: number;
+    think_ms: number;
     wake_tiles: number;
     awake_max: number;
     catchup_max_steps: number;
@@ -163,6 +226,10 @@ export interface Params {
     town_keep_day: number;
     town_keep_night: number;
   };
+  /**
+   * The fight (docs/design/COMBAT.md section 4.9): durations in game ms, points and tiles. The kernel derives pulses from wild.tick_ms. Inert while `enabled` is 0 (G35).
+   */
+  combat: { enabled: number; swing_quick_ms: number; swing_standard_ms: number; swing_heavy_ms: number; swing_floor_ms: number; bare_windup_ms: number; bare_base: number; tool_strike_permille: number; windup_min_ms: number; windup_max_ms: number; active_ms: number; rehit_ms: number; bite_div: number; behind_permille: number; weak_permille: number; mercy_ms: number; stun_ms: number; knockback_tiles: number; dodge_tiles: number; dodge_ms: number; dodge_cooldown_ms: number; breath_base: number; breath_per_stamina: number; breath_refill: number; breath_hold_ms: number; attack_breath: number; guard_drain: number; guard_hit_breath: number; dodge_breath: number; breath_stagger_ms: number; guard_stagger_ms: number; engage_tiles: number; leash_tiles: number; give_up_ms: number; claim_lock_ms: number; pay_per_s_mg: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
@@ -222,6 +289,8 @@ export interface Bundle {
   tag: string;
   params: Params;
   items: Record<string, ItemInfo>;
+  /** Clothing sets and the bonus unique to each one, by set id. */
+  sets: Record<string, WearSetInfo>;
   /** Classes declared by extensions, by id. The base classes are fixed in the schema. */
   classes: Record<string, ClassInfo>;
   resources: Record<string, ResourceDef>;
@@ -232,6 +301,7 @@ export interface Bundle {
   npcs: Record<string, NpcDef>;
   quests: Record<string, QuestDef>;
   expeditions: Record<string, ExpeditionDef>;
+  passages: Record<string, PassageDef>;
   restores: Record<string, RestoreDef>;
   camps: Record<string, CampDef>;
   races: Record<string, RaceDef>;

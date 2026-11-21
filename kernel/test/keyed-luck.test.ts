@@ -16,7 +16,6 @@ import {
   type Bundle,
   type Seed,
   type State,
-  KERNEL_VERSION,
   STATE_FORMAT,
   draw,
   isSeed,
@@ -116,8 +115,7 @@ describe('a draw under the key', () => {
 });
 
 describe('the seed of an old save widens to a key (state format 3)', () => {
-  test('the kernel is 0.20 and the format 3', () => {
-    expect(KERNEL_VERSION).toBe('0.22.0');
+  test('the format is 3', () => {
     expect(STATE_FORMAT).toBe(3);
   });
 

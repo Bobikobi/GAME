@@ -167,7 +167,7 @@ body {
 .btn.small {
   padding: 3px 9px;
   min-height: 32px;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .btn.big {
@@ -442,7 +442,7 @@ textarea {
   align-items: center;
   gap: 6px;
   padding: 2px 8px;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .meter-bar {
@@ -480,6 +480,15 @@ textarea {
 .meter-num {
   min-width: 2ch;
   text-align: right;
+}
+
+/* a bite (the threat telegraph's act, NEXT.md 12 c): the meter turns the warning colour for a moment, and nothing moves */
+.meter[data-hit] {
+  --hud-line: var(--ui-hud-line-warn);
+}
+
+.meter[data-hit] .meter-bar i {
+  background: var(--ui-warn);
 }
 
 .chip {
@@ -734,7 +743,75 @@ body {
   background: var(--red2);
   color: var(--paper);
   border: 2px solid var(--ink);
-  font-size: 13px;
+  font-size: 16px;
+}
+
+/* ------------------------------------------------------------ the crossing card (SEA_CROSSING.md): frame D, where the prompt sits */
+
+#ui > .sea-card {
+  pointer-events: auto;
+}
+
+.sea-card {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--prompt-lift));
+  transform: translateX(-50%);
+  width: min(380px, calc(100vw - 24px));
+  /* clear of frame D's corner pieces */
+  padding: 14px 20px;
+  font-size: 16px;
+}
+
+.sea-head b,
+.sea-event b {
+  font-family: var(--ui-display);
+  font-weight: 600;
+  color: var(--ui-gold-5);
+}
+
+.sea-event b {
+  display: block;
+}
+
+.sea-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.sea-track {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.sea-track i {
+  flex: 1;
+  height: 6px;
+  border: 1px solid var(--ui-gold-5);
+}
+
+.sea-track i.on {
+  background: var(--ui-gold-5);
+}
+
+.sea-event,
+.sea-clue,
+.sea-held {
+  margin: 4px 0;
+}
+
+.sea-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.sea-acts .btn {
+  flex: 1 1 auto;
 }
 
 /* ------------------------------------------------------------ touch */
@@ -830,8 +907,8 @@ body {
 .tbtn {
   font: inherit;
   font-size: 22px;
-  width: 68px;
-  height: 68px;
+  width: calc(68px * var(--btn-scale, 1));
+  height: calc(68px * var(--btn-scale, 1));
   border-radius: 50%;
   border: 3px solid var(--ink);
   background: var(--red2);
@@ -843,8 +920,8 @@ body {
 }
 
 .tbtn.b {
-  width: 56px;
-  height: 56px;
+  width: calc(56px * var(--btn-scale, 1));
+  height: calc(56px * var(--btn-scale, 1));
   font-size: 18px;
   margin-bottom: 30px;
   background: var(--grey2);
@@ -861,7 +938,7 @@ body {
   bottom: calc(100% + 10px);
   width: auto;
   min-width: 44px;
-  height: 44px;
+  height: max(44px, calc(44px * var(--btn-scale, 1)));
   padding: 0 12px;
   border-radius: 0;
   font-size: 16px;
@@ -878,6 +955,257 @@ body {
 
 .tbtn.down {
   transform: translateY(3px);
+}
+
+/* the landscape's own pieces wait in portrait */
+.stick-zone,
+.stick,
+.tbtn.nav {
+  display: none;
+}
+
+/* ------------------------------------------------------------ touch, landscape */
+
+/* A phone on its side plays in the Wild Rift grammar (the owner, 30.10): a floating stick in the left half, the
+   buttons under the right thumb, the HUD in one band along the top edge. The skin is the owner's pick B (1.11): the
+   stick an open gold ring, the knob and the buttons gold-rimmed lacquer coins with an inset ring, the glyph cut in gold. */
+.touch-on.landscape {
+  --prompt-lift: 10px;
+  /* the landscape controls draw at 40% transparency, the whole control at once (lacquer, rim and glyph): the
+     owner's start, 30.10; one property, so a settings slider can move it later */
+  --controls-alpha: 0.6;
+}
+
+.touch-on.landscape:not(.at-title) .touch {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+.touch-on.landscape .pad {
+  display: none;
+}
+
+/* the left half, under everything else on the page: the HUD's band and its taps stay on top */
+.touch-on.landscape .stick-zone {
+  display: block;
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* every size below is a share of the screen's height, set by touch.ts from controlsLayout (stick.ts) */
+.touch-on.landscape .stick {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  width: var(--ring, 96px);
+  height: var(--ring, 96px);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: none;
+  border: 3px solid var(--ui-gold-5);
+  box-shadow: 0 0 0 1px var(--ui-gold-2), inset 0 0 0 1px var(--ui-gold-2);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.touch-on.landscape .stick.on {
+  opacity: var(--controls-alpha);
+  transition: none;
+}
+
+.stick-knob {
+  width: var(--knob, 38px);
+  height: var(--knob, 38px);
+  border-radius: 50%;
+  background: var(--ui-black);
+  border: 3px solid var(--ui-gold-5);
+  box-shadow: inset 0 0 0 4px var(--ui-black), inset 0 0 0 5px var(--ui-gold-3), 0 3px 0 rgb(12 11 18 / 0.5);
+}
+
+/* the buttons stand on the screen's bottom-right corner, each placed by its center; their box covers the
+   screen, so only the buttons take a touch (the id outranks #ui > .touch .tbtns) */
+.touch-on.landscape .tbtns {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+.touch-on.landscape #ui > .touch .tbtns {
+  pointer-events: none;
+}
+
+.touch-on.landscape .tbtn {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  right: calc(var(--cx) + env(safe-area-inset-right));
+  bottom: calc(var(--cy) + env(safe-area-inset-bottom));
+  width: var(--d);
+  height: var(--d);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  transform: translate(50%, 50%);
+  border-radius: 50%;
+  background: var(--ui-black);
+  border: 3px solid var(--ui-gold-5);
+  color: var(--ui-gold-5);
+  box-shadow: inset 0 0 0 4px var(--ui-black), inset 0 0 0 5px var(--ui-gold-3), 0 3px 0 rgb(12 11 18 / 0.5);
+  /* the glyph cut in gold: a dark edge above, a light one below */
+  text-shadow: 0 -1px 0 var(--ui-gold-1), 0 1px 0 var(--ui-gold-6);
+  font-family: var(--ui-display);
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: auto;
+  opacity: var(--controls-alpha);
+}
+
+.touch-on.landscape .tbtn.sneak[aria-pressed='true'] {
+  color: var(--ui-black);
+  background: var(--ui-gold-5);
+}
+
+.touch-on.landscape .tbtn[hidden] {
+  display: none;
+}
+
+.touch-on.landscape .tbtn.down {
+  transform: translate(50%, calc(50% + 3px));
+  /* the press shows whole for its moment */
+  opacity: 1;
+}
+
+/* the glyphs grow with their buttons */
+.touch-on.landscape .tbtn.a {
+  font-size: max(26px, calc(var(--d) * 0.44));
+}
+
+.touch-on.landscape .tbtn.b {
+  font-size: max(18px, calc(var(--d) * 0.42));
+}
+
+.touch-on.landscape .tbtn.sneak {
+  font-size: max(16px, calc(var(--d) * 0.34));
+}
+
+/* a word and the line glyphs keep the body face */
+.touch-on.landscape .tbtn.sneak,
+.touch-on.landscape .tbtn.nav {
+  font-family: var(--font-body);
+  font-weight: 400;
+}
+
+/* the column at the right edge: a line glyph each, half the button across */
+.touch-on.landscape .tbtn.nav svg {
+  width: 52%;
+  height: 52%;
+}
+
+/* the HUD in one band along the top: meter and chips in a row, the tracker and the toasts under it */
+.touch-on.landscape .top {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: 8px;
+  row-gap: 4px;
+}
+
+.touch-on.landscape .hud {
+  flex: 1 1 100%;
+}
+
+.touch-on.landscape .hud-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.touch-on.landscape .hud-row {
+  flex-wrap: nowrap;
+}
+
+.touch-on.landscape .meter-bar {
+  width: 56px;
+}
+
+.touch-on.landscape .tracker {
+  max-width: min(23em, 44vw);
+}
+
+/* the toasts stand in the right half beside the tracker, out of the player's column in the middle and clear of the column */
+.touch-on.landscape .toasts {
+  flex: 1 1 0;
+  justify-items: end;
+  width: auto;
+  margin-right: 48px;
+}
+
+.touch-on.landscape .toast {
+  padding: 2px 8px;
+}
+
+/* the bag, the journal and the menu are under the right thumb: the band keeps the bag's load as a readout */
+.touch-on.landscape .hud-journal,
+.touch-on.landscape .hud-menu,
+.touch-on.landscape .hud-bag .load-label,
+.touch-on.landscape .hud-map {
+  display: none !important;
+}
+
+/* a dialogue stands low between the stick's half and the buttons, A reachable beside it */
+.touch-on.landscape .dialog-layer {
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-right: calc(var(--cluster, 172px) + env(safe-area-inset-right));
+}
+
+/* ------------------------------------------------------------ touch, the stick on the right */
+
+/* The page-root setting mirrors only the touch controls. Portrait swaps the pad and action row. Landscape moves
+   the stick zone to the right half and measures each button from the left edge; the HUD and menu window do not move. */
+:root[data-stick-side='right'] .touch-on .touch,
+:root[data-stick-side='right'] .touch-on .tbtns {
+  flex-direction: row-reverse;
+}
+
+:root[data-stick-side='right'] .tbtn.sneak {
+  right: auto;
+  left: 0;
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .stick-zone {
+  left: auto;
+  right: 0;
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .tbtn {
+  right: auto;
+  left: calc(var(--cx) + env(safe-area-inset-left));
+  transform: translate(-50%, 50%);
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .tbtn.down {
+  transform: translate(-50%, calc(50% + 3px));
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .dialog-layer {
+  padding-right: max(8px, env(safe-area-inset-right));
+  padding-left: calc(var(--cluster, 172px) + env(safe-area-inset-left));
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .tracker {
+  margin-left: var(--column-clear, 56px);
+}
+
+:root[data-stick-side='right'] .touch-on.landscape .toasts {
+  margin-right: 0;
 }
 
 /* ------------------------------------------------------------ layers */
@@ -1014,6 +1342,16 @@ body {
 
 .panel.wide {
   width: min(100%, 680px);
+}
+
+.panel.orientation-card {
+  width: min(100%, 420px);
+  text-align: center;
+}
+
+.orientation-card .panel-body p {
+  margin: 8px 0 0;
+  font-size: 18px;
 }
 
 /* the name on its plaque in the middle, the close button set into the right-hand corner over its piece */
@@ -1458,81 +1796,6 @@ body {
   color: var(--blue);
 }
 
-/* ------------------------------------------------------------ timing */
-
-.timing-stage {
-  padding: 18px 0 8px;
-}
-
-.timing-bar {
-  position: relative;
-  height: 28px;
-  background: #e9b8a8;
-  border: 3px solid var(--ink);
-  border-radius: 0;
-  overflow: hidden;
-}
-
-.zone {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-}
-
-.zone.ok {
-  background: var(--yellow);
-}
-
-.zone.good {
-  background: var(--green3);
-}
-
-.zone.perfect {
-  background: var(--green);
-}
-
-.zone.jackpot {
-  background: var(--gold);
-  box-shadow:
-    inset 2px 0 0 var(--yellow),
-    inset -2px 0 0 var(--yellow);
-}
-
-.marker {
-  position: absolute;
-  top: -2px;
-  bottom: -2px;
-  background: var(--ink);
-  box-shadow: 0 0 0 2px var(--paper);
-}
-
-.minigame-result.g4 {
-  color: var(--gold);
-  text-shadow: 0 2px 0 var(--ink);
-}
-
-.minigame.jackpot {
-  animation: minigame-jackpot 520ms ease-out;
-}
-
-@keyframes minigame-jackpot {
-  0% {
-    box-shadow:
-      inset 0 0 0 2px var(--paper2),
-      0 0 0 0 var(--gold);
-  }
-  40% {
-    box-shadow:
-      inset 0 0 0 2px var(--yellow),
-      0 0 0 10px color-mix(in srgb, var(--gold) 60%, transparent);
-  }
-  100% {
-    box-shadow:
-      inset 0 0 0 2px var(--paper2),
-      0 0 0 18px transparent;
-  }
-}
-
 /* ------------------------------------------------------------ small labels */
 
 .loading-title {
@@ -1720,7 +1983,7 @@ body {
   margin-top: 12px;
 }
 
-/* rays that turn slowly behind a level-up, a jackpot or a point */
+/* rays that turn slowly behind a level-up or a point */
 .burst {
   position: absolute;
   left: 50%;
@@ -1793,13 +2056,6 @@ body {
   padding: 8px 24px;
 }
 
-.banner.jackpot span {
-  color: var(--ink);
-  background: var(--gold);
-  border-color: var(--ink);
-  text-shadow: 2px 2px 0 var(--yellow);
-}
-
 .banner.point span {
   font-size: 26px;
   padding: 2px 12px;
@@ -1807,6 +2063,52 @@ body {
   background: var(--green2);
   border-color: var(--ink);
   text-shadow: 2px 2px 0 var(--green);
+}
+
+/* a place names itself on its first entry (G63): a plaque of frame D high on the screen, read, not cheered */
+.banner.place {
+  top: 22%;
+  animation-name: place-banner;
+  animation-duration: 3.2s;
+}
+
+.banner.place span {
+  padding: 8px 28px;
+  font-family: var(--ui-display);
+  font-size: var(--ui-big);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  /* a long name wraps inside the screen's gutter rather than running off a phone */
+  white-space: normal;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+  color: var(--ui-gold-6);
+  background: var(--ui-black);
+  border: 3px solid var(--ui-gold-5);
+  box-shadow:
+    inset 0 0 0 4px var(--ui-black),
+    inset 0 0 0 5px var(--ui-gold-3),
+    0 3px 0 rgb(12 11 18 / 0.5);
+  text-shadow:
+    0 -1px 0 var(--ui-gold-1),
+    0 1px 0 var(--ui-gold-2);
+}
+
+@keyframes place-banner {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15% {
+    opacity: 1;
+    transform: none;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .banner .burst {
@@ -1910,7 +2212,7 @@ body {
   align-items: center;
   gap: 0.3em;
   padding: 1px 0.5em 2px;
-  font-size: clamp(14px, 1.2vw + 6px, 20px);
+  font-size: clamp(16px, 1.2vw + 6px, 20px);
   line-height: 1.2;
   border: 2px solid var(--ink);
   box-shadow: 0 2px 0 rgba(27, 26, 46, 0.45);
@@ -2022,7 +2324,7 @@ body {
 }
 
 .whisper {
-  font-size: 15px;
+  font-size: 16px;
   color: #d9d4f0;
   text-shadow:
     0 0 6px rgba(154, 91, 176, 0.9),
@@ -2167,14 +2469,14 @@ body {
   }
   .hud-right .btn.small {
     padding: 2px 6px;
-    font-size: 14px;
+    font-size: 16px;
   }
   .dialog {
-    font-size: 16px;
+    font-size: 18px;
     padding: 18px 14px 14px;
   }
   .dialog-text {
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1.4;
   }
   .md p,
@@ -2226,7 +2528,6 @@ body {
   .burst,
   .choice.spent,
   .signature.on,
-  .minigame.jackpot,
   .banner,
   .purse-float,
   .whisper {

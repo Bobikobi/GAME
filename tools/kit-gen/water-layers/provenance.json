@@ -1,0 +1,57 @@
+{
+  "prompt": "Create one production texture atlas for a rich top-down pixel-art RPG water renderer. Square image, exact 2 by 2 grid, four equal square quadrants flush together, NO labels, NO borders, no perspective, no scenery. Each quadrant is a texture filling its entire square edge to edge. Top left: submerged sandy gravel riverbed, quiet broad irregular sandy olive patches, sparse tiny smooth pebbles, low contrast, no big rocks. Top right: deep teal water body with broad soft irregular darker and lighter rounded ripple patches, mostly calm negative space, NO white foam, NO thin outlined net, no regular diagonal repeated diamonds. Bottom left: water surface illumination, uneven broken short horizontal pale teal reflective flecks on dark muted teal, sparse bright glints among large quiet areas, organic clusters and multiple sizes, NOT stars or circles. Bottom right: dense broad turbulent white sea foam texture, ivory and pale icy blue islands and lacy broken foamy patches with irregular dark teal holes and gaps, mixed coarse and fine texture, fills entire square, NOT a narrow crest stripe. This is a texture atlas for layering and animation; each quadrant should tile as naturally as possible. Pixel art with clean clustered pixels, no smooth vector curves, no blur or photorealism. Logical pixels about 2-4 pixels at 1024 resolution, rich restrained texture. Palette guided by #122b2c #1c4a49 #2a6c66 #3f8f84 #62b3a2 #93d6c2 #172a52 #275a99 #7cc4ec #c4ecf8, warm muted sand for gravel. No objects, characters, text, logo, black outline grid.",
+  "tool": "built-in imagegen",
+  "seen": "Layered water: submerged bed, translucent body, independent surface illumination, broad broken foam",
+  "confirmed_by": "owner: תעשה אז after reference review",
+  "palette": "ramp-added",
+  "ramps": [
+    "water",
+    "teal",
+    "stone"
+  ],
+  "status": "dev study only",
+  "review": "Generated foam has broad islands and gaps suitable for a breaking band. Body texture is more regular than requested; blend independently moving samples at low contrast, and judge the in-engine result.",
+  "references": [
+    {
+      "url": "https://www.reddit.com/r/PixelArt/comments/197z0hh/",
+      "takeaway": "Small surface illumination changes; avoid obvious large-area repetition."
+    },
+    {
+      "url": "https://www.reddit.com/r/PixelArt/comments/da3npf/",
+      "takeaway": "Visible submerged bed beneath independent distortion and surface light."
+    },
+    {
+      "url": "https://www.reddit.com/r/godot/comments/1uvji8r/",
+      "takeaway": "Layered highlights and lowlights, multiple scales, shore interaction; viewed in owner screen recording."
+    },
+    {
+      "url": "https://www.reddit.com/r/PixelArt/comments/1nk9mv0/",
+      "takeaway": "Quiet pond areas and restrained broken reflections."
+    },
+    {
+      "url": "https://www.reddit.com/r/PixelArt/comments/1wz88y7/",
+      "takeaway": "Main owner preference: moving glints, reflections and local disturbance; direct video visually reviewed."
+    },
+    {
+      "url": "https://preview.redd.it/hvgvfun0dim71.gif?width=1920&format=mp4&s=e8254820358032b631874f314e3c86528def7e0e",
+      "takeaway": "Broad wave body and textured foam wake instead of a narrow white outline."
+    }
+  ],
+  "implementation": {
+    "bed": "Generated bed, visible according to distance from real bank alpha and manually selected slope. UV wobble is refraction; no scrolling bed.",
+    "reflection": "Actual bank colors mirrored across local shore normals and displaced by waves. No vegetation or sky reflection scene is present in this fixture.",
+    "surface": "Generated water body sampled at two scales; independent generated illumination sampled and modulated in time.",
+    "breakers": "Broad incoming band plus dissipating wash samples generated foam texture. Exposure follows upwind land obstruction.",
+    "limitations": [
+      "Visual prototype only, not hydrodynamic wave propagation through a bay.",
+      "No terrain height map; depth is approximated from bank distance and selected slope.",
+      "No character swimming, splash or wake system added.",
+      "Generated textures are candidates, not an owner-approved final look."
+    ]
+  },
+  "validation": {
+    "focusedTests": 13,
+    "browser": "desktop and 390px phone; weather, wind, slope, individual layers, pause, reduced motion, no errors",
+    "renderSampleMs": 13.6
+  }
+}

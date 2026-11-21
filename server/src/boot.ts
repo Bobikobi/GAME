@@ -30,6 +30,7 @@ export interface SessionConfig {
   appOrigin: string;
   /** absent when neither variable is set: Google then answers "not open yet" */
   google?: { clientId: string; clientSecret: string };
+  discord?: { clientId: string; clientSecret: string };
   mailer: MailerName;
   /** present only with MAILER=resend: its key and the sender address */
   resend?: ResendConfig;
@@ -97,6 +98,16 @@ function resendFromEnv(env: NodeJS.ProcessEnv): ResendConfig {
   return { apiKey, from };
 }
 
+/** A provider's client pair: both or neither, and neither keeps that way in closed ("not open yet"). */
+function oauthPair(env: NodeJS.ProcessEnv, prefix: 'GOOGLE' | 'DISCORD', name: string): { clientId: string; clientSecret: string } | undefined {
+  const clientId = env[`${prefix}_CLIENT_ID`] ?? '';
+  const clientSecret = env[`${prefix}_CLIENT_SECRET`] ?? '';
+  if ((clientId === '') !== (clientSecret === '')) {
+    throw new BootError(`Set both ${prefix}_CLIENT_ID and ${prefix}_CLIENT_SECRET, or neither (${name} then stays closed).`);
+  }
+  return clientId === '' ? undefined : { clientId, clientSecret };
+}
+
 function sessionMode(env: NodeJS.ProcessEnv): Auth {
   if (env.ALLOW_DEV_HEADER) {
     throw new BootError('ALLOW_DEV_HEADER is set with AUTH_MODE=session: the header mode and sign-in never run together. Remove it.');
@@ -109,11 +120,8 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
   if (appOrigin !== publicOrigin && !(isLoopback(publicOrigin) && isLoopback(appOrigin))) {
     throw new BootError(`APP_ORIGIN=${appOrigin} is not PUBLIC_ORIGIN=${publicOrigin}: the game is served beside the API on one origin (the session cookie never crosses origins and the API sends no CORS headers). Leave APP_ORIGIN unset; only a loopback pair, a laptop's dev client beside its API, may differ.`);
   }
-  const clientId = env.GOOGLE_CLIENT_ID ?? '';
-  const clientSecret = env.GOOGLE_CLIENT_SECRET ?? '';
-  if ((clientId === '') !== (clientSecret === '')) {
-    throw new BootError('Set both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or neither (Google then stays closed).');
-  }
+  const google = oauthPair(env, 'GOOGLE', 'Google');
+  const discord = oauthPair(env, 'DISCORD', 'Discord');
   const mailer = env.MAILER ?? 'log';
   if (!MAILERS.some((known) => known === mailer)) {
     throw new BootError(`MAILER=${JSON.stringify(mailer)} is not a mailer this build has. Known: ${MAILERS.join(', ')}.`);
@@ -123,7 +131,6 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
     throw new BootError(`MAILER=log writes each sign-in link to the log, so anyone who reads the log can sign in as anyone; it starts only with ALLOW_LOG_MAILER=${STAGING_ONLY}, on a box no real player reaches.`);
   }
   const resend = mailer === 'resend' ? resendFromEnv(env) : undefined;
-  const google = clientId === '' ? undefined : { clientId, clientSecret };
   const countryHeader = headerName(env, 'COUNTRY_HEADER', 'X-Country');
   const countryDb = env.COUNTRY_DB ? env.COUNTRY_DB : undefined;
   if (countryDb !== undefined && !countryDb.startsWith('/')) {
@@ -135,8 +142,8 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
   }
   return {
     mode: 'session',
-    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, ${appOrigin === publicOrigin ? 'the game beside it' : `the game at ${appOrigin}`}; the age limit ${countryHeader || countryDb ? `by the country in ${[countryHeader, countryDb && `the file ${countryDb}`].filter(Boolean).join(', else in ')}` : 'is the highest (no COUNTRY_HEADER, no COUNTRY_DB)'}; limits by ${addressHeader ?? 'the socket address'}.`,
-    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, ...(resend && { resend }), countryHeader, ...(countryDb && { countryDb }), addressHeader },
+    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${[google && ' and Google', discord && ' and Discord'].filter(Boolean).join('')}, ${appOrigin === publicOrigin ? 'the game beside it' : `the game at ${appOrigin}`}; the age limit ${countryHeader || countryDb ? `by the country in ${[countryHeader, countryDb && `the file ${countryDb}`].filter(Boolean).join(', else in ')}` : 'is the highest (no COUNTRY_HEADER, no COUNTRY_DB)'}; limits by ${addressHeader ?? 'the socket address'}.`,
+    session: { publicOrigin, appOrigin, google, discord, mailer: mailer as MailerName, ...(resend && { resend }), countryHeader, ...(countryDb && { countryDb }), addressHeader },
   };
 }
 

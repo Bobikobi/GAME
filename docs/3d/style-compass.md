@@ -32,7 +32,7 @@ itself are not in the repository (see the licence note).
 ## The cast: each role reads at a glance (09.10)
 
 The product owner's rule for the player roles, in the pixel and the 3D version alike: a role is
-told apart at phone size by one big item, one colour and its own body build. The patched base
+told apart at the full frame (1920 x 1080, STYLE 1) by one big item, one colour and its own body build. The patched base
 clothes underneath are the same for every role; fine attire is earned later, never given by a role.
 
 | Role | Build | Big item | Colour |

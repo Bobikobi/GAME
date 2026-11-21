@@ -1,13 +1,12 @@
 /**
  * Everything drawn as page elements over the canvas: the HUD, toasts, the
- * action prompt, dialogue, menus and the timing minigame. Layers stack; the
+ * action prompt, dialogue and menus. Layers stack; the
  * top one gets the buttons, and while any is open the game clock stops.
  */
 import { offerSignup } from './signup';
 import {
   OWN_FIRE,
   type GameEvent,
-  type Grade,
   characterLevel,
   doneLines,
   findSlot,
@@ -15,7 +14,6 @@ import {
   isNight,
   minuteOfDay,
   pickRemark,
-  resourceOf,
   rewardItem,
   hpCap,
   skillPoints,
@@ -34,22 +32,18 @@ import {
   itemName,
   lanternNight,
   nightCountdown,
-  nodeAction,
   questSteps,
   readyToHandIn,
-  windowScalePct,
 } from '../text';
 import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
 import { localMapState } from '../places';
-import { resourceKind, treasureKind } from '../work';
+import { seaView } from '../sea';
 import { say, type Option } from './dialog';
 import { STONE_RESTORE, STONE_SPEAKER } from '../stone';
 import { carveName } from './carve';
 import { button, h, sprite } from './dom';
 import { miniMapSvg } from './map';
 import { feedback } from './feedback';
-import { type Minigame, fish, pick, snap, strike, timing } from './games';
-import { BEAT, buzz } from './haptics';
 import { openLevelUp } from './levelup';
 import { FULL_BAG, HEAVY_LINE, flashFull, loadChip, loadView, paintLoad, turnedHeavy } from './load';
 import {
@@ -68,11 +62,6 @@ import {
 } from './panels';
 import { showTitle } from './title';
 import { mountTouch } from './touch';
-
-/** What the hands are doing, for the world's animation and sound. */
-export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig' | 'fish';
-
-const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap' | 'fish', Minigame> = { timing, strike, pick, snap, fish };
 
 export interface Layer {
   el: HTMLElement;
@@ -113,12 +102,18 @@ export class UI {
   /** the toasts up and in line (two at most up); its one timer brings it to its next change */
   private band = new ToastBand<HTMLElement>();
   private bandTimer = 0;
+  /** each profession's experience as the last batch of events left it (the toasts' second line reads the difference) */
+  private xpSeen: Record<string, number> = {};
   private promptEl: HTMLElement;
+  /** the crossing card aboard (SEA_CROSSING.md): not a layer, so the clock runs under it and a segment's sailing ends */
+  private seaEl: HTMLElement;
+  private seaKey = '';
   private layers: Layer[] = [];
   private loadingEl: HTMLElement | undefined;
   private titleOpen = false;
   private hudTimer = 0;
   private hudParts: HudParts | undefined;
+  private meterHitTimer: ReturnType<typeof setTimeout> | undefined;
   private hudMap: HTMLButtonElement;
   private hudMapChart: HTMLElement;
   private hudMapNote: HTMLElement;
@@ -140,6 +135,7 @@ export class UI {
     this.tracker = h('div', { class: 'tracker', hidden: true });
     this.toasts = h('div', { class: 'toasts', 'aria-live': 'polite' });
     this.promptEl = h('div', { class: 'prompt', hidden: true });
+    this.seaEl = h('div', { class: 'sea-card ui-window', role: 'group', 'aria-label': 'The crossing', hidden: true });
     this.hudMapChart = h('span', { class: 'hud-map-chart' });
     this.hudMapNote = h('span', { class: 'hud-map-note' }, 'No stall placed');
     this.hudMap = h(
@@ -150,13 +146,14 @@ export class UI {
       this.hudMapNote,
     );
     this.loadingEl = h('div', { class: 'loading' }, h('div', { class: 'loading-title' }, 'Loading the valley'), h('div', { class: 'loading-bar' }, h('i')));
-    root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.loadingEl, this.hudMap);
+    root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.seaEl, this.loadingEl, this.hudMap);
     mountTouch(root);
     this.tracker.addEventListener('click', () => this.panel(() => openJournal(this, 'tasks')));
   }
 
+  /** A layer is open, or the player is aboard: the boat is the world then, and the walk waits for the landing. */
   get blocking(): boolean {
-    return this.layers.length > 0 || this.titleOpen;
+    return this.layers.length > 0 || this.titleOpen || Boolean(app.session?.state.player.aboard);
   }
 
   /** Opens a panel that reads the state: work under way is taken back first, so it never shows what will not stay. */
@@ -205,6 +202,11 @@ export class UI {
     if (this.titleOpen) return true;
     const s = app.session;
     if (!s?.started) return true;
+    // aboard, A sails on: the card's buttons answer the event
+    if (s.state.player.aboard) {
+      if (b === 'a') void this.sail();
+      return true;
+    }
     if (b === 'a') app.world?.interact();
     else if (b === 'bag') this.panel(() => openBag(this));
     else if (b === 'journal') this.panel(() => openJournal(this));
@@ -234,16 +236,22 @@ export class UI {
   begin(session: GameSession): void {
     app.session = session;
     app.world?.bind(session);
+    this.xpSeen = { ...session.state.player.xp };
     session.on('events', (events) => {
       // a fall says it all in its one box: the calls to run from a hunt that has ended come down
       if (events.some((e) => e.e === 'fall')) this.clearToasts();
-      for (const t of eventToasts(app.bundle, session.state, events)) this.queueToast(t);
+      // what the kernel gave each profession since the last batch: the second line of a gain toast
+      const earned: Record<string, number> = {};
+      for (const [id, xp] of Object.entries(session.state.player.xp)) if (xp > (this.xpSeen[id] ?? 0)) earned[id] = xp - (this.xpSeen[id] ?? 0);
+      this.xpSeen = { ...session.state.player.xp };
+      for (const t of eventToasts(app.bundle, session.state, events, earned)) this.queueToast(t);
       feedback(this.root, events);
       void this.afterEvents(events);
       // after the story beats begin: on a phone a box they opened holds this batch's toasts until it closes
       this.runBand();
     });
     session.on('change', () => this.renderHud());
+    session.on('updated', () => this.toast('The valley was updated.', 'info'));
     this.hud.hidden = false;
     this.tracker.hidden = false;
     this.hudMap.hidden = false;
@@ -289,6 +297,7 @@ export class UI {
     }
     this.warnAtNight(s);
     this.warnFireLow(s);
+    this.renderSea(s);
     setClass(p.level, points > 0 ? 'chip glow' : 'chip');
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
     setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
@@ -348,8 +357,8 @@ export class UI {
     const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
     const load = loadChip();
-    const bag = button([h('span', { class: 'load-label' }, 'Bag'), load], () => this.panel(() => openBag(this)), 'small');
-    const log = button('Journal', () => this.panel(() => openJournal(this)), 'small');
+    const bag = button([h('span', { class: 'load-label' }, 'Bag'), load], () => this.panel(() => openBag(this)), 'small hud-bag');
+    const log = button('Journal', () => this.panel(() => openJournal(this)), 'small hud-journal');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
       h(
@@ -367,7 +376,7 @@ export class UI {
           h('button', { class: 'chip demo', type: 'button', onclick: () => this.aboutDemo() }, 'Demo'),
         ),
       ),
-      h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small')),
+      h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small hud-menu')),
     );
     return { meter, bar, num, goldText, boundChip, boundText, clockChip, clockIcon, clockText, dark, darkText, level, bag, load, log };
   }
@@ -402,6 +411,30 @@ export class UI {
     void say(this, null, [`The ${w.name} is burning low.`, 'Wood keeps it: feed it before it goes out.']);
   }
 
+  /** The crossing card: rebuilt only when what it says changes, so a button under a finger is never swapped. */
+  private renderSea(s: GameSession): void {
+    const view = seaView(app.bundle, s.state);
+    const key = view ? JSON.stringify([view, s.busy]) : '';
+    if (key === this.seaKey) return;
+    this.seaKey = key;
+    this.seaEl.hidden = !view;
+    if (!view) return this.seaEl.replaceChildren();
+    const dots = Array.from({ length: view.segments }, (_, i) => h('i', { class: i < view.segment ? 'on' : '' }));
+    this.seaEl.replaceChildren(
+      h('div', { class: 'sea-head' }, h('b', null, view.title), h('span', { class: 'muted' }, `${view.segment} / ${view.segments}`)),
+      h('div', { class: 'sea-track', 'aria-hidden': 'true' }, dots),
+      ...(view.event ? [h('p', { class: 'sea-event' }, h('b', null, view.event), ' ', view.sign!.join(' '))] : []),
+      ...(view.clue ? [h('p', { class: 'sea-clue' }, view.clue)] : []),
+      ...(view.held ? [h('p', { class: 'sea-held muted' }, `Held ${view.held}`)] : []),
+      h(
+        'div',
+        { class: 'sea-acts' },
+        view.answers.map((a) => button(a.label, () => void this.answer(a.choice), 'sea-answer')),
+        button(s.busy ? 'Sailing...' : 'Sail on', () => void this.sail(), 'sea-sail', s.busy),
+      ),
+    );
+  }
+
   private renderTracker(s: GameSession): void {
     const b = app.bundle;
     const ids = activeQuests(b, s.state);
@@ -430,6 +463,18 @@ export class UI {
       h('div', { class: 'tracker-title' }, title, more > 0 ? h('span', { class: 'more' }, ` +${more}`) : null),
       ...lines.map((text) => h('div', { class: 'tracker-step' }, text)),
     );
+  }
+
+  /**
+   * The health meter's own reaction to a bite (the threat telegraph's act, NEXT.md 12 c): its frame and fill turn
+   * the warning colour for `ms`, and nothing moves, so it stays under reduced motion.
+   */
+  meterHit(ms: number): void {
+    const meter = this.hudParts?.meter;
+    if (!meter) return;
+    meter.dataset.hit = '';
+    clearTimeout(this.meterHitTimer);
+    this.meterHitTimer = setTimeout(() => delete meter.dataset.hit, ms);
   }
 
   setPrompt(label: string): void {
@@ -519,6 +564,14 @@ export class UI {
       }
       // a fall is one plain box (G33): what happened and what it cost, never where it was
       if (e.e === 'fall') await say(this, null, fallLines(b, s.state.player.town, e.lost));
+      // the crossing's words: as the boat pulls away, when its event is met or missed, and as it puts in
+      const passage = 'passage' in e ? b.passages[e.passage] : undefined;
+      if (passage && e.e === 'board') await say(this, null, named(passage.board));
+      if (passage && e.e === 'sea' && e.outcome !== 'held') {
+        const ev = passage.events.find((x) => x.id === e.event);
+        if (ev) await say(this, null, named(e.outcome === 'met' ? ev.met : ev.missed));
+      }
+      if (passage && e.e === 'land') await say(this, null, named(e.back ? passage.back : passage.land));
       // the threshold of the night ruins is a place, not a mend or a task: the opening's last words
       if (e.e === 'visit' && e.slot === 'core/night-threshold') {
         await say(this, null, [
@@ -619,20 +672,13 @@ export class UI {
     await say(this, npc.name, [...named(talkLines(b, s.state, questId, 'waiting', s.tick) ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
   }
 
+  /** A click on a node starts the work; the world runs it on, one unit after another, until the player stops (DECISIONS.md, 2026-11-20). */
   async gather(nodeId: string): Promise<void> {
     const s = app.session;
-    const b = app.bundle;
     if (!s) return;
-    const r = resourceOf(b, nodeId)!;
-    const why = s.check({ t: 'gather', node: nodeId, grade: 3, at: s.pos });
+    const why = s.check({ t: 'gather', node: nodeId, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    // a node worked with a tool runs by itself after this one press: no pop-up, no bar
-    if (resourceKind(r)) return app.world?.startWork(nodeId);
-    const game = r.game ?? 'timing';
-    const grade = await this.play(GAMES[game], nodeAction(b, r), nodeId, game, b.items[r.output]?.sprite ?? r.sprite);
-    if (grade === null) return;
-    const res = await s.act({ t: 'gather', node: nodeId, grade, at: s.pos });
-    if (!res.ok) this.toast(res.error, 'bad');
+    return app.world?.startWork(nodeId);
   }
 
   /** Pick a thing put down back up, from the tile the player stands on. */
@@ -646,21 +692,10 @@ export class UI {
   async dig(spotId: string): Promise<void> {
     const s = app.session;
     if (!s) return;
-    const why = s.check({ t: 'dig', spot: spotId, grade: 3, at: s.pos });
+    const why = s.check({ t: 'dig', spot: spotId, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    // a find picked up by hand has no timing window
-    const treasure = app.bundle.treasures[app.bundle.instances[spotId]?.source ?? ''];
-    const byHand = !treasure?.tool;
-    if (treasure && treasureKind(treasure)) {
-      // the trowel digs by itself; the catch (G6) is said once the hands stop
-      app.world?.startWork(spotId, () => this.digCatch(spotId));
-      return;
-    }
-    const grade = byHand ? 3 : await this.play(timing, 'Dig', spotId, 'dig');
-    if (grade === null) return;
-    const res = await s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
-    if (!res.ok) return this.toast(res.error, 'bad');
-    if (!res.events.some((e) => e.e === 'riddle')) this.digCatch(spotId, res.events.find((e) => e.e === 'busy'));
+    // the catch (G6) is said once the hands stop
+    return app.world?.startWork(spotId, () => this.digCatch(spotId));
   }
 
   /** Look inside a searchable: the kernel draws or keeps today's contents, and a small window shows them (docs/design/SEARCH.md). */
@@ -672,26 +707,39 @@ export class UI {
     openSearch(this, spotId);
   }
 
+  /** Board a passage's boat from its jetty (SEA_CROSSING.md): the kernel draws the crossing's event and decides every refusal. */
+  async board(passageId: string): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    app.world?.dropWork();
+    const r = await s.act({ t: 'board', passage: passageId, at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
+    this.renderHud();
+  }
+
+  /** One act, one segment. */
+  async sail(): Promise<void> {
+    const s = app.session;
+    if (!s?.state.player.aboard || s.busy) return;
+    const r = await s.act({ t: 'sail' });
+    if (!r.ok) this.toast(r.error, 'bad');
+    this.renderHud();
+  }
+
+  /** Answer the event aboard: a riddle names its choice. */
+  async answer(choice?: number): Promise<void> {
+    const s = app.session;
+    if (!s?.state.player.aboard) return;
+    const r = await s.act(choice === undefined ? { t: 'answer' } : { t: 'answer', choice });
+    if (!r.ok) this.toast(r.error, 'bad');
+    this.renderHud();
+  }
+
   /** The catch (G6): while a riddle waits on a dig somewhere else, a dig here says so once the hands stop. */
   private digCatch(spotId: string, busy?: GameEvent): void {
     const s = app.session;
     if (!s || !digRiddleOpen(app.bundle, s.state, app.bundle.instances[spotId]!.source)) return;
     window.setTimeout(() => this.toast('Not here. Read the stones again.', 'info'), busy?.e === 'busy' ? busy.ms : 0);
-  }
-
-  /** A minigame for one action; every beat swings the arm and makes its sound in the world. */
-  private play(game: Minigame, title: string, nodeId: string, kind: WorkKind, art?: string): Promise<Grade | null> {
-    const s = app.session!;
-    return game(this, {
-      title,
-      scalePct: windowScalePct(app.bundle, s.state),
-      sprite: art,
-      onBeat: (_i, grade) => {
-        buzz(BEAT[grade]);
-        app.world?.beat(nodeId, kind, grade);
-      },
-      onPhase: (phase) => app.world?.fishPhase?.(nodeId, phase),
-    });
   }
 
   craft(station: string): void {

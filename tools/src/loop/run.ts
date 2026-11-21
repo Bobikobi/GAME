@@ -228,7 +228,7 @@ export async function collectProposals(options: RunOptions, addProposalLabels = 
   for (const pr of pulls.filter((item) => !item.draft)) {
     const changed = await options.client.list<ChangedFile>(repoPath(options, `/pulls/${pr.number}/files?per_page=100`));
     const files = changed.map((file) => file.filename);
-    if (!files.some(isProposalPath)) continue;
+    if (!isProposal(pr.user.login, changed)) continue;
     if (addProposalLabels && !hasLabel(pr, 'proposal')) await addLabels(options, pr.number, ['proposal']);
     const slots = new Set<string>();
     for (const file of files.filter((path) => path.endsWith('.json') && path.startsWith('content/extensions/'))) {
@@ -425,6 +425,19 @@ function state(states: ProposalState[], number: number): ProposalState {
   const found = states.find((item) => item.number === number);
   if (!found) throw new Error(`Missing proposal #${number}.`);
   return found;
+}
+
+/** The repo's own builder accounts: their pull requests edit extensions (a scale, a fix) without proposing content. */
+const BUILDERS = ['bobikobi', 'justarandomguyfromtheinternet', 'claude'];
+
+/**
+ * A pull request is a proposal when it touches an extension path and its author is not one of the repo's builders,
+ * or when it adds a file under an extension (a builder's new extension is a proposal too, an edit to one is not).
+ */
+export function isProposal(author: string, changed: ChangedFile[]): boolean {
+  const touched = changed.filter((file) => isProposalPath(file.filename));
+  if (touched.length === 0) return false;
+  return !BUILDERS.includes(author.toLowerCase()) || touched.some((file) => file.status === 'added');
 }
 
 function isProposalPath(path: string): boolean {

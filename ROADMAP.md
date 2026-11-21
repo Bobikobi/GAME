@@ -4,7 +4,7 @@ Loomvale is a free pixel-art browser game that its players build together. You c
 
 This page says where the game stands, what comes next, and where help is most welcome. The full rules of play live in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md), and every design choice is logged in [DECISIONS.md](DECISIONS.md).
 
-## Where it stands (v0.1.3)
+## Where it stands (v0.1.12)
 
 Stage 1 is a playable demo. Progress is saved in your browser only. It will not move to an account later; stage 2a plans a title and a cosmetic item for demo players instead.
 
@@ -17,8 +17,8 @@ What works today:
 - **The first maze:** the tangle south of the ruins.
 - **Crafting.** A workshop that climbs three tiers and tools that wear out or last. A craft can miss, and luck tilts it; a recipe above your level can be tried at a lower chance. The bag is sorted into categories.
 - **Sound** with a mute control, plus walk and work animations.
-- **A 3D door**, marked as a trial: the same valley and the same save in 3D, at [/play3d/](https://loomvale.vercel.app/play3d/).
-- **For creators:** the template, `pnpm check` with readable errors, a playable preview for every pull request, a creators board with points, and a read-only MCP server so an AI tool can read the rules and check content from a clone.
+- **The 3D client remains served at [/play3d/](https://loomvale.vercel.app/play3d/), but its home-page door and new work are paused since 26.10.2026.**
+- **For creators:** the template, `pnpm check` with readable errors, local play and checks (a fork's preview may need maintainer approval), a creators board with points, and a read-only MCP server so an AI tool can read the rules and check content from a clone.
 
 ## The stages
 
@@ -40,15 +40,15 @@ The order can change when play shows a better one, and every change is written i
 
 ## A 3D door
 
-A 3D client of the same valley is in progress. It uses the same simulation, content and save format and moves at its own pace; since v0.1.3 the home page has a second door to it, marked as a trial. People who like 3D are welcome to push it forward.
+The 3D client remains in the repository and `/play3d/` remains served, but its home-page door and new work are paused since 26.10.2026. It is not an open starter area today.
 
 ## Where help is most welcome
 
-- **Content:** a townsperson, a quest, a fruit, a herb, a recipe, a treasure or a place to restore. Start with [Add a townsperson in 15 minutes](docs/creators/README.md).
+- **Content:** a townsperson, a quest, a recipe or a treasure; a fruit, herb or place when an open call names a slot. Start with [Add a townsperson in 15 minutes](docs/creators/README.md).
 - **Pixel art:** 128x128 character frames and 128x128 work poses at 64 pixels per tile, in the kit's palette (the guide covers it).
 - **Reviewing:** every extension proposal needs three approvals once five creators have had an extension merged (until then, one approval, the owner's), and an approval earns points when that proposal is merged.
-- **3D:** models and scenes for the 3D door.
-- **Code:** read [CONTRIBUTING.md](CONTRIBUTING.md) first. The simulation in `kernel/` stays pure and integer-only.
+- **3D (paused since 26.10.2026):** the client stays served, but new models and scenes are not open work.
+- **Code:** read [CONTRIBUTING.md](CONTRIBUTING.md) and [the current standards](docs/STANDARDS.md) first. The simulation in `kernel/` stays pure and integer-only.
 
 To ask for something, open a "Request for the valley" issue. A request with enough votes becomes an open call, an invitation to every creator to build it.
 

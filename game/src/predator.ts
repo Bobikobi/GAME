@@ -4,8 +4,9 @@
  * running after the player while the kernel's hunt names it, and the music of a hunt. Display only:
  * every input is the kernel's state and clock, and nothing here decides a sight, a bite or a safe place.
  */
-import { type Bundle, type Hazard, type WorldView, headingOf, isSafe, lastDusk, predatorAt, stepRuleFor, windowOpen, type PublicState } from '@game/kernel';
+import { type Bundle, type Chase, type Hazard, type WorldView, headingOf, isSafe, lastDusk, predatorAt, stepRuleFor, windowOpen, type PublicState } from '@game/kernel';
 import type { SongId } from './audio';
+import { catchPace, nextBiteAt } from './telegraph';
 
 export type Spot = readonly [number, number];
 
@@ -128,28 +129,50 @@ export function firstStep(
   walk: (x: number, y: number) => boolean,
   stepOpen: (x1: number, y1: number, x2: number, y2: number) => boolean = () => true,
 ): [number, number] | undefined {
+  return shortestWalk(from, goal, near, walk, stepOpen)?.first;
+}
+
+/** How many whole steps that same walk takes: 0 once there, undefined when no walk gets there. */
+export function walkSteps(
+  from: Spot,
+  goal: Spot,
+  near: number,
+  walk: (x: number, y: number) => boolean,
+  stepOpen: (x1: number, y1: number, x2: number, y2: number) => boolean = () => true,
+): number | undefined {
+  const within = Math.abs(from[0] - goal[0]) + Math.abs(from[1] - goal[1]) <= near;
+  return within ? 0 : shortestWalk(from, goal, near, walk, stepOpen)?.steps;
+}
+
+function shortestWalk(
+  from: Spot,
+  goal: Spot,
+  near: number,
+  walk: (x: number, y: number) => boolean,
+  stepOpen: (x1: number, y1: number, x2: number, y2: number) => boolean,
+): { first: [number, number]; steps: number } | undefined {
   const within = (x: number, y: number) => Math.abs(x - goal[0]) + Math.abs(y - goal[1]) <= near;
   if (within(from[0], from[1])) return undefined;
   const seen = new Set<string>([`${from[0]},${from[1]}`]);
-  // each tile in the queue carries the first step of the walk that reached it
-  const queue: { x: number; y: number; first: [number, number] }[] = [];
-  const visit = (x: number, y: number, first: [number, number] | undefined, fromX: number, fromY: number): [number, number] | undefined => {
+  // each tile in the queue carries the first step of the walk that reached it, and how many steps that walk took
+  const queue: { x: number; y: number; first: [number, number]; steps: number }[] = [];
+  const visit = (x: number, y: number, first: [number, number] | undefined, steps: number, fromX: number, fromY: number) => {
     const k = `${x},${y}`;
     if (seen.has(k) || !(walk(x, y) || (x === goal[0] && y === goal[1])) || !stepOpen(fromX, fromY, x, y)) return undefined;
     seen.add(k);
     const step = first ?? [x, y];
-    if (within(x, y)) return step;
-    queue.push({ x, y, first: step });
+    if (within(x, y)) return { first: step, steps };
+    queue.push({ x, y, first: step, steps });
     return undefined;
   };
   for (const [dx, dy] of STEPS) {
-    const found = visit(from[0] + dx, from[1] + dy, undefined, from[0], from[1]);
+    const found = visit(from[0] + dx, from[1] + dy, undefined, 1, from[0], from[1]);
     if (found) return found;
   }
   for (let head = 0; head < queue.length; head++) {
     const t = queue[head]!;
     for (const [dx, dy] of STEPS) {
-      const found = visit(t.x + dx, t.y + dy, t.first, t.x, t.y);
+      const found = visit(t.x + dx, t.y + dy, t.first, t.steps + 1, t.x, t.y);
       if (found) return found;
     }
   }
@@ -249,7 +272,7 @@ export function wolfDrawn(
     const goal = s.player.at;
     const run: Run = last ? { ...last, home: false } : startRun(b, rule, tick, round, goal);
     const from = Math.max(run.tick, chase.since + SEEN.hold);
-    const next = tick > from ? runOn({ ...run, tick: from }, tick, rule.pace, (t) => firstStep(t, goal, 1, walk, stepOpen)) : { ...run, tick };
+    const next = tick > from ? runOn({ ...run, tick: from }, tick, chasePace(b, rule, chase, run, from, goal, walk, stepOpen), (t) => firstStep(t, goal, 1, walk, stepOpen)) : { ...run, tick };
     return { at: next.at, heading: runHeading(next, goal), run: next };
   }
   if (last) {
@@ -258,6 +281,29 @@ export function wolfDrawn(
     if (next) return { at: next.at, heading: runHeading(next, round), run: next };
   }
   return { at: round, heading: headingOf(b, rule, tick) };
+}
+
+/**
+ * How fast a hunting wolf is drawn running, in game ms a tile (the threat telegraph's act, NEXT.md 12 c): at its
+ * pace, or faster when it must, so it stands beside the player by the kernel's next bite (`catchPace`). The
+ * steps are counted from the tile it is on or walks to; with no telegraph in the params it keeps its pace.
+ */
+function chasePace(
+  b: Bundle,
+  rule: Hazard,
+  chase: Chase,
+  run: Run,
+  from: number,
+  goal: Spot,
+  walk: (x: number, y: number) => boolean,
+  stepOpen: (x1: number, y1: number, x2: number, y2: number) => boolean,
+): number {
+  const t = b.params.hazard.predator.telegraph;
+  if (!t) return rule.pace;
+  const on: Spot = run.to ?? [Math.round(run.at[0]), Math.round(run.at[1])];
+  const left = run.to ? Math.abs(run.to[0] - run.at[0]) + Math.abs(run.to[1] - run.at[1]) : 0;
+  const steps = (walkSteps(on, goal, 1, walk, stepOpen) ?? 0) + left;
+  return catchPace(steps, nextBiteAt(b, chase) - from, rule.pace, t.dash_ms);
 }
 
 /** Which way a run faces, four-way: where it walks, else toward what it waits by. */

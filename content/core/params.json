@@ -130,11 +130,25 @@
       8,
       12
     ],
-    "wear_set_bonus_pct": {
-      "value": 20,
-      "min": 0,
-      "max": 50,
-      "step": 5
+    "wear_req_level": [
+      1,
+      6,
+      11,
+      16,
+      21
+    ],
+    "attr_bonus_max": [
+      1,
+      2,
+      3,
+      4,
+      6
+    ],
+    "attr_bonus_step": {
+      "value": 2,
+      "min": 1,
+      "max": 4,
+      "step": 1
     },
     "rarity_bonus_ms": {
       "common": 0,
@@ -170,6 +184,18 @@
       "value": 32,
       "min": 2,
       "max": 32,
+      "step": 1
+    },
+    "pay_gap_ms": {
+      "value": 90000,
+      "min": 60000,
+      "max": 120000,
+      "step": 5000
+    },
+    "pay_sight_tiles": {
+      "value": 5,
+      "min": 3,
+      "max": 8,
       "step": 1
     },
     "hp_low_pct": {
@@ -208,6 +234,56 @@
         "min": 0,
         "max": 200,
         "step": 10
+      },
+      "flicker": {
+        "band_pct": {
+          "value": 8,
+          "min": 2,
+          "max": 20,
+          "step": 2
+        },
+        "step_min_ms": {
+          "value": 100,
+          "min": 60,
+          "max": 300,
+          "step": 20
+        },
+        "step_max_ms": {
+          "value": 200,
+          "min": 100,
+          "max": 400,
+          "step": 20
+        },
+        "frame_jitter_pct": {
+          "value": 20,
+          "min": 5,
+          "max": 40,
+          "step": 5
+        },
+        "start_spread_ms": {
+          "value": 360,
+          "min": 120,
+          "max": 1000,
+          "step": 60
+        },
+        "ember_per_s": {
+          "value": 3,
+          "min": 1,
+          "max": 8,
+          "step": 1
+        },
+        "spark_gap_min_s": {
+          "value": 2,
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
+        "spark_gap_max_s": {
+          "value": 6,
+          "min": 2,
+          "max": 20,
+          "step": 1
+        }
       }
     },
     "hazard": {
@@ -253,6 +329,86 @@
           "min": 5000,
           "max": 10000,
           "step": 500
+        },
+        "telegraph": {
+          "howl_tiles": {
+            "value": 24,
+            "min": 13,
+            "max": 40,
+            "step": 2
+          },
+          "howl_pct": {
+            "value": 50,
+            "min": 10,
+            "max": 100,
+            "step": 10
+          },
+          "howl_gap_min_s": {
+            "value": 40,
+            "min": 15,
+            "max": 120,
+            "step": 5
+          },
+          "howl_gap_max_s": {
+            "value": 90,
+            "min": 30,
+            "max": 240,
+            "step": 10
+          },
+          "near_tiles": {
+            "value": 10,
+            "min": 9,
+            "max": 14,
+            "step": 1
+          },
+          "near_pct": {
+            "value": 80,
+            "min": 20,
+            "max": 100,
+            "step": 10
+          },
+          "near_curve": {
+            "value": 2,
+            "min": 2,
+            "max": 3,
+            "step": 1
+          },
+          "dash_ms": {
+            "value": 150,
+            "min": 60,
+            "max": 600,
+            "step": 30
+          },
+          "lunge_ms": {
+            "value": 220,
+            "min": 100,
+            "max": 500,
+            "step": 20
+          },
+          "lunge_px": {
+            "value": 6,
+            "min": 2,
+            "max": 12,
+            "step": 1
+          },
+          "flinch_ms": {
+            "value": 260,
+            "min": 100,
+            "max": 500,
+            "step": 20
+          },
+          "flinch_px": {
+            "value": 2,
+            "min": 1,
+            "max": 6,
+            "step": 1
+          },
+          "hit_ms": {
+            "value": 450,
+            "min": 200,
+            "max": 1000,
+            "step": 50
+          }
         }
       },
       "pit": {
@@ -387,6 +543,12 @@
         "max": 12,
         "step": 1
       },
+      "tan_cure_d": {
+        "value": 1,
+        "min": 1,
+        "max": 5,
+        "step": 1
+      },
       "grade2_bp": {
         "value": 2500,
         "min": 0,
@@ -403,14 +565,14 @@
     "wild": {
       "tick_ms": {
         "value": 100,
-        "min": 100,
-        "max": 100,
-        "step": 0
+        "min": 33,
+        "max": 200,
+        "step": 1
       },
-      "think_ticks": {
-        "value": 8,
-        "min": 8,
-        "max": 8,
+      "think_ms": {
+        "value": 800,
+        "min": 800,
+        "max": 800,
         "step": 0
       },
       "wake_tiles": {
@@ -937,6 +1099,224 @@
         60,
         100
       ]
+    },
+    "combat": {
+      "enabled": {
+        "value": 0,
+        "min": 0,
+        "max": 1,
+        "step": 1
+      },
+      "swing_quick_ms": {
+        "value": 800,
+        "min": 600,
+        "max": 1000,
+        "step": 100
+      },
+      "swing_standard_ms": {
+        "value": 1000,
+        "min": 800,
+        "max": 1200,
+        "step": 100
+      },
+      "swing_heavy_ms": {
+        "value": 1200,
+        "min": 1200,
+        "max": 1500,
+        "step": 100
+      },
+      "swing_floor_ms": {
+        "value": 600,
+        "min": 400,
+        "max": 800,
+        "step": 100
+      },
+      "bare_windup_ms": {
+        "value": 300,
+        "min": 200,
+        "max": 500,
+        "step": 100
+      },
+      "bare_base": {
+        "value": 8,
+        "min": 4,
+        "max": 16,
+        "step": 1
+      },
+      "tool_strike_permille": {
+        "value": 1050,
+        "min": 1000,
+        "max": 1500,
+        "step": 50
+      },
+      "windup_min_ms": {
+        "value": 200,
+        "min": 100,
+        "max": 400,
+        "step": 100
+      },
+      "windup_max_ms": {
+        "value": 1000,
+        "min": 600,
+        "max": 1200,
+        "step": 100
+      },
+      "active_ms": {
+        "value": 200,
+        "min": 100,
+        "max": 300,
+        "step": 100
+      },
+      "rehit_ms": {
+        "value": 200,
+        "min": 100,
+        "max": 300,
+        "step": 100
+      },
+      "bite_div": {
+        "value": 6,
+        "min": 4,
+        "max": 8,
+        "step": 1
+      },
+      "behind_permille": {
+        "value": 2000,
+        "min": 1000,
+        "max": 3000,
+        "step": 250
+      },
+      "weak_permille": {
+        "value": 2000,
+        "min": 1000,
+        "max": 3000,
+        "step": 250
+      },
+      "mercy_ms": {
+        "value": 800,
+        "min": 600,
+        "max": 1000,
+        "step": 100
+      },
+      "stun_ms": {
+        "value": 300,
+        "min": 200,
+        "max": 500,
+        "step": 100
+      },
+      "knockback_tiles": {
+        "value": 1,
+        "min": 0,
+        "max": 1,
+        "step": 1
+      },
+      "dodge_tiles": {
+        "value": 2,
+        "min": 1,
+        "max": 3,
+        "step": 1
+      },
+      "dodge_ms": {
+        "value": 300,
+        "min": 200,
+        "max": 500,
+        "step": 100
+      },
+      "dodge_cooldown_ms": {
+        "value": 1500,
+        "min": 1000,
+        "max": 2000,
+        "step": 100
+      },
+      "breath_base": {
+        "value": 60,
+        "min": 40,
+        "max": 100,
+        "step": 5
+      },
+      "breath_per_stamina": {
+        "value": 8,
+        "min": 4,
+        "max": 12,
+        "step": 1
+      },
+      "breath_refill": {
+        "value": 2,
+        "min": 1,
+        "max": 4,
+        "step": 1
+      },
+      "breath_hold_ms": {
+        "value": 600,
+        "min": 300,
+        "max": 1000,
+        "step": 100
+      },
+      "attack_breath": {
+        "value": 15,
+        "min": 5,
+        "max": 30,
+        "step": 1
+      },
+      "guard_drain": {
+        "value": 1,
+        "min": 1,
+        "max": 3,
+        "step": 1
+      },
+      "guard_hit_breath": {
+        "value": 8,
+        "min": 4,
+        "max": 16,
+        "step": 1
+      },
+      "dodge_breath": {
+        "value": 12,
+        "min": 5,
+        "max": 24,
+        "step": 1
+      },
+      "breath_stagger_ms": {
+        "value": 1200,
+        "min": 800,
+        "max": 1500,
+        "step": 100
+      },
+      "guard_stagger_ms": {
+        "value": 600,
+        "min": 400,
+        "max": 800,
+        "step": 100
+      },
+      "engage_tiles": {
+        "value": 6,
+        "min": 4,
+        "max": 8,
+        "step": 1
+      },
+      "leash_tiles": {
+        "value": 7,
+        "min": 5,
+        "max": 10,
+        "step": 1
+      },
+      "give_up_ms": {
+        "value": 5000,
+        "min": 3000,
+        "max": 8000,
+        "step": 1000
+      },
+      "claim_lock_ms": {
+        "value": 4800,
+        "min": 3000,
+        "max": 6000,
+        "step": 600
+      },
+      "pay_per_s_mg": {
+        "value": 50,
+        "min": 25,
+        "max": 100,
+        "step": 5
+      }
     }
   }
 }

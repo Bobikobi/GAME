@@ -7,7 +7,7 @@
  * The input is started from here and let go in the page: a frame can be a quarter of a second on a machine
  * rendering in software, and a release sent over the wire lands a frame late, which walks the body a tile further.
  */
-import { type Page, sleep } from './cdp';
+import { type Page, WALK_WARP, sleep, timed } from './cdp';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
 
@@ -18,8 +18,8 @@ const ARROW: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'Ar
 /** Art pixels per tile, and the middle of one (`walking.ts` ART_PX). */
 export const ART_PX = 64;
 const MIDDLE = ART_PX / 2;
-/** How far out on the pad the stick is pushed: past the 40% of its width that walks at full speed (`input.ts`). */
-const STICK_OUT = 0.45;
+/** How far the thumb is pushed from where it landed, in CSS px: past the full-speed share of the floating ring (`stick.ts`, the ring is at least 96 px); landscape.ts pushes 60. */
+const STICK_OUT = 60;
 /** How often the feet are read while a direction is held, in ms. */
 const POLL = 25;
 
@@ -119,8 +119,12 @@ export class FreeWalk {
   private held = new Set<Dir>();
   /** the stick's push, while a finger is on the pad */
   private pushed: [number, number] | null = null;
-  private pad: { cx: number; cy: number; w: number } | null = null;
+  /** where the thumb lands to raise the floating stick: left half, below the HUD's band (set once) */
+  private anchor: { x: number; y: number } | null = null;
   private installed = false;
+  /** whether the finger that holds the floating stick is down (it stays down between walks) */
+  private fingerDown = false;
+  private flip = 0;
 
   constructor(
     readonly page: Page,
@@ -174,7 +178,11 @@ export class FreeWalk {
    * the body walks a diagonal as a diagonal, and the page lets go on the frame the tile is reached. A window
    * opening under the walk ends it where it stands (the word in town stops the walk), and a timeout throws.
    */
-  async holdTo(tile: readonly number[], what: string, timeoutMs = 10_000): Promise<void> {
+  holdTo(tile: readonly number[], what: string, timeoutMs = 10_000): Promise<void> {
+    return timed('walk', () => (WALK_WARP > 1 ? this.page.warped(WALK_WARP, () => this.holdToTimed(tile, what, timeoutMs)) : this.holdToTimed(tile, what, timeoutMs)));
+  }
+
+  private async holdToTimed(tile: readonly number[], what: string, timeoutMs: number): Promise<void> {
     await this.install();
     await this.page.eval(`window.__walk.until([${tile[0]}, ${tile[1]}], ${this.touch})`);
     const [tx, ty] = middleOf(tile);
@@ -280,30 +288,48 @@ export class FreeWalk {
     }
   }
 
-  /** The phone's stick: a finger at 45% of the pad's width, in the axes' direction; a direction change starts a new one. */
+  /**
+   * The phone's floating stick: a finger raised in the left half and pushed 60 px, in the axes' direction. The finger stays
+   * down between walks (the page lets the walk go on the tile's own frame), so a walk costs one touch event, not a lift and a
+   * landing; a push is a move, and a move to the very same point is not sent by the browser, so the push alternates by 2 px.
+   */
   private async push(ax: number, ay: number): Promise<void> {
     if (ax === 0 && ay === 0) {
       if (!this.pushed) return;
       this.pushed = null;
-      await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      // the page let go on the tile; where the walk ended any other way (a box, a timeout) the finger goes back to the middle
+      const still = await this.page.eval<boolean>(`(() => { const v = __game.controls.vector(); return v[0] !== 0 || v[1] !== 0; })()`);
+      if (still && this.fingerDown && this.anchor) await this.page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...this.anchor, id: 1 }] });
       return;
     }
     const length = Math.hypot(ax, ay);
     const ux = ax / length;
     const uy = ay / length;
     if (this.pushed && Math.abs(this.pushed[0] - ux) < 1e-9 && Math.abs(this.pushed[1] - uy) < 1e-9) return;
-    if (!this.pad) {
-      this.pad = await this.page.eval<{ cx: number; cy: number; w: number }>(
-        `(() => { const r = document.querySelector('.pad').getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width }; })()`,
+    if (!this.anchor) {
+      this.anchor = await this.page.eval<{ x: number; y: number }>(
+        `(() => { let band = 0; for (const e of document.querySelectorAll('.top > .hud, .top > .tracker')) { const r = e.getBoundingClientRect(); if (r.height > 0) band = Math.max(band, r.bottom); } return { x: 170, y: Math.round((band + window.innerHeight) / 2) + 20 }; })()`,
       );
     }
-    if (this.pushed) await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     this.pushed = [ux, uy];
-    const out = this.pad.w * STICK_OUT;
-    await this.page.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: this.pad.cx + ux * out, y: this.pad.cy + uy * out, id: 1 }],
-    });
+    this.flip = 1 - this.flip;
+    const out = STICK_OUT + 2 * this.flip;
+    const to = { x: this.anchor.x + ux * out, y: this.anchor.y + uy * out, id: 1 };
+    // a tap by anything else ends every finger: a move with none down is refused by the browser, and the finger lands again
+    if (this.fingerDown) {
+      try {
+        await this.page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to] });
+        return;
+      } catch {
+        this.fingerDown = false;
+      }
+    }
+    this.fingerDown = true;
+    // the stick rises under the thumb where it lands and reads no walk; the push is the move from there (both sent at once, in order)
+    await Promise.all([
+      this.page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...this.anchor, id: 1 }] }),
+      this.page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to] }),
+    ]);
   }
 
   /** The page's own hook that lets go of the walk on the right frame. */

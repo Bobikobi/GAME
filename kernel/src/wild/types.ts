@@ -44,7 +44,7 @@ export interface WildKind {
 
 /** One live animal. Integers only; every field a JSON value, so it can live in a saved state. */
 export interface Creature {
-  /** serial in its world; the stagger key is id % THINK_EVERY */
+  /** serial in its world; the stagger key uses the pulse count derived from wild.think_ms */
   id: number;
   /** the anchor's id, `kind@x,y` */
   anchor: string;
@@ -139,8 +139,6 @@ export interface ThinkOut {
   fledFrom?: Tile;
 }
 
-/** Server ticks of 100 ms between two thinks of one animal (HUNTING 1, COMBAT 4.9 tick_ms 100). */
-export const THINK_EVERY = 8;
 /** Game ms of one think step: a "step" in HUNTING 2 (owner question 6 default). */
 export const THINK_MS = 800;
 
@@ -148,7 +146,7 @@ export const THINK_MS = 800;
  * The numbers of HUNTING 2 to 4 and BEHAVIOUR 5.1 that are not a kind's own. Four of them have a row in
  * the core's params: `walkNoise` is `gait.noise_walk`, and since the creature schema `avoidSteps` is
  * `wild.flee_avoid_steps`, `denStay` `wild.den_stay_steps` and `spread` `wild.spread_tiles` (and
- * `THINK_EVERY` above is `wild.think_ticks`). The pull request that steps animals builds this object from params,
+ * `wild.think_ms` becomes a pulse count through `pulseDurations`). The pull request that steps animals builds this object from params,
  * with a `wild` row for each number it reads that has none yet; `leash` and `giveUp` take the fight's
  * own rows (COMBAT 4.9) when the fight lands.
  */
@@ -182,7 +180,7 @@ export const WILD = {
   stalkClose: 3,
   /** CHASE: tiles from the anchor before it goes home (`leash_tiles`) */
   leash: 7,
-  /** CHASE: steps out of sense before it gives up (`give_up_t` 50 ticks, rounded up to steps) */
+  /** CHASE: think steps out of sense before it gives up (`give_up_ms` 5000 ms, rounded up to steps) */
   giveUp: 7,
 } as const;
 

@@ -429,6 +429,10 @@
                 "type": "string"
               },
               {
+                "const": "passage",
+                "type": "string"
+              },
+              {
                 "const": "restore",
                 "type": "string"
               },
@@ -450,6 +454,10 @@
               },
               {
                 "const": "reaction",
+                "type": "string"
+              },
+              {
+                "const": "set",
                 "type": "string"
               },
               {
@@ -478,6 +486,10 @@
               },
               {
                 "const": "school",
+                "type": "string"
+              },
+              {
+                "const": "story",
                 "type": "string"
               }
             ]

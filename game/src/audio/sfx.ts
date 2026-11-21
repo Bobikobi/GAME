@@ -5,7 +5,7 @@ export type SfxId =
   | 'strike' | 'crack' | 'snap' | 'tug' | 'rustle' | 'pluck' | 'dig' | 'thud' | 'douse'
   | 'hammer' | 'sizzle' | 'coin' | 'pickup' | 'ui' | 'back' | 'miss' | 'good'
   | 'perfect' | 'step' | 'whisper' | 'bell' | 'click' | 'voice' | 'growl' | 'safe'
-  | 'wings' | 'plop' | 'journal';
+  | 'wings' | 'plop' | 'journal' | 'howl';
 
 export interface SfxOptions {
   pan?: number;
@@ -77,6 +77,7 @@ export function playSfx(
     case 'click': return click(context, output, when);
     case 'voice': return playVoice(context, output, when, detune);
     case 'growl': return growl(context, output, when, detune);
+    case 'howl': return howl(context, output, when, detune);
     case 'safe': return safe(context, output, when, detune);
     case 'wings': return wings(context, output, when);
     case 'plop': return plop(context, output, when, detune);
@@ -156,6 +157,49 @@ function growl(context: BaseAudioContext, out: AudioNode, at: number, detune: nu
   voice.stop(at + length);
   shake.stop(at + length);
   noiseBurst(context, out, at, 0.55, 'bandpass', 380, 0.12);
+  return length;
+}
+
+/**
+ * A wolf far off after dark (NEXT.md 12 c, the far beat): one long call that slides up, holds with a slow waver
+ * and falls away, through a throat's band, with a second voice a hair sharp. About two and a half seconds.
+ */
+function howl(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
+  const length = 2.6;
+  const throat = context.createBiquadFilter();
+  throat.type = 'bandpass';
+  throat.frequency.value = 900;
+  throat.Q.value = 0.9;
+  const envelope = context.createGain();
+  envelope.gain.setValueAtTime(0, at);
+  envelope.gain.linearRampToValueAtTime(0.32, at + 0.35);
+  envelope.gain.setValueAtTime(0.32, at + 1.6);
+  envelope.gain.linearRampToValueAtTime(0, at + length);
+  throat.connect(envelope).connect(out);
+  // the waver: five cents of vibrato, five times a second, on both voices
+  const waver = context.createOscillator();
+  const depth = context.createGain();
+  waver.frequency.value = 5;
+  depth.gain.value = 18;
+  waver.connect(depth);
+  for (const [cents, level] of [[0, 0.7], [14, 0.3]] as const) {
+    const voice = context.createOscillator();
+    const mix = context.createGain();
+    voice.type = 'triangle';
+    voice.detune.value = detune + cents;
+    depth.connect(voice.detune);
+    voice.frequency.setValueAtTime(330, at);
+    voice.frequency.exponentialRampToValueAtTime(523, at + 0.5);
+    voice.frequency.setValueAtTime(523, at + 1.5);
+    voice.frequency.exponentialRampToValueAtTime(392, at + length);
+    mix.gain.value = level;
+    voice.connect(mix).connect(throat);
+    voice.start(at);
+    voice.stop(at + length);
+  }
+  waver.start(at);
+  waver.stop(at + length);
+  noiseBurst(context, out, at, 0.6, 'bandpass', 700, 0.04);
   return length;
 }
 

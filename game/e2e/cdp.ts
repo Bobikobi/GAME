@@ -22,18 +22,64 @@ function findChrome(): string {
   throw new Error('No Chrome found. Install Chrome or set CHROME_BIN.');
 }
 
-export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+/**
+ * The time ledger: where a script's wall time goes, by kind (a walk, a wait on the game's clock, a fixed sleep), printed at
+ * the end of the run. A span is charged to the outermost kind open (a sleep inside a wait is the wait's), what no span covers
+ * is "taps, evals and loads". `E2E_LEDGER=0` silences it.
+ */
+const ledger = new Map<string, { ms: number; n: number }>();
+let open = 0;
+const started = Date.now();
+export function charge(kind: string, ms: number): void {
+  const row = ledger.get(kind) ?? { ms: 0, n: 0 };
+  row.ms += ms;
+  row.n += 1;
+  ledger.set(kind, row);
+}
+/** Runs `fn`, charging its wall time to `kind` unless a span is already open. */
+export async function timed<T>(kind: string, fn: () => Promise<T>): Promise<T> {
+  const t0 = Date.now();
+  open += 1;
+  try {
+    return await fn();
+  } finally {
+    open -= 1;
+    if (open === 0) charge(kind, Date.now() - t0);
+  }
+}
+if (process.env.E2E_LEDGER !== '0') {
+  process.on('exit', () => {
+    const total = Date.now() - started;
+    const charged = [...ledger.values()].reduce((a, r) => a + r.ms, 0);
+    const rows = [...ledger.entries()].sort((a, b) => b[1].ms - a[1].ms).slice(0, 12);
+    if (rows.length === 0) return;
+    console.log(`e2e ledger: ${(total / 1000).toFixed(0)} s in all, ${((total - charged) / 1000).toFixed(0)} s in taps, evals and loads`);
+    for (const [kind, r] of rows) console.log(`e2e ledger: ${(r.ms / 1000).toFixed(1).padStart(6)} s ${String(r.n).padStart(4)}x ${kind}`);
+  });
+}
+
+export const sleep = async (ms: number): Promise<void> => {
+  const t0 = Date.now();
+  await new Promise<void>((resolve) => setTimeout(resolve, ms));
+  if (open === 0) charge(`sleep ${ms} ms`, Date.now() - t0);
+};
 
 /**
  * E2E_WARP=<k> (k > 1) lets the game's clock run k times faster than the wall's while a script only waits on it
  * (`Page.waitFor`): a dig, a felling or a cooking that holds the player for N game seconds, the wait for dusk.
- * Walks, taps, minigames and every sleep stay at the real pace, and game durations are unchanged (the tick is
+ * Walks, taps and every sleep stay at the real pace, and game durations are unchanged (the tick is
  * the game's own, so a dig still takes its game seconds); what shrinks is only the wall time spent looking at
  * the clock. Set by the runner (run.ts) for the scripts that wait on the clock; unset, nothing is wrapped.
  * The wrap is in the page's performance.now(), which Phaser's loop reads for its delta; the frame cap on the
  * game's own side (LONGEST_FRAME_MS) bounds the gain on a slow machine, and the end-of-run report says how much.
  */
 const WARP = Number(process.env.E2E_WARP ?? 1);
+/**
+ * How fast the game's clock runs while a script walks (walk.ts): the walk's own factor, lower than the wait's, because the body
+ * crosses a tile in a few frames and the page lets go on the frame the feet are on the tile, so a frame must not carry it past.
+ * Default 1 (walks at the game's pace): at 2 the phone opening's collapsed-hall digs timed out on CI (issue #545). E2E_WALK_WARP=2 turns it on.
+ */
+export const WALK_WARP = Math.min(WARP, Number(process.env.E2E_WALK_WARP ?? 1));
 
 /** In the page: a clock that is continuous when its rate changes, and stays at 1 unless a wait asked and it is safe. */
 const WARP_CLOCK = `(() => {
@@ -41,8 +87,7 @@ const WARP_CLOCK = `(() => {
   let virt = real(), last = virt, gain = 0, since = 0, safe = false;
   window.__warp = 1;
   // safe when the world has run long enough for the device settings to settle (120 frames, about 10 s of play clock
-  // even on a slow runner; cached per 50 ms) and no minigame is open (asked at every call: a minigame times its
-  // frames on this clock, and a press is timed in real ms from its ring, so it must see one clock from its start)
+  // even on a slow runner; cached per 50 ms)
   const settled = (r) => {
     if (r - since > 50) {
       since = r;
@@ -53,7 +98,7 @@ const WARP_CLOCK = `(() => {
   };
   performance.now = () => {
     const r = real();
-    const k = window.__warp > 1 && settled(r) && !document.querySelector('.minigame-layer') ? window.__warp : 1;
+    const k = window.__warp > 1 && settled(r) ? window.__warp : 1;
     virt += (r - last) * k;
     gain += (r - last) * (k - 1);
     last = r;
@@ -277,24 +322,32 @@ export class Page {
    */
   async waitFor<T = unknown>(expression: string, what: string, timeoutMs = 15_000, warp = true): Promise<T> {
     const end = Date.now() + timeoutMs;
-    const warping = WARP > 1 && warp;
-    const t0 = Date.now();
-    if (warping) await this.eval(`(window.__warp = ${WARP})`);
-    try {
+    const poll = async (): Promise<T> => {
       for (;;) {
         const v = await this.eval<T>(expression);
         if (v) return v;
         if (Date.now() > end) throw new Error(`timed out waiting for ${what}`);
-        await sleep(40);
+        await new Promise<void>((resolve) => setTimeout(resolve, 40));
       }
+    };
+    const warping = WARP > 1 && warp;
+    return timed(`${warping ? 'wait (warped)' : 'wait (real pace)'}: ${what.slice(0, 48)}`, () => (warping ? this.warped(WARP, poll) : poll()));
+  }
+
+  /**
+   * Runs `fn` with the game's clock `k` times the wall's (see WARP), and puts it back at once; the gain is booked for the
+   * report at the end. The page can be gone when it ends (a crash or a reload), which the caller sees on its own.
+   */
+  async warped<T>(k: number, fn: () => Promise<T>): Promise<T> {
+    const t0 = Date.now();
+    await this.eval(`(window.__warp = ${k})`);
+    try {
+      return await fn();
     } finally {
-      if (warping) {
-        warpWaitMs += Date.now() - t0;
-        // the clock is put back at once; the page can be gone (a crash or a reload), which the caller sees on its own
-        const gain = await this.eval<number>('(window.__warp = 1, window.__warpGain ? window.__warpGain() : 0)').catch(() => this.gainSeen);
-        warpedMs += gain - this.gainSeen;
-        this.gainSeen = gain;
-      }
+      warpWaitMs += Date.now() - t0;
+      const gain = await this.eval<number>('(window.__warp = 1, window.__warpGain ? window.__warpGain() : 0)').catch(() => this.gainSeen);
+      warpedMs += gain - this.gainSeen;
+      this.gainSeen = gain;
     }
   }
 
@@ -330,6 +383,11 @@ export class Page {
     await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
     await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+  }
+
+  /** One notch of the mouse wheel over the page (negative deltaY is away from the user, the way in). */
+  async wheel(x: number, y: number, deltaY: number): Promise<void> {
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY });
   }
 
   /** Taps the first visible element matching the selector whose text contains `text`. */

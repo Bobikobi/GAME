@@ -6,7 +6,6 @@ import {
   type Action,
   type Bundle,
   type GameEvent,
-  type Grade,
   type Rect,
   type State,
   WEAR_SLOTS,
@@ -89,39 +88,25 @@ describe('determinism', () => {
   });
 });
 
-describe('timing grade', () => {
-  test('never lowers gather yield as grade increases', () => {
-    const node = Object.entries(bundle.instances)
-      .find(([, instance]) => instance.source === 'core/river-stones');
+describe('work has no grade', () => {
+  test('the same unit comes home whatever grade an old log claims', () => {
+    const node = Object.entries(bundle.instances).find(([, instance]) => instance.source === 'core/reed-bank');
     expect(node).toBeDefined();
     const [nodeId, instance] = node!;
-    const yields: number[] = [];
-    for (const grade of [0, 1, 2, 3, 4] as const) {
-      let state = newState(bundle, 77);
-      const started = step(bundle, state, { t: 'start', starter: 'core/forager', name: 'Grade' }, 0);
-      expect(started.ok).toBe(true);
+    const bags: unknown[] = [];
+    for (const grade of [undefined, 0, 1, 2, 3, 4]) {
+      const started = step(bundle, newState(bundle, 77), { t: 'start', starter: 'core/forager', name: 'Grade' }, 0);
       if (!started.ok) throw new Error(started.error);
-      state = started.state;
-      const path = bfsNear(bundle, state.player, state.player.at, {
-        x: instance.x,
-        y: instance.y,
-        w: 1,
-        h: 1,
-      });
+      const state = started.state;
+      const path = bfsNear(bundle, state.player, state.player.at, { x: instance.x, y: instance.y, w: 1, h: 1 });
       expect(path).toBeDefined();
       const result = step(bundle, state, { t: 'gather', node: nodeId, grade, at: path!.at(-1)! }, 0);
-      expect(result.ok).toBe(true);
       if (!result.ok) throw new Error(result.error);
-      yields.push(result.state.player.bag['core/stone'] ?? 0);
+      bags.push(result.state.player.bag);
     }
-
-    // a miss is a gamble that brings home at most one unit
-    expect(yields[0]).toBeLessThanOrEqual(1);
-    expect(yields[1]!).toBeGreaterThanOrEqual(yields[0]!);
-    expect(yields[2]!).toBeGreaterThanOrEqual(yields[1]!);
-    expect(yields[3]!).toBeGreaterThanOrEqual(yields[2]!);
-    // the jackpot pays in experience only
-    expect(yields[4]).toBe(yields[3]);
+    // one unit, not the node's whole yield, and the same for every grade
+    expect(bags[0]).toMatchObject({ 'core/reed': 1 });
+    for (const bag of bags) expect(bag).toEqual(bags[0]);
   });
 });
 
@@ -172,7 +157,6 @@ function badAction(state: State, random: () => number): Action {
     { t: 'gather', node: 'core/missing#0', grade: 3, at: [...state.player.at] },
     { t: 'gather', node: knownNode, grade: 3, at: [0, 0] },
     { t: 'buy', npc: 'core/trader', item: 'core/basket', qty: 0, at: [...state.player.at] },
-    { t: 'gather', node: knownNode, grade: 7 as Grade, at: [...state.player.at] },
   ];
   return pick(choices, random);
 }
@@ -185,8 +169,8 @@ function plausibleAction(state: State, random: () => number): Action {
     const at = nearTile(state, { x: instance.x, y: instance.y, w: 1, h: 1 });
     if (!at) return fallback();
     return instance.kind === 'resource'
-      ? { t: 'gather', node: id, grade: Math.floor(random() * 5) as Grade, at }
-      : { t: 'dig', spot: id, grade: Math.floor(random() * 5) as Grade, at };
+      ? { t: 'gather', node: id, grade: Math.floor(random() * 5), at }
+      : { t: 'dig', spot: id, grade: Math.floor(random() * 5), at };
   }
   if (choice === 1) {
     const [id, restore] = pick(Object.entries(bundle.restores).sort(([a], [b]) => a.localeCompare(b)), random);
@@ -267,19 +251,24 @@ function openingLog(): { a: Action; tick: number }[] {
     if (!result.ok) throw new Error(result.error);
     state = result.state;
   };
+  /** A node worked to its end: a unit after the last one ended. */
+  const work = (node: string, at: Tile): void => {
+    do append({ t: 'gather', node, at }, state.player.busyUntil);
+    while (state.nodes[node]?.taken !== undefined);
+  };
   append({ t: 'start', starter: 'core/forager', name: 'Replay' }, 0);
   // the forager's herbs over the keystone come first: the stone waits for that pick
   const [herb, herbSpot] = Object.entries(bundle.instances).filter(([, instance]) => instance.source === 'core/bank-herbs').sort(([a], [b]) => a.localeCompare(b))[0]!;
   const near = nearTile(state, { x: herbSpot.x, y: herbSpot.y, w: 1, h: 1 });
   if (!near) throw new Error(`No path to ${herb}.`);
-  append({ t: 'gather', node: herb, grade: 3, at: near }, state.player.busyUntil);
+  work(herb, near);
   const stones = Object.entries(bundle.instances)
     .filter(([, instance]) => instance.source === 'core/keystone')
     .sort(([a], [b]) => a.localeCompare(b));
   for (const [node, instance] of stones) {
     const at = nearTile(state, { x: instance.x, y: instance.y, w: 1, h: 1 });
     if (!at) throw new Error(`No path to ${node}.`);
-    append({ t: 'gather', node, grade: 3, at }, state.player.busyUntil);
+    work(node, at);
   }
   const bridge = findSlot(bundle.map, bundle.restores['core/old-bridge']!.place.slot)!;
   const at = nearTile(state, bridge);

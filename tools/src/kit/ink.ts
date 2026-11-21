@@ -100,9 +100,9 @@ interface KitFile {
   kit: { sprites: Record<string, { file: string; w: number; density?: number }> };
 }
 
-/** The sprites `kit:ink` and the check cover: density 4, and not seamless ground (`tiles/`). */
+/** The sprites `kit:ink` and the check cover: density 4, and neither seamless ground (`tiles/`) nor an animal (`creatures/`, pick C of 31.10). */
 export function inkSprites(sprites: KitFile['kit']['sprites']): [string, { file: string; w: number }][] {
-  return Object.entries(sprites).filter(([name, s]) => s.density === 4 && !name.startsWith('tiles/'));
+  return Object.entries(sprites).filter(([name, s]) => s.density === 4 && !name.startsWith('tiles/') && !name.startsWith('creatures/'));
 }
 
 /** Apply the pass in place to the kit at `kitDir`. Returns the files it changed. */

@@ -92,7 +92,7 @@ describe('opening sequence', () => {
         const key = keystones[0]![1];
         const before = JSON.stringify(planner.state);
         const near = required(bfsNear(bundle, planner.state.player, planner.state.player.at, { x: key.x, y: key.y, w: 1, h: 1 }), 'The keystone is out of reach.');
-        const tried = step(bundle, planner.state, { t: 'gather', node: keystones[0]![0], grade: 3, at: near.at(-1)! }, Math.max(planner.state.tick, planner.state.player.busyUntil));
+        const tried = step(bundle, planner.state, { t: 'gather', node: keystones[0]![0], at: near.at(-1)! }, Math.max(planner.state.tick, planner.state.player.busyUntil));
         expect(tried).toEqual({ ok: false, error: waits[pocket] });
         expect(JSON.stringify(planner.state)).toBe(before);
         firstTask = ownTask();
@@ -124,7 +124,8 @@ describe('opening sequence', () => {
       const trees = instancesOf(bundle, 'core/oak-trees');
       expect(trees.length).toBeGreaterThanOrEqual(2);
       const felled = planner.gather(trees[0]![0]);
-      expect(felled).toContainEqual({ e: 'gain', item: 'core/log', qty: 3 });
+      // a log a unit, three units to the tree
+      expect(felled.filter((e) => e.e === 'gain' && e.item === 'core/log')).toEqual(Array(3).fill({ e: 'gain', item: 'core/log', qty: 1 }));
       expect(planner.state.player.xp['core/woodcutting']).toBe(3000);
       planner.actNear(
         { x: fire[0], y: fire[1], w: 1, h: 1 },
@@ -278,21 +279,26 @@ class Planner {
     return this.act(action(path!.at(-1)!), tick);
   }
 
+  /** The node worked to its end: a unit after the last one ended, as the client repeats it with no input (QUARRYING 10). */
   gather(node: string): GameEvent[] {
     const instance = required(this.bundle.instances[node], `Unknown resource instance ${node}.`);
     expect(instance.kind).toBe('resource');
     const resource = this.bundle.resources[instance.source]!;
-    const minimum = Math.max(
-      this.state.tick,
-      this.state.player.busyUntil,
-      this.state.nodes[node]?.readyAt ?? 0,
-    );
-    const tick = firstOpenTick(this.bundle, minimum, resource.hours);
-    return this.actNear(
-      { x: instance.x, y: instance.y, w: 1, h: 1 },
-      (at) => ({ t: 'gather', node, grade: 3, at }),
-      tick,
-    );
+    const events: GameEvent[] = [];
+    do {
+      const minimum = Math.max(
+        this.state.tick,
+        this.state.player.busyUntil,
+        this.state.nodes[node]?.readyAt ?? 0,
+      );
+      const tick = firstOpenTick(this.bundle, minimum, resource.hours);
+      events.push(...this.actNear(
+        { x: instance.x, y: instance.y, w: 1, h: 1 },
+        (at) => ({ t: 'gather', node, at }),
+        tick,
+      ));
+    } while (this.state.nodes[node]?.taken !== undefined);
+    return events;
   }
 
   dig(spot: string): GameEvent[] {
@@ -301,7 +307,7 @@ class Planner {
     const tick = Math.max(this.state.tick, this.state.player.busyUntil, this.state.nodes[spot]?.readyAt ?? 0);
     return this.actNear(
       { x: instance.x, y: instance.y, w: 1, h: 1 },
-      (at) => ({ t: 'dig', spot, grade: 3, at }),
+      (at) => ({ t: 'dig', spot, at }),
       tick,
     );
   }

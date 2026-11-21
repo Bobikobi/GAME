@@ -11,6 +11,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -484,7 +485,7 @@ async function run(page: Page, url: string): Promise<void> {
   const built = await me.build();
   if (!built.built) throw new Error(`the wild ground refused a fire: ${built.words}`);
   if ((await me.logs()) !== watchLogs - 2) throw new Error(`kindling took ${watchLogs - (await me.logs())} logs, not 2`);
-  if (!(await me.page.eval<boolean>('__tend.sees()'))) throw new Error('the fire six tiles out of the town is not on the 390x844 screen');
+  if (!(await me.page.eval<boolean>('__tend.sees()'))) throw new Error('the fire six tiles out of the town is not on the sideways phone screen');
   if ((await me.stage()) !== 'full') throw new Error(`the new fire is ${await me.stage()}, not full`);
   // the hearth's feed toasts fade before a stage is read: no old clock is caught in the capture
   await page.waitFor(`__tend.toasts().length === 0`, 'the older toasts to fade', 12_000);
@@ -510,6 +511,21 @@ async function run(page: Page, url: string): Promise<void> {
   if ((await me.feedFitting()) !== 2) throw new Error('the embers did not take the two logs that fit');
   await me.setHour(21);
   await page.waitFor(`__tend.look() && __tend.look().burning`, 'the topped-up fire at 21:00', 5000);
+  // a living fire (CR-110), muted: the fire's breath moves and the crackle heard follows it while nothing leaves the speakers
+  await page.eval('__game.sound.setMuted(true)');
+  const breaths = new Set<string>();
+  const crackles = new Set<string>();
+  for (let i = 0; i < 12; i++) {
+    const b = await page.eval<{ gain: number } | null>("__game.world.fireBreath('own') ?? null");
+    if (b) breaths.add(b.gain.toFixed(3));
+    crackles.add((await page.eval<number>('__game.sound.state().crackle')).toFixed(3));
+    await sleep(100);
+  }
+  const quiet = await page.eval<number>('__game.sound.level()');
+  console.log(`living fire: ${breaths.size} breaths and ${crackles.size} crackle levels in 1.2 s, muted output ${quiet}`);
+  if (breaths.size < 3 || crackles.size < 3) throw new Error(`the fire did not breathe: ${breaths.size} breaths, ${crackles.size} crackle levels in 1.2 s`);
+  if (quiet !== 0) throw new Error(`muted, the output is ${quiet}, not 0`);
+  await page.eval('__game.sound.setMuted(false)');
 
   // a build during a chase is refused and keeps the logs; a chase that reaches the ring ends there.
   // Stepping out of the fire's light after dark opens the night's one warning (G31): the player closes it.
@@ -599,7 +615,7 @@ async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
   const local = remote ? null : await serve();
   const browser = await Browser.launch();
-  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
+  const page = await browser.newPage(PHONE);
   try {
     await run(page, remote ?? local?.url ?? '');
   } catch (error) {

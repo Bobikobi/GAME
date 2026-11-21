@@ -1,0 +1,71 @@
+{
+  "name": "wenna-down-1",
+  "label": "pixellab-wenna-down-1",
+  "provenance": "Issue #659: npc_wenna_down_1 (Codex draft e912daea890b9efa, chars-1.json) through the camera fix and a walk and an idle. Source: pnpm art:drafts fetch e912daea890b9efa, then pnpm art:reduce <it> --height 268 --frame 512 --colours 0 --out .scratch/pixellab/wenna-down-1/source.png (a 67 px figure after the x1/4 step of the faithful job)",
+  "jobs": [
+    {
+      "id": "faithful",
+      "recipe": "faithful",
+      "inputs": {
+        "image": "../../../.scratch/pixellab/wenna-down-1/source.png",
+        "image_size": 512,
+        "output_size": 128
+      },
+      "note": "The drawing onto a 128 px grid, kept as it is (fixer on). 128 is the frame of the game's character sheets; the figure stands 67 px tall in it, as the human does today."
+    },
+    {
+      "id": "camera",
+      "recipe": "rotate",
+      "inputs": {
+        "from_image": "@faithful",
+        "size": 128,
+        "from_view": "side",
+        "to_view": "high top-down"
+      },
+      "note": "The camera fix. The API has no 50 degree setting; high top-down is the nearest and the result is judged by eye on the game's grass."
+    },
+    {
+      "id": "eight",
+      "recipe": "rotations8",
+      "inputs": {
+        "first_frame": "@camera",
+        "description": "a village woman carrying two clay jars on a yoke, white cap, blue apron"
+      },
+      "note": "Eight facings of the corrected figure; the game uses down, left and up."
+    },
+    {
+      "id": "person",
+      "recipe": "character",
+      "inputs": {
+        "description": "a village woman carrying two clay jars on a yoke, white cap, blue apron",
+        "reference_image": "@camera",
+        "size": 128,
+        "n_directions": 4,
+        "view": "high top-down"
+      },
+      "note": "The stored character the motions run on; 'size' is the reference's canvas, for the price (2 generations at 128 px)."
+    },
+    {
+      "id": "walk",
+      "recipe": "motion",
+      "inputs": {
+        "character": "@person.character",
+        "size": 128,
+        "action": "walking slowly, the jars swaying on the yoke",
+        "directions": ["south", "west", "north"],
+        "frame_count": 8
+      }
+    },
+    {
+      "id": "idle",
+      "recipe": "motion",
+      "inputs": {
+        "character": "@person.character",
+        "size": 128,
+        "action": "standing still, breathing, the jars swaying a little",
+        "directions": ["south", "west", "north"],
+        "frame_count": 8
+      }
+    }
+  ]
+}

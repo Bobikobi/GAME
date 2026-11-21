@@ -12,5 +12,5 @@ The three things that went wrong before and are now rules:
 2. Take the palette decision before the first call (step 0b): `fits`, `restyle` or
    `ramp-added`. `tools/src/kit/gen.ts` refuses an outside reference without it.
 3. Never draw pixels by code or by hand, and never let a score steer a round. Open
-   `gallery.html` at 3x phone size and write two sentences on what you see before each change.
+   `gallery.html` at the game's scale and at 3x, and write two sentences on what you see before each change.
    At most three rounds.

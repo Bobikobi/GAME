@@ -9,7 +9,7 @@ import { AGE_COOKIE, clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKI
 import type { CountryLookup } from './country';
 import { inboxOf, RateLimit } from './limits';
 import type { Mailer } from './mailer';
-import { SignInRefusal, type OAuthProvider, type ProvenIdentity } from './provider';
+import { PROVES_ADDRESS, SignInRefusal, WEAKER_WAYS, type OAuthProvider, type ProvenIdentity, type ProviderId } from './provider';
 import { CLOSED_ACCOUNT_GRACE_MS, type AuthStore } from './store';
 import { isToken, newToken, pkceChallenge, sameSecret, tokenHash } from './tokens';
 
@@ -46,8 +46,10 @@ export interface SignInOptions {
   /** the account's secret key, 128 bits; a test passes its own */
   newSeed?: () => Seed;
   mailer: Mailer;
-  /** Google, when its client id and secret are set; Discord is a slot that is not open yet */
+  /** Google, when its client id and secret are set; closed ("not open yet") without them */
   google?: OAuthProvider;
+  /** Discord, the same way */
+  discord?: OAuthProvider;
   /** the origin this API answers on: the OAuth redirect and the email link are built on it */
   publicOrigin: string;
   /** where the game is: a browser is sent there after a sign-in, and a POST must come from it or from publicOrigin */
@@ -166,7 +168,7 @@ function slowDown(): SignInRefusal {
 }
 
 /**
- * Sign-in for the game's API (NEXT 18 e): Google by OAuth, an email link, and a Discord slot not open yet.
+ * Sign-in for the game's API (NEXT 18 e): Google and Discord by OAuth, and an email link.
  * A proven identity that names an account signs in at once; one that names none waits on a sign-up ticket
  * until the player gives a name and a year of birth, and only then is the account made.
  */
@@ -209,29 +211,41 @@ export function createSignIn(options: SignInOptions): SignIn {
   }
 
   /** A new session, and the one the browser had revoked: the token changes at every sign-in. */
-  async function startSession(request: IncomingMessage, accountId: string, at: number): Promise<string> {
+  /** A session through `via`, the way in that was just proven: none if a proof of the address took that way away meanwhile. */
+  async function startSession(request: IncomingMessage, accountId: string, at: number, via: { provider: ProviderId; subject: string }): Promise<string> {
     const previous = readCookie(request, SESSION_COOKIE);
     if (isToken(previous)) await store.revokeSession(tokenHash(previous), at);
     const token = newToken();
-    await store.createSession(tokenHash(token), accountId, at, at + SESSION_TTL_MS);
+    if (!(await store.createSession(tokenHash(token), accountId, at, at + SESSION_TTL_MS, via))) {
+      throw new SignInRefusal('That address already has an account. Sign in the way you made it.', 'email-taken', 409);
+    }
     return cookie(SESSION_COOKIE, token, SESSION_TTL_MS / 1000);
   }
 
   /**
-   * Where a proven identity leads: the account it already signs in to; else the account its address
-   * already has, which it joins (the provider has proven the address); else a sign-up ticket.
+   * Where a proven identity leads: the account it already signs in to; else the account its address already
+   * has, which a proof of the address joins (`PROVES_ADDRESS`), taking the address back from any weaker way in
+   * on it, and which a weaker one is refused; else a sign-up ticket.
    */
   async function arrive(request: IncomingMessage, response: ServerResponse, identity: ProvenIdentity, at: number): Promise<void> {
     const email = identity.email.trim().toLowerCase();
     let accountId = await store.accountForIdentity(identity.provider, identity.subject);
     if (!accountId) {
       accountId = await store.accountForEmail(email);
-      if (accountId) await store.addIdentity(identity.provider, identity.subject, accountId);
+      if (accountId && !PROVES_ADDRESS[identity.provider]) {
+        throw new SignInRefusal('That address already has an account. Sign in the way you made it.', 'email-taken', 409);
+      }
+      if (accountId) {
+        // whoever made or joined the account through a weaker way in may not have held this mailbox: they are signed
+        // out and that way in is gone, so the address's owner is the only one left in the account
+        await store.dropIdentities(accountId, WEAKER_WAYS, at);
+        await store.addIdentity(identity.provider, identity.subject, accountId);
+      }
     }
     if (accountId) {
       // an account closed within its 30 days comes back by signing in; the game is told plainly
       const restored = (await store.isClosed(accountId)) && (await store.reopenAccount(accountId));
-      const session = await startSession(request, accountId, at);
+      const session = await startSession(request, accountId, at, identity);
       backToGame(response, restored ? 'restored' : 'ok', [session, clearCookie(SIGNUP_COOKIE), clearCookie(FLOW_COOKIE)]);
       return;
     }
@@ -439,7 +453,7 @@ export function createSignIn(options: SignInOptions): SignIn {
       await store.dropTicket(ticket.ticketHash);
       throw new SignInRefusal('That address already has an account. Sign in instead.', 'email-taken', 409);
     }
-    const session = await startSession(request, made.accountId, at);
+    const session = await startSession(request, made.accountId, at, ticket);
     sendJson(response, 201, { name, opening: handover.kept ? 'kept' : 'fresh' }, [session, clearCookie(SIGNUP_COOKIE)]);
   }
 
@@ -480,9 +494,7 @@ export function createSignIn(options: SignInOptions): SignIn {
   type Route = (request: IncomingMessage, response: ServerResponse, url: URL) => Promise<void>;
 
   function oauth(provider: 'google' | 'discord'): { start: Route; callback: Route } {
-    const open = provider === 'google' ? options.google : undefined;
-    // TODO(NEXT 18 e, gate h5): Discord's OAuth app needs the owner's own login, so the slot answers "not
-    // open" until it exists; a `discordProvider` then fills `open` like Google's.
+    const open = provider === 'google' ? options.google : options.discord;
     const closed: Route = () => Promise.reject(new SignInRefusal(`Sign-in with ${provider === 'google' ? 'Google' : 'Discord'} is not open yet.`, 'not-open', 501));
     // every start writes a flow row, so one client address starts only so many (finding 6 of the 27.10 review)
     const start: Route = async (request, response, url) => {

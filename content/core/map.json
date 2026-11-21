@@ -303,7 +303,7 @@
             "riverbank"
           ],
           "cover": {
-            "core/base-kit:props/reeds": 30,
+            "core/base-kit:props/grass_tall": 30,
             "core/base-kit:props/flowers": 20,
             "core/base-kit:props/mushrooms_small": 10
           },
@@ -343,7 +343,7 @@
             "frame"
           ],
           "cover": {
-            "core/base-kit:props/reeds": 60
+            "core/base-kit:props/grass_tall": 60
           },
           "opens_by": "core/the-landing"
         },
@@ -475,7 +475,7 @@
           ],
           "cover": {
             "core/base-kit:props/pebbles": 20,
-            "core/base-kit:props/rock_small": 10
+            "core/base-kit:props/rock_mossy": 10
           },
           "opens_by": "wake"
         },
@@ -496,7 +496,7 @@
             "walled"
           ],
           "cover": {
-            "core/base-kit:props/rock_stones": 30,
+            "core/base-kit:props/pebbles": 30,
             "core/base-kit:props/mushrooms_small": 30
           },
           "opens_by": "core/the-night-arch"
@@ -646,7 +646,7 @@
           ],
           "cover": {
             "core/base-kit:props/mushrooms_small": 60,
-            "core/base-kit:props/rock_small": 50,
+            "core/base-kit:props/rock_mossy": 50,
             "core/base-kit:props/glow_mushrooms": 40
           },
           "opens_by": "core/the-tangle"
@@ -669,7 +669,7 @@
             "world:undead"
           ],
           "cover": {
-            "core/base-kit:props/rock_stones": 40,
+            "core/base-kit:props/pebbles": 40,
             "core/base-kit:props/fallen_branches": 40
           },
           "opens_by": "core/the-descent"
@@ -692,7 +692,7 @@
             "world:undead"
           ],
           "cover": {
-            "core/base-kit:props/rock_stones": 80,
+            "core/base-kit:props/pebbles": 80,
             "core/base-kit:props/glow_mushrooms": 60,
             "core/base-kit:props/mushrooms_small": 40,
             "core/base-kit:props/fallen_branches": 20
@@ -717,7 +717,7 @@
             "world:human"
           ],
           "cover": {
-            "core/base-kit:props/reeds": 40,
+            "core/base-kit:props/grass_tall": 40,
             "core/base-kit:props/pebbles": 20
           },
           "opens_by": "core/the-shore-way"
@@ -1683,6 +1683,30 @@
         }
       },
       {
+        "id": "core/camp-wolf",
+        "sprite": "core/base-kit:props/hazard_wolf",
+        "x": 28,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "hazard": {
+          "kind": "predator",
+          "window": [
+            "night"
+          ]
+        }
+      },
+      {
+        "id": "core/wolf-tracks",
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 29,
+        "y": 14,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
         "id": "core/bank-wolf",
         "sprite": "core/base-kit:props/hazard_wolf",
         "x": 8,
@@ -1824,22 +1848,6 @@
       {
         "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
-        "y": 5,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
-        "y": 10,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
         "y": 24,
         "w": 1,
         "h": 1,
@@ -1854,38 +1862,6 @@
         "h": 1,
         "solid": false,
         "cover": true
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 7,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 12,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 21,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 27,
-        "w": 1,
-        "h": 1,
-        "solid": false
       },
       {
         "sprite": "core/base-kit:props/pebbles",
@@ -2099,94 +2075,6 @@
       },
       {
         "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 13,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 15,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 11,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 14,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 20,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
-        "y": 7,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
-        "y": 9,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 12,
-        "y": 6,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 31,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 30,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 32,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 29,
         "w": 1,
@@ -2238,38 +2126,6 @@
         "h": 1,
         "solid": false,
         "cover": true
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 26,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 22,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 23,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 25,
-        "w": 1,
-        "h": 1,
-        "solid": false
       },
       {
         "sprite": "core/base-kit:props/pebbles",
@@ -3777,30 +3633,6 @@
       },
       {
         "sprite": "core/base-kit:props/grass_tall_c",
-        "x": 16,
-        "y": 33,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall_c",
-        "x": 16,
-        "y": 29,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 28,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall_c",
         "x": 3,
         "y": 5,
         "w": 1,
@@ -3848,22 +3680,6 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
-        "y": 3,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall_b",
-        "x": 16,
-        "y": 4,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/grass_tall_c",
         "x": 20,
         "y": 3,
@@ -3872,24 +3688,8 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/grass_tall_c",
-        "x": 16,
-        "y": 5,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/grass_tall",
         "x": 20,
-        "y": 6,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/grass_tall",
-        "x": 16,
         "y": 6,
         "w": 1,
         "h": 1,
@@ -3910,6 +3710,246 @@
         "w": 2,
         "h": 1,
         "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 12,
+        "y": 2,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 5,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 12,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 9,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 12,
+        "y": 10,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 14,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 12,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 11,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_c",
+        "x": 11,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 10,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 11,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 12,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 16,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_c",
+        "x": 16,
+        "y": 5,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 16,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 17,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 16,
+        "y": 10,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_c",
+        "x": 16,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_b",
+        "x": 17,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 18,
+        "y": 17,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 16,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall_c",
+        "x": 16,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "x": 17,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 30,
+        "y": 14,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 39,
+        "y": 16,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 17,
+        "y": 9,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 34,
+        "y": 22,
+        "w": 2,
+        "h": 1,
+        "solid": true
       }
     ],
     "creatures": {
@@ -3922,7 +3962,50 @@
           "hours": [
             5,
             20
-          ]
+          ],
+          "behaviour": {
+            "sight": 5,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 30,
+              "graze": 40,
+              "wander": 30
+            },
+            "roam": 6,
+            "flight": "fly",
+            "sleeps": "ground",
+            "alarm": 5,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "ignores",
+            "water": "crosses",
+            "weather": "roosts",
+            "town": "town_kind",
+            "habitat": [
+              "meadow",
+              "town"
+            ],
+            "group": {
+              "class": "flock",
+              "bands": [
+                0,
+                0,
+                20,
+                80
+              ],
+              "season": {
+                "winter": [
+                  0,
+                  0,
+                  10,
+                  90
+                ]
+              }
+            },
+            "family": "perching-birds"
+          }
         },
         "core/crow": {
           "look": "bird",
@@ -3985,7 +4068,41 @@
           "hours": [
             5,
             22
-          ]
+          ],
+          "behaviour": {
+            "sight": 2,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 50,
+              "graze": 30,
+              "wander": 20
+            },
+            "roam": 6,
+            "flight": "swim",
+            "sleeps": "water",
+            "alarm": 0,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "ignores",
+            "water": "lives_in",
+            "weather": "none",
+            "town": "town_kind",
+            "habitat": [
+              "water"
+            ],
+            "group": {
+              "class": "herd",
+              "bands": [
+                20,
+                40,
+                40,
+                0
+              ]
+            },
+            "family": "fish"
+          }
         },
         "core/hare": {
           "look": "rabbit",
@@ -4241,6 +4358,45 @@
               "cap_per_1000": 5,
               "refill_d": 3
             }
+          },
+          "fight": {
+            "tier": 1,
+            "hp": 16,
+            "breath": 80,
+            "pace_ms": 190,
+            "moves": [
+              {
+                "id": "bite",
+                "windup_ms": 500,
+                "reach": 1,
+                "breath": 15,
+                "recover_ms": 800,
+                "cooldown_ms": 1000
+              },
+              {
+                "id": "lunge",
+                "windup_ms": 700,
+                "reach": 2,
+                "harm_div": 4,
+                "breath": 20,
+                "recover_ms": 1000,
+                "cooldown_ms": 4000
+              }
+            ],
+            "patterns": [
+              [
+                "bite",
+                "bite",
+                "lunge"
+              ],
+              [
+                "lunge",
+                "bite"
+              ]
+            ],
+            "weak": {
+              "after": "lunge"
+            }
           }
         }
       },
@@ -4329,6 +4485,126 @@
           "kind": "core/roe",
           "x": 3,
           "y": 25
+        },
+        {
+          "kind": "core/hare",
+          "x": 11,
+          "y": 31
+        },
+        {
+          "kind": "core/hare",
+          "x": 3,
+          "y": 22
+        },
+        {
+          "kind": "core/hare",
+          "x": 10,
+          "y": 3
+        },
+        {
+          "kind": "core/hare",
+          "x": 28,
+          "y": 23
+        },
+        {
+          "kind": "core/hare",
+          "x": 18,
+          "y": 24
+        },
+        {
+          "kind": "core/hare",
+          "x": 42,
+          "y": 5
+        },
+        {
+          "kind": "core/roe",
+          "x": 8,
+          "y": 33
+        },
+        {
+          "kind": "core/roe",
+          "x": 3,
+          "y": 5
+        },
+        {
+          "kind": "core/roe",
+          "x": 20,
+          "y": 24
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 43,
+          "y": 17
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 25,
+          "y": 22
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 10,
+          "y": 29
+        },
+        {
+          "kind": "core/crow",
+          "x": 30,
+          "y": 26
+        },
+        {
+          "kind": "core/crow",
+          "x": 28,
+          "y": 48
+        },
+        {
+          "kind": "core/crow",
+          "x": 44,
+          "y": 48
+        },
+        {
+          "kind": "core/trout",
+          "x": 13,
+          "y": 14
+        },
+        {
+          "kind": "core/trout",
+          "x": 13,
+          "y": 3
+        },
+        {
+          "kind": "core/hare",
+          "x": 45,
+          "y": 27
+        },
+        {
+          "kind": "core/hare",
+          "x": 35,
+          "y": 33
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 43,
+          "y": 33
+        },
+        {
+          "kind": "core/crow",
+          "x": 46,
+          "y": 32
+        },
+        {
+          "kind": "core/crow",
+          "x": 28,
+          "y": 32
+        },
+        {
+          "kind": "core/crow",
+          "x": 28,
+          "y": 38
+        },
+        {
+          "kind": "core/crow",
+          "x": 44,
+          "y": 38
         }
       ]
     },
@@ -4336,6 +4612,111 @@
       "x": 6,
       "y": 17
     },
+    "card": "valley-floor",
+    "cards": [
+      {
+        "id": "valley-floor",
+        "title": "Valley floor",
+        "climate": "temperate",
+        "weather": {
+          "rain": 2000,
+          "fog": 1000
+        },
+        "look": {
+          "rain": 1000,
+          "fog": 1000
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "east-highland",
+        "title": "East terraces + highland",
+        "climate": "cold",
+        "weather": {
+          "rain": 1500,
+          "fog": 2000
+        },
+        "look": {
+          "rain": 800,
+          "fog": 1300
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "elf-wood",
+        "title": "North: elf wood",
+        "climate": "temperate",
+        "weather": {
+          "rain": 2000,
+          "fog": 1500
+        },
+        "look": {
+          "rain": 700,
+          "fog": 1100
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "bay-coast",
+        "title": "The bay + south coast",
+        "climate": "wet",
+        "weather": {
+          "rain": 3500,
+          "fog": 2500
+        },
+        "look": {
+          "rain": 1200,
+          "fog": 1400
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "far-bank",
+        "title": "Far bank (map edge)",
+        "climate": "wet",
+        "weather": {
+          "rain": 3000,
+          "fog": 2000
+        },
+        "look": {
+          "rain": 1000,
+          "fog": 1000
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "undead-south",
+        "title": "Undead south",
+        "climate": "dry",
+        "weather": {
+          "rain": 500,
+          "fog": 2500
+        },
+        "look": {
+          "rain": 600,
+          "fog": 1300
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      }
+    ],
     "slots": [
       {
         "id": "core/river-stones",
@@ -4380,7 +4761,8 @@
         "y": 18,
         "w": 2,
         "h": 1,
-        "tag": "ruin"
+        "tag": "ruin",
+        "danger": 1
       },
       {
         "id": "core/arch-way",
@@ -4400,7 +4782,8 @@
         "h": 1,
         "tag": "ruin",
         "label": "Threshold of the night ruins",
-        "safe": true
+        "safe": true,
+        "danger": 0
       },
       {
         "id": "core/camp",
@@ -4448,6 +4831,87 @@
         "tag": "grove"
       },
       {
+        "id": "core/lone-mushrooms-1",
+        "kind": "resource",
+        "x": 45,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/lone-mushrooms-2",
+        "kind": "resource",
+        "x": 44,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "tag": "ruin"
+      },
+      {
+        "id": "core/lone-mushrooms-3",
+        "kind": "resource",
+        "x": 23,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-4",
+        "kind": "resource",
+        "x": 27,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-5",
+        "kind": "resource",
+        "x": 33,
+        "y": 40,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-6",
+        "kind": "resource",
+        "x": 43,
+        "y": 36,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-7",
+        "kind": "resource",
+        "x": 34,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-8",
+        "kind": "resource",
+        "x": 43,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-mushrooms-9",
+        "kind": "resource",
+        "x": 23,
+        "y": 46,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
         "id": "core/town-square",
         "kind": "area",
         "x": 26,
@@ -4455,7 +4919,8 @@
         "w": 4,
         "h": 4,
         "tag": "town",
-        "label": "Town square"
+        "label": "Town square",
+        "danger": 0
       },
       {
         "id": "core/elder-house",
@@ -4501,7 +4966,8 @@
         "w": 3,
         "h": 2,
         "tag": "grove",
-        "label": "Heart of the tangle"
+        "label": "Heart of the tangle",
+        "danger": 1
       },
       {
         "id": "core/tangle",
@@ -4510,7 +4976,8 @@
         "y": 34,
         "w": 25,
         "h": 15,
-        "tag": "grove"
+        "tag": "grove",
+        "danger": 1
       },
       {
         "id": "core/town-edge",
@@ -4746,6 +5213,69 @@
         "tag": "meadow"
       },
       {
+        "id": "core/lone-oak-9",
+        "kind": "resource",
+        "x": 42,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/lone-oak-10",
+        "kind": "resource",
+        "x": 27,
+        "y": 37,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-11",
+        "kind": "resource",
+        "x": 33,
+        "y": 39,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-12",
+        "kind": "resource",
+        "x": 43,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-13",
+        "kind": "resource",
+        "x": 27,
+        "y": 45,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-14",
+        "kind": "resource",
+        "x": 33,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
+        "id": "core/lone-oak-15",
+        "kind": "resource",
+        "x": 43,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "tag": "grove"
+      },
+      {
         "id": "core/fallen-logs",
         "kind": "resource",
         "x": 28,
@@ -4782,13 +5312,23 @@
         "tag": "grove"
       },
       {
+        "id": "core/lone-log-4",
+        "kind": "resource",
+        "x": 43,
+        "y": 11,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
         "id": "core/north-gate",
         "kind": "area",
         "x": 6,
         "y": 0,
         "w": 1,
         "h": 2,
-        "label": "North gate"
+        "label": "North gate",
+        "danger": 1
       },
       {
         "id": "core/descent-gate",
@@ -4797,7 +5337,8 @@
         "y": 34,
         "w": 1,
         "h": 1,
-        "label": "Descent gate"
+        "label": "Descent gate",
+        "danger": 1
       },
       {
         "id": "core/shore-gate",
@@ -4806,7 +5347,8 @@
         "y": 34,
         "w": 1,
         "h": 1,
-        "label": "Shore gate"
+        "label": "Shore gate",
+        "danger": 1
       },
       {
         "id": "core/hall-stair",
@@ -4816,7 +5358,8 @@
         "w": 1,
         "h": 1,
         "tag": "ruin",
-        "label": "Collapsed stair"
+        "label": "Collapsed stair",
+        "danger": 1
       },
       {
         "id": "core/workshop-stall",

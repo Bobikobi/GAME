@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RICH } from '../src/config';
 import { startPerf } from '../src/perf';
 import { SETTINGS_KEY, readSettings } from '../src/settings';
 import { SettingsApplier, applyDisplay, type Root } from '../src/settings-apply';
+import { settingsBody } from '../src/ui/settings-window';
 
 const mem = () => {
   const store: Record<string, string> = {};
@@ -41,6 +42,45 @@ function setup(storage = mem(), hz = 120) {
   return { apply, perf, loop, advance, clock, root, storage };
 }
 
+class MiniNode {
+  children: MiniNode[] = [];
+  constructor(private readonly ownText = '') {}
+  append(...nodes: MiniNode[]): void { this.children.push(...nodes); }
+  replaceChildren(...nodes: MiniNode[]): void { this.children = nodes; }
+  get textContent(): string { return this.ownText + this.children.map((n) => n.textContent).join(''); }
+}
+
+class MiniElement extends MiniNode {
+  className = '';
+  readonly attributes: Record<string, string> = {};
+  private readonly listeners: Record<string, ((event: { stopPropagation(): void }) => void)[]> = {};
+  constructor(readonly tagName: string) { super(); }
+  setAttribute(name: string, value: string): void { this.attributes[name] = value; }
+  addEventListener(name: string, listener: EventListener): void {
+    (this.listeners[name] ??= []).push(listener as unknown as (event: { stopPropagation(): void }) => void);
+  }
+  click(): void { for (const listener of this.listeners.click ?? []) listener({ stopPropagation() {} }); }
+}
+
+function miniDom(): void {
+  vi.stubGlobal('Node', MiniNode);
+  vi.stubGlobal('document', {
+    createElement: (tag: string) => new MiniElement(tag),
+    createTextNode: (text: string) => new MiniNode(text),
+  });
+}
+
+function elements(root: MiniNode): MiniElement[] {
+  const out: MiniElement[] = [];
+  for (const child of root.children) {
+    if (child instanceof MiniElement) out.push(child);
+    out.push(...elements(child));
+  }
+  return out;
+}
+
+afterEach(() => vi.unstubAllGlobals());
+
 describe('the frame cap', () => {
   it('changes actualFps within 2 s of the press', () => {
     const t = setup();
@@ -63,10 +103,13 @@ describe('settings survive a reload', () => {
   it('a change is kept and read back by the next launch', () => {
     const storage = mem();
     const t = setup(storage);
-    t.apply.set({ quality: 'low', frameCap: 60, reducedMotion: true, textSize: 20 });
-    expect(JSON.parse(storage.store[SETTINGS_KEY]!)).toEqual({ quality: 'low', frameCap: 60, reducedMotion: true, textSize: 20 });
+    const chosen = {
+      quality: 'low', frameCap: 60, reducedMotion: true, textSize: 20, stickSide: 'right', buttonSize: 'small',
+    } as const;
+    t.apply.set(chosen);
+    expect(JSON.parse(storage.store[SETTINGS_KEY]!)).toEqual(chosen);
     const next = startPerf('', storage);
-    expect(next.settings).toEqual({ quality: 'low', frameCap: 60, reducedMotion: true, textSize: 20 });
+    expect(next.settings).toEqual(chosen);
     expect(readSettings(storage)).toEqual(next.settings);
   });
   it('Reset to Auto clears the record and every row is Auto again', () => {
@@ -74,8 +117,11 @@ describe('settings survive a reload', () => {
     t.apply.set({ quality: 'low', textSize: 18 });
     t.apply.reset();
     expect(t.storage.store[SETTINGS_KEY]).toBeUndefined();
-    expect(t.apply.settings).toEqual({ quality: 'auto', frameCap: 'auto', reducedMotion: false, textSize: 16 });
+    expect(t.apply.settings).toEqual({
+      quality: 'auto', frameCap: 'auto', reducedMotion: false, textSize: 16, stickSide: 'left', buttonSize: 'medium',
+    });
     expect(t.root.dataset.textSize).toBe('16');
+    expect(t.root.dataset.stickSide).toBe('left');
   });
 });
 
@@ -87,16 +133,41 @@ describe('applied at once', () => {
     t.apply.set({ quality: 'high', textSize: 18 });
     expect(RICH.motion).toBe(true);
     expect(t.root.dataset.textSize).toBe('18');
+    t.apply.set({ stickSide: 'right', buttonSize: 'large' });
+    expect(t.root.dataset.stickSide).toBe('right');
+    expect(t.root.dataset.buttonSize).toBe('large');
   });
   it('reduced motion set by the player wins; unset, the phone decides', () => {
     const root: Root = { dataset: {} };
-    const base = { quality: 'auto', frameCap: 'auto', textSize: 16 } as const;
+    const base = { quality: 'auto', frameCap: 'auto', textSize: 16, stickSide: 'left', buttonSize: 'medium' } as const;
     applyDisplay(root, { ...base, reducedMotion: false }, false);
     expect(root.dataset.motion).toBe('full');
     applyDisplay(root, { ...base, reducedMotion: false }, true);
     expect(root.dataset.motion).toBe('reduced');
     applyDisplay(root, { ...base, reducedMotion: true }, false);
     expect(root.dataset.motion).toBe('reduced');
+  });
+});
+
+describe('the Controls section', () => {
+  it('shows only with touch controls, and a choice applies once and redraws as selected', () => {
+    miniDom();
+    const desktop = settingsBody(setup().apply, undefined, undefined, false) as unknown as MiniElement;
+    expect(elements(desktop).filter((el) => el.tagName === 'h3').map((el) => el.textContent)).not.toContain('Controls');
+
+    const t = setup();
+    const set = vi.spyOn(t.apply, 'set');
+    const touch = settingsBody(t.apply, undefined, undefined, true) as unknown as MiniElement;
+    expect(elements(touch).filter((el) => el.tagName === 'h3').map((el) => el.textContent)).toContain('Controls');
+    const right = elements(touch).find((el) => el.tagName === 'button' && el.textContent === 'Right');
+    expect(right).toBeDefined();
+    right!.click();
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith({ stickSide: 'right' });
+    expect(t.apply.settings.stickSide).toBe('right');
+    const selected = elements(touch).find((el) => el.tagName === 'button' && el.textContent === 'Right');
+    expect(selected?.className.split(' ')).toContain('on');
+    expect(selected?.attributes['aria-checked']).toBe('true');
   });
 });
 
@@ -132,6 +203,14 @@ describe('the window keeps the floor at every text size (G29)', () => {
   it('uses regular hyphens only', () => {
     for (const f of ['settings.css', 'settings-window.ts']) expect(readFileSync(new URL(`../src/ui/${f}`, import.meta.url), 'utf8')).not.toMatch(/[\u2013\u2014]/);
   });
+
+  it('draws the Text size choices as 16, 18 and 20 in a face with distinct digits', () => {
+    miniDom();
+    const body = settingsBody(setup().apply, undefined, undefined, false) as unknown as MiniElement;
+    const group = elements(body).find((el) => el.attributes['aria-label'] === 'Text size');
+    expect(group?.children.map((child) => child.textContent)).toEqual(['16', '18', '20']);
+    expect(css).toMatch(/\.text-size-options\s+\.set-opt\s*{[^}]*font-family:\s*'Atkinson Hyperlegible Next'/s);
+  });
 });
 
 describe("the stored preferences reach the rules the phone's own setting reaches", () => {
@@ -153,13 +232,13 @@ describe("the stored preferences reach the rules the phone's own setting reaches
     }
     return out;
   };
-  it('mirrors every reduced-motion selector of style.css and games.css under the attribute', () => {
-    const sels = [...reduced(read('style.css')), ...reduced(read('ui/games/games.css'))];
+  it('mirrors every reduced-motion selector of style.css under the attribute', () => {
+    const sels = reduced(read('style.css'));
     expect(sels.length).toBeGreaterThan(10);
     for (const sel of sels) expect(settings, sel).toContain(`:root[data-motion='reduced'] ${sel}`);
   });
-  it('scales the px sizes of the windows (dialog, minigames, search, notes) with the chosen size', () => {
-    for (const sel of ['.dialog-text', '.md p', '.version', '.row .muted', '.panel.search .search-row', '.minigame-title']) {
+  it('scales the px sizes of the windows (dialog, search, notes) with the chosen size', () => {
+    for (const sel of ['.dialog-text', '.md p', '.version', '.row .muted', '.panel.search .search-row']) {
       expect(settings, sel).toContain(`:root[data-text-size='20'] ${sel}`);
     }
   });

@@ -84,6 +84,7 @@ export function offerSignup(ui: UI): void {
       h('h2', { class: 'ui-plaque' }, 'Keep this game with an account'),
       h('p', null, 'Make an account and your valley comes with you.'),
       button('Continue with Google', () => (window.location.href = `${server}/auth/google/start`), 'big'),
+      button('Continue with Discord', () => (window.location.href = `${server}/auth/discord/start`), 'big'),
       h('label', { class: 'name-row' }, 'Or by email ', email),
       button('Send me a link', () => {
         void post(server, '/auth/email/start', { email: email.value.trim() }).then(() => (note.textContent = 'If that address can sign in, a link is on its way.'));

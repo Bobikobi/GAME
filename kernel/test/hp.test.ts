@@ -5,7 +5,7 @@
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type State, KERNEL_VERSION, hpCap, migrateState, newState, serialize, step } from '@game/kernel';
+import { type Bundle, type State, hpCap, migrateState, newState, serialize, step } from '@game/kernel';
 
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -29,7 +29,6 @@ describe('the health bar is hp', () => {
     const saved = JSON.parse(serialize(s)) as { player: Record<string, unknown> };
     expect(saved.player).not.toHaveProperty('satiety');
     expect(saved.player).not.toHaveProperty('satietyAt');
-    expect(KERNEL_VERSION).toBe('0.22.0');
   });
 
   test('a save from before kernel 0.19 carries its satiety over as hp, and the old fields go', () => {

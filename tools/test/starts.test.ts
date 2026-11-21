@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runCheck } from '../src/check';
+import { isAdvisory } from '../src/art/scale';
 import { CONTENT_DIR } from '../src/load';
 import { EFFORT_BAND_PCT, KIT_BAND_PCT, measureStarts } from '../src/starts';
 
@@ -14,7 +15,8 @@ describe('the core content', () => {
   it('passes with no line: trees give the wood, every pocket lays or finds an axe, Pell sells another', () => {
     const result = runCheck();
     // the richness, hand and colour lines are advisory counts (tools/src/richness.ts, tools/src/colors.ts), not defects of the content
-    expect(result.issues.filter((i) => !i.where.startsWith('map.richness') && !i.where.startsWith('quests.hand.') && !i.where.startsWith('art.'))).toEqual([]);
+    // the scale lines of the sprites in known-short.json are the audit's open list: that list only shrinks, a short sprite not on it fails here
+    expect(result.issues.filter((i) => !isAdvisory(i))).toEqual([]);
     const b = result.assembled.bundle!;
     expect(b.resources['core/oak-trees']!.tool).toBe('axe');
     expect(Object.keys(b.pockets).sort()).toEqual(['core/north-meadow', 'core/slid-bank', 'core/west-bank']);
@@ -209,7 +211,9 @@ describe('a fixture that breaks each rule', () => {
   });
 
   it('a tree and no shop that sells an axe', () => {
-    expect(text('no shop sells one')).toHaveLength(1);
+    expect(text('a tree needs an axe, and no shop sells one')).toHaveLength(1);
+    // the general row of the node tools names each axe node too (QUARRYING 2): no start-known recipe makes one either
+    expect(text('requires an axe, but no shop sells one').map((i) => i.message.split('"')[1]).sort()).toEqual(['core/fallen-logs', 'core/oak-trees']);
   });
 
   it('an opening that asks for more logs than the trees give', () => {

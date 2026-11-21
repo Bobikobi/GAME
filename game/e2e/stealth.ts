@@ -8,8 +8,8 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
-import { solveMinigame } from './minigame';
 import { FreeWalk, VEC, type Dir } from './walk';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -217,9 +217,10 @@ class StealthPlayer {
     if (at[0] !== x || at[1] !== y) throw new Error(`walk to ${what} ended at ${at.join(',')}`);
   }
 
-  async solveMinigame(): Promise<void> {
-    await solveMinigame(this.page, true, 'the moonreed minigame');
-    await this.page.waitFor('!__stealth.state().busy && !__stealth.state().blocking', 'the moonreed gather to finish', 10_000);
+  /** The moonreed is picked by itself after the press: the player only watches it come home (QUARRYING 10). */
+  async watchWork(): Promise<void> {
+    await this.page.waitFor('__game.world.working', 'the moonreed work to start by itself', 3000);
+    await this.page.waitFor('!__game.world.working && !__stealth.state().busy && !__stealth.state().blocking', 'the moonreed gather to finish', 20_000);
   }
 
   async handleLevelUp(): Promise<void> {
@@ -282,6 +283,15 @@ async function run(page: Page, url: string): Promise<void> {
   if (!(await page.eval<boolean>('__stealth.cover(12, 33)'))) throw new Error('the waiting tile is not cover');
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the wolf began a chase on the covered approach');
 
+  // The threat telegraph's near beat, muted (NEXT.md 12 c): near the wolf the prowl is asked for, and nothing leaves
+  // the speakers; from here on every visual cue is checked with the sound off.
+  await page.eval('__game.sound.setMuted(true)');
+  const prowl = await page.waitFor<number>('(() => { const st = __game.sound.state(); return st.beds.prowl > 0 ? st.beds.prowl : 0; })()', 'the prowl near the wolf', 5000);
+  await sleep(300);
+  const level = await page.eval<number>('__game.sound.level()');
+  console.log(`telegraph: prowl asked at ${prowl.toFixed(3)} beside the bank road, muted output ${level}`);
+  if (level !== 0) throw new Error(`muted, the output is ${level}, not 0`);
+
   // Wait for the wolf on the west edge, looking north: its eyes face away
   // from the one-tile crossing to the moonreed.
   await page.waitFor<Predator>(`(() => {
@@ -295,7 +305,7 @@ async function run(page: Page, url: string): Promise<void> {
   const at = (await me.state()).pos;
   if (Math.max(Math.abs(node.x - at[0]), Math.abs(node.y - at[1])) !== 1) throw new Error(`moonreed ${node.x},${node.y} is not beside the crossing at ${at.join(',')}`);
   await page.press('Enter');
-  await me.solveMinigame();
+  await me.watchWork();
   await me.handleLevelUp();
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the moonreed crossing started a chase');
   if ((await page.eval<number>(`__game.session.state.player.bag['core/moonreed'] ?? 0`)) < 1) throw new Error('the moonreed is not in the bag');
@@ -312,9 +322,22 @@ async function run(page: Page, url: string): Promise<void> {
     throw new Error(`${error instanceof Error ? error.message : error}: ${JSON.stringify(debug)}`);
   });
   const before = await page.eval<Health>('__stealth.health()');
+  // count the predator's hurts the kernel tells, and the meter's reactions to them
+  await page.eval(`(() => {
+    window.__bites = { hurts: 0, hits: 0 };
+    __game.session.on('events', (es) => { for (const e of es) if (e.e === 'hurt' && e.by === 'predator') window.__bites.hurts++; });
+    const meter = document.querySelector('.meter');
+    new MutationObserver((ms) => { for (const m of ms) if (m.attributeName === 'data-hit' && meter.hasAttribute('data-hit')) window.__bites.hits++; })
+      .observe(meter, { attributes: true, attributeFilter: ['data-hit'] });
+    // the "!" lasts 1.2 game s, and the clock runs fast while a script waits: it is watched every frame
+    window.__bang = false;
+    const watch = () => { if (__game.world.bang.visible) window.__bang = true; requestAnimationFrame(watch); };
+    watch();
+  })()`);
   await me.step('left');
   await me.step('up');
   await page.waitFor('!!__game.session.state.player.chase', 'the wolf chase to start', 3000);
+  await page.waitFor('window.__bang', 'muted, the "!" over the wolf at the chase', 3000);
   const chased = await page.eval<Health>('__stealth.health()');
   const chasedAt = Date.now();
   await me.snap('chase');
@@ -329,12 +352,16 @@ async function run(page: Page, url: string): Promise<void> {
   );
   if (home.falls !== before.falls) throw new Error(`the chase ended in a fall: falls ${before.falls} -> ${home.falls}`);
   if (before.hp - home.hp < health.bite) throw new Error(`the chase never bit: health ${before.hp} -> ${home.hp}`);
+  // one drawn bite per hurt, and the meter shows each (the telegraph's act)
+  const bites = await page.eval<{ hurts: number; hits: number; drawn: number }>('({ ...window.__bites, drawn: __game.world.bites.count })');
+  console.log(`telegraph: ${bites.hurts} predator hurts, ${bites.drawn} bites drawn, ${bites.hits} meter reactions`);
+  if (bites.hurts < 1 || bites.drawn !== bites.hurts || bites.hits !== bites.hurts) throw new Error(`bites drawn do not match the hurts: ${JSON.stringify(bites)}`);
   await me.snap('camp-safe');
   if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
 }
 
 async function play(browser: Browser, url: string): Promise<void> {
-  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
+  const page = await browser.newPage(PHONE);
   try {
     await run(page, url);
   } catch (error) {

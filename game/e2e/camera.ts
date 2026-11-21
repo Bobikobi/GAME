@@ -4,6 +4,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser } from './cdp';
+import { PHONE_3X } from './viewports';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -39,9 +40,10 @@ function serve(): Promise<{ server: Server; url: string }> {
 
 /**
  * The camera rule at a real 3x phone: the one e2e at device scale 3 (the others
- * run at 1, since software GL draws a 1170x2532 canvas about 8x slower). A
- * 390x844 screen at 3x is a 1170x2532 canvas, so k = floor(1170 / 576) = 2 and
- * the world zoom is the whole step at or above 1.5k: 4 * ceil(1.5 * 2) = 12.
+ * run at 1, since software GL draws a high-density phone canvas about 8x slower).
+ * The sideways phone at 3x is a 2532x1170 canvas; the step comes from the shorter side
+ * (view.ts cameraK), so k = floor(1170 / 576) = 2 and the world zoom is the whole step at
+ * or above 1.5k: 4 * ceil(1.5 * 2) = 12, the same as the upright phone had.
  */
 async function main(): Promise<void> {
   const remote = process.env.E2E_URL;
@@ -50,19 +52,57 @@ async function main(): Promise<void> {
   try {
     const browser = await Browser.launch();
     try {
-      const page = await browser.newPage({ width: 390, height: 844, mobile: true, scale: 3 });
+      const page = await browser.newPage(PHONE_3X);
       try {
         await page.goto(`${remote ?? local?.url ?? ''}?debug&rich=none`);
         await page.waitFor(`!!document.querySelector('#game canvas') && !!window.__game && !!window.__game.world`, 'the world scene', 30_000);
         const seen = await page.eval<{ w: number; h: number; zoom: number }>(
           `({ w: document.querySelector('#game canvas').width, h: document.querySelector('#game canvas').height, zoom: __game.world.cameras.main.zoom })`,
         );
-        if (seen.w !== 1170 || seen.h !== 2532) throw new Error(`canvas is ${seen.w}x${seen.h}, expected 1170x2532 device pixels`);
+        // Re-pinned for the same 3x phone on its side: the canvas axes swap; the zoom stays 12 because the step reads the shorter side.
+        if (seen.w !== 2532 || seen.h !== 1170) throw new Error(`canvas is ${seen.w}x${seen.h}, expected 2532x1170 device pixels`);
         if (seen.zoom !== 12) throw new Error(`camera zoom is ${seen.zoom}, expected 12 (k=2, 1.5 times closer)`);
         console.log(`camera: canvas ${seen.w}x${seen.h}, zoom ${seen.zoom}`);
         if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
       } finally {
         page.close();
+      }
+      // the wheel on a 1440 x 900 desktop (CR-109): k = 1, the default view 8, in to 12 and 16, back to 8 and no further
+      const desk = await browser.newPage({ width: 1440, height: 900, mobile: false, scale: 1 });
+      try {
+        await desk.goto(`${remote ?? local?.url ?? ''}?debug&rich=none`);
+        await desk.waitFor(`!!document.querySelector('#game canvas') && !!window.__game && !!window.__game.world`, 'the world scene', 30_000);
+        // the wheel works in the world, so the character wakes first (the title screen covers the canvas)
+        await desk.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
+        await desk.tap('.title-screen button', 'New game');
+        const choice = await desk.waitFor<string>(
+          `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+          'the race cards',
+        );
+        if (choice === 'ask') await desk.tap('.title-screen button', 'Start a new game');
+        await desk.tap('.card.race', 'Elf');
+        await desk.tap('.title-screen button', 'Wake up');
+        await desk.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+        await new Promise((r) => setTimeout(r, 1500)); // the opening's camera settles on the player
+        const read = () =>
+          desk.eval<{ zoom: number; dx: number; dy: number }>(
+            `(() => { const w = __game.world, c = w.cameras.main, p = w.player; return { zoom: c.zoom, dx: Math.abs(c.worldView.centerX - p.x), dy: Math.abs(c.worldView.centerY - p.y) }; })()`,
+          );
+        const zooms: number[] = [];
+        if (process.env.WHEEL_STILLS) await desk.screenshot(`${process.env.WHEEL_STILLS}/wheel-8.png`);
+        for (const dy of [-100, -100, -100, 100, 100, 100]) {
+          await desk.wheel(720, 450, dy);
+          await new Promise((r) => setTimeout(r, 600)); // the glide and the pause between two notches
+          const z = await read();
+          zooms.push(z.zoom);
+          if (z.dx > 2 || z.dy > 2) throw new Error(`the player is ${z.dx.toFixed(1)}, ${z.dy.toFixed(1)} units off the middle at zoom ${z.zoom}`);
+          if (process.env.WHEEL_STILLS && z.zoom > 8 === (dy < 0) && zooms.length <= 3) await desk.screenshot(`${process.env.WHEEL_STILLS}/wheel-${z.zoom}.png`);
+        }
+        if (zooms.join() !== '12,16,16,12,8,8') throw new Error(`the wheel went ${zooms.join(', ')}, expected 12, 16, 16, 12, 8, 8`);
+        console.log(`camera: desktop wheel ${zooms.join(' > ')}, the player centred`);
+        if (desk.errors.length > 0) throw new Error(`page errors:\n${desk.errors.join('\n')}`);
+      } finally {
+        desk.close();
       }
     } finally {
       await browser.close();

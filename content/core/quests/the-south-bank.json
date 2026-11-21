@@ -17,7 +17,7 @@
       {
         "kind": "find",
         "item": "core/moonreed",
-        "clue": "Pell says moonreed opens after dark on the south bank. The wolf watches the open meadow; tall grass hides you from its eyes, never from its nose."
+        "clue": "Pell says moonreed opens after dark on the south bank. The wolf watches the open meadow."
       }
     ],
     "reward": {
@@ -33,7 +33,7 @@
     "talk": {
       "offer": [
         "A traveller bought moonreed here once. South bank, after dark.",
-        "A wolf walks that bank. Tall grass hides you from its eyes, not its nose."
+        "A wolf walks that bank. Its tracks reach the cobbles south of the square."
       ],
       "waiting": [
         "Moonreed opens after dark. Watch the wolf's eyes, not its teeth."

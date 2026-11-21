@@ -4,7 +4,7 @@
  *
  *   tsx game/e2e/stills/hud-frame-d.ts <out-dir> <before|after> [date]
  *
- * The same frames each time: a phone in portrait (390 by 844 CSS px at 3x) by day, in the opening's first minute
+ * The same frames each time: a phone on its side at 3x by day, in the opening's first minute
  * with the tracker shown and one toast up, and the same phone at night; a desktop (1280 by 800) by day. Beside each
  * still it writes the HUD's boxes (so the two runs prove the layout did not move), the smallest text, the smallest
  * tap target, the HUD band's height and every text's colour on the colour under it.
@@ -14,6 +14,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from '../cdp';
+import { PHONE_3X } from '../viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from '../wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -29,8 +30,8 @@ const TYPES: Record<string, string> = {
 };
 
 const FORMS = [
-  { name: 'phone-day', width: 390, height: 844, mobile: true, scale: 3, hour: 9 },
-  { name: 'phone-night', width: 390, height: 844, mobile: true, scale: 3, hour: 22 },
+  { name: 'phone-day', ...PHONE_3X, hour: 9 },
+  { name: 'phone-night', ...PHONE_3X, hour: 22 },
   { name: 'desktop-day', width: 1280, height: 800, mobile: false, scale: 1, hour: 9 },
 ] as const;
 

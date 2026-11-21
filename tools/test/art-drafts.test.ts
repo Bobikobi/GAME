@@ -7,8 +7,8 @@ import { PNG } from 'pngjs';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import {
-  type Collected, type Draft, DraftIndex, type Gh, annotateWrongDraws, assetName, collectLine, collectPictures, draftId, fetchDrafts,
-  foldIndex, gpuSecondsSince, indexGrewOnly, noteDraft, parseIndex, parseRunLog, pacing, pngDims, pushCollected, sha256Hex, tagFor,
+  type Collected, type Draft, DraftIndex, FILE_KINDS, type Gh, annotateWrongDraws, assetName, collectLine, collectPictures, draftId, fetchDrafts,
+  foldIndex, gpuSecondsSince, runCli, indexGrewOnly, noteDraft, parseIndex, parseRunLog, pacing, pngDims, pushCollected, sha256Hex, tagFor,
   verifyDrafts, verifyExitCode, verifyText, wrongDrawOrphans, wrongDrawsText,
 } from '../src/art/drafts.js';
 
@@ -92,7 +92,10 @@ function fakeGh(): { gh: Gh; store: Map<string, Map<string, Buffer>>; calls: str
     if (verb === 'upload') {
       const release = store.get(tag);
       if (release === undefined) return { status: 1, stdout: '', stderr: 'no release' };
-      for (const file of args.slice(5)) release.set(basename(file), readFileSync(file));
+      const files = args.slice(5);
+      // GitHub's cap: a release holds at most 1000 assets
+      if (release.size + files.filter((file) => !release.has(basename(file))).length > 1000) return { status: 1, stdout: '', stderr: 'HTTP 422: Validation Failed (file_count limited to 1000)' };
+      for (const file of files) release.set(basename(file), readFileSync(file));
       return ok();
     }
     if (verb === 'download') {
@@ -165,6 +168,16 @@ describe('draft ids and what a run line becomes', () => {
     expect(parseRunLog('kernel kaggle/2026-10-27T13-24-56-615Z-1/kernel\nrecipe sdxl, model m\ndevice T4, kernel 510.7 s, wall 546 s')).toMatchObject({
       runId: '2026-10-27T13-24-56-615Z-1', recipe: 'sdxl', kernelSeconds: 510.7,
     });
+  });
+
+  test('loose pictures: a seed in the json beside it is kept, anything but a whole number is not', () => {
+    const dir = folder('seeds');
+    writeFileSync(join(dir, 'a.png'), picture(11));
+    writeFileSync(join(dir, 'a.json'), JSON.stringify({ prompt: 'p', tool: 'pixellab /create-image-pixflux {}', date: '2026-11-02', seed: 1234 }));
+    writeFileSync(join(dir, 'b.png'), picture(12));
+    writeFileSync(join(dir, 'b.json'), JSON.stringify({ seed: '7' }));
+    const items = collectPictures([join(dir, 'a.png'), join(dir, 'b.png')], { label: 'pixellab-x', route: 'pixellab' });
+    expect(items.map((i) => i.record.seed)).toEqual([1234, null]);
   });
 
   test('loose pictures: the stem is the name, a json beside it gives the prompt and date, the rest stays null', () => {
@@ -268,6 +281,51 @@ describe('the drafts repo: push, fetch, verify', () => {
     expect([...store.keys()]).toEqual([tag]);
   });
 
+  test('a jpg and a glb are drafts too: the store keeps their extension, fetch and verify find them', () => {
+    const { gh, store } = fakeGh();
+    const index = DraftIndex.open(join(folder('index-ext'), 'drafts.jsonl'));
+    const dir = folder('ext-pictures');
+    writeFileSync(join(dir, 'look.jpg'), Buffer.from('not really a jpeg'));
+    writeFileSync(join(dir, 'model.glb'), Buffer.from('glTF fake model'));
+    writeFileSync(join(dir, 'notes.txt'), 'skip me');
+    const skipped: { name: string; why: string }[] = [];
+    const items = collectPictures([join(dir, 'look.jpg'), join(dir, 'model.glb'), join(dir, 'notes.txt')], { label: 'ext', skipped });
+    expect(items.map((i) => i.record.files.raw.ext)).toEqual(['.jpg', '.glb']);
+    expect(skipped.map((x) => x.name)).toEqual(['notes.txt']);
+    const report = pushCollected(items, index, { gh });
+    expect(report.uploaded).toBe(2);
+    const [jpg, glb] = items;
+    expect(index.drafts.get(jpg!.record.id)?.stored?.assets.raw).toBe(`${jpg!.record.id}.jpg`);
+    expect(index.drafts.get(glb!.record.id)?.stored?.assets.raw).toBe(`${glb!.record.id}.glb`);
+    expect([...(store.get(index.drafts.get(jpg!.record.id)!.stored!.tag)?.keys() ?? [])].sort()).toEqual([`${jpg!.record.id}.jpg`, `${glb!.record.id}.glb`].sort());
+    const cache = folder('cache-ext');
+    const verified = verifyDrafts(index, null, { gh, cache });
+    expect(verified.ok).toBe(2);
+    expect(verifyExitCode(verified)).toBe(0);
+  });
+
+  test('a run folder pushed with --recursive also gives its sub-folders\' pictures; without it only the manifest\'s', () => {
+    const fx = runFolder({ seed: 5, name: 'urn' });
+    writeFileSync(join(fx.dir, 'manifest.jsonl'), `${JSON.stringify(fx.line)}\n`);
+    mkdirSync(join(fx.dir, 'refinement'), { recursive: true });
+    writeFileSync(join(fx.dir, 'refinement', 'urn-v2.png'), picture(77));
+    const before = process.env['ART_DRAFTS_INDEX'];
+    try {
+      const flat = join(folder('idx-flat'), 'drafts.jsonl');
+      process.env['ART_DRAFTS_INDEX'] = flat;
+      runCli(['push', fx.dir, '--label', 'urn', '--no-upload']);
+      const deep = join(folder('idx-deep'), 'drafts.jsonl');
+      process.env['ART_DRAFTS_INDEX'] = deep;
+      runCli(['push', fx.dir, '--label', 'urn', '--recursive', '--no-upload']);
+      expect(DraftIndex.open(flat).drafts.size).toBe(1);
+      expect(DraftIndex.open(deep).drafts.size).toBeGreaterThan(1);
+      expect([...DraftIndex.open(deep).drafts.values()].some((d) => d.sources.some((x) => x.file === 'urn-v2.png'))).toBe(true);
+    } finally {
+      if (before === undefined) delete process.env['ART_DRAFTS_INDEX'];
+      else process.env['ART_DRAFTS_INDEX'] = before;
+    }
+  });
+
   test('a second push uploads nothing, and never overwrites', () => {
     const { gh, calls } = fakeGh();
     const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
@@ -286,6 +344,47 @@ describe('the drafts repo: push, fetch, verify', () => {
     const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
     pushCollected([collected(runFolder({ seed: 1 })), collected(runFolder({ seed: 2, drawer: 'local' }))], index, { gh, tag: 'run-backfill-test' });
     expect([...store.keys()]).toEqual(['run-backfill-test']);
+  });
+
+  /** A release that already holds `count` assets from earlier pushes. */
+  function filled(store: Map<string, Map<string, Buffer>>, tag: string, count: number): void {
+    store.set(tag, new Map(Array.from({ length: count }, (_, i) => [`old-${i}.png`, Buffer.from('x')])));
+  }
+
+  test('a release near GitHub\'s 1000 assets is counted: the drafts that fit go in, the rest roll to tag-2', () => {
+    const { gh, store } = fakeGh();
+    filled(store, 'run-orphans', 994);
+    const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
+    const items = [1, 2, 3].map((seed) => collected(runFolder({ seed })));
+    const report = pushCollected(items, index, { gh, tag: 'run-orphans' });
+    expect(report.uploaded).toBe(3);
+    expect(report.tags).toEqual(['run-orphans', 'run-orphans-2']);
+    expect(store.get('run-orphans')?.size).toBe(1000);
+    expect(store.get('run-orphans-2')?.size).toBe(3);
+    expect(items.map((i) => index.drafts.get(i.record.id)?.stored?.tag)).toEqual(['run-orphans', 'run-orphans', 'run-orphans-2']);
+  });
+
+  test('a full release is never asked to take more, and a later push goes on filling the last one', () => {
+    const { gh, store, calls } = fakeGh();
+    filled(store, 'run-undated-unknown', 1000);
+    filled(store, 'run-undated-unknown-2', 998);
+    const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
+    const item = collected(runFolder({ seed: 4 }));
+    pushCollected([item], index, { gh, tag: 'run-undated-unknown' });
+    expect(index.drafts.get(item.record.id)?.stored?.tag).toBe('run-undated-unknown-3');
+    expect(calls.filter((c) => c[1] === 'upload').map((c) => c[2])).toEqual(['run-undated-unknown-3']);
+    expect(store.get('run-undated-unknown')?.size).toBe(1000);
+  });
+
+  test('a draft whose files a release already holds (a push stopped before the index) is cited there, not sent again', () => {
+    const { gh, store, calls } = fakeGh();
+    const item = collected(runFolder({ seed: 6 }));
+    filled(store, 'run-x', 1000);
+    store.set('run-x-2', new Map(FILE_KINDS.flatMap((kind) => (item.paths[kind] === null ? [] : [[assetName(item.record.id, kind, item.record.files[kind]?.ext), Buffer.from('y')] as const]))));
+    const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
+    pushCollected([item], index, { gh, tag: 'run-x' });
+    expect(index.drafts.get(item.record.id)?.stored?.tag).toBe('run-x-2');
+    expect(calls.filter((c) => c[1] === 'upload')).toHaveLength(0);
   });
 
   test('fetch fills the cache and verify exits 0 when every hash matches', () => {
@@ -446,7 +545,7 @@ describe('the committed index', () => {
       expect(d.files.raw.sha256.startsWith(d.id)).toBe(true);
       if (d.stored !== null) {
         expect(d.stored.repo).toBe('Bobikobi/GAME-art-drafts');
-        expect(d.stored.assets.raw).toBe(`${d.id}.png`);
+        expect(d.stored.assets.raw).toBe(`${d.id}${d.files.raw.ext ?? '.png'}`);
       }
     }
   });

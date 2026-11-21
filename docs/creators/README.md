@@ -57,7 +57,7 @@ mkdir -p content/extensions
 cp -r templates/extension content/extensions/<your-handle>
 ```
 
-The template holds a townsperson (`npcs/wren.json`: Wren the mender) and three optional extras: a quest Wren gives (`quests/`), a fruit bush (`resources/`) and a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)). For a townsperson alone, delete `quests/`, `resources/`, `reactions/` and the template's `README.md`, and keep `npcs/wren.json`. You come back to the quest in [Your next step](#your-next-step).
+The template holds a townsperson (`npcs/wren.json`: Wren the mender) and three examples for later: a quest Wren gives (`quests/`), a fruit bush (`resources/`) and a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)). For a townsperson alone, delete `quests/`, `resources/`, `reactions/` and the template's `README.md`, and keep `npcs/wren.json`. You come back to the quest in [Your next step](#your-next-step).
 
 In every file you keep, replace `your-handle` with your handle (`grep -rn your-handle content/extensions/<your-handle>` lists every place). Everything you add has an id that starts with it, so two creators can never clash.
 
@@ -68,7 +68,7 @@ Rename `content/extensions/<your-handle>/npcs/wren.json` to your character's nam
 - the top-level `title` (up to 40 characters, the character's name and what they do) and `description` (what a reviewer reads first).
 - `npc.name` - the name above the dialogue box.
 - `npc.sprite` - how they look. It points at a frame of the core art: `core/base-kit:chars/woman_idle_down` is a standing figure, and the other `*_idle_down` frames in `content/kit/core/chars/` are the same kind. `elder` and `trader` belong to Maru and Pell: leave those two to them.
-- `npc.place.slot` - where they stand. It must be a slot of the kind `npc` that no one has filled. Today that is `core/trainers-stall` (in town, three tiles north of Pell's stall), which is why the template uses it. One extension per slot, so if another townsperson is already waiting for review there, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots still free; the others on the map are kept for the core (the player's stall, the traveller's camp). A shop is the core's: leave `shop` out.
+- `npc.place.slot` - where they stand. It must be a slot of the kind `npc` that no one has filled. The template uses the currently free `core/trainers-stall` (in town, three tiles north of Pell's stall). If you move them, ask the `slots` tool of the MCP server (below) for the current list. One extension per slot, so if another townsperson is already waiting for review there, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). A shop is the core's: leave `shop` out.
 - `npc.dialogue` - what they say: one list of boxes for each standing the player has with them, which grows as the player comes back.
   - `first`: the first time the player talks to them (at most three boxes).
   - `stranger`, `acquaintance`, `friend`: one box or two each, said as the player returns and the standing grows.
@@ -90,7 +90,7 @@ A townsperson has no price, stat or reward of their own. What they ask of the pl
 pnpm check
 ```
 
-Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout of the game already prints dozens of them (about the core map, the core art and the core quests, none from your files). It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
+Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout may already print warnings about core files; read any line from your folder. It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
 
 ## 5. See it in the game (3 minutes)
 
@@ -117,6 +117,8 @@ Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; 
 
 ## Your next step
 
+Read [the standards developers build against today](../STANDARDS.md) before moving from one content file into the fight, weapons, figures or maps.
+
 Once the townsperson stands, the valley can start to need them. Each of these is a small pull request of its own, built on the files you have:
 
 1. **A quest your townsperson gives.** Copy `templates/extension/quests/a-coin-for-the-road.json` into `content/extensions/<your-handle>/quests/`, replace `your-handle`, and set `quest.giver` to your character (`<your-handle>/<name>`; the template already names Wren). It sends the player to dig an old coin out of the gate rubble (a `find` step: the journal shows a clue, never a count), and pays one mended cup, the item defined in the character's file. Rewrite `summary` and `clue` in your character's voice. A reward must give the player something new to do: an item, a recipe or a place opened. Gold and reputation alone fail the check. The check may also warn that your quest's `type` can be open together with a core quest of the same type (G17): choose another of the fourteen kinds in [GAME_RULES.md](../design/GAME_RULES.md) if it does. Step kinds that exist today: `bring`, `make`, `find`, `riddle`, `visit`, `restore`, `build` and `tend`. The quest brings a `Quest review:` into your pull request (the quest-designer skill, `.claude/skills/quest-designer`).
@@ -125,11 +127,11 @@ Once the townsperson stands, the valley can start to need them. Each of these is
 4. **A camp part.** A thing a player builds at their camp, with the inputs it takes ([A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
 5. **Your own art** for the character: [Your own art](#your-own-art-optional).
 
-Not yet possible today: a new place on the map, a new ruin to restore (every restore slot is taken), a second townsperson (one npc slot waits), anything that needs the core map. If your idea needs one of those, open a "Request for the valley" issue: the community votes it into an open call, and the core team adds the slot.
+Not yet possible today: a new place on the map, a new ruin to restore (every restore slot is taken), a new resource (every resource slot is taken), anything that needs the core map. For another townsperson, ask the `slots` tool for the current free npc slots. If your idea needs a core slot, open a "Request for the valley" issue: the community votes it into an open call, and the core team adds the slot.
 
 ## Smaller things: a fruit, a herb, a recipe
 
-A fruit bush in an empty slot of the map is the smallest useful thing, and it works the same way: steps 1, 2, 4, 5 and 6 above. In step 2 keep `resources/wild-plums.json` and delete `npcs/`, `quests/` and `reactions/` instead. The pull request then reads "no quest changed", "no story text changed" and "no new picture". The bushes grow in the glade west of where you wake up, and its sign reads "Added by <your-handle>".
+A fruit bush is the smallest useful resource, but every resource slot is filled today. The file below is a starting point for the next resource open call, not a pull request that can pass now. When the `slots` tool lists a free resource slot, follow steps 1, 2, 4, 5 and 6 above; in step 2 keep `resources/wild-plums.json`, delete `npcs/`, `quests/` and `reactions/`, and replace its old slot as well as its handle. The pull request then reads "no quest changed", "no story text changed" and "no new picture".
 
 ### The fruit file
 
@@ -141,18 +143,18 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `items[0].class`, `family` and `tier` - what the fruit is: `plant`, family `plum`, tier 1. See [Classes and tiers](#classes-and-tiers).
 - `items[0].weight` - how heavy one is, a whole number from 0 to 20. Most things weigh 1; a log or a stone 3; a herb or a coin 0. The load sets the player's pace.
 - `food.satiety` - how much one fruit fills, 1 to 100. A redberry gives 4, a cooked berry mash 15.
-- `node.yield` - fruit per pick with perfect timing, 1 to 20.
-- `node.active_ms` - how long one pick takes, from 1000 to 15000 ms.
+- `node.yield` - units the node gives before it is out, 1 to 20. One unit comes each work interval, and the node's `active_ms` is shared out among them, so a node worked to its end takes `active_ms`.
+- `node.active_ms` - how long the whole node takes to work to its end, from 1000 to 15000 ms (each unit takes its share). A better tool, a higher level and agility shorten it.
 - `node.respawn_ms` - how long before the same bush gives again. Waiting is never paid.
 - `node.count` - how many bushes grow in the slot, 1 to 12.
 - `node.hours` - optional. `[18, 6]` makes a fruit that only ripens at night.
-- `node.tool` - optional. `basket`, `trowel` or `axe`: the tool the player must carry to gather it. With `axe` the node is a tree: gathering it is felling, which trains Woodcutting (`core/woodcutting`) instead of Foraging, and `node.level` is the Woodcutting level it asks for. Wood comes only this way: the check refuses an item of class `wood` from any other node, and from a dig spot. With `rod` the node is a fishing spot: gathering it is fishing, which trains Fishing (`core/fishing`), and `node.level` is the Fishing level it asks for.
-- `node.work` - optional, `"mine"` on a node with no `tool`: it is mined, broken with blows that run by themselves after one press, as a tree is felled, with no minigame. It trains Digging (`core/digging`), and `node.level` is the Digging level it asks for. Bare hands mine; a pick or a hammer in the bag makes it faster and wears a little each time. The river stones are mined.
-- `node.game` - optional: the minigame, `timing` (the default), `strike`, `pick`, `snap` or `fish`. `fish` is the cast, the wait, the nibble and the bite: give it to a node fished with `rod`.
+- `node.tool` - optional. `basket`, `axe` or `rod`: the tool the player must carry to gather it. With `axe` the node is a tree: gathering it is felling, which trains Woodcutting (`core/woodcutting`) instead of Foraging, and `node.level` is the Woodcutting level it asks for. Wood comes only this way: the check refuses an item of class `wood` from any other node, and from a dig spot. With `rod` the node is a fishing spot: gathering it is fishing, which trains Fishing (`core/fishing`), and `node.level` is the Fishing level it asks for. A `pick`, a `hammer` or a `trowel` on a node also needs `node.work: "mine"`, or the check refuses it; and every tool a node asks for must be one a shop sells or a start-known recipe makes at tier 1, so no race is locked out of it.
+- `node.work` - optional, `"mine"`: it is mined, broken with blows that run by themselves after one press, as a tree is felled. It trains Digging (`core/digging`), and `node.level` is the Digging level it asks for. With no `tool` bare hands mine, and a pick or a hammer in the bag makes it faster and wears a little each time; with a `pick`, `hammer` or `trowel` that tool is required. The river stones are mined.
+- `node.game` - retired: no minigame is played and no timing is read (every work is a click and a repeating animation, one unit each work interval). Still accepted, and ignored, so an older file loads. A node fished with `rod` shows the cast, the wait and the reel.
 - `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
 - `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
 - `node.place.water` - optional. `true` puts the node on the slot's water tiles beside the bank, for a fishing spot; the slot needs water in it. Left out, a node stands on the ground.
-- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot: the fruit in this guide goes to the glade, so if another fruit is already waiting there for review, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots that are still free.
+- `node.place.slot` - where it grows. The template still names `core/west-glade`, now filled by glade figs; replace it with the resource slot named by the open call. One extension per slot, and the `slots` tool of the MCP server (below) is the current list.
 
 You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
 
@@ -174,7 +176,7 @@ Recipes climb one tier at a time. A recipe's tier is the highest tier among its 
 - a camp part provides its station at that tier or higher;
 - the profession that gates it is the one named in `profession`, or else the one that works its station (cooking works the fire).
 
-From tier 3 up, a thing comes only from a gated source: a node that needs the tier's level or respawns in 5 minutes or more, a dig spot, a quest reward or a recipe. No shop sells it.
+From tier 3 up, a thing comes only from a gated source: a node that needs the tier's level or respawns in 5 minutes or more, a dig spot, a quest reward or a recipe. No shop sells it. From tier 2 up, no shop sells a tool, a weapon or ammunition either: a better one is made, found or earned.
 
 ### Recipe templates
 
@@ -220,7 +222,7 @@ A material you gather comes from a resource, like the fruit above. `content/core
 - The tier climbs one step at most: the blade may be tier 2 because its flakes are tier 1. A tier 3 output needs a tier 2 input.
 - `level` sits in the band of the recipe's tier (`tier_min_level` in the params, `[1, 3, 6]` today): tier 1 at level 1 or 2, tier 2 from 3 to 5, tier 3 from 6. The blade asks for handcraft level 3. The level is where the recipe has its own chance, not a wall: a player below it may still try.
 - The station has to reach the tier: a tier 2 recipe needs a camp part that provides its station at tier 2 or higher. At the workshop that is the workbench (see [A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
-- `known` - `start` if every player knows it, `found` if a dig or a quest teaches it.
+- `known` - `start` if every player knows it, `found` if a dig or a quest teaches it. A `found` recipe needs a teacher: a found scrap's `unlocks` or a quest reward's `recipes` names it.
 - `active_ms` - how long one try takes, 1000 to 15000 ms.
 
 From tier 2 a try can miss. At its own level a tier 2 recipe succeeds 80 times in 100 and a tier 3 recipe 65 (`craft_chance_bp`), and each level above the recipe's adds 5 percent to the chance (`craft_level_step_bp`). Each level below takes the same step off, down to nothing, so a tier 1 recipe tried below its level can miss too, and a try at nothing still runs and misses. The game never shows a chance, a word for the difficulty or the level a recipe wants: players learn it by trying. A miss makes nothing and keeps half of each input, rounded down; when that would keep nothing, one unit of the most valuable input comes back. `miss.keep_pct` sets another share, up to 90 percent.
@@ -235,11 +237,14 @@ The check then asks one thing more: a try never loses value on average. Take the
 
 `content/core/recipes/reed-hat.json` makes a hat you wear while you gather. An item you wear has `wear`:
 
-- `wear.slot` - `head`, `top`, `legs`, `outfit` (the top and the legs at once), `feet`, `jewelry` (two places), `hand` or `back`. A piece of class `garment` goes on the head, top, legs, outfit, feet or back, a piece of class `jewelry` in a jewelry place, and the hand holds a tool.
+- `wear.slot` - `head`, `top`, `legs`, `outfit` (the top and the legs at once), `feet`, `hands` (gloves), `jewelry` (two places), `hand` or `back`. A piece of class `garment` goes on the head, top, legs, outfit, feet, hands or back, a piece of class `jewelry` in a jewelry place, and the hand holds a tool.
 - `wear.places`, `wear.load_bonus` - a bag on the back: how many places it gives (no bag gives 12, a satchel 24), and for a frame bag how much it adds to the weight limit. Only a work piece on the back has them.
 - `wear.effects` - one or two small bonuses from a closed list: `gather_speed_pct`, `dig_speed_pct`, `craft_speed_pct`, `craft_chance_pct` and `rare_find_pct`. Each is a percent, each effect once, at most the cap of the item's tier (`wear_effect_max_pct`, `[5, 8, 12]` today: 5 at tier 1, 8 at tier 2, 12 at tier 3). The reed hat is tier 2 and gives 5.
-- `wear.set` - optional: an id of your own that two or more of your pieces name, and that fits on the character at once (one piece per place, two jewelry pieces at most). Worn whole, a set's effects grow by `wear_set_bonus_pct` (20 percent today). The reed hat and the reed sandals make the set `core/reed-walker`.
+- `wear.set` - optional: an id of your own that two or more of your pieces name, and that fits on the character at once (one piece per place, two jewelry pieces at most). Declare the same id in a `sets/` row with the one worn `effect` and whole-number `value` that wearing every piece adds. The pieces' values plus that bonus cannot exceed the per-piece tier cap. The reed hat and reed sandals make `core/reed-walker`; its row adds 2 gathering points.
 - `wear.look` - a look shows and counts for nothing: no effects and no set.
+- `wear.req` - optional: a profession and the level of the piece's tier (`wear_req_level`: 1, 6, 11, 16, 21), and base attributes; nothing reads it yet. Once read, below it the piece counts up to what a piece one tier above the wearer's own gives (PROGRESSION 5.6). A look has none.
+- `bind` - on the item: `none` for everything found or made; only a look binds, and power is never bound (EQUIPMENT 3.6).
+- A `weapon` block, worn attributes (`wear.attrs`) and a garment trait (`wear.trait`) are in the schema and refused for now: each waits for what reads it.
 
 Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves. It takes no place while worn, and neither do two tools: the one in the hand (worn there, or else one from the bag) and one at the belt; every other tool takes a place, and the weight of all of them still counts. Other things of one kind share a place, up to `place_stack` (ten) to a place.
 
@@ -324,7 +329,7 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 
 ## Tools and the first morning
 
-A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe`, `staff`, `hammer` or `pick`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells the basket, the trowel, the axe and the staff. A staff, a hammer and a pick ask for no work: they are worn in the hand for what their `wear` block helps, and a hammer or a pick in the bag also breaks a mined node (`node.work`) faster.
+A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe`, `staff`, `hammer` or `pick`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells the basket, the trowel, the axe and the staff. A staff asks for no work: it is worn in the hand for what its `wear` block helps. A hammer and a pick are worn the same way, and in the bag they also break a mined node (`node.work`) faster; a mined node may also require one (`node.tool` with `node.work: "mine"`), but a dig spot never does.
 
 A new game starts with two things. The player chooses a race; the world's seed draws the wake pocket, the same draw for every race. Every character meets the others at the bridge and the first fire.
 
@@ -335,7 +340,7 @@ A wake pocket (`"type": "pocket"`, core only) is one of the places a new game wa
 - `intro`: one to four lines the narrator says as the character wakes.
 - `ground`: one to three `{ "item", "qty" }` stacks that lie on the ground by the wake tile, tier 1 only. They are never in the bag at the start: each is the one find of a spot of the pocket's own, picked up by hand.
 - A quest with `"pocket": "<id>"` is offered to a character who woke there only: the pocket's own first task. A task with no giver is handed to nobody, so what it asked for stays in the bag.
-- A dig spot with `"pocket": "<id>"` is that pocket's own spot: only a character who woke there sees it and digs it, once, and it always gives its one find. Leave out the spot's `tool` and the find is picked up by hand, with no timing window, and the character's senses lead to it with a trail of glints.
+- A dig spot with `"pocket": "<id>"` is that pocket's own spot: only a character who woke there sees it and digs it, once, and it always gives its one find. Leave out the spot's `tool` and the find is picked up by hand, and the character's senses lead to it with a trail of glints.
 
 ### A race
 
@@ -353,7 +358,7 @@ The check keeps the starts fair over every pair of a race and a wake pocket. Eve
 
 ## A world that answers: reactions
 
-A reaction is a rule the world follows, written as data ([REACTIONS.md](../design/REACTIONS.md)). It hangs on one kind of thing, holds while every condition it names holds, and does one thing. The kernel reads it and never runs it, so nothing changes while nobody looks, and a replay gives the same world. `content/core/reactions/` holds the core's five, and `templates/extension/reactions/` drops a plum below a full bush.
+A reaction is a rule the world follows, written as data ([REACTIONS.md](../design/REACTIONS.md)). It hangs on one kind of thing, holds while every condition it names holds, and does one thing. The kernel reads it and never runs it, so nothing changes while nobody looks, and a replay gives the same world. `content/core/reactions/` holds the core's five, and `templates/extension/reactions/` drops a plum beside a full bush, on its west side (`at: "left"`).
 
 - `on` - what it hangs on: `{ "resource": "<id>" }` or `{ "treasure": "<id>" }`, either one `"*"` for every one, or a ground tag, `{ "tag": "water" }`.
 - `when` - one or more conditions, all of which must hold: `hours` (`[from, to)`, as a node's), `night` (`true` or `false`), `ready_for_ms` (the node has stood ready and untouched that long), `on_tag`, `player_within` (1 to 8 tiles), `unseen` (a find the player cannot see yet), `chance_pct` (a roll of the game day, the same all day) and `weather` (`clear`, `rain` or `fog`: the day's sky over the region, the same for every player there).
@@ -372,17 +377,18 @@ An appear node is priced like any node: if it gives its item for less work than 
 - The rarity you declare is within one step of what the data implies. A fruit that grows anywhere at any hour is common; night-only, high-level or slow-to-regrow fruit is rarer.
 - Everything a recipe or quest asks for can be found somewhere in the world.
 - Wood comes only from felling a tree: a node that gives an item of class `wood` needs `"tool": "axe"`, and digging never gives wood. A tree stands in the way (`solid`) without cutting any place of the map off from where the player wakes up.
-- Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. Together these make a long recipe a chain of short steps, each one behind its station and surest from its level up. See [Classes and tiers](#classes-and-tiers).
+- Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold, and from tier 2 up no shop sells a tool, a weapon or ammunition. A dug-up recipe (`known: found`) has a teacher. A recipe template stays within `template_max_recipes`. Together these make a long recipe a chain of short steps, each one behind its station and surest from its level up. See [Classes and tiers](#classes-and-tiers).
 - The rarity bonuses of the whole world stay inside the rarity budget (10% today): a rare node with many copies or a fast respawn uses more of it.
 - A garment or jewelry piece names where it is worn (`wear`), with at most two small effects under its tier's cap; a look (`wear.look`) has no effect, and only a look may carry `premium_later`, while staying obtainable in the game. A recipe's `miss` names the share of each input a miss keeps (up to 90 percent, half when left out); a miss makes nothing else and is worth less than a success.
 - A try never loses value on average: at the recipe's own level and before luck, the chance of a success times the value of the outputs, plus the chance of a miss times what a miss keeps, reaches the value of the inputs. A recipe that loses value would make crafting worth less than selling its materials. The fix is more time or fewer inputs; see [A recipe](#a-recipe).
 - A tool is of class `tool` and has the tier of its `tool`; only a tool is of class `tool`, and a `meal` is always food. A class means the same thing in every recipe that asks for it.
-- A worn piece fits its place: a garment on the head, top, legs, outfit or feet, jewelry in a jewelry place, a tool in the hand. It names each effect once. A set belongs to one creator, has two pieces or more and fits on the character at once, because a set that cannot be worn whole promises a bonus nobody gets.
+- A worn piece fits its place: a garment on the head, top, legs, outfit, feet or hands, jewelry in a jewelry place, a tool in the hand. It names each effect once. A set belongs to one creator, has two pieces or more and fits on the character at once, because a set that cannot be worn whole promises a bonus nobody gets.
+- No weapon, no attribute bonus and no garment trait yet; a worn piece's `req` asks its tier's level; only a look binds.
 - A camp part's tier is open (1 to 3 today). An upgrade stands in the slot of the part it replaces, provides the same station, keeps at least its tier and its bag bonus, and the upgrades never go round in a circle: building up never takes away what you had.
 - A recipe never asks for a level its profession does not reach.
 - A `find` step names an item that is found, not farmed: one that only digging gives, or that exactly one timed plant (a resource with `hours`) gives, never made or sold. It carries a clue; the journal shows the clue, not a count. With a giver, the hand-in takes one; with no giver, the step counts once the item has been in the bag, so a later step may use it up. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
 - A `maze` quest may name its rung of help on the ladder of four (`maze.tier`) and the map area that frames the whole maze (`maze.area`). Stepping into that area from outside shows the maze from above for three seconds: at tier 1 with a faint line of the route and its landmarks lit (the props drawn with `maze.landmark`), at tier 2 with the landmarks lit a moment, at tier 3 the shape alone, and at tier 4 nothing. The check refuses the block on a quest of another type, a frame that is not an area or does not hold the heart, and a landmark drawn nowhere inside it.
-- A dig spot may leave out `tool`: its find is then picked up by hand, with no minigame and nothing worn. A restore may have no `inputs`: it then never opens by hand, and a quest opens it as its reward (`reward.opens`, a place reward, up to two restores). The check refuses an `opens` that names no restore, and a restore with no inputs that no quest opens.
+- A dig spot may leave out `tool`: its find is then picked up by hand, with nothing worn. A restore may have no `inputs`: it then never opens by hand, and a quest opens it as its reward (`reward.opens`, a place reward, up to two restores). The check refuses an `opens` that names no restore, and a restore with no inputs that no quest opens.
 - A restore may carry `mist`: the tiles around its place that the mist leaves clear once it is mended (the old bridge: 13, so the three wake pockets join). The kernel ignores it; the client draws it.
 - No reward repeats a pocket's tool. A quest's reward item that a wake pocket lays on its ground names `instead`: an item that ground lacks, which a character who woke there gets in its place. The check refuses a reward item a pocket's ground lays with no `instead`, and an `instead` that the same ground lays too.
 - No quest is gated by race: `race` appears only inside a `when`, on a remark, a topic or a quest's `talk.variants`.
