@@ -7,7 +7,7 @@ import type { GameSession } from '../session-surface';
 import { ATTRIBUTE_LABEL, ATTRIBUTE_TEXT } from '../text';
 import { say } from './dialog';
 import { gameServer, offerSignup } from './signup';
-import { enterFullView } from './touch';
+import { landscapeOnFirstStart, releaseLandscape, requestLandscape } from './orient';
 import { standingFrame } from '../work';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
@@ -77,6 +77,21 @@ export function showTitle(ui: UI): Promise<void> {
     let probe: Promise<RemoteSession | undefined> | undefined;
     // the screen the title shows: a probe that answers late redraws only the home screen it was asked from
     let screen: TitleScreen = 'home';
+    const orientation = new AbortController();
+    let leavePlay: (() => void) | undefined;
+    const askLandscape = landscapeOnFirstStart(
+      () => document.body.classList.contains('touch-on'),
+      () => {
+        leavePlay = () => {
+          orientation.abort();
+          releaseLandscape(window.screen);
+          leavePlay = undefined;
+        };
+        window.addEventListener('pagehide', leavePlay, { signal: orientation.signal });
+        void requestLandscape(document, window.screen, orientation.signal);
+      },
+    );
+    const enterPlay = (event: MouseEvent) => askLandscape((event as PointerEvent).pointerType);
 
     const render = (state: TitleState) => {
       screen = 'home';
@@ -90,7 +105,7 @@ export function showTitle(ui: UI): Promise<void> {
           h(
             'div',
             { class: 'title-actions' },
-            actions.canContinue ? button('Continue', () => void resume(), 'big') : null,
+            actions.canContinue ? button('Continue', (event) => void resume(event), 'big') : null,
             actions.newGame ? button('New game', () => (actions.canContinue ? confirmNew() : choose()), actions.canContinue ? '' : 'big') : null,
             actions.signIn ? button('Sign in', () => offerSignup(ui)) : null,
           ),
@@ -105,6 +120,7 @@ export function showTitle(ui: UI): Promise<void> {
 
     // the local picture first; where a server is named, a probe replaces it with the account's game
     const home = () => {
+      leavePlay?.();
       render({ server: server !== undefined, hasSave: Session.hasSave(), signedIn: false, started: false });
       if (server !== undefined) {
         // the line is down: the local picture stands, and the buttons ask again
@@ -121,9 +137,9 @@ export function showTitle(ui: UI): Promise<void> {
     };
 
     /** Continue: the server's game where the build names a server and the browser is signed in, else the demo's save. */
-    const resume = async () => {
+    const resume = async (event: MouseEvent) => {
       // the full view is asked inside the tap itself: a browser refuses it once the server's answer has outlasted the tap
-      enterFullView();
+      enterPlay(event);
       if (server === undefined) {
         resumeLocal();
         return;
@@ -132,6 +148,7 @@ export function showTitle(ui: UI): Promise<void> {
       try {
         joined = await joinRemote(app.bundle, server);
       } catch (error) {
+        leavePlay?.();
         note(error instanceof WireGap ? 'Waiting for the connection.' : error instanceof WireRefusal ? error.message : 'The game server could not be reached.');
         return;
       }
@@ -154,6 +171,7 @@ export function showTitle(ui: UI): Promise<void> {
     const resumeLocal = () => {
       const session = Session.restore(app.bundle);
       if (!session) {
+        leavePlay?.();
         note('That save could not be read. Start a new game.');
         return;
       }
@@ -231,11 +249,11 @@ export function showTitle(ui: UI): Promise<void> {
       drawCards();
       let starting = false;
       // no name here: the player cuts it on the stone at the bridge, the only place a name is chosen
-      const start = async () => {
+      const start = async (event: MouseEvent) => {
         // one start at a time: a second tap or Enter while the first waits starts nothing more
         if (starting) return;
         starting = true;
-        enterFullView();
+        enterPlay(event);
         // a start that comes before the probe's answer waits for it, so a signed-in account never starts in the browser
         if (!remote && probe) {
           error.textContent = 'Waiting for the connection.';
