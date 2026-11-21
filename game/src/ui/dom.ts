@@ -25,11 +25,11 @@ export function h<K extends keyof HTMLElementTagNameMap>(
   return el;
 }
 
-export function button(label: Child | Child[], onClick: () => void, cls = '', disabled = false): HTMLButtonElement {
+export function button(label: Child | Child[], onClick: (event: MouseEvent) => void, cls = '', disabled = false): HTMLButtonElement {
   const b = h('button', { class: `btn ${cls}`.trim(), type: 'button', disabled }, label);
   b.addEventListener('click', (e) => {
     e.stopPropagation();
-    onClick();
+    onClick(e);
   });
   return b;
 }
