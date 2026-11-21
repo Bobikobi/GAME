@@ -188,7 +188,7 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
     c,
     [
       ['Tools', ['Basket', 'Trowel', 'Axe', 'Walking staff']],
-      ['To wear', ['Satchel']],
+      ['To wear', ['Satchel', 'Hare-fur hood', 'Roe-leather jerkin', 'Roe-leather leggings', 'Hare-leather shoes']],
       ['Food and drink', ['Redberry', 'Herb tea', 'Berry mash']],
       ['Medicine', ['First-aid kit']],
     ],
