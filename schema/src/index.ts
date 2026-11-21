@@ -686,7 +686,16 @@ export const ShopBody = Type.Object(
   {
     sells: Type.Array(
       Type.Object(
-        { item: Id, price_mg: Int(1, 100_000_000, 'Price in milli-gold (1000 = 1 gold).') },
+        {
+          item: Id,
+          price_mg: Type.Optional(
+            Int(
+              1,
+              100_000_000,
+              'Price in milli-gold (1000 = 1 gold). Left out, the build sets it to the lowest price R8 allows, `r_mg_per_value_ms` times the item\'s value, so no price is typed by hand; an item with no value cannot be left unpriced.',
+            ),
+          ),
+        },
         { additionalProperties: false },
       ),
       { maxItems: 40 },
