@@ -523,20 +523,31 @@ async function phone(page: Page, url: string): Promise<void> {
   log(`a pinch zooms ${zp} -> ${(await dataset(page)).zoom}`);
   hadNoErrors(page);
 
-  // The layout scan checks the unfilled slots. Equip a technique to measure a filled slot as well.
+  // Equip a technique to check the slot and its visible name in the filled state.
   await tapNode(page, facts.child);
   await page.tap('.tree-card .tree-learn', 'Learn');
   await page.tap('.tree-card .tree-equip', 'Put in the build');
-  const filled = await page.waitFor<{ width: number; height: number }>(`(() => {
+  const filled = await page.waitFor<{
+    width: number; height: number; name: string; fontSize: number; clientWidth: number; scrollWidth: number;
+  }>(`(() => {
     const slot = document.querySelector('.tree-phone-side .tree-slot.filled[data-slot="0"]');
     if (!slot) return null;
+    const label = slot.querySelector('span:last-child');
+    slot.scrollIntoView({ block: 'nearest' });
     const { width, height } = slot.getBoundingClientRect();
-    return { width, height };
+    return {
+      width, height, name: label?.textContent.trim() ?? '', fontSize: label ? parseFloat(getComputedStyle(label).fontSize) : 0,
+      clientWidth: label?.clientWidth ?? 0, scrollWidth: label?.scrollWidth ?? 0,
+    };
   })()`, 'the phone filled slot');
   if (filled.width < slotWidth || filled.height < slotHeight) {
     throw new Error(`the phone filled slot is ${filled.width} x ${filled.height} px, expected at least ${slotWidth} x ${slotHeight} px`);
   }
-  log(`the filled slot is ${filled.width} x ${filled.height} px`);
+  if (!filled.name || filled.fontSize < 16 || filled.clientWidth === 0 || filled.scrollWidth > filled.clientWidth) {
+    throw new Error(`the phone filled slot name "${filled.name}" is ${filled.fontSize} px with ${filled.scrollWidth}/${filled.clientWidth} px of text width`);
+  }
+  log(`the filled slot is ${filled.width} x ${filled.height} px and "${filled.name}" is ${filled.fontSize} px with ${filled.scrollWidth}/${filled.clientWidth} px of text width`);
+  await page.screenshot(join(OUT, 'skills-844x390.png'));
 
   // the big tree on a phone: only what is on screen, and a tap still chooses
   const total = await growBigTree(page);
