@@ -43,3 +43,30 @@ it('asks on the first phone start gesture and skips desktop starts', () => {
   phoneStart('touch');
   expect(request).toHaveBeenCalledOnce();
 });
+
+it('asks again after play was left: a failed Continue re-arms the gate', () => {
+  const request = vi.fn();
+  const gate = landscapeOnFirstStart(() => true, request);
+  gate('touch');
+  gate('touch');
+  expect(request).toHaveBeenCalledOnce();
+  gate.rearm();
+  gate('touch');
+  expect(request).toHaveBeenCalledTimes(2);
+});
+
+it('never asks for a key press (an empty pointer type) or a mouse click', () => {
+  const request = vi.fn();
+  const gate = landscapeOnFirstStart(() => true, request);
+  gate('');
+  gate('mouse');
+  expect(request).not.toHaveBeenCalled();
+  gate();
+  expect(request).toHaveBeenCalledOnce();
+});
+
+it('still asks for fullscreen where the lock API is missing, and says the lock is unsupported', async () => {
+  const fullscreen = vi.fn(allow);
+  await expect(requestLandscape(documentWith(fullscreen), {})).resolves.toBe('unsupported');
+  expect(fullscreen).toHaveBeenCalledOnce();
+});

@@ -77,15 +77,17 @@ export function showTitle(ui: UI): Promise<void> {
     let probe: Promise<RemoteSession | undefined> | undefined;
     // the screen the title shows: a probe that answers late redraws only the home screen it was asked from
     let screen: TitleScreen = 'home';
-    const orientation = new AbortController();
     let leavePlay: (() => void) | undefined;
     const askLandscape = landscapeOnFirstStart(
       () => document.body.classList.contains('touch-on'),
       () => {
+        // one controller per request: a left play aborts its own, and the next tap starts a fresh one
+        const orientation = new AbortController();
         leavePlay = () => {
           orientation.abort();
           releaseLandscape(window.screen);
           leavePlay = undefined;
+          askLandscape.rearm();
         };
         window.addEventListener('pagehide', leavePlay, { signal: orientation.signal });
         void requestLandscape(document, window.screen, orientation.signal);
