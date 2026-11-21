@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/hidework",
+  "title": "Hidework classes",
+  "creator": "core",
+  "description": "The classes of worn pieces cut from a tanned hide (docs/design/CLOTHING.md section 3): leather with the hair off, fur with it on.",
+  "classes": [
+    {
+      "id": "core/leather",
+      "name": "Leather",
+      "base": "garment",
+      "description": "Cut from tanned hide, hair off."
+    },
+    {
+      "id": "core/fur",
+      "name": "Fur",
+      "base": "garment",
+      "description": "Cut from tanned hide, hair on."
+    }
+  ]
+}

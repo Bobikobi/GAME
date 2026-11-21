@@ -11,6 +11,10 @@
     "stations": [
       "workshop"
     ],
+    "families": [
+      "wear",
+      "tools"
+    ],
     "xp_levels": [
       4,
       40,

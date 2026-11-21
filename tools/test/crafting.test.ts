@@ -222,7 +222,8 @@ describe('a world that uses the grammar', () => {
 });
 
 describe('a world that wears, misses and builds over a part', () => {
-  const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
+  // a set's pieces are uncommon (CLOTHING 8 rule 1), and a worn piece made of herbs (weight 0) weighs nothing (MATERIALS M7)
+  const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', rarity: 'uncommon', weight: 0, wear, ...extra });
   const result = world({
     'sets/field.json': set('field'),
     'items.json': items(
@@ -275,7 +276,8 @@ describe('a world that wears, misses and builds over a part', () => {
 });
 
 describe('worn items the check refuses', () => {
-  const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
+  // a set's pieces are uncommon (CLOTHING 8 rule 1), and a worn piece made of herbs (weight 0) weighs nothing (MATERIALS M7)
+  const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', rarity: 'uncommon', weight: 0, wear, ...extra });
   const result = world({
     'sets/field.json': set('field'),
     'items.json': items(

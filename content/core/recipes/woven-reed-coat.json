@@ -1,0 +1,55 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/woven-reed-coat",
+  "title": "Woven reed coat",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/woven-reed-coat",
+      "name": "Woven reed coat",
+      "description": "Mat on the back, dyed cord at the seams. Gathering goes easier in it.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "core/reedwork",
+      "family": "reed",
+      "tier": 3,
+      "sprite": "core/base-kit:items/branch",
+      "weight": 2,
+      "wear": {
+        "slot": "top",
+        "effects": [
+          {
+            "effect": "gather_speed_pct",
+            "value": 8
+          }
+        ]
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 7000,
+    "level": 6,
+    "inputs": [
+      {
+        "item": "core/woven-mat",
+        "qty": 1
+      },
+      {
+        "item": "core/dyed-cord",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/woven-reed-coat",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "found",
+    "family": "wear"
+  }
+}

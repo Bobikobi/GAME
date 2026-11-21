@@ -141,7 +141,8 @@ function pull(number: number, title: string, login: string, sha: string, extra: 
     labels: [{ name: 'proposal' }],
     user: { login },
     draft: false,
-    head: { sha, repo: { full_name: REPO } },
+    base: { ref: 'develop' },
+    head: { ref: 'proposal', sha, repo: { full_name: REPO } },
     ...extra,
   };
 }

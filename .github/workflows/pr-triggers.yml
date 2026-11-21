@@ -38,6 +38,8 @@ jobs:
       - name: Read the changed files and the body
         env:
           BASE: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           set -o pipefail

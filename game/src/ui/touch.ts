@@ -219,24 +219,4 @@ export function mountTouch(root: HTMLElement): void {
   // A acts on pointerdown, so the browser's click that follows the finger
   // lifting would land on the window A just opened (and close it)
   for (const el of [pad, zone, a, b, sneak, bag, journal, menu]) el.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
-
-}
-
-/**
- * Fullscreen and the landscape lock, best effort: a browser may refuse either (iOS refuses the lock, and a phone
- * browser without the element fullscreen refuses both), and play never waits on them.
- */
-export function enterFullView(): void {
-  if (!document.body.classList.contains('touch-on') || document.fullscreenElement) return;
-  const lock = () => {
-    const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
-    orientation?.lock?.('landscape').catch(() => undefined);
-  };
-  try {
-    const asked = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' });
-    if (asked) asked.then(lock, () => undefined);
-    else lock();
-  } catch {
-    // an old browser without the promise form: no full view, play goes on
-  }
 }
