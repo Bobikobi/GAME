@@ -2840,7 +2840,7 @@
           ],
           "bob": false
         },
-        "scale": 1
+        "scale": 0.92
       },
       "chars/human_hardened-leathers_up": {
         "file": "chars/human_hardened-leathers_up.png",
@@ -2862,7 +2862,7 @@
           ],
           "bob": false
         },
-        "scale": 1.15
+        "scale": 0.99
       },
       "chars/human_hardened-leathers_left": {
         "file": "chars/human_hardened-leathers_left.png",
@@ -2905,7 +2905,7 @@
           ],
           "bob": false
         },
-        "scale": 1
+        "scale": 0.93
       },
       "chars/human_reed-walker_up": {
         "file": "chars/human_reed-walker_up.png",
@@ -2926,7 +2926,7 @@
           ],
           "bob": false
         },
-        "scale": 1.15
+        "scale": 0.99
       },
       "chars/human_reed-walker_left": {
         "file": "chars/human_reed-walker_left.png",
@@ -2947,7 +2947,7 @@
           ],
           "bob": false
         },
-        "scale": 0.95
+        "scale": 0.97
       },
       "chars/elf_reed-walker_down": {
         "file": "chars/elf_reed-walker_down.png",
@@ -2969,7 +2969,7 @@
           ],
           "bob": false
         },
-        "scale": 1.08
+        "scale": 1.1
       },
       "chars/elf_reed-walker_up": {
         "file": "chars/elf_reed-walker_up.png",
@@ -2991,7 +2991,7 @@
           ],
           "bob": false
         },
-        "scale": 1.37
+        "scale": 1.16
       },
       "chars/elf_reed-walker_left": {
         "file": "chars/elf_reed-walker_left.png",
@@ -3013,7 +3013,7 @@
           ],
           "bob": false
         },
-        "scale": 1.15
+        "scale": 1.16
       },
       "chars/human_digger-leathers_down": {
         "file": "chars/human_digger-leathers_down.png",
@@ -3035,7 +3035,7 @@
           ],
           "bob": false
         },
-        "scale": 1
+        "scale": 0.92
       },
       "chars/human_digger-leathers_up": {
         "file": "chars/human_digger-leathers_up.png",
@@ -3057,7 +3057,7 @@
           ],
           "bob": false
         },
-        "scale": 1.15
+        "scale": 0.99
       },
       "chars/human_digger-leathers_left": {
         "file": "chars/human_digger-leathers_left.png",
@@ -3079,7 +3079,7 @@
           ],
           "bob": false
         },
-        "scale": 0.95
+        "scale": 0.93
       },
       "chars/skeleton_reed-walker_down": {
         "file": "chars/skeleton_reed-walker_down.png",
@@ -3100,7 +3100,7 @@
           ],
           "bob": false
         },
-        "scale": 0.77
+        "scale": 0.75
       },
       "chars/skeleton_reed-walker_up": {
         "file": "chars/skeleton_reed-walker_up.png",
@@ -3121,7 +3121,7 @@
           ],
           "bob": false
         },
-        "scale": 0.93
+        "scale": 0.75
       },
       "chars/skeleton_reed-walker_left": {
         "file": "chars/skeleton_reed-walker_left.png",
@@ -3142,7 +3142,7 @@
           ],
           "bob": false
         },
-        "scale": 0.74
+        "scale": 0.75
       }
     }
   }
