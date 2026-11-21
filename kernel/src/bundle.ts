@@ -66,7 +66,8 @@ export type PocketDef = Meta & Pocket;
 export type ProfessionDef = Meta & Profession;
 /** A wing of the skill tree (docs/design/GROWTH.md section 4): a profession's nodes and the races' corners. */
 export type SchoolDef = Meta & School;
-export type ShopDef = Meta & Shop;
+/** A shop as the bundle holds it: every offer carries its price, a left-out one filled by the build at the R8 floor. */
+export type ShopDef = Meta & Omit<Shop, 'sells'> & { sells: { item: string; price_mg: number }[] };
 export type MapDef = Meta & GameMap;
 /** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
 export type ReactionDef = Meta & Reaction;

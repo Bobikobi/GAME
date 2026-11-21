@@ -15836,8 +15836,7 @@
                 "additionalProperties": false,
                 "type": "object",
                 "required": [
-                  "item",
-                  "price_mg"
+                  "item"
                 ],
                 "properties": {
                   "item": {
@@ -15849,7 +15848,7 @@
                   "price_mg": {
                     "minimum": 1,
                     "maximum": 100000000,
-                    "description": "Price in milli-gold (1000 = 1 gold).",
+                    "description": "Price in milli-gold (1000 = 1 gold). Left out, the build sets it to the lowest price R8 allows, `r_mg_per_value_ms` times the item's value, so no price is typed by hand; an item with no value cannot be left unpriced.",
                     "type": "integer"
                   }
                 }
