@@ -132,6 +132,10 @@ describe('the known-short list', () => {
   test('a short sprite on the list is advisory; one that is not on it fails the content tests', () => {
     expect(isAdvisory({ where: 'art.scale.core/base-kit:props/tree_oak' })).toBe(true);
     expect(isAdvisory({ where: 'art.scale.core/base-kit:props/well_old' })).toBe(false);
+    expect(isAdvisory({ where: 'families.pieces', level: 'warning' })).toBe(true);
+    expect(isAdvisory({ where: 'families.pieces', level: 'error' })).toBe(false);
+    expect(isAdvisory({ where: 'families.pieces' })).toBe(false);
+    expect(isAdvisory({ where: 'families.other', level: 'warning' })).toBe(false);
     expect(isAdvisory({ where: 'art.scale.core/base-kit:props/new_oak' })).toBe(false);
     expect(isAdvisory({ where: 'kit.sprites.props/chest' })).toBe(false);
     expect(isAdvisory({ where: 'art.ink16' })).toBe(true);
