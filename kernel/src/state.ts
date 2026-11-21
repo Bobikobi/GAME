@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.30.0';
+export const KERNEL_VERSION = '0.31.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -627,9 +627,9 @@ export function powerCap(bundle: Bundle, state: PublicState): number {
 /**
  * Sum of a technique effect: the ones the player has unlocked through profession levels, and the
  * learned nodes of the tree (a small node always, a technique only while it sits in the build);
- * `only` counts one profession's.
+ * `only` counts one profession's, and a node of a craft family (CLOTHING 6.1) counts only when `family` names it.
  */
-export function techniqueValue(bundle: Bundle, state: PublicState, effect: string, only?: string): number {
+export function techniqueValue(bundle: Bundle, state: PublicState, effect: string, only?: string, family?: string): number {
   let total = 0;
   for (const id of Object.keys(bundle.professions).sort()) {
     if (only !== undefined && id !== only) continue;
@@ -642,6 +642,8 @@ export function techniqueValue(bundle: Bundle, state: PublicState, effect: strin
     const found = treeNode(bundle, key);
     if (!found || found.node.effect !== effect) continue;
     if (only !== undefined && found.school.profession !== only) continue;
+    // a family node helps only the recipes of its family (CLOTHING 6.1): a caller that names no family gets none of it
+    if (found.node.family !== undefined && found.node.family !== family) continue;
     if (found.node.slot === true && !build.includes(key)) continue;
     total += Math.max(1, found.node.value);
   }
@@ -690,6 +692,15 @@ export function nodeIsOurs(state: PublicState, node: SchoolNodeDef): boolean {
  * Why the player cannot learn this node now, in the kernel's own words, or undefined when they can.
  * The place is not asked here (the action asks it): this is what the tree screen shows on a node.
  */
+/**
+ * Whether a gate is open now (RecipeBody.gate, SchoolNode.gate): "combat" opens with `combat.enabled`, the switch the
+ * hunt waits under too (G35). No gate is always open.
+ */
+export function gateOpen(bundle: Bundle, gate: 'combat' | undefined): boolean {
+  if (gate === undefined) return true;
+  return gate === 'combat' && bundle.params.combat.enabled === 1;
+}
+
 export function nodeRefusal(bundle: Bundle, state: PublicState, key: string): string | undefined {
   const found = treeNode(bundle, key);
   if (!found || !bundle.params.growth) return 'There is no such thing to learn.';
@@ -697,6 +708,8 @@ export function nodeRefusal(bundle: Bundle, state: PublicState, key: string): st
   const p = state.player;
   if ((p.nodes ?? []).includes(key)) return 'You know this already.';
   if (!nodeIsOurs(state, node)) return 'That belongs to another race.';
+  // a node behind a gate is shown and never taken while it is closed: no point goes to a craft nobody can make yet (CLOTHING 6.1)
+  if (!gateOpen(bundle, node.gate)) return 'This cannot be learned yet.';
   const missing = (node.needs ?? []).map((n) => needKey(school.id, n)).filter((k) => !(p.nodes ?? []).includes(k));
   if (missing.length > 0) {
     const names = missing.map((k) => treeNode(bundle, k)?.node.name ?? k);
@@ -762,8 +775,8 @@ export function wornValue(bundle: Bundle, state: PublicState, effect: string): n
  * clamps the rate it feeds under the power cap (rule R9). Its attribute side is
  * `attrAt`: the race's profile and the region's grade (DECISIONS.md, 2026-10-22).
  */
-export function effectValue(bundle: Bundle, state: PublicState, effect: string, profession?: string): number {
-  return techniqueValue(bundle, state, effect, profession) + wornValue(bundle, state, effect);
+export function effectValue(bundle: Bundle, state: PublicState, effect: string, profession?: string, family?: string): number {
+  return techniqueValue(bundle, state, effect, profession, family) + wornValue(bundle, state, effect);
 }
 
 /**
