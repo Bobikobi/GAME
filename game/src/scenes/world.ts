@@ -70,6 +70,8 @@ import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels }
 import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
+import { EffectLayer } from '../effect-layer';
+import { landingDust, spawnsOf } from '../effects';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
@@ -227,9 +229,14 @@ interface Fire {
   breath: FireFlicker | undefined;
   /** the fire's own draws, for its sparks */
   rng: () => number;
+  /** the pack's camp-fire loop (effects.ts), shown in place of the kit's burning look while the wood is full or steady, and whether it is up now */
+  pv?: Phaser.GameObjects.Sprite;
+  pvOn?: boolean;
 }
 
 /** The burning look of a fire prop, from the base kit, and the cold look of the fire the player kindles. */
+/** The pack's camp fire is 40 art px wide and the kit's lit hearth shows about 48: the fit that makes the two stand as wide (effects.ts). */
+const CAMPFIRE_FIT = 1.2;
 const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
 const FIRE_UNLIT_SPRITE = 'core/base-kit:props/campfire_unlit';
 /** A flame's frame time: the kit's three frames while the fire is full. */
@@ -397,6 +404,8 @@ export class WorldScene extends Phaser.Scene {
   private leaves: Emitter | undefined;
   private bursts = new Map<string, Emitter>();
   private puffs = new Map<string, Emitter>();
+  /** the pack's effects (effects.ts): a spark on a hit, a starburst on a bite, dust on a landing, the camp fire's flame */
+  private effects!: EffectLayer;
   /** the old picture's dark frame, drawn under the cut-out instead of as a filter over everything (WebGL) */
   private vignette: Phaser.GameObjects.Image | undefined;
   private frameLook = { strength: 0.3, radius: 0.8 };
@@ -597,6 +606,7 @@ export class WorldScene extends Phaser.Scene {
     app.ui.root.prepend(this.labels);
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
+    this.effects = new EffectLayer(this, DEPTH.fx, T);
     const read = this.b.params.light?.read;
     if (RICH.light) this.light = new LightLayer(this, this.lightTable, { floor: (read?.floor ?? READ.floor) / 100 }, { shade: DEPTH.shade, pools: DEPTH.shade + 0.2 });
     this.buildGround();
@@ -1376,6 +1386,28 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
+   * The pack's camp fire (effects.ts) over a fire's hearth: shown in place of the kit's burning look while the wood is full or
+   * steady, a little smaller when it settles, at the night's height over the shade; the kit's look comes back when it is not up.
+   * Without motion it stands on its first frame.
+   */
+  private campfireFlame(f: Fire, on: boolean, stage: FireStage, night: boolean, gone: boolean): void {
+    if (on) {
+      f.pv ??= this.effects.make('campfire', f.spr.x, f.spr.y, f.baseDepth);
+      if (!f.pv) return;
+      const fit = (stage === 'full' ? 1 : 0.9) * CAMPFIRE_FIT;
+      f.pv.setPosition(f.spr.x, f.spr.y - 1).setScale(this.effects.scale * fit).setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth).setVisible(true);
+      if (!RICH.motion) f.pv.setFrame(0);
+      f.spr.setVisible(false);
+      f.pvOn = true;
+    } else if (f.pvOn) {
+      f.pv?.setVisible(false);
+      // (the fire the player kindled and then lost has no look to give back)
+      if (!gone) f.spr.setVisible(true);
+      f.pvOn = false;
+    }
+  }
+
+  /**
    * The fire the player kindled (NEXT 21b): one sprite that follows the tile the kernel names, cold until it is
    * lit. It is not a map prop, so nothing builds it at bind time; refreshFires() calls this first.
    */
@@ -1420,7 +1452,10 @@ export class WorldScene extends Phaser.Scene {
       // by day the kit's own flame shows while the wood is full; at night the shade would hide it, so the drawn tongue
       // carries the flame over the dark at every stage
       const night = this.night > 0.15;
-      const drawn = stage === 'low' || stage === 'embers' || (night && full);
+      // the pack's camp-fire loop stands in for the kit's burning look while the wood is full or steady, by day and by night, so
+      // the drawn tongue is not laid over it too
+      const pvOn = full && this.effects.has('campfire');
+      const drawn = !pvOn && (stage === 'low' || stage === 'embers' || (night && full));
       const look = full ? f.lit : f.unlit;
       if (f.spr.texture.key !== look) {
         retex(f.spr, look, 0);
@@ -1438,6 +1473,7 @@ export class WorldScene extends Phaser.Scene {
       f.baseX = sx;
       f.baseY = sy;
       f.spr.setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth);
+      this.campfireFlame(f, pvOn, stage, night, id === OWN_FIRE && s.state.player.own === null);
       f.flame.setDepth(night ? DEPTH.shade + 1 : f.baseDepth + 0.01);
       f.sparks?.setDepth(night ? DEPTH.shade + 0.9 : f.baseDepth + 0.02);
       // with the light layer on, the fire's pool lights its ring; the old soft disc would light it twice
@@ -1498,6 +1534,13 @@ export class WorldScene extends Phaser.Scene {
       scale: drawn ? f.baseY : f.spr.scaleX,
       stage: f.stage,
     };
+  }
+
+  /** The pack's camp fire over a fire's hearth now, for a test: whether it is up, the frame it shows, and whether the kit's own look is hidden under it. */
+  campfireLook(id: string): { up: boolean; frame: number; kitHidden: boolean } | undefined {
+    const f = this.fires.get(id);
+    if (!f) return undefined;
+    return { up: !!f.pvOn && !!f.pv?.visible, frame: f.pv ? Number(f.pv.frame.name) : -1, kitHidden: !f.spr.visible };
   }
 
   /** Whether a rectangle of tiles is on the screen now. */
@@ -2218,6 +2261,7 @@ export class WorldScene extends Phaser.Scene {
     this.stoneHeld = false;
     this.stones?.destroy();
     this.stones = undefined;
+    this.effects.clear();
     this.carryImg?.destroy();
     this.carryImg = undefined;
     this.lunge = null;
@@ -2241,6 +2285,7 @@ export class WorldScene extends Phaser.Scene {
       session.on('events', (events) => {
         this.biteDrawn(events);
         this.fightClips(events);
+        this.fightEffects(events);
         this.celebrate(events);
         for (const event of events) if (event.e === 'cue') this.playCue(event);
       }),
@@ -2639,6 +2684,8 @@ export class WorldScene extends Phaser.Scene {
    */
   private animate(time: number, delta: number): void {
     this.driftAir(time, delta);
+    this.effects.update(time);
+    for (const f of this.fires.values()) if (f.pv && f.pvOn && RICH.motion) this.effects.loop(f.pv, 'campfire', time, f.phase * 1000);
     for (const d of this.drifting) d.update(time);
     if (RICH.motion) this.maskSway.update(time, this.cameras.main.worldView);
     for (const c of this.cycles) {
@@ -2978,6 +3025,22 @@ export class WorldScene extends Phaser.Scene {
     this.drawBody();
     if (this.body.moving) this.walkFrame();
     else this.faceFrame();
+  }
+
+  /** The effects a batch of the kernel's events starts (effects.ts `spawnsOf`): a spark on a landed hit, a starburst on a bite or a critical blow. Motion only. */
+  private fightEffects(events: readonly GameEvent[]): void {
+    if (!RICH.motion || !this.session) return;
+    for (const spawn of spawnsOf(events, this.session.pos)) this.effects.playSpawn(spawn, this.time.now);
+  }
+
+  /**
+   * Where a jump or a thrown stone comes down: the pack's dust on dry ground (path, bank, town, ruin), the old puff on the rest
+   * (leaves on a meadow), and the old puff on dry ground too when the sheet did not load.
+   */
+  private dustAt(x: number, y: number): void {
+    const tag = this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag;
+    if (landingDust(tag) && this.effects.has('landing-dust')) this.effects.playSpawn({ id: 'landing-dust', tile: [x, y] }, this.time.now, DEPTH.puff);
+    else this.puffAt(x, y);
   }
 
   /** A little dust at the feet as a step starts, in the colour of the ground left behind. */
@@ -4106,7 +4169,7 @@ export class WorldScene extends Phaser.Scene {
       layer.fly(thrown, this.time.now, (tile, sank) => {
         sound.sfx('step');
         if (sank) this.splashAt(tile);
-        else if (RICH.motion) this.puffAt(tile[0], tile[1]);
+        else if (RICH.motion) this.dustAt(tile[0], tile[1]);
       });
       // STAND-IN throw: the figure leans into the throw and settles back
       const [dx, dy] = DIRS[s.facing];
@@ -4141,7 +4204,7 @@ export class WorldScene extends Phaser.Scene {
     }
     s.pos = [hop.to[0], hop.to[1]];
     this.body.place(hop.to);
-    if (RICH.motion) this.puffAt(hop.to[0], hop.to[1]);
+    if (RICH.motion) this.dustAt(hop.to[0], hop.to[1]);
     this.arrive(s);
     this.drawBody();
     this.faceFrame();
