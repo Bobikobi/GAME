@@ -12,6 +12,8 @@ import {
   attrAt,
   characterLevel,
   minuteOfDay,
+  openDoor,
+  summaryDay,
   professionLevel,
   rareFindPermille,
   recipeTier,
@@ -42,7 +44,7 @@ import type { StoneView } from '../stone';
 import { Session, STALL_SLOTS, stallDraftOf, type StallDraft } from '../session';
 import type { GameSession } from '../session-surface';
 import type { ActResult } from '../session-surface';
-import { SEARCH_EMPTY, SEARCH_LUCK_LINE, searchRows, ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
+import { SEARCH_EMPTY, dayRows, doorLine, rowLine, SEARCH_LUCK_LINE, searchRows, ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
 import { shopGroups } from '../shopstock';
 import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces, mapRegions } from '../places';
@@ -1206,6 +1208,29 @@ function markReviewAsked(): void {
   } catch {
     // storage may be blocked; the review may then be offered again
   }
+}
+
+/**
+ * The day summary (GAME_RULES G16, the ladder's session end): what the day gave, as three lines (found, built, learned,
+ * from the kernel's tally of the valley day) and the one open door, picked from the quest state. It stands before the
+ * review pop-up and never in its place. Resolves when the window closes.
+ */
+export function openDaySummary(ui: UI): Promise<void> {
+  const s = app.session;
+  if (!s) return Promise.resolve();
+  const day = summaryDay(s.state);
+  const rows = dayRows(app.bundle, day ?? { found: [], built: [], learned: [] });
+  return new Promise<void>((resolve) => {
+    const p = panel(ui, day ? `Day ${day.n}` : 'The day', 'day-summary', 'What the day gave you');
+    const done = button('On we go', () => p.close(), 'small');
+    p.body.replaceChildren(
+      h('ul', { class: 'day-rows' }, rows.map((r) => h('li', { 'data-kind': r.kind, 'data-count': String(r.count) }, rowLine(r)))),
+      h('h3', null, 'Waiting for you'),
+      h('p', { class: 'day-door' }, doorLine(app.bundle, openDoor(app.bundle, s.state))),
+      h('div', { class: 'actions' }, done),
+    );
+    p.layer.onClose = resolve;
+  });
 }
 
 /**

@@ -57,6 +57,7 @@ import {
   confirmBuild,
   confirmRestore,
   openFeedback,
+  openDaySummary,
   openOpeningReview,
   openSearch,
 } from './panels';
@@ -578,7 +579,7 @@ export class UI {
           'Past the arch the ruins go on, darker and deeper than by day. Far below, a bell rings once.',
           'Not tonight. The way stays open.',
         ]);
-        void openOpeningReview(this).then(() => offerSignup(this));
+        void openDaySummary(this).then(() => openOpeningReview(this)).then(() => offerSignup(this));
       }
     }
   }

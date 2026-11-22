@@ -24,6 +24,7 @@ import {
   searchDawn,
   serialize,
   step,
+  summaryDay,
   tallyStep,
   valleyDay,
 } from '@game/kernel';
@@ -340,6 +341,21 @@ describe('a line that waits for the morning', () => {
     expect(day1).toBeUndefined();
     expect(day2).toBeDefined();
     expect(pickRemark(b, s, 'core/elder', new Set([day2!.key]), dawnTick(1) + 1000)).toBeUndefined();
+  });
+});
+
+describe('the day a summary tells', () => {
+  test('is the running day when it holds something, else the day before when that does, else none', () => {
+    const s = started();
+    expect(summaryDay(s)).toBeUndefined();
+    s.player.day = { n: 1, found: ['core/herb'], built: [], learned: [] };
+    expect(summaryDay(s)?.n).toBe(1);
+    s.player.day = { n: 2, found: [], built: [], learned: [], prev: { n: 1, found: ['core/herb'], built: [], learned: [] } };
+    expect(summaryDay(s)?.n).toBe(1);
+    s.player.day = { n: 2, found: ['core/log'], built: [], learned: [], prev: { n: 1, found: ['core/herb'], built: [], learned: [] } };
+    expect(summaryDay(s)?.n).toBe(2);
+    s.player.day = { n: 3, found: [], built: [], learned: [], prev: { n: 2, found: [], built: [], learned: [] } };
+    expect(summaryDay(s)).toBeUndefined();
   });
 });
 

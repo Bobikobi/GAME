@@ -99,3 +99,14 @@ export function openDoor(b: Bundle, s: PublicState): OpenDoor | undefined {
   }
   return undefined;
 }
+
+/**
+ * The day a summary tells (G16): the valley day that is running when it holds anything, else the day that ended before it
+ * (a player who reaches the end of a session in the first minutes after a dawn), else none.
+ */
+export function summaryDay(s: PublicState): (DayLog & { n: number }) | undefined {
+  const day = s.player.day;
+  if (day === undefined) return undefined;
+  if (dayHolds(day) > 0 || day.prev === undefined) return dayHolds(day) > 0 ? day : undefined;
+  return dayHolds(day.prev) > 0 ? day.prev : undefined;
+}
