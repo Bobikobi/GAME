@@ -3,6 +3,8 @@
  * Places say how many things the player holds and come from what is on the back; weight says how fast
  * they walk, against a limit of `load.base` plus `per_point.might` a point of might.
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import {
@@ -280,6 +282,26 @@ describe('bags', () => {
     expect(offer).toBeDefined();
     // a shop never sells below the value (R8)
     expect(offer!.price_mg).toBeGreaterThanOrEqual(b.params.r_mg_per_value_ms * b.values['core/satchel']!);
+  });
+});
+
+describe("Pell's shelf", () => {
+  const PIECES = [
+    ['head', 'core/hare-fur-hood'],
+    ['top', 'core/roe-leather-jerkin'],
+    ['legs', 'core/roe-leather-leggings'],
+    ['feet', 'core/hare-leather-shoes'],
+  ] as const;
+
+  test('sells one plain tier-1 piece per body place, each at exactly the R8 floor, none with a typed price', () => {
+    const raw = JSON.parse(readFileSync(fileURLToPath(new URL('../../content/core/shops/trader-shop.json', import.meta.url)), 'utf8')) as { shop: { sells: { item: string; price_mg?: number }[] } };
+    for (const [slot, id] of PIECES) {
+      expect(b.items[id]!.wear?.slot).toBe(slot);
+      expect(b.items[id]!.tier).toBe(1);
+      expect(raw.shop.sells.find((o) => o.item === id)).toEqual({ item: id });
+      const offer = b.shops['core/trader-shop']!.sells.find((o) => o.item === id)!;
+      expect(offer.price_mg).toBe(b.params.r_mg_per_value_ms * b.values[id]!);
+    }
   });
 });
 

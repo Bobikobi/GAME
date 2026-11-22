@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import type { Bundle } from '@game/kernel';
 import { app } from '../src/app';
 import { CHUNK, chunkRange } from '../src/groundchunks';
-import { adopt, baseOf, baseScale, densityOf, rel, retex, setRel, unitOf } from '../src/kitart';
+import { adopt, baseOf, baseScale, densityOf, drawnDensity, fitOf, rel, retex, setRel, unitOf } from '../src/kitart';
 import { GREENS, remapTone } from '../src/richground';
 import { heightOf } from '../src/targets';
 import { cameraK, cameraZoom, deviceSize, ratioOf, WHEEL_STEPS, wheelStep, wheelZoom, worldToPage } from '../src/view';
@@ -87,6 +87,7 @@ describe('density in the client', () => {
       sprites: {
         'k:chars/old': { url: 'a', w: 16, h: 24, frames: 1, density: 1 },
         'k:chars/pell': { url: 'b', w: 64, h: 96, frames: 3, density: 4 },
+        'k:chars/swing': { url: 'd', w: 128, h: 128, frames: 4, density: 4, clip: { race: 'core/human', view: 'left', verb: 'strike', frame_ms: 100, anchor: [64, 100], fit_permille: 700 } },
         'k:tiles/grass': { url: 'c', w: 64, h: 64, frames: 1, density: 4 },
       },
     } as unknown as Bundle;
@@ -115,6 +116,26 @@ describe('density in the client', () => {
     expect(unitOf('k:chars/old')).toEqual({ w: 16, h: 24 });
     expect(unitOf('nope')).toBeUndefined();
     expect(baseScale('k:chars/pell')).toBe(0.25);
+  });
+
+  test('a clip sheet shows at its fit on top of the density, the feet stay on the anchor, and a swap back to the walk restores its base', () => {
+    expect(fitOf('k:chars/swing')).toBe(0.7);
+    expect(fitOf('k:chars/pell')).toBe(1);
+    expect(baseScale('k:chars/swing')).toBeCloseTo(0.175, 12);
+    expect(baseScale('k:chars/pell')).toBe(0.25);
+    expect(drawnDensity('k:chars/swing')).toBeCloseTo(4 / 0.7, 12);
+    expect(drawnDensity('k:chars/pell')).toBe(4);
+    expect(drawnDensity('fx-shadow')).toBe(1);
+    const o = adopt(fake('k:chars/pell'));
+    setRel(o, 1, 1.04);
+    retex(o, 'k:chars/swing', 2);
+    expect(o.scaleX).toBeCloseTo(0.175, 12);
+    expect(o.scaleY).toBeCloseTo(0.182, 12);
+    retex(o, 'k:chars/pell', 2);
+    expect(o.scaleX).toBe(0.25);
+    expect(o.scaleY).toBeCloseTo(0.26, 12);
+    // a 100 px tall figure in the clip's 128 px frame is shown 100 * 0.175 = 17.5 world units tall: what a 70 px walk figure at 0.25 shows
+    expect(100 * baseScale('k:chars/swing')).toBeCloseTo(70 * baseScale('k:chars/pell'), 12);
   });
 
   test('a density-4 sprite shows at a quarter scale, a density-1 one at 1', () => {

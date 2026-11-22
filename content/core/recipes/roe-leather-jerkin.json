@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/roe-leather-jerkin",
+  "title": "Roe-leather jerkin",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/roe-leather-jerkin",
+      "name": "Roe-leather jerkin",
+      "description": "A sleeveless jerkin of roe leather, stitched with sinew. It lets you bend over a dig.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/leather",
+      "family": "roe",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stew-scrap",
+      "weight": 1,
+      "wear": {
+        "slot": "top",
+        "effects": [
+          {
+            "effect": "dig_speed_pct",
+            "value": 5
+          }
+        ]
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 6000,
+    "level": 2,
+    "inputs": [
+      {
+        "item": "core/roe-leather",
+        "qty": 1
+      },
+      {
+        "item": "core/sinew-thread",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/roe-leather-jerkin",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start",
+    "gate": "combat",
+    "family": "wear"
+  }
+}

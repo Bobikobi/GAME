@@ -17,6 +17,7 @@ import {
   type Stray,
   type StreamDef,
 } from './report';
+import { git as runGit } from '../git';
 
 const STREAMS_FILE = 'docs/team/streams.json';
 const args = process.argv.slice(2);
@@ -28,7 +29,7 @@ interface Run {
 
 function git(argv: string[], okCodes: number[] = [0]): Run {
   try {
-    return { code: 0, out: execFileSync('git', argv, { encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'pipe'] }) };
+    return { code: 0, out: runGit(undefined, argv) };
   } catch (error) {
     const failure = error as { status?: number; stdout?: string };
     if (failure.status !== undefined && okCodes.includes(failure.status)) return { code: failure.status, out: failure.stdout ?? '' };

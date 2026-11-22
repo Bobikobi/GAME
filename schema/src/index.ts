@@ -682,11 +682,23 @@ export const NpcBody = Type.Object(
   { additionalProperties: false },
 );
 
+/** The highest price a shop offer may carry, in milli-gold: a written price and the one the build computes alike. */
+export const SHOP_PRICE_MAX_MG = 100_000_000;
+
 export const ShopBody = Type.Object(
   {
     sells: Type.Array(
       Type.Object(
-        { item: Id, price_mg: Int(1, 100_000_000, 'Price in milli-gold (1000 = 1 gold).') },
+        {
+          item: Id,
+          price_mg: Type.Optional(
+            Int(
+              1,
+              SHOP_PRICE_MAX_MG,
+              'Price in milli-gold (1000 = 1 gold). Left out, the build sets it to the lowest price R8 allows, `r_mg_per_value_ms` times the item\'s value, so no price is typed by hand; an item with no value cannot be left unpriced.',
+            ),
+          ),
+        },
         { additionalProperties: false },
       ),
       { maxItems: 40 },
@@ -1989,6 +2001,13 @@ export const ClipBody = Type.Object(
     verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup or dig.' }),
     frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
     anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
+    fit_permille: Type.Optional(
+      Int(
+        100,
+        4000,
+        'The factor the clip shows at on top of its density\'s base scale (1 / density), in thousandths (the bundle holds whole numbers only): a take drawn larger than the race\'s walk shows smaller, so its figure stands as tall as the walk\'s. Left out, 1000. The feet stay on the anchor whatever the fit.',
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -2024,7 +2043,8 @@ export const KitBody = Type.Object(
             384,
             'Frame height in pixels. At density 1 tiles/ and items/ are 16, chars/ are 24, a work pose 32 and props up to 64. At density 4 tiles/ and items/ are 64, chars/ are 96, a work pose 128 and props up to 384.',
           ),
-          frames: Type.Optional(Int(1, 16, 'Animation frames laid side by side. Default 1.')),
+          frames: Type.Optional(Int(1, 64, 'Animation frames laid side by side, or in rows when `cols` wraps them. Default 1.')),
+          cols: Type.Optional(Int(1, 32, 'Frames per row when the sheet is wrapped into rows (read left to right, then top to bottom): a long clip of 45 frames is too wide for one row (a picture wider than 4096 px is refused). Left out, one row of `frames`.')),
           ramps: Type.Optional(
             Type.Array(Type.String({ pattern: '^[a-z0-9][a-z0-9-]*$', maxLength: 32 }), {
               minItems: 1,

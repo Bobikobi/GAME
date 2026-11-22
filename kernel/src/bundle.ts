@@ -3,6 +3,7 @@
  * reads. `pnpm bundle` builds it; the client and (from stage 2) the server
  * load the same bundle, so both run the same rules on the same data.
  */
+import { idiv, idivUp } from './num';
 import type {
   Camp,
   ClassDef,
@@ -66,7 +67,8 @@ export type PocketDef = Meta & Pocket;
 export type ProfessionDef = Meta & Profession;
 /** A wing of the skill tree (docs/design/GROWTH.md section 4): a profession's nodes and the races' corners. */
 export type SchoolDef = Meta & School;
-export type ShopDef = Meta & Shop;
+/** A shop as the bundle holds it: every offer carries its price, a left-out one filled by the build at the R8 floor. */
+export type ShopDef = Meta & Omit<Shop, 'sells'> & { sells: { item: string; price_mg: number }[] };
 export type MapDef = Meta & GameMap;
 /** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
 export type ReactionDef = Meta & Reaction;
@@ -255,6 +257,24 @@ export interface SpriteInfo {
   density: 1 | 4;
   /** A cycle that follows the distance walked: art pixels per pose and the feet's point in the frame. Its last frame is the standing pose. */
   stride?: { travel_mpx: number; anchor: [number, number]; bob?: boolean };
+  /** Frames per row when the sheet is wrapped (rows of `cols` frames, read left to right, top to bottom); left out, one row of `frames`. */
+  cols?: number;
+}
+
+/** The widest or tallest sheet the game accepts: 4096 px is what practically every phone's graphics card takes (WebGL 2 only guarantees 2048); a sheet wider than this must wrap (`cols`). */
+export const MAX_SHEET_PX = 4096;
+
+/** The grid a sheet's frames lie in: `cols` frames to a row, `rows` rows, and the picture's size. A sheet that does not wrap is one row. */
+export function sheetGrid(s: { w: number; h: number; frames: number; cols?: number }): { cols: number; rows: number; width: number; height: number } {
+  const cols = Math.min(s.cols ?? s.frames, s.frames);
+  const rows = idivUp(s.frames, cols);
+  return { cols, rows, width: cols * s.w, height: rows * s.h };
+}
+
+/** Where frame `i` of a sheet sits in its picture: the one rule the checks and the game's slicing (Phaser's spritesheet, row by row) share. */
+export function frameRect(s: { w: number; h: number; frames: number; cols?: number }, i: number): { x: number; y: number; w: number; h: number } {
+  const { cols } = sheetGrid(s);
+  return { x: (i % cols) * s.w, y: idiv(i, cols) * s.h, w: s.w, h: s.h };
 }
 
 /** One placed node or dig spot: `<resource id>#<n>`. */

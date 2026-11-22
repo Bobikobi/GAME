@@ -42,7 +42,9 @@ import {
   riddleSlots,
   sees,
   spotOpen,
+  frameRect,
   gaitStepMs,
+  sheetGrid,
   treasureKind,
   windowOpen,
   type WorkKind,
@@ -92,13 +94,13 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
-import { adopt, baseOf, densityOf, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
+import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraZoom, pixelRatio, wheelStep, wheelZoom, worldToPage } from '../view';
 import { ROOM, doorsOf, type RoomScene } from './room';
 
@@ -1106,14 +1108,19 @@ export class WorldScene extends Phaser.Scene {
     if (this.textures.exists(key)) return key;
     const info = this.b.sprites[ref];
     if (!info || !this.textures.exists(ref)) return undefined;
-    const tex = this.textures.createCanvas(key, info.w * info.frames, info.h);
+    // the copy keeps the sheet's layout, rows included (`cols`): each frame goes where the kernel's grid rule puts it
+    const grid = sheetGrid(info);
+    const tex = this.textures.createCanvas(key, grid.width, grid.height);
     if (!tex) return undefined;
-    for (let f = 0; f < info.frames; f++) tex.drawFrame(ref, info.frames > 1 ? f : undefined, f * info.w, 0, false);
+    for (let f = 0; f < info.frames; f++) {
+      const at = frameRect(info, f);
+      tex.drawFrame(ref, info.frames > 1 ? f : undefined, at.x, at.y, false);
+    }
     const pixels = tex.getData(0, 0, tex.width, tex.height);
     remapTone(pixels.data, tex.width, tone, info.w);
     tex.putData(pixels, 0, 0);
     tex.refresh();
-    if (info.frames > 1) for (let f = 0; f < info.frames; f++) tex.add(f, 0, f * info.w, 0, info.w, info.h);
+    if (info.frames > 1) for (let f = 0; f < info.frames; f++) { const at = frameRect(info, f); tex.add(f, 0, at.x, at.y, info.w, info.h); }
     return key;
   }
 
@@ -1502,7 +1509,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private buildCasters(): void {
     // a density-4 prop casts at the size it is drawn: the layer reads each texture's density
-    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, densityOf);
+    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, drawnDensity);
     // nothing that changes every frame is painted into a layer (cast-layer.ts): a thing that walks casts
     // through its own image, a thing on a beat (a sway, a flame, a blink) from its first frame
     const walks = new Set<Phaser.GameObjects.GameObject>(this.hazards.map((h) => h.spr));
@@ -2171,6 +2178,7 @@ export class WorldScene extends Phaser.Scene {
       this.outside();
     }
     this.session = session;
+    this.loadClips(session.state.player.race);
     this.auto = null;
     this.held.clear();
     this.look = session.facing;
@@ -2327,6 +2335,22 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
+   * Fetches the clip sheets of the player's race, in the background, once: the boot leaves every clip out (clips.ts `bootSprites`).
+   * A clip asked for before its sheet is here is not played (`playClip`), so the figure keeps its walk sheet or code-drawn motion
+   * for those first moments; a sheet that cannot be loaded does the same for good, as a kit without the clip would.
+   */
+  private loadClips(race: string | undefined): void {
+    if (!race) return;
+    let queued = 0;
+    for (const [ref, info] of raceClips(this.b.sprites as ClipSprites, race)) {
+      if (this.textures.exists(ref)) continue;
+      this.load.spritesheet(ref, info.url, { frameWidth: info.w, frameHeight: info.h });
+      queued++;
+    }
+    if (queued > 0 && !this.load.isLoading()) this.load.start();
+  }
+
+  /**
    * Plays the kit's clip for a verb on the player's figure, in the way it faces, at the clip's own frame time (clips.ts has the
    * one rule for how long). True when the kit has one; with none the figure keeps today's walk sheet or code-drawn motion, and
    * a clip still playing is dropped, so a verb with no art never shows the last one's.
@@ -2336,6 +2360,10 @@ export class WorldScene extends Phaser.Scene {
     const race = s?.state.player.race;
     if (!s || !race || this.falling) return false;
     const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing);
+    if (found && !this.textures.exists(found.key)) {
+      this.figure.stop(); // its sheet is still on the way (or never came): today's motion, as with no clip
+      return false;
+    }
     if (!found) {
       this.figure.stop();
       return false;
