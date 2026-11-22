@@ -709,7 +709,7 @@ sound. What it never decides alone: a new step kind, a removed beat, a reward
 type, a rung of the ladder, the opening order, anything that makes a read or a
 build pay less.
 
-**A one-time exception to "the opening never moves" (G59 of the draft in [OPEN_WORLD.md](OPEN_WORLD.md)), the owner, 18.10.** When the open world's first ring is built (NEXT.md section 19), the core team, and only it, may reshape the valley and improve the opening: the valley's size and frame, the wake tiles and the opening's legs. It does not cover the rung payoffs, the ladder minutes or the 90 s ceiling, which stay as section 2 says, and creators never touch the opening. It ends when the world lock is re-anchored with the owner's yes; after that G59 holds again, whole. Saves are relocated by placement, never by a fall. Any other request to move the opening goes to the owner as above.
+**A one-time exception to "the opening never moves" (G59 of the draft in [OPEN_WORLD.md](OPEN_WORLD.md)), the owner, 18.10.** When the open world's first ring is built (NEXT.md section 19), the core team, and only it, may reshape the valley and improve the opening: the valley's size and frame, the wake tiles and the opening's legs. It does not cover the rung payoffs, the ladder minutes or the 90 s ceiling, which stay as section 2 says, and creators never touch the opening. It ends when the world lock is re-anchored with the owner's yes; the owner, 22.11: it stays open until there is a real game, and no builder stops or asks him because of G59 until then. After the re-anchor G59 holds again, whole. Saves are relocated by placement, never by a fall. Any other request to move the opening goes to the owner as above.
 
 ## 7. The review checklist
 
