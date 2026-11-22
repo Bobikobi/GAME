@@ -40,7 +40,7 @@ The first six T1 pieces, the reed hat and sandals, and the woven reed coat are t
 | 3 | roe leather | Hardened jerkin T | medium | 3 | dig 9, find 9 |
 | 3 | roe leather | Hardened breeches L | medium | 2 | dig 9, find 9 |
 
-Bench is `craft_speed_pct`, hand is `craft_chance_pct`, gather is `gather_speed_pct`, dig is `dig_speed_pct`, find is `rare_find_pct`. Guard is proposed `guard_pct` and quiet is proposed signed `quiet_wear`. Positive quiet means less wear noise. Each effect uses whole percentage points. The early choices put find on the leggings and cape, craft chance on the gloves, and more work on the thicker T2 gear. The T2 scores can use the top of their uncommon band to keep the early kit distinct. Patched work clothes and the light cloak carry through their existing routes and IDs, with individual icon work due.
+Bench is `craft_speed_pct`, hand is `craft_chance_pct`, gather is `gather_speed_pct`, dig is `dig_speed_pct`, and find is `rare_find_pct` (`schema/src/index.ts:163–166`). Their worn values use whole percentage points (`schema/src/index.ts:232–238`). The proposed effects `guard_pct` and signed `quiet_wear` would use the same unit. Positive quiet would mean less wear noise. The early choices put find on the leggings and cape, craft chance on the gloves, and more work on the thicker T2 gear. The T2 scores can use the top of their uncommon band to keep the early kit distinct. Keep the IDs of patched work clothes and the light cloak and their human and elf starting-outfit routes, with individual icon work due (`content/core/items/outfits.json:11–12`, `content/core/items/outfits.json:70–71`, `content/core/races/human.json:28–32`, `content/core/races/elf.json:28–32`).
 
 ### Tiers 4 to 10
 
@@ -157,7 +157,7 @@ A piece's lead material names its shared kit ramp and can carry the actual hide 
 
 T1–3 caps and the wear ladder's first five entries come from `content/core/params.json:128–145`. T4+ and the scores in the table are proposals. Common gets one thing, uncommon one effect, rare two distinct effects. Reserve legendary for its own future row. Before the trait and attribute readers land, both are empty. Afterwards read slot and strength from the place conditions and `attr_bonus_max` from params. A common trait or attribute uses the piece's one allowance. See `docs/design/CLOTHING.md:182–249`, `schema/src/index.ts:183–195`, `content/core/params.json:1039–1068`.
 
-At T4–10, an uncommon score can use the rounded-down endpoints of 500–750‰ of the tier cap. Each rare score uses 750–900‰. The preferred scores are in the table. Add 1 to uncommon top and glove scores; subtract 1 from legs and feet. For rare, head and hands add 1 to the first score and subtract 1 from the second. Legs and feet do the reverse. Top and outfit hold the table's pair. Reverse the preferred pair before that change for close armour. The endpoint rule takes precedence over CLOTHING's proposed previous-tier floor where it would exhaust a late band's choices.
+At T4–10, an uncommon score can use the rounded-down endpoints of 500–750‰ of the tier cap. Each rare score uses 750–900‰. The preferred scores are in the table. Add 1 to uncommon top and glove scores; subtract 1 from legs and feet. For rare, head and hands add 1 to the first score and subtract 1 from the second. Legs and feet do the reverse. Top and outfit hold the table's pair. Reverse the preferred pair before that change for close armour. The proposed endpoint rule takes precedence over CLOTHING's proposed previous-tier floor where that floor would exhaust a late band's choices (`docs/design/CLOTHING.md:186–188`).
 
 Expand in ascending tier, then ordinary, set, quest, boss, individual look, in the printed table order (ordinary columns left to right, places in row order). Leave the early rows fixed. Among the unused legal blocks at the given weight, choose least total distance from the preferred magnitudes, then smaller sum, then lower first and second magnitudes. Open links require guard strictly below quiet, close armour guard strictly above the magnitude of negative quiet. Refuse a cell with no block left. Use the signed effect keys in the comparison and retain this output when inserting rows later, so a new item never renumbers the gear already emitted.
 
@@ -185,7 +185,7 @@ The first effect points at its work profession. Find uses Digging, quiet uses Hu
 | R9, R11, R12 | Clamp combined rates, hold output of consumed inputs fixed, probe value drift and vary economy anchors within their bounds. |
 | S1–S6 | S1 neutral names and lines describe present things. S2 a past claim has a speaker. S3 keep shared facts few and visible. S4 clues admit two readings. S5 a name cannot make a belief a joke or evil. S6 any linked season leaves a question open. |
 
-Rules: `docs/design/GAME_RULES.md:179–183,403–431,484–545,765–770`, `docs/kernel-review-v1.md:91–122`, `docs/design/STORY.md:58–72`. Audit question 3 uses the separate danger and tier fields in [CREATURE_MATRIX.md](CREATURE_MATRIX.md). For question 4, a drop is a route to the same scored row, with its expected value checked against the encounter. Held signature weapons and their condition follow that page's proposal and the existing weapon rulings.
+Rules: `docs/design/GAME_RULES.md:179–183,403–431,484–545,765–770`, `docs/kernel-review-v1.md:91–122`, `docs/design/STORY.md:58–72`. Audit question 3 uses the separate danger and tier fields in [CREATURE_MATRIX.md](CREATURE_MATRIX.md). For question 4, a drop is a route to the same scored row, with its expected value checked against the encounter. The proposed signature-weapon drop and condition rules follow `docs/design/CREATURE_MATRIX.md:285` and the owner's rulings on NPC weapon drops, weapon wear and signature techniques (`docs/design/WEAPON_MATRIX.md:585`, `docs/design/WEAPONS.md:515–516`).
 
 ## 6. Stage 3 row contract
 
@@ -193,9 +193,9 @@ The source record is `tier, landSlot?, materialKey, leadItem, class, itemFamily,
 
 Reuse weapon tier/cell and input resolution, ordered row validation, integer arithmetic and configurable counts. Keep combat damage, weapon subclasses and price policy with their owners. Share `bandOf`, stack/input keys, row identity, small validators and count/report shapes where they apply. Deny a provisional row when its station, reader, route or proof is missing. Print rejected cells and reasons, then apply the ordinary content checks on a scratch bundle before any emission. See `docs/design/CONTENT_MATRIX_AUDIT.md:50–61`, `tools/src/balance/weapons.ts:342–368,398–439,461–467,866–928,1293–1323`.
 
-## 7. Owner questions
+## 7. Owner questions (open, to go to the owner as cards)
 
-1. Should mail and plate trade more protection for more weight or noise? **Yes.** Both stay within the guard and noise caps.
-2. Should six full working sets take 30 of the 400 places? **Yes.** Each set has a job and each piece works on its own.
-3. Should the ten named last-tier pieces each show their own cut on the character? **Yes.** Keep the shared cuts for the rest of the table.
-4. Should existing pieces with the same numbers get distinct weight or effects while keeping their names? **Yes.** Keep the item IDs and prove starting outfits are still fair.
+1. Should mail and plate trade more protection for more weight or noise? **Proposed: yes** because weight or noise gives extra protection a cost within the proposed caps.
+2. Should six full working sets take 30 of the 400 places? **Proposed: yes** because each set has a job and each piece works on its own.
+3. Should the ten named last-tier pieces each show their own cut on the character? **Proposed: yes** because a distinct cut makes each named piece recognizable when worn.
+4. Should existing pieces with the same numbers get distinct weight or effects while keeping their names? **Proposed: yes** because keeping item IDs preserves saved references while the profiles become distinct. Recheck starting-outfit fairness (`docs/design/ARMOUR_MATRIX.md:19`).

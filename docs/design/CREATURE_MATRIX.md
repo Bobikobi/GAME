@@ -308,9 +308,11 @@ Stage 4 reads `family { bodyId, rig, moveSet, endType, regionLine, habitat, t, b
 
 See `docs/design/GAME_RULES.md:291–312,340–369,403–441,468–480,512–545,554–605`, `docs/design/OPEN_WORLD.md:256–272`, `docs/design/HUNTING.md:121–130`, `docs/kernel-review-v1.md:88–122`, `docs/design/STORY.md:58–72`. A new spoken line waits for the voice review and the player's initiative (G20 and G21, `docs/design/GAME_RULES.md:228–236`).
 
-## 7. Owner questions
+## 7. Owner questions (open, to go to the owner as cards)
 
-1. Should foes who drop their weapon and flee count among the 700? **Yes.** They still give a fight the player can learn.
-2. Should each kind count once even if you can both hunt and fight it? **Yes.** Use the encounter the kind is mainly for.
-3. Should a map hold at most one boss across all its chunks? **Yes.** Give each boss a place where the whole encounter fits.
-4. Should the first live wolf fight be tier 2 while its hunt goods stay tier 3? **Yes.** Set the fight by its leap and opening, and the goods by its hunting ground.
+1. Should foes who drop their weapon and flee count among the 700? **Proposed: yes** because they still give a fight the player can learn.
+2. Should each kind count once even if you can both hunt and fight it? **Proposed: yes** because the primary encounter can assign the kind to a single ledger.
+3. Should a map hold at most one boss across all its chunks? **Proposed: yes** because each boss needs a place where the whole encounter fits.
+4. Should the first live wolf fight be tier 2 while its hunt goods stay tier 3? **Proposed: yes** because the leap and opening set the fight tier, while the hunting ground sets the goods tier.
+
+`DECISIONS.md:4603` records the first two questions as open: “Still with stage 2: whether person-foes count among the 700, and whether a kind that is both an animal and a foe counts once.”
