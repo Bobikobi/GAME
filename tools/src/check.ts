@@ -6,6 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
+import { hexOfPacked, packedColors, readPng } from './pngcache';
 import {
   type Bundle,
   DRESS_PART_STEPS,
@@ -14,10 +15,12 @@ import {
   huntGoods,
   idiv,
   itemCategory,
+  MAX_SHEET_PX,
   minChargeFor,
   missOutcome,
   rarityBudget,
   rarityRank,
+  sheetGrid,
   wearReqLevel,
 } from '@game/kernel';
 import { GOODS, RARITIES, TRAIT_SLOTS, type ChunkFile, type ParamsBody } from '@game/schema';
@@ -45,6 +48,7 @@ import { checkReach } from './reach';
 import { checkPayGap } from './paygap';
 import { checkMapPlan } from './mapplan';
 import { checkRaces } from './races';
+import { checkFamilies } from './families';
 import { checkSchools } from './schools';
 import { checkHands } from './hands';
 import { checkRichness } from './richness';
@@ -92,6 +96,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkRaces(b, assembled.origin));
     issues.push(...checkSchools(b, assembled.origin));
+    issues.push(...checkFamilies(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkLock(b, assembled.origin, root));
     issues.push(...checkReach(b, assembled.origin));
@@ -983,7 +988,7 @@ export function strideProblem(s: { w: number; h: number; frames: number; stride?
  * V-1: every sprite exists, has the published size, and uses the core palette and its own declared ramps;
  * and it is drawn rich at 64 px per tile unless the core kit still waits to redraw it (DECISIONS.md, 2026-10-23).
  */
-function checkKits(a: Assembled): Issue[] {
+export function checkKits(a: Assembled): Issue[] {
   const issues: Issue[] = [];
   const core = CORE_PALETTE.map((h) => h.toLowerCase());
   for (const [kitId, kit] of Object.entries(a.kits)) {
@@ -1016,7 +1021,7 @@ function checkKits(a: Assembled): Issue[] {
       const rich = richProblem(kitId, name, s);
       if (rich) issues.push({ file: kitFile, where, message: rich, level: 'error' });
       // A declared height in characters is held to its kind's floor (NATURE section 1, STYLE 1b).
-      for (const message of scaleProblems(name, s.scale)) issues.push({ file: kitFile, where: `art.scale.${kitId}:${name}`, message, level: 'warning' });
+      for (const message of scaleProblems(name, s.scale, s.clip !== undefined)) issues.push({ file: kitFile, where: `art.scale.${kitId}:${name}`, message, level: 'warning' });
       const abs = join(kit.dir, s.file);
       if (!existsSync(abs)) {
         issues.push({ file: kitFile, where, message: `missing file ${kit.rel}/${s.file}`, level: 'error' });
@@ -1024,16 +1029,28 @@ function checkKits(a: Assembled): Issue[] {
       }
       let png: PNG;
       try {
-        png = PNG.sync.read(readFileSync(abs));
+        png = readPng(abs);
       } catch {
         issues.push({ file: `${kit.rel}/${s.file}`, where: '', message: 'not a readable PNG', level: 'error' });
         continue;
       }
-      if (png.width !== s.w * s.frames || png.height !== s.h) {
+      const grid = sheetGrid(s);
+      if (png.width !== grid.width || png.height !== grid.height) {
         issues.push({
           file: `${kit.rel}/${s.file}`,
           where: '',
-          message: `is ${png.width}x${png.height}, the kit says ${s.w * s.frames}x${s.h} (${s.frames} frame${s.frames > 1 ? 's' : ''} of ${s.w}x${s.h})`,
+          message: `is ${png.width}x${png.height}, the kit says ${grid.width}x${grid.height} (${s.frames} frame${s.frames > 1 ? 's' : ''} of ${s.w}x${s.h}${grid.rows > 1 ? `, ${grid.cols} to a row` : ''})`,
+          level: 'error',
+        });
+      }
+      if (s.cols !== undefined && s.cols >= s.frames) {
+        issues.push({ file: kitFile, where, message: `cols ${s.cols} wraps nothing: the sheet has ${s.frames} frames. Leave cols out for one row.`, level: 'error' });
+      }
+      if (grid.width > MAX_SHEET_PX || grid.height > MAX_SHEET_PX) {
+        issues.push({
+          file: kitFile,
+          where,
+          message: `the sheet is ${grid.width}x${grid.height}, wider or taller than ${MAX_SHEET_PX} px, which a phone's graphics card may refuse. Wrap it into rows with cols.`,
           level: 'error',
         });
       }
@@ -1048,12 +1065,9 @@ function checkKits(a: Assembled): Issue[] {
       const allowed = allowedColors(core, [...ramps, ...named.flatMap((id) => (rampById.has(id) ? [] : [coreRamp(id)]).filter((r) => r !== undefined))], named);
       const used = new Set<string>();
       const bad = new Set<string>();
-      let soft = 0;
-      for (let i = 0; i < png.data.length; i += 4) {
-        const alpha = png.data[i + 3]!;
-        if (alpha === 0) continue;
-        if (alpha !== 255) soft++;
-        const hex = `#${[png.data[i]!, png.data[i + 1]!, png.data[i + 2]!].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+      const { colors: packed, soft } = packedColors(png.data);
+      for (const value of packed) {
+        const hex = hexOfPacked(value);
         used.add(hex);
         if (!allowed.has(hex)) bad.add(hex);
       }

@@ -55,6 +55,20 @@ function indexOf(sprites: ClipSprites): ReadonlyMap<string, string> {
   return index;
 }
 
+/**
+ * The sprites the game loads before it starts: every sheet but the clips'. A clip sheet is big (a 45-frame take is a 2048 x 384 picture,
+ * the clips of one race about 1.1 to 2.1 MB) and only the player's own figure plays one, so the world loads the clips of the player's
+ * race once it knows the race (`raceClips`), and the other races' are never fetched.
+ */
+export function bootSprites(sprites: ClipSprites): [string, ClipSprite][] {
+  return Object.entries(sprites).filter(([, info]) => info.clip === undefined);
+}
+
+/** The clip sheets of one race, by key: what the world fetches when a character of that race wakes. */
+export function raceClips(sprites: ClipSprites, race: string): [string, ClipSprite][] {
+  return Object.entries(sprites).filter(([, info]) => info.clip?.race === race);
+}
+
 /** The clip for a verb, a race and a facing, or nothing: then the figure keeps today's walk sheet or code-drawn motion. */
 export function clipFor(sprites: ClipSprites, verb: ClipVerb, race: string, dir: Dir): Found | undefined {
   const { view, flip } = viewOf(dir);

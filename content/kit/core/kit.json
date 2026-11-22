@@ -12,7 +12,9 @@
     "Claude Code: text-grid sprites and frames via a PIL script",
     "Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen",
     "Codex image generation via kit:gen",
-    "FLUX.1 schnell and Qwen-Image 2512 via kit:gen"
+    "FLUX.1 schnell and Qwen-Image 2512 via kit:gen",
+    "PixelLab, animation route P: 69 character clips (#742)",
+    "GPT image animation, route g1: 2 guard clips (#742)"
   ],
   "kit": {
     "palette": [
@@ -2222,6 +2224,1742 @@
             90
           ],
           "bob": false
+        },
+        "scale": 0.74
+      },
+      "chars/human_dodge_back": {
+        "file": "chars/human_dodge_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "dodge",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.97
+      },
+      "chars/human_dodge_front": {
+        "file": "chars/human_dodge_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "dodge",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.92
+      },
+      "chars/human_dodge_left": {
+        "file": "chars/human_dodge_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "dodge",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.95
+      },
+      "chars/human_fell_back": {
+        "file": "chars/human_fell_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "fell",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1
+      },
+      "chars/human_fell_front": {
+        "file": "chars/human_fell_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "fell",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1.05
+      },
+      "chars/human_fell_left": {
+        "file": "chars/human_fell_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "fell",
+          "frame_ms": 32,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.12
+      },
+      "chars/human_fish_front": {
+        "file": "chars/human_fish_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "fish",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.92
+      },
+      "chars/human_fish_left": {
+        "file": "chars/human_fish_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "fish",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.06
+      },
+      "chars/human_guard_back": {
+        "file": "chars/human_guard_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "guard",
+          "frame_ms": 24,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.97
+      },
+      "chars/human_guard_front": {
+        "file": "chars/human_guard_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "guard",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.95
+      },
+      "chars/human_guard_left": {
+        "file": "chars/human_guard_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 55,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "guard",
+          "frame_ms": 14,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.95
+      },
+      "chars/human_hit_back": {
+        "file": "chars/human_hit_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "hit",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.98
+      },
+      "chars/human_hit_front": {
+        "file": "chars/human_hit_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "hit",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.97
+      },
+      "chars/human_hit_left": {
+        "file": "chars/human_hit_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "hit",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.98
+      },
+      "chars/human_pickup_back": {
+        "file": "chars/human_pickup_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "pickup",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.97
+      },
+      "chars/human_pickup_front": {
+        "file": "chars/human_pickup_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "pickup",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.92
+      },
+      "chars/human_pickup_left": {
+        "file": "chars/human_pickup_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "pickup",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.95
+      },
+      "chars/human_quarry_back": {
+        "file": "chars/human_quarry_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "quarry",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.98
+      },
+      "chars/human_quarry_front": {
+        "file": "chars/human_quarry_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "quarry",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.92
+      },
+      "chars/human_quarry_left": {
+        "file": "chars/human_quarry_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 12,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "quarry",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.12
+      },
+      "chars/human_strike_back": {
+        "file": "chars/human_strike_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "strike",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.97
+      },
+      "chars/human_strike_front": {
+        "file": "chars/human_strike_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "strike",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.96
+      },
+      "chars/human_strike_left": {
+        "file": "chars/human_strike_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "strike",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.96
+      },
+      "chars/elf_dodge_back": {
+        "file": "chars/elf_dodge_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "dodge",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.16
+      },
+      "chars/elf_dodge_front": {
+        "file": "chars/elf_dodge_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "dodge",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 790
+        },
+        "scale": 1.08
+      },
+      "chars/elf_dodge_left": {
+        "file": "chars/elf_dodge_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "dodge",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.15
+      },
+      "chars/elf_fell_back": {
+        "file": "chars/elf_fell_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "fell",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.19
+      },
+      "chars/elf_fell_front": {
+        "file": "chars/elf_fell_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "fell",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 790
+        },
+        "scale": 1.14
+      },
+      "chars/elf_fell_left": {
+        "file": "chars/elf_fell_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "fell",
+          "frame_ms": 32,
+          "anchor": [
+            64,
+            105
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.31
+      },
+      "chars/elf_fish_back": {
+        "file": "chars/elf_fish_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "fish",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.16
+      },
+      "chars/elf_fish_front": {
+        "file": "chars/elf_fish_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "fish",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 790
+        },
+        "scale": 1.09
+      },
+      "chars/elf_fish_left": {
+        "file": "chars/elf_fish_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "fish",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.25
+      },
+      "chars/elf_guard_back": {
+        "file": "chars/elf_guard_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "guard",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.17
+      },
+      "chars/elf_guard_front": {
+        "file": "chars/elf_guard_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "guard",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 790
+        },
+        "scale": 1.09
+      },
+      "chars/elf_guard_left": {
+        "file": "chars/elf_guard_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "guard",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.15
+      },
+      "chars/elf_hit_back": {
+        "file": "chars/elf_hit_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "hit",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.23
+      },
+      "chars/elf_hit_front": {
+        "file": "chars/elf_hit_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "hit",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            91
+          ],
+          "fit_permille": 790
+        },
+        "scale": 1.13
+      },
+      "chars/elf_hit_left": {
+        "file": "chars/elf_hit_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "hit",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.15
+      },
+      "chars/elf_pickup_back": {
+        "file": "chars/elf_pickup_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "pickup",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.16
+      },
+      "chars/elf_pickup_front": {
+        "file": "chars/elf_pickup_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "pickup",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 790
+        },
+        "scale": 1.08
+      },
+      "chars/elf_pickup_left": {
+        "file": "chars/elf_pickup_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "pickup",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.15
+      },
+      "chars/elf_quarry_back": {
+        "file": "chars/elf_quarry_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "quarry",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.19
+      },
+      "chars/elf_quarry_front": {
+        "file": "chars/elf_quarry_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "quarry",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 790
+        },
+        "scale": 1.08
+      },
+      "chars/elf_quarry_left": {
+        "file": "chars/elf_quarry_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 12,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "quarry",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.25
+      },
+      "chars/elf_strike_back": {
+        "file": "chars/elf_strike_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "strike",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.15
+      },
+      "chars/elf_strike_front": {
+        "file": "chars/elf_strike_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "strike",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 790
+        },
+        "scale": 1.14
+      },
+      "chars/elf_strike_left": {
+        "file": "chars/elf_strike_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "strike",
+          "frame_ms": 100,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840
+        },
+        "scale": 1.15
+      },
+      "chars/skeleton_dodge_back": {
+        "file": "chars/skeleton_dodge_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "dodge",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.75
+      },
+      "chars/skeleton_dodge_front": {
+        "file": "chars/skeleton_dodge_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "dodge",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_dodge_left": {
+        "file": "chars/skeleton_dodge_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "dodge",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_fell_back": {
+        "file": "chars/skeleton_fell_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "fell",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.79
+      },
+      "chars/skeleton_fell_front": {
+        "file": "chars/skeleton_fell_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "fell",
+          "frame_ms": 100,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.82
+      },
+      "chars/skeleton_fell_left": {
+        "file": "chars/skeleton_fell_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "fell",
+          "frame_ms": 32,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.85
+      },
+      "chars/skeleton_fish_back": {
+        "file": "chars/skeleton_fish_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "fish",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.75
+      },
+      "chars/skeleton_fish_front": {
+        "file": "chars/skeleton_fish_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "fish",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_fish_left": {
+        "file": "chars/skeleton_fish_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "fish",
+          "frame_ms": 32,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.85
+      },
+      "chars/skeleton_guard_back": {
+        "file": "chars/skeleton_guard_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "guard",
+          "frame_ms": 24,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.75
+      },
+      "chars/skeleton_guard_front": {
+        "file": "chars/skeleton_guard_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "guard",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_guard_left": {
+        "file": "chars/skeleton_guard_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 55,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "guard",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_hit_back": {
+        "file": "chars/skeleton_hit_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "hit",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.78
+      },
+      "chars/skeleton_hit_front": {
+        "file": "chars/skeleton_hit_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "hit",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.81
+      },
+      "chars/skeleton_hit_left": {
+        "file": "chars/skeleton_hit_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "hit",
+          "frame_ms": 24,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.76
+      },
+      "chars/skeleton_pickup_back": {
+        "file": "chars/skeleton_pickup_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "pickup",
+          "frame_ms": 22,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_pickup_front": {
+        "file": "chars/skeleton_pickup_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "pickup",
+          "frame_ms": 110,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_pickup_left": {
+        "file": "chars/skeleton_pickup_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 44,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "pickup",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_quarry_back": {
+        "file": "chars/skeleton_quarry_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "quarry",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.81
+      },
+      "chars/skeleton_quarry_front": {
+        "file": "chars/skeleton_quarry_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "quarry",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_quarry_left": {
+        "file": "chars/skeleton_quarry_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "quarry",
+          "frame_ms": 24,
+          "anchor": [
+            64,
+            104
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.86
+      },
+      "chars/skeleton_strike_back": {
+        "file": "chars/skeleton_strike_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "strike",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.75
+      },
+      "chars/skeleton_strike_front": {
+        "file": "chars/skeleton_strike_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 45,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "strike",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            104
+          ],
+          "fit_permille": 562
+        },
+        "scale": 0.76
+      },
+      "chars/skeleton_strike_left": {
+        "file": "chars/skeleton_strike_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 44,
+        "cols": 16,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "strike",
+          "frame_ms": 20,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562
         },
         "scale": 0.74
       },

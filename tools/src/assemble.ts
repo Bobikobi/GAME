@@ -37,7 +37,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; clip?: ClipInfo; source?: { spec: string; manifest: string } }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; cols?: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; clip?: ClipInfo; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -407,10 +407,11 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               w: s.w,
               h: s.h,
               frames: s.frames ?? 1,
+              ...(s.cols === undefined ? {} : { cols: s.cols }),
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
               ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
-              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number] } } : {}),
+              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number], ...(s.clip.fit_permille === undefined ? {} : { fit_permille: s.clip.fit_permille }) } } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -432,7 +433,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   for (const [kitId, kit] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
       // `clip` rides on the entry for the client (game/src/clips.ts reads it); the kernel's SpriteInfo does not name it
-      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density, ...(s.stride ? { stride: s.stride } : {}), ...(s.clip ? { clip: s.clip } : {}) };
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, ...(s.cols === undefined ? {} : { cols: s.cols }), density: s.density, ...(s.stride ? { stride: s.stride } : {}), ...(s.clip ? { clip: s.clip } : {}) };
     }
   }
 

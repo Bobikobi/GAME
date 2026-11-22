@@ -1,6 +1,6 @@
 # Skill families: what the tree holds, a first family set fitted to it, and a clean one (2026-11-21)
 
-Status: **picked: A, 21.11; B the later expansion** (#769). The owner answered the card `skill-families-1121`, 21.11 at 09:44: "לגבי המחקר a בהמשך הרחבה לb" (on the survey: A, and later an expansion to B). Set A's frame is built on develop (#776): Handcraft's families `wear` and `tools`, the node `family` key, and F6's kernel test (kernel/test/recipe-gate.test.ts, "a family node"). Not built yet, step C of the clothing wave: the node groups, `nodes_max` 12 to 20 (params.json still says 12) and the check rows F1 to F5. Nothing of B is built now, and nothing in A may block it (section 2.4).
+Status: **picked: A, 21.11; B the later expansion** (#769). The owner answered the card `skill-families-1121`, 21.11 at 09:44: "לגבי המחקר a בהמשך הרחבה לb" (on the survey: A, and later an expansion to B). Set A's frame is built on develop (#776): Handcraft's families `wear` and `tools`, the node `family` key, and F6's kernel test (kernel/test/recipe-gate.test.ts, "a family node"). Step C of the clothing wave (#797) builds the node groups (two smalls each for `wear` and `tools`, the majors wait), `nodes_max` 12 to 20 and the check rows F1 to F5 (`tools/src/families.ts`); section 2.3 says what each row does as built. Nothing of B is built now, and nothing in A may block it (section 2.4).
 
 The owner, 21.11: "לגבי הפער של עיצוב הביגוד זה עץ נחמד אבל הוא לא יכול להיות קשה מידי לפיתוח לעומת שאר המשפחות, כי יהיה ברזל ואז יהיה שריון מגינים חרבות ועוד שימוש מתכת, אז מי שמתקדם בייצור ביגוד יהיה לו קל מולם, לעומת מי שמייצר נשק ומתקדם בזה יהיה לו קל יותר בנשקים, גם אוכל או כישורים נוספים. תעשה בדיקת עצי סקילים אצל המובילים ותציע לי ערכת משפחות ראשונה, מול מה שיש לנו וגם אלטרנטיבה נקייה בלי מה שאתה יודע על המשחק כבר (חוץ מזה שזה עולם פתוח לחקירה)".
 
@@ -162,11 +162,11 @@ Six rows for `pnpm check` (proposed). Each row reads the content and the bundle'
 
 | # | Check | Pass when | Where it reads |
 |---|---|---|---|
-| F1 | One shape | every craft family has exactly 2 small and 2 major family nodes, the smalls at 5, the majors as techniques, each group hanging from its school's first major in the same order | content/core/schools/*.json; tools/src/schools.ts |
-| F2 | One curve | every craft profession has the same `xp_levels`, and `tier_min_level` is one table | professions/*.json; params.json |
-| F3 | Work per tier | a family's median work per piece at a tier is at most 2 times the median of the other families of its school at that tier | recipes: `active_ms` down the inputs, per unit |
+| F1 | One shape | every craft family has 2 small family nodes (`craft_speed_pct` 5, then `craft_chance_pct` 5, the first hanging from the school's first major, the second from the first) and then no major node while they wait, or 2 that are techniques in a chain (the first from the second small, the second from the first); a lone major is an error. Designed as 2 smalls and 2 majors; built so while the majors wait for `quality_pct` and #784 | content/core/schools/*.json; tools/src/schools.ts |
+| F2 | One curve | every craft profession has the same `xp_levels` (a coded row); `tier_min_level` is one param, one table by construction, with no coded row | professions/*.json; params.json |
+| F3 | Work per tier | a family's median work per piece at a tier is at most 2 times the median of the pooled pieces of the school's other families at that tier; equality passes (built: only when another family holds a piece at that tier) | recipes: `active_ms` down the inputs, per unit |
 | F4 | Steps | a family's pieces at a tier have at most 3 recipe steps from gathered goods (the games' band is 2 to 4, CLOTHING_BALANCE 2) | recipes |
-| F5 | Pieces per tier | an open tier of a family holds at least 2 recipes, and at most 3 times the smallest family of its school at that tier | recipes, `open_tiers` |
+| F5 | Pieces per tier | an open tier a family holds has at least 2 recipes (below that it is a visible `!` warning, `families.pieces`, until the tier holds two), and no family holds more than 3 times the smallest family that holds a recipe at that tier (a family with none at a tier is skipped) | recipes, `open_tiers` |
 | F6 | The edge stays home | a family node's effect reaches only recipes of its own family (built as a kernel test, #776), and its effect is one of the allowed kinds | tools/src/schools.ts; kernel/test/recipe-gate.test.ts |
 
 **Today, and with the clothing wave as designed.**
@@ -182,6 +182,19 @@ Six rows for `pnpm check` (proposed). Each row reads the content and the bundle'
 | arms, remedies | - | - | 0 | not open: the checks start when a family opens |
 
 The wear family's fix is two edits to designed content that is not built yet (CLOTHING's appendix). No locked value moves.
+
+**Built (step C, #769).** `pnpm check` runs F1 to F5 from `tools/src/families.ts` (F6 stays the kernel test of #776). The wear and tools groups are in the Handcraft school file, each with its two smalls (`quick-seams`, `steady-needle`; `deft-grip`, `sure-edge`), and `nodes_max` is 20. The fix above is built as C5: scrape and tan are one 6 s action and the jerkin and leggings take one thread. On the built content the table reads:
+
+| Family | F3 work, tier 1 / 2 / 3 (median) | F4 steps (longest) | F5 pieces, tier 1 / 2 / 3 | Verdict |
+|---|---|---|---|---|
+| wear | 16 s / 17 s / 29 s | 3 | 4 / 4 / 1 | passes; one note: tier 3 holds 1 recipe, fewer than 2 (the hardened pieces wait) |
+| tools | 8 s / 11 s / 30.25 s | 3 | 3 / 2 / 2 | passes |
+
+- **F1 while the majors wait.** The row asks of a group two smalls at 5 (speed, then chance), the first hanging from the school's first major, and then none or two majors that are techniques. The majors `even-cut` and `close-stitch` are not built, so a group of two smalls passes, and a lone major is an error. When they land the row holds them to two.
+- **F3 at the edge.** Wear at tier 1 is exactly 2.0 times the tools' median (16 s against 8 s), the largest the row allows. The row's ceiling is part of the design: a heavier hide piece fails it.
+- **F5's floor is a note.** A tier with one recipe in a family is a `!` line, not an error, because a family fills tier by tier; the ratio to the smallest family is an error.
+- **F2** holds today: Handcraft and Cooking share one `xp_levels` table. `tier_min_level` is one table by construction (one param).
+
 
 ### 2.4 What keeps B open (the owner: B is the later expansion)
 

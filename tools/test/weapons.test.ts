@@ -71,8 +71,8 @@ describe('the source', () => {
     expect(() => loadSource(bad2)).toThrow(/hit_ties_open\.pairs\[44\]: is \[tier, a, b\]/);
   });
 
-  it('reads the content: 33 built recipes, the Handcraft top at 9, the 13 anchored values in the bundle', () => {
-    expect(built.recipes).toHaveLength(33);
+  it('reads the content: 31 built recipes, the Handcraft top at 9, the 13 anchored values in the bundle', () => {
+    expect(built.recipes).toHaveLength(31);
     expect(built.tops.get('handcraft')).toBe(9);
     const ctx = makeCtx(source, 'default', built);
     for (const name of anchored(source)) {
@@ -89,7 +89,7 @@ describe('the default variant', () => {
     expect(report.errors).toEqual([]);
     expect(report.notes.checksRun).toHaveLength(35);
     expect(report.notes.builtCompared).toBe(13);
-    expect(report.notes.builtRecipes).toBe(33);
+    expect(report.notes.builtRecipes).toBe(31);
     expect(report.notes.hitTies).toBe(44);
     expect(report.notes.launcherPairs).toBe(732);
     expect(report.notes.taughtDups).toHaveLength(9);

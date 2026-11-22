@@ -5,9 +5,12 @@ import type { ExtensionFile } from '@game/schema';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { assemble } from '../../tools/src/assemble';
 import { readBoard } from '../../tools/src/board';
+import { withoutClips } from '../../tools/test/fixtures/clips/without-clips';
 import { REPO_ROOT, loadAll } from '../../tools/src/load';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
+import { MAX_SHEET_PX, sheetGrid } from '@game/kernel';
+import { ClipPlayer, VERB_OF_AUTO, bootSprites, clipFor, raceClips, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
 import type { Dir } from '../src/input';
+import { spriteStyle } from '../src/ui/dom';
 
 /**
  * #742 stage 1: the figure finds a clip by verb + race + view and plays it at the clip's own frame time. The fixture kit
@@ -26,7 +29,7 @@ let fixture: { sprites: Record<string, { clip: { verb: string; view: string; rac
 beforeAll(() => {
   const data = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ExtensionFile & { kit: typeof fixture };
   fixture = data.kit;
-  const a = assemble([...loadAll().files, { rel: 'kit/core/clip-fixture.json', abs: FIXTURE, data }], readBoard());
+  const a = assemble([...withoutClips(loadAll().files), { rel: 'kit/core/clip-fixture.json', abs: FIXTURE, data }], readBoard());
   expect(a.issues.filter((i) => i.level === 'error')).toEqual([]);
   sprites = a.bundle!.sprites as ClipSprites;
 });
@@ -56,6 +59,11 @@ describe('B2: a clip is found by verb, race and view', () => {
     expect(times.size).toBe(27);
   });
 
+  test('the clip\'s display fit (permille) rides through the schema and the assembler to the bundle, and a clip with none has none', () => {
+    expect(sprites['core/clip-fixture:chars/human_strike_left']?.clip?.fit_permille).toBe(700);
+    expect(sprites['core/clip-fixture:chars/human_strike_front']?.clip?.fit_permille).toBeUndefined();
+  });
+
   test('the right side is the left sheet, flipped', () => {
     for (const verb of CLIP_VERBS) {
       const right = clipFor(sprites, verb, HUMAN, 'right')!;
@@ -80,8 +88,8 @@ describe('B2: a clip is found by verb, race and view', () => {
     expect(clipFor(without, 'strike', HUMAN, 'up')).toBeDefined();
   });
 
-  test('develop\'s kit, with no clip sheets, has nothing for any verb, race or facing (B1)', () => {
-    const plain = assemble(loadAll().files, readBoard()).bundle!.sprites as ClipSprites;
+  test('a kit with no clip sheets has nothing for any verb, race or facing (B1)', () => {
+    const plain = assemble(withoutClips(loadAll().files), readBoard()).bundle!.sprites as ClipSprites;
     expect(Object.values(plain).some((s) => s.clip)).toBe(false);
     for (const race of ['core/human', 'core/elf', 'core/skeleton']) {
       for (const verb of CLIP_VERBS) for (const dir of ['left', 'right', 'up', 'down'] as const) expect(clipFor(plain, verb, race, dir)).toBeUndefined();
@@ -167,5 +175,89 @@ describe('which verb answers what', () => {
     for (const v of Object.values(VERB_OF_AUTO)) expect(verbs.has(v)).toBe(true);
     expect(new Set(Object.values(VERB_OF_AUTO))).toEqual(new Set(['fell', 'quarry', 'fish', 'pickup', 'dig']));
     expect(Object.keys(VERB_OF_AUTO).sort()).toEqual(['dig', 'fell', 'fish', 'mine', 'pick']);
+  });
+});
+
+/**
+ * #742 stage 2: the kit the game ships holds the approved clips. Every race, view and verb of the 15.11 set resolves to its
+ * packed sheet, in both facings of the left view; the one parked cell (the human's fish from behind) resolves to nothing, so the
+ * engine falls back as before.
+ */
+describe('the packed kit', () => {
+  const RACES = ['core/human', 'core/elf', 'core/skeleton'];
+  const VERBS = ['strike', 'guard', 'dodge', 'hit', 'fell', 'quarry', 'fish', 'pickup'] as const;
+  const PARKED = 'core/human|fish|back';
+  let real: ClipSprites;
+
+  beforeAll(() => {
+    const a = assemble(loadAll().files, readBoard());
+    expect(a.issues.filter((i) => i.level === 'error')).toEqual([]);
+    real = a.bundle!.sprites as ClipSprites;
+  });
+
+  test('71 sheets: each (race, view, verb) finds its own sheet, with a frame time, a feet anchor and a display fit', () => {
+    let found = 0;
+    for (const race of RACES) {
+      for (const view of CLIP_VIEWS) {
+        for (const verb of VERBS) {
+          const hit = clipFor(real, verb, race, FACING[view]);
+          if (`${race}|${verb}|${view}` === PARKED) {
+            expect(hit, PARKED).toBeUndefined();
+            continue;
+          }
+          expect(hit, `${race} ${verb} ${view}`).toBeDefined();
+          expect(hit!.key).toBe(`core/base-kit:chars/${race.slice(5)}_${verb}_${view}`);
+          const sprite = real[hit!.key]!;
+          // a take plays about a second whatever its frame count (the 45-frame ones show each frame 14 to 33 ms, the older 9 to 16 frame ones about 100)
+          expect(sprite.clip!.frame_ms).toBeGreaterThanOrEqual(10);
+          expect(sprite.clip!.frame_ms).toBeLessThanOrEqual(130);
+          expect(sprite.frames * sprite.clip!.frame_ms, hit!.key).toBeGreaterThanOrEqual(700);
+          expect(sprite.frames * sprite.clip!.frame_ms, hit!.key).toBeLessThanOrEqual(1500);
+          // no sheet is wider or taller than 4096 px, which practically every phone's graphics card takes (WebGL 2 only guarantees 2048)
+          const grid = sheetGrid(sprite);
+          expect(Math.max(grid.width, grid.height), hit!.key).toBeLessThanOrEqual(MAX_SHEET_PX);
+          expect(sprite.clip!.fit_permille, hit!.key).toBeGreaterThan(0);
+          expect(hit!.anchor[1]).toBeGreaterThan(0);
+          found++;
+        }
+      }
+    }
+    expect(found).toBe(71);
+    expect(Object.values(real).filter((s) => s.clip && RACES.includes(s.clip.race) && (VERBS as readonly string[]).includes(s.clip.verb))).toHaveLength(71);
+  });
+
+  test('the boot loads no clip sheet; a race\'s clips are the 23 or 24 sheets of that race and nothing of another', () => {
+    const boot = bootSprites(real);
+    expect(boot.some(([, s]) => s.clip !== undefined)).toBe(false);
+    expect(boot.length + Object.values(real).filter((s) => s.clip).length).toBe(Object.keys(real).length);
+    let all = 0;
+    for (const race of RACES) {
+      const own = raceClips(real, race);
+      expect(own.every(([, s]) => s.clip!.race === race), race).toBe(true);
+      expect(own.length, race).toBeGreaterThanOrEqual(23);
+      all += own.length;
+    }
+    expect(all).toBe(71);
+    expect(raceClips(real, 'core/dragon')).toEqual([]);
+  });
+
+  test('facing right plays the left sheet flipped', () => {
+    const left = clipFor(real, 'fell', 'core/elf', 'left')!;
+    const right = clipFor(real, 'fell', 'core/elf', 'right')!;
+    expect(right.key).toBe(left.key);
+    expect([left.flip, right.flip]).toEqual([false, true]);
+  });
+});
+
+describe('a wrapped sheet in the interface: the sprite element shows the cell the kernel names', () => {
+  const info = { url: 'x.png', w: 128, h: 128, frames: 45, cols: 16, density: 4 };
+  test('frame 0 is the top left, frame 17 the second row\'s second cell, the background is the whole 2048 x 384 picture at scale', () => {
+    expect(spriteStyle(info, 2, 0)).toBe('width:64px;height:64px;background-image:url("x.png");background-size:1024px 192px;background-position:0px 0px');
+    expect(spriteStyle(info, 2, 17)).toBe('width:64px;height:64px;background-image:url("x.png");background-size:1024px 192px;background-position:-64px -64px');
+    expect(spriteStyle(info, 2, 44)).toContain('background-position:-768px -128px'); // 44 = row 2, column 12
+  });
+  test('a one-row sheet reads as it always did', () => {
+    const one = { url: 'y.png', w: 16, h: 16, frames: 4, density: 1 };
+    expect(spriteStyle(one, 2, 3)).toBe('width:32px;height:32px;background-image:url("y.png");background-size:128px 32px;background-position:-96px 0px');
   });
 });

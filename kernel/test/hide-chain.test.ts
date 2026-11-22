@@ -1,5 +1,5 @@
 /**
- * The tier-1 hide chain (docs/design/CLOTHING.md, appendix "For the take verb"; #769): a raw hide is scraped, tanned
+ * The tier-1 hide chain (docs/design/CLOTHING.md, appendix "For the take verb"; #769): a raw hide is scraped and tanned in one action
  * with a herb and sewn with sinew thread into a hood, a jerkin, leggings and shoes. The whole chain waits for the
  * fight (gate "combat": nothing but a hunt lays a hide in a player's hands), only the worn pieces are of the `wear`
  * family, and a run from a hare and a roe to a worn pair of shoes works end to end once the gate is open.
@@ -11,8 +11,6 @@ import { type Bundle, type State, campTile, effectValue, makeWalkable, near, new
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
 const STEPS = [
-  'core/scrape-hare-hide',
-  'core/scrape-roe-hide',
   'core/tan-hare-leather',
   'core/tan-hare-fur',
   'core/tan-roe-leather',
@@ -72,6 +70,15 @@ describe('the tier-1 hide chain', () => {
     for (const id of STEPS) expect(shut.recipes[id]!.family, id).toBeUndefined();
   });
 
+  test('scraping and tanning is one action of the workshop, and a piece takes one thread (CLOTHING_BALANCE P3, SKILL_FAMILIES C5)', () => {
+    for (const [id, hide] of [['core/tan-hare-leather', 'core/hare-hide'], ['core/tan-hare-fur', 'core/hare-hide'], ['core/tan-roe-leather', 'core/roe-hide']] as const) {
+      expect(shut.recipes[id], id).toMatchObject({ active_ms: 6000, inputs: [{ item: hide, qty: 1 }, { item: 'core/stone-flakes', qty: 1 }, { item: 'core/herb', qty: 1 }] });
+    }
+    expect(shut.items['core/scraped-hare-hide']).toBeUndefined();
+    expect(shut.items['core/scraped-roe-hide']).toBeUndefined();
+    for (const id of WORN) expect(shut.recipes[id]!.inputs.find((i) => i.item === 'core/sinew-thread'), id).toMatchObject({ qty: 1 });
+  });
+
   test('the raw hides carry their animal as family, leather and fur are garment classes', () => {
     expect(shut.items['core/hare-hide']).toMatchObject({ class: 'core/hide', family: 'hare' });
     expect(shut.items['core/roe-hide']).toMatchObject({ class: 'core/hide', family: 'roe' });
@@ -97,21 +104,16 @@ describe('the tier-1 hide chain', () => {
     Object.assign(s.player.bag, {
       'core/hare-hide': 2,
       'core/roe-hide': 2,
-      'core/roe-sinew': 3,
+      'core/roe-sinew': 2,
       'core/stone-flakes': 4,
       'core/herb': 4,
     });
     let t = s;
     for (const id of [
-      'core/scrape-hare-hide',
-      'core/scrape-hare-hide',
-      'core/scrape-roe-hide',
-      'core/scrape-roe-hide',
       'core/tan-hare-leather',
       'core/tan-hare-fur',
       'core/tan-roe-leather',
       'core/tan-roe-leather',
-      'core/sinew-thread',
       'core/sinew-thread',
       'core/sinew-thread',
       'core/hare-leather-shoes',
@@ -122,7 +124,7 @@ describe('the tier-1 hide chain', () => {
       t = craft(open, t, id);
     }
     for (const id of WORN) expect(t.player.bag[id], id).toBe(1);
-    // the hides are all spent, and so is the thread (3 sinew make 6: 1 + 1 + 2 + 2)
+    // the hides are all spent, and so is the thread (2 sinew make 4: one thread to each piece, 1 + 1 + 1 + 1)
     expect(t.player.bag['core/sinew-thread'] ?? 0).toBe(0);
     expect(t.player.bag['core/hare-hide'] ?? 0).toBe(0);
     expect(t.player.bag['core/roe-hide'] ?? 0).toBe(0);
