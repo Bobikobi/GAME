@@ -46,6 +46,8 @@ function developWorld(world: FightWorld): FightWorld {
     player.state.content = RECORDED_CONTENT;
     // The combat arena starts with the gate open, so it knows the hide recipes added after the recording.
     player.state.player.recipes = player.state.player.recipes.filter((id) => !RECIPES_ADDED_SINCE.has(id));
+    // the day's tally (#806) did not exist when the hashes were recorded
+    delete player.state.player.day;
   }
   return old;
 }

@@ -287,7 +287,16 @@ class Tender {
   }
 
   async idle(what: string): Promise<void> {
-    await this.page.waitFor('!__game.ui.blocking && !document.querySelector(".dialog")', what, 10_000);
+    // a night played through to dawn tells the day summary (GAME_RULES G16), which holds the world: a player closes it with "On we go"
+    await this.page.waitFor(
+      `(() => {
+        const done = [...document.querySelectorAll('.panel.day-summary .btn')].find((b) => b.textContent === 'On we go');
+        if (done) done.click();
+        return !__game.ui.blocking && !document.querySelector(".dialog");
+      })()`,
+      what,
+      10_000,
+    );
   }
 
   own(): Promise<Own | null> {

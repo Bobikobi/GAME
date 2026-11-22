@@ -38,6 +38,8 @@ export interface Hands {
   readonly tick: number;
   advance(dt: number): void;
   report(at: readonly [number, number]): void;
+  /** the tile the walker stands on, which the phone reports again by itself at a dawn (`tellDawn`); a hands without one reports nothing of its own */
+  pos?: [number, number];
   act(action: Action): Promise<ActResult>;
   flushMoves(): Promise<void>;
 }
@@ -52,12 +54,20 @@ export interface Clock {
 
 export class Player {
   readonly log: LogEntry[] = [];
+  /** true while `walk` reports a tile: any other report is the phone's own (a dawn, a fire gone out) and is kept in the log too */
+  private walking = false;
 
   constructor(
     readonly bundle: Bundle,
     readonly hands: Hands,
     readonly clock: Clock,
-  ) {}
+  ) {
+    const report = hands.report.bind(hands);
+    hands.report = (at, ...rest: unknown[]) => {
+      if (!this.walking) this.log.push({ a: { t: 'move', at: [at[0], at[1]] }, tick: hands.tick });
+      (report as (...args: unknown[]) => void)(at, ...rest);
+    };
+  }
 
   get state(): PublicState {
     return this.hands.state;
@@ -95,7 +105,10 @@ export class Player {
   async walk(path: readonly MapTile[]): Promise<void> {
     for (const at of path.slice(1)) {
       this.time(this.bundle.params.walk_step_ms);
+      if (this.hands.pos) this.hands.pos = [at[0], at[1]];
+      this.walking = true;
       this.hands.report(at);
+      this.walking = false;
       this.log.push({ a: { t: 'move', at: [at[0], at[1]] }, tick: this.hands.tick });
     }
     await this.hands.flushMoves();

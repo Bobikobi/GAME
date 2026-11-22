@@ -5134,6 +5134,12 @@
                             "type": "string"
                           }
                         ]
+                      },
+                      "day_min": {
+                        "minimum": 2,
+                        "maximum": 365,
+                        "description": "The valley's day has reached this number: day 1 runs from the wake to the first dawn, day 2 from that dawn to the next. A line that waits for the morning after (the ladder's Day 2). Never the calendar's day (G28).",
+                        "type": "integer"
                       }
                     }
                   },
@@ -5299,6 +5305,12 @@
                             "type": "string"
                           }
                         ]
+                      },
+                      "day_min": {
+                        "minimum": 2,
+                        "maximum": 365,
+                        "description": "The valley's day has reached this number: day 1 runs from the wake to the first dawn, day 2 from that dawn to the next. A line that waits for the morning after (the ladder's Day 2). Never the calendar's day (G28).",
+                        "type": "integer"
                       }
                     }
                   }
@@ -6681,6 +6693,12 @@
                                 "type": "string"
                               }
                             ]
+                          },
+                          "day_min": {
+                            "minimum": 2,
+                            "maximum": 365,
+                            "description": "The valley's day has reached this number: day 1 runs from the wake to the first dawn, day 2 from that dawn to the next. A line that waits for the morning after (the ladder's Day 2). Never the calendar's day (G28).",
+                            "type": "integer"
                           }
                         }
                       },

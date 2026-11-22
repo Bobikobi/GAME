@@ -75,6 +75,16 @@
         "say": [
           "My mother put less salt in. Do not tell Pell I said so."
         ]
+      },
+      {
+        "when": {
+          "day_min": 2
+        },
+        "say": [
+          "The bell rang again in the night. I counted.",
+          "Mend what you can today. Then listen when the dark comes."
+        ],
+        "priority": 3
       }
     ],
     "topics": [
