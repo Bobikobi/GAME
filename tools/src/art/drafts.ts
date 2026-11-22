@@ -111,17 +111,23 @@ export interface Draft {
   review_by?: string;
   review_note?: string;
   looks_like?: string;
+  /** The prune rule's reason code when the files were removed from the store (`pnpm art:prune`); the index line stays. */
+  removed?: string;
+  /** When the removal was made, from the amendment's `at`. */
+  removed_at?: string;
   at: string | null;
   sources: DraftSource[];
 }
 
 /** The fields a later line may set; the others are the draft as it arrived. */
-export const AMENDABLE = ['stored', 'review', 'review_by', 'review_note', 'looks_like', 'model', 'round', 'ramps', 'pool', 'seed', 'recipe'] as const;
+export const AMENDABLE = ['stored', 'review', 'review_by', 'review_note', 'looks_like', 'model', 'round', 'ramps', 'pool', 'seed', 'recipe', 'removed'] as const;
 
 export interface Amendment extends Partial<Pick<Draft, (typeof AMENDABLE)[number]>> {
   id: string;
   amend: true;
   sources?: DraftSource[];
+  /** With `removed`: the day the files were taken out of the store. */
+  at?: string;
 }
 
 export type DraftLine = Draft | Amendment;
@@ -198,8 +204,12 @@ export function foldLine(map: Map<string, Draft>, line: DraftLine): void {
     const value = line[key];
     if (value !== undefined) (existing as unknown as Record<string, unknown>)[key] = structuredClone(value);
   }
+  if (line.removed !== undefined && line.at !== undefined) existing.removed_at = line.at;
   mergeSources(existing.sources, line.sources);
 }
+
+/** A draft whose files were pruned out of the store: the index keeps its line, the store has nothing to fetch. */
+export const isRemoved = (draft: Pick<Draft, 'removed'>): boolean => draft.removed !== undefined;
 
 export function foldIndex(lines: readonly DraftLine[]): Map<string, Draft> {
   const map = new Map<string, Draft>();
