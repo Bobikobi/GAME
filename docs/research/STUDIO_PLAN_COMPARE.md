@@ -16,6 +16,19 @@ most. The first is player evidence: no outside player has played the game for us
 the wide world: the current stage ends on how it looks, not on how it plays. A third risk follows from both. Since 9.11
 the new world has been built outside the game players can open.
 
+**The owner's answer, 22.11 (his words, translated).** "The problem really is the design. That is why we have now focused on
+starting the base of the valley's look, which is what I tried to steer toward this week. The thing is that we also have the
+developers' area, so reaching a first MVP takes a lot of effort, and you cannot make a valley base when you do not know where
+it is going to expand. So first we wanted valid documentation for most of the game, and to develop the base according to it.
+Write these gaps in one ordered summary place, and from there we give the manager an order to approve the relevant line, so
+we can really start testing the game in the field: put most of the effort into developing the first valley, which is exactly
+the real playtest."
+
+So the order was a choice. The documentation of most of the game came first, so that the valley's base would not be built
+blind. This matches the studio phase that produces design documents before the slice (section 1.1). What changes now is
+where the effort goes. The first valley becomes the MVP, and the field test becomes its gate. Section 4 lists the gaps in
+order as the conditions that line has to meet. DECISIONS 2026-11-22 records the owner's word.
+
 ---
 
 ## 1. How studios plan a game
@@ -189,6 +202,9 @@ opening against the difficulty table (`pnpm map:playtest`, DECISIONS:3749).
 
 ### The three biggest gaps by risk to the game
 
+These were written before the owner's answer of 22.11. That answer makes the order deliberate: documentation first, then the
+valley's base. The gaps themselves stand, and section 4 says how the valley line closes each one.
+
 **1. No player has played the game for us.** Risk: highest. Every design call so far, including 96 that wait on "a
 playtest", is judged by the owner, by agents or by scripts. Studios make playtest evidence the gate out of the prototype
 (Riot), test before saving exists (Wikipedia: Playtest), and small teams run one-on-one sessions cheaply (Cronin). Our own
@@ -217,7 +233,28 @@ valley into it. The plan already allows code-only promotion behind a switch (pla
 
 ---
 
-## 4. One recommendation
+## 4. The gaps in one place: what the first valley line must close
 
-Run the five-player playtest of the live valley this week. It costs no code, our own spec already demands it, and it is
-the only one of the three steps whose answer could change the order of everything else.
+The owner's order of 22.11 points most of the effort at the first valley, and that is how the gaps above get closed. The
+list below puts them in the order the line meets them. Each one gets a measure that can be checked. The manager turns them
+into the line's tracks and its end in the plan of record. This page does not change the plan.
+
+| # | Gap | What studios do | What closes it in the valley line | Measured by |
+|---|---|---|---|---|
+| 1 | No outside player has played (gap 1) | A playtest gate out of the prototype (Riot). Testing starts before saving exists | A playtest of the valley as it is today, before the new look: a first reading of the fun | 5 outside players, 10 minutes each, recorded. The gaps between pays timed against pillar 1. Notes kept in a log in the repo |
+| 2 | The look is not locked for the valley | Pre-production locks a style guide and asset budgets, and the slice sets the quality bar (Meta, Cerny) | The valley's base look, the owner's focus this week, picked by the direction rule and then frozen as the valley's frame | One recorded pick in DECISIONS with its frame. After that, polish only inside it |
+| 3 | The slice is of the look, not of play (gap 2) | A vertical slice holds art, gameplay and systems at final quality (Game Developer, Codecks) | The valley at the new look carries the whole first ten minutes of the hook ladder (GAME_RULES section 2) plus one outing past the edge | The ladder's rungs met in the e2e, and on a recorded play, on a phone and a desktop |
+| 4 | The cost per item is not measured | The slice is built "everything two times" to set the cost of production (Pixelsplit) | Two of each new kind in the valley (two quests, two creatures, two garments), each one's cost recorded | Lines of code, pictures and sessions per item, written down before any matrix emits content |
+| 5 | The new world lives outside the game build (gap 3) | One build, always playable, merged every day (Unity, Riot) | The valley is built in the shipped game. Anything from the wide world that it uses enters behind a switch | Every landing is playable at the develop address. No valley work waits on a line outside the build |
+| 6 | Nobody is invited to play | Beta or early access with outside players. An estimated 40-50% of Dead Cells' changes came from them | The field test: the spec's own stage-1 gate (spec html:700) is brought back as the line's end | 5 testers enjoy it, 3 return within a week, and one outside creator adds an item by PR from the README alone |
+| 7 | Phases have no time box | Pre-production is time-boxed because teams "can iterate on it forever" (Game Developer) | A fixed playtest every release, so progress is read in play as well as in lines of code | One playtest note per release in the log |
+
+What stays as it is, by choice: the owner is the greenlight; documentation for most of the game came before the base; the
+developers' area belongs to the MVP; the wide world's documentation and generator keep their place. They now serve the
+valley and do not compete with it for effort.
+
+## 5. One recommendation
+
+Approve the valley line with rows 1 and 6 as its two gates: a playtest of today's valley before the new look is built, and
+the spec's tester gate at its end. The first one costs no code, and it is the only step whose answer could change the order
+of everything after it.
