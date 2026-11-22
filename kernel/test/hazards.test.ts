@@ -181,7 +181,8 @@ describe('what the vocabularies and the shipped content say', () => {
     const r = move(base, s, [6, 18], 3_600_000);
     expect(r.state.player.hp).toBe(cap);
     const later = move(base, r.state, [6, 19], 7_200_000);
-    expect(kinds(later.events)).toEqual([]);
+    // the valley's dawns are told (they hurt nothing): nothing else is
+    expect(kinds(later.events).filter((k) => k !== 'dawn')).toEqual([]);
     expect(later.state.player.hp).toBe(cap);
   });
 

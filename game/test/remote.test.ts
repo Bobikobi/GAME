@@ -61,6 +61,8 @@ describe('the remote session (NEXT 18 c)', () => {
       remote.advance(frame);
       clock.now += frame;
       frameIndex += 1;
+      // a dawn reports the tile again on both sides (`tellDawn`); the reply lands before the frames are compared
+      await remote.flushMoves();
 
       // every 800th frame an action waits for its reply; the rest of the run is the walk
       const action = frameIndex === 400 ? script[0] : undefined;
@@ -70,9 +72,15 @@ describe('the remote session (NEXT 18 c)', () => {
         expect(theirs.ok, `${action.t}: ${'error' in theirs ? theirs.error : ''}`).toBe(mine.ok);
         if (!mine.ok) expect(theirs).toEqual({ ok: false, error: mine.error });
         if (theirs.ok) worked += 1;
+        // the walker stands where the work took it
+        local.pos = [local.state.player.at[0], local.state.player.at[1]];
+        remote.pos = [remote.state.player.at[0], remote.state.player.at[1]];
       } else if (frameIndex % 8 === 0 && walkedRoute < route.length) {
         const at = route[walkedRoute]!;
         walkedRoute += 1;
+        // the walker's own tile, as `walking.ts` keeps it before it reports: a dawn reports it again
+        local.pos = [at[0], at[1]];
+        remote.pos = [at[0], at[1]];
         local.report(at);
         remote.report(at);
         await remote.flushMoves();

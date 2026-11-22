@@ -27,7 +27,9 @@ export function fightArena(base: Bundle): Bundle {
  * Normal automatic quest accounting finishes first-pickings and opens the bridge.
  */
 export function playedState(b: Bundle, seed: number, at: [number, number]): State {
-  const prep = { ...b, instances: { ...b.instances } };
+  // the frozen account is the one the hashes were recorded on: its logs lay out the plain wait, not the wait for the morning (#806)
+  const { respawn_dawn: _dawn, ...logs } = b.resources['core/fallen-logs']!;
+  const prep = { ...b, instances: { ...b.instances }, resources: { ...b.resources, 'core/fallen-logs': logs } };
   let s = newState(prep, seed);
   const act = (a: Action): void => {
     const r = step(prep, s, a, Math.max(s.tick + 1, s.player.busyUntil));
