@@ -214,7 +214,7 @@ export class RemoteSession implements GameSession {
     this.state = state;
     this.version = version;
     // the clock starts where the server's state stands: a returning player who sent less would be refused as
-    // time running backwards. Not at the end of work under way, as `Session.load` does: the server lets game
+    // time running backwards. Work under way finishes when the clock runs again: the server lets game
     // time run only as fast as the wall clock since it last accepted a step (`server/src/api.ts`, checkClock),
     // so a player back before the work is done would be refused as ahead of time. The work ends on the phone.
     this.tick = state.tick;
@@ -297,7 +297,7 @@ export class RemoteSession implements GameSession {
 
   /** Called every frame with real elapsed ms, as the local session is. */
   advance(dt: number): void {
-    if (!this.started || this.paused) return;
+    if (!this.started || this.paused || globalThis.document?.hidden || globalThis.navigator?.onLine === false) return;
     // the world is on screen: this browser has now shown this content (the title's probe joins without showing it)
     if (this.noted !== this.state.content) this.note();
     this.tick += Math.max(0, Math.min(LONGEST_FRAME_MS, Math.round(dt)));
@@ -490,8 +490,7 @@ export class RemoteSession implements GameSession {
       throw error;
     }
     this.land(reply);
-    // the phone's clock never runs back, and never stays behind the server's; not at the end of work under way,
-    // as `Session.load` does, for the server's clock check (`server/src/api.ts`, see the constructor)
+    // the phone's clock never runs back, and never stays behind the server's
     this.tick = Math.max(this.tick, this.state.tick);
     // the walk that was owed is dropped, so the player stands where the server last heard them
     this.pos = [this.state.player.at[0], this.state.player.at[1]];

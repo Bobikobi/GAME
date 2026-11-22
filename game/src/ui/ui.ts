@@ -6,6 +6,7 @@
 import { offerSignup } from './signup';
 import {
   OWN_FIRE,
+  type Action,
   type DayLog,
   type GameEvent,
   characterLevel,
@@ -715,6 +716,13 @@ export class UI {
     const s = app.session;
     if (!s) return;
     const r = await s.act({ t: 'pickup', item: itemId, at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
+  }
+
+  async hunt(action: Action): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act(action);
     if (!r.ok) this.toast(r.error, 'bad');
   }
 

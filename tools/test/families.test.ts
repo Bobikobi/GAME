@@ -33,9 +33,9 @@ describe('the real content', () => {
     expect(medianX2([1, 2, 3, 10])).toBe(5);
   });
 
-  test('the table: wear holds 4 / 4 / 1 recipes by tier and tools 3 / 2 / 2, within the steps cap', () => {
+  test('the table: wear holds 4 / 4 / 1 recipes by tier and tools 4 / 2 / 2, within the steps cap', () => {
     const rows = familyRows(b).map((r) => `${r.family}${r.tier}:${r.pieces.length}`);
-    expect(rows).toEqual(['tools1:3', 'tools2:2', 'tools3:2', 'wear1:4', 'wear2:4', 'wear3:1']);
+    expect(rows).toEqual(['tools1:4', 'tools2:2', 'tools3:2', 'wear1:4', 'wear2:4', 'wear3:1']);
     for (const r of familyRows(b)) expect(Math.max(...r.steps)).toBeLessThanOrEqual(STEPS_MAX);
   });
 });
@@ -105,7 +105,9 @@ describe('each row refuses its break', () => {
 
   test('F5: a family more than three times the smallest at a tier, and a lone recipe at a tier is a note, not an error', () => {
     const x = copy();
-    for (const id of ['core/hammerstone', 'core/fishing-rod']) delete x.recipes[id]!.family;
+    // the break is built here, not read off the live tools count: leave one recipe in the tools family at tier 1 (a lone recipe), whatever the tier holds
+    const tools1 = familyRows(x).find((r) => r.family === 'tools' && r.tier === 1)!;
+    for (const id of tools1.pieces.slice(1)) delete x.recipes[id]!.family;
     const hit = rule(x, 'F5').filter((i) => i.level === 'error');
     expect(hit).toHaveLength(1);
     expect(hit[0]!.message).toContain('wear holds 4 recipes at tier 1, more than 3 times the 1');

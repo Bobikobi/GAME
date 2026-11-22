@@ -5,10 +5,11 @@
  * character out: `step` refuses a state whose `content` is not the bundle's tag.
  */
 import type { Bundle } from './bundle';
+import { preyKey, recordHuntBatches } from './hunt';
 import { appearSlots } from './reactions';
 import { relocationOf } from './relocate';
 import { placeName } from './world';
-import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, type State } from './state';
+import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, type HuntStock, type State } from './state';
 import { startRecipes } from './step';
 
 /**
@@ -27,6 +28,7 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   const keepKeys = <T>(record: Record<string, T>, known: Record<string, unknown>): Record<string, T> =>
     Object.fromEntries(Object.entries(record).filter(([k]) => k in known));
   p.bag = keepKeys(p.bag, bundle.items);
+  if (p.huntStock) p.huntStock.bag = keepKeys(p.huntStock.bag, p.bag);
   p.wear = keepKeys(p.wear, bundle.items);
   p.made = keepKeys(p.made, bundle.recipes);
   p.quests = keepKeys(p.quests, bundle.quests);
@@ -64,6 +66,10 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   );
   // the authored ground moved inside a larger map (gap M5): every saved tile moves with it, before the reach check below
   moveTiles(bundle, state);
+  if (p.preyReturns) {
+    const spots = new Set((bundle.map.creatures?.spots ?? []).map(preyKey));
+    p.preyReturns = Object.fromEntries(Object.entries(p.preyReturns).filter(([key]) => spots.has(key)));
+  }
   // a height layer may have walled the old tile off from every wake (G68): stand on the nearest tile a foot can reach, never a fall
   const stand = relocationOf(bundle, state);
   if (stand) p.at = stand;
@@ -113,14 +119,29 @@ function moveTiles(bundle: Bundle, state: State): void {
   p.at = shift(p.at);
   if (p.own) p.own.at = shift(p.own.at);
   for (const carcass of p.carcasses ?? []) carcass.at = shift(carcass.at);
+  for (const snare of p.snares ?? []) snare.at = shift(snare.at);
+  if (p.preyReturns) {
+    const returns = p.preyReturns;
+    p.preyReturns = {};
+    // Use today's spots and their earlier coordinates to preserve their cooldowns.
+    for (const spot of bundle.map.creatures?.spots ?? []) {
+      const until = returns[preyKey({ ...spot, x: spot.x - moved.dx, y: spot.y - moved.dy })];
+      if (until !== undefined) p.preyReturns[preyKey(spot)] = until;
+    }
+  }
   if (p.ground) {
     const dropped: Record<string, Record<string, number>> = {};
+    const huntGround: Record<string, HuntStock> = {};
     for (const [key, items] of Object.entries(p.ground)) {
       const [x, y] = key.split(',').map(Number) as [number, number];
       const key2 = groundKey(shift([x, y]));
       dropped[key2] = { ...dropped[key2] };
       for (const [item, qty] of Object.entries(items)) dropped[key2][item] = (dropped[key2][item] ?? 0) + qty;
+      for (const [item, batches] of Object.entries(p.huntStock?.ground[key] ?? {})) {
+        recordHuntBatches((huntGround[key2] ??= {}), item, batches);
+      }
     }
     p.ground = dropped;
+    if (p.huntStock) p.huntStock.ground = huntGround;
   }
 }
