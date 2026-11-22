@@ -215,6 +215,7 @@ export class UI {
       return true;
     }
     if (b === 'a') app.world?.interact();
+    else if (b === 'jump') app.world?.jump?.();
     else if (b === 'bag') this.panel(() => openBag(this));
     else if (b === 'journal') this.panel(() => openJournal(this));
     else if (b === 'menu') this.panel(() => openMenu(this));

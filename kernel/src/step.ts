@@ -32,6 +32,7 @@ import {
   huntGoods, huntGoodsExpiry, huntOf, placeCarcass, preyKey, recordHuntBatches, snareAt, snareGround, snareKind, snarePrey,
   stonePrey, takeHuntBatches,
 } from './hunt';
+import { breathLeft, fallHarm, jumpRule } from './jump';
 import { drawBasisPoints, type Seed } from './rng';
 import {
   ATTRIBUTES,
@@ -138,7 +139,12 @@ export type Action =
   /** answer the event aboard while it is open; `choice` is the place of the answer among a riddle's choices */
   | { t: 'answer'; choice?: number }
   /** `gait` is how the step was taken (default walk: an old save or client without it reads walk) */
-  | { t: 'move'; at: Tile; gait?: Gait };
+  | { t: 'move'; at: Tile; gait?: Gait }
+  /**
+   * jump to `at`, one tile ahead in a straight line or two across a gap of water (DECISIONS.md, 2026-11-22): up at most one level,
+   * down from any height, a little breath, never in the first minute. A fall of two levels or more hurts by its height, four kill (G33).
+   */
+  | { t: 'jump'; at: Tile };
 
 export type GameEvent =
   | import('./events').FightEvent
@@ -187,6 +193,8 @@ export type GameEvent =
   | { e: 'unwear'; item: string; slot: WearSlot; look: boolean }
   /** health went down: `by` is a hazard kind or "food"; `id` the hazard prop; `hp` what is left, in milli-points */
   | { e: 'hurt'; by: string; id?: string; hp: number }
+  /** the player jumped from one tile to another; `drop` is the levels fallen (0 or less: level or climbing), `across` a gap of water crossed, `harm` the health the landing took, in milli-points (0 for a fall of one level or none; death is the `fall` event) */
+  | { e: 'jump'; from: Tile; at: Tile; drop: number; across: boolean; harm: number }
   /** health reached zero (G33): the player fell at `from`, lost `lost` (what the outing brought), and woke at `at` */
   | { e: 'fall'; from: Tile; at: Tile; lost: { item: string; qty: number }[] }
   /** a predator noticed the player and a hunt began: once, at the step that starts it; `id` is the predator prop */
@@ -478,6 +486,7 @@ function apply(ctx: Ctx, a: Action, options: StepOptions): void {
   // a position report and a carved name are not work: they go through while the player is busy
   if (a.t !== 'move' && a.t !== 'carve' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
   if (a.t === 'move') return moveTo(ctx, a.at, options.validateTravel === true, a.gait);
+  if (a.t === 'jump') return jump(ctx, a.at);
   // past an expedition's last bell the mist walks the player out first: the action is not made, and its tile is not read (G49)
   if (ctx.walkOut !== undefined) {
     arrive(ctx, s.player.at);
@@ -1662,6 +1671,52 @@ function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean, gait: Gait = 'walk'
 }
 
 /** G56: travel and action tiles must be reachable by a four-way walk inside the elapsed-time square. */
+/**
+ * A jump (DECISIONS.md, 2026-11-22). The line and the heights are `jumpRule`'s, the landing must be a tile a foot can
+ * stand on, the first minute after waking is refused, and a jump costs breath. The world acts at the landing as it
+ * does at the end of a walk (`arrive`), and then the fall: a drop of two levels or more takes health by its height, and
+ * one that takes the last of it is a death where the body landed (G33).
+ */
+function jump(ctx: Ctx, at: Tile): void {
+  const { b, s, tick } = ctx;
+  const p = s.player;
+  if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) refuse('Where are you?');
+  // past an expedition's last bell the mist walks the player out first: the jump is not made (G49)
+  if (ctx.walkOut !== undefined) {
+    arrive(ctx, p.at);
+    return;
+  }
+  if (p.fight != null) refuse('Not during a fight.');
+  if (tick < b.params.jump.first_minute_ms) refuse('You have only just woken. Your legs are not ready to jump.');
+  const hop = jumpRule(b)(p.at, at);
+  if (!hop.ok) refuse(hop.why);
+  if (!walkableFor(b)(at[0], at[1], p)) refuse('You cannot land there.');
+  const left = breathLeft(b, s, tick);
+  if (left < b.params.jump.breath_cost) refuse('You are out of breath.');
+  const from: Tile = [p.at[0], p.at[1]];
+  const levels = Math.max(0, hop.drop);
+  const harm = fallHarm(b, s, levels);
+  p.breath = { left: left - b.params.jump.breath_cost, at: tick };
+  ctx.events.push({ e: 'jump', from, at: [at[0], at[1]], drop: hop.drop, across: hop.across, harm });
+  // a bite that is due lands where the player stood
+  chaseBites(ctx);
+  if (fallIfDown(ctx)) return;
+  if (harm >= p.hp) {
+    // a fall that takes the last of the health: the body lies where it landed, and nothing there is entered
+    p.at = [at[0], at[1]];
+    p.movedAt = tick;
+    hurt(ctx, harm, 'fall');
+    fallIfDown(ctx);
+    return;
+  }
+  if (arrive(ctx, at)) return;
+  p.busyUntil = tick + b.params.jump.air_ms;
+  if (harm > 0) {
+    hurt(ctx, harm, 'fall');
+    fallIfDown(ctx);
+  }
+}
+
 function checkTravel(ctx: Ctx, target: Tile, gait: Gait = 'walk'): void {
   const { b, s, tick } = ctx;
   const from = s.player.at;

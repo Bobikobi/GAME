@@ -191,6 +191,16 @@ export function flattenParams(p: ParamsBody): Params {
       noise_walk: p.gait.noise_walk.value,
       noise_run: p.gait.noise_run.value,
     },
+    jump: {
+      first_minute_ms: p.jump.first_minute_ms.value,
+      up_levels: p.jump.up_levels.value,
+      breath_cost: p.jump.breath_cost.value,
+      breath_refill_per_s: p.jump.breath_refill_per_s.value,
+      air_ms: p.jump.air_ms.value,
+      fall_two_bp: p.jump.fall_two_bp.value,
+      fall_three_bp: p.jump.fall_three_bp.value,
+      death_levels: p.jump.death_levels.value,
+    },
     hunt: {
       dress_step_ms: p.hunt.dress_step_ms.value,
       meat_spoil_d: p.hunt.meat_spoil_d.value,

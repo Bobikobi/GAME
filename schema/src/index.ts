@@ -1838,6 +1838,22 @@ export const ParamsBody = Type.Object(
           'The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.',
       },
     ),
+    jump: Type.Object(
+      {
+        first_minute_ms: { ...Bounded, description: 'Game milliseconds from the first wake (tick 0) in which a jump is refused: the legs are not ready (DECISIONS.md, 2026-11-22: the jump and the fall; the hop\'s rule of ANIMATION.md section 2).' },
+        up_levels: { ...Bounded, description: 'The most levels one jump climbs: 1 is a low rock or ledge. A face higher than this is climbed by a crossing (G68). A jump down has no limit.' },
+        breath_cost: { ...Bounded, description: 'Breath points one jump costs, the same points as a fight\'s breath (`combat.breath_base`, `breath_per_stamina`; a dodge costs `dodge_breath`). Outside a fight nothing else spends them.' },
+        breath_refill_per_s: { ...Bounded, description: 'Breath points won back each second outside a fight, up to the same cap a fight uses.' },
+        air_ms: { ...Bounded, description: 'Game milliseconds a jump keeps the player busy: the hop in the air and the landing. A walk report goes through; another work action or jump waits.' },
+        fall_two_bp: { ...Bounded, description: 'Basis points of the health cap a fall of two levels takes. One level takes nothing.' },
+        fall_three_bp: { ...Bounded, description: 'Basis points of the health cap a fall of three levels takes.' },
+        death_levels: { ...Bounded, description: 'A fall of this many levels or more is death (G33): the body lies where it landed.' },
+      },
+      {
+        additionalProperties: false,
+        description: 'The jump and the fall (DECISIONS.md, 2026-11-22): up one level, down any height, across a one-tile gap of water; a little breath each; the fall hurts by its height, up to death. All integers; the first night is measured with jumps (G71).',
+      },
+    ),
     hunt: Type.Object(
       {
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },

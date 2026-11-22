@@ -438,6 +438,12 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   if (!(p.gait.noise_still <= p.gait.noise_sneak && p.gait.noise_sneak <= p.gait.noise_walk && p.gait.noise_walk <= p.gait.noise_run)) {
     err(PARAMS_FILE, 'params.gait', 'the noise grows with the pace: noise_still <= noise_sneak <= noise_walk <= noise_run');
   }
+  // the jump and the fall (DECISIONS.md, 2026-11-22): the fall hurts more with height and a death comes after the last hurt
+  if (!(0 < p.jump.fall_two_bp && p.jump.fall_two_bp < p.jump.fall_three_bp && p.jump.fall_three_bp < 10_000)) {
+    err(PARAMS_FILE, 'params.jump', 'a fall hurts more with its height and never takes the whole bar short of death: 0 < fall_two_bp < fall_three_bp < 10000');
+  }
+  if (p.jump.death_levels < 4) err(PARAMS_FILE, 'params.jump.death_levels', 'a fall of one, two or three levels never kills by its height alone: death_levels is 4 or more');
+  if (p.jump.breath_cost > p.combat.breath_base) err(PARAMS_FILE, 'params.jump.breath_cost', 'one jump costs no more breath than the lowest breath cap (combat.breath_base), or a player with no stamina could never jump');
   if (p.load.light_permille >= 1000) err(PARAMS_FILE, 'params.load.light_permille', 'the light pace ends before the limit: under 1000');
   if (p.load.max_permille <= 1000) err(PARAMS_FILE, 'params.load.max_permille', 'the hard edge lies beyond the limit: over 1000');
 

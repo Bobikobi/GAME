@@ -960,6 +960,7 @@ body {
 /* the landscape's own pieces wait in portrait */
 .stick-zone,
 .stick,
+.tbtn.jump,
 .tbtn.nav {
   display: none;
 }
@@ -1098,12 +1099,14 @@ body {
 
 /* a word and the line glyphs keep the body face */
 .touch-on.landscape .tbtn.sneak,
+.touch-on.landscape .tbtn.jump,
 .touch-on.landscape .tbtn.nav {
   font-family: var(--font-body);
   font-weight: 400;
 }
 
 /* the column at the right edge: a line glyph each, half the button across */
+.touch-on.landscape .tbtn.jump svg,
 .touch-on.landscape .tbtn.nav svg {
   width: 52%;
   height: 52%;

@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.33.0';
+export const KERNEL_VERSION = '0.34.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -265,6 +265,8 @@ export interface Player {
   movedAt: number;
   /** the valley's day so far and the day before it (G16, the day summary); absent until the first step of a day that has begun */
   day?: DayTally;
+  /** the breath the jump spends (kernel 0.33): what was left after the last jump and the tick it was left at; absent until the first jump, when the player holds the full cap (`breathLeft`) */
+  breath?: { left: number; at: number };
 }
 
 /**
