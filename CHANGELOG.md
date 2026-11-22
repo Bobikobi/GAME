@@ -2,6 +2,30 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.13 - 2026-11-22
+
+What players notice
+- A day has an end now. When the valley's day ends (05:00 on the valley clock) a "Day N" window says what the day gave, as three lines and one open door: what you found, what you built, what you learned, and who has a task for you next. It comes every day, before the morning toast, and waits until you stand somewhere safe with nothing else open.
+- Day 2 has its own morning: a toast says what you gathered is ready again, a bell rings below the ruins in the night, Elder Maru has a line only from day 2, and Pell has a new topic, "What each tool opens" (basket, trowel, axe, staff). The valley's days are counted in its own dawns, so away from the game it waits at the hour you left it.
+- On a phone, the first tap that starts play asks the browser for fullscreen and landscape; going back to the title or leaving the page lets it go. A mouse click never asks.
+- The Skills window on a sideways phone gives the map most of the screen: two columns, the school row above the map, and the node card and keys in a scrolling pane on the right.
+- Work and fight actions play their own drawn clips instead of the walk: strike, guard, dodge, hit, felling, quarrying, fishing and picking up, in three views for the human, the elf and the skeleton. 56 of them are redrawn at 44 to 45 frames for a smoother move, and a race's sheets load after you wake, not at boot.
+- Pell sells four plain garments, so a piece can be bought as well as made: the hare-fur hood, the roe-leather jerkin, the roe-leather leggings and the hare-leather shoes, each at the lowest price the economy allows. Buying one skips the hide chain's combat gate.
+- A woven reed coat can be made at the workshop at level 6 from a woven mat and a dyed cord, and it makes gathering 8 percent faster. Its weaving page is a rare find in the deep ruins. The journal gains a "Reedwork" group.
+- Dried herbs (CeosIsrael): any herb hung at the fire for three seconds becomes dried herbs, which weigh nothing in the bag and sell for more than fresh ones. Wild herb and sunleaf each give their own.
+
+What creators notice
+- Schema, additive and every existing file valid unchanged: a shop offer may leave `price_mg` out and the build sets the lowest price rule R8 allows (a typed price is kept, and R8 still refuses one below the floor); a kit sheet may wrap into rows with `cols`, and `frames` goes from 16 to 64; recipes and nodes may carry a craft `family` and a `gate`, and a node behind a closed gate is shown and never taken ("This cannot be learned yet.").
+- The clothing wave's content: ten start-known hide-chain recipes behind the combat gate (scrape and tan as one action, sinew thread, four tier-1 garments), the garment and hidework classes, Handcraft's four small wear and tools nodes (`quick-seams`, `steady-needle`, `deft-grip`, `sure-edge`) and the family parity rows in `pnpm check`.
+- Kit art: a worn whole set is drawn on the figure (reed-walker for three races, digger-leathers and hardened-leathers for the human) and shown only with `?sets=1` until the race art on the 35 degree figure lands. A driver for drifting pieces (`game/src/drift.ts`: smoke and embers rise, leaves and ash fall, each piece a pure function of its seed and age) runs the chimney smoke behind `?drift=sheet`.
+- A release pull request (base `main`, head `develop`, from this repository) now passes the body rule and the community loop's merge rule, which the v0.1.12 release had to merge past by hand. The starter roles generator is retired (the three sprite sets stay in the kit), and the tools share one Git helper. The index of the drafts of the 45-frame work clips and the creature clip trial is in `tools/kit-gen/drafts.jsonl`.
+- New design pages: how finding, the carried kit and the bag compare with seven games; how the clothing route compares and a route player on the kernel that reads the hide chain from the content; skill families split by use (set A now, the clean set B later); the content matrix audit and the armour and creature matrices (stages 1 and 2 of the content count, #789); the systems alignment map (S1-S9); the large-games figures checked against data tables; and a research page setting our work plan beside a studio's, from idea to release.
+- The developers' home at `/developers/`: a page of its own with the shared goal as a meter (squares drawn of the whole, read from `.github/dev-area.json`) and a read-only feed of what people and agents are making, open pull requests included, each with its maker, its state and what it still lacks; a day and a night version. `pnpm hub:data` now also builds the feed, three gap rules over the content files (a thing with no picture or only the old 16 px one, a figure with no quest, a quest with no place) and the meter into the hub data; `/hub/` links to it. It reads GitHub only and changes nothing in the game.
+- Decisions recorded: content by matrix (weapons, armour and creatures from tables by rule); what the content targets count (one item, one animation); the creature clip trial (the walk and punch route, PixMiniMax at 8 frames; the wolf bite stays open); and the first valley's base look, the painted new world (still B), with the frame it was chosen on.
+
+What changed underneath
+- kernel 0.1.13 (simulation 0.32.0): the day tally (`day`, `valleyDay`: ids found, built and learned, kept once each, integers and strings only; a step across several dawns tells the last morning once), the craft family on techniques and effects, and the gate reader (`gateOpen`: the combat gate opens with `combat.enabled`, the switch the hunt waits under; a start recipe behind a closed gate is handed out at the first load after it opens). The save format is unchanged and a v0.1.12 save loads as it is. Content tag dc6c6766 (79 items, 80 placed nodes, 332 sprites); site ca061ade, the develop commit this note was prepared on, and the release's own merge commit is the live site.
+
 ## v0.1.12 - 2026-11-21
 
 What players notice
