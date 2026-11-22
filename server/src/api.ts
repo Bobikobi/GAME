@@ -249,7 +249,13 @@ export function isAction(value: unknown): value is Action {
     case 'drop':
       return hasOnlyKeys(value, ['t', 'item', 'qty', 'at']) && typeof value.item === 'string' && Number.isSafeInteger(value.qty) && isTile(value.at);
     case 'pickup':
-      return hasOnlyKeys(value, ['t', 'item', 'at']) && typeof value.item === 'string' && isTile(value.at);
+      return hasOnlyKeys(value, ['t', 'item', 'at', 'qty']) && typeof value.item === 'string' && isTile(value.at) && (value.qty === undefined || Number.isSafeInteger(value.qty));
+    case 'lift':
+      return hasOnlyKeys(value, ['t', 'size', 'at', 'qty']) && (value.size === 'small' || value.size === 'large') && isTile(value.at) && (value.qty === undefined || Number.isSafeInteger(value.qty));
+    case 'setdown':
+      return hasOnlyKeys(value, ['t', 'at']) && isTile(value.at);
+    case 'throw':
+      return hasOnlyKeys(value, ['t', 'at', 'aim', 'power']) && isTile(value.at) && isTile(value.aim) && (value.power === undefined || Number.isSafeInteger(value.power));
     case 'dress':
       return hasOnlyKeys(value, ['t', 'carcass', 'at']) && Number.isSafeInteger(value.carcass) && isTile(value.at);
     case 'board':

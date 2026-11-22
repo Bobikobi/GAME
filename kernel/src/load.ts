@@ -18,9 +18,9 @@ export function itemWeight(bundle: Bundle, itemId: string): number {
   return bundle.items[itemId]?.weight ?? 1;
 }
 
-/** What the whole bag weighs, worn things included: they are on the body, not off it. */
+/** What the whole bag weighs, worn things included: they are on the body, not off it. A large stone held over the head weighs too (`stones.large_weight`): the might limit and the pace bands then treat it like any carried thing. */
 export function loadWeight(bundle: Bundle, state: PublicState): number {
-  let n = 0;
+  let n = state.player.stones?.carry === 'large' ? bundle.params.stones.large_weight : 0;
   for (const [id, qty] of Object.entries(state.player.bag)) n += qty * itemWeight(bundle, id);
   return n;
 }

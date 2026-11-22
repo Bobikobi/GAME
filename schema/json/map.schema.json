@@ -1940,6 +1940,54 @@
             }
           }
         },
+        "stones": {
+          "additionalProperties": false,
+          "description": "Loose stones lying in the world (DECISIONS.md, 2026-11-22): where each lies until a player lifts it. A thrown stone goes back to the first spot a player has emptied. Absent: none. Spots are never props: a stone never changes the walk map.",
+          "type": "object",
+          "required": [
+            "spots"
+          ],
+          "properties": {
+            "spots": {
+              "maxItems": 200,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "x",
+                  "y",
+                  "size"
+                ],
+                "properties": {
+                  "x": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  },
+                  "y": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  },
+                  "size": {
+                    "description": "A small stone goes in the hand and the bag; a large one is carried over the head.",
+                    "anyOf": [
+                      {
+                        "const": "small",
+                        "type": "string"
+                      },
+                      {
+                        "const": "large",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
         "width": {
           "minimum": 8,
           "maximum": 1024,
