@@ -5,6 +5,7 @@
  */
 import {
   KERNEL_VERSION,
+  SNARE_ITEM,
   WEAR_SLOTS,
   bagCapacity,
   bagUsed,
@@ -541,6 +542,13 @@ export function openBag(ui: UI): void {
     const item = b.items[id]!;
     const price = salePrice(b, s.state, id, 1);
     const actions: HTMLElement[] = [];
+    if (id === SNARE_ITEM) {
+      actions.push(button('Set snare', async () => {
+        const r = await s.act({ t: 'set_snare', tile: s.pos, at: s.pos });
+        if (r.ok) p.close();
+        else ui.toast(r.error, 'bad');
+      }));
+    }
     if (item.food) {
       actions.push(button(eatLabel(b, id), async () => {
         const r = await s.act({ t: 'eat', item: id });

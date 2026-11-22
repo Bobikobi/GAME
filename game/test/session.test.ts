@@ -73,6 +73,19 @@ function talker(): UI {
 }
 
 describe('session persistence', () => {
+  test('restores the saved tick while work is still busy', () => {
+    const session = startedSession();
+    session.tick = 500;
+    session.state.player.busyUntil = 600;
+    session.save();
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.tick).toBe(500);
+    expect(restored.busy).toBe(true);
+    restored.advance(100);
+    expect(restored.busy).toBe(false);
+  });
+
   test('loads an old save without met NPCs', () => {
     startedSession();
     const oldSave = JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>;

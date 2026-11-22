@@ -85,7 +85,7 @@ import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '.
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
-import { questTargets } from '../targets';
+import { huntingAt, huntingNearby, questTargets } from '../targets';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
@@ -4051,6 +4051,8 @@ export class WorldScene extends Phaser.Scene {
     // on the jetty a passage leaves from, once the opening has reached it, the boat is offered (SEA_CROSSING.md); its hours and fare are the kernel's to refuse
     const passage = passageAt(this.b, s.state, s.pos);
     if (passage) return { label: `Board: ${this.b.passages[passage]!.title}`, run: () => void app.ui.board(passage), tile: [s.pos[0], s.pos[1]], top: T };
+    const prey = huntingNearby(this.b, s.state, s.tick, s.pos);
+    if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: T / 2 };
     // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
     // It comes after every other target, so a fire never hides a thing the player already faces.
     return this.kindleTarget(s);
@@ -4077,6 +4079,8 @@ export class WorldScene extends Phaser.Scene {
     // a pile the player put down, under their feet
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };
+    const hunt = huntingAt(b, s.state, s.tick, s.pos, tile);
+    if (hunt) return { ...hunt, run: () => void app.ui.hunt(hunt.action), top: T / 2 };
     const door = this.doors.get(k);
     if (door) {
       // the door is used from the step in front of it, facing in

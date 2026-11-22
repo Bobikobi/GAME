@@ -499,7 +499,12 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
     case 'safe':
       return { text: 'Safe.', tone: 'good' };
     case 'nothing':
+      if (e.verb === 'check_snare') return { text: 'Empty snare.' };
       return { text: e.verb === 'dig' ? 'Nothing this time.' : 'Missed - nothing this time.', tone: 'bad' };
+    case 'spoil':
+      return { text: `${itemName(b, e.item)} spoiled.`, tone: 'bad' };
+    case 'take_prey':
+      return { text: 'Small game taken.' };
     case 'miss':
       return { text: `${b.recipes[e.recipe]?.title ?? e.recipe} did not come out this time - part of it is left`, tone: 'bad' };
     case 'wear':

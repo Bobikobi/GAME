@@ -1,6 +1,6 @@
 # The jump and the fall: where it sits in the skill tree
 
-Tracker #826. Decision: DECISIONS 2026-11-22 "The jump and the fall". Built in kernel 0.33.0 (`kernel/src/jump.ts`, the `jump` action, the `jump` params block).
+Tracker #826. Decision: DECISIONS 2026-11-22 "The jump and the fall". Built in kernel 0.34.0 (`kernel/src/jump.ts`, the `jump` action, the `jump` params block).
 
 ## 1. What the player does
 

@@ -190,10 +190,17 @@ export function isAction(value: unknown): value is Action {
     case 'search':
       return hasOnlyKeys(value, ['t', 'spot', 'at']) && typeof value.spot === 'string' && isTile(value.at);
     case 'take':
+      if ('prey' in value) {
+        return hasOnlyKeys(value, ['t', 'prey', 'at'])
+          && Number.isSafeInteger(value.prey) && (value.prey as number) >= 0 && isTile(value.at);
+      }
       return hasOnlyKeys(value, ['t', 'spot', 'row', 'at'])
         && typeof value.spot === 'string'
         && (value.row === undefined || (Number.isSafeInteger(value.row) && (value.row as number) >= 0))
         && isTile(value.at);
+    case 'set_snare':
+    case 'check_snare':
+      return hasOnlyKeys(value, ['t', 'tile', 'at']) && isTile(value.tile) && isTile(value.at);
     case 'craft':
       return hasOnlyKeys(value, ['t', 'recipe', 'at']) && typeof value.recipe === 'string' && isTile(value.at);
     case 'eat':

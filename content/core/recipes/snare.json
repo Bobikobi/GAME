@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/snare",
+  "title": "Snare",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/snare",
+      "name": "Snare",
+      "description": "A snare for small game.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "fibre",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch",
+      "weight": 1
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 3000,
+    "level": 1,
+    "inputs": [
+      { "item": "core/reed-cord", "qty": 2 },
+      { "item": "core/branch", "qty": 1 }
+    ],
+    "outputs": [
+      { "item": "core/snare", "qty": 1, "share_pct": 100 }
+    ],
+    "known": "start",
+    "family": "tools"
+  }
+}

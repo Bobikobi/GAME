@@ -12,6 +12,17 @@ let bundle: Bundle;
 let server: Server | undefined;
 const health = { up: true };
 
+test('the wire accepts each hunting action and keeps search takes distinct', () => {
+  const at = [2, 3];
+  expect(isAction({ t: 'take', prey: 0, at })).toBe(true);
+  expect(isAction({ t: 'take', spot: 'core/hollow-tree', row: 0, at })).toBe(true);
+  expect(isAction({ t: 'take', prey: 0, spot: 'core/hollow-tree', at })).toBe(false);
+  expect(isAction({ t: 'take', prey: -1, at })).toBe(false);
+  expect(isAction({ t: 'set_snare', tile: at, at })).toBe(true);
+  expect(isAction({ t: 'check_snare', tile: at, at })).toBe(true);
+  expect(isAction({ t: 'check_snare', tile: at, at, kind: 'core/wolf' })).toBe(false);
+});
+
 beforeAll(() => {
   bundle = loadBundle();
 });

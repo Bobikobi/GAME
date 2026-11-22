@@ -64,7 +64,7 @@ const hop = (b: Bundle, from: Tile, to: Tile) => step(b, standing(b, from), { t:
 
 describe('the kernel version', () => {
   test('is pinned once for the repository', () => {
-    expect(KERNEL_VERSION).toBe('0.33.0');
+    expect(KERNEL_VERSION).toBe('0.34.0');
   });
 });
 
