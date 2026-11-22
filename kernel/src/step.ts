@@ -23,6 +23,7 @@ import type { Bundle, QuestDef, RecipeDef, SearchDef, Verb } from './bundle';
 import { canonical } from './canon';
 import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, watchedAt, windowOpen, windowShuts } from './danger';
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
+import { rollDay, tallyStep } from './day';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
 import { GAITS, type Gait, foodFillPermille, gaitStepMs, itemWeight, loadMax, loadWeight, weightRoom } from './load';
@@ -158,6 +159,8 @@ export type GameEvent =
   | { e: 'search'; spot: string; rows: string[] }
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
+  /** a valley day began (G16): the first step past a dawn tells it, with how many nodes the player worked out in the day that ended are ready; the day that ended is in `player.day.prev` */
+  | { e: 'dawn'; day: number; renewed: number }
   /** the player entered a place for the first time (G63, G66): a map region or a named area, by id; the banner shows its name (`placeName`) */
   | { e: 'place'; id: string }
   | { e: 'attr'; attr: Attribute; value: number }
@@ -406,9 +409,12 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number,
   try {
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
+    // the valley's day turns at its dawn, before the action: the tally of the day that ended closes, and the nodes worked out are counted
+    if (ctx.s.player.race !== '') for (const d of rollDay(bundle, ctx.s, state.tick)) ctx.events.push({ e: 'dawn', day: d.day, renewed: d.renewed });
     apply(ctx, action, options);
     autoQuests(ctx);
     expeditions(ctx);
+    tallyStep(bundle, state, ctx.s);
     return { ok: true, state: ctx.s, events: ctx.events };
   } catch (err) {
     if (err instanceof Refusal) return { ok: false, error: err.message };

@@ -625,6 +625,9 @@ export const When = Type.Object(
     time: Type.Optional(
       Type.Union([Type.Literal('day'), Type.Literal('night')], { description: 'By day (05:00 to 20:00) or by night.' }),
     ),
+    day_min: Type.Optional(
+      Int(2, 365, 'The valley\'s day has reached this number: day 1 runs from the wake to the first dawn, day 2 from that dawn to the next. A line that waits for the morning after (the ladder\'s Day 2). Never the calendar\'s day (G28).'),
+    ),
   },
   { additionalProperties: false, minProperties: 1, description: 'Holds when every condition it names holds.' },
 );
