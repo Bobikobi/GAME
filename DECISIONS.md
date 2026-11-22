@@ -4765,3 +4765,13 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **Kept:** the fight is real-time free action, never turns (the owner, 15.11); the motion is drawn as clips (wind-up stages, release), the aim line and the tremble are the code layer (ANIMATION.md section 3).
 
 **Retry when:** a playtest on a phone shows the hold-and-drag aim too hard to read, or the charge too slow for a real-time fight. **Model:** Claude Opus 5.5 (the manager). **Link:** the loose stones entry above, #819 (the thrown stone).
+
+## 2026-11-22 ✅ The developers' area: the game's own look by day, the management site's dark frame by night, one day/night button; the landing does not lead with Claude (#727, direction, not built)
+
+**What:** three screens shown as stills (1920 x 1080 and a phone on its side 844 x 390), each in two looks: A, the management site's dark frame and side menu, adapted; B, the game's own public look (paper colours, serif headings, green) with the same side menu. The owner's picks (22.11 18:42-18:44, the management site): the landing B, with the note "B but without the Claude framing"; the feed A, with the note "both, by a day/night button"; the personal area B.
+- **The frame:** the whole area carries one day/night button. Day is look B, night is look A; the side menu and every other part are the same in both.
+- **The landing:** look B. It invites to see the work and take a task, with the Google and GitHub buttons. It does not lead with Claude: no "Bring your Claude" headline and no "connect your Claude" step on it.
+- **Connecting a developer's own Claude** stays, inside the personal area (the owner's spec on #727, comment 7081885515).
+- **Kept from the spec:** a like, comments and "join the work" on every feed item; joining opens the task, the developer confirms, the personal area follows its progress.
+
+**Retry when:** the built area shown live reads worse than the stills, or developers ask for the Claude route up front. **Model:** Claude Opus 5.5 (the manager). **Link:** #727; the stills and their pages in the feat-dev-area-feed folder, `.scratch/stills-1122/` (kept for the build).
