@@ -1879,6 +1879,7 @@ It goes before NEXT 19, so the generated ring reacts by its tile tags from its f
 
 The owner, 19.10, on the two questions of [docs/design/REACTIONS.md](docs/design/REACTIONS.md) section 9, both as recommended: fog shortens a predator's sight, landing with weather in phase B (G47 carries it); noise never turns a predator's head in the demo; weather never touches a fire, neither to put it out nor to make it burn longer (G48 carries it).
 On fire in a shared world (section 10), his words: a wildfire and putting it out are rewarding, several players may fight one at once, and a fire set on purpose comes only in the future. So a spreading fire stays a world event the seed lights in the wild, and putting it out pays each player for their own work.
+**Superseded in part (12.11, the owner's answer table, #704):** the future came early for the torch: a torch may be thrown and may light a fire that spreads slowly. Found by the stale-seat audit of 22.11.
 Left open for the rules session: the line "a player's act may open things for others, never close or destroy them" (his word: "I don't know").
 The section 4 examples now carry the real file shape of #207 (`reaction: { on, when, then }`, the appear node inline), `empty_for_ms` is out of phase A, and the fish rise on `water` tiles.
 **Retry when:** combat (W2) makes reading a foe's attention part of the fight; then noise turning a head is asked again. Model: claude-opus-5-5.
