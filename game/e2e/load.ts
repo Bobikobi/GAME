@@ -337,7 +337,7 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
     return { ok: r.ok, error: r.error, before, after: window.__load.weight(), pile: (s.state.player.ground ?? {})[s.pos.join(',')]?.['core/stone'] ?? 0 };
   })()`);
   if (!put.ok || put.after !== put.before - 3 || put.pile !== 1) throw new Error(`putting a stone down: ${JSON.stringify(put)}`);
-  await page.waitFor(`/Pick up/.test(document.querySelector('.prompt:not([hidden])')?.textContent ?? '')`, 'the prompt to offer the stone back');
+  await page.waitFor(`/Pick up|Lift the stone|Take a stone from the pile/.test(document.querySelector('.prompt:not([hidden])')?.textContent ?? '')`, 'the prompt to offer the stone back');
   await page.eval(`window.__game.ui.pickUp('core/stone')`);
   await page.waitFor(`window.__load.weight() === ${put.before} && !(window.__game.session.state.player.ground ?? {})[window.__game.session.pos.join(',')]`, 'the stone back in the bag');
   log('put a stone down and picked it up again');
