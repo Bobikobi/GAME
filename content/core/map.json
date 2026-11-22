@@ -4608,6 +4608,110 @@
         }
       ]
     },
+    "stones": {
+      "spots": [
+        {
+          "x": 3,
+          "y": 6,
+          "size": "large"
+        },
+        {
+          "x": 5,
+          "y": 9,
+          "size": "small"
+        },
+        {
+          "x": 3,
+          "y": 12,
+          "size": "small"
+        },
+        {
+          "x": 10,
+          "y": 14,
+          "size": "small"
+        },
+        {
+          "x": 20,
+          "y": 12,
+          "size": "large"
+        },
+        {
+          "x": 18,
+          "y": 13,
+          "size": "small"
+        },
+        {
+          "x": 24,
+          "y": 14,
+          "size": "small"
+        },
+        {
+          "x": 39,
+          "y": 12,
+          "size": "large"
+        },
+        {
+          "x": 38,
+          "y": 14,
+          "size": "small"
+        },
+        {
+          "x": 3,
+          "y": 19,
+          "size": "small"
+        },
+        {
+          "x": 5,
+          "y": 21,
+          "size": "small"
+        },
+        {
+          "x": 9,
+          "y": 23,
+          "size": "small"
+        },
+        {
+          "x": 4,
+          "y": 26,
+          "size": "small"
+        },
+        {
+          "x": 8,
+          "y": 28,
+          "size": "large"
+        },
+        {
+          "x": 27,
+          "y": 16,
+          "size": "small"
+        },
+        {
+          "x": 21,
+          "y": 17,
+          "size": "small"
+        },
+        {
+          "x": 27,
+          "y": 20,
+          "size": "small"
+        },
+        {
+          "x": 23,
+          "y": 22,
+          "size": "large"
+        },
+        {
+          "x": 34,
+          "y": 17,
+          "size": "small"
+        },
+        {
+          "x": 43,
+          "y": 18,
+          "size": "small"
+        }
+      ]
+    },
     "spawn": {
       "x": 6,
       "y": 17
