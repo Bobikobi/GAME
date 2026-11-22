@@ -6,9 +6,9 @@
  * walking the player, L learns, a technique goes into the build, the wheel zooms, a drag pans, Shift and
  * an arrow pan, a number key shows one school and 0 the whole tree. Then a generated tree of about three hundred nodes (tests
  * only, never content) is drawn and panned within a frame's time, only what is on screen. On a phone,
- * the layout fits the sideways window, sampled nodes have 44 px tap areas at the starting zoom,
- * a tap chooses, a long press shows the number, Learn works, a finger pans, the zoom button and pinch
- * change zoom, and the big tree draws only what is on screen.
+ * the layout fits the sideways window and each sampled node passes four hit probes 21 px from its centre
+ * at the starting zoom. A tap chooses, a long press shows the number, Learn works, a finger pans, the zoom
+ * button and pinch change zoom, and the big tree draws only what is on screen.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -480,7 +480,7 @@ async function phone(page: Page, url: string): Promise<void> {
     return checked >= 3 ? out : ['only ' + checked + ' nodes in view'];
   })()`);
   if (misses.length > 0) throw new Error(`taps miss: ${misses.join('; ')}`);
-  log('sampled nodes take 44 px taps at the starting zoom');
+  log('each sampled node passes four hit probes 21 px from its centre at the starting zoom');
 
   // a tap chooses, a long press shows the number, Learn learns
   await tapNode(page, facts.root);
