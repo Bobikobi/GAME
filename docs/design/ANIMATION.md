@@ -5,7 +5,7 @@ The owner, 28.10: "movements for everything, smooth and rich ... and the demo ac
 **Where it stands (2026-10-29)**
 - Decided (the owner, 29.10, the direction gate of section 6): the code bob on the human walk is in (A), four poses are enough for a wolf's walk (B), and two poses plus the code layer is not (C): the code layer sits on top of real poses, at least four a loop, and never replaces them. The rest of the page is the builder's frame, marked **proposal** where a number is a starting point.
 - Built: the feel layer's pure module (`game/src/feel.ts`, not yet in the scene) and the gait params (`gait` in `params.json`, `gaitStepMs`, `noiseRadius`). Next: the feel layer into the scene, the quadruped target as a four-pose sheet target.
-- The hop (section 2) waits for its own pick.
+- The hop (section 2) was picked (22.11) and is built as a code stand-in; the drawn clip waits.
 - Fights wait for COMBAT (G35: no fighting in the demo); the hitstop and shake of section 4 are written and kept unused until a blow lands on a creature (DECISIONS 2026-10-26, the hit feel is not for gathering).
 
 ## 1. What exists
@@ -30,7 +30,7 @@ A verb is one thing a body does that the player or the world can read. A new ver
 | hurt | later | rendered + code | 2 | with fights |
 | death / fall | later | rendered | 5 | with fights |
 | swim | later | rendered, above a code-drawn waterline | 4 | with the sea crossing |
-| jump | **picked (owner 22.11), not built** | rendered (library `Jump_*`) | 3 | up one level, down any height with fall damage (DECISIONS 2026-11-22, the jump and the fall), across a one-tile gap, costing breath; never in the first minute. It changes `makeStepRule` and the fall's health cost |
+| jump | **built as a code stand-in (#826); the drawn clip is not** | rendered (library `Jump_*`) | 3 | up one level, down any height with fall damage (DECISIONS 2026-11-22, the jump and the fall), across a one-tile gap, costing breath; never in the first minute. The stand-in: the figure holds its standing frame and rises on an arc (`world.ts`, `hop`), its feet and shadow keep the ground; the kernel's `jump` action carries the rule (`kernel/src/jump.ts`). The drawn clip replaces the arc when it lands |
 
 **The gaits** are three paces of one body, carried by the kernel's `move` as `gait: walk | run | sneak` and set by the `gait` group of `content/core/params.json`: a walk is the pace the load allows (`walk_step_ms`, 190 ms a tile when steady), a run takes that divided by `gait.run_div` (2: 95 ms), a sneak times `gait.sneak_mul` (2: 380 ms), every one a whole number of milliseconds. Each is heard at a radius of tiles from the shared noise table: still 2, sneak 3, walk 5, run 8 (`gait.noise_*`; the hunting rules read the same table). On a phone the run is held (one thumb) and the sneak is a toggle button. The run's breath cost waits for the breath bar of COMBAT; until it lands a run costs nothing and the demo's opening has no reason to forbid it.
 

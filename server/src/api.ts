@@ -190,10 +190,17 @@ export function isAction(value: unknown): value is Action {
     case 'search':
       return hasOnlyKeys(value, ['t', 'spot', 'at']) && typeof value.spot === 'string' && isTile(value.at);
     case 'take':
+      if ('prey' in value) {
+        return hasOnlyKeys(value, ['t', 'prey', 'at'])
+          && Number.isSafeInteger(value.prey) && (value.prey as number) >= 0 && isTile(value.at);
+      }
       return hasOnlyKeys(value, ['t', 'spot', 'row', 'at'])
         && typeof value.spot === 'string'
         && (value.row === undefined || (Number.isSafeInteger(value.row) && (value.row as number) >= 0))
         && isTile(value.at);
+    case 'set_snare':
+    case 'check_snare':
+      return hasOnlyKeys(value, ['t', 'tile', 'at']) && isTile(value.tile) && isTile(value.at);
     case 'craft':
       return hasOnlyKeys(value, ['t', 'recipe', 'at']) && typeof value.recipe === 'string' && isTile(value.at);
     case 'eat':
@@ -251,6 +258,8 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t']);
     case 'answer':
       return hasOnlyKeys(value, ['t', 'choice']) && (value.choice === undefined || Number.isSafeInteger(value.choice));
+    case 'jump':
+      return hasOnlyKeys(value, ['t', 'at']) && isTile(value.at);
     case 'move':
       // a walk leaves its gait out (an old log reads walk); a run or a sneak names it, as the kernel's action does
       return hasOnlyKeys(value, ['t', 'at', 'gait']) && isTile(value.at) && (value.gait === undefined || isGait(value.gait));

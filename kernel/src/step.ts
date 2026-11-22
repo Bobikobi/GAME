@@ -27,12 +27,19 @@ import { rollDay, tallyStep } from './day';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
 import { GAITS, type Gait, foodFillPermille, gaitStepMs, itemWeight, loadMax, loadWeight, weightRoom } from './load';
-import { DRESS_PARTS, carcassGone, carcassGoods, dressPartMs, huntGoods, huntOf } from './hunt';
+import {
+  DRESS_PARTS, SNARE_ITEM, THROW_STONE, awakeHuntTick, carcassGoods, dressPartMs,
+  huntGoods, huntGoodsExpiry, huntOf, placeCarcass, preyKey, recordHuntBatches, snareAt, snareGround, snareKind, snarePrey,
+  stonePrey, takeHuntBatches,
+} from './hunt';
+import { breathLeft, fallHarm, jumpRule } from './jump';
 import { drawBasisPoints, type Seed } from './rng';
 import {
   ATTRIBUTES,
   type Attribute,
   type FireState,
+  type HuntBatch,
+  type HuntStock,
   LEGACY_STARTERS,
   legacyNodeId,
   OWN_FIRE,
@@ -73,6 +80,7 @@ import {
   treeNode,
   tendHolds,
   verbLevel,
+  valleyDay,
   type PublicState,
 } from './state';
 import { rarityRank, payFor } from './values';
@@ -96,6 +104,8 @@ export type Action =
   | { t: 'search'; spot: string; at: Tile }
   /** move one row of a searched searchable (`row`, a place in its list) or all its rows into the bag */
   | { t: 'take'; spot: string; row?: number; at: Tile }
+  | { t: 'take'; prey: number; at: Tile }
+  | { t: 'set_snare' | 'check_snare'; tile: Tile; at: Tile }
   | { t: 'craft'; recipe: string; at: Tile }
   | { t: 'eat'; item: string }
   | { t: 'feed'; fire: string; item: string; at: Tile }
@@ -129,7 +139,12 @@ export type Action =
   /** answer the event aboard while it is open; `choice` is the place of the answer among a riddle's choices */
   | { t: 'answer'; choice?: number }
   /** `gait` is how the step was taken (default walk: an old save or client without it reads walk) */
-  | { t: 'move'; at: Tile; gait?: Gait };
+  | { t: 'move'; at: Tile; gait?: Gait }
+  /**
+   * jump to `at`, one tile ahead in a straight line or two across a gap of water (DECISIONS.md, 2026-11-22): up at most one level,
+   * down from any height, a little breath, never in the first minute. A fall of two levels or more hurts by its height, four kill (G33).
+   */
+  | { t: 'jump'; at: Tile };
 
 export type GameEvent =
   | import('./events').FightEvent
@@ -137,6 +152,8 @@ export type GameEvent =
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
   | { e: 'drop'; item: string; qty: number; at: Tile }
+  | { e: 'spoil'; item: string; qty: number }
+  | { e: 'take_prey' }
   /** a part of a taken animal was dressed: its kind, its grade (1 plain, 2 fine, 3 true), the parts still to do, and with the last part (left 0) what it gave, in the bag or on the player's tile */
   | { e: 'dress'; kind: string; grade: number; goods: { item: string; qty: number }[]; left: number }
   | { e: 'gold'; delta: number }
@@ -176,6 +193,8 @@ export type GameEvent =
   | { e: 'unwear'; item: string; slot: WearSlot; look: boolean }
   /** health went down: `by` is a hazard kind or "food"; `id` the hazard prop; `hp` what is left, in milli-points */
   | { e: 'hurt'; by: string; id?: string; hp: number }
+  /** the player jumped from one tile to another; `drop` is the levels fallen (0 or less: level or climbing), `across` a gap of water crossed, `harm` the health the landing took, in milli-points (0 for a fall of one level or none; death is the `fall` event) */
+  | { e: 'jump'; from: Tile; at: Tile; drop: number; across: boolean; harm: number }
   /** health reached zero (G33): the player fell at `from`, lost `lost` (what the outing brought), and woke at `at` */
   | { e: 'fall'; from: Tile; at: Tile; lost: { item: string; qty: number }[] }
   /** a predator noticed the player and a hunt began: once, at the step that starts it; `id` is the predator prop */
@@ -201,6 +220,8 @@ export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok:
 export interface StepOptions {
   /** Enforce server-side four-way reachability for reported and action tiles (G56). */
   validateTravel?: boolean;
+  /** Game milliseconds skipped at this step by the caller, e.g. when sleeping until dawn. */
+  inactiveMs?: number;
 }
 
 /** The multiplier on rare and legendary dig chances, in permille: luck, techniques and worn items, inside the power cap. */
@@ -290,7 +311,7 @@ function refuse(message: string): never {
 }
 
 const walkableCache = new WeakMap<Bundle, ReturnType<typeof makeWalkable>>();
-function walkableFor(bundle: Bundle) {
+export function walkableFor(bundle: Bundle) {
   let fn = walkableCache.get(bundle);
   if (!fn) {
     fn = makeWalkable(bundle);
@@ -404,9 +425,15 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number,
   ctx.s.player.own ??= null;
   ctx.s.player.expeditions ??= {};
   ctx.s.player.bitten ??= [];
+  const inactive = options.inactiveMs ?? 0;
+  if (!Number.isSafeInteger(inactive) || inactive < 0 || inactive > tick - state.tick) {
+    return { ok: false, error: 'Invalid inactive time.' };
+  }
+  if (inactive > 0) ctx.s.player.huntPausedMs = (ctx.s.player.huntPausedMs ?? 0) + inactive;
   // a save from before kernel 0.17 has searched nothing
   ctx.s.searched ??= {};
   try {
+    spoilHuntStock(ctx);
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
     // the valley's day turns at its dawn, before the action: the tally of the day that ended closes, and the nodes worked out are counted
@@ -427,7 +454,7 @@ export function replay(
   bundle: Bundle,
   start: State,
   log: readonly { a: Action; tick: number }[],
-  options: StepOptions = {},
+  options: Pick<StepOptions, 'validateTravel'> = {},
 ): { state: State; events: GameEvent[]; error?: string; at?: number } {
   let state = start;
   const events: GameEvent[] = [];
@@ -459,6 +486,7 @@ function apply(ctx: Ctx, a: Action, options: StepOptions): void {
   // a position report and a carved name are not work: they go through while the player is busy
   if (a.t !== 'move' && a.t !== 'carve' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
   if (a.t === 'move') return moveTo(ctx, a.at, options.validateTravel === true, a.gait);
+  if (a.t === 'jump') return jump(ctx, a.at);
   // past an expedition's last bell the mist walks the player out first: the action is not made, and its tile is not read (G49)
   if (ctx.walkOut !== undefined) {
     arrive(ctx, s.player.at);
@@ -504,7 +532,11 @@ function act(ctx: Ctx, a: Action): void {
     case 'search':
       return search(ctx, a.spot, a.at);
     case 'take':
-      return takeRows(ctx, a.spot, a.row, a.at);
+      return 'prey' in a ? throwStone(ctx, a.prey) : takeRows(ctx, a.spot, a.row, a.at);
+    case 'set_snare':
+      return setSnare(ctx, a.tile);
+    case 'check_snare':
+      return checkSnare(ctx, a.tile);
     case 'craft':
       return craft(ctx, a.recipe, a.at);
     case 'eat':
@@ -1639,6 +1671,52 @@ function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean, gait: Gait = 'walk'
 }
 
 /** G56: travel and action tiles must be reachable by a four-way walk inside the elapsed-time square. */
+/**
+ * A jump (DECISIONS.md, 2026-11-22). The line and the heights are `jumpRule`'s, the landing must be a tile a foot can
+ * stand on, the first minute after waking is refused, and a jump costs breath. The world acts at the landing as it
+ * does at the end of a walk (`arrive`), and then the fall: a drop of two levels or more takes health by its height, and
+ * one that takes the last of it is a death where the body landed (G33).
+ */
+function jump(ctx: Ctx, at: Tile): void {
+  const { b, s, tick } = ctx;
+  const p = s.player;
+  if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) refuse('Where are you?');
+  // past an expedition's last bell the mist walks the player out first: the jump is not made (G49)
+  if (ctx.walkOut !== undefined) {
+    arrive(ctx, p.at);
+    return;
+  }
+  if (p.fight != null) refuse('Not during a fight.');
+  if (tick < b.params.jump.first_minute_ms) refuse('You have only just woken. Your legs are not ready to jump.');
+  const hop = jumpRule(b)(p.at, at);
+  if (!hop.ok) refuse(hop.why);
+  if (!walkableFor(b)(at[0], at[1], p)) refuse('You cannot land there.');
+  const left = breathLeft(b, s, tick);
+  if (left < b.params.jump.breath_cost) refuse('You are out of breath.');
+  const from: Tile = [p.at[0], p.at[1]];
+  const levels = Math.max(0, hop.drop);
+  const harm = fallHarm(b, s, levels);
+  p.breath = { left: left - b.params.jump.breath_cost, at: tick };
+  ctx.events.push({ e: 'jump', from, at: [at[0], at[1]], drop: hop.drop, across: hop.across, harm });
+  // a bite that is due lands where the player stood
+  chaseBites(ctx);
+  if (fallIfDown(ctx)) return;
+  if (harm >= p.hp) {
+    // a fall that takes the last of the health: the body lies where it landed, and nothing there is entered
+    p.at = [at[0], at[1]];
+    p.movedAt = tick;
+    hurt(ctx, harm, 'fall');
+    fallIfDown(ctx);
+    return;
+  }
+  if (arrive(ctx, at)) return;
+  p.busyUntil = tick + b.params.jump.air_ms;
+  if (harm > 0) {
+    hurt(ctx, harm, 'fall');
+    fallIfDown(ctx);
+  }
+}
+
 function checkTravel(ctx: Ctx, target: Tile, gait: Gait = 'walk'): void {
   const { b, s, tick } = ctx;
   const from = s.player.at;
@@ -1953,18 +2031,72 @@ function wearTool(ctx: Ctx, itemId: string): void {
   }
 }
 
-/** Put down what is not worn on the player's tile (DECISIONS.md, 2026-10-23): it stays there, saved, until picked up. */
+function throwStone(ctx: Ctx, index: number): void {
+  const { b, s, tick } = ctx;
+  const p = s.player;
+  if ((p.bag[THROW_STONE] ?? 0) < 1) refuse('You need a stone.');
+  const prey = stonePrey(b, s, tick, index, p.at);
+  if (!prey) refuse('No small game in reach.');
+  removeItem(ctx, THROW_STONE, 1, true);
+  const refill = huntOf(b, prey.kind)?.spawn?.refill_d ?? 1;
+  (p.preyReturns ??= {})[preyKey(prey)] = tick + refill * b.params.day_length_ms;
+  placeCarcass(b, s, prey.kind, [prey.x, prey.y], 1, tick);
+  ctx.events.push({ e: 'take_prey' });
+}
+
+function setSnare(ctx: Ctx, tile: Tile): void {
+  const { b, s, tick } = ctx;
+  checkHuntTile(ctx, tile);
+  if (!snareGround(b, s, tile)) refuse('Set snares on meadow ground.');
+  if (snareAt(s, tile)) refuse('There is already a snare here.');
+  if ((s.player.bag[SNARE_ITEM] ?? 0) < 1) refuse('You need a snare.');
+  removeItem(ctx, SNARE_ITEM, 1, true);
+  (s.player.snares ??= []).push({ at: [...tile], kind: snarePrey(b, tile), readyDay: valleyDay(b, tick) + 1 });
+}
+
+function checkSnare(ctx: Ctx, tile: Tile): void {
+  const { b, s, tick } = ctx;
+  checkHuntTile(ctx, tile);
+  const snare = snareAt(s, tile);
+  if (!snare) refuse('There is no snare here.');
+  const day = valleyDay(b, tick);
+  if (snare.checkedDay === day) refuse('Snare already checked today.');
+  snare.checkedDay = day;
+  // A catch stays in the snare until this check. The carcass clock starts here.
+  if (day >= snare.readyDay && snare.kind && snareKind(b, snare.kind)) {
+    placeCarcass(b, s, snare.kind, tile, 1, tick);
+    snare.readyDay = day + 1;
+    ctx.events.push({ e: 'take_prey' });
+  } else {
+    ctx.events.push({ e: 'nothing', verb: 'check_snare' });
+  }
+}
+
+function checkHuntTile(ctx: Ctx, tile: Tile): void {
+  if (!Array.isArray(tile) || tile.length !== 2 || !tile.every(Number.isSafeInteger)) refuse('Where are you?');
+  checkAt(ctx, ctx.s.player.at, { x: tile[0], y: tile[1], w: 1, h: 1 });
+}
+
+/** Put down what is not worn on the player's tile (DECISIONS.md, 2026-10-23). */
 function drop(ctx: Ctx, itemId: string, qty: number): void {
   const p = ctx.s.player;
   checkQty(qty);
   let worn = 0;
   for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id === itemId) worn++;
   if ((p.bag[itemId] ?? 0) - worn < qty) refuse(worn > 0 ? 'Take it off before you put it down.' : 'You do not have enough.');
-  removeItem(ctx, itemId, qty, true);
-  const at: Tile = [p.at[0], p.at[1]];
-  const ground = (p.ground ??= {});
-  const pile = (ground[groundKey(at)] ??= {});
+  dropItem(ctx, itemId, qty, removeItem(ctx, itemId, qty, true));
+}
+
+function dropItem(ctx: Ctx, itemId: string, qty: number, batches: HuntBatch[]): void {
+  const p = ctx.s.player;
+  const at: Tile = [...p.at];
+  const key = groundKey(at);
+  const pile = ((p.ground ??= {})[key] ??= {});
   pile[itemId] = (pile[itemId] ?? 0) + qty;
+  if (batches.length > 0) {
+    const stock = (p.huntStock ??= { bag: {}, ground: {} });
+    recordHuntBatches((stock.ground[key] ??= {}), itemId, batches);
+  }
   ctx.events.push({ e: 'drop', item: itemId, qty, at });
 }
 
@@ -1978,7 +2110,12 @@ function pickUp(ctx: Ctx, itemId: string): void {
   if (!pile || n < 1) refuse('There is nothing like that here.');
   if (placeRoom(b, s, itemId) < 1) refuse('Your bag is full.');
   if (weightRoom(b, s, itemId) < 1) refuse(TOO_HEAVY);
-  const kept = addItem(ctx, itemId, n);
+  const kept = addItem(ctx, itemId, n, false, false);
+  const stock = p.huntStock?.ground[key];
+  if (p.huntStock && stock) {
+    recordHuntBatches(p.huntStock.bag, itemId, removeHuntBatches(stock, itemId, kept));
+    if (Object.keys(stock).length === 0) delete p.huntStock.ground[key];
+  }
   if (kept < n) pile[itemId] = n - kept;
   else delete pile[itemId];
   if (Object.keys(pile).length === 0) delete p.ground![key];
@@ -2000,7 +2137,7 @@ function dress(ctx: Ctx, carcassId: number, at: Tile): void {
   if (!c) refuse('There is nothing to dress here.');
   checkAt(ctx, at, { x: c.at[0], y: c.at[1], w: 1, h: 1 });
   const hunt = huntOf(b, c.kind);
-  const goods = hunt && !carcassGone(b, c, ctx.tick) ? carcassGoods(b, c, ctx.tick) : [];
+  const goods = carcassGoods(b, c, awakeHuntTick(s));
   if (!hunt || goods.length === 0) refuse('Nothing is left of it.');
   if (goods.every((g) => placeRoom(b, s, g.item) < 1)) refuse('Your bag is full.');
   if (loadWeight(b, s) >= loadMax(b, s)) refuse(TOO_HEAVY);
@@ -2013,15 +2150,13 @@ function dress(ctx: Ctx, carcassId: number, at: Tile): void {
     ctx.events.push({ e: 'dress', kind: c.kind, grade: c.grade, goods: [], left });
     return;
   }
-  const tile: Tile = [at[0], at[1]];
   for (const g of goods) {
     // quiet: the drop event below says where the rest went
     const kept = take(ctx, g.item, g.qty, true);
     const surplus = g.qty - kept;
     if (surplus > 0) {
-      const pile = ((p.ground ??= {})[groundKey(tile)] ??= {});
-      pile[g.item] = (pile[g.item] ?? 0) + surplus;
-      ctx.events.push({ e: 'drop', item: g.item, qty: surplus, at: tile });
+      const until = huntGoodsExpiry(b, g.item, awakeHuntTick(s));
+      dropItem(ctx, g.item, surplus, until === undefined ? [] : [{ qty: surplus, until }]);
     }
   }
   p.carcasses = list.filter((x) => x.id !== carcassId);
@@ -2030,12 +2165,17 @@ function dress(ctx: Ctx, carcassId: number, at: Tile): void {
 }
 
 /** Put something into the bag; returns how many fit. */
-function addItem(ctx: Ctx, itemId: string, qty: number, quiet = false): number {
+function addItem(ctx: Ctx, itemId: string, qty: number, quiet = false, fresh = true): number {
   const { b, s } = ctx;
   const room = Math.min(placeRoom(b, s, itemId), weightRoom(b, s, itemId));
   const kept = Math.min(qty, room);
   if (kept > 0) {
     s.player.bag[itemId] = (s.player.bag[itemId] ?? 0) + kept;
+    const until = fresh ? huntGoodsExpiry(b, itemId, awakeHuntTick(s)) : undefined;
+    if (until !== undefined) {
+      const stock = (s.player.huntStock ??= { bag: {}, ground: {} });
+      recordHuntBatches(stock.bag, itemId, [{ qty: kept, until }]);
+    }
     ctx.events.push({ e: 'gain', item: itemId, qty: kept });
     if (!s.player.journal.includes(itemId)) {
       s.player.journal = [...s.player.journal, itemId].sort();
@@ -2055,7 +2195,7 @@ function take(ctx: Ctx, itemId: string, qty: number, quiet = false): number {
   return kept;
 }
 
-function removeItem(ctx: Ctx, itemId: string, qty: number, quiet = false): void {
+function removeItem(ctx: Ctx, itemId: string, qty: number, quiet = false): HuntBatch[] {
   const bag = ctx.s.player.bag;
   const left = (bag[itemId] ?? 0) - qty;
   if (left < 0) refuse('You do not have enough.');
@@ -2074,6 +2214,53 @@ function removeItem(ctx: Ctx, itemId: string, qty: number, quiet = false): void 
   if (!quiet) ctx.events.push({ e: 'spend', item: itemId, qty });
   // a worn unit that leaves the bag comes off
   for (const off of fitWorn(ctx.b, ctx.s, itemId)) ctx.events.push({ e: 'unwear', ...off });
+  const stock = ctx.s.player.huntStock;
+  return stock ? removeHuntBatches(stock.bag, itemId, qty) : [];
+}
+
+function removeHuntBatches(stock: HuntStock, item: string, qty: number): HuntBatch[] {
+  const batches = stock[item];
+  if (!batches) return [];
+  const removed = takeHuntBatches(batches, qty);
+  if (batches.length === 0) delete stock[item];
+  return removed;
+}
+
+function spoilHuntStock(ctx: Ctx): void {
+  const { s } = ctx;
+  const p = s.player;
+  const now = awakeHuntTick(s);
+  const stock = p.huntStock;
+  if (!stock) return;
+  for (const [item, batches] of Object.entries(stock.bag)) {
+    const qty = Math.min(expiredQty(batches, now), p.bag[item] ?? 0);
+    if (qty === 0) continue;
+    removeItem(ctx, item, qty, true);
+    ctx.events.push({ e: 'spoil', item, qty });
+  }
+  for (const [key, items] of Object.entries(stock.ground)) {
+    const pile = p.ground?.[key];
+    for (const [item, batches] of Object.entries(items)) {
+      const qty = expiredQty(batches, now);
+      if (qty === 0) continue;
+      removeHuntBatches(items, item, qty);
+      if (!pile) continue;
+      const left = (pile[item] ?? 0) - qty;
+      if (left > 0) pile[item] = left;
+      else delete pile[item];
+    }
+    if (pile && Object.keys(pile).length === 0) delete p.ground![key];
+    if (Object.keys(items).length === 0) delete stock.ground[key];
+  }
+}
+
+function expiredQty(batches: HuntBatch[], now: number): number {
+  let qty = 0;
+  for (const batch of batches) {
+    if (batch.until > now) break;
+    qty += batch.qty;
+  }
+  return qty;
 }
 
 function learnRecipe(ctx: Ctx, recipeId: string): void {

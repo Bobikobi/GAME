@@ -27,6 +27,23 @@ describe('one decode per PNG', () => {
     }
   });
 
+  test('copies of one picture at different paths share one decode (a test world copies the whole kit into a new folder each time)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pngcache-'));
+    try {
+      const bytes = picture([[1, 2, 3, 255], [4, 5, 6, 255]]);
+      const a = join(dir, 'a.png');
+      const b = join(dir, 'b.png');
+      writeFileSync(a, bytes);
+      writeFileSync(b, bytes);
+      expect(readPng(b)).toBe(readPng(a));
+      writeFileSync(b, picture([[7, 7, 7, 255]]));
+      expect(readPng(b).width).toBe(1);
+      expect(readPng(a).width).toBe(2);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('colours are the distinct drawn ones, clear pixels skipped, half-transparent ones counted', () => {
     const { data } = PNG.sync.read(picture([[27, 26, 46, 255], [27, 26, 46, 255], [245, 244, 239, 255], [0, 0, 0, 0], [5, 5, 5, 100]]));
     const { colors, soft } = packedColors(data);

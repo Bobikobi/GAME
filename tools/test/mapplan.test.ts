@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Bundle } from '@game/kernel';
 import { validateFile } from '@game/schema';
-import { ROAD_MARGIN, checkMapPlan, exitRoads, firstDusk, firstNight, straightRuns } from '../src/mapplan';
+import { HOP_STEPS, ROAD_MARGIN, checkMapPlan, exitRoads, firstDusk, firstNight, straightRuns } from '../src/mapplan';
 import { loadBundle } from './helpers/world';
 
 let bundle: Bundle;
@@ -146,5 +146,53 @@ describe('G71: the first night is held by size', () => {
       expect(found, 'a road of 5 steps where the plan asks for the night').toBeDefined();
       expect(found!.message).toContain('5 steps past the gate');
     });
+  });
+});
+
+describe('G71 counts the jump as a move (DECISIONS 2026-11-22, the jump and the fall)', () => {
+  // a corridor: the wake at x 1, ground to x 4, `mid` from x 5, then ground of another world from x 5 + mid.length
+  const corridor = (mid: string, levels?: string[]): Bundle => {
+    const row = (y: number) => (y === 2 ? `%.${'.'.repeat(3)}${mid}${'.'.repeat(10)}` : '%'.repeat(14 + mid.length));
+    const width = 14 + mid.length;
+    const map: Map = {
+      ...bundle.map,
+      width,
+      height: 5,
+      ground: [0, 1, 2, 3, 4].map(row),
+      levels,
+      props: [],
+      slots: [],
+      regions: [{ id: 'elsewhere', x: 5 + mid.length, y: 0, w: width - 5 - mid.length, h: 5, world: 'elsewhere' }],
+      plan: undefined,
+    };
+    if (!levels) delete (map as { levels?: unknown }).levels;
+    const pocket = Object.values(bundle.pockets)[0]!;
+    return { ...bundle, map, instances: {}, pockets: { [pocket.id]: { ...pocket, wake: { x: 1, y: 2 } } } };
+  };
+  const out = (b: Bundle) => firstNight(b)[0]!;
+
+  it('a stream one tile wide is a hop of two steps: the wake reaches the far world in 3 + 2 steps and G71 fails the map', () => {
+    expect(HOP_STEPS).toBe(2);
+    const f = out(corridor('~'));
+    expect(f.exitSteps).toBe(3 + HOP_STEPS);
+    expect(errors(corridor('~')).some((i) => i.message.startsWith('G71: from the wake'))).toBe(true);
+  });
+
+  it('a stream two tiles wide, a wall of rubble or of forest, and a gate are not hopped: the valley holds', () => {
+    for (const mid of ['~~', '%', 'T']) expect(out(corridor(mid)).exitSteps, mid).toBeNull();
+  });
+
+  it('the climb is free in the measure, so a cliff is never a shortcut it misses: a mountain band beside the wake counts as flat ground', () => {
+    const flat = corridor('.');
+    const cliff = corridor('.', [0, 1, 2, 3, 4].map(() => `${'0'.repeat(5)}${'9'.repeat(10)}`));
+    expect(out(cliff).exitSteps).toBe(out(flat).exitSteps);
+    // and a hop does not climb past the jump's own height rule: a bank two levels up across the stream is not a landing
+    const high = corridor('~', [0, 1, 2, 3, 4].map(() => `${'0'.repeat(5)}${'2'.repeat(10)}`));
+    expect(out(high).exitSteps).toBeNull();
+  });
+
+  it('the shipped valley holds with the jump counted: the measure above is the one `pnpm check` runs', () => {
+    for (const f of firstNight(bundle)) expect(f.exitSteps, f.pocket).toBeNull();
+    expect(errors(bundle).filter((i) => i.message.startsWith('G71'))).toEqual([]);
   });
 });

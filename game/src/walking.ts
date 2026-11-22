@@ -4,7 +4,7 @@
  * or a hunt runs (P-5b). The 2D scene and the 3D door both walk by them. Pure apart from the GameSession it is handed, so the walk
  * can be played on the real map without a renderer (game/test/stealth-flow.test.ts).
  */
-import { type Bundle, type Gait, type Hazard, type PublicState, type Tile, type makeWalkable, sees, setComplete, setPieces, stepRuleFor, windowOpen } from '@game/kernel';
+import { type Bundle, type Gait, type Hazard, type PublicState, type Tile, type makeWalkable, jumpRule, sees, setComplete, setPieces, stepRuleFor, windowOpen } from '@game/kernel';
 
 import { DIRS, type Dir } from './input';
 import type { GameSession } from './session-surface';
@@ -31,8 +31,36 @@ export function canEnter(
 ): boolean {
   if (!walkable(x, y, s.state.player)) return false;
   if (Math.abs(x - from[0]) + Math.abs(y - from[1]) === 1 && !stepRuleFor(b)(from[0], from[1], x, y)) return false;
+  return !nodeStands(b, nodeAt, s, x, y);
+}
+
+/** Whether a plant or stone that is ready stands on the tile: the body does not enter it, walking or landing. */
+function nodeStands(b: Bundle, nodeAt: ReadonlyMap<string, string>, s: Pick<GameSession, 'tick' | 'state'>, x: number, y: number): boolean {
   const node = nodeAt.get(`${x},${y}`);
-  return !(node && b.instances[node]?.kind === 'resource' && (s.state.nodes[node]?.readyAt ?? 0) <= s.tick);
+  return !!node && b.instances[node]?.kind === 'resource' && (s.state.nodes[node]?.readyAt ?? 0) <= s.tick;
+}
+
+/**
+ * The tile the jump key aims at (DECISIONS 2026-11-22, the jump and the fall): ahead, the way the player faces, one tile if a
+ * foot can stand there, else two when the tile between is a gap of water. The line and the heights are the kernel's own
+ * `jumpRule` (the very function `step` and G71's walk read), so the client never aims at a landing the kernel refuses by shape;
+ * breath, the first minute and the rest are the kernel's to answer. Undefined when there is nothing to land on.
+ */
+export function jumpTarget(
+  b: Bundle,
+  walkable: Walkable,
+  nodeAt: ReadonlyMap<string, string>,
+  s: Pick<GameSession, 'pos' | 'tick' | 'state' | 'facing'>,
+): Tile | undefined {
+  const rule = jumpRule(b);
+  const [dx, dy] = DIRS[s.facing];
+  for (const len of [1, 2]) {
+    const to: Tile = [s.pos[0] + dx * len, s.pos[1] + dy * len];
+    if (!rule([s.pos[0], s.pos[1]], to).ok) continue;
+    if (!walkable(to[0], to[1], s.state.player) || nodeStands(b, nodeAt, s, to[0], to[1])) continue;
+    return to;
+  }
+  return undefined;
 }
 
 /** The last frame of a step: the tile is the player's, and the kernel hears of it. A hazard there may hurt, and a fall moves the player to town. */

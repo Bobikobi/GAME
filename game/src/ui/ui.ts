@@ -6,6 +6,7 @@
 import { offerSignup } from './signup';
 import {
   OWN_FIRE,
+  type Action,
   type DayLog,
   type GameEvent,
   characterLevel,
@@ -214,6 +215,7 @@ export class UI {
       return true;
     }
     if (b === 'a') app.world?.interact();
+    else if (b === 'jump') app.world?.jump?.();
     else if (b === 'bag') this.panel(() => openBag(this));
     else if (b === 'journal') this.panel(() => openJournal(this));
     else if (b === 'menu') this.panel(() => openMenu(this));
@@ -715,6 +717,13 @@ export class UI {
     const s = app.session;
     if (!s) return;
     const r = await s.act({ t: 'pickup', item: itemId, at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
+  }
+
+  async hunt(action: Action): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act(action);
     if (!r.ok) this.toast(r.error, 'bad');
   }
 
