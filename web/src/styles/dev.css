@@ -1,0 +1,337 @@
+@import '../../../design/tokens.css';
+
+/*
+ * The developers' home (issue 727, stage 1; DECISIONS.md, 2026-11-15): the shared goal on top, the feed under it, a day and
+ * a night version. Tokens only: no hex here (web/test/tokens.test.ts), no shadow, no radius, no gradient. Every word is
+ * 16 px or more. The two themes are the role blocks below; tools and web/test/dev.test.ts measure their contrast.
+ */
+@font-face {
+  font-family: 'Platypi';
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url('/fonts/platypi/platypi-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/atkinson-hyperlegible-next/atkinson-hyperlegible-next-latin.woff2') format('woff2');
+}
+
+/* THEME:day */
+:root,
+:root[data-theme='day'] {
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --fg2: var(--ink2);
+  --muted: var(--grey);
+  --line: var(--paper2);
+  --accent: var(--green);
+  --alert: var(--red);
+  color-scheme: light;
+}
+/* THEME:night */
+:root[data-theme='night'] {
+  --bg: var(--ink);
+  --fg: var(--paper);
+  --fg2: var(--paper2);
+  --muted: var(--grey2);
+  --line: var(--ink2);
+  --accent: var(--green3);
+  --alert: var(--gold);
+  color-scheme: dark;
+}
+/* THEME:night-without-script: a reader whose browser asks for dark and who has not chosen */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: var(--ink);
+    --fg: var(--paper);
+    --fg2: var(--paper2);
+    --muted: var(--grey2);
+    --line: var(--ink2);
+    --accent: var(--green3);
+    --alert: var(--gold);
+    color-scheme: dark;
+  }
+}
+
+:root {
+  --w-display: 800;
+  --w-display2: 700;
+  /* nothing a person reads is below 16 px here; the shared sheet's small step is 15 */
+  --t-s: 16px;
+  --gutter: var(--s-4);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 var(--text-m) / 26px var(--font-reading);
+  font-variant-ligatures: none;
+}
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd {
+  margin: 0;
+  padding: 0;
+}
+ul,
+ol {
+  list-style: none;
+}
+a {
+  color: inherit;
+}
+:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 3px;
+}
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip {
+  position: absolute;
+  left: var(--gutter);
+  top: calc(-1 * var(--s-12));
+  z-index: 3;
+  padding: var(--s-2) var(--s-3);
+  background: var(--fg);
+  color: var(--bg);
+}
+.skip:focus {
+  top: var(--s-2);
+}
+.col {
+  max-width: calc(720px + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* the bar: the wordmark, where we are, and the one control */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 56px;
+}
+.wordmark {
+  font: var(--w-display) 24px / 28px var(--font-display);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.here {
+  color: var(--fg2);
+  font-size: var(--t-s);
+  flex: 1;
+  min-width: 0;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border: var(--px) solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+  font: 700 var(--t-s) / 1 var(--font-reading);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn[hidden] {
+  display: none;
+}
+.btn:hover {
+  background: var(--line);
+}
+.btn[aria-pressed='true'] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.btn:active {
+  transform: translateY(var(--px));
+}
+
+/* the shared goal */
+.goal {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 4px solid var(--fg);
+}
+.goal h1 {
+  font: var(--w-display2) 22px / 28px var(--font-display);
+  text-wrap: balance;
+}
+.goal h1 b {
+  font-weight: var(--w-display);
+  font-variant-numeric: tabular-nums;
+}
+.meter {
+  height: 8px;
+  margin-top: var(--s-3);
+  background: var(--line);
+}
+.meter i {
+  display: block;
+  height: 8px;
+  min-width: 4px;
+  background: var(--accent);
+}
+.goal p {
+  margin-top: var(--s-2);
+  font-size: var(--t-s);
+  line-height: 24px;
+  color: var(--fg2);
+}
+
+/* the sections under it */
+.sec {
+  margin-top: var(--s-8);
+}
+.sec > h2 {
+  font: var(--w-display2) 20px / 24px var(--font-display);
+  padding-bottom: var(--s-2);
+  border-bottom: var(--px) solid var(--fg);
+}
+.sec > h2 span {
+  color: var(--fg2);
+  font-weight: 400;
+  font-family: var(--font-reading);
+  font-size: var(--t-s);
+  margin-left: var(--s-2);
+}
+.item {
+  padding: var(--s-4) 0;
+  border-bottom: var(--px) solid var(--line);
+  display: grid;
+  gap: var(--s-2);
+}
+.item h3 {
+  font: var(--w-display2) 19px / 25px var(--font-display);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+.item h3 a {
+  text-decoration: none;
+}
+.item h3 a:hover {
+  text-decoration: underline var(--px);
+  text-underline-offset: 5px;
+}
+.top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  font-size: var(--t-s);
+}
+/* a label, not a button: ink on a pale fill in both themes */
+.chip {
+  padding: 0 var(--s-2);
+  font: 700 var(--t-s) / 24px var(--font-reading);
+  color: var(--ink);
+  background: var(--paper2);
+  white-space: nowrap;
+}
+.chip.work {
+  background: var(--yellow);
+}
+.chip.review {
+  background: var(--sky);
+}
+.ref,
+.by {
+  color: var(--fg2);
+  font-size: var(--t-s);
+  font-variant-numeric: tabular-nums;
+}
+.by b {
+  color: var(--fg);
+  font-weight: 700;
+}
+.miss {
+  font-size: var(--t-s);
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.miss b {
+  color: var(--alert);
+}
+.miss code,
+.gap code {
+  font: 400 var(--t-s) / 24px ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  overflow-wrap: anywhere;
+}
+.gap a {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-decoration-thickness: var(--px);
+  text-underline-offset: 5px;
+}
+.gap a:hover {
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 4px;
+}
+.empty {
+  padding: var(--s-4) 0;
+  color: var(--fg2);
+}
+
+/* the foot: where to go next, and what this was built from */
+.foot {
+  margin-top: var(--s-12);
+  padding: var(--s-4) 0 var(--s-8);
+  border-top: var(--px) solid var(--line);
+  font-size: var(--t-s);
+  line-height: 24px;
+  color: var(--fg2);
+}
+.foot nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s-6);
+}
+.foot nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--fg);
+  font-weight: 700;
+}
+.foot p {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 720px) {
+  .bar {
+    height: 72px;
+  }
+  .goal h1 {
+    font-size: 32px;
+    line-height: 38px;
+  }
+  .item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

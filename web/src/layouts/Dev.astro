@@ -1,0 +1,87 @@
+---
+// The frame of the developers' home (issue 727, stage 1): its own slim page, not the site's frame. A bar, the page, a foot.
+// The scripts: Vercel Web Analytics (the pair every page carries) and one small script that sets the day or night version
+// before the page paints and remembers the reader's choice on the reader's device. Nothing is fetched from any other origin.
+import '../styles/dev.css';
+import { dateTime, fromFixture, hub } from '../data/site';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const site = Astro.site ?? new URL('https://loomvale.vercel.app');
+const canonical = new URL(Astro.url.pathname, site).href;
+const { source, built_at } = hub;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" href="/play/favicon.png" />
+    <script is:inline>
+      window.va =
+        window.va ||
+        function () {
+          (window.vaq = window.vaq || []).push(arguments);
+        };
+    </script>
+    <script is:inline defer src="/_vercel/insights/script.js"></script>
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        var key = 'loomvale-dev-theme';
+        var theme = null;
+        try {
+          theme = localStorage.getItem(key);
+        } catch (e) {}
+        if (theme !== 'day' && theme !== 'night') theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'day';
+        root.setAttribute('data-theme', theme);
+        addEventListener('DOMContentLoaded', function () {
+          var button = document.getElementById('theme');
+          if (!button) return;
+          button.hidden = false;
+          button.setAttribute('aria-pressed', String(theme === 'night'));
+          button.addEventListener('click', function () {
+            theme = theme === 'night' ? 'day' : 'night';
+            root.setAttribute('data-theme', theme);
+            button.setAttribute('aria-pressed', String(theme === 'night'));
+            try {
+              localStorage.setItem(key, theme);
+            } catch (e) {}
+          });
+        });
+      })();
+    </script>
+    <slot name="head" />
+    <link rel="preload" href="/fonts/platypi/platypi-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/atkinson-hyperlegible-next/atkinson-hyperlegible-next-latin.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the content</a>
+    <header>
+      <div class="col bar">
+        <a class="wordmark" href="/" aria-label="Loomvale, home">Loomvale</a>
+        <span class="here">Developers</span>
+        <button class="btn" id="theme" type="button" aria-pressed="false" hidden>Night mode</button>
+      </div>
+    </header>
+    <main id="main" class="col">
+      <slot />
+    </main>
+    <footer class="col foot">
+      <nav aria-label="More for developers">
+        <a href="/hub/">Start building</a>
+        <a href="/docs/">Guide</a>
+        <a href="https://github.com/Bobikobi/GAME/pulls">All pull requests</a>
+      </nav>
+      <p>Kernel {source.kernel_version}, commit {source.sha}, built {dateTime(built_at)} UTC{fromFixture && ' (fixture)'}.</p>
+    </footer>
+  </body>
+</html>

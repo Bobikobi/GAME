@@ -1121,6 +1121,229 @@
         }
       ]
     },
+    "feed": {
+      "description": "Open pull requests, newest change first. Absent in documents built before the developers' home.",
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "One open pull request: what people and the development team are making for the game, as it is on GitHub.",
+        "type": "object",
+        "required": [
+          "number",
+          "title",
+          "url",
+          "author",
+          "maker",
+          "state",
+          "created_at",
+          "updated_at",
+          "missing"
+        ],
+        "properties": {
+          "number": {
+            "minimum": 1,
+            "description": "GitHub issue or pull request number.",
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          },
+          "author": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 39,
+            "description": "GitHub handle, lowercase. \"core\" is the core team.",
+            "type": "string"
+          },
+          "maker": {
+            "description": "\"team\": the author is one of the game's own standing tracks (.github/dev-area.json team_handles), shown as \"Development team\". The real GitHub handle stays in `author`.",
+            "anyOf": [
+              {
+                "const": "team",
+                "type": "string"
+              },
+              {
+                "const": "person",
+                "type": "string"
+              }
+            ]
+          },
+          "state": {
+            "description": "\"draft\" is a pull request marked as a draft; \"review\" is one marked ready. Only open pull requests are in the feed.",
+            "anyOf": [
+              {
+                "const": "draft",
+                "type": "string"
+              },
+              {
+                "const": "review",
+                "type": "string"
+              }
+            ]
+          },
+          "created_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          },
+          "updated_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          },
+          "missing": {
+            "maxItems": 3,
+            "description": "The gaps of the records this pull request changes.",
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "description": "One thing a record still lacks, found by a rule over the content files (tools/src/hub/gaps.ts). It names the record and its file, so a newcomer can act on it.",
+              "type": "object",
+              "required": [
+                "rule",
+                "id",
+                "file",
+                "url",
+                "line"
+              ],
+              "properties": {
+                "rule": {
+                  "anyOf": [
+                    {
+                      "const": "no_picture",
+                      "type": "string"
+                    },
+                    {
+                      "const": "figure_no_quest",
+                      "type": "string"
+                    },
+                    {
+                      "const": "quest_no_place",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "id": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                  "maxLength": 80,
+                  "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                  "type": "string"
+                },
+                "file": {
+                  "pattern": "^[A-Za-z0-9_./-]+$",
+                  "maxLength": 240,
+                  "description": "A path relative to the repository root.",
+                  "type": "string"
+                },
+                "url": {
+                  "pattern": "^https://",
+                  "maxLength": 400,
+                  "type": "string"
+                },
+                "line": {
+                  "minLength": 1,
+                  "maxLength": 240,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "gaps": {
+      "description": "Every gap the three rules find on the content of the checkout.",
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "One thing a record still lacks, found by a rule over the content files (tools/src/hub/gaps.ts). It names the record and its file, so a newcomer can act on it.",
+        "type": "object",
+        "required": [
+          "rule",
+          "id",
+          "file",
+          "url",
+          "line"
+        ],
+        "properties": {
+          "rule": {
+            "anyOf": [
+              {
+                "const": "no_picture",
+                "type": "string"
+              },
+              {
+                "const": "figure_no_quest",
+                "type": "string"
+              },
+              {
+                "const": "quest_no_place",
+                "type": "string"
+              }
+            ]
+          },
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "file": {
+            "pattern": "^[A-Za-z0-9_./-]+$",
+            "maxLength": 240,
+            "description": "A path relative to the repository root.",
+            "type": "string"
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          },
+          "line": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "world": {
+      "additionalProperties": false,
+      "description": "The shared goal: squares of the wide world's chart drawn, of the whole, from .github/dev-area.json. Read, never typed into a page.",
+      "type": "object",
+      "required": [
+        "drawn",
+        "whole",
+        "as_of",
+        "next"
+      ],
+      "properties": {
+        "drawn": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "whole": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "as_of": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "The day the count was read, kept current by the maintainers.",
+          "type": "string"
+        },
+        "next": {
+          "minLength": 1,
+          "maxLength": 240,
+          "type": "string"
+        }
+      }
+    },
     "parameters": {
       "additionalProperties": false,
       "type": "object",
