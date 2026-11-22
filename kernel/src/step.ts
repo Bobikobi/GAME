@@ -33,6 +33,7 @@ import {
   stonePrey, takeHuntBatches,
 } from './hunt';
 import { breathLeft, fallHarm, jumpRule } from './jump';
+import { FULL_POWER, STONE_ITEM, lendStone, lyingAt, settleStones, throwFlight, unloan, whyNoRoom } from './stones';
 import { drawBasisPoints, type Seed } from './rng';
 import {
   ATTRIBUTES,
@@ -128,8 +129,22 @@ export type Action =
   | { t: 'unwear'; slot: WearSlot; look?: boolean }
   /** put down `qty` of a thing on the tile the player stands on (`at`); it stays there for a later pick-up */
   | { t: 'drop'; item: string; qty: number; at: Tile }
-  /** pick a dropped thing up again from the tile the player stands on */
-  | { t: 'pickup'; item: string; at: Tile }
+  /** pick a dropped thing up again from the tile the player stands on; `qty` takes part of a pile (left out: all of it) */
+  | { t: 'pickup'; item: string; at: Tile; qty?: number }
+  /**
+   * lift a loose stone from the tile the player stands on (DECISIONS.md, 2026-11-22): a small one into the bag (`qty` of a
+   * pile, one by default), a large one over the head. It comes from what lies there set down or thrown, then from the
+   * stone at the tile's own spot. A large one asks the strength to carry it (might's load limit).
+   */
+  | { t: 'lift'; size: 'small' | 'large'; at: Tile; qty?: number }
+  /** set the large stone held over the head down on the tile the player stands on (a small one is put down with `drop`) */
+  | { t: 'setdown'; at: Tile }
+  /**
+   * throw a stone toward the tile `aim` (DECISIONS.md, 2026-11-22): the one held over the head if there is one, else a small one
+   * from the bag. It flies the size's range along the line to `aim`, lands and runs on (`throwFlight`), and goes home after
+   * `stones.return_ms`. `power` is a thousandth part, 1000 (left out) a full throw: the place for the charged throw to come.
+   */
+  | { t: 'throw'; at: Tile; aim: Tile; power?: number }
   /** dress one part of a taken animal lying at `at` (docs/design/HUNTING.md section 6): a small animal is one part, a medium two, a large four; with the last part its goods at its grade come into the bag, and what does not fit lies on the player's tile */
   | { t: 'dress'; carcass: number; at: Tile }
   /** board a passage's boat at its jetty (docs/design/SEA_CROSSING.md): in its hours, paying its fare; the crossing's one event is drawn here */
@@ -152,6 +167,12 @@ export type GameEvent =
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
   | { e: 'drop'; item: string; qty: number; at: Tile }
+  /** a stone was lifted: `qty` of the size, from the tile `at` */
+  | { e: 'lift'; size: 'small' | 'large'; qty: number; at: Tile }
+  /** the large stone was set down at `at`, which now holds `count` stones */
+  | { e: 'setdown'; size: 'large'; at: Tile; count: number }
+  /** a stone was thrown: from, first touch, rest (null: it sank in water), by what size, and how many game milliseconds the throw takes */
+  | { e: 'stone_thrown'; size: 'small' | 'large'; from: Tile; touch: Tile; at: Tile | null; ms: number }
   | { e: 'spoil'; item: string; qty: number }
   | { e: 'take_prey' }
   /** a part of a taken animal was dressed: its kind, its grade (1 plain, 2 fine, 3 true), the parts still to do, and with the last part (left 0) what it gave, in the bag or on the player's tile */
@@ -434,6 +455,7 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number,
   ctx.s.searched ??= {};
   try {
     spoilHuntStock(ctx);
+    settleStones(bundle, ctx.s.player, tick);
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
     // the valley's day turns at its dawn, before the action: the tally of the day that ended closes, and the nodes worked out are counted
@@ -485,6 +507,8 @@ function apply(ctx: Ctx, a: Action, options: StepOptions): void {
   if (a.t === 'sail' || a.t === 'answer') refuse('You are not on a boat.');
   // a position report and a carved name are not work: they go through while the player is busy
   if (a.t !== 'move' && a.t !== 'carve' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
+  // both hands hold a large stone: nothing is done but walking, setting it down and throwing it
+  if (s.player.stones?.carry === 'large' && a.t !== 'move' && a.t !== 'carve' && a.t !== 'setdown' && a.t !== 'throw') refuse('Both hands hold the stone. Set it down first.');
   if (a.t === 'move') return moveTo(ctx, a.at, options.validateTravel === true, a.gait);
   if (a.t === 'jump') return jump(ctx, a.at);
   // past an expedition's last bell the mist walks the player out first: the action is not made, and its tile is not read (G49)
@@ -578,7 +602,13 @@ function act(ctx: Ctx, a: Action): void {
     case 'drop':
       return drop(ctx, a.item, a.qty);
     case 'pickup':
-      return pickUp(ctx, a.item);
+      return pickUp(ctx, a.item, a.qty);
+    case 'lift':
+      return lift(ctx, a.size, a.qty);
+    case 'setdown':
+      return setDown(ctx);
+    case 'throw':
+      return throwLoose(ctx, a.aim, a.power);
     case 'dress':
       return dress(ctx, a.carcass, a.at);
     case 'board':
@@ -1657,6 +1687,7 @@ function gradeEvents(ctx: Ctx, from: readonly [number, number]): void {
 /** A position report (DECISIONS.md, 2026-10-10): the tile the player stands on now. It is the one place travel is checked. */
 function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean, gait: Gait = 'walk'): void {
   if (!GAITS.includes(gait)) refuse('That is not a way to walk.');
+  if (gait === 'run' && ctx.s.player.stones?.carry === 'large') refuse('You cannot run with a stone over your head.');
   if (validateTravel) {
     checkTravel(ctx, at, gait);
     arrive(ctx, at, gait);
@@ -1921,6 +1952,12 @@ function fall(ctx: Ctx): void {
     p.solved = p.solved.filter((key) => !outing.solved.includes(key));
     p.visited = p.visited.filter((slot) => !outing.visited.includes(slot));
   }
+  // what the body held does not come along (DECISIONS.md, 2026-11-22): a large stone held over the head and the stones the outing gave go back to their spots
+  if (p.stones?.carry === 'large') {
+    delete p.stones.carry;
+    lendStone(b, p, '', 'large', ctx.tick);
+  }
+  for (const l of lost) if (l.item === STONE_ITEM) for (let i = 0; i < l.qty; i++) lendStone(b, p, '', 'small', ctx.tick);
   const at = reappearTile(b, s, walkableFor(b));
   p.falls += 1;
   p.at = at;
@@ -2084,6 +2121,11 @@ function drop(ctx: Ctx, itemId: string, qty: number): void {
   let worn = 0;
   for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id === itemId) worn++;
   if ((p.bag[itemId] ?? 0) - worn < qty) refuse(worn > 0 ? 'Take it off before you put it down.' : 'You do not have enough.');
+  // a stone put down joins a pile on this tile and the stones of its area (DECISIONS.md, 2026-11-22): the pile's height and the area's cap
+  if (itemId === STONE_ITEM) {
+    const why = whyNoRoom(ctx.b, ctx.s, p.at, qty);
+    if (why) refuse(why);
+  }
   dropItem(ctx, itemId, qty, removeItem(ctx, itemId, qty, true));
 }
 
@@ -2101,16 +2143,19 @@ function dropItem(ctx: Ctx, itemId: string, qty: number, batches: HuntBatch[]): 
 }
 
 /** Pick up a dropped thing from the tile the player stands on: as much as the places and the weight take. */
-function pickUp(ctx: Ctx, itemId: string): void {
+function pickUp(ctx: Ctx, itemId: string, qty?: number): void {
   const { b, s } = ctx;
   const p = s.player;
   const key = groundKey(p.at);
   const pile = p.ground?.[key];
   const n = pile?.[itemId] ?? 0;
   if (!pile || n < 1) refuse('There is nothing like that here.');
+  // a part of a pile (DECISIONS.md, 2026-11-22: a pile is taken apart); left out, all of it as before
+  if (qty !== undefined) checkQty(qty);
   if (placeRoom(b, s, itemId) < 1) refuse('Your bag is full.');
   if (weightRoom(b, s, itemId) < 1) refuse(TOO_HEAVY);
-  const kept = addItem(ctx, itemId, n, false, false);
+  const kept = addItem(ctx, itemId, Math.min(n, qty ?? n), false, false);
+  if (itemId === STONE_ITEM) unloan(s.player, key, 'small', kept);
   const stock = p.huntStock?.ground[key];
   if (p.huntStock && stock) {
     recordHuntBatches(p.huntStock.bag, itemId, removeHuntBatches(stock, itemId, kept));
@@ -2119,6 +2164,130 @@ function pickUp(ctx: Ctx, itemId: string): void {
   if (kept < n) pile[itemId] = n - kept;
   else delete pile[itemId];
   if (Object.keys(pile).length === 0) delete p.ground![key];
+}
+
+// ------------------------------------------------------------------ loose stones
+
+/** The player's stone book, made on first use. */
+function stoneBook(p: State['player']): NonNullable<State['player']['stones']> {
+  return (p.stones ??= { taken: {}, large: {}, returns: [] });
+}
+
+/**
+ * Lift a loose stone from the tile the player stands on (DECISIONS.md, 2026-11-22). What was set down or thrown there
+ * goes first, then the stone at the tile's own spot, whose spot is then empty until a thrown stone comes home to it.
+ * A small stone goes in the bag as the item `core/stone` (the places and the weight take what they take); a large one
+ * is held over the head and weighs in the load, so it is lifted only where might's limit carries it.
+ */
+function lift(ctx: Ctx, size: 'small' | 'large', qty = 1): void {
+  const { b, s } = ctx;
+  const p = s.player;
+  if (size !== 'small' && size !== 'large') refuse('Lift a small stone or a large one.');
+  checkQty(qty);
+  if (p.fight != null) refuse('Not during a fight.');
+  if (p.stones?.carry === 'large') refuse('Both hands hold a stone already.');
+  const at: Tile = [p.at[0], p.at[1]];
+  const key = groundKey(at);
+  const here = lyingAt(b, s, at);
+  const spotIndex = here.spot === size ? lyingSpot(ctx, at) : undefined;
+  const lying = size === 'small' ? here.small : here.large;
+  if (lying + (spotIndex === undefined ? 0 : 1) < 1) refuse(size === 'small' ? 'There is no small stone here.' : 'There is no large stone here.');
+  const book = stoneBook(p);
+  if (size === 'large') {
+    if (loadWeight(b, s) + b.params.stones.large_weight > loadMax(b, s)) refuse('That stone is too heavy for you.');
+    if (lying > 0) {
+      if (lying === 1) delete book.large[key];
+      else book.large[key] = lying - 1;
+      unloan(p, key, 'large', 1);
+    } else book.taken[String(spotIndex)] = true;
+    book.carry = 'large';
+    ctx.events.push({ e: 'lift', size, qty: 1, at });
+    busy(ctx, 'lift', b.params.stones.lift_ms);
+    return;
+  }
+  if (placeRoom(b, s, STONE_ITEM) < 1) refuse('Your bag is full.');
+  if (weightRoom(b, s, STONE_ITEM) < 1) refuse(TOO_HEAVY);
+  const want = Math.min(qty, lying + (spotIndex === undefined ? 0 : 1), placeRoom(b, s, STONE_ITEM), weightRoom(b, s, STONE_ITEM));
+  const fromLying = Math.min(want, lying);
+  if (fromLying > 0) {
+    addItem(ctx, STONE_ITEM, fromLying, false, false);
+    const pile = p.ground![key]!;
+    if (fromLying >= (pile[STONE_ITEM] ?? 0)) delete pile[STONE_ITEM];
+    else pile[STONE_ITEM] = (pile[STONE_ITEM] ?? 0) - fromLying;
+    if (Object.keys(pile).length === 0) delete p.ground![key];
+    unloan(p, key, 'small', fromLying);
+  }
+  if (want > fromLying && spotIndex !== undefined) {
+    // the world's own stone: it counts on the outing's account like what a node gives
+    take(ctx, STONE_ITEM, 1);
+    book.taken[String(spotIndex)] = true;
+  }
+  ctx.events.push({ e: 'lift', size, qty: want, at });
+  busy(ctx, 'lift', b.params.stones.lift_ms);
+}
+
+/** The index of the standing spot on a tile (the caller knows there is one). */
+function lyingSpot(ctx: Ctx, at: Tile): number | undefined {
+  const spots = ctx.b.map.stones?.spots ?? [];
+  for (let i = 0; i < spots.length; i++) {
+    const spot = spots[i]!;
+    if (spot.x === at[0] && spot.y === at[1] && !ctx.s.player.stones?.taken[String(i)]) return i;
+  }
+  return undefined;
+}
+
+/** Set the large stone held over the head down on the player's tile. */
+function setDown(ctx: Ctx): void {
+  const { b, s } = ctx;
+  const p = s.player;
+  if (p.stones?.carry !== 'large') refuse('You are not holding a stone.');
+  const why = whyNoRoom(b, s, p.at, 1);
+  if (why) refuse(why);
+  const at: Tile = [p.at[0], p.at[1]];
+  const key = groundKey(at);
+  const book = stoneBook(p);
+  book.large[key] = (book.large[key] ?? 0) + 1;
+  delete book.carry;
+  ctx.events.push({ e: 'setdown', size: 'large', at, count: lyingAt(b, s, at).count });
+  busy(ctx, 'setdown', b.params.stones.lift_ms);
+}
+
+/**
+ * Throw a stone toward `aim` (DECISIONS.md, 2026-11-22). The rule of where it goes is `throwFlight`'s, the same the
+ * client's aim line reads. The stone lies where it comes to rest, counts in that area, and goes back to its own spot
+ * after `stones.return_ms`; one that sinks in water goes back the same way. A throw at small game is `take` with a
+ * `prey` index (#819) and is not this action.
+ */
+function throwLoose(ctx: Ctx, aim: Tile, power: number = FULL_POWER): void {
+  const { b, s, tick } = ctx;
+  const p = s.player;
+  if (!Array.isArray(aim) || aim.length !== 2 || !Number.isSafeInteger(aim[0]) || !Number.isSafeInteger(aim[1])) refuse('Aim at a tile.');
+  if (!Number.isSafeInteger(power) || power < 1 || power > FULL_POWER) refuse('That is not a throw.');
+  if (p.fight != null) refuse('Not during a fight.');
+  const size = p.stones?.carry === 'large' ? 'large' : 'small';
+  if (size === 'small' && (p.bag[STONE_ITEM] ?? 0) < 1) refuse('You have no stone to throw.');
+  const flight = throwFlight(b, s, size, aim, power);
+  if ('error' in flight) refuse(flight.error);
+  if (flight.rest) {
+    const why = whyNoRoom(b, s, flight.rest, 1);
+    if (why) refuse(why);
+  }
+  if (size === 'small') removeItem(ctx, STONE_ITEM, 1, true);
+  else delete stoneBook(p).carry;
+  let key = '';
+  if (flight.rest) {
+    key = groundKey(flight.rest);
+    if (size === 'small') {
+      const pile = ((p.ground ??= {})[key] ??= {});
+      pile[STONE_ITEM] = (pile[STONE_ITEM] ?? 0) + 1;
+    } else {
+      const book = stoneBook(p);
+      book.large[key] = (book.large[key] ?? 0) + 1;
+    }
+  }
+  lendStone(b, p, key, size, tick);
+  ctx.events.push({ e: 'stone_thrown', size, from: flight.from, touch: flight.touch, at: flight.rest ?? null, ms: b.params.stones.throw_ms });
+  busy(ctx, 'throw', b.params.stones.throw_ms);
 }
 
 /**

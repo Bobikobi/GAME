@@ -216,6 +216,8 @@ export class UI {
     }
     if (b === 'a') app.world?.interact();
     else if (b === 'jump') app.world?.jump?.();
+    // B throws a stone the way the player faces (DECISIONS 2026-11-22, #831); with none in hand it says so
+    else if (b === 'b') app.world?.throwStone?.();
     else if (b === 'bag') this.panel(() => openBag(this));
     else if (b === 'journal') this.panel(() => openJournal(this));
     else if (b === 'menu') this.panel(() => openMenu(this));

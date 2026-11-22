@@ -200,6 +200,8 @@ export interface Params {
   gait: { run_div: number; sneak_mul: number; noise_still: number; noise_sneak: number; noise_walk: number; noise_run: number };
   /** the jump and the fall (DECISIONS.md, 2026-11-22) */
   jump: { first_minute_ms: number; up_levels: number; breath_cost: number; breath_refill_per_s: number; air_ms: number; fall_two_bp: number; fall_three_bp: number; death_levels: number };
+  /** loose stones (DECISIONS.md, 2026-11-22) */
+  stones: { large_weight: number; small_range: number; large_range: number; small_roll: number; large_roll: number; area_tiles: number; area_cap: number; return_ms: number; pile_max: number; lift_ms: number; throw_ms: number };
   /**
    * Dressing a taken animal (docs/design/HUNTING.md sections 5-6): what one step takes, how many game days a carcass
    * keeps its meat and then anything, and how often an animal appears fine or true (basis points).

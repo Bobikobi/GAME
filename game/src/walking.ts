@@ -40,6 +40,38 @@ function nodeStands(b: Bundle, nodeAt: ReadonlyMap<string, string>, s: Pick<Game
   return !!node && b.instances[node]?.kind === 'resource' && (s.state.nodes[node]?.readyAt ?? 0) <= s.tick;
 }
 
+/** The eight ways a throw can go, by the drawn facing: the four axes and the four diagonals between them. */
+const THROW_DIR: Readonly<Record<Facing8, readonly [number, number]>> = {
+  up: [0, -1],
+  down: [0, 1],
+  left: [-1, 0],
+  right: [1, 0],
+  up_left: [-1, -1],
+  up_right: [1, -1],
+  down_left: [-1, 1],
+  down_right: [1, 1],
+};
+
+/** How far the aim tile of a throw is set from the feet: past any throw's reach, so the kernel's range and the ground decide where it lands. */
+export const THROW_AIM_TILES = 8;
+
+/**
+ * The tile a throw is aimed at (DECISIONS 2026-11-22, loose stones, #831): out from the feet the way the figure is drawn facing,
+ * along an axis or a diagonal, as far as the map reaches (at most `THROW_AIM_TILES`). The kernel clips the flight to the size's range;
+ * the charged throw will move this tile's distance (the action's `power`), not its direction. Undefined at the map's edge, facing out.
+ */
+export function throwAim(b: Bundle, s: Pick<GameSession, 'pos' | 'facing'>, look?: Facing8): Tile | undefined {
+  const [dx, dy] = THROW_DIR[look ?? s.facing];
+  let last: Tile | undefined;
+  for (let n = 1; n <= THROW_AIM_TILES; n++) {
+    const x = s.pos[0] + dx * n;
+    const y = s.pos[1] + dy * n;
+    if (x < 0 || y < 0 || x >= b.map.width || y >= b.map.height) break;
+    last = [x, y];
+  }
+  return last;
+}
+
 /**
  * The tile the jump key aims at (DECISIONS 2026-11-22, the jump and the fall): ahead, the way the player faces, one tile if a
  * foot can stand there, else two when the tile between is a gap of water. The line and the heights are the kernel's own

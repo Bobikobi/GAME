@@ -48,9 +48,13 @@ import {
   treasureKind,
   windowOpen,
   type WorkKind,
+  STONE_ITEM,
+  lyingAt,
+  settled,
 } from '@game/kernel';
 import { app } from '../app';
 import { Piles, pileAt } from './piles';
+import { StoneLayer } from './stones';
 import { sound, type Heard, type Owner, type SongId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
@@ -97,7 +101,7 @@ import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
-import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, wornSetSheet } from '../walking';
+import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -114,6 +118,9 @@ const NEIGHBOURS: readonly [number, number][] = [
 ];
 /** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
 const WHEEL_GLIDE_MS = 160;
+/** the throw's stand-in lean, ms, and the share of the item picture a stone held over the head shows at (STONE_SCALE.large, held) */
+const LUNGE_MS = 260;
+const STONE_CARRY_SCALE = 0.8;
 const WHEEL_GAP_MS = 180;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
@@ -497,6 +504,18 @@ export class WorldScene extends Phaser.Scene {
   private refreshIn = 0;
   /** what the player put down, drawn on its tiles */
   private piles?: Piles;
+  /** the loose stones, by count, and the flight of a thrown one (DECISIONS 2026-11-22, #831) */
+  private stones?: StoneLayer;
+  /**
+   * The large stone held over the head. STAND-IN until the anim lane's carry clip lands (docs/design/LOOSE_STONES.md, the
+   * pictures it needs): the figure keeps its standing frame and the stone rides above the head. `rise` is the share of the
+   * way up from the ground while the lift runs (0 on the ground, 1 held).
+   */
+  private carryImg?: Phaser.GameObjects.Image;
+  private carryRise = 1;
+  private carryFrom = 0;
+  /** the throw's lean, STAND-IN until the throw clip: the drawn figure leans into the throw and settles back, [dir x, dir y, start ms] */
+  private lunge: [number, number, number] | null = null;
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
@@ -2197,6 +2216,11 @@ export class WorldScene extends Phaser.Scene {
     this.falling = false;
     this.figure.stop();
     this.stoneHeld = false;
+    this.stones?.destroy();
+    this.stones = undefined;
+    this.carryImg?.destroy();
+    this.carryImg = undefined;
+    this.lunge = null;
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
@@ -2209,9 +2233,10 @@ export class WorldScene extends Phaser.Scene {
     this.telegraph = new Telegraph(this.b);
     this.bites = new Bites(this.b);
     this.unbind = [
-      session.on('busy', ({ ms }) => {
+      session.on('busy', ({ verb, ms }) => {
         this.busyFrom = session.tick;
-        this.busyMs = ms;
+        // a stone lifted, set down or thrown is its own motion, not work: no bar and no working frames over it
+        this.busyMs = verb === 'lift' || verb === 'setdown' || verb === 'throw' ? 0 : ms;
       }),
       session.on('events', (events) => {
         this.biteDrawn(events);
@@ -2271,7 +2296,10 @@ export class WorldScene extends Phaser.Scene {
           ? 0
           : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000)) - this.lift;
     // a bite's flinch moves the drawn player only, never where the body stands
-    const [fx, fy] = this.flinch;
+    const [fx0, fy0] = this.flinch;
+    const [lx, ly] = this.lungeOffset();
+    const fx = fx0 + lx;
+    const fy = fy0 + ly;
     this.player.setOrigin(0.5 - fx / (this.player.displayWidth || 1), footOrigin(k) - (dy * (T / ART_PX) + fy) / (this.player.displayHeight || 1));
   }
 
@@ -2458,6 +2486,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshNodes();
     this.refreshFires(s);
     (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
+    (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig)).refresh(s.state, s.tick);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -2575,12 +2604,16 @@ export class WorldScene extends Phaser.Scene {
       this.refreshIn = 250;
       this.refreshNodes();
       this.refreshFires(s);
+      // a thrown stone that has been out its time goes home with no step to say so
+      this.stones?.refresh(s.state, s.tick);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
     }
     this.hopFrame(s);
     this.walk(s, real);
+    this.stones?.frame(this.time.now);
+    this.carryFrame(s);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
     this.placeShaft(minuteOfDay(this.b, s.tick));
@@ -2917,7 +2950,9 @@ export class WorldScene extends Phaser.Scene {
     const moved = this.body.follow(s.pos);
     const was = this.body.moving;
     const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
-    const gait = app.controls.gait(performance.now());
+    // both hands hold a stone: no running (the kernel refuses it), the load slows the walk itself
+    const asked = app.controls.gait(performance.now());
+    const gait = asked === 'run' && s.state.player.stones?.carry === 'large' ? 'walk' : asked;
     const facing = facingFor(input, s.facing);
     const look = facing8For(input, this.lookOf(s));
     const turned = facing !== s.facing || look !== this.look;
@@ -3962,6 +3997,129 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  // ------------------------------------------------------------ loose stones (DECISIONS 2026-11-22, #831)
+
+  /** The lean of the throw's stand-in as an offset of the drawn figure, in game px: toward the throw, then back (over `LUNGE_MS`). */
+  private lungeOffset(): [number, number] {
+    const l = this.lunge;
+    if (!l) return [0, 0];
+    const k = (this.time.now - l[2]) / LUNGE_MS;
+    if (k >= 1) {
+      this.lunge = null;
+      return [0, 0];
+    }
+    // out fast, back slower: the arm swings through
+    const out = k < 0.3 ? k / 0.3 : 1 - (k - 0.3) / 0.7;
+    return [l[0] * 2 * out, l[1] * 2 * out];
+  }
+
+  /** The tile where the stone's picture over the head stands: just above the head of the drawn figure. */
+  private carryFrame(s: GameSession): void {
+    const carrying = s.state.player.stones?.carry === 'large' && !this.falling;
+    if (!carrying) {
+      if (this.carryImg) {
+        this.carryImg.destroy();
+        this.carryImg = undefined;
+      }
+      this.carryRise = 1;
+      return;
+    }
+    if (!this.carryImg) {
+      // the lift has just begun: the stone comes up from the feet to over the head across the kernel's lift time
+      const ref = this.b.items['core/stone']?.sprite ?? 'core/base-kit:items/stone';
+      this.carryImg = kitImage(this, 0, 0, ref).setOrigin(0.5, 1);
+      this.carryImg.setData('scale', baseOf(this.carryImg) * STONE_CARRY_SCALE);
+      this.carryImg.setScale(this.carryImg.getData('scale') as number);
+      this.carryFrom = this.time.now;
+      this.carryRise = this.lifting ? 0 : 1;
+    }
+    if (this.carryRise < 1) this.carryRise = Math.min(1, (this.time.now - this.carryFrom) / this.b.params.stones.lift_ms);
+    // STAND-IN: the figure keeps its standing frame; the stone rides above its head and bobs with the walk
+    const headTop = this.player.getTopCenter().y + this.figureTop(this.player.texture.key, Number(this.player.frame.name) || 0) * (T / ART_PX);
+    const heldY = headTop + 2 - this.lift;
+    const feetY = this.player.y;
+    this.carryImg.setPosition(this.player.x, feetY + (heldY - feetY) * this.carryRise);
+    this.carryImg.setDepth(this.player.depth + 1);
+  }
+
+  /** Whether a lift is under way: the kernel's busy time after a `lift` of a large stone. */
+  private lifting = false;
+
+  /**
+   * A on a tile where stones lie (or the spot's own stone): lift one, a small one into the bag, a large one over the head.
+   * The kernel answers by its own rules (strength, load, hands) and the refusal is told in its words.
+   */
+  liftStone(size: 'small' | 'large'): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    this.lifting = size === 'large';
+    void Promise.resolve(s.act({ t: 'lift', size, at: s.pos })).then((r) => {
+      if (!r.ok) {
+        this.lifting = false;
+        app.ui.toast(r.error, 'bad');
+        return;
+      }
+      sound.sfx('pickup');
+      if (size === 'large') {
+        this.carryFrom = this.time.now;
+        this.carryRise = 0;
+      }
+      // the picture is up over the head once the lift's time is out
+      this.time.delayedCall(this.b.params.stones.lift_ms, () => (this.lifting = false));
+    });
+  }
+
+  /** A while both hands hold the stone: set it down on the tile underfoot, on the pile there if there is one. */
+  setDownStone(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || !this.canControl(s)) return;
+    void Promise.resolve(s.act({ t: 'setdown', at: s.pos })).then((r) => {
+      if (!r.ok) app.ui.toast(r.error, 'bad');
+      else sound.sfx('step');
+    });
+  }
+
+  /**
+   * The B key and the phone's B button (DECISIONS 2026-11-22, #831): throw a stone the way the player faces. A large stone over the
+   * head goes first, else a small one from the bag; the full power for now (the kernel's `power`, a held press charges it later).
+   * The flight is the kernel's own (`throwFlight`): this plays it as an arc with bounces and a slide, the landing hidden until it lands.
+   */
+  throwStone(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    const large = s.state.player.stones?.carry === 'large';
+    if (!large && (s.state.player.bag[STONE_ITEM] ?? 0) < 1) {
+      app.ui.toast('You have no stone to throw.', 'info');
+      return;
+    }
+    const aim = throwAim(this.b, s, this.lookOf(s));
+    if (!aim) return;
+    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim })).then((r) => {
+      if (!r.ok) {
+        app.ui.toast(r.error, 'bad');
+        return;
+      }
+      const thrown = r.events.find((e) => e.e === 'stone_thrown');
+      if (thrown?.e !== 'stone_thrown') return;
+      const layer = (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig));
+      if (thrown.at) layer.hold(key(thrown.at[0], thrown.at[1]), thrown.size, this.time.now, thrown.ms);
+      layer.fly(thrown, this.time.now, (tile, sank) => {
+        sound.sfx('step');
+        if (sank) this.splashAt(tile);
+        else if (RICH.motion) this.puffAt(tile[0], tile[1]);
+      });
+      // STAND-IN throw: the figure leans into the throw and settles back
+      const [dx, dy] = DIRS[s.facing];
+      this.lunge = [dx, dy, this.time.now];
+    });
+  }
+
+  /** A ring spreading on the water where a stone went under. */
+  private splashAt(tile: Tile): void {
+    const ring = this.add.ellipse((tile[0] + 0.5) * T, (tile[1] + 0.6) * T, 4, 2).setStrokeStyle(1, 0xf5f4ef, 0.9).setDepth(DEPTH.puff);
+    this.tweens.add({ targets: ring, scaleX: 3.5, scaleY: 3.5, alpha: 0, duration: 420, onComplete: () => ring.destroy() });
+  }
+
   /** One frame of the hop's stand-in: the feet go from tile to tile, the drawing rides the arc, and on landing the body stands on the tile. */
   private hopFrame(s: GameSession): void {
     const hop = this.hop;
@@ -4038,6 +4196,8 @@ export class WorldScene extends Phaser.Scene {
 
   private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
+    // both hands hold a large stone: A sets it down (the kernel allows nothing else but walking and throwing, B)
+    if (s.state.player.stones?.carry === 'large') return { label: 'Set the stone down', run: () => this.setDownStone(), tile: [x, y], top: T };
     const [fx, fy] = DIRS[s.facing];
     const order: [number, number][] = [facedTile(s), [x, y]];
     for (const [dx, dy] of NEIGHBOURS) {
@@ -4070,12 +4230,26 @@ export class WorldScene extends Phaser.Scene {
     return { label: 'Build a fire', run: () => app.ui.kindle(tile), tile, top: T };
   }
 
+  /** The A button over stones at the player's feet: a small one first (the bag takes it), else a large one (both hands). */
+  private stoneTarget(s: GameSession, tile: [number, number]): Target | undefined {
+    const here = lyingAt(this.b, settled(this.b, s.state, s.tick), tile);
+    if (here.count === 0) return undefined;
+    const small = here.small > 0 || here.spot === 'small';
+    const size = small ? 'small' : 'large';
+    const pile = here.count > 1;
+    const label = pile ? 'Take a stone from the pile' : size === 'small' ? 'Lift the stone' : 'Lift the large stone';
+    return { label, run: () => this.liftStone(size), tile, top: T };
+  }
+
   private targetAt(s: GameSession, x: number, y: number): Target | undefined {
     const b = this.b;
     const p = s.state.player;
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? T;
+    // stones lying under the feet, or the spot's own: lift one (a pile is taken apart a stone at a time)
+    const stone = x === s.pos[0] && y === s.pos[1] ? this.stoneTarget(s, tile) : undefined;
+    if (stone) return stone;
     // a pile the player put down, under their feet
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };

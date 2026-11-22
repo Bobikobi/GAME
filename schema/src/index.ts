@@ -1854,6 +1854,25 @@ export const ParamsBody = Type.Object(
         description: 'The jump and the fall (DECISIONS.md, 2026-11-22): up one level, down any height, across a one-tile gap of water; a little breath each; the fall hurts by its height, up to death. All integers; the first night is measured with jumps (G71).',
       },
     ),
+    stones: Type.Object(
+      {
+        large_weight: { ...Bounded, description: 'What a large stone carried over the head weighs, in the bag\'s own weight unit: it counts in the load like any carried thing, so the might limit decides who can lift it (the limit\'s hard edge, `load.max_permille`) and the load bands set the pace (DECISIONS.md, 2026-11-22: loose stones). A small stone is the item `core/stone` and weighs what the item says.' },
+        small_range: { ...Bounded, description: 'Tiles a small stone flies from the thrower. The same reach as the thrown stone of small game (`STONE_RANGE`, #819); a test keeps the two equal.' },
+        large_range: { ...Bounded, description: 'Tiles a large stone flies: both hands over the head, thrown short.' },
+        small_roll: { ...Bounded, description: 'Tiles a small stone runs on along the ground after its first touch, while the ground is walkable and does not climb; the client draws the bounces and the slide between the two tiles.' },
+        large_roll: { ...Bounded, description: 'The same for a large stone: it digs in and runs less.' },
+        area_tiles: { ...Bounded, description: 'Side, in tiles, of the square an area is: the map is cut in a grid of these and each square holds at most `area_cap` loose stones.' },
+        area_cap: { ...Bounded, description: 'The most loose stones one area holds at once (those still lying at their spots, those set down and those thrown), so a world shared by many is not flooded. A throw or a set-down that would pass it is refused.' },
+        return_ms: { ...Bounded, description: 'Game milliseconds a thrown stone lies where it landed before it goes back to its own spot.' },
+        pile_max: { ...Bounded, description: 'The most stones set down on one tile. A pile is counted by number and never climbed.' },
+        lift_ms: { ...Bounded, description: 'Game milliseconds lifting a stone keeps the player busy.' },
+        throw_ms: { ...Bounded, description: 'Game milliseconds a throw keeps the player busy: the wind-up, the flight and the landing.' },
+      },
+      {
+        additionalProperties: false,
+        description: 'Loose stones (DECISIONS.md, 2026-11-22): lifted at the map\'s stone spots, carried (a large one over the head, at the pace its weight sets), thrown to a landing that runs on, set down and piled. All integers; the charged throw is a later track and rides the throw action\'s power.',
+      },
+    ),
     hunt: Type.Object(
       {
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
@@ -2707,6 +2726,27 @@ export const MapBody = Type.Object(
         {
           additionalProperties: false,
           description: 'Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A spot may carry a rank, a shape, a count, affixes, a leader and a route (the generator\'s axes, DECISIONS 2026-11-08); left out, it is a regular spot of the kind\'s own group class. A kind with "hunt" is the kernel\'s too: it dresses its carcasses and the value table prices its goods, with its spots as the source\'s capacity (HUNTING sections 5-9). A kind with "behaviour" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den\'s mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).',
+        },
+      ),
+    ),
+    stones: Type.Optional(
+      Type.Object(
+        {
+          spots: Type.Array(
+            Type.Object(
+              {
+                x: Int(0, 1023),
+                y: Int(0, 1023),
+                size: Type.Union([Type.Literal('small'), Type.Literal('large')], { description: 'A small stone goes in the hand and the bag; a large one is carried over the head.' }),
+              },
+              { additionalProperties: false },
+            ),
+            { maxItems: 200 },
+          ),
+        },
+        {
+          additionalProperties: false,
+          description: 'Loose stones lying in the world (DECISIONS.md, 2026-11-22): where each lies until a player lifts it. A thrown stone goes back to the first spot a player has emptied. Absent: none. Spots are never props: a stone never changes the walk map.',
         },
       ),
     ),
