@@ -123,7 +123,11 @@ describe('what the page prints is what the data says', () => {
     for (const file of ['web/src/pages/developers/index.astro', 'web/src/layouts/Dev.astro', 'web/src/data/dev.ts']) expect(read(file), file).not.toMatch(/2,?280/);
   });
   it('lists every open pull request of the data once, with its link and its maker', () => {
-    expect(hub.feed!.length).toBeGreaterThan(0);
+    // a build without GitHub (CI, a laptop) has an empty feed and the page must say why; the fixture always has items
+    if (hub.feed!.length === 0) {
+      expect(text).toContain(hub.sources.github ? 'No open pull requests right now.' : 'GitHub could not be read when this page was built.');
+      expect(text).toContain('0 open');
+    } else expect(text).toContain(`${hub.feed!.length} open`);
     for (const item of hub.feed!) {
       expect(text.split(`href="${item.url}"`).length - 1, `#${item.number}`).toBe(1);
       expect(text).toContain(`PR #${item.number}`);
