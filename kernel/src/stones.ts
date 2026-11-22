@@ -162,6 +162,9 @@ export function unloan(player: PublicState['player'], key: string, size: StoneSi
 
 /** Put a stone on loan: it lies at `key` ('' where it sank) and goes home `stones.return_ms` after `tick`. */
 export function lendStone(bundle: Bundle, player: PublicState['player'], key: string, size: StoneSize, tick: number): void {
+  // a stone that sank, or fell with its body, with no emptied spot of its size to go home to (one mined at a node) just leaves the world:
+  // nothing is written, so a player who never touched a spot keeps a state with no `stones` at all
+  if (key === '' && (!player.stones || homeOf(bundle, player.stones, size) === undefined)) return;
   const stones = (player.stones ??= { taken: {}, large: {}, returns: [] });
   stones.returns.push({ key, size, at: tick + bundle.params.stones.return_ms });
   stones.returns.sort((a, b) => a.at - b.at);
