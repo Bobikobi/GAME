@@ -4746,3 +4746,13 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **Rules touched:** G68 gains one exception (the jump), written into GAME_RULES; G71's measure of the first night counts jumps, so a cliff never becomes a short way out of the valley.
 
 **Retry when:** a playtest shows players dying by falls they could not read (then the edge shows its height), or jumps opening shortcuts that G71 misses. **Model:** Claude Opus 5.5 (the manager). **Link:** ANIMATION.md section 2 (the jump row).
+
+## 2026-11-22 ✅ A held press charges the throw and the bow: the power grows while held and shows on the figure and on the ground (direction, not built)
+
+**What:** the owner (22.11 ~17:56, in chat), following the loose stones: a long press charges the power of a throw, and the same for the bow and arrow, with its own animation; inspiration from Wild Rift. The shape, by Wild Rift's charged shots (Varus's held shot: the range line grows while held, the shot leaves on release) and by the open-world bows (the draw deepens while held):
+- **While held:** the figure winds up in stages (an arm drawn back for a stone, the string drawn for a bow), and an aim line on the ground grows with the power; on a phone the attack button is held and dragged to aim, as in Wild Rift (landscape only, DECISIONS 2026-11-20).
+- **On release:** the throw or the shot leaves at the power reached: farther and harder the longer it was held, up to full. The landing of a stone keeps the rule of the loose stones entry above (bounces, a slide or roll, never flat).
+- **Held past full:** the arm or the bow tires (a tremble, the aim line wavers) and the shot leaves or is let down after a short while, so a charge cannot be held for ever.
+- **Kept:** the fight is real-time free action, never turns (the owner, 15.11); the motion is drawn as clips (wind-up stages, release), the aim line and the tremble are the code layer (ANIMATION.md section 3).
+
+**Retry when:** a playtest on a phone shows the hold-and-drag aim too hard to read, or the charge too slow for a real-time fight. **Model:** Claude Opus 5.5 (the manager). **Link:** the loose stones entry above, #819 (the thrown stone).
