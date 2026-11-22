@@ -30,7 +30,7 @@ A verb is one thing a body does that the player or the world can read. A new ver
 | hurt | later | rendered + code | 2 | with fights |
 | death / fall | later | rendered | 5 | with fights |
 | swim | later | rendered, above a code-drawn waterline | 4 | with the sea crossing |
-| hop | **owner's pick** | rendered (library `Jump_*`) | 3 | down one level anywhere, never up, and across a one-tile gap, costing breath; never in the first minute. It changes `makeStepRule` and nowhere else. Versus no hop: crossings only (G68) |
+| jump | **picked (owner 22.11), not built** | rendered (library `Jump_*`) | 3 | up one level, down any height with fall damage (DECISIONS 2026-11-22, the jump and the fall), across a one-tile gap, costing breath; never in the first minute. It changes `makeStepRule` and the fall's health cost |
 
 **The gaits** are three paces of one body, carried by the kernel's `move` as `gait: walk | run | sneak` and set by the `gait` group of `content/core/params.json`: a walk is the pace the load allows (`walk_step_ms`, 190 ms a tile when steady), a run takes that divided by `gait.run_div` (2: 95 ms), a sneak times `gait.sneak_mul` (2: 380 ms), every one a whole number of milliseconds. Each is heard at a radius of tiles from the shared noise table: still 2, sneak 3, walk 5, run 8 (`gait.noise_*`; the hunting rules read the same table). On a phone the run is held (one thumb) and the sneak is a toggle button. The run's breath cost waits for the breath bar of COMBAT; until it lands a run costs nothing and the demo's opening has no reason to forbid it.
 
