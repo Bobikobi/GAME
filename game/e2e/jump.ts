@@ -6,7 +6,8 @@
  * - after it, a tap jumps up one ledge of the valley (the town's face at x=21|22): the player stands on the higher tile and the
  *   drawing rode an arc above the ground (the code STAND-IN hop: the figure lifts, its feet and shadow keep the ground);
  * - a drop of two levels (the valley has none, so one digit of the height layer is raised in the page) lands, costs a fifth
- *   of the health cap and says so in the hurt cue's words.
+ *   of the health cap and says so in the hurt cue's words;
+ * - a drop of four levels is death by G33: the fall-down plays, the player wakes in town and walks again.
  *
  * Every check waits on a condition, never on a fixed time. The screenshots go to the out-dir (default .scratch/e2e).
  */
@@ -36,6 +37,8 @@ const HIGH: [number, number] = [22, 4];
 /** Row 5 beside it, raised in the page to level 2, so a jump left from it drops two levels onto (21, 5). */
 const TALL: [number, number] = [22, 5];
 const BELOW: [number, number] = [21, 5];
+/** Row 6, raised in the page to level 4, so a jump left from it drops four levels onto (21, 6): death. */
+const DEEP: [number, number] = [22, 6];
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -113,6 +116,16 @@ async function main(): Promise<void> {
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
     await start(page);
 
+    // the first minute: refused in the kernel's words, nothing moves
+    await page.eval(place(LOW, 'right'));
+    const early = await page.eval<number>(`window.__game.session.tick`);
+    if (early >= 60_000) throw new Error(`the first-minute check ran late: the clock is at ${early} ms`);
+    await page.tap('.tbtn.jump');
+    await page.waitFor(`${toasts}.includes('only just woken')`, 'the first-minute refusal', 5000);
+    const still = await page.eval<number[]>(where);
+    if (still[0] !== LOW[0] || still[1] !== LOW[1]) throw new Error(`a refused jump moved the player to ${still.join(',')}`);
+    console.log('jump: the first minute refuses the jump and the player stays');
+
     // the button: round, a thumb's size, on the right, clear of every button and the HUD
     const seen = await page.eval<{ buttons: (Box & { name: string })[]; hud: (Box & { name: string })[] }>(LAYOUT);
     const jump = seen.buttons.find((b) => b.name.includes('tbtn jump'));
@@ -125,19 +138,15 @@ async function main(): Promise<void> {
     }
     console.log(`jump: the button is ${Math.round(jump.w)} px at ${Math.round(jump.x)},${Math.round(jump.y)}, clear of ${seen.buttons.length - 1} buttons and ${seen.hud.length} HUD parts`);
 
-    // the first minute: refused in the kernel's words, nothing moves
-    await page.eval(place(LOW, 'right'));
-    const early = await page.eval<number>(`window.__game.session.tick`);
-    if (early >= 60_000) throw new Error(`the first-minute check ran late: the clock is at ${early} ms`);
-    await page.tap('.tbtn.jump');
-    await page.waitFor(`${toasts}.includes('only just woken')`, 'the first-minute refusal', 5000);
-    const still = await page.eval<number[]>(where);
-    if (still[0] !== LOW[0] || still[1] !== LOW[1]) throw new Error(`a refused jump moved the player to ${still.join(',')}`);
-    console.log('jump: the first minute refuses the jump and the player stays');
-
     // past the minute: up one ledge, and the drawing rides an arc
     await page.waitFor(`window.__game.session.tick >= 60000`, 'the first minute to pass', 60_000);
-    await page.eval(place(LOW, 'right'));
+    // two tiles short of the ledge, then walked to it with the arrow key: the walk's own report of the position is what the jump leaves from
+    await page.eval(place([LOW[0] - 2, LOW[1]], 'down'));
+    await page.key('ArrowRight', 'keyDown');
+    await page.waitFor(`${where}[0] === ${LOW[0]}`, 'the walk to the foot of the ledge', 10_000);
+    await page.key('ArrowRight', 'keyUp');
+    await page.waitFor(`window.__game.controls.vector()[0] === 0 && !window.__game.session.busy`, 'the walk to stop', 5000);
+    await page.waitFor(`window.__game.session.state.player.at[0] === ${LOW[0]} && window.__game.session.state.player.at[1] === ${LOW[1]}`, 'the kernel to hold the walked-to tile', 10_000);
     await page.eval(`(() => {
       window.__lifts = [];
       const sample = () => { window.__lifts.push(window.__game.world.lift); window.__liftTimer = requestAnimationFrame(sample); };
@@ -173,6 +182,33 @@ async function main(): Promise<void> {
     if (hp0 - hp1 !== Math.floor((hp0 * 2000) / 10_000)) throw new Error(`the fall took ${hp0 - hp1} of ${hp0}, not a fifth`);
     await page.screenshot(join(OUT, 'jump-fall.png'));
     console.log(`jump: a drop of two levels cost ${(hp0 - hp1) / 1000} health (${hp0 / 1000} to ${hp1 / 1000}) and showed the hurt cue`);
+
+    // a drop of four levels is death (G33): the hop lands, the fall-down plays, the figure wakes in town and can walk again
+    await page.eval(`(() => {
+      const rows = window.__game.bundle.map.levels;
+      const y = ${DEEP[1]}, x = ${DEEP[0]};
+      rows[y] = rows[y].slice(0, x) + '4' + rows[y].slice(x + 1);
+    })()`);
+    await page.waitFor(`window.__game.session.tick >= window.__game.session.state.player.busyUntil`, 'the landing to end', 5000);
+    await page.eval(place(DEEP, 'left'));
+    // the breath for a third hop: it refills a little each second
+    await page.waitFor(`window.__game.session.state.player.hp > 0`, 'a living player', 2000);
+    await page.tap('.tbtn.jump');
+    await page.waitFor(`window.__game.world.falling === true`, 'the fall-down to begin', 5000);
+    await page.waitFor(`window.__game.world.falling === false && !window.__game.world.hop && !window.__game.world.hopAsked`, 'the fall-down to end and the player to wake', 30_000);
+    const woke = await page.eval<number[]>(where);
+    if (Math.abs(woke[0]! - DEEP[0]) + Math.abs(woke[1]! - DEEP[1]) < 4) throw new Error(`a drop of four levels left the player at ${woke.join(',')}, not woken in town`);
+    await page.screenshot(join(OUT, 'jump-death.png'));
+    // the wake's own line ("Everything went dark.") is read to its end with A, as the stone's lines are
+    for (let i = 0; i < 8 && (await page.eval<boolean>(`!!document.querySelector('.dialog')`)); i++) {
+      await page.tap('.tbtn.a');
+      await page.waitFor(`true`, 'a frame');
+    }
+    await page.waitFor(`!document.querySelector('.dialog')`, 'the wake line to close', 10_000);
+    await page.key('ArrowDown', 'keyDown');
+    await page.waitFor(`(() => { const p = ${where}; return p[0] !== ${woke[0]} || p[1] !== ${woke[1]}; })()`, 'the player to walk again after waking', 10_000);
+    await page.key('ArrowDown', 'keyUp');
+    console.log(`jump: a drop of four levels was death: the fall-down played, the player woke at ${woke.join(',')} and walked again`);
 
     if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
   } catch (err) {
