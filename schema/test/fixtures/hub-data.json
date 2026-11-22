@@ -167,6 +167,14 @@
     }
   ],
   "summary": { "week": "2026-W41", "number": 17, "url": "https://github.com/Bobikobi/GAME/issues/17", "posted_at": "2026-10-05T07:07:00Z" },
+  "feed": [
+    { "number": 12, "title": "Glade fig bushes for the Quiet glade", "url": "https://github.com/Bobikobi/GAME/pull/12", "author": "example-builder", "maker": "person", "state": "review", "created_at": "2026-10-06T09:00:00Z", "updated_at": "2026-10-07T08:30:00Z", "missing": [] },
+    { "number": 9, "title": "The fight tick tells the screen each strike's outcome", "url": "https://github.com/Bobikobi/GAME/pull/9", "author": "bobikobi", "maker": "team", "state": "draft", "created_at": "2026-10-05T09:00:00Z", "updated_at": "2026-10-06T12:00:00Z", "missing": [] }
+  ],
+  "gaps": [
+    { "rule": "no_picture", "id": "core/elder", "file": "content/core/npcs/elder.json", "url": "https://github.com/Bobikobi/GAME/blob/develop/content/core/npcs/elder.json", "line": "only the old 16 px picture (core/base-kit:chars/elder), waiting for its redraw" }
+  ],
+  "world": { "drawn": 15, "whole": 2280, "as_of": "2026-10-07", "next": "The first block walked in the live game" },
   "parameters": {
     "loop": {
       "open_call_votes": 5,

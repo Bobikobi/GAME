@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "note": "Read by the developers' home (tools/src/hub/devarea.ts). world is the shared goal's meter: the squares of the wide world's chart drawn, of the whole, on the day in as_of; the maintainers move drawn by hand when a square is finished. team_handles are the GitHub accounts the game's own standing tracks push from: their pull requests read \"Development team\" on the feed.",
+  "world": {
+    "drawn": 29,
+    "whole": 2280,
+    "as_of": "2026-11-22",
+    "next": "The first block walked in the live game"
+  },
+  "team_handles": ["bobikobi"]
+}

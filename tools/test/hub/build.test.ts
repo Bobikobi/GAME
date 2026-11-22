@@ -71,6 +71,25 @@ describe('buildHubData', () => {
     expect(doc.summary).toEqual({ week: '2026-W41', number: 41, url: 'https://github.test/issues/41', posted_at: '2026-10-09T06:00:00Z' });
   });
 
+  it('carries the feed, the gaps and the meter, and builds the same bytes twice from the same input (F6)', async () => {
+    const build = () => buildHubData({ client: new FakeGitHub(), now: NOW, previews: true, repository: REPO });
+    const [a, b] = [await build(), await build()];
+    expect(validateHubData(a)).toEqual([]);
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    expect(a.feed!.map((i) => [i.number, i.author, i.maker, i.state])).toEqual([
+      [3, 'bob', 'person', 'review'],
+      [2, 'alice', 'person', 'review'],
+    ]);
+    expect(a.world).toEqual(JSON.parse(readFileSync(join(import.meta.dirname, '../../../.github/dev-area.json'), 'utf8')).world);
+    expect(a.gaps!.every((g) => g.url.startsWith(`https://github.com/${REPO}/blob/develop/content/`))).toBe(true);
+  });
+
+  it('builds the feed empty without GitHub', async () => {
+    const doc = await buildHubData({ client: null, now: NOW, previews: false, repository: REPO });
+    expect(doc.feed).toEqual([]);
+    expect(Array.isArray(doc.gaps)).toBe(true);
+  });
+
   it('leaves the previews out when asked to', async () => {
     const doc = await buildHubData({ client: new FakeGitHub(), now: NOW, previews: false, repository: REPO });
     expect(validateHubData(doc)).toEqual([]);
@@ -141,6 +160,7 @@ function pull(number: number, title: string, login: string, sha: string, extra: 
     labels: [{ name: 'proposal' }],
     user: { login },
     draft: false,
+    state: 'open',
     base: { ref: 'develop' },
     head: { ref: 'proposal', sha, repo: { full_name: REPO } },
     ...extra,
@@ -173,7 +193,7 @@ class FakeGitHub implements LoopClient {
     user: { login: 'github-actions[bot]', type: 'Bot' },
   };
   private readonly open = [pull(2, 'Plum bushes', 'alice', 'head-a'), pull(3, 'Pear trees', 'bob', 'head-b')];
-  private readonly merged = pull(5, 'Fig tree', 'fern', 'head-f', { merged_at: '2026-10-08T00:00:00Z' });
+  private readonly merged = pull(5, 'Fig tree', 'fern', 'head-f', { merged_at: '2026-10-08T00:00:00Z', state: 'closed' });
 
   async get<T>(path: string): Promise<T> {
     if (path.includes('/contents/')) {
@@ -190,7 +210,7 @@ class FakeGitHub implements LoopClient {
     if (path === `${r}/issues?state=all&labels=vote&per_page=100`) return [this.vote] as T[];
     if (path === `${r}/issues?state=open&labels=request&per_page=100`) return [this.request] as T[];
     if (path === `${r}/pulls?state=open&per_page=100`) return this.open as T[];
-    if (path === `${r}/pulls?state=closed&per_page=100`) return [this.merged, pull(6, 'Closed', 'gil', 'head-g')] as T[];
+    if (path === `${r}/pulls?state=closed&per_page=100`) return [this.merged, pull(6, 'Closed', 'gil', 'head-g', { state: 'closed' })] as T[];
     if (path === `${r}/issues?state=all&labels=weekly%20summary&per_page=100`) {
       const summary = (number: number, week: string, at: string): Issue => ({
         number,
