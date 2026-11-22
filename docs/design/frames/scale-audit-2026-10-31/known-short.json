@@ -8,6 +8,9 @@
     "ceosisrael/kit:props/fig_bush": "trees: wave 3c (the crowns session)",
     "ceosisrael/kit:props/fig_bush_empty": "trees: wave 3c (the crowns session)",
     "core/base-kit:chars/skeleton_down": "characters stream",
-    "core/base-kit:chars/skeleton_left": "characters stream"
+    "core/base-kit:chars/skeleton_left": "characters stream",
+    "core/base-kit:chars/skeleton_reed-walker_down": "characters stream (set sheets of the skeleton keep the live skeleton height)",
+    "core/base-kit:chars/skeleton_reed-walker_left": "characters stream (set sheets of the skeleton keep the live skeleton height)",
+    "core/base-kit:chars/skeleton_reed-walker_up": "characters stream (set sheets of the skeleton keep the live skeleton height)"
   }
 }
