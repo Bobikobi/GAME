@@ -4736,3 +4736,13 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **Stage 3 (not now):** a pile that changes the ground's height and can be climbed waits for a building system: it changes the walk map for every player at once, and walls of stones would block paths, against the rule that nothing is blocked.
 
 **Why:** pick-up and set-down already exist in the kernel (an item left on a tile, DECISIONS 2026-10-23), so stages 1-2 add a world object and a throw, not a new system; a height that players change is the heavy part. **Retry when:** a building system is planned (stage 3), or a playtest shows stones flooding a shared area. **Model:** Claude Opus 5.5 (the manager). **Link:** #819 (the thrown stone of the small hunt).
+
+## 2026-11-22 ✅ The jump and the fall: up one level, down any height, the fall hurts by its height up to death (direction, not built)
+
+**What:** the hop of ANIMATION.md section 2 waited for the owner's pick (down only). The owner (22.11 ~17:47, in chat): a jump may go up too, compared with the big games, and a jump off a cliff must take health by its weight, up to death. The manager compared: top-down action games (Path of Exile 2, Diablo IV) have no free jump, only a dodge and marked traversal points; the classic top-down Zelda drops off ledges, never up; open worlds (Valheim, Minecraft, Breath of the Wild) jump about half a body up and take fall damage that grows with height, to death. The manager proposed the open-world way, the owner's word: "מאשר מדרגות והצעות".
+- **Up:** one height level only (a low rock or ledge); anything higher is climbed by a crossing (G68).
+- **Down:** from any height. A fall of one level costs nothing, two levels a fifth of the health bar, three levels half, four or more (a real cliff) is death, by G33 (the pack lies where the body fell). Later a skill node or a piece of gear may lessen a fall.
+- **Kept from the hop:** across a one-tile gap, a little breath for each jump, never in the first minute.
+- **Rules touched:** G68 gains one exception (the jump), written into GAME_RULES; G71's measure of the first night counts jumps, so a cliff never becomes a short way out of the valley.
+
+**Retry when:** a playtest shows players dying by falls they could not read (then the edge shows its height), or jumps opening shortcuts that G71 misses. **Model:** Claude Opus 5.5 (the manager). **Link:** ANIMATION.md section 2 (the jump row).
