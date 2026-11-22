@@ -251,6 +251,8 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t']);
     case 'answer':
       return hasOnlyKeys(value, ['t', 'choice']) && (value.choice === undefined || Number.isSafeInteger(value.choice));
+    case 'jump':
+      return hasOnlyKeys(value, ['t', 'at']) && isTile(value.at);
     case 'move':
       // a walk leaves its gait out (an old log reads walk); a run or a sneak names it, as the kernel's action does
       return hasOnlyKeys(value, ['t', 'at', 'gait']) && isTile(value.at) && (value.gait === undefined || isGait(value.gait));

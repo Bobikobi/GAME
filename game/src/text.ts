@@ -383,6 +383,7 @@ const HURT_TEXT: Readonly<Record<string, string>> = {
   trap: 'A trap snapped shut on your foot',
   deep_water: 'The deep water dragged at you',
   food: 'That did not agree with you',
+  fall: 'You hit the ground hard',
 };
 
 /** The Eat button's label: what a food gives, and what it takes when it hurts. */
