@@ -97,7 +97,7 @@ import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
-import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
+import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -2267,10 +2267,12 @@ export class WorldScene extends Phaser.Scene {
     const p = this.session?.state.player;
     const race = p ? this.b.races[p.race] : undefined;
     const first = Object.values(this.b.races)[0];
-    const base = (p?.look === 1 && race?.sprite_alt) || race?.sprite || first?.sprite || '';
+    const bare = (p?.look === 1 && race?.sprite_alt) || race?.sprite || first?.sprite || '';
+    const has = (k: string) => k in this.b.sprites;
+    // a complete clothing set is drawn whole on the figure (public #772); the other poses stay the bare figure
+    const base = p && pose === 'walk' ? wornSetSheet(this.b, this.session!.state, bare, has, window.location.search) : bare;
     const stem = pose === 'walk' ? base : base.replace(/_down$/, `_${pose}_down`);
     const of = (d: string) => stem.replace(/_down$/, `_${d}`);
-    const has = (k: string) => k in this.b.sprites;
     const none = { key: '', flip: false };
     if (pose !== 'walk' && !has(stem)) return none;
     // the rig's diagonals (23.10) for the walk and the blink; work poses stay four-way
