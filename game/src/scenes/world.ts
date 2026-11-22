@@ -2270,7 +2270,7 @@ export class WorldScene extends Phaser.Scene {
     const bare = (p?.look === 1 && race?.sprite_alt) || race?.sprite || first?.sprite || '';
     const has = (k: string) => k in this.b.sprites;
     // a complete clothing set is drawn whole on the figure (public #772); the other poses stay the bare figure
-    const base = p && pose === 'walk' ? wornSetSheet(this.b, this.session!.state, bare, has) : bare;
+    const base = p && pose === 'walk' ? wornSetSheet(this.b, this.session!.state, bare, has, window.location.search) : bare;
     const stem = pose === 'walk' ? base : base.replace(/_down$/, `_${pose}_down`);
     const of = (d: string) => stem.replace(/_down$/, `_${d}`);
     const none = { key: '', flip: false };

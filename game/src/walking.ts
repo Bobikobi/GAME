@@ -317,7 +317,17 @@ export function diagonalSheet(stem: string, look: Facing8, facing: Dir, has: (ke
  * drawing for this race and view (`chars/human_down` -> `chars/human_reed-walker_down`), the set's sheet; otherwise the
  * stem as it is, the bare figure. Sets are read in id order, so two complete sets always give the same sheet.
  */
-export function wornSetSheet(bundle: Bundle, state: PublicState, stem: string, has: (key: string) => boolean): string {
+/**
+ * Whether `?sets=1` asks for the clothing sets drawn whole on the 35-degree figure (default: off). The set sheets are
+ * the new figure and the race sheets are still the old art, so in the public game a worn set would swap the look.
+ * On when the race art on the 35-degree figure lands.
+ */
+export function setSheetsOn(query: string): boolean {
+  return new URLSearchParams(query).get('sets') === '1';
+}
+
+export function wornSetSheet(bundle: Bundle, state: PublicState, stem: string, has: (key: string) => boolean, query: string): string {
+  if (!setSheetsOn(query)) return stem;
   for (const id of Object.keys(setPieces(bundle)).sort()) {
     if (!setComplete(bundle, state, id)) continue;
     const key = stem.replace(/_down$/, `_${id.slice(id.indexOf('/') + 1)}_down`);
