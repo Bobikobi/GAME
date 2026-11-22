@@ -4553,6 +4553,11 @@ This follows the owner's 14.11 direction that the game, apart from its home page
 
 Owner answer 12.11, WEAPONS section 17 question 3: every tool-only hand, not only the axe, uses 1050 per mille of bare-hand strike harm.
 The kernel floors the integer result; bare hands and weapon hands keep their existing harm. Retry when weapon harm itself lands. Built by Codex for [#710](https://github.com/Bobikobi/GAME/issues/710).
+
+## 2026-11-21 ✅ The skill map fills the sideways phone's window (#720)
+**What:** the school row sits above the map in the left column. The build and node card share a scrollable pane to its right.
+**Checks:** at 844 x 390 the Skills page's scroll and client heights must match. The map must be at least 60% of the window height and 530 CSS px wide. The starting layout scan requires sampled text at 16 CSS px or larger, sampled buttons and summaries at least 44 x 44 CSS px, and build slots at least 44 x 48 CSS px. At 1280 x 800 the test checks a window height of 768 CSS px, a distance of 232.3 CSS px from the window top to the map, and a map height of 423.1 CSS px, each within 1 CSS px. The tap helper can bring an unmounted node into view by scrolling to a school button and tapping it.
+**Retry when:** the measured phone viewport changes or a new Skills control no longer fits either column. **Model:** Codex, finished by Claude. **Link:** [#720](https://github.com/Bobikobi/GAME/issues/720).
 ## 2026-11-21 ✅ Clothing's route is measured against seven games: a first piece in 7 to 27 minutes of play, a first outfit in 30 to 90 (#769)
 **What:** OSRS, WoW Classic, Albion, New World, Valheim, Vintage Story and Stardew, with sources (docs/design/CLOTHING_BALANCE.md). Loomvale's row was played on the kernel by `tools/src/balance/clothing-route-cli.ts`: first piece 4.4 minutes passed (3.6 of active play; 0.8 is waiting on a node), tier-1 kit 9.0 (7.7 active), first set 21.3 known (13.4 active) or 64.1 median dug up (16.1 active). Passed counts every minute from the morning after the opening, node waits and the night included; active leaves those two out.
 **Result:** the work is short against the band, and the dug-up set is inside it in minutes passed. Making is the only route (buying and finding are missing), and there are 1.8 pieces a body place against 2.5 to 4.

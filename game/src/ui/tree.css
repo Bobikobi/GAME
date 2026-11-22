@@ -1,6 +1,7 @@
 /* The skill tree page of the kit (game/src/ui/tree.ts; DECISIONS 2026-10-23 "The skill tree
-   screen"): the map of the tree on the canvas inset, the schools' buttons above it, the build at
-   its foot, the chosen node's card and the keys beside it on a computer and under it on a phone.
+   screen"): the schools sit above the map. On a computer the build sits below the map, with the
+   node card and Keys to its right. On a phone the player and points line, build, node card and Keys
+   share a scrolling pane to the right of the map.
    Colours come from the theme's tokens only (tools/test/ui-theme.test.ts): a school's colour is
    --kit-tree-<tint>, its name on dark wood --kit-tree-<tint>-ink. */
 
@@ -18,12 +19,13 @@
 }
 
 .tree-page {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-rows: minmax(0, 1fr);
   gap: 8px;
   height: 100%;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   font: 400 var(--kit-text) / 1.2 var(--font);
   color: var(--kit-ink);
 }
@@ -32,14 +34,28 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  height: 100%;
   min-height: 0;
 }
 
-/* in the phone's scrolling column nothing gives way: the school row, the map, the build and the card keep their size */
-.tree-page > *,
-.tree-main > *,
+/* the map gives way to the window; rows and controls keep their finger-sized height */
+.tree-main > :not(.tree-frame),
 .tree-side > * {
   flex-shrink: 0;
+}
+
+.tree-head.tree-desktop-head,
+.tree-main > .tree-build {
+  display: none;
+}
+
+.tree-phone-side {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.tree-phone-side > .tree-build {
+  margin: 6px 0 8px;
 }
 
 .tree-head {
@@ -92,8 +108,8 @@
 
 .tree-frame {
   position: relative;
-  flex: none;
-  height: 360px;
+  flex: 1;
+  min-height: 0;
 }
 
 .tree-view {
@@ -297,6 +313,13 @@
   gap: 6px;
 }
 
+/* Give each phone slot 44 px and divide the remaining width between the slots. */
+.tree-phone-side > .tree-build .tree-slots {
+  grid-template-columns: repeat(5, 44px);
+  column-gap: 0;
+  justify-content: space-between;
+}
+
 .tree-slot {
   display: flex;
   align-items: center;
@@ -325,6 +348,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tree-phone-side .tree-slot.filled {
+  flex-direction: column;
+  padding-inline: 1px;
+}
+
+.tree-phone-side .tree-slot.filled span:last-child {
+  align-self: stretch;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .tree-slot.closed {
@@ -433,6 +469,20 @@
     grid-template-rows: minmax(0, 1fr);
     gap: 10px;
     overflow: hidden;
+  }
+
+  .tree-head.tree-desktop-head,
+  .tree-main > .tree-build {
+    display: flex;
+  }
+
+  .tree-phone-side {
+    display: contents;
+  }
+
+  .tree-phone-head,
+  .tree-phone-side > .tree-build {
+    display: none;
   }
 
   .tree-main {
