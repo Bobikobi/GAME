@@ -43,7 +43,7 @@ import { FrameProbe, liteUrl } from './lite';
 import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
 import type { GameSession } from '../session-surface';
 import { stoneView } from '../stone';
-import { heightOf, questTargets } from '../targets';
+import { heightOf, huntingAt, huntingNearby, questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { beatAt, blowsDue, nextUnit } from '../work';
@@ -1251,7 +1251,8 @@ export class World3D implements WorldView {
       const t = this.targetAt(s, tx, ty);
       if (t) return t;
     }
-    return undefined;
+    const prey = huntingNearby(this.b, s.state, s.tick, s.pos);
+    if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: 0.4 };
   }
 
   private targetAt(s: GameSession, x: number, y: number): Target | undefined {
@@ -1263,6 +1264,8 @@ export class World3D implements WorldView {
     // a pile the player put down, under their feet (drawn in the 2D door; here the prompt finds it)
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: 0.4 };
+    const hunt = huntingAt(b, s.state, s.tick, s.pos, tile);
+    if (hunt) return { ...hunt, run: () => void app.ui.hunt(hunt.action), top: 0.4 };
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);

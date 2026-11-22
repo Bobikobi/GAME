@@ -85,7 +85,7 @@ import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '.
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
-import { questTargets } from '../targets';
+import { huntingAt, huntingNearby, questTargets } from '../targets';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
@@ -97,7 +97,7 @@ import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
-import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep, wornSetSheet } from '../walking';
+import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -544,6 +544,18 @@ export class WorldScene extends Phaser.Scene {
   private lanternFor: number | undefined;
   /** while the fall plays: no walking, and the player's sprite belongs to the animation */
   private falling = false;
+  /**
+   * The jump in the air (DECISIONS 2026-11-22). STAND-IN until the drawn jump clip comes from the anim lane (ANIMATION.md
+   * section 2, "the jump row"): the figure holds its standing frame and rises on an arc while its feet, and so the cast
+   * shadow, travel the ground from the takeoff tile to the landing tile. `start` and `ms` are the scene clock's.
+   */
+  private hop: { from: [number, number]; to: [number, number]; start: number; ms: number; peak: number } | null = null;
+  /** a jump asked of the kernel and not answered yet (a server answers later): the hop's wait stands from now */
+  private hopAsked = false;
+  /** a fall that the hop in the air holds back until it lands: where the body fell, and where it wakes */
+  private fellAfterHop: { from: [number, number]; to: [number, number] } | null = null;
+  /** how high the drawing rides above the body, in art pixels: the hop's arc (the shadow keeps the ground) */
+  private lift = 0;
   /** the kit's clip under way on the player's figure (#742): while it plays it owns the frame shown, and the kernel knows nothing of it */
   private readonly figure = new ClipPlayer();
   /** the "!" over a predator that has just seen the player */
@@ -2250,13 +2262,14 @@ export class WorldScene extends Phaser.Scene {
     const info = this.b.sprites[k];
     const st = info?.stride;
     // art px, down is positive: the bob is negative or zero
-    const dy = !st
-      ? (info as ClipSprite | undefined)?.clip
-        ? 0
-        : walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE)
-      : st.bob === false
-        ? 0
-        : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000);
+    const dy =
+      (!st
+        ? (info as ClipSprite | undefined)?.clip
+          ? 0
+          : walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE)
+        : st.bob === false
+          ? 0
+          : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000)) - this.lift;
     // a bite's flinch moves the drawn player only, never where the body stands
     const [fx, fy] = this.flinch;
     this.player.setOrigin(0.5 - fx / (this.player.displayWidth || 1), footOrigin(k) - (dy * (T / ART_PX) + fy) / (this.player.displayHeight || 1));
@@ -2566,6 +2579,7 @@ export class WorldScene extends Phaser.Scene {
       this.showSignatures(s);
       this.hearPlace(s);
     }
+    this.hopFrame(s);
     this.walk(s, real);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
@@ -2898,7 +2912,7 @@ export class WorldScene extends Phaser.Scene {
    * its feet enter is the player's, told to the kernel in order. The facing follows the motion's leading axis.
    */
   private walk(s: GameSession, delta: number): void {
-    if (this.falling) return;
+    if (this.falling || this.hop || this.hopAsked) return;
     // the session may have put the player elsewhere: a load, a fall, the server's tile taken back
     const moved = this.body.follow(s.pos);
     const was = this.body.moving;
@@ -3550,6 +3564,12 @@ export class WorldScene extends Phaser.Scene {
   private fallDown(from: readonly [number, number], to: readonly [number, number]): void {
     const s = this.session;
     if (!s) return;
+    // a jump off a cliff lands first: the fall begins where the body came down, once the hop in the air is over
+    if (this.hop || this.hopAsked) {
+      this.falling = true;
+      this.fellAfterHop = { from: [from[0], from[1]], to: [to[0], to[1]] };
+      return;
+    }
     this.falling = true;
     this.figure.stop();
     // work under way is not taken back: it is simply over (the session drops its undo)
@@ -3854,8 +3874,14 @@ export class WorldScene extends Phaser.Scene {
     for (const e of events) {
       // the jolt and the flash belong to danger (joltOf); a success moves no camera and flashes nothing
       const jolt = joltOf(e, RICH.motion);
-      if (jolt?.flash) this.cameras.main.flash(jolt.flash.ms, ...jolt.flash.rgb);
-      if (jolt?.shake) this.cameras.main.shake(jolt.shake.ms, jolt.shake.intensity);
+      // a landing that hurts shows its flash and shake when the feet come down, not at the takeoff
+      const landsIn = e.e === 'hurt' && e.by === 'fall' ? this.hopLeft() : 0;
+      const shock = () => {
+        if (jolt?.flash) this.cameras.main.flash(jolt.flash.ms, ...jolt.flash.rgb);
+        if (jolt?.shake) this.cameras.main.shake(jolt.shake.ms, jolt.shake.intensity);
+      };
+      if (landsIn > 0) this.time.delayedCall(landsIn, shock);
+      else shock();
       if (e.e === 'fall') this.fallDown(e.from, e.at);
       if (e.e === 'restore' || e.e === 'build') {
         const slot = e.e === 'restore' ? findSlot(this.b.map, this.b.restores[e.restore]?.place.slot ?? '') : undefined;
@@ -3898,6 +3924,69 @@ export class WorldScene extends Phaser.Scene {
     }
     this.marker.setVisible(!!t);
     if (t) this.marker.setPosition(t.tile[0] * T + T / 2, (t.tile[1] + 1) * T - t.top - 1);
+  }
+
+  /** Milliseconds until the hop in the air lands: the whole hop while a jump is asked and not answered, 0 on the ground. */
+  private hopLeft(): number {
+    if (this.hop) return Math.max(0, this.hop.start + this.hop.ms - this.time.now);
+    return this.hopAsked ? this.b.params.jump.air_ms : 0;
+  }
+
+  /**
+   * The jump key and the phone's jump button (DECISIONS 2026-11-22, the jump and the fall): one hop ahead the way the
+   * player faces, or two across a gap of water. The landing is `jumpTarget`'s, the kernel answers by its own rule (breath,
+   * the first minute, a face too high) and the refusal is told in its words. The hop's look is a code STAND-IN (`hop`).
+   */
+  jump(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    const to = jumpTarget(this.b, this.walkable, this.nodeAt, s);
+    if (!to) {
+      app.ui.toast('There is nothing to land on there.', 'info');
+      return;
+    }
+    const from: [number, number] = [s.pos[0], s.pos[1]];
+    this.hopAsked = true;
+    void Promise.resolve(s.act({ t: 'jump', at: to })).then((r) => {
+      this.hopAsked = false;
+      if (!r.ok) {
+        app.ui.toast(r.error, 'info');
+        return;
+      }
+      const lands = r.events.find((e) => e.e === 'jump');
+      if (lands?.e !== 'jump') return;
+      sound.sfx('step');
+      // the figure holds its standing frame in the air; a longer way over a gap rises a little higher
+      this.faceFrame();
+      this.hop = { from, to: [to[0], to[1]], start: this.time.now, ms: this.b.params.jump.air_ms, peak: lands.across ? 26 : 18 };
+    });
+  }
+
+  /** One frame of the hop's stand-in: the feet go from tile to tile, the drawing rides the arc, and on landing the body stands on the tile. */
+  private hopFrame(s: GameSession): void {
+    const hop = this.hop;
+    if (!hop) return;
+    const k = Math.min(1, (this.time.now - hop.start) / hop.ms);
+    this.body.x = (hop.from[0] + (hop.to[0] - hop.from[0]) * k) * ART_PX + ART_PX / 2;
+    this.body.y = (hop.from[1] + (hop.to[1] - hop.from[1]) * k) * ART_PX + ART_PX / 2;
+    this.body.moving = false;
+    this.lift = hop.peak * 4 * k * (1 - k);
+    this.drawBody();
+    if (k < 1) return;
+    this.hop = null;
+    this.lift = 0;
+    const fell = this.fellAfterHop;
+    this.fellAfterHop = null;
+    if (fell) {
+      this.fallDown(fell.from, fell.to);
+      return;
+    }
+    s.pos = [hop.to[0], hop.to[1]];
+    this.body.place(hop.to);
+    if (RICH.motion) this.puffAt(hop.to[0], hop.to[1]);
+    this.arrive(s);
+    this.drawBody();
+    this.faceFrame();
   }
 
   /** The A button: act on what the player faces, stands on, or stands next to. */
@@ -3962,6 +4051,8 @@ export class WorldScene extends Phaser.Scene {
     // on the jetty a passage leaves from, once the opening has reached it, the boat is offered (SEA_CROSSING.md); its hours and fare are the kernel's to refuse
     const passage = passageAt(this.b, s.state, s.pos);
     if (passage) return { label: `Board: ${this.b.passages[passage]!.title}`, run: () => void app.ui.board(passage), tile: [s.pos[0], s.pos[1]], top: T };
+    const prey = huntingNearby(this.b, s.state, s.tick, s.pos);
+    if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: T / 2 };
     // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
     // It comes after every other target, so a fire never hides a thing the player already faces.
     return this.kindleTarget(s);
@@ -3988,6 +4079,8 @@ export class WorldScene extends Phaser.Scene {
     // a pile the player put down, under their feet
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };
+    const hunt = huntingAt(b, s.state, s.tick, s.pos, tile);
+    if (hunt) return { ...hunt, run: () => void app.ui.hunt(hunt.action), top: T / 2 };
     const door = this.doors.get(k);
     if (door) {
       // the door is used from the step in front of it, facing in

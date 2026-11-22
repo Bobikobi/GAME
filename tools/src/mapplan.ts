@@ -3,7 +3,7 @@
  * the game). The plan agrees with the tiles; paths wind (G69); and the first night is held by the
  * size of the land, never by a lock (G71). The kernel and the clients never read the plan.
  */
-import { type Bundle, type Rect, findSlot, inRect, lastDusk, makeWalkable, tagAt, worldAt } from '@game/kernel';
+import { type Bundle, type Rect, findSlot, inRect, isGap, jumpRule, lastDusk, makeWalkable, tagAt, worldAt } from '@game/kernel';
 import type { Issue } from './load';
 
 type Tile = readonly [number, number];
@@ -155,30 +155,57 @@ function exitTiles(b: Bundle): { id: string; tiles: Tile[] }[] {
   });
 }
 
-/** A walk over the map with every mend made and every listed gate open; `stop` tiles are entered but not walked past. */
+/**
+ * The steps a hop over a gap is counted as: the two tiles it covers (DECISIONS.md, 2026-11-22). Its air time is longer
+ * (`jump.air_ms`), and breath and the first minute are left out, so the measure stays an upper bound on any shortcut
+ * a jump could make: G71 counts jumps as moves, and a cliff or a stream never becomes a short way out of the valley.
+ */
+export const HOP_STEPS = 2;
+
+/**
+ * A walk over the map with every mend made and every listed gate open, the jump counted as a move: four-way steps of one
+ * and hops across a one-tile gap of water, by the kernel's own `jumpRule`, of `HOP_STEPS`. Heights are not read by the
+ * walk (a climb of any size is free here), which is more than any jump may do, so a cliff is never a shortcut the
+ * measure misses. `stop` tiles are entered but not walked past.
+ */
 function walkFrom(b: Bundle, starts: readonly Tile[], stop: (x: number, y: number) => boolean, skip: (x: number, y: number) => boolean = () => false): Map<number, number> {
   const m = b.map;
   const walkable = makeWalkable(b);
+  const rule = jumpRule(b);
   const view = { restored: passableSlots(b).map((s) => s.id), camp: [] as string[] };
   const gate = new Set(exitTiles(b).flatMap((e) => e.tiles.map(([x, y]) => y * m.width + x)));
   const open = (x: number, y: number) => x >= 0 && y >= 0 && x < m.width && y < m.height && (gate.has(y * m.width + x) || walkable(x, y, view));
   const dist = new Map<number, number>();
-  const queue: Tile[] = [];
+  // a queue of tiles by their distance: a hop costs more than a step, so a plain queue would reach a tile by the longer way
+  const buckets: Tile[][] = [];
+  const first = new Set<number>();
   for (const [x, y] of starts) {
     dist.set(y * m.width + x, 0);
-    queue.push([x, y]);
+    first.add(y * m.width + x);
+    (buckets[0] ??= []).push([x, y]);
   }
-  for (let i = 0; i < queue.length; i++) {
-    const [x, y] = queue[i]!;
-    const d = dist.get(y * m.width + x)!;
-    if (i >= starts.length && stop(x, y)) continue;
-    for (const [dx, dy] of STEPS) {
-      const nx = x + dx;
-      const ny = y + dy;
-      const k = ny * m.width + nx;
-      if (dist.has(k) || !open(nx, ny) || skip(nx, ny)) continue;
-      dist.set(k, d + 1);
-      queue.push([nx, ny]);
+  const reach = (x: number, y: number, d: number) => {
+    const k = y * m.width + x;
+    const known = dist.get(k);
+    if (known !== undefined && known <= d) return;
+    dist.set(k, d);
+    (buckets[d] ??= []).push([x, y]);
+  };
+  for (let d = 0; d < buckets.length; d++) {
+    for (const [x, y] of buckets[d] ?? []) {
+      const k = y * m.width + x;
+      if (dist.get(k) !== d) continue;
+      if (!first.has(k) && stop(x, y)) continue;
+      for (const [dx, dy] of STEPS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (open(nx, ny) && !skip(nx, ny)) reach(nx, ny, d + 1);
+        // a gap of water between two standing tiles: hopped, if the height rule of the jump allows it
+        if (!isGap(b, nx, ny) || open(nx, ny)) continue;
+        const lx = x + 2 * dx;
+        const ly = y + 2 * dy;
+        if (open(lx, ly) && !skip(lx, ly) && rule([x, y], [lx, ly]).ok) reach(lx, ly, d + HOP_STEPS);
+      }
     }
   }
   return dist;

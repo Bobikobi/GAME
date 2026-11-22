@@ -1317,6 +1317,56 @@
         "max": 100,
         "step": 5
       }
+    },
+    "jump": {
+      "first_minute_ms": {
+        "value": 60000,
+        "min": 30000,
+        "max": 180000,
+        "step": 15000
+      },
+      "up_levels": {
+        "value": 1,
+        "min": 1,
+        "max": 2,
+        "step": 1
+      },
+      "breath_cost": {
+        "value": 10,
+        "min": 5,
+        "max": 20,
+        "step": 1
+      },
+      "breath_refill_per_s": {
+        "value": 5,
+        "min": 2,
+        "max": 10,
+        "step": 1
+      },
+      "air_ms": {
+        "value": 400,
+        "min": 200,
+        "max": 800,
+        "step": 50
+      },
+      "fall_two_bp": {
+        "value": 2000,
+        "min": 1000,
+        "max": 3000,
+        "step": 500
+      },
+      "fall_three_bp": {
+        "value": 5000,
+        "min": 3000,
+        "max": 7000,
+        "step": 500
+      },
+      "death_levels": {
+        "value": 4,
+        "min": 3,
+        "max": 5,
+        "step": 1
+      }
     }
   }
 }
