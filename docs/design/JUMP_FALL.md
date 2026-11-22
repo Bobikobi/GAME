@@ -12,7 +12,7 @@ Read first: `content/core/schools/` (six live schools, all gathering or crafting
 
 - **The jump itself is not grown.** It is the body's own verb, like a step, so it sits on no node. Nothing a player trains opens or closes it.
 - **What grows is how the fall is taken.** No live school fits, and Travel (4.8) does not exist as a file yet. The proposal below extends the tree there. The pull request's line is `Tree: extends the tree: docs/design/JUMP_FALL.md`.
-- **Overlap to settle, not settled here.** Travel's gated nodes `scramble` (a rock step of one level by hand, 8 s, level 11-20) and `leap` (a gap one tile wide, 3 s, level 16-21) name what the free jump now does. They keep a job as the slow, safe, breathless forms: no breath spent, no jump needed in the first minute, and (for `leap`) a gap that is wider than the free hop's one tile. The manager decides whether they are renamed or kept as written.
+- **The overlap is settled (the manager's ruling, 22.11).** The free jump is the base everyone has; Travel's nodes stay and grow on top of it. `scramble` keeps its id as the safe form of the one-level step up: no breath spent and no jump arc. `leap` widens to a gap two steps wide, because a gap one tile wide is now free. PROGRESSION 4.8's `scramble` and `leap` rows and the `leap` node text change in the same pull request.
 
 ## 3. The proposed node
 

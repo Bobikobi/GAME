@@ -344,9 +344,9 @@ From band 4 to the crown is 44.9 active hours: about 2,700 laps of a 60 s course
 | `log` | a fallen trunk over a stream or a gap (REACTIONS `open`; GROWTH 5.2's felled tree as a bridge) | 1-10 | none | 5 s | 19 a, 19 c |
 | `squeeze` | a gap between rocks, a hole in a hedge | 1-15 | none | 6 s | 19 a, 19 c |
 | `ford` | a shallow river, waded | 6-20 | `ford-wise` | 2 s a water tile | 19 a, 19 c; high water shuts it (REACTIONS `close`) |
-| `scramble` | a rock step of one level, by hand | 11-20 | `scramble` | 8 s | 19 a's levels, 19 c |
+| `scramble` | a rock step of one level, by hand: the safe form of the free jump (no breath spent, no jump arc, G68 and DECISIONS 2026-11-22) | 11-20 | `scramble` | 8 s | 19 a's levels, 19 c |
 | `ledge` | a narrow way along a rock face | 11-21 | `ledge-walk` | 2 s a tile | 19 a's levels, 19 c |
-| `leap` | a gap one tile wide | 16-21 | `leap` | 3 s | 19 c |
+| `leap` | a gap two steps wide (a gap one tile wide is the free jump's, DECISIONS 2026-11-22) | 16-21 | `leap` | 3 s | 19 c |
 | `rope` | a drop of two or three levels | Climbing's | Climbing's `climb_reach` | Climbing's | Climbing (4.5) |
 
 A crossing tile carries `crossing: { kind, travel, secs }` where today it carries `crossing: true` (true stays the open steps or ramp; a shared-file change, its own small pull request in 19 a). The step rule landed with #405 and reads only `crossing: true` today (any crossing at either end opens a step of 1 to 3 levels); the kinds below are still to come, and when they do, the step check reads the kind, the player's Travel level and the node, in the one function the BFS of G56 shares, so reach and walking cannot disagree. A place's crossings are set against NEXT 19 b's table: where the expected level puts a player in band b, its crossings sit at band b or one above, a reason to come back. A crossing is never in two schools, and its time pays its own school only.
@@ -374,7 +374,7 @@ A crossing tile carries `crossing: { kind, travel, secs }` where today it carrie
 | 3, Trail | `swift-crossing` | Swift crossing | small | `ledge-walk` | `cross_speed_pct` | 5 | Ways over go quicker still. | 19 a, 19 c |
 | 3, Trail | `oar-hand` | Oar hand | small | `ledge-walk` | `row_step_pct` | 10 | The oars pull the boat further each stroke. | 19 f, the `row` verb |
 | 3, Trail | `wide-chart` | Wide chart | small | `ledge-walk` | `map_wide` | 1 | Your chart holds a little more around the ground you have walked. | none |
-| 4, Trail | `leap` | Leap | major | `ledge-walk` | `leap` | 0 | You jump a gap a step wide. | 19 c |
+| 4, Trail | `leap` | Leap | major | `ledge-walk` | `leap` | 0 | You leap a gap two steps wide. | 19 c |
 | 4, Trail | `trail-stride` | Trail stride | small | `leap` | `walk_step_pct` | 5 | On a trail your feet find their rhythm. | none |
 | 4, Trail | `long-oar` | Long oar | small | `leap` | `row_step_pct` | 10 | A long pull carries the boat further. | 19 f, the `row` verb |
 | 4, Trail | `far-chart` | Far chart | small | `leap` | `map_wide` | 1 | Your chart holds more of the land around your ways. | none |
