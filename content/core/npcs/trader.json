@@ -76,6 +76,15 @@
     ],
     "topics": [
       {
+        "ask": "What each tool opens",
+        "lines": [
+          "Basket: berries, herbs, mushrooms. Anything that grows low and soft.",
+          "Trowel: the ground itself. Dig where the old stones lie.",
+          "Axe: oaks and fallen wood. A tree gives logs, and logs give fire.",
+          "Staff: opens nothing, finds a little more. Sharp eyes, I call it."
+        ]
+      },
+      {
         "ask": "About the bells",
         "when": {
           "visited": [

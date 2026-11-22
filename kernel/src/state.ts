@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.31.0';
+export const KERNEL_VERSION = '0.32.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -239,6 +239,25 @@ export interface Player {
   crossings?: number;
   /** tick of the last arrival: a position report, or an action at a tile */
   movedAt: number;
+  /** the valley's day so far and the day before it (G16, the day summary); absent until the first step of a day that has begun */
+  day?: DayTally;
+}
+
+/**
+ * What one valley day held, as ids kept by the step that brought each: what was found (an item met for the first
+ * time, a place brought home), built (a place mended, a camp part raised) and learned (a recipe, a node of the tree).
+ * Each id enters once in a game, so the lists stay short. Integers and strings only.
+ */
+export interface DayLog {
+  found: string[];
+  built: string[];
+  learned: string[];
+}
+
+/** The day the player is in (`n`, the valley's day, from `valleyDay`) with what it holds so far, and the finished day before it (`prev`) until the next dawn replaces it. */
+export interface DayTally extends DayLog {
+  n: number;
+  prev?: DayLog & { n: number };
 }
 
 /** A crossing under way: the passage, how far it has come, and the one event drawn for it at boarding. */
@@ -822,6 +841,29 @@ export function hourOf(bundle: Bundle, tick: number): number {
 export function searchDawn(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
   return idiv(tick + idiv(day, 2) - idivUp(5 * day, 24), day);
+}
+
+/**
+ * The valley's day (G16, G28): 1 from the wake to the first dawn, and one more at each dawn. It is the count of the
+ * valley's own dawns, so it moves only while the game clock runs and never with the calendar. Tick 0 is noon.
+ */
+export function valleyDay(bundle: Bundle, tick: number): number {
+  return searchDawn(bundle, tick) + 1;
+}
+
+/** The first dawn (05:00) at or after `tick`: when a node that waits for the morning (`respawn_dawn`) is back. */
+export function dawnAtOrAfter(bundle: Bundle, tick: number): number {
+  const day = bundle.params.day_length_ms;
+  const dawn = idivUp(5 * day, 24) - idiv(day, 2);
+  const k = Math.max(1, idivUp(tick - dawn, day));
+  return dawn + k * day;
+}
+
+/** The latest dawn at or before `tick`; -1 before the first. */
+export function lastDawn(bundle: Bundle, tick: number): number {
+  const k = searchDawn(bundle, tick);
+  if (k < 1) return -1;
+  return idivUp(5 * bundle.params.day_length_ms, 24) - idiv(bundle.params.day_length_ms, 2) + k * bundle.params.day_length_ms;
 }
 
 /** Night for the rules: 20:00 to 05:00, the hours the client darkens fully and plays the night song. */

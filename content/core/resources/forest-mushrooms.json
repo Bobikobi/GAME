@@ -27,6 +27,7 @@
     "yield": 2,
     "active_ms": 3500,
     "respawn_ms": 90000,
+    "respawn_dawn": true,
     "count": 3,
     "sprite": "core/base-kit:props/mushroom_patch",
     "tool": "basket",

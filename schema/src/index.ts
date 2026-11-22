@@ -400,6 +400,12 @@ export const ResourceBody = Type.Object(
     yield: Int(1, 20, 'Units the node gives before it is out: one each work interval, the node\'s time shared out among them (QUARRYING 10).'),
     active_ms: Ms('Time the player is busy gathering once.'),
     respawn_ms: Ms('Time before the same plant gives again. Waiting is never paid.'),
+    respawn_dawn: Type.Optional(
+      Type.Literal(true, {
+        description:
+          'A node worked out comes back at the first dawn (05:00) after its `respawn_ms` has run: the morning brings it back (G16, the ladder\'s Day 2). It is never back sooner than the plain wait, so the value table and the rarity budget hold as they are. The dawn is the valley\'s, never the calendar\'s: a player away finds it as they left it (G28).',
+      }),
+    ),
     count: Int(1, 12, 'How many of these nodes the slot holds.'),
     sprite: SpriteRef,
     sprite_empty: Type.Optional(SpriteRef),
@@ -624,6 +630,9 @@ export const When = Type.Object(
     race: Type.Optional(Ids('Races the player may be: holds when the player is one of them. A line may differ by race; a quest step never does.')),
     time: Type.Optional(
       Type.Union([Type.Literal('day'), Type.Literal('night')], { description: 'By day (05:00 to 20:00) or by night.' }),
+    ),
+    day_min: Type.Optional(
+      Int(2, 365, 'The valley\'s day has reached this number: day 1 runs from the wake to the first dawn, day 2 from that dawn to the next. A line that waits for the morning after (the ladder\'s Day 2). Never the calendar\'s day (G28).'),
     ),
   },
   { additionalProperties: false, minProperties: 1, description: 'Holds when every condition it names holds.' },
