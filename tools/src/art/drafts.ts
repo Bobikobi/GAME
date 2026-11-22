@@ -10,7 +10,8 @@
  * - The pictures are too big for this repo. They live in the private repo `Bobikobi/GAME-art-drafts`, one GitHub
  *   release per kernel run, three assets a draft named by its id: `<id>.png` (the raw picture, what the importer read),
  *   `<id>.full.png` (the kernel's picture before the grid, when there is one) and `<id>.imported.png` (what the importer
- *   made). `stored` in the index cites tag and asset; `files` holds the hashes. Nothing is ever deleted there.
+ *   made). `stored` in the index cites tag and asset; `files` holds the hashes. A file leaves the store only through `pnpm art:prune`
+ *   (docs/art/REUSE.md "Pruning"): a cold copy first, then one amendment `removed` on the draft's line.
  * - `.scratch/art-drafts/` is the local cache. `pnpm art:drafts fetch` fills it, `verify` re-hashes it against the index.
  *
  *   pnpm art:drafts push <run folder | picture folder> --label <source> [--provenance <text>] [--backfill] [--tag <tag>]
@@ -263,6 +264,15 @@ export class DraftIndex {
     if (Object.keys(patch).length === 2) return 'same';
     this.write(patch);
     return 'merged';
+  }
+
+  /** The files of this draft were taken out of the store by `pnpm art:prune`: one amendment `{id, amend, removed: <rule code>, at}`. */
+  markRemoved(id: string, code: string, at: string): boolean {
+    const existing = this.drafts.get(id);
+    if (existing === undefined) throw new Error(`no draft ${id}`);
+    if (existing.removed !== undefined) return false;
+    this.write({ id, amend: true, removed: code, at });
+    return true;
   }
 
   /** A fact learned later. Nothing is written when it changes nothing. */

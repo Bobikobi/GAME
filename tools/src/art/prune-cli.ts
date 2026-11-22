@@ -12,6 +12,12 @@
  * A dry run deletes nothing and changes no file of the repo. It reads, beside the index: the owner's hand sort (the library
  * page's `reviews.jsonl`), the hub answers, the pick closes, the pools, a grep of the repo, and the drafts store's asset list
  * (cached in `.scratch/prune/store.json`; `--refresh-store` lists it again, `--offline` never asks GitHub).
+ *
+ * pnpm art:prune --apply --list FILE --go SHA256 [--cold DIR]
+ *
+ * Removes the drafts of a reviewed list, after the manager's GO (see `prune-apply.ts`): the list's hash must be the approved one,
+ * every row must still hold, a cold copy is made and checked first, and only then the files are deleted from the store and
+ * one `removed` amendment per draft is appended to the index.
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -24,6 +30,7 @@ import { dateOf } from './library.js';
 import { ensureThumbs, thumbPath } from './library-cli.js';
 import { readReviews } from './library-reviews.js';
 import { type Choice, type PickClose, type Plan, type PruneInput, type RetiredEntry, RULES, type Verdict, ERA_END, YOUNG_DAYS, assetsOf, byRule, bytesOf, isThreeD, planPrune, sampleFor } from './prune.js';
+import { coldCopy, deleteFromStore, expectedHashes, markRemoved, parseList, rowsThatFail, sha256OfText, writeManifest } from './prune-apply.js';
 import { ROOT } from './queue.js';
 
 export const CLOSES_PATH = 'tools/kit-gen/pick-closes.json';
@@ -285,10 +292,12 @@ export function decisionNotes(drafts: readonly Draft[], plan: Plan, root = ROOT,
 
 export interface DryOptions { out: string; seed: number; offline: boolean; refresh: boolean; say: (t: string) => void; indexPath?: string; now?: Date }
 
-export function dryRun(opts: DryOptions): { plan: Plan; report: string; total: number } {
+export interface Gathered { index: DraftIndex; all: Draft[]; drafts: Draft[]; inputs: string[]; store: { assets: StoreAsset[] | null; note: string }; input: PruneInput; plan: Plan }
+
+/** Read every input and sort the drafts: the plan a dry run reports and an apply re-checks its list against. */
+export function gather(opts: DryOptions): Gathered {
   const root = ROOT;
   mkdirSync(opts.out, { recursive: true });
-  for (const old of readdirSync(opts.out).filter((f) => /^sheet-R\d\.png$/.test(f))) rmSync(join(opts.out, old));
   const index = DraftIndex.open(opts.indexPath ?? INDEX_PATH);
   const all = [...index.drafts.values()];
   const drafts = all.filter((d) => !isRemoved(d));
@@ -311,7 +320,14 @@ export function dryRun(opts: DryOptions): { plan: Plan; report: string; total: n
   inputs.push(`the drafts store: ${store.assets === null ? store.note : `${store.assets.length} assets in ${new Set(store.assets.map((a) => a.tag)).size} releases, ${store.note}`}`);
 
   const input: PruneInput = { drafts, owner, uses, closes, hubOk: hub, retired, nameHits: nameSearch(root), present: store.assets === null ? null : new Set(store.assets.map((a) => a.name)), objects: readObjects(root), now: opts.now ?? new Date() };
-  const plan = planPrune(input);
+  return { index, all, drafts, inputs, store, input, plan: planPrune(input) };
+}
+
+export function dryRun(opts: DryOptions): { plan: Plan; report: string; total: number } {
+  const root = ROOT;
+  mkdirSync(opts.out, { recursive: true });
+  for (const old of readdirSync(opts.out).filter((f) => /^sheet-R\d\.png$/.test(f))) rmSync(join(opts.out, old));
+  const { all, drafts, inputs, plan } = gather(opts);
 
   const byId = new Map(drafts.map((d) => [d.id, d]));
   writeFileSync(join(opts.out, 'remove.jsonl'), plan.remove.map((v) => {
@@ -357,10 +373,51 @@ function flag(args: readonly string[], name: string): string | undefined {
   return i >= 0 ? args[i + 1] : undefined;
 }
 
+const COLD_DEFAULT = join(homedir(), 'Projects/GAME/.scratch/drafts-pruned-2211');
+
+/** pnpm art:prune --apply --list FILE --go SHA256 [--cold DIR]: the removal of a reviewed list. See `prune-apply.ts`. */
+export function applyList(args: readonly string[], say: (t: string) => void): number {
+  const listFile = flag(args, '--list');
+  const go = flag(args, '--go');
+  if (listFile === undefined || go === undefined) { process.stderr.write('art:prune --apply needs --list FILE (a reviewed remove.jsonl) and --go SHA256 (the list\'s hash the manager approved)\n'); return 2; }
+  const text = readFileSync(resolve(listFile), 'utf8');
+  const sum = sha256OfText(text);
+  if (sum !== go) { process.stderr.write(`the list's sha256 is ${sum}, not the approved ${go}: nothing was touched\n`); return 3; }
+  const rows = parseList(text);
+  const out = resolve(flag(args, '--out') ?? join(ROOT, '.scratch/prune'));
+  const cold = resolve(flag(args, '--cold') ?? COLD_DEFAULT);
+  say(`list ${rows.length} rows, sha256 ${sum}`);
+  const g = gather({ out, seed: DEFAULT_SEED, offline: false, refresh: true, say });
+  const bad = rowsThatFail(rows, g.plan);
+  if (bad.length > 0) { process.stderr.write(`${bad.length} rows no longer hold; nothing was touched:\n${bad.slice(0, 20).join('\n')}\n`); return 4; }
+  const byId = new Map(g.drafts.map((d) => [d.id, d]));
+  for (const r of rows) {
+    const d = byId.get(r.id)!;
+    const have = [...expectedHashes(d).keys()].sort().join(',');
+    if (have !== [...r.assets].sort().join(',')) { process.stderr.write(`${r.id}: the list names assets ${r.assets.join(',')} but the index holds ${have}; nothing was touched\n`); return 4; }
+  }
+  say(`every row still holds (${g.plan.remove.length} in the fresh plan, ${g.plan.remove.length - rows.length} more than the list: not touched)`);
+  const cc = coldCopy(rows, byId, cold, realGh, say);
+  say(`cold copy: ${cc.copied} files, ${mb(cc.bytes)} MB, in ${cold}; ${cc.failures.length} failed`);
+  if (cc.failures.length > 0) { process.stderr.write(`a cold copy failed its check; NOTHING was deleted:\n${cc.failures.slice(0, 20).join('\n')}\n`); return 5; }
+  const at = new Date().toISOString();
+  writeManifest(cold, rows, sum, at);
+  const del = deleteFromStore(rows, byId, g.store.assets ?? [], realGh, say);
+  say(`store: ${del.deleted} files deleted, ${del.absent.length} already absent, releases deleted: ${del.releasesDeleted.length} ${del.releasesDeleted.join(' ')}`);
+  if (del.failures.length > 0) { process.stderr.write(`${del.failures.length} deletes failed; the index was not changed:\n${del.failures.slice(0, 20).join('\n')}\n`); return 6; }
+  const n = markRemoved(g.index, rows, at);
+  say(`index: ${n} amend lines appended`);
+  const after = listStore(realGh);
+  const still = rows.flatMap((r) => r.assets.filter((a) => after.some((x) => x.name === a && x.tag === r.tag)));
+  say(still.length === 0 ? 'verified: none of the removed files is in the store any more' : `NOT verified: ${still.length} removed files are still in the store`);
+  return still.length === 0 ? 0 : 7;
+}
+
 export function main(args: readonly string[]): number {
   const say = (t: string): void => void process.stdout.write(`${t}\n`);
+  if (args.includes('--apply')) return applyList(args, say);
   if (!args.includes('--dry')) {
-    process.stderr.write('art:prune: only --dry is available before the manager\'s GO; it writes .scratch/prune/report.md and remove.jsonl and deletes nothing.\n');
+    process.stderr.write('art:prune: --dry writes .scratch/prune/report.md and remove.jsonl and deletes nothing; --apply --list FILE --go SHA256 removes a list the manager approved.\n');
     return 2;
   }
   const out = resolve(flag(args, '--out') ?? join(ROOT, '.scratch/prune'));
