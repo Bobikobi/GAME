@@ -26,7 +26,6 @@ export class Piles {
   refresh(state: PublicState): void {
     const want = new Map<string, string>();
     for (const k of Object.keys(state.player.ground ?? {})) {
-      const [x, y] = k.split(',').map(Number) as [number, number];
       // the stones lying here are the stone layer's (scenes/stones.ts): they show by count, in their sizes
       const id = Object.keys(state.player.ground?.[k] ?? {}).filter((i) => i !== STONE_ITEM && (state.player.ground?.[k]?.[i] ?? 0) > 0).sort()[0];
       if (id) want.set(k, this.b.items[id]?.sprite ?? this.fallback);

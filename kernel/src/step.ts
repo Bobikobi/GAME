@@ -2180,7 +2180,7 @@ function stoneBook(p: State['player']): NonNullable<State['player']['stones']> {
  * is held over the head and weighs in the load, so it is lifted only where might's limit carries it.
  */
 function lift(ctx: Ctx, size: 'small' | 'large', qty = 1): void {
-  const { b, s, tick } = ctx;
+  const { b, s } = ctx;
   const p = s.player;
   if (size !== 'small' && size !== 'large') refuse('Lift a small stone or a large one.');
   checkQty(qty);

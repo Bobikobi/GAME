@@ -401,7 +401,7 @@ describe('piles and the area', () => {
     const b = world({ ground: FIELD, spots: [] });
     const s = { ...standing(b, [2, 1]), player: { ...standing(b, [2, 1]).player, bag: { [STONE_ITEM]: 3 } } };
     const piled = run(b, s, drop(3)).state;
-    const moved = run(b, piled, pickup(2), (st) => ({ t: 'move', at: [3, 1] }) as Action, drop(2)).state;
+    const moved = run(b, piled, pickup(2), () => ({ t: 'move', at: [3, 1] }) as Action, drop(2)).state;
     expect(lyingAt(b, moved, [2, 1]).small).toBe(1);
     expect(lyingAt(b, moved, [3, 1]).small).toBe(2);
   });
@@ -417,7 +417,7 @@ describe('piles and the area', () => {
     const after = FIELD.flatMap((row, y) => [...row].map((_, x) => walkable(x, y, piled.player)));
     expect(after).toEqual(before);
     // walk over the pile and the spot
-    const r = run(b, { ...piled, player: { ...piled.player, at: [1, 1] } }, (st) => ({ t: 'move', at: [2, 1] }) as Action, (st) => ({ t: 'move', at: [3, 1] }) as Action, (st) => ({ t: 'move', at: [4, 1] }) as Action);
+    const r = run(b, { ...piled, player: { ...piled.player, at: [1, 1] } }, () => ({ t: 'move', at: [2, 1] }) as Action, () => ({ t: 'move', at: [3, 1] }) as Action, () => ({ t: 'move', at: [4, 1] }) as Action);
     expect(r.state.player.at).toEqual([4, 1]);
   });
 
@@ -514,9 +514,9 @@ describe('replay', () => {
     };
     go(lift('small'));
     go(throwTo([12, 1]));
-    go((s) => ({ t: 'move', at: [2, 1] }) as Action);
+    go(() => ({ t: 'move', at: [2, 1] }) as Action);
     go(lift('large'));
-    go((s) => ({ t: 'move', at: [3, 1] }) as Action);
+    go(() => ({ t: 'move', at: [3, 1] }) as Action);
     go(setdown);
     go(lift('small'));
     go(drop(1));
