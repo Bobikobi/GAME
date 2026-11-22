@@ -63,7 +63,7 @@ const GROUPS: Record<string, Group> = {
  * How much faster the game's clock runs while a script only waits on it (cdp.ts, WARP): the openings wait on digs,
  * fellings, cookings and dusk. E2E_WARP=1 in the shell turns it off, to debug a run at the game's own pace.
  */
-const WARP: Record<string, number> = { opening: 4, sea: 4, jump: 4, effects: 4 };
+const WARP: Record<string, number> = { opening: 4, sea: 4, jump: 4 };
 
 /** Throws when a script is in no group or a plain script is in two: CI would skip it or play it twice. */
 function checkGroups(): void {
