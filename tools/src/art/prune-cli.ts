@@ -20,9 +20,10 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { DRAFTS_REPO, type Draft, DraftIndex, type Gh, INDEX_PATH, isRemoved, realGh, retry } from './drafts.js';
+import { dateOf } from './library.js';
 import { ensureThumbs, thumbPath } from './library-cli.js';
 import { readReviews } from './library-reviews.js';
-import { type Choice, type PickClose, type Plan, type PruneInput, type RetiredEntry, RULES, type Verdict, YOUNG_DAYS, assetsOf, byRule, bytesOf, planPrune, sampleFor } from './prune.js';
+import { type Choice, type PickClose, type Plan, type PruneInput, type RetiredEntry, RULES, type Verdict, ERA_END, YOUNG_DAYS, assetsOf, byRule, bytesOf, isThreeD, planPrune, sampleFor } from './prune.js';
 import { ROOT } from './queue.js';
 
 export const CLOSES_PATH = 'tools/kit-gen/pick-closes.json';
@@ -46,6 +47,18 @@ export function readCloses(root = ROOT): PickClose[] {
     if (typeof c.id !== 'string' || typeof c.closed !== 'string' || typeof c.decision !== 'string' || !Array.isArray(c.lost)) throw new Error(`${CLOSES_PATH}: a close needs id, closed, decision and lost`);
   }
   return parsed.closes;
+}
+
+/** The names of the objects the kit and the pools hold: `props/tree_oak` is `tree_oak`. */
+export function readObjects(root = ROOT): Set<string> {
+  const out = new Set<string>();
+  const kit = join(root, 'content/kit/core/kit.json');
+  if (existsSync(kit)) for (const m of readFileSync(kit, 'utf8').matchAll(/"[a-z0-9]+\/([a-z0-9_]+)"\s*:\s*\{/g)) out.add(m[1]!);
+  for (const file of readdirSync(join(root, POOLS_DIR)).filter((f) => f.endsWith('.json'))) {
+    const parsed = JSON.parse(readFileSync(join(root, POOLS_DIR, file), 'utf8')) as { entries?: Record<string, unknown>[] };
+    for (const e of parsed.entries ?? []) if (typeof e['name'] === 'string') out.add(e['name']);
+  }
+  return out;
 }
 
 /** The pools' entries that say `retired`. */
@@ -100,7 +113,7 @@ export function scanUses(drafts: readonly Draft[], root = ROOT): Map<string, str
 }
 
 /** A word-bounded search of content/ and docs/design/ for a retired subject's name. */
-export function nameSearch(root = ROOT): (term: string) => string[] {
+export function nameSearch(root = ROOT, dirs: readonly string[] = ['content', 'docs/design']): (term: string) => string[] {
   const corpus: { file: string; body: string }[] = [];
   const walk = (dir: string): void => {
     for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
@@ -109,7 +122,7 @@ export function nameSearch(root = ROOT): (term: string) => string[] {
       else if (TEXT_EXT.some((x) => e.name.endsWith(x)) && statSync(join(root, rel)).size < 8 * 1024 * 1024) corpus.push({ file: rel, body: readFileSync(join(root, rel), 'utf8') });
     }
   };
-  for (const dir of ['content', 'docs/design']) if (existsSync(join(root, dir))) walk(dir);
+  for (const dir of dirs) if (existsSync(join(root, dir))) walk(dir);
   return (term) => {
     const re = new RegExp(`(?<![A-Za-z0-9_])${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9_])`);
     return corpus.filter((c) => re.test(c.body)).map((c) => c.file);
@@ -188,7 +201,7 @@ const labelOf = (d: Draft): string => d.pool ?? d.sources[0]?.label ?? '?';
 
 export interface SheetInfo { rule: string; file: string | null; cells: { n: number; id: string; name: string; doubt: boolean }[]; missing: number }
 
-export function reportText(opts: { plan: Plan; drafts: readonly Draft[]; removedBefore: number; inputs: string[]; sheets: SheetInfo[]; seed: number; now: Date }): string {
+export function reportText(opts: { plan: Plan; drafts: readonly Draft[]; removedBefore: number; inputs: string[]; sheets: SheetInfo[]; seed: number; now: Date; notes?: string[] }): string {
   const { plan, drafts, sheets } = opts;
   const byId = new Map(drafts.map((d) => [d.id, d]));
   const per = byRule(plan);
@@ -210,7 +223,7 @@ export function reportText(opts: { plan: Plan; drafts: readonly Draft[]; removed
   if (held.size === 0) lines.push('| - | - | 0 |');
   lines.push('', '## Kept, no rule caught it', '');
   for (const [why, n] of [...plan.kept].sort((a, b) => b[1] - a[1])) lines.push(`- ${n}: ${why}`);
-  lines.push('', '### Where the unsorted rest sits (no rule, no protection): the biggest groups', '', '| group | drafts | MB |', '|---|---:|---:|');
+  lines.push('', ...(opts.notes ?? []), '### Where the unsorted rest sits (no rule, no protection): the biggest groups', '', '| group | drafts | MB |', '|---|---:|---:|');
   const rest = new Map<string, { n: number; b: number }>();
   for (const id of plan.uncaught) { const d = byId.get(id)!; const g = rest.get(labelOf(d)) ?? { n: 0, b: 0 }; rest.set(labelOf(d), { n: g.n + 1, b: g.b + bytesOf(d) }); }
   for (const [g, v] of [...rest].sort((a, b) => b[1].n - a[1].n).slice(0, 12)) lines.push(`| ${g} | ${v.n} | ${mb(v.b)} |`);
@@ -229,13 +242,43 @@ export function reportText(opts: { plan: Plan; drafts: readonly Draft[]; removed
     lines.push(`Evidence, one example: ${vs[0]!.why}`, '');
     const sheet = sheets.find((s) => s.rule === r.rule);
     if (sheet?.file != null) {
-      lines.push(`Sheet: \`${sheet.file}\` (${sheet.cells.length} cells, ${SHEET_COLS} a row, reading order; cells 1-${sheet.cells.filter((c) => c.doubt).length} are the ones the rule is least sure of${sheet.missing > 0 ? `; ${sheet.missing} had no picture` : ''})`, '');
+      const nDoubt = sheet.cells.filter((c) => c.doubt).length;
+      const top = Math.max(...vs.map((v) => v.sure));
+      const lower = vs.filter((v) => v.sure < top).length;
+      lines.push(`Sheet: \`${sheet.file}\` (${sheet.cells.length} cells, ${SHEET_COLS} a row, reading order; the first ${nDoubt} cells are the rule's doubtful ones: ${lower === 0 ? 'this rule has no doubt signal, every removal is equally sure, so they are simply the first by id' : `${lower} of its ${vs.length} removals are less sure than the rest and come first, marked with their certainty, then the first by id`}${sheet.missing > 0 ? `; ${sheet.missing} had no picture` : ''})`, '');
       lines.push('| cell | id | name | |', '|---:|---|---|---|');
-      for (const c of sheet.cells) lines.push(`| ${c.n} | ${c.id} | ${c.name} | ${c.doubt ? 'least sure' : ''} |`);
+      for (const c of sheet.cells) lines.push(`| ${c.n} | ${c.id} | ${c.name} | ${c.doubt ? ((vs.find((v) => v.id === c.id)?.sure ?? 1) < top ? `less sure (${vs.find((v) => v.id === c.id)?.sure})` : 'first by id') : ''} |`);
       lines.push('');
     }
   }
   return lines.join('\n');
+}
+
+/** The two examples the owner named, counted as they stand: held for his or the manager's decision, never removed by a dry run. */
+export function decisionNotes(drafts: readonly Draft[], plan: Plan, root = ROOT, now = new Date()): string[] {
+  const lines: string[] = ['## Held for decision (the owner\'s own examples; nothing here is removed)', ''];
+  const search = nameSearch(root);
+  const code = nameSearch(root, ['kernel/src', 'game/src']);
+  const removed = new Set(plan.remove.map((v) => v.id));
+  lines.push('**Retired subjects (R4).** The names the owner gave, counted as drafts that carry the name, and what still names them:', '', '| name | drafts | in content/ and docs/design/ | in kernel/ and game/ | 3D door or reviewed or used | free to remove |', '|---|---:|---|---|---:|---:|');
+  for (const term of ['forager', 'digger', 'explorer']) {
+    const re = new RegExp(`(?<![A-Za-z0-9])${term}`, 'i');
+    const ds = drafts.filter((d) => re.test([d.name, ...d.sources.map((s) => s.file ?? '')].join(' ')));
+    const guarded = ds.filter((d) => plan.held.some((h) => h.id === d.id) || d.review !== 'unreviewed' || isThreeD(d)).length;
+    const a = search(term);
+    const b = code(term);
+    lines.push(`| ${term} | ${ds.length} | ${a.length} files, e.g. ${a.slice(0, 2).join(', ') || '-'} | ${b.length} files, e.g. ${b.slice(0, 2).join(', ') || '-'} | ${guarded} | ${ds.filter((d) => removed.has(d.id)).length} |`);
+  }
+  lines.push('', 'A subject is retired only when a grep of content/ and docs/design/ finds it nowhere. These three are still the game\'s starts (`core/explorer` is a start in kernel/src/state.ts) and `content/kit/core/kit.json` still declares their sprites, so no draft is removed by name. The pools mark 25 `cast` entries retired (the three starter looks, decision 43 of 22.10); the kit still lists those sprites too.', '');
+  const small = drafts.filter((d) => (d.asked !== null && Math.max(...d.asked) <= 32) || (d.canvas !== null && Math.max(...d.canvas) <= 32));
+  const dayOf = (d: Draft): string | null => dateOf(d)?.date ?? null;
+  const before = small.filter((d) => (dayOf(d) ?? '9999') <= ERA_END && dayOf(d) !== null);
+  const after = small.filter((d) => dayOf(d) !== null && (dayOf(d) as string) > ERA_END);
+  const undated = small.filter((d) => dayOf(d) === null);
+  const top = (ds: Draft[]): string => { const g = new Map<string, number>(); for (const d of ds) g.set(labelOf(d), (g.get(labelOf(d)) ?? 0) + 1); return [...g].sort((x, y) => y[1] - x[1]).slice(0, 3).map(([k, n]) => `${k} ${n}`).join(', ') || '-'; };
+  lines.push(`**Old era (R3).** Drafts whose canvas or asked size is 32 px or less: ${small.length}. Made on or before ${ERA_END} (the 64 px decision): ${before.length}. Made after it: ${after.length} (${top(after)}), the 2.11 PixelLab and Kaggle trials, which are tool benches, not the old game. Undated: ${undated.length} (${top(undated)}). The index holds no draft of the 16 px or 32 px game's own sprites: the earliest dated draft is ${[...drafts].map(dayOf).filter((x): x is string => x !== null).sort()[0] ?? '?'} and the first 64 px redraw prep is already of 18.10. The one removal is an explicitly named old 16 px sprite.`, '');
+  void now;
+  return lines;
 }
 
 /* ---- the run ---- */
@@ -267,7 +310,7 @@ export function dryRun(opts: DryOptions): { plan: Plan; report: string; total: n
   const store = storeAssets(opts.out, { offline: opts.offline, refresh: opts.refresh, say: opts.say });
   inputs.push(`the drafts store: ${store.assets === null ? store.note : `${store.assets.length} assets in ${new Set(store.assets.map((a) => a.tag)).size} releases, ${store.note}`}`);
 
-  const input: PruneInput = { drafts, owner, uses, closes, hubOk: hub, retired, nameHits: nameSearch(root), present: store.assets === null ? null : new Set(store.assets.map((a) => a.name)), now: opts.now ?? new Date() };
+  const input: PruneInput = { drafts, owner, uses, closes, hubOk: hub, retired, nameHits: nameSearch(root), present: store.assets === null ? null : new Set(store.assets.map((a) => a.name)), objects: readObjects(root), now: opts.now ?? new Date() };
   const plan = planPrune(input);
 
   const byId = new Map(drafts.map((d) => [d.id, d]));
@@ -297,7 +340,7 @@ export function dryRun(opts: DryOptions): { plan: Plan; report: string; total: n
     const made = makeSheet(files, file);
     sheets.push({ rule, file: made ? `sheet-${rule}.png` : null, cells: made ? used : [], missing });
   }
-  const report = reportText({ plan, drafts, removedBefore: all.length - drafts.length, inputs, sheets, seed: opts.seed, now: opts.now ?? new Date() });
+  const report = reportText({ plan, drafts, removedBefore: all.length - drafts.length, inputs, sheets, seed: opts.seed, now: opts.now ?? new Date(), notes: decisionNotes(drafts, plan, root, opts.now) });
   writeFileSync(join(opts.out, 'report.md'), report);
   return { plan, report, total: plan.remove.length };
 }

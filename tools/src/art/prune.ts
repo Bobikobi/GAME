@@ -77,6 +77,8 @@ export interface PruneInput {
   nameHits: (term: string) => readonly string[];
   /** The asset names the store holds, or null when the store was not listed. */
   present: ReadonlySet<string> | null;
+  /** The names of the objects the game or its pools still has (kit sprites, pool entries): an archived draft of one of these has a home. */
+  objects: ReadonlySet<string>;
   now: Date;
 }
 
@@ -181,12 +183,27 @@ export function protectedBy(d: Draft, input: PruneInput): string | null {
 
 /* ---- the rules ---- */
 
-type Rule = (d: Draft, input: PruneInput) => Omit<Verdict, 'id' | 'rule' | 'code' | 'bytes'> | null;
+/** What the rules share: the names that still have a draft the owner kept. */
+interface Ctx { keptNames: ReadonlySet<string> }
 
-const r1: Rule = (d, input) => {
+type Rule = (d: Draft, input: PruneInput, ctx: Ctx) => Omit<Verdict, 'id' | 'rule' | 'code' | 'bytes'> | null;
+
+/** An object's name as the pools and the kit write it: the draft's own name without the timestamp or round tail. */
+export const objectName = (d: Draft): string => d.name.replace(/-\d{4}-\d{2}-\d{2}T[\d-]+Z?$/, '').replace(/_2c_[a-z]-1x$/, '').replace(/-\d+x?$/, '');
+
+/** How certain an archive is: an object that has a kept draft is surely replaced; one with no kept draft and no sprite or pool entry is the doubtful one. */
+function archiveSure(d: Draft, input: PruneInput, ctx: Ctx): { sure: number; tail: string } {
+  const name = objectName(d);
+  if (ctx.keptNames.has(name)) return { sure: 1, tail: `; the object "${name}" has a kept draft` };
+  if (input.objects.has(name)) return { sure: 0.85, tail: `; "${name}" is a kit sprite or pool entry, no kept draft` };
+  return { sure: 0.5, tail: `; "${name}" has no kept draft, no kit sprite and no pool entry` };
+}
+
+const r1: Rule = (d, input, ctx) => {
   const page = input.owner.get(d.id);
-  if (page !== undefined) return page.review === 'archive' ? { why: `archived by the owner on the library page, ${page.at.slice(0, 10)}`, sure: 1 } : null;
-  if (d.review === 'archive' && OWNER_BY.includes(d.review_by ?? '')) return { why: `index review archive by ${d.review_by}${d.review_note ? `: ${d.review_note.slice(0, 60)}` : ''}`, sure: 1 };
+  const a = archiveSure(d, input, ctx);
+  if (page !== undefined) return page.review === 'archive' ? { why: `archived by the owner on the library page, ${page.at.slice(0, 10)}${a.tail}`, sure: a.sure } : null;
+  if (d.review === 'archive' && OWNER_BY.includes(d.review_by ?? '')) return { why: `index review archive by ${d.review_by}${d.review_note ? `: ${d.review_note.slice(0, 60)}` : ''}${a.tail}`, sure: a.sure };
   return null;
 };
 
@@ -244,6 +261,9 @@ export function planPrune(input: PruneInput): Plan {
   const uncaught: string[] = [];
   const note = (why: string): void => void kept.set(why, (kept.get(why) ?? 0) + 1);
   const gone = new Set<string>();
+  const keptNames = new Set<string>();
+  for (const d of input.drafts) if (KEPT_STATES.includes(reviewOf(d, input.owner).review) || KEPT_STATES.includes(d.review)) keptNames.add(objectName(d));
+  const ctx: Ctx = { keptNames };
 
   const decide = (d: Draft, rule: RuleId, hit: { why: string; sure: number }): boolean => {
     const hold = (by: string): false => {
@@ -266,7 +286,7 @@ export function planPrune(input: PruneInput): Plan {
   const caught = new Set<string>();
   for (const d of input.drafts) {
     for (const [rule, fn] of FIRST_PASS) {
-      const hit = fn(d, input);
+      const hit = fn(d, input, ctx);
       if (hit === null) continue;
       caught.add(d.id);
       if (decide(d, rule, hit)) break;
@@ -285,7 +305,9 @@ export function planPrune(input: PruneInput): Plan {
     const lost = FILE_KINDS.some((k) => { const f = d.files[k]; return f && !(holders.get(f.sha256) ?? []).some((o) => o.id !== d.id && !gone.has(o.id)); });
     if (lost) continue;
     caught.add(d.id);
-    decide(d, 'R5', { why: `its raw picture is a file of ${best.id} (${best.name}, ${reviewOf(best, input.owner).review})`, sure: 0.9 });
+    const keeper = reviewOf(best, input.owner);
+    const sure = keeper.review === 'unreviewed' ? 0.7 : keeper.byOwner ? 1 : 0.85;
+    decide(d, 'R5', { why: `its raw picture is a file of ${best.id} (${best.name}, ${keeper.review}${keeper.byOwner ? ' by the owner' : keeper.review === 'unreviewed' ? '' : ' by an agent'})`, sure });
   }
 
   for (const d of input.drafts) {
