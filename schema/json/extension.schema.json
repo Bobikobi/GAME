@@ -866,11 +866,6 @@
               "description": "Time before the same plant gives again. Waiting is never paid.",
               "type": "integer"
             },
-            "respawn_dawn": {
-              "description": "A node worked out comes back at the first dawn (05:00) after its `respawn_ms` has run: the morning brings it back (G16, the ladder's Day 2). It is never back sooner than the plain wait, so the value table and the rarity budget hold as they are. The dawn is the valley's, never the calendar's: a player away finds it as they left it (G28).",
-              "const": true,
-              "type": "boolean"
-            },
             "count": {
               "minimum": 1,
               "maximum": 12,

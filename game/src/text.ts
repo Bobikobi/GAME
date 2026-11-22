@@ -525,13 +525,13 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
 }
 
 /**
- * The first morning of a valley day (the ladder's Day 2): the day's number, what changed overnight that the player can
- * see (the grove that waits for the dawn is back), and the bell they heard below the ruins in the night. A line says
- * only what is so: no grove line when nothing came back, and the narrator tells nothing of the past (STORY S2).
+ * The first morning of a valley day (the ladder's Day 2): the day's number, what the player worked out the day before that is
+ * ready again, and the bell they heard below the ruins in the night. A line says only what is so: no line about the nodes
+ * when none was worked, and the narrator tells nothing of the past (STORY S2).
  */
 export function morning(day: number, renewed: number): { text: string; second: string; tone: 'info' } {
   return {
-    text: renewed > 0 ? `Day ${day}. The grove has grown back.` : `Day ${day}.`,
+    text: renewed > 0 ? `Day ${day}. What you gathered is ready again.` : `Day ${day}.`,
     second: 'A bell rang below the ruins in the night.',
     tone: 'info',
   };

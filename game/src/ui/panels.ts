@@ -13,7 +13,6 @@ import {
   characterLevel,
   minuteOfDay,
   openDoor,
-  summaryDay,
   professionLevel,
   rareFindPermille,
   recipeTier,
@@ -22,6 +21,7 @@ import {
   setPieces,
   skillPoints,
   wornValue,
+  type DayLog,
   type WearSlot,
 } from '@game/kernel';
 import { app } from '../app';
@@ -1211,17 +1211,17 @@ function markReviewAsked(): void {
 }
 
 /**
- * The day summary (GAME_RULES G16, the ladder's session end): what the day gave, as three lines (found, built, learned,
- * from the kernel's tally of the valley day) and the one open door, picked from the quest state. It stands before the
- * review pop-up and never in its place. Resolves when the window closes.
+ * The day summary (GAME_RULES G16, the ladder's session end): what the day that ended gave, as three lines (found, built,
+ * learned, from the kernel's tally of the valley day) and the one open door, picked from the quest state. The valley's
+ * day ends at its dawn; the window comes then, before the morning toast. Resolves when the window closes.
  */
-export function openDaySummary(ui: UI): Promise<void> {
+export function openDaySummary(ui: UI, day: DayLog & { n: number }): Promise<void> {
   const s = app.session;
   if (!s) return Promise.resolve();
-  const day = summaryDay(s.state);
-  const rows = dayRows(app.bundle, day ?? { found: [], built: [], learned: [] });
+  const rows = dayRows(app.bundle, day);
   return new Promise<void>((resolve) => {
-    const p = panel(ui, day ? `Day ${day.n}` : 'The day', 'day-summary', 'What the day gave you');
+    const p = panel(ui, `Day ${day.n}`, 'day-summary', 'What the day gave you');
+    p.layer.holdsToasts = true;
     const done = button('On we go', () => p.close(), 'small');
     p.body.replaceChildren(
       h('ul', { class: 'day-rows' }, rows.map((r) => h('li', { 'data-kind': r.kind, 'data-count': String(r.count) }, rowLine(r)))),

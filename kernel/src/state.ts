@@ -851,14 +851,6 @@ export function valleyDay(bundle: Bundle, tick: number): number {
   return searchDawn(bundle, tick) + 1;
 }
 
-/** The first dawn (05:00) at or after `tick`: when a node that waits for the morning (`respawn_dawn`) is back. */
-export function dawnAtOrAfter(bundle: Bundle, tick: number): number {
-  const day = bundle.params.day_length_ms;
-  const dawn = idivUp(5 * day, 24) - idiv(day, 2);
-  const k = Math.max(1, idivUp(tick - dawn, day));
-  return dawn + k * day;
-}
-
 /** The latest dawn at or before `tick`; -1 before the first. */
 export function lastDawn(bundle: Bundle, tick: number): number {
   const k = searchDawn(bundle, tick);

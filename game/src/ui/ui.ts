@@ -6,12 +6,14 @@
 import { offerSignup } from './signup';
 import {
   OWN_FIRE,
+  type DayLog,
   type GameEvent,
   characterLevel,
   doneLines,
   findSlot,
   holds,
   isNight,
+  isSafe,
   minuteOfDay,
   pickRemark,
   rewardItem,
@@ -122,6 +124,9 @@ export class UI {
   private trackerKey = '';
   private talkCount = new Map<string, number>();
   private levelUpOpen = false;
+  /** the morning a dawn brought, waiting to be told: the day that ended and the dawn event, kept until the player stands in a safe place (G16) */
+  private morning: { day: DayLog & { n: number }; dawn: GameEvent } | undefined;
+  private morningOpen = false;
   private stoneOpen = false;
   /** the night (its end tick) whose lantern warning was shown, so it opens once per night */
   private warnedNight: number | undefined;
@@ -245,7 +250,11 @@ export class UI {
       const earned: Record<string, number> = {};
       for (const [id, xp] of Object.entries(session.state.player.xp)) if (xp > (this.xpSeen[id] ?? 0)) earned[id] = xp - (this.xpSeen[id] ?? 0);
       this.xpSeen = { ...session.state.player.xp };
-      for (const t of eventToasts(app.bundle, session.state, events, earned)) this.queueToast(t);
+      // the dawn is told after the day summary (G16): the summary first, in a safe place, then the morning toast
+      const dawn = events.filter((e) => e.e === 'dawn').pop();
+      const ended = session.state.player.day?.prev;
+      if (dawn && ended) this.morning = { day: ended, dawn };
+      for (const t of eventToasts(app.bundle, session.state, events.filter((e) => e.e !== 'dawn'), earned)) this.queueToast(t);
       feedback(this.root, events);
       void this.afterEvents(events);
       // after the story beats begin: on a phone a box they opened holds this batch's toasts until it closes
@@ -298,6 +307,7 @@ export class UI {
     }
     this.warnAtNight(s);
     this.warnFireLow(s);
+    this.tellMorning();
     this.renderSea(s);
     setClass(p.level, points > 0 ? 'chip glow' : 'chip');
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
@@ -488,6 +498,24 @@ export class UI {
     this.runBand();
   }
 
+  /**
+   * The day summary and then the morning toast, once the valley's day has ended (G16): they wait until the player stands in a
+   * safe place (G30) with nothing open, so a box or a hunt is never cut by them. Asked on every batch of events and on the HUD's tick.
+   */
+  private tellMorning(): void {
+    const s = app.session;
+    const m = this.morning;
+    if (!m || !s?.started || this.morningOpen || this.layers.length > 0 || this.titleOpen) return;
+    if (!isSafe(app.bundle, s.state, s.state.player.at)) return;
+    this.morning = undefined;
+    this.morningOpen = true;
+    void openDaySummary(this, m.day).then(() => {
+      this.morningOpen = false;
+      for (const t of eventToasts(app.bundle, s.state, [m.dawn])) this.queueToast(t);
+      this.runBand();
+    });
+  }
+
   /** A toast joins the line (toasts.ts): two at most stand at once, a bad one goes ahead, and none is dropped. */
   private queueToast(t: Toast): void {
     if (t.lines.some((l) => FULL_BAG.test(l))) flashFull(this.hud);
@@ -579,7 +607,7 @@ export class UI {
           'Past the arch the ruins go on, darker and deeper than by day. Far below, a bell rings once.',
           'Not tonight. The way stays open.',
         ]);
-        void openDaySummary(this).then(() => openOpeningReview(this)).then(() => offerSignup(this));
+        void openOpeningReview(this).then(() => offerSignup(this));
       }
     }
   }

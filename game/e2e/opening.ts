@@ -1378,39 +1378,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       await me.walkTo(threshold, 'the threshold of the night ruins');
       await me.step((await me.state()).facing);
       const below = await me.talkThrough();
-      // the day summary stands first (GAME_RULES G16): what the day found, built and learned, and one open door
-      await page.waitFor(`!!document.querySelector('.panel.day-summary')`, 'the day summary', 5000);
-      const sumProbe = `(() => {
-        const p = document.querySelector('.panel.day-summary');
-        const lines = [...p.querySelectorAll('.day-rows li, .day-door')];
-        const r = p.getBoundingClientRect();
-        return { title: p.querySelector('h2').textContent,
-          rows: [...p.querySelectorAll('.day-rows li')].map((li) => ({ kind: li.dataset.kind, count: Number(li.dataset.count), text: li.textContent })),
-          door: p.querySelector('.day-door').textContent, minPx: Math.min(...lines.map((e) => parseFloat(getComputedStyle(e).fontSize))),
-          box: { left: r.left, top: r.top, right: r.right, bottom: r.bottom }, vw: innerWidth, vh: innerHeight };
-      })()`;
-      type SumView = { title: string; rows: { kind: string; count: number; text: string }[]; door: string; minPx: number; box: { left: number; top: number; right: number; bottom: number }; vw: number; vh: number };
-      const fits = (v: SumView, where: string) => {
-        if (v.minPx < 16) throw new Error(`the day summary text is ${v.minPx} px at ${where}, under 16`);
-        if (v.box.left < 0 || v.box.top < 0 || v.box.right > v.vw || v.box.bottom > v.vh) throw new Error(`the day summary is clipped at ${where}: ${JSON.stringify(v.box)} in ${v.vw} x ${v.vh}`);
-      };
-      const sum = await page.eval<SumView>(sumProbe);
-      for (const kind of ['found', 'built', 'learned']) {
-        if (!((sum.rows.find((r) => r.kind === kind)?.count ?? 0) > 0)) throw new Error(`the day summary counts no ${kind}: ${JSON.stringify(sum.rows)}`);
-      }
-      if (sum.door.trim().length < 12) throw new Error(`the day summary names no open door: "${sum.door}"`);
-      fits(sum, `${sum.vw} x ${sum.vh}`);
-      await me.snap('day-summary');
-      // the same window at the full desktop frame, then back to the run's own size
-      await page.send('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false });
-      await sleep(700);
-      fits(await page.eval<SumView>(sumProbe), '1920 x 1080');
-      await me.snap('day-summary-1920');
-      await page.send('Emulation.setDeviceMetricsOverride', { width: run.viewport.width, height: run.viewport.height, deviceScaleFactor: run.viewport.scale ?? 1, mobile: run.viewport.mobile });
-      await sleep(700);
-      log(`day summary "${sum.title}": ${sum.rows.map((r) => r.text).join(' | ')} | ${sum.door} (text ${sum.minPx} px)`);
-      await page.eval(`[...document.querySelectorAll('.panel.day-summary .btn')].find((b) => b.textContent === 'On we go').click()`);
-      // the one-time development review follows it; skip it, as a player may
+      // the one-time development review follows the last words; skip it, as a player may
       await page.waitFor(`!!document.querySelector('.panel.review')`, 'the development review', 5000);
       await page.eval(`[...document.querySelectorAll('.panel.review .btn')].find((b) => b.textContent === 'Skip').click()`);
       await me.idle('the threshold');
@@ -1443,15 +1411,45 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       await me.snap('fall');
       log(`stepped past the threshold at night, fell, and woke in town at (${woke[0]}, ${woke[1]}) with the bag whole`);
 
-      // 13. Day 2: the first morning (GAME_RULES G16). The valley's clock is moved to the morning, as a night slept or played through.
-      const grove = await page.eval<{ id: string; ready: boolean }[]>(`[...__e2e.nodes('core/forest-mushrooms'), ...__e2e.nodes('core/fallen-logs')]`);
-      const waiting = grove.filter((n) => !n.ready).map((n) => n.id);
-      if (waiting.length === 0) throw new Error('no spent node of the grove to see grow back: the mushrooms were never gathered');
+      // 13. Day 2: the valley's day ends at 05:00 (GAME_RULES G16). The clock is jumped to 05:00 (setHour), as a night played through.
       if ((await page.eval<number>('__e2e.day()')) !== 1) throw new Error('the first night is not still day 1');
-      await page.eval('__e2e.setHour(6)');
+      await page.eval('__e2e.setHour(5)');
+      // the valley's day ends at 05:00 and the day summary stands first (GAME_RULES G16), before the morning toast: what the day found, built and learned, and one open door
+      await page.waitFor(`!!document.querySelector('.panel.day-summary')`, 'the day summary', 15_000);
+      const sumProbe = `(() => {
+        const p = document.querySelector('.panel.day-summary');
+        const lines = [...p.querySelectorAll('.day-rows li, .day-door')];
+        const r = p.getBoundingClientRect();
+        return { title: p.querySelector('h2').textContent,
+          rows: [...p.querySelectorAll('.day-rows li')].map((li) => ({ kind: li.dataset.kind, count: Number(li.dataset.count), text: li.textContent })),
+          door: p.querySelector('.day-door').textContent, minPx: Math.min(...lines.map((e) => parseFloat(getComputedStyle(e).fontSize))),
+          box: { left: r.left, top: r.top, right: r.right, bottom: r.bottom }, vw: innerWidth, vh: innerHeight };
+      })()`;
+      type SumView = { title: string; rows: { kind: string; count: number; text: string }[]; door: string; minPx: number; box: { left: number; top: number; right: number; bottom: number }; vw: number; vh: number };
+      const fits = (v: SumView, where: string) => {
+        if (v.minPx < 16) throw new Error(`the day summary text is ${v.minPx} px at ${where}, under 16`);
+        if (v.box.left < 0 || v.box.top < 0 || v.box.right > v.vw || v.box.bottom > v.vh) throw new Error(`the day summary is clipped at ${where}: ${JSON.stringify(v.box)} in ${v.vw} x ${v.vh}`);
+      };
+      const sum = await page.eval<SumView>(sumProbe);
+      for (const kind of ['found', 'built', 'learned']) {
+        if (!((sum.rows.find((r) => r.kind === kind)?.count ?? 0) > 0)) throw new Error(`the day summary counts no ${kind}: ${JSON.stringify(sum.rows)}`);
+      }
+      if (sum.door.trim().length < 12) throw new Error(`the day summary names no open door: "${sum.door}"`);
+      fits(sum, `${sum.vw} x ${sum.vh}`);
+      await me.snap('day-summary');
+      // the same window at the full desktop frame, then back to the run's own size
+      await page.send('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false });
+      await sleep(700);
+      fits(await page.eval<SumView>(sumProbe), '1920 x 1080');
+      await me.snap('day-summary-1920');
+      await page.send('Emulation.setDeviceMetricsOverride', { width: run.viewport.width, height: run.viewport.height, deviceScaleFactor: run.viewport.scale ?? 1, mobile: run.viewport.mobile });
+      await sleep(700);
+      if (/Day 2/.test(await page.eval<string>(`document.querySelector('.toasts')?.textContent ?? ''`))) throw new Error('the morning toast came before the day summary');
+      log(`day summary "${sum.title}": ${sum.rows.map((r) => r.text).join(' | ')} | ${sum.door} (text ${sum.minPx} px)`);
+      await page.eval(`[...document.querySelectorAll('.panel.day-summary .btn')].find((b) => b.textContent === 'On we go').click()`);
       await page.waitFor(`/Day 2/.test(document.querySelector('.toasts')?.textContent ?? '')`, 'the morning toast', 15_000);
       const morning = await page.eval<string>(`document.querySelector('.toasts')?.textContent ?? ''`);
-      if (!morning.includes('The grove has grown back')) throw new Error(`the morning toast does not name the grove: "${morning}"`);
+      if (!morning.includes('is ready again')) throw new Error(`the morning toast does not name what is ready: "${morning}"`);
       if (!morning.includes('bell')) throw new Error(`the morning toast does not name the bell: "${morning}"`);
       const toastPx = `Math.min(...[...document.querySelectorAll('.toasts *')].filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())).map((e) => parseFloat(getComputedStyle(e).fontSize)))`;
       const toastBox = `(() => { const r = document.querySelector('.toasts').getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; })()`;
@@ -1467,11 +1465,11 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       }
       await page.send('Emulation.setDeviceMetricsOverride', { width: run.viewport.width, height: run.viewport.height, deviceScaleFactor: run.viewport.scale ?? 1, mobile: run.viewport.mobile });
       await sleep(700);
-      const back = await page.eval<{ id: string; ready: boolean }[]>(`[...__e2e.nodes('core/forest-mushrooms'), ...__e2e.nodes('core/fallen-logs')]`);
-      const still = back.filter((n) => waiting.includes(n.id) && !n.ready);
-      if (still.length > 0) throw new Error(`the grove did not grow back at the dawn: ${still.map((n) => n.id).join(', ')}`);
+      // the shipped waits stay: the grove nodes the run gathered are ready at the dawn
+      const grove = await page.eval<{ id: string; ready: boolean }[]>(`[...__e2e.nodes('core/forest-mushrooms'), ...__e2e.nodes('core/fallen-logs')]`);
+      if (grove.some((n) => !n.ready)) throw new Error(`grove nodes are not ready at the dawn: ${grove.filter((n) => !n.ready).map((n) => n.id).join(', ')}`);
       if ((await page.eval<number>('__e2e.day()')) !== 2) throw new Error('the kernel did not count day 2');
-      log(`day 2: "${morning}"; ${waiting.length} spent nodes of the grove are back`);
+      log(`day 2: "${morning}"`);
       // Maru has one line only from day 2, in a speaker's mouth
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       await me.expectPrompt(/^Talk to Elder Maru/, 'the elder');

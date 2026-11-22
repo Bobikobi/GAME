@@ -1,8 +1,8 @@
 /**
  * The valley's day (GAME_RULES G16, G28; the ladder's session end and Day 2): the tally of a day counts what the
  * steps of that day changed and nothing else, a save keeps it, the day turns at each dawn of the valley's own
- * clock (never the calendar's, and not while the player is away), a plant that waits for the morning is back at
- * the dawn, a line can wait for day 2, and the open door is picked from the quest state.
+ * clock (never the calendar's, and not while the player is away), the dawn counts what the day worked out, a
+ * line can wait for day 2, and the open door is picked from the quest state.
  */
 import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 
@@ -13,7 +13,6 @@ import {
   type Rect,
   type State,
   type StepResult,
-  dawnAtOrAfter,
   holds,
   idiv,
   idivUp,
@@ -24,7 +23,6 @@ import {
   searchDawn,
   serialize,
   step,
-  summaryDay,
   tallyStep,
   valleyDay,
 } from '@game/kernel';
@@ -92,9 +90,6 @@ describe('the valley day', () => {
     expect(valleyDay(b, dawnTick(1))).toBe(2);
     expect(valleyDay(b, dawnTick(3))).toBe(4);
     expect(valleyDay(b, dawnTick(3)) - 1).toBe(searchDawn(b, dawnTick(3)));
-    expect(dawnAtOrAfter(b, 0)).toBe(dawnTick(1));
-    expect(dawnAtOrAfter(b, dawnTick(1))).toBe(dawnTick(1));
-    expect(dawnAtOrAfter(b, dawnTick(1) + 1)).toBe(dawnTick(2));
     expect(lastDawn(b, 0)).toBe(-1);
     expect(lastDawn(b, dawnTick(2) + 5)).toBe(dawnTick(2));
   });
@@ -259,14 +254,8 @@ describe('D2: the day changes once for each valley day, by the valley\'s clock',
   });
 });
 
-describe('a plant that waits for the morning', () => {
+describe('the dawn counts what the day worked out', () => {
   const LOGS = 'core/fallen-logs';
-
-  test('the grove\'s fallen wood and mushrooms say so in their content', () => {
-    expect(b.resources[LOGS]!.respawn_dawn).toBe(true);
-    expect(b.resources['core/forest-mushrooms']!.respawn_dawn).toBe(true);
-    expect(b.resources['core/oak-trees']!.respawn_dawn).toBeUndefined();
-  });
 
   /** A character with an axe at a log, at the hour of the valley's day 1. */
   function atLog(tick: number): { s: State; node: string; at: [number, number] } {
@@ -278,49 +267,23 @@ describe('a plant that waits for the morning', () => {
     return { s, node, at };
   }
 
-  test('a log worked out at dusk stays out all night and is back at the dawn, not sooner', () => {
+  test('the shipped respawn times stay: a log worked out at dusk is ready long before the dawn', () => {
     const dusk = hourTick(0, 19);
     const { s, node, at } = atLog(dusk);
     const worked = act(s, { t: 'gather', node, at }, dusk);
     const readyAt = worked.s.nodes[node]!.readyAt;
-    expect(readyAt).toBe(dawnTick(1));
-    // the plain wait is three minutes of the valley's time; the night is longer
-    expect(readyAt).toBeGreaterThan(dusk + b.resources[LOGS]!.respawn_ms);
-    const midnight = hourTick(0, 24);
-    const refused = step(b, stand(worked.s, at, midnight), { t: 'gather', node, at }, midnight);
-    expect(refused.ok).toBe(false);
-    if (!refused.ok) expect(refused.error).toBe('It has not grown back yet.');
-    const dawn = ok(step(b, stand(worked.s, at, dawnTick(1) - 1), { t: 'move', at }, dawnTick(1)));
-    expect(dawns(dawn.events)).toEqual([{ e: 'dawn', day: 2, renewed: 1 }]);
-    const again = step(b, stand(dawn.state, at, dawnTick(1) + 10), { t: 'gather', node, at }, dawnTick(1) + 10);
-    expect(again.ok).toBe(true);
-  });
-
-  test('a log worked out in the morning is back the next morning, never sooner than its plain wait', () => {
-    const noon = hourTick(1, 12);
-    const { s, node, at } = atLog(noon);
-    const worked = act(s, { t: 'gather', node, at }, noon);
-    expect(worked.s.nodes[node]!.readyAt).toBe(dawnTick(2));
-  });
-
-  test('a plant with no such flag grows back by its plain wait', () => {
-    let s = started();
-    const node = instanceOf('core/oak-trees');
-    const at = beside(s, nodeRect(node));
-    const tick = hourTick(0, 13);
-    s = stand(s, at, tick);
-    s.player.bag = { ...s.player.bag, 'core/axe': 1 };
-    // an oak gives its logs a unit at a time: work it out
-    let t = tick;
-    let cur = s;
-    for (let i = 0; i < b.resources['core/oak-trees']!.yield; i++) {
-      const r = act(stand(cur, at, t), { t: 'gather', node, at }, t);
-      cur = r.s;
-      t += 10_000;
-    }
-    const readyAt = cur.nodes[node]!.readyAt;
+    expect(readyAt).toBeLessThan(dusk + b.resources[LOGS]!.respawn_ms * 2);
     expect(readyAt).toBeLessThan(dawnTick(1));
-    expect(readyAt - tick).toBeLessThan(b.params.day_length_ms / 4);
+  });
+
+  test('the first dawn tells how many nodes that day worked out are ready, and the dawn after tells none of them again', () => {
+    const dusk = hourTick(0, 19);
+    const { s, node, at } = atLog(dusk);
+    const worked = act(s, { t: 'gather', node, at }, dusk);
+    const first = ok(step(b, stand(worked.s, at, dawnTick(1) - 1), { t: 'move', at }, dawnTick(1)));
+    expect(dawns(first.events)).toEqual([{ e: 'dawn', day: 2, renewed: 1 }]);
+    const second = ok(step(b, stand(first.state, at, dawnTick(2) - 1), { t: 'move', at }, dawnTick(2)));
+    expect(dawns(second.events)).toEqual([{ e: 'dawn', day: 3, renewed: 0 }]);
   });
 });
 
@@ -341,21 +304,6 @@ describe('a line that waits for the morning', () => {
     expect(day1).toBeUndefined();
     expect(day2).toBeDefined();
     expect(pickRemark(b, s, 'core/elder', new Set([day2!.key]), dawnTick(1) + 1000)).toBeUndefined();
-  });
-});
-
-describe('the day a summary tells', () => {
-  test('is the running day when it holds something, else the day before when that does, else none', () => {
-    const s = started();
-    expect(summaryDay(s)).toBeUndefined();
-    s.player.day = { n: 1, found: ['core/herb'], built: [], learned: [] };
-    expect(summaryDay(s)?.n).toBe(1);
-    s.player.day = { n: 2, found: [], built: [], learned: [], prev: { n: 1, found: ['core/herb'], built: [], learned: [] } };
-    expect(summaryDay(s)?.n).toBe(1);
-    s.player.day = { n: 2, found: ['core/log'], built: [], learned: [], prev: { n: 1, found: ['core/herb'], built: [], learned: [] } };
-    expect(summaryDay(s)?.n).toBe(2);
-    s.player.day = { n: 3, found: [], built: [], learned: [], prev: { n: 2, found: [], built: [], learned: [] } };
-    expect(summaryDay(s)).toBeUndefined();
   });
 });
 

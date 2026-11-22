@@ -54,7 +54,6 @@ import {
   fireBurns,
   fireOf,
   gradeShift,
-  dawnAtOrAfter,
   hourOf,
   isNight,
   lastDusk,
@@ -160,7 +159,7 @@ export type GameEvent =
   | { e: 'search'; spot: string; rows: string[] }
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
-  /** a valley day began (G16): the first step past a dawn tells it, with how many of the grove's plants that wait for the morning came back (`respawn_dawn`); the day that ended is in `player.day.prev` */
+  /** a valley day began (G16): the first step past a dawn tells it, with how many nodes the player worked out in the day that ended are ready; the day that ended is in `player.day.prev` */
   | { e: 'dawn'; day: number; renewed: number }
   /** the player entered a place for the first time (G63, G66): a map region or a named area, by id; the banner shows its name (`placeName`) */
   | { e: 'place'; id: string }
@@ -410,7 +409,7 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number,
   try {
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
-    // the valley's day turns at its dawn, before the action: the tally of the day that ended closes, and what the grove waited for is back
+    // the valley's day turns at its dawn, before the action: the tally of the day that ended closes, and the nodes worked out are counted
     if (ctx.s.player.race !== '') for (const d of rollDay(bundle, ctx.s, state.tick)) ctx.events.push({ e: 'dawn', day: d.day, renewed: d.renewed });
     apply(ctx, action, options);
     autoQuests(ctx);
@@ -676,9 +675,7 @@ function gather(ctx: Ctx, nodeId: string, at: Tile): void {
     // the node is worked out: the tool wears once for the whole node, and the respawn starts
     if (tool) wearTool(ctx, tool);
     if (helper) wearTool(ctx, helper);
-    const plain = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
-    // a plant of the grove waits for the first dawn after its plain wait: the morning brings it back (G16)
-    node.readyAt = r.respawn_dawn === true ? dawnAtOrAfter(b, plain) : plain;
+    node.readyAt = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
     delete node.taken;
   } else node.taken = done + 1;
   s.nodes[nodeId] = node;

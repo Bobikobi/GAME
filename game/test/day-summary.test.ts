@@ -39,8 +39,8 @@ describe('the day summary lines', () => {
 });
 
 describe('the morning toast', () => {
-  test('tells the day, the grove when it came back, and the bell; the narrator tells nothing of the past', () => {
-    expect(morning(2, 3)).toEqual({ text: 'Day 2. The grove has grown back.', second: 'A bell rang below the ruins in the night.', tone: 'info' });
+  test('tells the day, what was worked once it is ready again, and the bell; the narrator tells nothing of the past', () => {
+    expect(morning(2, 3)).toEqual({ text: 'Day 2. What you gathered is ready again.', second: 'A bell rang below the ruins in the night.', tone: 'info' });
     expect(morning(2, 0).text).toBe('Day 2.');
   });
 
@@ -53,7 +53,7 @@ describe('the morning toast', () => {
     ];
     const toasts = eventToasts(b, s.state, events);
     const lines = toasts.flatMap((t) => t.lines);
-    expect(lines).toEqual(['Day 3. The grove has grown back.', 'A bell rang below the ruins in the night.']);
+    expect(lines).toEqual(['Day 3. What you gathered is ready again.', 'A bell rang below the ruins in the night.']);
     expect(describeEvent(b, s.state, events[1]!)?.second).toBe('A bell rang below the ruins in the night.');
   });
 });

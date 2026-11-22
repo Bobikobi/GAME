@@ -8,16 +8,15 @@
  * kernel: the tally is ids in the state, so a save keeps it and a replay rebuilds it.
  */
 import type { Bundle } from './bundle';
-import { resourceOf } from './reactions';
-import { type DayLog, type PublicState, type State, valleyDay } from './state';
+import { type DayLog, type PublicState, type State, lastDawn, valleyDay } from './state';
 
 /** The most dawns one step tells: a step that crosses more (a tick jumped by a test or a replay) tells the last of them. */
 export const MAX_DAWNS = 8;
 
-/** One valley day begun: its number, and how many of the grove's plants that wait for the morning came back with it. */
+/** One valley day begun: its number, and how many nodes the player worked out in the day that ended are ready at this dawn. */
 export interface Dawn {
   day: number;
-  /** nodes that wait for the dawn (`respawn_dawn`) and came back since the step before; carried by the last dawn a step tells */
+  /** nodes whose wait ran out in the day that ended (after the dawn before it, up to this one): what the player worked is ready; carried by the last dawn a step tells */
   renewed: number;
 }
 
@@ -39,8 +38,10 @@ export function rollDay(b: Bundle, s: State, from: number): Dawn[] {
   const cur = p.day ?? { n: was, found: [], built: [], learned: [] };
   p.day = { n: now, found: [], built: [], learned: [], prev: { n: cur.n, found: cur.found, built: cur.built, learned: cur.learned } };
   let renewed = 0;
-  for (const [id, node] of Object.entries(s.nodes)) {
-    if (node.readyAt > from && node.readyAt <= s.tick && resourceOf(b, id)?.respawn_dawn === true) renewed += 1;
+  // a node worked out in that day has its wait run out between the dawn before it and this one (the shipped waits stay as they are)
+  const opened = Math.max(lastDawn(b, from), 0);
+  for (const node of Object.values(s.nodes)) {
+    if (node.readyAt > opened && node.readyAt <= s.tick) renewed += 1;
   }
   const first = Math.max(was + 1, now - MAX_DAWNS + 1);
   const dawns: Dawn[] = [];
@@ -98,15 +99,4 @@ export function openDoor(b: Bundle, s: PublicState): OpenDoor | undefined {
     if (slot.kind === 'area' && slot.label !== undefined && !(p.seen ?? []).includes(slot.id)) return { kind: 'place', id: slot.id, name: slot.label };
   }
   return undefined;
-}
-
-/**
- * The day a summary tells (G16): the valley day that is running when it holds anything, else the day that ended before it
- * (a player who reaches the end of a session in the first minutes after a dawn), else none.
- */
-export function summaryDay(s: PublicState): (DayLog & { n: number }) | undefined {
-  const day = s.player.day;
-  if (day === undefined) return undefined;
-  if (dayHolds(day) > 0 || day.prev === undefined) return dayHolds(day) > 0 ? day : undefined;
-  return dayHolds(day.prev) > 0 ? day.prev : undefined;
 }
