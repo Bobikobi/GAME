@@ -10,8 +10,10 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
 - Bags (items) - `content/core/items/bags.json`
+- Garment classes (items) - `content/core/items/garments.json`
 - Goods of the hunt (items) - `content/core/items/goods.json`
 - Healing (items) - `content/core/items/healing.json`
+- Hidework classes (items) - `content/core/items/hidework.json`
 - Maru's house key (items) - `content/core/items/maru-house-key.json`
 - Outfits (items) - `content/core/items/outfits.json`
 - Quarrying (items) - `content/core/items/stone.json`
@@ -60,6 +62,8 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Flint trowel (recipe) - `content/core/recipes/flint-trowel.json`
 - Grilled fish (recipe) - `content/core/recipes/grilled-fish.json`
 - Hammerstone (recipe) - `content/core/recipes/hammerstone.json`
+- Hare-fur hood (recipe) - `content/core/recipes/hare-fur-hood.json`
+- Hare-leather shoes (recipe) - `content/core/recipes/hare-leather-shoes.json`
 - Herb stew (recipe) - `content/core/recipes/herb-stew.json`
 - Herb tea (recipe) - `content/core/recipes/herb-tea.json`
 - Knapped pick (recipe) - `content/core/recipes/knapped-pick.json`
@@ -69,12 +73,19 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Reed cord (recipe) - `content/core/recipes/reed-cord.json`
 - Reed hat (recipe) - `content/core/recipes/reed-hat.json`
 - Reed sandals (recipe) - `content/core/recipes/reed-sandals.json`
+- Roe-leather jerkin (recipe) - `content/core/recipes/roe-leather-jerkin.json`
+- Roe-leather leggings (recipe) - `content/core/recipes/roe-leather-leggings.json`
 - Satchel (recipe) - `content/core/recipes/satchel.json`
+- Sinew thread (recipe) - `content/core/recipes/sinew-thread.json`
 - Split a log (recipe) - `content/core/recipes/split-log.json`
 - Stone blade (recipe) - `content/core/recipes/stone-blade.json`
 - Stone flakes (recipe) - `content/core/recipes/stone-flakes.json`
 - Stone trowel (recipe) - `content/core/recipes/stone-trowel.json`
+- Tan hare fur (recipe) - `content/core/recipes/tan-hare-fur.json`
+- Tan hare leather (recipe) - `content/core/recipes/tan-hare-leather.json`
+- Tan roe leather (recipe) - `content/core/recipes/tan-roe-leather.json`
 - Woven mat (recipe) - `content/core/recipes/woven-mat.json`
+- Woven reed coat (recipe) - `content/core/recipes/woven-reed-coat.json`
 - Wild herbs (resource) - `content/core/resources/bank-herbs.json`
 - Bell bushes (resource) - `content/core/resources/bell-bushes.json`
 - Redberry bushes (resource) - `content/core/resources/berry-bushes.json`
@@ -114,7 +125,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - A trowel in the grass (treasure) - `content/core/treasures/slid-trowel.json`
 - Base kit (kit) - `content/kit/core/kit.json`
 
-AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex image generation via kit:gen; Codex: text-grid sprites in tools/src/kit/sketches.ts; FLUX.1 schnell and Qwen-Image 2512 via kit:gen; Nano Banana (gemini-3.1-flash-image) via Antigravity; Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen.
+AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex image generation via kit:gen; Codex: text-grid sprites in tools/src/kit/sketches.ts; FLUX.1 schnell and Qwen-Image 2512 via kit:gen; GPT image animation, route g1: 2 guard clips (#742); Nano Banana (gemini-3.1-flash-image) via Antigravity; PixelLab, animation route P: 69 character clips (#742); Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen.
 
 ## [ceosisrael](https://github.com/ceosisrael)
 
@@ -122,6 +133,7 @@ AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex imag
 - Sunleaf mushrooms (recipe) - `content/extensions/ceosisrael/recipes/sunleaf-mushrooms.json`
 - Traveller's cap (recipe) - `content/extensions/ceosisrael/recipes/travellers-cap.json`
 - Glade fig bushes (resource) - `content/extensions/ceosisrael/resources/glade-figs.json`
+- Dried herbs (template) - `content/extensions/ceosisrael/templates/dried-herbs.json`
 - CeosIsrael's kit art (kit) - `content/kit/ceosisrael/kit.json`
 
 AI tools: Claude (Anthropic); Qwen-Image 2512 (kit:gen, kaggle drawer).
