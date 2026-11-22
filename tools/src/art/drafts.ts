@@ -244,6 +244,11 @@ export class DraftIndex {
     foldLine(this.drafts, line);
   }
 
+  /** The drafts whose files are still in the store. A reader that lists, counts, fetches or draws drafts uses this; `drafts` also keeps the removed ones, so an id stays known. */
+  live(): Draft[] {
+    return [...this.drafts.values()].filter((d) => !isRemoved(d));
+  }
+
   /** A draft: new bytes append a line, known bytes only gain what they add (a source, a storage citation, a blank field). */
   add(record: Draft): AddResult {
     const existing = this.drafts.get(record.id);
@@ -761,7 +766,7 @@ export function fetchDrafts(index: DraftIndex, ids: readonly string[] | null, op
   mkdirSync(cache, { recursive: true });
   const report: FetchReport = { fetched: 0, present: 0, missing: [] };
   const wanted = new Map<string, { id: string; kind: FileKind; asset: string; ext?: string }[]>();
-  for (const draft of ids === null ? index.drafts.values() : ids.flatMap((id) => index.drafts.get(id) ?? [])) {
+  for (const draft of (ids === null ? [...index.drafts.values()] : ids.flatMap((id) => index.drafts.get(id) ?? [])).filter((d) => !isRemoved(d))) {
     for (const kind of FILE_KINDS) {
       const ref = draft.files[kind];
       if (ref === null) continue;
@@ -806,7 +811,7 @@ export function verifyDrafts(index: DraftIndex, ids: readonly string[] | null, o
   const cache = opts.cache ?? CACHE_DIR;
   const fetched = opts.fetch === false ? { fetched: 0, present: 0, missing: [] as FetchReport['missing'] } : fetchDrafts(index, ids, { ...opts, cache });
   const report: VerifyReport = { checked: 0, ok: 0, mismatched: [], missing: [], unpushed: [], fetched: fetched.fetched };
-  const drafts = ids === null ? [...index.drafts.values()] : ids.flatMap((id) => index.drafts.get(id) ?? []);
+  const drafts = (ids === null ? [...index.drafts.values()] : ids.flatMap((id) => index.drafts.get(id) ?? [])).filter((d) => !isRemoved(d));
   for (const draft of drafts) {
     let kept = false;
     for (const kind of FILE_KINDS) {
@@ -962,7 +967,7 @@ function listPictures(dir: string, recursive: boolean): string[] {
 }
 
 function stats(index: DraftIndex): string {
-  const drafts = [...index.drafts.values()];
+  const drafts = index.live();
   const by = (f: (d: Draft) => string): string => {
     const counts = new Map<string, number>();
     for (const d of drafts) counts.set(f(d), (counts.get(f(d)) ?? 0) + 1);
@@ -1065,7 +1070,7 @@ export function runCli(argv: readonly string[]): number {
     }
     case 'view': {
       if (positional[0] !== 'wrong-draws') throw new Error('Usage: art:drafts view wrong-draws [--write]');
-      const text = wrongDrawsText(index.drafts.values());
+      const text = wrongDrawsText(index.live());
       if (flags.has('write')) writeFileSync(WRONG_DRAWS_LIBRARY, text);
       else process.stdout.write(text);
       return 0;

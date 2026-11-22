@@ -15,6 +15,8 @@
  *
  * pnpm art:prune --apply --list FILE --go SHA256 [--cold DIR]
  *
+ * `--only R2` reports one rule alone: the step a closed pick runs (docs/art/REUSE.md, "Pruning").
+ *
  * Removes the drafts of a reviewed list, after the manager's GO (see `prune-apply.ts`): the list's hash must be the approved one,
  * every row must still hold, a cold copy is made and checked first, and only then the files are deleted from the store and
  * one `removed` amendment per draft is appended to the index.
@@ -290,7 +292,7 @@ export function decisionNotes(drafts: readonly Draft[], plan: Plan, root = ROOT,
 
 /* ---- the run ---- */
 
-export interface DryOptions { out: string; seed: number; offline: boolean; refresh: boolean; say: (t: string) => void; indexPath?: string; now?: Date }
+export interface DryOptions { out: string; seed: number; offline: boolean; refresh: boolean; say: (t: string) => void; indexPath?: string; now?: Date; only?: readonly string[] }
 
 export interface Gathered { index: DraftIndex; all: Draft[]; drafts: Draft[]; inputs: string[]; store: { assets: StoreAsset[] | null; note: string }; input: PruneInput; plan: Plan }
 
@@ -320,7 +322,10 @@ export function gather(opts: DryOptions): Gathered {
   inputs.push(`the drafts store: ${store.assets === null ? store.note : `${store.assets.length} assets in ${new Set(store.assets.map((a) => a.tag)).size} releases, ${store.note}`}`);
 
   const input: PruneInput = { drafts, owner, uses, closes, hubOk: hub, retired, nameHits: nameSearch(root), present: store.assets === null ? null : new Set(store.assets.map((a) => a.name)), objects: readObjects(root), now: opts.now ?? new Date() };
-  return { index, all, drafts, inputs, store, input, plan: planPrune(input) };
+  const full = planPrune(input);
+  // `--only R2`: the step a closed pick runs; the other rules still decide what stays, they just report nothing
+  const plan = opts.only === undefined ? full : { ...full, remove: full.remove.filter((v) => opts.only!.includes(v.rule)) };
+  return { index, all, drafts, inputs, store, input, plan };
 }
 
 export function dryRun(opts: DryOptions): { plan: Plan; report: string; total: number } {
@@ -422,7 +427,8 @@ export function main(args: readonly string[]): number {
   }
   const out = resolve(flag(args, '--out') ?? join(ROOT, '.scratch/prune'));
   const seed = Number(flag(args, '--seed') ?? DEFAULT_SEED);
-  const result = dryRun({ out, seed, offline: args.includes('--offline'), refresh: args.includes('--refresh-store'), say });
+  const only = flag(args, '--only')?.split(',').map((r) => r.trim().toUpperCase());
+  const result = dryRun({ out, seed, offline: args.includes('--offline'), refresh: args.includes('--refresh-store'), say, ...(only === undefined ? {} : { only }) });
   say(summaryLine(result.plan));
   say(`report: ${join(out, 'report.md')}`);
   return 0;

@@ -40,7 +40,7 @@ export function galleryCards(opts: GalleryOptions): { pool: PoolName; name: stri
   const root = opts.root ?? ROOT;
   const cache = opts.cacheDir ?? CACHE_DIR;
   const index = DraftIndex.open(opts.indexPath ?? join(root, 'tools/kit-gen/drafts.jsonl'));
-  const all = [...index.drafts.values()];
+  const all = index.live();
   const groups: ReturnType<typeof galleryCards> = [];
   for (const pool of opts.pools) {
     for (const entry of readPool(pool, root)) {

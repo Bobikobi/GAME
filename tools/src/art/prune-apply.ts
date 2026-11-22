@@ -10,7 +10,7 @@
  *   4. one amendment `{"id", "amend": true, "removed": "<rule code>", "at"}` per draft is appended to the index.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -82,7 +82,7 @@ export function coldCopy(rows: readonly ListRow[], byId: ReadonlyMap<string, Dra
           if (!existsSync(file)) { report.failures.push(`${b.id} ${b.asset}: not downloaded (${got.status === 0 ? 'the release has no such asset' : got.stderr.trim().slice(0, 100)})`); continue; }
           const sum = hashOf(file);
           if (sum !== b.sha) { report.failures.push(`${b.id} ${b.asset}: sha256 ${sum.slice(0, 12)} is not the index's ${b.sha.slice(0, 12)}`); rmSync(file, { force: true }); continue; }
-          renameSync(file, join(dest, tag, b.asset));
+          copyFileSync(file, join(dest, tag, b.asset));
           // the copy on disk is read back once more: the check is of the cold copy, not of the download
           if (hashOf(join(dest, tag, b.asset)) !== b.sha) { report.failures.push(`${b.id} ${b.asset}: the cold copy does not read back`); continue; }
           report.copied += 1;
