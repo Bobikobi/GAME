@@ -6,6 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
+import { hexOfPacked, packedColors, readPng } from './pngcache';
 import {
   type Bundle,
   DRESS_PART_STEPS,
@@ -1028,7 +1029,7 @@ export function checkKits(a: Assembled): Issue[] {
       }
       let png: PNG;
       try {
-        png = PNG.sync.read(readFileSync(abs));
+        png = readPng(abs);
       } catch {
         issues.push({ file: `${kit.rel}/${s.file}`, where: '', message: 'not a readable PNG', level: 'error' });
         continue;
@@ -1064,12 +1065,9 @@ export function checkKits(a: Assembled): Issue[] {
       const allowed = allowedColors(core, [...ramps, ...named.flatMap((id) => (rampById.has(id) ? [] : [coreRamp(id)]).filter((r) => r !== undefined))], named);
       const used = new Set<string>();
       const bad = new Set<string>();
-      let soft = 0;
-      for (let i = 0; i < png.data.length; i += 4) {
-        const alpha = png.data[i + 3]!;
-        if (alpha === 0) continue;
-        if (alpha !== 255) soft++;
-        const hex = `#${[png.data[i]!, png.data[i + 1]!, png.data[i + 2]!].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+      const { colors: packed, soft } = packedColors(png.data);
+      for (const value of packed) {
+        const hex = hexOfPacked(value);
         used.add(hex);
         if (!allowed.has(hex)) bad.add(hex);
       }

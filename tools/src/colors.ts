@@ -8,29 +8,21 @@
  * so a redraw moves the count and a comment does not. Warnings only, like richness: the owner
  * decides if one becomes an error.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
 
 import type { Bundle } from '@game/kernel';
 import type { Assembled } from './assemble';
 import type { Issue } from './load';
+import { hexOfPacked, packedColors, readPng } from './pngcache';
 import { richnessWindows } from './richness';
 
 /** A colour as the palette writes it, lower case. */
 export type Hex = string;
 
-const hexOf = (r: number, g: number, b: number): Hex =>
-  `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
-
 /** Every colour a PNG draws with, as the palette writes it. */
 export function pngColors(png: PNG): Set<Hex> {
-  const colors = new Set<Hex>();
-  for (let i = 0; i < png.data.length; i += 4) {
-    if (png.data[i + 3] === 0) continue;
-    colors.add(hexOf(png.data[i]!, png.data[i + 1]!, png.data[i + 2]!));
-  }
-  return colors;
+  return new Set([...packedColors(png.data).colors].map(hexOfPacked));
 }
 
 /** The colours of every sprite of every kit, by sprite reference (`kit:group/name`). */
@@ -39,7 +31,7 @@ export function spriteColors(a: Assembled): Map<string, Set<Hex>> {
   for (const [kitId, kit] of Object.entries(a.kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
       try {
-        out.set(`${kitId}:${name}`, pngColors(PNG.sync.read(readFileSync(join(kit.dir, s.file)))));
+        out.set(`${kitId}:${name}`, pngColors(readPng(join(kit.dir, s.file))));
       } catch {
         // a missing or unreadable PNG is checkKits' error to report, not this measure's
       }

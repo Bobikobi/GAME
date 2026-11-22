@@ -26,7 +26,7 @@ of the core palette and the ramps the same race and view's walk names, and the f
 tools/src/kit/ink.ts) become the ink #1b1a2e.
 
 A cell whose displayed height or feet are out of the band is REFUSED and listed. With --write each passing cell is written as one
-horizontal strip (`chars/<race>_<verb>_<view>.png`, the take's frames as they are), with the same bytes every run, and with
+horizontal strip (`chars/<race>_<verb>_<view>.png`, the take's frames as they are; a clip over 32 frames wraps into rows of 16 and its row says `cols`), with the same bytes every run, and with
 --write-kit its row (the walk's ramps, the clip block with its fit; `scale` follows from `pnpm art:scale --declare`, which measures a clip sheet at its fit) is put into the kit's kit.json, replacing the
 rows of an earlier run; without it the rows are printed as JSON. Python 3 with numpy and Pillow only; every path is an argument."""
 import argparse, json, re, sys
@@ -156,9 +156,28 @@ def load_take(folder):
     return frames, json.loads((folder / "clip.json").read_text())
 
 
+MAX_SHEET_PX = 4096  # a picture wider or taller than this may be refused by a browser's graphics card (kernel MAX_SHEET_PX)
+WRAP_COLS = 16       # a longer clip wraps into rows of this many frames: 45 frames are 2048 x 384
+
+
+def cols_for(n):
+    """Frames per row: none (one row) while the strip fits, else WRAP_COLS (kit.json's `cols`)."""
+    return None if n * FRAME <= MAX_SHEET_PX else WRAP_COLS
+
+
 def strip(frames):
-    """The take's frames side by side, bytes fixed by the pixels alone (no metadata, no timestamps)."""
-    sheet = np.concatenate(frames, axis=1)
+    """The take's frames side by side (in rows of `cols_for` when it is too long for one), bytes fixed by the pixels alone (no metadata, no timestamps)."""
+    cols = cols_for(len(frames))
+    if cols is None:
+        sheet = np.concatenate(frames, axis=1)
+    else:
+        blank = np.zeros_like(frames[0])
+        rows = []
+        for r in range(0, len(frames), cols):
+            line = list(frames[r:r + cols])
+            line += [blank] * (cols - len(line))
+            rows.append(np.concatenate(line, axis=1))
+        sheet = np.concatenate(rows, axis=0)
     img = Image.fromarray(sheet, "RGBA")
     return img
 
@@ -218,7 +237,7 @@ def main():
             save(strip(frames), Path(a.kit) / f"{sheet}.png")
         if ok:
             clip = {"race": f"core/{race}", "view": view, "verb": verb, "frame_ms": int(meta["ms"]), "anchor": anc, "fit_permille": fit}
-            row = {"file": f"{sheet}.png", "w": FRAME, "h": FRAME, "frames": len(frames), "density": DENSITY}
+            row = {"file": f"{sheet}.png", "w": FRAME, "h": FRAME, "frames": len(frames), **({"cols": cols_for(len(frames))} if cols_for(len(frames)) else {}), "density": DENSITY}
             if "ramps" in walk:
                 row["ramps"] = walk["ramps"]
             row["clip"] = clip
