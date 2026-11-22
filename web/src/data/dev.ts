@@ -20,7 +20,7 @@ export function meterView(world: HubWorld): { drawn: string; whole: string; perc
   };
 }
 
-export function feedView(item: HubFeedItem): HubFeedItem & { maker: string; chip: string; stateLabel: string } {
+export function feedView(item: HubFeedItem): Omit<HubFeedItem, 'maker'> & { maker: string; chip: string; stateLabel: string } {
   return {
     ...item,
     maker: item.maker === 'team' ? TEAM_NAME : item.author,
