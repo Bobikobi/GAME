@@ -9,7 +9,7 @@ The owner, 21.11: "בניית ביגוד וקניה שלו ושלבי ההכנה
 | Measure | The band of the games | Loomvale |
 |---|---|---|
 | First worn piece | 7 to 27 minutes of play | 3.6 minutes of active play (4.4 pass, 0.8 of them waiting on a node): short. With the planned day of curing, 24 minutes have passed |
-| First outfit | 30 to 90 minutes of play | the tier-1 kit takes 7.7 minutes of active play (9.0 pass): short. The first bonus set takes 13 to 16 minutes of play, and 64 minutes pass (median) when its recipes are dug up |
+| First outfit | 30 to 90 minutes of play | the tier-1 kit takes 7.4 minutes of active play (8.7 pass): short. The first bonus set takes 13 to 16 minutes of play, and 64 minutes pass (median) when its recipes are dug up |
 | Ways to get a piece | every game but one gives two or three ways (make, buy, find) | making only. Buying and finding are missing |
 | Pieces per body place by the end of tier 2 | 2.5 to 4 | 1.8: thin. The hands have none |
 | Clothing against the other families | - | the same levels and the same minutes to each tier. A tier-1 leather piece has one step more, 2.4 to 2.8 times the work of another tier-1 Handcraft good, and 3 to 4 times its value. One step less (P3) brings the work inside twice its tier; most of the value gap is the hide, that is the hunt |
@@ -56,27 +56,29 @@ One row per game for its first cloth or leather piece and its first full outfit.
 
 ## 3. Where Loomvale stands, link by link
 
-Seed 1, from the morning after the opening (`clothing-route-cli.ts --seeds 1,2,3,4,5`; seeds 1 to 5 agree within 0.1 minute):
+Seed 1, from the morning after the opening (`clothing-route-cli.ts --seeds 1,2,3,4,5`; seeds 1 to 5 agree within 0.2 minute):
+
+*Re-measured 22.11 (#769), after the hide chain was built (#788, #797).* The first run of this page played a copy of the chain kept inside the route's own code (scrape 6 s, then tan 4 s). The route now reads the chain from the content: scrape and tan are one 6 s action, and the roe jerkin and leggings take one thread. The route also sets out only in the hours of the day (the bank wolf walks the road by night), so the first set now passes one night. What moved: the kit 9.0 to 8.7 (active 7.7 to 7.4), the known set 21.3 to 24.3 (active 13.4 to 13.1), the dug-up median 64.1 to 64.2. The first piece is unchanged.
 
 | Milestone | Minutes passed (active) | Where the time went |
 |---|---|---|
 | First piece worn (hare-leather shoes) | 4.4 (3.6 active) | hunt 2.6, walk 0.3, gather 0.3, craft 0.4, waiting on a node 0.8; Handcraft level 2 |
-| Tier-1 kit worn (4 pieces) | 9.0 (7.7 active) | hunt 5.2, walk 0.6, gather 0.6, craft 1.3, node 1.2 |
-| First set worn, recipes known from the start | 21.3 (13.4 active) | hunt 8.8, walk 1.2, gather 1.0, craft 2.3, node 2.1, night 5.8: 13.4 active |
-| First set worn, recipes dug up (`--found`, seeds 1 to 20) | median 64.1 (29.3 to 208.6) | active median 16.1 (14.1 to 25.6); waiting on the rubble median 23.3; night median 24.6; digs median 36.5 (9 to 160) |
+| Tier-1 kit worn (4 pieces) | 8.7 (7.4 active) | hunt 5.2, walk 0.6, gather 0.6, craft 1.0, node 1.2 |
+| First set worn, recipes known from the start | 24.3 (13.1 active) | hunt 8.8, walk 1.2, gather 1.0, craft 2.0, node 2.1, night 9.2: 13.1 active |
+| First set worn, recipes dug up (`--found`, seeds 1 to 20) | median 64.2 (28.9 to 208.6) | active median 15.8 (13.9 to 25.2); waiting on the rubble median 21.3; night median 26.7; digs median 36.5 (9 to 160) |
 
 | Link | Band | Loomvale | Verdict |
 |---|---|---|---|
-| Prep steps to the first piece | 2 to 4 | 5 on the main line: hunt, take, scrape, tan, sew. Two side steps: knap flakes, twist sinew thread | **too long** by one step |
+| Prep steps to the first piece | 2 to 4 | 4 on the main line: hunt, take, scrape and tan (one action since step C, #797), sew. Two side steps: knap flakes, twist sinew thread | inside (was 5, **too long** by one step, before step C) |
 | Stations | 0 to 2 | the work stone (tier 1); the workbench (tier 2) | inside |
 | First piece | 7 to 27 | 3.6 active (4.4 passed, 0.8 of it waiting on a node) | **too short** |
-| First outfit | 30 to 90 | tier-1 kit 7.7 active (9.0 passed, 1.2 of it waiting on a node); bonus set 13.4 (known) or 16.1 active (found, median) | **too short** in work |
-| First bonus set, minutes passed | 30 to 90 | 21.3 (known); 64.1 median (found) | known **too short**; found **inside** |
+| First outfit | 30 to 90 | tier-1 kit 7.4 active (8.7 passed, 1.2 of it waiting on a node); bonus set 13.1 (known) or 15.8 active (found, median) | **too short** in work |
+| First bonus set, minutes passed | 30 to 90 | 24.3 (known); 64.2 median (found) | known **too short**; found **inside** |
 | Waits | 0 | the hide's day of curing, 20 real minutes (DECISIONS 2026-11-19; not built, so not in the run) | **long**, on the owner's own decision; passive |
 | Travel | a few minutes (not measured for the games) | 0.3 to 1.2 minutes of walking | short |
 | Shop price against make cost | 2 to 17.5 | a shop price is at least 10 times the value (R8; the satchel is sold at exactly 10). But no garment is sold | **missing** |
 
-**Why it is short.** Each Loomvale step is a few seconds: a scrape is 6 s, a tan 4 s, a sewing 5 to 7 s (CLOTHING appendix). In OSRS and WoW most of the first outfit's time is levelling: Crafting 18 for OSRS chaps, skill 25 for a WoW belt. Loomvale's tier-1 recipes sit at levels 1 to 2 by the band rule (`tier_min_level` [1, 3, 6], content/core/params.json). Handcraft reaches level 3 after 0.7 minutes of crafting and level 6 after 12 (content/core/professions/handcraft.json, `xp_levels`). The whole valley runs on this short clock. A cooked dish is worth 4 to 8 seconds of play, a tier-3 stone trowel 31.
+**Why it is short.** Each Loomvale step is a few seconds: scrape and tan together are one 6 s action (two, 6 s and 4 s, before step C), a sewing 5 to 7 s (CLOTHING appendix). In OSRS and WoW most of the first outfit's time is levelling: Crafting 18 for OSRS chaps, skill 25 for a WoW belt. Loomvale's tier-1 recipes sit at levels 1 to 2 by the band rule (`tier_min_level` [1, 3, 6], content/core/params.json). Handcraft reaches level 3 after 0.7 minutes of crafting and level 6 after 12 (content/core/professions/handcraft.json, `xp_levels`). The whole valley runs on this short clock. A cooked dish is worth 4 to 8 seconds of play, a tier-3 stone trowel 31.
 
 **Why we do not lengthen the work.** To reach the band's lower edge for the kit (30 minutes), the kit would need about ten more hides, three or four a piece, since a roe takes about 2 minutes of play. A jerkin with three more roe leathers would be worth about 140,000 instead of 44,500, four times the dearest built Handcraft piece (the fine basket, 35,000). The owner's word of 21.11 puts the families on one footing (section 7), so that cost is not paid. The route's length comes from three things the games also use:
 - the dug-up scraps (WoW's patterns: 24 of 51 leatherworking recipes up to skill 150 are found, not taught)
@@ -266,7 +268,7 @@ None moves a locked value or writes a price. They are applied to CLOTHING.md in 
 |---|---|---|---|
 | P1 | 6, "Known or found" | Tier 1 known from the start, tiers 2 and 3 dug up, by DECISIONS 2026-10-10 | The same split, now measured: the found route brings the first set inside the band. It is kept under the owner's teach rule of 2026-11-12 (every route open, difficulty matched to the grade). The found hide recipes cannot carry the combat gate: the check row of #776 keeps gated recipes known from the start, so their scraps could be dug while the fight is off. So the tier-2 and tier-3 hide recipes and their scrap rows land when the gate opens, not with the tier-1 chain |
 | P2 | 6.1 | Four family nodes proposed | Held until the owner picks a family set (SKILL_FAMILIES). The two majors also wait for `quality_pct` |
-| P3 | 4.2 and the appendix | Scrape (6 s), then tan (4 s): two actions | One action of the workshop, "scrape and tan": hide, flakes and herb in, the leather or the fur out, 6 s. It applies if the owner's family set keeps a parity check on work per tier (SKILL_FAMILIES); until then it stays a proposal, and the tier-1 chain of pull request E is built either way from one table |
+| P3 (built in step C, #797) | 4.2 and the appendix | Scrape (6 s), then tan (4 s): two actions | One action of the workshop, "scrape and tan": hide, flakes and herb in, the leather or the fur out, 6 s. It applies if the owner's family set keeps a parity check on work per tier (SKILL_FAMILIES); until then it stays a proposal, and the tier-1 chain of pull request E is built either way from one table |
 | P4 | 5 and the appendix's Waits | No piece for the hands; reed starts at tier 2 | The ranked gap list of section 5.4, as proposals. The hare-leather gloves join the tier-1 chain behind the gate; the woven reed cape can land now |
 | P5 | 6 (a new line) | (not written) | A found or bought piece is the same item as the made one, never better (R4) |
 | P6 | 18 | Five questions | Two more, this page's questions 1 and 2 |

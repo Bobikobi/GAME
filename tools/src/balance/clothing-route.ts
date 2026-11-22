@@ -2,9 +2,10 @@
  * The clothing route, played (docs/design/CLOTHING_BALANCE.md; #769): how long a player who knows the way takes from
  * the end of the opening to the first worn leather piece, to the tier-1 kit and to the first set, on the kernel itself.
  *
- * The hide chain is proposed content (CLOTHING appendix, "For the take verb"): until it lands, `withHideChain` adds its
- * items and recipes to a copy of the bundle exactly as the appendix lists them, with values from the calculator's
- * hand table (CLOTHING 4.3). Nothing lays a carcass in play yet (kernel/src/hunt.ts:2-5), so the take is modelled as
+ * The tier-1 hide chain (tan, the sinew thread, the four garments) is content now and is read from the bundle as it
+ * stands: this file keeps no copy of it. What is still a proposal is tier 2, the boiled leather and the digger
+ * leathers (CLOTHING appendix, "For the take verb"): `withHideChain` adds those rows to a copy of the bundle and takes
+ * their values from the value solver (`computeValues`), as the build would, not from a table typed here. Nothing lays a carcass in play yet (kernel/src/hunt.ts:2-5), so the take is modelled as
  * the hunt fields state it: the player stands by an animal's spot for its `take_s` and the carcass lies on the spot
  * (`placeCarcass`, as the tests lay one). Every other step is a real action through `step`, with the travel rule on:
  * gathering, building, crafting with its chance and its misses, dressing, wearing, walking tile by tile.
@@ -18,6 +19,7 @@ import {
   type RecipeDef,
   type PublicState,
   type State,
+  computeValues,
   campTile,
   npcTile,
   newState,
@@ -45,7 +47,6 @@ interface Row {
   tier: number;
   rarity: 'common' | 'uncommon' | 'rare';
   weight: number;
-  value: number;
   wear?: Piece;
   station: number;
   active: number;
@@ -54,21 +55,11 @@ interface Row {
   out?: number;
 }
 
-/** CLOTHING appendix, "For the take verb", row by row (values from section 4.3). */
-export const HIDE_CHAIN: readonly Row[] = [
-  { id: 'core/scraped-hare-hide', name: 'Scraped hare hide', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 20960, station: 1, active: 6000, level: 1, inputs: [['core/hare-hide', 1], ['core/stone-flakes', 1]] },
-  { id: 'core/scraped-roe-hide', name: 'Scraped roe hide', cls: 'core/hide', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 28640, station: 1, active: 6000, level: 1, inputs: [['core/roe-hide', 1], ['core/stone-flakes', 1]] },
-  { id: 'core/hare-leather', name: 'Hare leather', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 24760, station: 1, active: 4000, level: 1, inputs: [['core/scraped-hare-hide', 1], ['core/herb', 1]] },
-  { id: 'core/hare-fur', name: 'Hare fur', cls: 'core/hide', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 24760, station: 1, active: 4000, level: 1, inputs: [['core/scraped-hare-hide', 1], ['core/herb', 1]] },
-  { id: 'core/roe-leather', name: 'Roe leather', cls: 'core/hide', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 32440, station: 1, active: 4000, level: 1, inputs: [['core/scraped-roe-hide', 1], ['core/herb', 1]] },
-  { id: 'core/sinew-thread', name: 'Sinew thread', cls: 'core/sinew', tier: 1, rarity: 'common', weight: 0, value: 3630, station: 1, active: 3000, level: 1, inputs: [['core/roe-sinew', 1]], out: 2 },
-  { id: 'core/hare-fur-hood', name: 'Hare-fur hood', cls: 'core/fur', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 32390, wear: { slot: 'head', effects: [{ effect: 'craft_speed_pct', value: 5 }] }, station: 1, active: 5000, level: 1, inputs: [['core/hare-fur', 1], ['core/sinew-thread', 1]] },
-  { id: 'core/roe-leather-jerkin', name: 'Roe-leather jerkin', cls: 'core/leather', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 44500, wear: { slot: 'top', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 6000, level: 2, inputs: [['core/roe-leather', 1], ['core/sinew-thread', 2]] },
-  { id: 'core/roe-leather-leggings', name: 'Roe-leather leggings', cls: 'core/leather', family: 'roe', tier: 1, rarity: 'common', weight: 1, value: 44500, wear: { slot: 'legs', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 6000, level: 2, inputs: [['core/roe-leather', 1], ['core/sinew-thread', 2]] },
-  { id: 'core/hare-leather-shoes', name: 'Hare-leather shoes', cls: 'core/leather', family: 'hare', tier: 1, rarity: 'common', weight: 1, value: 32390, wear: { slot: 'feet', effects: [{ effect: 'dig_speed_pct', value: 5 }] }, station: 1, active: 5000, level: 1, inputs: [['core/hare-leather', 1], ['core/sinew-thread', 1]] },
-  { id: 'core/boiled-leather', name: 'Boiled leather', cls: 'core/hide', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 38040, station: 2, active: 5000, level: 3, inputs: [['core/roe-leather', 1], ['core/branch', 1]] },
-  { id: 'core/boiled-leather-cap', name: 'Boiled-leather cap', cls: 'core/leather', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 46670, wear: { slot: 'head', effects: [{ effect: 'dig_speed_pct', value: 5 }], set: 'core/digger-leathers' }, station: 2, active: 5000, level: 4, inputs: [['core/boiled-leather', 1], ['core/sinew-thread', 1]] },
-  { id: 'core/boiled-leather-boots', name: 'Boiled-leather boots', cls: 'core/leather', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, value: 47670, wear: { slot: 'feet', effects: [{ effect: 'dig_speed_pct', value: 5 }], set: 'core/digger-leathers' }, station: 2, active: 6000, level: 5, inputs: [['core/boiled-leather', 1], ['core/sinew-thread', 1]] },
+/** The proposed tier-2 rows of the CLOTHING appendix, "For the take verb" (not content yet, the torn page waits for the owner's ruling). */
+export const TIER2_PROPOSED: readonly Row[] = [
+  { id: 'core/boiled-leather', name: 'Boiled leather', cls: 'core/hide', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, station: 2, active: 5000, level: 3, inputs: [['core/roe-leather', 1], ['core/branch', 1]] },
+  { id: 'core/boiled-leather-cap', name: 'Boiled-leather cap', cls: 'core/leather', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, wear: { slot: 'head', effects: [{ effect: 'dig_speed_pct', value: 5 }], set: 'core/digger-leathers' }, station: 2, active: 5000, level: 4, inputs: [['core/boiled-leather', 1], ['core/sinew-thread', 1]] },
+  { id: 'core/boiled-leather-boots', name: 'Boiled-leather boots', cls: 'core/leather', family: 'roe', tier: 2, rarity: 'uncommon', weight: 1, wear: { slot: 'feet', effects: [{ effect: 'dig_speed_pct', value: 5 }], set: 'core/digger-leathers' }, station: 2, active: 6000, level: 5, inputs: [['core/boiled-leather', 1], ['core/sinew-thread', 1]] },
 ];
 
 /**
@@ -85,10 +76,15 @@ export const GATE_SCRAPS: readonly [string, string][] = [
   ['core/leather-boots-scrap', 'core/boiled-leather-boots'],
 ];
 
-/** A copy of the bundle with the hide chain added as the appendix lists it; tier 1 is known from the start, tier 2 by `teach`. */
+/** A copy of the bundle with the proposed tier-2 rows added; the tier-1 chain is the content's own. Tier 2 is known from the start or found, by `teach`. */
 export function withHideChain(base: Bundle, teach: Teach = 'start'): Bundle {
   const b = structuredClone(base);
-  for (const r of HIDE_CHAIN) {
+  // the content's hide chain waits behind the fight's gate (`gate: "combat"`, the take verb is not live): the route plays
+  // the hunt as the hunt fields state it, so the chain is opened in this copy, and only the chain
+  for (const r of Object.values(b.recipes)) {
+    if (r.gate === 'combat' && (r.id.startsWith('core/tan-') || r.id === 'core/sinew-thread' || r.family === 'wear')) delete r.gate;
+  }
+  for (const r of TIER2_PROPOSED) {
     const item = {
       id: r.id,
       name: r.name,
@@ -104,7 +100,6 @@ export function withHideChain(base: Bundle, teach: Teach = 'start'): Bundle {
       file: 'clothing-route',
     } as unknown as ItemInfo;
     b.items[r.id] = item;
-    b.values[r.id] = r.value;
     const recipe = {
       id: r.id,
       title: r.name,
@@ -119,6 +114,9 @@ export function withHideChain(base: Bundle, teach: Teach = 'start'): Bundle {
     } as unknown as RecipeDef;
     b.recipes[r.id] = recipe;
   }
+  // the value of each proposed row is the solver's, on the content with the rows in: nothing here is a number typed by hand
+  const solved = computeValues(b).values;
+  for (const r of TIER2_PROPOSED) b.values[r.id] = solved[r.id]!;
   if (teach === 'found') {
     const gate = b.treasures['core/ruins-gate']!;
     const scrap = b.items['core/stew-scrap']!;
@@ -234,6 +232,15 @@ const tile = (t: readonly [number, number]) => ({ x: t[0], y: t[1], w: 1, h: 1 }
 /** The hours the route works in: the hare's day (its kind's \`hours\`), outside the wolf's night. */
 const DAY: [number, number] = [6, 19];
 
+/** The ids of the tier-1 chain as the content has it: what the tan recipes make, the sinew thread and the wear pieces made from them. */
+function tier1Chain(b: Bundle): string[] {
+  const ids = new Set<string>(['core/sinew-thread']);
+  for (const r of Object.values(b.recipes)) {
+    if (r.id.startsWith('core/tan-') || r.family === 'wear') for (const o of r.outputs) ids.add(o.item);
+  }
+  return [...ids].sort();
+}
+
 /** One run of the route from the forager's start with one world seed. */
 export async function playRoute(base: Bundle, seed: number, teach: Teach = 'start'): Promise<RouteRun> {
   const b = withHideChain(base, teach);
@@ -265,7 +272,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
 
   /** Leave behind what the route does not need when the bag runs short of places. */
   const SOLD = ['core/pottery-shard', 'core/old-coin'];
-  const KEEP = new Set([...SOLD, 'core/stone', 'core/stone-flakes', 'core/herb', 'core/branch', 'core/log', 'core/reed', 'core/reed-cord', 'core/hare-hide', 'core/roe-hide', 'core/roe-sinew', ...HIDE_CHAIN.map((r) => r.id)]);
+  const KEEP = new Set([...SOLD, 'core/stone', 'core/stone-flakes', 'core/herb', 'core/branch', 'core/log', 'core/reed', 'core/reed-cord', 'core/hare-hide', 'core/roe-hide', 'core/roe-sinew', ...TIER2_PROPOSED.map((r) => r.id), ...tier1Chain(b)]);
   const room = async (need: number) => {
     if (player.freePlaces() >= need) return;
     const spare = Object.keys(player.state.player.bag)
@@ -277,6 +284,16 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
     }
   };
 
+  /**
+   * Walk next to a place, in the hours of the day only. The bank wolf walks the road by night: a walk into its round fells
+   * the player (a fall the run cannot tell from a slow one), so a walk that would begin at night waits for the morning first.
+   */
+  const walk = async (rect: Parameters<typeof player.walkNear>[0]): Promise<void> => {
+    const dawn = firstOpenTick(b, player.tick, DAY);
+    if (dawn > player.tick) await book('night', async () => player.waitUntil(dawn));
+    await book('walk', () => player.walkNear(rect));
+  };
+
   const gatherUntil = async (source: string, item: string, want: number) => {
     while (bag(item) < want) {
       await room(1);
@@ -285,7 +302,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
         .sort((x, y) => x.ready - y.ready || x.id.localeCompare(y.id))[0];
       if (!node) throw new Error(`No ${source} on the map.`);
       const rect = player.rectOf(node.id);
-      await book('walk', () => player.walkNear(rect));
+      await walk(rect);
       const wait = Math.max(0, node.ready - player.tick);
       if (wait > 0) await book('wait', async () => player.time(wait));
       await book('gather', async () => {
@@ -300,7 +317,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
     const out = b.recipes[recipe]!.outputs[0]!.item;
     for (let i = 0; i < times; ) {
       await room(2);
-      await book('walk', () => player.walkNear(b.recipes[recipe]!.station === 'fire' ? fire : workshop));
+      await walk(b.recipes[recipe]!.station === 'fire' ? fire : workshop);
       const before = bag(out);
       await book('craft', async () => {
         await player.act({ t: 'craft', recipe, at: player.at });
@@ -330,7 +347,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
     if (!free) throw new Error(`No ${kind} left to take today.`);
     used.add(`${free.s.x},${free.s.y}`);
     await room(4);
-    await book('walk', () => player.walkNear(tile([free.s.x, free.s.y])));
+    await walk(tile([free.s.x, free.s.y]));
     // an animal is about in its own hours only (the kind's \`hours\`): a hunt at night waits for the morning
     const hours = b.map.creatures!.kinds[kind]!.hours;
     if (hours) {
@@ -364,7 +381,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
       const hasTrowel = Object.keys(player.state.player.bag).some((id) => b.items[id]?.tool?.kind === 'trowel' && bag(id) > 0);
       if (!hasTrowel) {
         const trader = tile(npcTile(b, 'core/trader')!);
-        await book('walk', () => player.walkNear(trader));
+        await walk(trader);
         // what the digs turned up pays for it
         for (const id of SOLD) if (bag(id) > 0) await player.act({ t: 'sell', npc: 'core/trader', item: id, qty: bag(id), at: player.at });
         await player.act({ t: 'buy', npc: 'core/trader', item: 'core/trowel', qty: 1, at: player.at });
@@ -373,7 +390,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
       const spot = instances('core/ruins-gate')
         .map((id) => ({ id, ready: player.state.nodes[id]?.readyAt ?? 0 }))
         .sort((x, y) => x.ready - y.ready || x.id.localeCompare(y.id))[0]!;
-      await book('walk', () => player.walkNear(player.rectOf(spot.id)));
+      await walk(player.rectOf(spot.id));
       const wait = Math.max(0, spot.ready - player.tick);
       if (wait > 0) await book('wait', async () => player.time(wait));
       const open = firstOpenTick(b, player.tick, DAY);
@@ -412,7 +429,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
     // 1. the first piece: a hare for the leather, a roe for the thread, the work stone and two flakes, two herbs
     if (!player.state.player.camp.includes('core/work-stone')) {
       await gatherUntil('core/river-stones', 'core/stone', 4);
-      await book('walk', () => player.walkNear(workshop));
+      await walk(workshop);
       await book('craft', async () => {
         await player.act({ t: 'build', camp: 'core/work-stone', at: player.at });
         player.waitUntil(player.state.player.busyUntil);
@@ -423,8 +440,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
     await gatherUntil('core/wild-herbs', 'core/herb', 2);
     await hunt('core/hare');
     await hunt('core/roe');
-    await craft('core/scraped-hare-hide');
-    await craft('core/hare-leather');
+    await craft('core/tan-hare-leather');
     await craft('core/sinew-thread');
     await craft('core/hare-leather-shoes');
     await wear('core/hare-leather-shoes');
@@ -436,11 +452,9 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
     await gatherUntil('core/wild-herbs', 'core/herb', 4);
     await hunt('core/hare');
     await hunt('core/roe');
-    await craft('core/scraped-hare-hide');
-    await craft('core/hare-fur');
-    await craft('core/scraped-roe-hide', 2);
-    await craft('core/roe-leather', 2);
-    await craft('core/sinew-thread', 3);
+    await craft('core/tan-hare-fur');
+    await craft('core/tan-roe-leather', 2);
+    await craft('core/sinew-thread');
     await craft('core/hare-fur-hood');
     await craft('core/roe-leather-jerkin');
     await craft('core/roe-leather-leggings');
@@ -456,7 +470,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
       await craft('core/reed-cord', 2);
       await gatherUntil('core/oak-trees', 'core/log', 3);
       await craft('core/split-log', 3);
-      await book('walk', () => player.walkNear(workshop));
+      await walk(workshop);
       await book('craft', async () => {
         await player.act({ t: 'build', camp: 'core/workbench', at: player.at });
         player.waitUntil(player.state.player.busyUntil);
@@ -471,8 +485,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
     }
     await hunt('core/roe');
     await hunt('core/roe');
-    await craft('core/scraped-roe-hide', 2);
-    await craft('core/roe-leather', 2);
+    await craft('core/tan-roe-leather', 2);
     await craft('core/boiled-leather', 2);
     for (const piece of ['core/boiled-leather-cap', 'core/boiled-leather-boots']) {
       while (bag('core/sinew-thread') < 1) await craft('core/sinew-thread');
