@@ -1,0 +1,53 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/tan-hare-leather",
+  "title": "Tan hare leather",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/hare-leather",
+      "name": "Hare leather",
+      "description": "Soft thin leather, the hair off.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/hide",
+      "family": "hare",
+      "tags": [
+        "tanned"
+      ],
+      "tier": 1,
+      "sprite": "core/base-kit:items/stew-scrap",
+      "weight": 1
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 6000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/hare-hide",
+        "qty": 1
+      },
+      {
+        "item": "core/stone-flakes",
+        "qty": 1
+      },
+      {
+        "item": "core/herb",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/hare-leather",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start",
+    "gate": "combat"
+  }
+}

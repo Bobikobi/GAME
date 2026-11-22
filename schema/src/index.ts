@@ -117,6 +117,9 @@ export const ItemClass = Type.Union([...BASE_CLASSES.map((k) => Type.Literal(k))
 });
 const Word = (description: string) => Type.String({ pattern: '^[a-z0-9_-]+$', maxLength: 24, description });
 
+/** What a recipe or a tree node may wait for (RecipeBody.gate, SchoolNode.gate): the fight's switch, under which the hunt waits too (G35). */
+export const GATES = ['combat'] as const;
+
 // ---------------------------------------------------------------- shared parts
 
 export const Stack = Type.Object(
@@ -554,6 +557,15 @@ export const RecipeBody = Type.Object(
     known: Type.Union([Type.Literal('start'), Type.Literal('found')], {
       description: '"start": every player knows it. "found": learned from a recipe scrap found by digging, or from a quest.',
     }),
+    family: Type.Optional(
+      Word('The craft family inside its profession, one its profession declares in "families", named by what the thing is for (SKILL_FAMILIES 2.1): "wear" for what is worn, clothing now and armour with metal; "tools" for tools; "arms" for weapons when they open. The material stays in the family of the item itself. A tree node with the same family helps it.'),
+    ),
+    gate: Type.Optional(
+      Type.Union(GATES.map((g) => Type.Literal(g)), {
+        description:
+          '"combat": closed while the fight is off (params combat.enabled 0, G35). Nobody knows it, nothing teaches it and the craft is refused; a save learns it, if it is start-known, once the gate opens. For a chain whose first input only a hunt or a fight lays in a player\'s hands (CLOTHING 6, "Before the take verb").',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -613,6 +625,9 @@ export const When = Type.Object(
     time: Type.Optional(
       Type.Union([Type.Literal('day'), Type.Literal('night')], { description: 'By day (05:00 to 20:00) or by night.' }),
     ),
+    day_min: Type.Optional(
+      Int(2, 365, 'The valley\'s day has reached this number: day 1 runs from the wake to the first dawn, day 2 from that dawn to the next. A line that waits for the morning after (the ladder\'s Day 2). Never the calendar\'s day (G28).'),
+    ),
   },
   { additionalProperties: false, minProperties: 1, description: 'Holds when every condition it names holds.' },
 );
@@ -670,11 +685,23 @@ export const NpcBody = Type.Object(
   { additionalProperties: false },
 );
 
+/** The highest price a shop offer may carry, in milli-gold: a written price and the one the build computes alike. */
+export const SHOP_PRICE_MAX_MG = 100_000_000;
+
 export const ShopBody = Type.Object(
   {
     sells: Type.Array(
       Type.Object(
-        { item: Id, price_mg: Int(1, 100_000_000, 'Price in milli-gold (1000 = 1 gold).') },
+        {
+          item: Id,
+          price_mg: Type.Optional(
+            Int(
+              1,
+              SHOP_PRICE_MAX_MG,
+              'Price in milli-gold (1000 = 1 gold). Left out, the build sets it to the lowest price R8 allows, `r_mg_per_value_ms` times the item\'s value, so no price is typed by hand; an item with no value cannot be left unpriced.',
+            ),
+          ),
+        },
         { additionalProperties: false },
       ),
       { maxItems: 40 },
@@ -1298,6 +1325,14 @@ export const ProfessionBody = Type.Object(
       ),
       { maxItems: 10 },
     ),
+     families: Type.Optional(
+      Type.Array(Word('A craft family.'), {
+        minItems: 1,
+        maxItems: 12,
+        uniqueItems: true,
+        description: 'A craft profession only: the families its recipes are sorted into, by use (SKILL_FAMILIES 2.1). A recipe or a tree node of this profession names one of them; when a family grows into its own school, its recipes name that profession instead.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1366,6 +1401,15 @@ export const SchoolNode = Type.Object(
     ),
     race: Type.Optional({ ...Id, description: 'A corner node only: the race whose node this is. Only a player of that race sees and learns it.' }),
     icon: Type.Optional({ ...Id, description: 'An item whose sprite pictures the node on the tree.' }),
+    family: Type.Optional(
+      Word('A craft node only: it helps only the recipes of this family, one its school\'s profession declares (SKILL_FAMILIES 2.2). Left out, a craft node helps every recipe of its profession.'),
+    ),
+    gate: Type.Optional(
+      Type.Union(GATES.map((g) => Type.Literal(g)), {
+        description:
+          '"combat": closed while the fight is off (params combat.enabled 0, G35). The tree shows it and refuses a point for it, so no point goes to a node whose recipes nobody can make yet (CLOTHING 6.1).',
+      }),
+    ),
     cluster: Type.Optional({ ...NodeId, description: 'The cluster of its school it belongs to (the school\'s `clusters`): nodes that stand together.' }),
     pos: Type.Optional(
       Type.Object(
@@ -1960,6 +2004,13 @@ export const ClipBody = Type.Object(
     verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup or dig.' }),
     frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
     anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
+    fit_permille: Type.Optional(
+      Int(
+        100,
+        4000,
+        'The factor the clip shows at on top of its density\'s base scale (1 / density), in thousandths (the bundle holds whole numbers only): a take drawn larger than the race\'s walk shows smaller, so its figure stands as tall as the walk\'s. Left out, 1000. The feet stay on the anchor whatever the fit.',
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1995,7 +2046,8 @@ export const KitBody = Type.Object(
             384,
             'Frame height in pixels. At density 1 tiles/ and items/ are 16, chars/ are 24, a work pose 32 and props up to 64. At density 4 tiles/ and items/ are 64, chars/ are 96, a work pose 128 and props up to 384.',
           ),
-          frames: Type.Optional(Int(1, 16, 'Animation frames laid side by side. Default 1.')),
+          frames: Type.Optional(Int(1, 64, 'Animation frames laid side by side, or in rows when `cols` wraps them. Default 1.')),
+          cols: Type.Optional(Int(1, 32, 'Frames per row when the sheet is wrapped into rows (read left to right, then top to bottom): a long clip of 45 frames is too wide for one row (a picture wider than 4096 px is refused). Left out, one row of `frames`.')),
           ramps: Type.Optional(
             Type.Array(Type.String({ pattern: '^[a-z0-9][a-z0-9-]*$', maxLength: 32 }), {
               minItems: 1,

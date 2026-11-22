@@ -69,9 +69,10 @@ describe('hub-data', () => {
   it('a missing source leaves its section empty', () => {
     const doc = fixture();
     doc.sources.github = null;
-    expect(hubInvariants(doc).map((i) => i.path)).toEqual(['/sources/github']);
+    expect(hubInvariants(doc).map((i) => i.path)).toEqual(['/sources/github', '/feed']);
     const bare = fixture();
     bare.sources.github = null;
+    bare.feed = [];
     bare.requests = [];
     bare.proposals = [];
     bare.votes = [];
@@ -124,5 +125,37 @@ describe('hub-data', () => {
     expect(Object.keys(option).sort()).toEqual(['bar', 'key', 'percent', 'title', 'url']);
     expect('voters' in vote).toBe(false);
     expect('votes' in vote).toBe(false);
+  });
+});
+
+describe('hub-data: the developers\' home (#727, stage 1)', () => {
+  it('still accepts a document built before the feed, the gaps and the world existed', () => {
+    const doc = fixture() as unknown as Record<string, unknown>;
+    delete doc['feed'];
+    delete doc['gaps'];
+    delete doc['world'];
+    expect(validateHubData(doc)).toEqual([]);
+  });
+
+  it('keeps the real handle of a feed item and only says whether it is the development team', () => {
+    const doc = fixture();
+    expect(doc.feed!.map((i) => [i.author, i.maker])).toEqual([['example-builder', 'person'], ['bobikobi', 'team']]);
+    (doc.feed![0] as unknown as { maker: string }).maker = 'agent';
+    expect(validateHubData(doc).map((i) => i.path)).toContain('/feed/0/maker');
+  });
+
+  it('has no feed when it was built without GitHub, and no meter with more squares drawn than there are', () => {
+    const doc = fixture();
+    doc.sources.github = null;
+    doc.sources.vercel = null;
+    doc.requests = [];
+    doc.proposals = [];
+    doc.votes = [];
+    doc.reviewers = [];
+    doc.summary = null;
+    expect(validateHubData(doc)).toEqual([{ path: '/feed', message: 'built without GitHub: the feed must be empty' }]);
+    const world = fixture();
+    world.world!.drawn = world.world!.whole + 1;
+    expect(validateHubData(world)).toEqual([{ path: '/world/drawn', message: 'cannot be more than whole' }]);
   });
 });

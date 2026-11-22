@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FORMAT_VERSION } from '@game/schema';
-import { HUB_FORMAT, validateHubData, type HubData } from '@game/schema/hub';
+import { HUB_FORMAT, validateHubData, type HubData, type HubFeedItem } from '@game/schema/hub';
 import { readPoints } from '../board';
 import { runCheck } from '../check';
 import { loadConfig } from '../loop/config';
@@ -14,6 +14,9 @@ import type { LoopClient } from '../loop/github';
 import { REPO_ROOT } from '../load';
 import { addedTimes, contentSections, head, parameters } from './content';
 import { githubSections, type GitHubSections } from './github';
+import { readDevArea } from './devarea';
+import { readFeed } from './feed';
+import { findGaps, viewOf } from './gaps';
 import type { AccountsReader } from './accounts';
 import { readUsage, type UsageReader } from './usage';
 
@@ -62,16 +65,21 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
   const commit = head(root, options.now);
   const kernel = JSON.parse(readFileSync(join(root, 'kernel/package.json'), 'utf8')) as { version: string };
 
+  const devArea = readDevArea(root);
+  const gaps = findGaps(viewOf(assembled), repository);
   let github = EMPTY;
+  let feed: HubFeedItem[] = [];
   let fetched: string | null = null;
   if (options.client) {
     try {
       github = await githubSections(options.client, repository, loop, points.per_approval, options.now);
+      feed = await readFeed(options.client, repository, gaps, devArea.team);
       fetched = options.now.toISOString();
     } catch (error) {
       // a deploy must not fail because GitHub is slow or the token expired: the sections stay empty and say why
       log(`warning: GitHub could not be read, so requests, proposals, votes, reviewers and the summary are empty: ${error instanceof Error ? error.message : String(error)}`);
       github = EMPTY;
+      feed = [];
     }
   }
   if (!options.previews) github = { ...github, proposals: github.proposals.map(({ preview: _preview, ...rest }) => rest) };
@@ -96,7 +104,7 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
       log(`warning: the game server's players counter could not be read, so accounts is null: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-  const compose = (gh: GitHubSections, at: string | null): HubData => ({
+  const compose = (gh: GitHubSections, at: string | null, items: HubFeedItem[]): HubData => ({
     format: HUB_FORMAT,
     built_at: options.now.toISOString(),
     source: {
@@ -120,16 +128,19 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
     proposals: gh.proposals,
     votes: gh.votes,
     summary: gh.summary,
+    feed: items,
+    gaps,
+    ...(devArea.world ? { world: devArea.world } : {}),
     parameters: parameters(root, loop, points),
     players: null,
     accounts,
     usage: usage?.usage ?? null,
   });
-  const doc = compose(github, fetched);
+  const doc = compose(github, fetched, feed);
   if (fetched === null) return doc;
   // what people write on GitHub is not ours to vouch for: a document it would break is published without it
   const issues = validateHubData(doc);
   if (issues.length === 0) return doc;
   log(`warning: what GitHub returned does not fit the document, so its sections are left out: ${issues.map((i) => `${i.path} ${i.message}`).join('; ')}`);
-  return compose(EMPTY, null);
+  return compose(EMPTY, null, []);
 }

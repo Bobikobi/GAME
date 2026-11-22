@@ -1,0 +1,265 @@
+{
+ "$comment": "The clothing sets to draw whole on the figure (public #772), in order. Pieces name the wear place the bars measure; a ramp is dark to light hex steps, taken from the source named in colour_source. Frames counted per race for stand and walk; right views are the left ones mirrored by code and never drawn twice. Work, fight and the other clips are not drawn here: #771 redraws them on 45 frames.",
+ "figure": {
+  "frame_px": 128,
+  "body_rows_px": 96,
+  "game_art_px": 51,
+  "camera_deg": 35,
+  "bare_source": "~/Projects/GAME.worktrees/art-elf-slim/.scratch/set",
+  "note": "The kept 35 degree takes, the figure of the painted lands. The live kit's walk sheets (human 11 frames x 3 views x 2 builds, elf 16, skeleton 13) are the older drawing."
+ },
+ "frames": {
+  "per_race_stand_and_walk": {
+   "human": {
+    "views": [
+     "front",
+     "back",
+     "left"
+    ],
+    "idle": {
+     "front": 4,
+     "back": 4,
+     "left": 4
+    },
+    "walk": {
+     "front": 4,
+     "back": 4,
+     "left": 4
+    },
+    "total": 24
+   },
+   "elf": {
+    "views": [
+     "front",
+     "back",
+     "left"
+    ],
+    "idle": {
+     "front": 4,
+     "back": 4,
+     "left": 4
+    },
+    "walk": {
+     "front": 4,
+     "back": 4,
+     "left": 4
+    },
+    "total": 24
+   },
+   "skeleton": {
+    "views": [
+     "front",
+     "back",
+     "left"
+    ],
+    "idle": {
+     "front": 4,
+     "back": 4,
+     "left": 4
+    },
+    "walk": {
+     "front": 16,
+     "back": 16,
+     "left": 4
+    },
+    "total": 48,
+    "note": "the skeleton's kept front and back walks are 16 frame takes"
+   }
+  },
+  "live_walk_sheets_today": {
+   "human": "11 x 3 views x 2 builds = 66",
+   "elf": "16 x 3 x 2 = 96",
+   "skeleton": "13 x 3 = 39"
+  },
+  "other_clips_not_drawn_here": "human 23 clips / 215 frames in the pack of #764, elf and skeleton alike; redrawn on 45 frames by #771"
+ },
+ "sets": [
+  {
+   "order": 1,
+   "id": "core/reed-walker",
+   "title": "Reed-walker",
+   "wearable_today": true,
+   "why": "the one set a player can wear in the live game: reed hat and reed sandals, craftable at the workshop",
+   "races": [
+    "human",
+    "elf",
+    "skeleton"
+   ],
+   "race_order": "human first; elf and skeleton after the human's passes",
+   "pieces": [
+    {
+     "item": "core/reed-hat",
+     "name": "Reed hat",
+     "place": "head",
+     "bars_places": [
+      "head"
+     ],
+     "colour_source": "dried reed straw, with a band of the berry-dyed cord (core/dyed-cord, the berry sprite's red)",
+     "ramp": [
+      "#7a5f33",
+      "#a6854a",
+      "#c9a96a",
+      "#e8d4a2"
+     ],
+     "accent_ramp": [
+      "#5e1c28",
+      "#a8302f",
+      "#e2533f"
+     ],
+     "look": "a low-crowned woven reed hat with a wide brim that clears the skull outline and sits above the brow, a berry-red cord band"
+    },
+    {
+     "item": "core/reed-sandals",
+     "name": "Reed sandals",
+     "place": "feet",
+     "bars_places": [
+      "feet"
+     ],
+     "colour_source": "dried reed straw, cord straps",
+     "ramp": [
+      "#7a5f33",
+      "#a6854a",
+      "#c9a96a",
+      "#e8d4a2"
+     ],
+     "accent_ramp": [],
+     "look": "flat woven reed soles with two cord straps over the foot and one round the ankle; the toes stay bare"
+    }
+   ],
+   "description": "Dress this figure in a reed hat and reed sandals only. Hat: low flat-crowned woven pale straw hat, wide brim, thin red cord band; crown no taller than the hair was, brim above the eyebrows so forehead, eyes and face stay fully visible, a little brown hair at the temples. Sandals: very thin flat woven straw soles hugging the feet, cord straps, toes bare; feet keep their size and ground line. Body, face, skin, grey shorts, pose and size stay exactly the same.",
+   "head_layer": {
+    "front": "idle-front/f0",
+    "back": "walk-back/f1",
+    "left": "walk-left/f1"
+   },
+   "use_view_clauses": {
+    "human": false,
+    "elf": true,
+    "skeleton": true
+   },
+   "description_by_race": {
+    "elf": "Dress this figure in a reed hat and reed sandals only. Hat: low flat-crowned woven pale straw hat, wide brim, thin red cord band; crown no taller than the hair was, brim above the eyebrows so forehead, eyes and pointed ears stay fully visible. Sandals: very thin flat woven straw soles hugging the feet, cord straps, toes bare; feet keep their size and ground line. Body, face, ears, hair, skin, grey clothes, pose and size stay exactly the same.",
+    "skeleton": "Dress this skeleton in a reed hat and reed sandals only. Hat: low flat-crowned woven pale straw hat, wide brim, thin red cord band; crown no taller than the skull was, brim above the eye sockets so the whole skull face stays visible. Sandals: very thin flat woven straw soles under the bone feet, cord straps, toes bare; feet keep their size and ground line. Skull, bones, ribs, pose and size stay exactly the same."
+   }
+  },
+  {
+   "order": 2,
+   "id": "core/digger-leathers",
+   "title": "Digger leathers",
+   "wearable_today": false,
+   "why": "CLOTHING section 8; the numbers are built by the clothing wave (public #769), the look does not wait",
+   "races": [
+    "human"
+   ],
+   "pieces": [
+    {
+     "item": "core/boiled-leather-cap",
+     "name": "Boiled-leather cap",
+     "place": "head",
+     "bars_places": [
+      "head"
+     ],
+     "colour_source": "the roe hide's coat (content/kit/core/creatures/roe.png: bark ramp), the hide's colour is final",
+     "ramp": [
+      "#3f1e17",
+      "#5e2e20",
+      "#7f452a",
+      "#a3633a",
+      "#cc8e55"
+     ],
+     "accent_ramp": [],
+     "look": "a close boiled-leather skull cap with a stitched seam and a short peak, clearly a cap and not hair"
+    },
+    {
+     "item": "core/boiled-leather-boots",
+     "name": "Boiled-leather boots",
+     "place": "feet",
+     "bars_places": [
+      "feet"
+     ],
+     "colour_source": "the roe hide's coat (bark ramp)",
+     "ramp": [
+      "#3f1e17",
+      "#5e2e20",
+      "#7f452a",
+      "#a3633a",
+      "#cc8e55"
+     ],
+     "accent_ramp": [],
+     "look": "ankle-high stiff leather boots with a folded cuff and a thick sole"
+    }
+   ],
+   "description": "Dress this figure in a leather cap and leather boots only. Cap: a close-fitting tan-russet boiled-leather skull cap with a stitched seam and a short peak, clearly a cap and not hair, above the eyebrows so forehead, eyes and face stay fully visible. Boots: ankle-high stiff russet leather boots with a folded cuff and a thick sole. Body, face, skin, pose and size stay exactly the same, grey shorts keep the same grey.",
+   "use_view_clauses": true,
+   "head_layer": {
+    "front": "idle-front/f0",
+    "back": "walk-back/f2",
+    "left": "walk-left/f1",
+    "idle-left": "idle-left/f0@s14"
+   }
+  },
+  {
+   "order": 3,
+   "id": "core/hardened-leathers",
+   "title": "Hardened leathers",
+   "wearable_today": false,
+   "why": "CLOTHING section 8; rare tier; numbers in public #769",
+   "races": [
+    "human"
+   ],
+   "pieces": [
+    {
+     "item": "core/hardened-jerkin",
+     "name": "Hardened jerkin",
+     "place": "top",
+     "bars_places": [
+      "top"
+     ],
+     "colour_source": "the roe hide's coat (bark ramp), hardened so one step darker",
+     "ramp": [
+      "#2a1810",
+      "#3f1e17",
+      "#5e2e20",
+      "#7f452a",
+      "#a3633a"
+     ],
+     "accent_ramp": [],
+     "look": "a sleeveless hardened-leather jerkin laced up the front, the neck and the shoulders left bare so the chin and face stay clear"
+    },
+    {
+     "item": "core/hardened-breeches",
+     "name": "Hardened breeches",
+     "place": "legs",
+     "bars_places": [
+      "legs"
+     ],
+     "colour_source": "the roe hide's coat (bark ramp), hardened",
+     "ramp": [
+      "#2a1810",
+      "#3f1e17",
+      "#5e2e20",
+      "#7f452a",
+      "#a3633a"
+     ],
+     "accent_ramp": [],
+     "look": "knee-length hardened-leather breeches over the shorts, a plain belt"
+    }
+   ],
+   "description": "Dress this figure in a hardened leather jerkin and breeches only. Jerkin: a sleeveless dark-brown hardened leather jerkin laced up the front, ending below the collarbones; the neck, shoulders, arms and chin stay bare and uncovered. Breeches: plain knee-length hardened leather breeches with a plain belt, replacing the grey shorts. Head, hair, face, arms, shins, feet, pose and size stay exactly the same.",
+   "use_view_clauses": true
+  }
+ ],
+ "bars": {
+  "S1": "height within 2 px of the bare frame (128 px frame), feet rows within 1",
+  "S2": "outside the garment's area the figure is unchanged (face, hair, skin) by no more than the measured noise of the trial's A still",
+  "S3": "nothing of the garment inside the face box, on every frame",
+  "S4": "the garment's area changes by at most 12% between neighbour frames and its colours stay on the set's ramp",
+  "S5": "one body, no loose specks",
+  "S6": "by eye at 4 times on the painted village-edge plate at zoom 3, 13:00 and dusk"
+ },
+ "view_clauses": {
+  "front": "",
+  "back": " Seen from behind, facing away; keep it facing away.",
+  "left": " Side view facing left; keep the same profile."
+ }
+}

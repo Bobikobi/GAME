@@ -7,7 +7,7 @@
 import type { WhenDef } from '@game/schema';
 
 import type { Bundle } from './bundle';
-import { type PublicState, campBuilt, isNight } from './state';
+import { type PublicState, campBuilt, isNight, valleyDay } from './state';
 
 /** Whether every condition `when` names holds, at `tick` for the time of day. */
 export function holds(bundle: Bundle, state: PublicState, when: WhenDef, tick: number = state.tick): boolean {
@@ -21,13 +21,14 @@ export function holds(bundle: Bundle, state: PublicState, when: WhenDef, tick: n
   if (when.visited && !when.visited.every((sl) => p.visited.includes(sl))) return false;
   if (when.race && !when.race.includes(p.race)) return false;
   if (when.time && (when.time === 'night') !== isNight(bundle, tick)) return false;
+  if (when.day_min !== undefined && valleyDay(bundle, tick) < when.day_min) return false;
   return true;
 }
 
-/** How specific a condition is: one for each id it names, one for a race (it names one of them), and one for a time of day. */
+/** How specific a condition is: one for each id it names, one for a race (it names one of them), and one for a time of day or a day of the valley. */
 export function weight(when: WhenDef): number {
   const lists = [when.done, when.active, when.not_done, when.restored, when.built, when.has, when.visited];
-  return lists.reduce((n, list) => n + (list?.length ?? 0), 0) + (when.race ? 1 : 0) + (when.time ? 1 : 0);
+  return lists.reduce((n, list) => n + (list?.length ?? 0), 0) + (when.race ? 1 : 0) + (when.time ? 1 : 0) + (when.day_min !== undefined ? 1 : 0);
 }
 
 /** The key a heard remark is remembered by: "<npc id>#<index>". */

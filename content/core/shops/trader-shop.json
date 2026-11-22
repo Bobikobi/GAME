@@ -42,6 +42,18 @@
       {
         "item": "core/first-aid-kit",
         "price_mg": 60000
+      },
+      {
+        "item": "core/hare-fur-hood"
+      },
+      {
+        "item": "core/roe-leather-jerkin"
+      },
+      {
+        "item": "core/roe-leather-leggings"
+      },
+      {
+        "item": "core/hare-leather-shoes"
       }
     ],
     "buys": true,

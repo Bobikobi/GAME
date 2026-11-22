@@ -227,6 +227,50 @@ export const HubProposal = Type.Object(
   { additionalProperties: false, description: 'One content proposal. The preview is the trial world of this proposal: the game at /play/ of its deployment.' },
 );
 
+export const GAP_RULES = ['no_picture', 'figure_no_quest', 'quest_no_place'] as const;
+export const HubGap = Type.Object(
+  {
+    rule: Type.Union(GAP_RULES.map((r) => Type.Literal(r))),
+    id: Id,
+    file: RepoPath,
+    url: Url,
+    line: Text,
+  },
+  {
+    additionalProperties: false,
+    description:
+      'One thing a record still lacks, found by a rule over the content files (tools/src/hub/gaps.ts). It names the record and its file, so a newcomer can act on it.',
+  },
+);
+
+export const FEED_STATES = ['draft', 'review'] as const;
+export const HubFeedItem = Type.Object(
+  {
+    number: GitHubNumber,
+    title: Title,
+    url: Url,
+    author: Handle,
+    maker: Type.Union([Type.Literal('team'), Type.Literal('person')], {
+      description: '"team": the author is one of the game\'s own standing tracks (.github/dev-area.json team_handles), shown as "Development team". The real GitHub handle stays in `author`.',
+    }),
+    state: Type.Union(FEED_STATES.map((s) => Type.Literal(s)), { description: '"draft" is a pull request marked as a draft; "review" is one marked ready. Only open pull requests are in the feed.' }),
+    created_at: Iso,
+    updated_at: Iso,
+    missing: Type.Array(HubGap, { maxItems: 3, description: 'The gaps of the records this pull request changes.' }),
+  },
+  { additionalProperties: false, description: 'One open pull request: what people and the development team are making for the game, as it is on GitHub.' },
+);
+
+export const HubWorld = Type.Object(
+  {
+    drawn: Count,
+    whole: Type.Integer({ minimum: 1 }),
+    as_of: Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'The day the count was read, kept current by the maintainers.' }),
+    next: Text,
+  },
+  { additionalProperties: false, description: 'The shared goal: squares of the wide world\'s chart drawn, of the whole, from .github/dev-area.json. Read, never typed into a page.' },
+);
+
 export const HubVote = Type.Object(
   {
     number: GitHubNumber,
@@ -364,6 +408,9 @@ export const HubData = Type.Object(
     proposals: Type.Array(HubProposal),
     votes: Type.Array(HubVote),
     summary: Type.Union([HubSummary, Type.Null()]),
+    feed: Type.Optional(Type.Array(HubFeedItem, { description: 'Open pull requests, newest change first. Absent in documents built before the developers\' home.' })),
+    gaps: Type.Optional(Type.Array(HubGap, { description: 'Every gap the three rules find on the content of the checkout.' })),
+    world: Type.Optional(HubWorld),
     parameters: HubParameters,
     players: Type.Union([HubPlayers, Type.Null()]),
     accounts: Type.Optional(Type.Union([HubAccounts, Type.Null()], { description: 'null when the count is unknown, never a guessed 0.' })),
@@ -382,6 +429,9 @@ export type HubKit = Static<typeof HubKit>;
 export type HubSlot = Static<typeof HubSlot>;
 export type HubRequest = Static<typeof HubRequest>;
 export type HubProposal = Static<typeof HubProposal>;
+export type HubGap = Static<typeof HubGap>;
+export type HubFeedItem = Static<typeof HubFeedItem>;
+export type HubWorld = Static<typeof HubWorld>;
 export type HubVote = Static<typeof HubVote>;
 export type HubSummary = Static<typeof HubSummary>;
 export type HubParameters = Static<typeof HubParameters>;
@@ -440,6 +490,8 @@ export function hubInvariants(doc: HubData): SchemaIssue[] {
     const empty = doc.requests.length === 0 && doc.proposals.length === 0 && doc.votes.length === 0 && doc.reviewers.length === 0 && doc.summary === null;
     if (!empty) issues.push({ path: '/sources/github', message: 'built without GitHub: requests, proposals, votes, reviewers and summary must be empty' });
   }
+  if (doc.sources.github === null && (doc.feed ?? []).length > 0) issues.push({ path: '/feed', message: 'built without GitHub: the feed must be empty' });
+  if (doc.world && doc.world.drawn > doc.world.whole) issues.push({ path: '/world/drawn', message: 'cannot be more than whole' });
   if (doc.sources.vercel === null && doc.proposals.some((pr) => pr.preview !== undefined)) {
     issues.push({ path: '/sources/vercel', message: 'built without Vercel: no proposal may carry a preview' });
   }

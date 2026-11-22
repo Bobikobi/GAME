@@ -19,6 +19,7 @@ import {
   WEATHER_ODDS,
   applyStatePatch,
   hourOf,
+  valleyDay,
 } from '@game/kernel';
 import type { WeatherName } from '@game/schema';
 
@@ -186,6 +187,8 @@ export class RemoteSession implements GameSession {
   private resuming: Promise<void> | undefined;
   /** the tick up to which burns that ran out were asked about (`tellOuts`) */
   private outSeen = 0;
+  /** the valley day the server was last asked about (`tellDawn`) */
+  private dawnAsked = 0;
   private pauses = 0;
   private deferred: GameEvent[] = [];
   private moves: { kind: 'move'; at: Tile; tick: number; gait?: Gait }[] = [];
@@ -299,6 +302,7 @@ export class RemoteSession implements GameSession {
     if (this.noted !== this.state.content) this.note();
     this.tick += Math.max(0, Math.min(LONGEST_FRAME_MS, Math.round(dt)));
     this.tellOuts();
+    this.tellDawn();
     if (this.deferred.length > 0 && !this.busy) {
       const events = this.deferred;
       this.deferred = [];
@@ -323,6 +327,16 @@ export class RemoteSession implements GameSession {
     const since = Math.max(this.state.tick, this.outSeen);
     this.outSeen = this.tick;
     if (!burnEnded(this.state, since, this.tick)) return;
+    this.report(this.pos, true);
+    void this.flushMoves().catch(() => undefined);
+  }
+
+  /** The valley's day turns at its own dawn and the kernel tells it with a step: once a dawn has passed since the last step, the tile is reported again (as `Session.tellDawn` does), once per valley day. */
+  private tellDawn(): void {
+    if (!this.open || this.busy) return;
+    const day = valleyDay(this.bundle, this.tick);
+    if (day <= valleyDay(this.bundle, this.state.tick) || day <= this.dawnAsked) return;
+    this.dawnAsked = day;
     this.report(this.pos, true);
     void this.flushMoves().catch(() => undefined);
   }

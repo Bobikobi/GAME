@@ -42,7 +42,9 @@ import {
   riddleSlots,
   sees,
   spotOpen,
+  frameRect,
   gaitStepMs,
+  sheetGrid,
   treasureKind,
   windowOpen,
   type WorkKind,
@@ -78,6 +80,7 @@ import type { WeatherName } from '@game/schema';
 import { LANDING, LANDINGS, MARK_LIFE, RAIN_FALL, RAIN_LIFE, RAIN_MAX, RAIN_SLANT, type Landing, bankFog, dropsAlive, landingsPerSecond, markPixels, skyLook, streakPixels, washRgb } from '../rain';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
+import { CHIMNEY_SMOKE, DRIFT_TEXTURE, Drifters, driftOn } from '../drift';
 import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '../flicker';
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
@@ -91,13 +94,13 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
-import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
+import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
-import { adopt, baseOf, densityOf, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
+import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraZoom, pixelRatio, wheelStep, wheelZoom, worldToPage } from '../view';
 import { ROOM, doorsOf, type RoomScene } from './room';
 
@@ -289,8 +292,16 @@ interface Glow {
 }
 
 /** An emitter that only runs while its patch of the valley is on screen. */
+/** What the on-screen rule needs of a thing that emits: a particle emitter, or the drift driver's pieces. */
+interface Switch {
+  emitting: boolean;
+  start(): unknown;
+  stop(): unknown;
+  destroy(): unknown;
+}
+
 interface Local {
-  emitter: Emitter;
+  emitter: Switch;
   rect: Phaser.Geom.Rectangle;
 }
 
@@ -433,6 +444,8 @@ export class WorldScene extends Phaser.Scene {
   private breathers: Breather[] = [];
   private glows: Glow[] = [];
   private locals: Local[] = [];
+  /** the drift driver's pieces (drift.ts), moved every frame; only behind `?drift=sheet` */
+  private drifting: Drifters[] = [];
   /** sparks over the targets of the first open step of the main task; rebuilt by refresh() */
   private glints: Local[] = [];
   private glintKey = '';
@@ -1095,14 +1108,19 @@ export class WorldScene extends Phaser.Scene {
     if (this.textures.exists(key)) return key;
     const info = this.b.sprites[ref];
     if (!info || !this.textures.exists(ref)) return undefined;
-    const tex = this.textures.createCanvas(key, info.w * info.frames, info.h);
+    // the copy keeps the sheet's layout, rows included (`cols`): each frame goes where the kernel's grid rule puts it
+    const grid = sheetGrid(info);
+    const tex = this.textures.createCanvas(key, grid.width, grid.height);
     if (!tex) return undefined;
-    for (let f = 0; f < info.frames; f++) tex.drawFrame(ref, info.frames > 1 ? f : undefined, f * info.w, 0, false);
+    for (let f = 0; f < info.frames; f++) {
+      const at = frameRect(info, f);
+      tex.drawFrame(ref, info.frames > 1 ? f : undefined, at.x, at.y, false);
+    }
     const pixels = tex.getData(0, 0, tex.width, tex.height);
     remapTone(pixels.data, tex.width, tone, info.w);
     tex.putData(pixels, 0, 0);
     tex.refresh();
-    if (info.frames > 1) for (let f = 0; f < info.frames; f++) tex.add(f, 0, f * info.w, 0, info.w, info.h);
+    if (info.frames > 1) for (let f = 0; f < info.frames; f++) { const at = frameRect(info, f); tex.add(f, 0, at.x, at.y, info.w, info.h); }
     return key;
   }
 
@@ -1491,7 +1509,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private buildCasters(): void {
     // a density-4 prop casts at the size it is drawn: the layer reads each texture's density
-    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, densityOf);
+    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, drawnDensity);
     // nothing that changes every frame is painted into a layer (cast-layer.ts): a thing that walks casts
     // through its own image, a thing on a beat (a sway, a flame, a blink) from its first frame
     const walks = new Set<Phaser.GameObjects.GameObject>(this.hazards.map((h) => h.spr));
@@ -1536,6 +1554,14 @@ export class WorldScene extends Phaser.Scene {
 
   /** A thin thread of smoke rising from (x, y), only while that chimney is on screen. */
   private smoke(x: number, y: number, depth: number): void {
+    const rect = new Phaser.Geom.Rectangle(x - 16, y - 40, 48, 56);
+    // `?drift=sheet` and its sheet loaded: the driver's pieces; otherwise (the default) the kit's own puff below
+    if (driftOn(window.location.search) && this.textures.exists(DRIFT_TEXTURE)) {
+      const drifters = new Drifters(this, CHIMNEY_SMOKE.spec, x, y, depth, seedOf(`chimney-${x}-${y}`));
+      this.drifting.push(drifters);
+      this.locals.push({ emitter: drifters, rect });
+      return;
+    }
     const emitter = this.smokePuffs(x, y, depth, {
       speedY: { min: -7, max: -3 },
       speedX: { min: 1, max: 3 },
@@ -1544,7 +1570,7 @@ export class WorldScene extends Phaser.Scene {
       frequency: 420,
       maxAliveParticles: 10,
     });
-    this.locals.push({ emitter, rect: new Phaser.Geom.Rectangle(x - 16, y - 40, 48, 56) });
+    this.locals.push({ emitter, rect });
   }
 
   private buildNodes(): void {
@@ -2152,6 +2178,7 @@ export class WorldScene extends Phaser.Scene {
       this.outside();
     }
     this.session = session;
+    this.loadClips(session.state.player.race);
     this.auto = null;
     this.held.clear();
     this.look = session.facing;
@@ -2240,10 +2267,12 @@ export class WorldScene extends Phaser.Scene {
     const p = this.session?.state.player;
     const race = p ? this.b.races[p.race] : undefined;
     const first = Object.values(this.b.races)[0];
-    const base = (p?.look === 1 && race?.sprite_alt) || race?.sprite || first?.sprite || '';
+    const bare = (p?.look === 1 && race?.sprite_alt) || race?.sprite || first?.sprite || '';
+    const has = (k: string) => k in this.b.sprites;
+    // a complete clothing set is drawn whole on the figure (public #772); the other poses stay the bare figure
+    const base = p && pose === 'walk' ? wornSetSheet(this.b, this.session!.state, bare, has, window.location.search) : bare;
     const stem = pose === 'walk' ? base : base.replace(/_down$/, `_${pose}_down`);
     const of = (d: string) => stem.replace(/_down$/, `_${d}`);
-    const has = (k: string) => k in this.b.sprites;
     const none = { key: '', flip: false };
     if (pose !== 'walk' && !has(stem)) return none;
     // the rig's diagonals (23.10) for the walk and the blink; work poses stay four-way
@@ -2308,6 +2337,22 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
+   * Fetches the clip sheets of the player's race, in the background, once: the boot leaves every clip out (clips.ts `bootSprites`).
+   * A clip asked for before its sheet is here is not played (`playClip`), so the figure keeps its walk sheet or code-drawn motion
+   * for those first moments; a sheet that cannot be loaded does the same for good, as a kit without the clip would.
+   */
+  private loadClips(race: string | undefined): void {
+    if (!race) return;
+    let queued = 0;
+    for (const [ref, info] of raceClips(this.b.sprites as ClipSprites, race)) {
+      if (this.textures.exists(ref)) continue;
+      this.load.spritesheet(ref, info.url, { frameWidth: info.w, frameHeight: info.h });
+      queued++;
+    }
+    if (queued > 0 && !this.load.isLoading()) this.load.start();
+  }
+
+  /**
    * Plays the kit's clip for a verb on the player's figure, in the way it faces, at the clip's own frame time (clips.ts has the
    * one rule for how long). True when the kit has one; with none the figure keeps today's walk sheet or code-drawn motion, and
    * a clip still playing is dropped, so a verb with no art never shows the last one's.
@@ -2317,6 +2362,10 @@ export class WorldScene extends Phaser.Scene {
     const race = s?.state.player.race;
     if (!s || !race || this.falling) return false;
     const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing);
+    if (found && !this.textures.exists(found.key)) {
+      this.figure.stop(); // its sheet is still on the way (or never came): today's motion, as with no clip
+      return false;
+    }
     if (!found) {
       this.figure.stop();
       return false;
@@ -2543,6 +2592,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private animate(time: number, delta: number): void {
     this.driftAir(time, delta);
+    for (const d of this.drifting) d.update(time);
     if (RICH.motion) this.maskSway.update(time, this.cameras.main.worldView);
     for (const c of this.cycles) {
       if (c.clock) {
@@ -2708,7 +2758,7 @@ export class WorldScene extends Phaser.Scene {
     for (const l of this.locals) this.setEmitting(l.emitter, Phaser.Geom.Rectangle.Overlaps(l.rect, this.viewRect));
   }
 
-  private setEmitting(emitter: Emitter, on: boolean): void {
+  private setEmitting(emitter: Switch, on: boolean): void {
     if (emitter.emitting === on) return;
     if (on) emitter.start();
     else emitter.stop();

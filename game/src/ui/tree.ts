@@ -583,16 +583,18 @@ export function treeScreen(ui: UI, memo: TreeMemo, after: () => void): HTMLEleme
   zoomIn.setAttribute('aria-label', 'Zoom in');
   const head = h(
     'div',
-    { class: 'tree-head' },
+    { class: 'tree-head tree-desktop-head' },
     h('span', { class: 'tree-who' }, `${st.player.name ? `${st.player.name}, ` : ''}${raceName.toLowerCase()}, level ${characterLevel(b, st)}`),
     h('span', { class: `tree-points ${points > 0 ? 'some' : ''}`.trim() }, points > 0 ? `${points} point${points > 1 ? 's' : ''} to spend` : 'No points to spend'),
   );
+  const phoneHead = head.cloneNode(true) as HTMLElement;
+  phoneHead.className = 'tree-head tree-phone-head';
   fillSide();
   const page = h(
     'div',
     { class: 'tree-page' },
     h('div', { class: 'tree-main' }, head, schoolsRow, h('div', { class: 'tree-frame' }, view, h('div', { class: 'tree-tools' }, zoomOut, zoomIn)), buildStrip()),
-    side,
+    h('div', { class: 'tree-phone-side' }, phoneHead, buildStrip(), side),
   );
 
   // the first look: the whole tree on a computer; on a phone the trunk and the first nodes, at a size a finger can take

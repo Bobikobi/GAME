@@ -5,6 +5,7 @@ import {
   attrAt,
   type Bundle,
   type GameEvent,
+  type OpenDoor,
   type RecipeDef,
   type WearSlot,
   loadLimit,
@@ -28,6 +29,7 @@ import {
   salePrice,
   hpCap,
   slotsFor,
+  treeNode,
   workSpeedPermille, type PublicState } from '@game/kernel';
 import { feedTooLate, fireName, tendLine } from './fires';
 
@@ -443,7 +445,7 @@ export function searchRows(b: Bundle, s: PublicState, tick: number, spotId: stri
   return held.rows.map((item, index) => ({ index, item, name: itemName(b, item), sprite: b.items[item]?.sprite }));
 }
 
-export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info' } | undefined {
+export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info'; second?: string } | undefined {
   switch (e.e) {
     case 'gain':
       return { text: `+${e.qty} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
@@ -509,6 +511,8 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
       return { text: `${e.attr[0]?.toUpperCase()}${e.attr.slice(1)} is now ${e.value}`, tone: 'good' };
     case 'riddle':
       return { text: `That was it: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'good' };
+    case 'dawn':
+      return morning(e.day, e.renewed);
     case 'visit': {
       const slot = findSlot(b.map, e.slot);
       // a named area the banner has named already needs no second word (G63)
@@ -518,6 +522,63 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
     default:
       return undefined;
   }
+}
+
+/**
+ * The first morning of a valley day (the ladder's Day 2): the day's number, what the player worked out the day before that is
+ * ready again, and the bell they heard below the ruins in the night. A line says only what is so: no line about the nodes
+ * when none was worked, and the narrator tells nothing of the past (STORY S2).
+ */
+export function morning(day: number, renewed: number): { text: string; second: string; tone: 'info' } {
+  return {
+    text: renewed > 0 ? `Day ${day}. What you gathered is ready again.` : `Day ${day}.`,
+    second: 'A bell rang below the ruins in the night.',
+    tone: 'info',
+  };
+}
+
+/** One kind of thing a day gave the player, for the day summary: what it is called, how many, and the names of the first few. */
+export interface DayRow {
+  kind: 'found' | 'built' | 'learned';
+  label: string;
+  count: number;
+  names: string[];
+}
+
+/** The most names a summary row spells out; the rest is "and N more". */
+export const SUMMARY_NAMES = 3;
+
+/** The three rows of a day summary, each with the names the content gives its ids (a find, a place mended or a camp raised, a recipe or a skill). */
+export function dayRows(b: Bundle, log: { found: readonly string[]; built: readonly string[]; learned: readonly string[] }): DayRow[] {
+  const found = log.found.map((id) => b.items[id]?.name ?? findSlot(b.map, id)?.label ?? '');
+  const built = log.built.map((id) => b.restores[id]?.title ?? b.camps[id]?.title ?? '');
+  const learned = log.learned.map((id) => b.recipes[id]?.title ?? treeNode(b, id)?.node.name ?? '');
+  const row = (kind: DayRow['kind'], label: string, ids: readonly string[], names: string[]): DayRow => ({
+    kind,
+    label,
+    count: ids.length,
+    names: [...new Set(names.filter((n) => n !== ''))],
+  });
+  return [row('found', 'Found', log.found, found), row('built', 'Built', log.built, built), row('learned', 'Learned', log.learned, learned)];
+}
+
+/** A row as one line: "Found 7: Herb, Keystone, Log and 4 more", or a plain "none yet" when the day gave none of that. */
+export function rowLine(r: DayRow): string {
+  if (r.count === 0) return `${r.label}: nothing yet`;
+  const shown = r.names.slice(0, SUMMARY_NAMES);
+  const more = r.count - shown.length;
+  const list = shown.length === 0 ? '' : `: ${shown.join(', ')}${more > 0 ? ` and ${more} more` : ''}`;
+  return `${r.label} ${r.count}${list}`;
+}
+
+/** The open door of a day summary in one line (G16): a task a character has for the player, a task begun, or a place not yet seen. */
+export function doorLine(b: Bundle, door: OpenDoor | undefined): string {
+  if (door === undefined) return 'Nothing waits. The valley is yours to walk.';
+  if (door.kind === 'place') return `Not yet seen: the ${door.name}.`;
+  const title = b.quests[door.quest]?.title ?? door.quest;
+  const giver = door.giver === undefined ? undefined : b.npcs[door.giver]?.name;
+  if (door.begun) return `Still open: ${title}.`;
+  return giver ? `${giver} has a task for you: ${title}.` : `A task waits: ${title}.`;
 }
 
 /**

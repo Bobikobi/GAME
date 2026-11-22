@@ -1,0 +1,74 @@
+---
+// The developers' home (issue 727, stage 1; DECISIONS.md 2026-11-15): the shared goal on top, the feed under it. Read-only: it
+// shows what GitHub and the content files say and nothing else. Every number comes from the hub-data document.
+import Dev from '../../layouts/Dev.astro';
+import { dateTime, hub } from '../../data/site';
+import { feedView, meterView } from '../../data/dev';
+
+const { world, feed, gaps, github } = { world: hub.world ?? null, feed: hub.feed ?? [], gaps: hub.gaps ?? [], github: hub.sources.github };
+const meter = world ? meterView(world) : null;
+const items = feed.map(feedView);
+// the bar's width is the one number the page writes into a rule; a style block keeps the page free of style attributes
+const fill = meter ? `.meter i { width: ${meter.percent}%; }` : '';
+---
+
+<Dev title="Developers - Loomvale" description="What people and the development team are making for Loomvale right now, what the game still lacks, and the wide world's progress.">
+  <Fragment slot="head"><style is:inline set:html={fill} /></Fragment>
+  {
+    meter && world && (
+      <section class="goal" aria-labelledby="goal-h">
+        <h1 id="goal-h">
+          The wide world: <b>{meter.drawn}</b> of <b>{meter.whole}</b> squares drawn
+        </h1>
+        <div class="meter" role="img" aria-label={`${meter.drawn} of ${meter.whole} squares drawn`}>
+          <i></i>
+        </div>
+        <p>Next: {world.next}. Counted {meter.asOf}.</p>
+      </section>
+    )
+  }
+  {!meter && <h1 class="vh">Developers</h1>}
+
+  <section class="sec" aria-labelledby="feed-h">
+    <h2 id="feed-h">Being made<span>{items.length} open</span></h2>
+    {
+      items.length === 0 ? (
+        <p class="empty">{github ? 'No open pull requests right now.' : 'GitHub could not be read when this page was built.'} <a href="https://github.com/Bobikobi/GAME/pulls">See them on GitHub</a>.</p>
+      ) : (
+        <ul>
+          {items.map((i) => (
+            <li class="item">
+              <div class="top">
+                <span class={`chip ${i.chip}`}>{i.stateLabel}</span>
+                <span class="ref">PR #{i.number}</span>
+              </div>
+              <h3><a href={i.url}>{i.title}</a></h3>
+              <p class="by">By <b>{i.maker}</b></p>
+              {i.missing.map((m) => (
+                <p class="miss"><b>Still missing:</b> <code>{m.id}</code> {m.line}</p>
+              ))}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+
+  <section class="sec" aria-labelledby="gaps-h">
+    <h2 id="gaps-h">Still missing in the game<span>{gaps.length} found</span></h2>
+    {
+      gaps.length === 0 ? (
+        <p class="empty">Nothing the three checks can find: every thing has its picture, every figure its quest, every quest its place.</p>
+      ) : (
+        <ul>
+          {gaps.map((g) => (
+            <li class="item gap">
+              <p><code>{g.id}</code> {g.line}</p>
+              <p><a href={g.url}>{g.file}</a></p>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+</Dev>

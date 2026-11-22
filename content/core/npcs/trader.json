@@ -88,6 +88,15 @@
           "Two: something old is still awake down there. Who else lights the lanterns?",
           "Three: someone buried old things on purpose. Leave them. Take what you need."
         ]
+      },
+      {
+        "ask": "What each tool opens",
+        "lines": [
+          "Basket: berries, herbs, mushrooms. Anything that grows low and soft.",
+          "Trowel: the ground itself. Dig where the old stones lie.",
+          "Axe: oaks and fallen wood. A tree gives logs, and logs give fire.",
+          "Staff: opens nothing, finds a little more. Sharp eyes, I call it."
+        ]
       }
     ]
   }

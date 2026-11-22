@@ -21,6 +21,7 @@ import {
   dayOf,
   groundSpots,
   hourOf,
+  valleyDay,
   isSeed,
   makeWalkable,
   migrateState,
@@ -147,6 +148,8 @@ export class Session implements GameSession {
   private sinceSave = 0;
   /** the tick up to which burns that ran out were asked about (`tellOuts`) */
   private outSeen = 0;
+  /** the valley day the kernel was last asked about (`tellDawn`) */
+  private dawnAsked = 0;
   /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
   private hour = -1;
 
@@ -429,6 +432,7 @@ export class Session implements GameSession {
       this.emit('change', undefined);
     }
     this.tellOuts();
+    this.tellDawn();
     // a glint at dusk, a plant that opens: the world redraws once an hour, not only after an action
     const hour = hourOf(this.bundle, this.tick);
     if (hour !== this.hour) {
@@ -458,6 +462,20 @@ export class Session implements GameSession {
         return;
       }
     }
+  }
+
+  /**
+   * The valley's day turns at the dawn of its own clock, which runs only while the world is on screen (G28), and the
+   * kernel tells it with a step: so once the dawn has passed since the last step, the tile is reported again and the
+   * kernel tells the morning. Asked once per valley day: a report the kernel refuses is not repeated every frame (the
+   * next step tells it then), and none goes while work is under way.
+   */
+  private tellDawn(): void {
+    if (this.busy) return;
+    const day = valleyDay(this.bundle, this.tick);
+    if (day <= valleyDay(this.bundle, this.state.tick) || day <= this.dawnAsked) return;
+    this.dawnAsked = day;
+    this.report(this.pos, true);
   }
 
   /** A node a reaction raises stands when the kernel's own draw says so: this game holds its seed. */

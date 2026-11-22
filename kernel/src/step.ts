@@ -23,6 +23,7 @@ import type { Bundle, QuestDef, RecipeDef, SearchDef, Verb } from './bundle';
 import { canonical } from './canon';
 import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, watchedAt, windowOpen, windowShuts } from './danger';
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
+import { rollDay, tallyStep } from './day';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
 import { GAITS, type Gait, foodFillPermille, gaitStepMs, itemWeight, loadMax, loadWeight, weightRoom } from './load';
@@ -49,6 +50,7 @@ import {
   campBuilt,
   effectValue,
   fitWorn,
+  gateOpen,
   fireBurns,
   fireOf,
   gradeShift,
@@ -157,6 +159,8 @@ export type GameEvent =
   | { e: 'search'; spot: string; rows: string[] }
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
+  /** a valley day began (G16): the first step past a dawn tells it, with how many nodes the player worked out in the day that ended are ready; the day that ended is in `player.day.prev` */
+  | { e: 'dawn'; day: number; renewed: number }
   /** the player entered a place for the first time (G63, G66): a map region or a named area, by id; the banner shows its name (`placeName`) */
   | { e: 'place'; id: string }
   | { e: 'attr'; attr: Attribute; value: number }
@@ -210,6 +214,22 @@ export function recipeProfession(bundle: Bundle, recipe: RecipeDef): string {
   return recipe.profession ?? bundle.stations[recipe.station] ?? bundle.verbs.craft;
 }
 
+/**
+ * Whether a recipe is open now (RecipeBody.gate): a recipe that waits for the fight opens with `combat.enabled`, the
+ * switch the hunt waits under too (G35). A closed recipe is known by nobody and taught by nothing, and its craft is
+ * refused; a start-known one is learned once its gate opens (CLOTHING 6, "Before the take verb").
+ */
+export function recipeOpen(bundle: Bundle, recipe: Pick<RecipeDef, 'gate'>): boolean {
+  return gateOpen(bundle, recipe.gate);
+}
+
+/** The recipes every player knows now: the start-known ones whose gate is open, in id order. */
+export function startRecipes(bundle: Bundle): string[] {
+  return Object.keys(bundle.recipes)
+    .filter((id) => bundle.recipes[id]!.known === 'start' && recipeOpen(bundle, bundle.recipes[id]!))
+    .sort();
+}
+
 /** A recipe's tier: the highest tier among its outputs. It needs a station of that tier. */
 export function recipeTier(bundle: Bundle, recipe: RecipeDef): number {
   return Math.max(1, ...recipe.outputs.map((o) => bundle.items[o.item]?.tier ?? 1));
@@ -221,9 +241,9 @@ export function recipeTier(bundle: Bundle, recipe: RecipeDef): number {
  * that carries it), inside the power cap and never past
  * craft_luck_max_permille. Luck tilts; it never decides.
  */
-export function craftLuckPermille(bundle: Bundle, state: State, profession: string): number {
+export function craftLuckPermille(bundle: Bundle, state: State, profession: string, family?: string): number {
   const raw =
-    1000 + bundle.params.per_point.luck_permille * attrAt(bundle, state, 'luck') + 10 * effectValue(bundle, state, 'craft_chance_pct', profession);
+    1000 + bundle.params.per_point.luck_permille * attrAt(bundle, state, 'luck') + 10 * effectValue(bundle, state, 'craft_chance_pct', profession, family);
   return Math.min(bundle.params.craft_luck_max_permille, clamp(raw, 1000, powerCap(bundle, state)) - 1000);
 }
 
@@ -239,7 +259,7 @@ export function craftChanceBp(bundle: Bundle, state: State, recipeId: string): n
   const skill = clamp(base + (professionLevel(bundle, state, profession) - c.level) * p.craft_level_step_bp, 0, 10_000);
   // a try at nothing runs and misses: luck closes part of a gap, it never opens one
   if (skill === 0) return 0;
-  return skill + mulDiv(10_000 - skill, craftLuckPermille(bundle, state, profession), 1000);
+  return skill + mulDiv(10_000 - skill, craftLuckPermille(bundle, state, profession, c.family), 1000);
 }
 
 /**
@@ -389,9 +409,12 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number,
   try {
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
+    // the valley's day turns at its dawn, before the action: the tally of the day that ended closes, and the nodes worked out are counted
+    if (ctx.s.player.race !== '') for (const d of rollDay(bundle, ctx.s, state.tick)) ctx.events.push({ e: 'dawn', day: d.day, renewed: d.renewed });
     apply(ctx, action, options);
     autoQuests(ctx);
     expeditions(ctx);
+    tallyStep(bundle, state, ctx.s);
     return { ok: true, state: ctx.s, events: ctx.events };
   } catch (err) {
     if (err instanceof Refusal) return { ok: false, error: err.message };
@@ -602,9 +625,7 @@ function start(ctx: Ctx, a: Extract<Action, { t: 'start' }>): void {
   if (b.params.starting_gold_mg > 0) s.ledger.minted += b.params.starting_gold_mg;
   s.player.hp = hpCap(b, s);
   s.player.movedAt = ctx.tick;
-  s.player.recipes = Object.keys(b.recipes)
-    .filter((id) => b.recipes[id]!.known === 'start')
-    .sort();
+  s.player.recipes = startRecipes(b);
   // the race's outfit is worn from the first morning; the pocket's tools lie on the ground by the wake tile (its own spots), never in the bag
   // a format 1 starter carried only its kit (its pocket's tools, now in the bag, their spots spent) and no race outfit, so a logged game rolls as it did
   const firstMorning = legacy ? [...pocket.ground] : [...(race.outfit ?? [])];
@@ -774,7 +795,7 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
   const { b, s } = ctx;
   const c = b.recipes[recipeId];
   if (!c) refuse('Unknown recipe.');
-  if (!s.player.recipes.includes(recipeId)) refuse('You do not know this recipe yet.');
+  if (!s.player.recipes.includes(recipeId) || !recipeOpen(b, c)) refuse('You do not know this recipe yet.');
   const built = Object.keys(b.camps)
     .sort()
     .filter((id) => s.player.camp.includes(id) && b.camps[id]!.provides === c.station);
@@ -819,7 +840,7 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
   );
   if (heavier > 0 && loadWeight(b, s) + heavier > loadMax(b, s)) refuse('What this makes would be too heavy to carry.');
 
-  const ms = duration(ctx, c.active_ms, speedPermille(ctx, 10 * effectValue(b, s, 'craft_speed_pct', profession)));
+  const ms = duration(ctx, c.active_ms, speedPermille(ctx, 10 * effectValue(b, s, 'craft_speed_pct', profession, c.family)));
   // one draw per try of this recipe (rule R4); a sure craft takes its turn of the counter too
   const chance = craftChanceBp(b, s, recipeId);
   const tries = s.player.tries[recipeId] ?? 0;
@@ -1481,6 +1502,8 @@ function learn(ctx: Ctx, itemId: string): void {
   if (!item?.fragment) refuse('There is nothing to learn from that.');
   if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have that.');
   if (s.player.recipes.includes(item.fragment.unlocks)) refuse('You already know this recipe.');
+  const unlocks = b.recipes[item.fragment.unlocks];
+  if (unlocks && !recipeOpen(b, unlocks)) refuse('This recipe cannot be learned yet.');
   removeItem(ctx, itemId, 1);
   learnRecipe(ctx, item.fragment.unlocks);
 }
@@ -2055,7 +2078,8 @@ function removeItem(ctx: Ctx, itemId: string, qty: number, quiet = false): void 
 
 function learnRecipe(ctx: Ctx, recipeId: string): void {
   const p = ctx.s.player;
-  if (!ctx.b.recipes[recipeId] || p.recipes.includes(recipeId)) return;
+  const recipe = ctx.b.recipes[recipeId];
+  if (!recipe || !recipeOpen(ctx.b, recipe) || p.recipes.includes(recipeId)) return;
   p.recipes = [...p.recipes, recipeId].sort();
   ctx.events.push({ e: 'learn', recipe: recipeId });
 }

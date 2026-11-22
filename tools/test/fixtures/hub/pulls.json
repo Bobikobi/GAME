@@ -1,0 +1,367 @@
+{
+ "recorded": "2026-11-22 from GET /repos/Bobikobi/GAME/pulls?state=open and ?state=closed (first 4), fields the feed reads",
+ "open": [
+  {
+   "number": 805,
+   "title": "Research: our work plan beside a studio's plan from idea to release",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/805",
+   "state": "open",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-22T06:55:52Z",
+   "updated_at": "2026-11-22T07:11:00Z",
+   "merged_at": null,
+   "labels": [],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "docs/studio-plan-compare",
+    "sha": "974d5f436f59ae01f0ac3628517adc63ce0e8380",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 803,
+   "title": "The armour and creature matrices: stage 2 of the content count (#789)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/803",
+   "state": "open",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-22T05:47:58Z",
+   "updated_at": "2026-11-22T06:28:17Z",
+   "merged_at": null,
+   "labels": [
+    {
+     "name": "land-ok"
+    }
+   ],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "docs/content-matrix-stage2",
+    "sha": "8cbb27ecba440aa575ec81bf8cf5efd714b6d4b3",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 688,
+   "title": "docs(design): place cards for the drowned bay and the tiered city",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/688",
+   "state": "open",
+   "draft": true,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-09T22:49:00Z",
+   "updated_at": "2026-11-09T22:55:15Z",
+   "merged_at": null,
+   "labels": [],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "claude/settings-screen-ui-s2ss3y",
+    "sha": "558f83b02e936372f1593771acd1ff1bc8316ec0",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 677,
+   "title": "feat(art): the slim elf's walk and idle as drafts, and CR-117 (a race's mark in the other worlds)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/677",
+   "state": "open",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-02T13:14:19Z",
+   "updated_at": "2026-11-02T14:12:19Z",
+   "merged_at": null,
+   "labels": [],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "feat/art-elf-slim",
+    "sha": "d4cd285019577ce2757bc2978905cd17bc38c089",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 676,
+   "title": "feat(art): finish the promote pipeline and pilot it on a bush, a patch and a ruin pillar (#664)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/676",
+   "state": "open",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-02T12:25:59Z",
+   "updated_at": "2026-11-02T13:47:08Z",
+   "merged_at": null,
+   "labels": [],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "feat/art-promote-2-pipeline",
+    "sha": "542c56b9f388377f25ac38e04e6623ac582eaa7a",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 675,
+   "title": "feat(art): three ramps for the owner's kept bush, ruin and patch pieces (#664)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/675",
+   "state": "open",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-02T12:08:24Z",
+   "updated_at": "2026-11-02T12:08:36Z",
+   "merged_at": null,
+   "labels": [],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "feat/art-promote-2",
+    "sha": "2d0ddc002c12d191ca28832d7ec1df47d802f995",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 510,
+   "title": "feat(world): grass tufts - cream-tipped clumps that lean in the wind across the meadow",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/510",
+   "state": "open",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-10-31T14:38:23Z",
+   "updated_at": "2026-11-01T10:10:21Z",
+   "merged_at": null,
+   "labels": [
+    {
+     "name": "preview"
+    }
+   ],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "feat/grass-tufts",
+    "sha": "73cf0a374b5cfefb5479c6ea2ed338463644f745",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 464,
+   "title": "feat(sound): the music plays by state, sampled instruments by default and the synth as the player's switch",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/464",
+   "state": "open",
+   "draft": true,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-10-30T14:52:25Z",
+   "updated_at": "2026-10-31T20:18:55Z",
+   "merged_at": null,
+   "labels": [],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "feat/music-by-state",
+    "sha": "74e7761c889481d7f0cef4341e94938f56484f9a",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 433,
+   "title": "feat(anim): the hare and the crow as native bodies - two CC0 models, seven actions, six clips, two pick pages",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/433",
+   "state": "open",
+   "draft": true,
+   "user": {
+    "login": "CeosIsrael"
+   },
+   "created_at": "2026-10-30T01:30:00Z",
+   "updated_at": "2026-11-12T14:59:37Z",
+   "merged_at": null,
+   "labels": [],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "art/hare-crow-loops",
+    "sha": "a0432df404881afc02a22450ec661d88a1bdae23",
+    "repo": {
+     "full_name": "CeosIsrael/GAME"
+    }
+   }
+  },
+  {
+   "number": 391,
+   "title": "feat(content): the inn and its bed, Maru walks his round (rebuilds #296 on develop)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/391",
+   "state": "open",
+   "draft": true,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-10-28T14:44:55Z",
+   "updated_at": "2026-10-31T09:42:09Z",
+   "merged_at": null,
+   "labels": [],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "feat/content-inn-v2",
+    "sha": "4544758f806ec79f617149fec84d8f2f4c212c9e",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  }
+ ],
+ "closed": [
+  {
+   "number": 787,
+   "title": "docs(alignment): systems alignment map, S1-S9 (#784)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/787",
+   "state": "closed",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-21T08:56:57Z",
+   "updated_at": "2026-11-22T07:17:52Z",
+   "merged_at": "2026-11-22T07:17:52Z",
+   "labels": [
+    {
+     "name": "land-ok"
+    }
+   ],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "docs/systems-alignment",
+    "sha": "bd9498a2c631b8b891e96e1fbd6841e4a677b0cf",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 780,
+   "title": "Skills window on a sideways phone: the map is the main thing (#720)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/780",
+   "state": "closed",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-21T08:03:01Z",
+   "updated_at": "2026-11-22T07:07:36Z",
+   "merged_at": "2026-11-22T07:07:36Z",
+   "labels": [
+    {
+     "name": "land-ok"
+    }
+   ],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "codex/skills-sideways",
+    "sha": "bfde8dc3e889898aa46d67d3929700d5afff1fbe",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 802,
+   "title": "Clothing sets drawn whole on the figure: reed-walker, digger-leathers, hardened-leathers (#772)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/802",
+   "state": "closed",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-22T01:56:04Z",
+   "updated_at": "2026-11-22T06:47:01Z",
+   "merged_at": "2026-11-22T06:47:01Z",
+   "labels": [
+    {
+     "name": "land-ok"
+    }
+   ],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "feat/clothing-sets-art",
+    "sha": "bf02b03dfc626c5c26443cc4900fc6d2df140566",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  },
+  {
+   "number": 801,
+   "title": "The clothing route reads the hide chain from the content, and sets out only by day (#769)",
+   "html_url": "https://github.com/Bobikobi/GAME/pull/801",
+   "state": "closed",
+   "draft": false,
+   "user": {
+    "login": "Bobikobi"
+   },
+   "created_at": "2026-11-22T01:42:42Z",
+   "updated_at": "2026-11-22T06:25:43Z",
+   "merged_at": "2026-11-22T06:25:43Z",
+   "labels": [
+    {
+     "name": "land-ok"
+    }
+   ],
+   "base": {
+    "ref": "develop"
+   },
+   "head": {
+    "ref": "feat/clothing-route-table",
+    "sha": "4c02018b6d669b28f05bc60daacb7c21e0056bed",
+    "repo": {
+     "full_name": "Bobikobi/GAME"
+    }
+   }
+  }
+ ]
+}

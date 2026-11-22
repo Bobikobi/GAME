@@ -24,7 +24,8 @@ export interface Issue {
 
 export interface PullRequest extends Issue {
   draft: boolean;
-  head: { sha: string; repo: { full_name: string } | null };
+  base: { ref: string };
+  head: { ref: string; sha: string; repo: { full_name: string } | null };
   merged_at?: string | null;
 }
 

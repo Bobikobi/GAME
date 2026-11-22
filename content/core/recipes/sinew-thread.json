@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/sinew-thread",
+  "title": "Sinew thread",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/sinew-thread",
+      "name": "Sinew thread",
+      "description": "Tendon dried and twisted thin enough for a needle.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "core/sinew",
+      "tags": [
+        "thread"
+      ],
+      "tier": 1,
+      "sprite": "core/base-kit:items/stew-scrap",
+      "weight": 0
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 3000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/roe-sinew",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/sinew-thread",
+        "qty": 2,
+        "share_pct": 100
+      }
+    ],
+    "known": "start",
+    "gate": "combat"
+  }
+}

@@ -77,6 +77,12 @@ describe('the scale warnings', () => {
     expect(scaleProblems('props/chest', 0.4)).toEqual([]);
   });
 
+  test('a clip sheet owes no scale: its fit makes it as tall as its race\'s walk, which the floor holds', () => {
+    expect(scaleProblems('chars/skeleton_strike_left', undefined, true)).toEqual([]);
+    expect(scaleProblems('chars/skeleton_strike_left', 0.74, true)).toEqual([]);
+    expect(scaleProblems('chars/skeleton_strike_left', undefined)).toHaveLength(1);
+  });
+
   test('a world sprite with no scale is a warning; ground and inventory icons owe none', () => {
     expect(scaleProblems('props/chest', undefined)[0]).toContain('pnpm art:scale --declare');
     expect(scaleProblems('chars/human_down', undefined)).toHaveLength(1);

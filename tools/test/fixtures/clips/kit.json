@@ -22,7 +22,8 @@
           "anchor": [
             64,
             90
-          ]
+          ],
+          "fit_permille": 700
         }
       },
       "chars/human_strike_front": {

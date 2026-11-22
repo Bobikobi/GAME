@@ -1,6 +1,7 @@
 /** Runs the community loop against a replaceable GitHub client. */
 import { appendFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { isReleasePullRequest } from '../release-pr';
 import type { LoopConfig } from './config';
 import type { LoopClient } from './github';
 import { evaluateMerge, quotaAllowed, quotaOverflow, type MergeEvaluation, type RuleResult } from './merge';
@@ -77,10 +78,15 @@ export async function runRequests(options: RunOptions): Promise<void> {
 }
 
 export async function runProposals(options: RunOptions): Promise<ProposalState[]> {
-  const states = await collectProposals(options);
+  const pulls = await openPullRequests(options);
+  const states = await collectOpenProposals(options, pulls, true);
   const voteIssues = await openVoteIssues(options);
   await applyCompetition(options, states, voteIssues, true);
   for (const proposal of states) await reportProposal(options, proposal);
+  for (const pr of pulls.filter((item) => isRelease(options, item))) {
+    const description = 'release: develop into main';
+    await reportMergeRule(options, pr, { state: 'success', description }, `${description}\n`);
+  }
   return states;
 }
 
@@ -133,11 +139,7 @@ export async function runVotes(options: RunOptions): Promise<void> {
     }
   }
   for (const issue of open) await updateVote(options, issue, accounts);
-  if (!options.client.dryRun) {
-    const refreshed = await collectProposals(options);
-    await applyCompetition(options, refreshed, await openVoteIssues(options), true);
-    for (const proposal of refreshed) await reportProposal(options, proposal);
-  }
+  if (!options.client.dryRun) await runProposals(options);
 }
 
 export async function runDiscovery(options: RunOptions): Promise<void> {
@@ -223,9 +225,20 @@ export async function runAll(options: RunOptions): Promise<void> {
 }
 
 export async function collectProposals(options: RunOptions, addProposalLabels = true): Promise<ProposalState[]> {
-  const pulls = await options.client.list<PullRequest>(repoPath(options, '/pulls?state=open&per_page=100'));
+  return collectOpenProposals(options, await openPullRequests(options), addProposalLabels);
+}
+
+function openPullRequests(options: RunOptions): Promise<PullRequest[]> {
+  return options.client.list<PullRequest>(repoPath(options, '/pulls?state=open&per_page=100'));
+}
+
+function isRelease(options: RunOptions, pr: PullRequest): boolean {
+  return isReleasePullRequest(pr.base.ref, pr.head.ref, pr.head.repo?.full_name, options.repository);
+}
+
+async function collectOpenProposals(options: RunOptions, pulls: PullRequest[], addProposalLabels: boolean): Promise<ProposalState[]> {
   const raw: Omit<ProposalState, 'evaluation'>[] = [];
-  for (const pr of pulls.filter((item) => !item.draft)) {
+  for (const pr of pulls.filter((item) => !item.draft && !isRelease(options, item))) {
     const changed = await options.client.list<ChangedFile>(repoPath(options, `/pulls/${pr.number}/files?per_page=100`));
     const files = changed.map((file) => file.filename);
     if (!isProposal(pr.user.login, changed)) continue;
@@ -290,30 +303,36 @@ export async function collectProposals(options: RunOptions, addProposalLabels = 
 }
 
 async function reportProposal(options: RunOptions, proposal: ProposalState): Promise<void> {
+  await reportMergeRule(options, proposal.pr, proposal.evaluation, renderMergeComment(proposal));
+}
+
+async function reportMergeRule(
+  options: RunOptions, pr: PullRequest, verdict: Pick<MergeEvaluation, 'state' | 'description'>, commentBody: string,
+): Promise<void> {
   // post a status and touch the comment only when they change, so an hourly run stays quiet
-  const description = proposal.evaluation.description.slice(0, 139);
-  const combined = await options.client.get<{ statuses?: { context: string; state: string; description: string | null }[] }>(repoPath(options, `/commits/${proposal.pr.head.sha}/status`));
+  const description = verdict.description.slice(0, 139);
+  const combined = await options.client.get<{ statuses?: { context: string; state: string; description: string | null }[] }>(repoPath(options, `/commits/${pr.head.sha}/status`));
   const last = combined.statuses?.find((status) => status.context === 'merge rule');
-  if (last?.state !== proposal.evaluation.state || last.description !== description) {
-    await options.client.write('POST', repoPath(options, `/statuses/${proposal.pr.head.sha}`), {
-      state: proposal.evaluation.state,
+  if (last?.state !== verdict.state || last.description !== description) {
+    await options.client.write('POST', repoPath(options, `/statuses/${pr.head.sha}`), {
+      state: verdict.state,
       context: 'merge rule',
       description,
     });
   }
   const marker = '<!-- loop:merge-rule -->';
-  const body = renderMergeComment(proposal);
-  const comments = await options.client.list<Comment>(repoPath(options, `/issues/${proposal.number}/comments?per_page=100`));
+  const body = `${marker}\n${commentBody}`;
+  const comments = await options.client.list<Comment>(repoPath(options, `/issues/${pr.number}/comments?per_page=100`));
   const old = comments.find((comment) => comment.body.includes(marker));
   if (old) {
     if (old.body !== body) await options.client.write('PATCH', repoPath(options, `/issues/comments/${old.id}`), { body });
   }
-  else await options.client.write('POST', repoPath(options, `/issues/${proposal.number}/comments`), { body });
+  else await options.client.write('POST', repoPath(options, `/issues/${pr.number}/comments`), { body });
 }
 
 function renderMergeComment(proposal: ProposalState): string {
   const icon = { pass: '✅', pending: '⏳', fail: '❌' } as const;
-  const lines = ['<!-- loop:merge-rule -->', '## Merge rule', '', ...proposal.evaluation.rules.map((rule) => `- ${icon[rule.state]} **${rule.name}:** ${rule.text}`), ''];
+  const lines = ['## Merge rule', '', ...proposal.evaluation.rules.map((rule) => `- ${icon[rule.state]} **${rule.name}:** ${rule.text}`), ''];
   lines.push(`**Slots:** ${proposal.slots.length > 0 ? proposal.slots.map((slot) => `\`${slot}\``).join(', ') : 'None found'}`);
   lines.push(`**Request:** ${proposal.request === undefined ? 'None linked' : `#${proposal.request}`}`);
   lines.push(`**Competing proposals:** ${proposal.competitors.length > 0 ? proposal.competitors.map((number) => `#${number}`).join(', ') : 'None'}`);

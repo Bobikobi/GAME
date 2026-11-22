@@ -64,8 +64,11 @@ export function eventToasts(b: Bundle, s: PublicState, events: readonly GameEven
     .filter(([, ms]) => ms > 0)
     .sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]))[0];
   let told = trained === undefined;
+  // a step that crosses several dawns tells the morning once: the last day's
+  const lastDawn = events.reduce((at, e, i) => (e.e === 'dawn' ? i : at), -1);
   events.forEach((e, i) => {
     if (fell && e.e === 'hurt') return;
+    if (e.e === 'dawn' && i !== lastDawn) return;
     if (e.e === 'quest' && e.state === 'active' && events.slice(i + 1).some((x) => x.e === 'quest' && x.quest === e.quest && x.state === 'done')) return;
     const d = describe(b, s, e);
     if (!d) return;

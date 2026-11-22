@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.30.0';
+export const KERNEL_VERSION = '0.32.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -239,6 +239,25 @@ export interface Player {
   crossings?: number;
   /** tick of the last arrival: a position report, or an action at a tile */
   movedAt: number;
+  /** the valley's day so far and the day before it (G16, the day summary); absent until the first step of a day that has begun */
+  day?: DayTally;
+}
+
+/**
+ * What one valley day held, as ids kept by the step that brought each: what was found (an item met for the first
+ * time, a place brought home), built (a place mended, a camp part raised) and learned (a recipe, a node of the tree).
+ * Each id enters once in a game, so the lists stay short. Integers and strings only.
+ */
+export interface DayLog {
+  found: string[];
+  built: string[];
+  learned: string[];
+}
+
+/** The day the player is in (`n`, the valley's day, from `valleyDay`) with what it holds so far, and the finished day before it (`prev`) until the next dawn replaces it. */
+export interface DayTally extends DayLog {
+  n: number;
+  prev?: DayLog & { n: number };
 }
 
 /** A crossing under way: the passage, how far it has come, and the one event drawn for it at boarding. */
@@ -627,9 +646,9 @@ export function powerCap(bundle: Bundle, state: PublicState): number {
 /**
  * Sum of a technique effect: the ones the player has unlocked through profession levels, and the
  * learned nodes of the tree (a small node always, a technique only while it sits in the build);
- * `only` counts one profession's.
+ * `only` counts one profession's, and a node of a craft family (CLOTHING 6.1) counts only when `family` names it.
  */
-export function techniqueValue(bundle: Bundle, state: PublicState, effect: string, only?: string): number {
+export function techniqueValue(bundle: Bundle, state: PublicState, effect: string, only?: string, family?: string): number {
   let total = 0;
   for (const id of Object.keys(bundle.professions).sort()) {
     if (only !== undefined && id !== only) continue;
@@ -642,6 +661,8 @@ export function techniqueValue(bundle: Bundle, state: PublicState, effect: strin
     const found = treeNode(bundle, key);
     if (!found || found.node.effect !== effect) continue;
     if (only !== undefined && found.school.profession !== only) continue;
+    // a family node helps only the recipes of its family (CLOTHING 6.1): a caller that names no family gets none of it
+    if (found.node.family !== undefined && found.node.family !== family) continue;
     if (found.node.slot === true && !build.includes(key)) continue;
     total += Math.max(1, found.node.value);
   }
@@ -690,6 +711,15 @@ export function nodeIsOurs(state: PublicState, node: SchoolNodeDef): boolean {
  * Why the player cannot learn this node now, in the kernel's own words, or undefined when they can.
  * The place is not asked here (the action asks it): this is what the tree screen shows on a node.
  */
+/**
+ * Whether a gate is open now (RecipeBody.gate, SchoolNode.gate): "combat" opens with `combat.enabled`, the switch the
+ * hunt waits under too (G35). No gate is always open.
+ */
+export function gateOpen(bundle: Bundle, gate: 'combat' | undefined): boolean {
+  if (gate === undefined) return true;
+  return gate === 'combat' && bundle.params.combat.enabled === 1;
+}
+
 export function nodeRefusal(bundle: Bundle, state: PublicState, key: string): string | undefined {
   const found = treeNode(bundle, key);
   if (!found || !bundle.params.growth) return 'There is no such thing to learn.';
@@ -697,6 +727,8 @@ export function nodeRefusal(bundle: Bundle, state: PublicState, key: string): st
   const p = state.player;
   if ((p.nodes ?? []).includes(key)) return 'You know this already.';
   if (!nodeIsOurs(state, node)) return 'That belongs to another race.';
+  // a node behind a gate is shown and never taken while it is closed: no point goes to a craft nobody can make yet (CLOTHING 6.1)
+  if (!gateOpen(bundle, node.gate)) return 'This cannot be learned yet.';
   const missing = (node.needs ?? []).map((n) => needKey(school.id, n)).filter((k) => !(p.nodes ?? []).includes(k));
   if (missing.length > 0) {
     const names = missing.map((k) => treeNode(bundle, k)?.node.name ?? k);
@@ -762,8 +794,8 @@ export function wornValue(bundle: Bundle, state: PublicState, effect: string): n
  * clamps the rate it feeds under the power cap (rule R9). Its attribute side is
  * `attrAt`: the race's profile and the region's grade (DECISIONS.md, 2026-10-22).
  */
-export function effectValue(bundle: Bundle, state: PublicState, effect: string, profession?: string): number {
-  return techniqueValue(bundle, state, effect, profession) + wornValue(bundle, state, effect);
+export function effectValue(bundle: Bundle, state: PublicState, effect: string, profession?: string, family?: string): number {
+  return techniqueValue(bundle, state, effect, profession, family) + wornValue(bundle, state, effect);
 }
 
 /**
@@ -809,6 +841,21 @@ export function hourOf(bundle: Bundle, tick: number): number {
 export function searchDawn(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
   return idiv(tick + idiv(day, 2) - idivUp(5 * day, 24), day);
+}
+
+/**
+ * The valley's day (G16, G28): 1 from the wake to the first dawn, and one more at each dawn. It is the count of the
+ * valley's own dawns, so it moves only while the game clock runs and never with the calendar. Tick 0 is noon.
+ */
+export function valleyDay(bundle: Bundle, tick: number): number {
+  return searchDawn(bundle, tick) + 1;
+}
+
+/** The latest dawn at or before `tick`; -1 before the first. */
+export function lastDawn(bundle: Bundle, tick: number): number {
+  const k = searchDawn(bundle, tick);
+  if (k < 1) return -1;
+  return idivUp(5 * bundle.params.day_length_ms, 24) - idiv(bundle.params.day_length_ms, 2) + k * bundle.params.day_length_ms;
 }
 
 /** Night for the rules: 20:00 to 05:00, the hours the client darkens fully and plays the night song. */

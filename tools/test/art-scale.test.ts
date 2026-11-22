@@ -80,6 +80,13 @@ describe('the shipped kits', () => {
     for (const r of rows) expect(declared.get(`${r.kit}:${r.name}`), r.name).toBe(r.chars);
   });
 
+  test('a clip sheet is measured at its fit: a take drawn larger than the walk reads as tall as the walk', () => {
+    const walk = rows.find((r) => r.name === 'chars/human_left')!;
+    const clip = rows.find((r) => r.name === 'chars/human_strike_left')!;
+    expect(clip.px).toBeGreaterThan(walk.px);
+    expect(Math.abs(clip.chars - walk.chars)).toBeLessThan(0.1);
+  });
+
   test('ground tiles and inventory icons are not measured', () => {
     expect(rows.some((r) => r.name.startsWith('tiles/') || r.name.startsWith('items/'))).toBe(false);
   });
@@ -125,6 +132,10 @@ describe('the known-short list', () => {
   test('a short sprite on the list is advisory; one that is not on it fails the content tests', () => {
     expect(isAdvisory({ where: 'art.scale.core/base-kit:props/tree_oak' })).toBe(true);
     expect(isAdvisory({ where: 'art.scale.core/base-kit:props/well_old' })).toBe(false);
+    expect(isAdvisory({ where: 'families.pieces', level: 'warning' })).toBe(true);
+    expect(isAdvisory({ where: 'families.pieces', level: 'error' })).toBe(false);
+    expect(isAdvisory({ where: 'families.pieces' })).toBe(false);
+    expect(isAdvisory({ where: 'families.other', level: 'warning' })).toBe(false);
     expect(isAdvisory({ where: 'art.scale.core/base-kit:props/new_oak' })).toBe(false);
     expect(isAdvisory({ where: 'kit.sprites.props/chest' })).toBe(false);
     expect(isAdvisory({ where: 'art.ink16' })).toBe(true);
