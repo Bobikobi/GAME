@@ -37,27 +37,34 @@ export function enclosedPockets(picture: Picture, frameWidth: number, frames: nu
   const height = frameHeight;
   const count = frameWidth * height;
   const reached = new Uint8Array(count);
+  const mask = new Uint8Array(count);
   const queue = new Int32Array(count);
   const pockets: Pocket[] = [];
   for (let frame = 0; frame < frames; frame += 1) {
     const left = (frame % cols) * frameWidth;
     const top = Math.floor(frame / cols) * frameHeight;
-    const clear = (index: number): boolean => {
-      const x = index % frameWidth;
-      return (data[((top + (index - x) / frameWidth) * width + left + x) * 4 + 3] ?? 0) < 128;
-    };
+    // the frame's see-through pixels once, so the flood reads a flat array and not the sheet
+    for (let y = 0; y < height; y += 1) {
+      const row = ((top + y) * width + left) * 4 + 3;
+      for (let x = 0; x < frameWidth; x += 1) mask[y * frameWidth + x] = (data[row + x * 4] ?? 0) < 128 ? 1 : 0;
+    }
+    const clear = (index: number): boolean => mask[index] === 1;
     // flood from the queued pixels through see-through ones, side by side or corner to corner; returns the queue's end
     const flood = (end: number): number => {
       let head = 0;
       let tail = end;
+      const last = frameWidth - 1;
       while (head < tail) {
         const index = queue[head++] ?? 0;
         const x = index % frameWidth;
         const y = (index - x) / frameWidth;
-        for (let ny = Math.max(0, y - 1); ny <= Math.min(height - 1, y + 1); ny += 1) {
-          for (let nx = Math.max(0, x - 1); nx <= Math.min(frameWidth - 1, x + 1); nx += 1) {
-            const neighbor = ny * frameWidth + nx;
-            if (reached[neighbor] === 0 && clear(neighbor)) {
+        const x0 = x > 0 ? x - 1 : 0;
+        const x1 = x < last ? x + 1 : last;
+        for (let ny = y > 0 ? y - 1 : 0, ny1 = y < height - 1 ? y + 1 : height - 1; ny <= ny1; ny += 1) {
+          const row = ny * frameWidth;
+          for (let nx = x0; nx <= x1; nx += 1) {
+            const neighbor = row + nx;
+            if (reached[neighbor] === 0 && mask[neighbor] === 1) {
               reached[neighbor] = 1;
               queue[tail++] = neighbor;
             }

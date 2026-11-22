@@ -1,6 +1,7 @@
 /** Loads every sprite the bundle names, then hands over to the world. */
 import * as Phaser from 'phaser';
 import { app } from '../app';
+import { bootSprites, type ClipSprites } from '../clips';
 import { CHIMNEY_SMOKE, DRIFT_TEXTURE, driftOn } from '../drift';
 
 export class BootScene extends Phaser.Scene {
@@ -11,7 +12,8 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     this.load.on('progress', (v: number) => app.ui.loading(v));
     this.load.on('loaderror', (file: { key: string }) => console.warn(`could not load sprite ${file.key}`));
-    for (const [ref, info] of Object.entries(app.bundle.sprites)) {
+    // the clips' sheets wait: the world loads the ones of the player's race (clips.ts `raceClips`)
+    for (const [ref, info] of bootSprites(app.bundle.sprites as ClipSprites)) {
       if (info.frames > 1) this.load.spritesheet(ref, info.url, { frameWidth: info.w, frameHeight: info.h });
       else this.load.image(ref, info.url);
     }

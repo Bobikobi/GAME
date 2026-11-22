@@ -86,6 +86,8 @@ window.__clips = (() => {
       return Object.keys(sprites).filter((k) => sprites[k].clip).length;
     },
     race() { return g().session.state.player.race; },
+    /** Whether a sheet's texture has arrived: the world fetches the player's race's clips in the background after it wakes. */
+    loaded(key) { return world.textures.exists(key); },
     /** One beat of a work on the real scene, the way the figure is told of it: facing down, the view the sheets are drawn for. */
     play(kind) {
       log.length = 0;
@@ -228,6 +230,8 @@ async function realKit(page: Page, race: string): Promise<string[]> {
   }
   for (const w of WORK) {
     const key = `core/base-kit:chars/${stem}_${w.verb}_front`;
+    // the clips of the player's race load after the world wakes, not at boot (game/src/clips.ts `raceClips`): wait for the sheet, never a fixed time
+    if (key !== `core/base-kit:chars/${broken}`) await page.waitFor(`__clips.loaded(${JSON.stringify(key)})`, `the ${race} ${w.verb} sheet to load`, 60_000);
     const r = await page.eval<{ found: boolean; rows: [string, number, number][]; walkKey: string; walkFrames: number; walkDensity: number; w: number; h: number }>(`__clips.real(${JSON.stringify(w.kind)}, ${LOOP_MS})`);
     const own = r.rows.filter((x) => x[0] === key);
     const distinct = [...new Set(own.map((x) => x[1]))].sort((a, b) => a - b);
