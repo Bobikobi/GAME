@@ -1,6 +1,7 @@
 /**
  * Loose stones in the world (DECISIONS 2026-11-22, #831): the stones that lie on their tiles, by count (a lone stone, two or
- * three, a heap), and the flight of a thrown one. Every stone is the one item picture, scaled by its size (REUSE: no new art),
+ * three, a heap), and the flight of a thrown one. A small stone is its own drawing, a large one the item picture scaled (REUSE: the
+ * existing stone), a heap of four or more small ones the kit's rubble heap,
  * the motion is code (stone-art.ts), the shadow is an ellipse under it. A stone that was just thrown is held back from its
  * resting tile until its flight ends, so the landing is seen and not announced.
  */
@@ -8,7 +9,7 @@ import type * as Phaser from 'phaser';
 import { type Bundle, type PublicState, type Tile, STONE_ITEM, lyingAt, settled, stoneSpots } from '@game/kernel';
 import { T } from '../config';
 import { baseOf, kitImage } from '../kitart';
-import { type StoneSize, type Throw, pileLayout, stoneMotion } from '../stone-art';
+import { SMALL_STONE_SCALE, STONE_SCALE, type StonePicture, type StoneSize, type Throw, pileLayout, stoneMotion } from '../stone-art';
 
 /** The ink of every shadow in the world (the cast layer's own). */
 const INK = 0x1b1a2e;
@@ -18,7 +19,7 @@ interface Shown {
   images: Phaser.GameObjects.Image[];
 }
 
-interface Held {
+export interface Held {
   key: string;
   size: StoneSize;
   until: number;
@@ -38,7 +39,8 @@ export class StoneLayer {
   private readonly shown = new Map<string, Shown>();
   private readonly held: Held[] = [];
   private readonly flying: Flying[] = [];
-  private readonly ref: string;
+  /** the pictures by kind: the item's (a large stone), the small stone's own drawing and the rubble heap */
+  private readonly refs: Readonly<Record<StonePicture, string>>;
   private last?: { state: PublicState; tick: number };
 
   constructor(
@@ -46,7 +48,8 @@ export class StoneLayer {
     private readonly b: Bundle,
     private readonly depth: number,
   ) {
-    this.ref = b.items[STONE_ITEM]?.sprite ?? 'core/base-kit:items/stone';
+    const large = b.items[STONE_ITEM]?.sprite ?? 'core/base-kit:items/stone';
+    this.refs = { large, small: 'core/base-kit:items/stone_small', heap: 'core/base-kit:props/rock_stones' };
   }
 
   /** The tiles with a stone on them: the spots that still have theirs, and every tile where stones were set down or fell. */
@@ -87,7 +90,7 @@ export class StoneLayer {
       if (this.shown.has(k)) continue;
       const [x, y] = k.split(',').map(Number) as [number, number];
       const images = pileLayout(n.small + n.large, n.large).map((slot) => {
-        const img = kitImage(this.scene, (x + 0.5 + slot.dx) * T, (y + 1 - slot.dy) * T - 2, this.ref).setOrigin(0.5, 1).setDepth(this.depth);
+        const img = kitImage(this.scene, (x + 0.5 + slot.dx) * T, (y + 1 - slot.dy) * T - 2, this.refs[slot.picture]).setOrigin(0.5, 1).setDepth(this.depth);
         img.setScale(baseOf(img) * slot.scale);
         return img;
       });
@@ -103,9 +106,16 @@ export class StoneLayer {
    * Holds one stone of `size` back from the tile `key` for `ms`: the tile shows the pile without it until the stone it lands
    * is seen to land (the flight below), then the tile is drawn again as it is.
    */
-  hold(key: string, size: StoneSize, now: number, ms: number): void {
-    this.held.push({ key, size, until: now + ms });
+  hold(key: string, size: StoneSize, now: number, ms: number): Held {
+    const h: Held = { key, size, until: now + ms };
+    this.held.push(h);
     if (this.last) this.refresh(this.last.state, this.last.tick);
+    return h;
+  }
+
+  /** Sets when a hold ends, once the flight it waits for has begun (`hold` with an endless time): the flight's start is the one clock. */
+  holdUntil(h: Held, until: number): void {
+    h.until = until;
   }
 
   /** The stones as they are drawn on a tile now, for a test or a check. */
@@ -117,8 +127,8 @@ export class StoneLayer {
   /** Starts the flight of a thrown stone from the hand; `onTouch` is told once, where it first comes down (a puff, a splash). */
   fly(throwEv: Throw, now: number, onTouch: (tile: Tile, sank: boolean) => void): void {
     const motion = stoneMotion(throwEv);
-    const image = kitImage(this.scene, 0, 0, this.ref).setOrigin(0.5, 0.5);
-    image.setData('scale', baseOf(image) * (throwEv.size === 'large' ? 0.95 : 0.46));
+    const image = kitImage(this.scene, 0, 0, this.refs[throwEv.size]).setOrigin(0.5, 0.5);
+    image.setData('scale', baseOf(image) * (throwEv.size === 'large' ? STONE_SCALE.large : SMALL_STONE_SCALE));
     const shadow = this.scene.add.ellipse(0, 0, 8, 4, INK, 0.35);
     this.flying.push({ image, shadow, throwEv, motion, start: now, touched: false, onTouch });
     this.frame(now);
@@ -136,8 +146,8 @@ export class StoneLayer {
       f.image.setScale(base * pose.shrink);
       f.image.setRotation(pose.spin);
       f.image.setAlpha(pose.alpha);
-      // above everything standing on its row of ground
-      f.image.setDepth(Math.round(ground) + 2);
+      // the foot line of its tile, as a figure's depth is: a stone in the hand of the thrower on that tile is in front of the thrower
+      f.image.setDepth(Math.round(ground + T / 2) + 2);
       // the shadow stays on the ground and thins as the stone rises
       const rise = Math.min(1, pose.lift / 1.2);
       f.shadow.setPosition(px, ground + 1);
