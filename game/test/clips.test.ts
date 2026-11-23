@@ -35,8 +35,8 @@ beforeAll(() => {
 });
 
 describe('B2: a clip is found by verb, race and view', () => {
-  test('all 12 verbs x 3 views are 36 lookups, each returning that sheet and its own frame time', () => {
-    expect(CLIP_VERBS).toHaveLength(12);
+  test('all 13 verbs x 3 views are 39 lookups, each returning that sheet and its own frame time', () => {
+    expect(CLIP_VERBS).toHaveLength(13);
     expect(CLIP_VIEWS).toHaveLength(3);
     let looked = 0;
     const times = new Set<number>();
@@ -54,9 +54,9 @@ describe('B2: a clip is found by verb, race and view', () => {
         looked += 1;
       }
     }
-    expect(looked).toBe(36);
+    expect(looked).toBe(39);
     // every sheet is told apart by its own time: a lookup that ignored the verb or the view would show up as a repeat
-    expect(times.size).toBe(36);
+    expect(times.size).toBe(39);
   });
 
   test('the clip\'s display fit (permille) rides through the schema and the assembler to the bundle, and a clip with none has none', () => {
@@ -110,6 +110,16 @@ describe('the frame rule: one for every verb, the clip\'s own time', () => {
     expect(clipFrame(560, 8, 140)).toBe(4);
     expect(clipFrame(560, 8, 280)).toBe(2);
     expect(clipFrame(560, 8, 100)).toBe(5);
+  });
+
+  test('a stretched clip (the lift) plays once across the action\'s time: its last frame is the last of it', () => {
+    const at = (ms: number) => clipFrame(ms, 9, 67, 600, true);
+    expect(at(0)).toBe(0);
+    expect(at(599)).toBe(8);
+    expect(at(600)).toBeUndefined();
+    expect(Array.from({ length: 600 }, (_, t) => at(t)!).every((f, i, a) => i === 0 || f >= a[i - 1]!)).toBe(true);
+    // a longer lift (the kernel's number moved) spreads the same nine frames over more time
+    expect(clipFrame(599, 9, 67, 1200, true)).toBe(4);
   });
 
   test('an action with no length plays the clip once, then it is over', () => {
@@ -247,7 +257,7 @@ describe('the packed kit', () => {
     }
   });
 
-  test('the boot loads no clip sheet; a race\'s clips are the 32 sheets of that race (23 or 24 and the stones\' carry, throw and push) and nothing of another', () => {
+  test('the boot loads no clip sheet; a race\'s clips are the 35 sheets of that race (23 or 24 and the stones\' carry, throw, push and lift) and nothing of another', () => {
     const boot = bootSprites(real);
     expect(boot.some(([, s]) => s.clip !== undefined)).toBe(false);
     expect(boot.length + Object.values(real).filter((s) => s.clip).length).toBe(Object.keys(real).length);
@@ -258,7 +268,7 @@ describe('the packed kit', () => {
       expect(own.length, race).toBeGreaterThanOrEqual(23);
       all += own.length;
     }
-    expect(all).toBe(98);
+    expect(all).toBe(107);
     expect(raceClips(real, 'core/dragon')).toEqual([]);
   });
 

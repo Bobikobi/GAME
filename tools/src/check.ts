@@ -995,10 +995,10 @@ function sizeRule(name: string, m: number): { w: number; h: number; exact: boole
 
 /**
  * A clip that needs more room than the walk's frame is drawn on a 192 px frame (DECISIONS 2026-11-23): the carry clip, a figure with a
- * stone held over its head. The 128 frame stands bottom-centred on it, so the feet keep their place; only the carry verb has one.
+ * stone held over its head. The 128 frame stands bottom-centred on it, so the feet keep their place; only the carry and lift verbs have one.
  */
 const WIDE_FRAME = 192;
-const WIDE_CLIP = /^chars\/[a-z0-9]+_carry_(left|front|back)$/;
+const WIDE_CLIP = /^chars\/[a-z0-9]+_(carry|lift)_(left|front|back)$/;
 
 function fits(name: string, w: number, h: number, m: number): boolean {
   if (m === 4 && WIDE_CLIP.test(name) && w === WIDE_FRAME && h === WIDE_FRAME) return true;

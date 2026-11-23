@@ -124,10 +124,13 @@ export function handWorld(fig: DrawnFigure, point: readonly [number, number]): {
 
 /**
  * The frame shown `elapsed` ms after the clip started, or nothing once it is over. With `lasts` (the action's own length in
- * ms) the clip loops until the action ends and is cut there; without it the clip plays once.
+ * ms) the clip loops until the action ends and is cut there; without it the clip plays once. With `stretch` too, the clip plays once
+ * across `lasts`.
  */
-export function clipFrame(elapsed: number, frames: number, frameMs: number, lasts?: number): number | undefined {
+export function clipFrame(elapsed: number, frames: number, frameMs: number, lasts?: number, stretch = false): number | undefined {
   if (!(frames > 0) || !(frameMs > 0) || elapsed < 0) return undefined;
+  // a clip that is the whole of the action (the lift) is spread over `lasts`, its last frame ending with it, however long the kernel says
+  if (stretch && lasts !== undefined && lasts > 0) return elapsed < lasts ? Math.min(frames - 1, Math.floor((elapsed * frames) / lasts)) : undefined;
   const n = Math.floor(elapsed / frameMs);
   if (lasts === undefined) return n < frames ? n : undefined;
   return elapsed < lasts ? n % frames : undefined;
@@ -159,7 +162,7 @@ export function verbOfOutcome(o: OutcomeLike): ClipVerb | undefined {
 
 /** One clip under way on the figure: which sheet, when it began, and how long the action lasts when it has a length. */
 export class ClipPlayer {
-  private run: { found: Found; start: number; lasts?: number } | null = null;
+  private run: { found: Found; start: number; lasts?: number; stretch?: boolean } | null = null;
 
   /** Whether a clip is under way (it may be over by now: `frameAt` says). */
   get active(): boolean {
@@ -167,8 +170,8 @@ export class ClipPlayer {
   }
 
   /** Begins a clip at `now`; one already playing is replaced, so a new blow restarts the swing. */
-  start(found: Found, now: number, lasts?: number): void {
-    this.run = { found, start: now, ...(lasts === undefined ? {} : { lasts }) };
+  start(found: Found, now: number, lasts?: number, stretch = false): void {
+    this.run = { found, start: now, ...(lasts === undefined ? {} : { lasts }), ...(stretch ? { stretch } : {}) };
   }
 
   /** Ends the clip without a word: the caller puts the figure back. */
@@ -180,7 +183,7 @@ export class ClipPlayer {
   frameAt(now: number): { found: Found; frame: number } | undefined {
     const r = this.run;
     if (!r) return undefined;
-    const frame = clipFrame(now - r.start, r.found.frames, r.found.frame_ms, r.lasts);
+    const frame = clipFrame(now - r.start, r.found.frames, r.found.frame_ms, r.lasts, r.stretch);
     if (frame === undefined) {
       this.run = null;
       return undefined;
