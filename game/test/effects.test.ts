@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { GameEvent } from '@game/kernel';
+import { FightWordLayer } from '../src/fight-word-layer';
 import {
   ART_PER_TILE, EFFECTS, EFFECT_IDS, LAY, cellOf, frameAt, landingDust, lifeMs, originOf, sheetSize, sizeInTiles, spawnsOf,
 } from '../src/effects';
@@ -114,9 +115,40 @@ describe('which event starts which effect', () => {
     expect(spawnsOf(batch, me)).toHaveLength(1);
   });
 
-  it('a miss, a guard and a dodge play nothing', () => {
-    const out = (e: string): GameEvent => ({ e, kind: 'miss', number: 0, at, move: 'attack', striker: { side: 'player', id: 'p' }, struck: { side: 'foe', id: 'w' } }) as unknown as GameEvent;
-    expect(spawnsOf([out('fight_miss'), out('fight_guard'), out('fight_dodge')], me)).toEqual([]);
+  it('misses, guards and dodges skip the spark and show a word over the recipient', () => {
+    const striker = { side: 'player', id: 'p' } as const;
+    const struck = { side: 'foe', id: 'wolf' } as const;
+    const events: GameEvent[] = [
+      { e: 'fight_miss', kind: 'miss', number: 0, at, move: 'attack', striker, struck },
+      { e: 'fight_guard', kind: 'guard', number: 0, at: me, move: 'bite', striker: struck, struck: striker },
+      { e: 'fight_dodge', kind: 'dodge', number: 0, at: me, move: 'bite', striker: struck, struck: striker },
+    ];
+    expect(spawnsOf(events, me)).toEqual([]);
+
+    const labels: HTMLElement[] = [];
+    const host = { ownerDocument: { createElement: () => ({ style: {} }) }, append: (el: HTMLElement) => labels.push(el) } as unknown as HTMLElement;
+    const words = new FightWordLayer(host, ({ struck: target }, point) => {
+      point.x = target.id === 'wolf' ? 100 : 200;
+      point.y = 80;
+      return true;
+    });
+    words.play([...events, { e: 'hurt', by: 'predator', id: 'wolf', hp: 80 }], 1000);
+    words.update(1000, false);
+    expect(labels.map((el) => [el.textContent, el.style.transform, el.hidden])).toEqual([
+      ['MISS', 'translate(100px, 76px) scale(1)', false],
+      ['BLOCK 0', 'translate(200px, 52px) scale(1)', false],
+      ['DODGE', 'translate(200px, 76px) scale(1)', false],
+    ]);
+    words.update(1600, false);
+    expect(words.active).toBe(false);
+    expect(labels.every((el) => el.hidden)).toBe(true);
+
+    words.play([hit('player', 'critical', at)], 1600);
+    words.update(1900, true);
+    expect(labels).toHaveLength(3);
+    expect(labels.find((el) => !el.hidden)).toMatchObject({
+      textContent: 'CRIT 3', style: { transform: 'translate(100px, 76px) scale(1.25)', opacity: '1' },
+    });
   });
 
   it('two blows of the player show two sparks, and none of them is lost to the bite rule', () => {
