@@ -13,6 +13,10 @@ import type { UI } from './ui/ui';
 export interface WorldView {
   bind(session: GameSession): void;
   interact(): void;
+  /** the jump (DECISIONS 2026-11-22); the 3D door is paused (DECISIONS 2026-10-26) and has none until it returns */
+  jump?(): void;
+  /** B: throw a stone (DECISIONS 2026-11-22, #831); the 3D door is paused (DECISIONS 2026-10-26) and has none until it returns */
+  throwStone?(): void;
   signText(slotId: string): SignInfo;
   screenOf(x: number, y: number): { x: number; y: number };
   startWork(nodeId: string, onDone?: () => void): void | Promise<void>;

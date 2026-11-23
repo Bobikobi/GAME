@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.32.0';
+export const KERNEL_VERSION = '0.35.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -115,9 +115,26 @@ export interface Carcass {
   grade: 1 | 2 | 3;
   /** the tick it fell */
   since: number;
+  /** the awake clock when it fell; older carcasses use since */
+  awakeSince?: number;
   /** parts of the dressing done so far (one action each; DRESS_PARTS by size); absent means none */
   dressed?: number;
 }
+
+export interface Snare {
+  at: [number, number];
+  kind?: string;
+  readyDay: number;
+  checkedDay?: number;
+}
+
+export interface HuntBatch {
+  qty: number;
+  /** expiry on the awake clock */
+  until: number;
+}
+
+export type HuntStock = Record<string, HuntBatch[]>;
 
 export interface FireState {
   /** tick at which this uninterrupted burn began */
@@ -227,6 +244,13 @@ export interface Player {
   carcasses?: Carcass[];
   /** how many animals have fallen in this game: the next carcass takes the number after */
   fallen?: number;
+  /** Game time skipped during sleep or absence, excluded from spoilage. */
+  huntPausedMs?: number;
+  /** When each creature spot can be taken again, by species and tile. */
+  preyReturns?: Record<string, number>;
+  snares?: Snare[];
+  /** Expiry batches alongside the existing bag and dropped stacks. */
+  huntStock?: { bag: HuntStock; ground: Record<string, HuntStock> };
   /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.12) */
   own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
@@ -241,6 +265,29 @@ export interface Player {
   movedAt: number;
   /** the valley's day so far and the day before it (G16, the day summary); absent until the first step of a day that has begun */
   day?: DayTally;
+  /** the breath the jump spends (kernel 0.33): what was left after the last jump and the tick it was left at; absent until the first jump, when the player holds the full cap (`breathLeft`) */
+  breath?: { left: number; at: number };
+  /** the loose stones this player has moved (kernel 0.35, DECISIONS.md 2026-11-22); absent until the first stone is lifted, and every field of an old state reads as none */
+  stones?: StoneState;
+}
+
+/** A thing the world holds for the player: where a loose stone lies, and what returns. */
+export type StoneSize = 'small' | 'large';
+
+/**
+ * Loose stones (kernel 0.35). The map's spots (`map.stones.spots`) say where a stone lies until lifted; this says what
+ * the player has done to them. Small stones set down or thrown lie in `player.ground` (`core/stone`, a pile counted by
+ * number); large ones lie here, since no bag holds them.
+ */
+export interface StoneState {
+  /** spots whose stone this player lifted, by spot index in the map's list: that spot is empty until a thrown stone returns to it */
+  taken: Record<string, true>;
+  /** large stones lying away from a spot, by tile (`groundKey`) */
+  large: Record<string, number>;
+  /** thrown stones on loan, oldest first: the stone lies at `key` ('' where it sank in water) and goes home at tick `at` */
+  returns: { key: string; size: StoneSize; at: number }[];
+  /** both hands hold a large stone over the head: it weighs in the load (`stones.large_weight`) and blocks every other work */
+  carry?: 'large';
 }
 
 /**

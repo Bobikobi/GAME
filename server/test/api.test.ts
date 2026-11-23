@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
-import { appearSlots, appears, dayOf, gaitStepMs, skyAt, makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type Gait, type State, type Tile } from '@game/kernel';
+import { appearSlots, appears, dayOf, gaitStepMs, hpCap, jumpTargets, levelAt, skyAt, makeWalkable, stepRuleFor, newState, npcTile, salePrice, serialize, step, type Bundle, type Gait, type State, type Tile } from '@game/kernel';
 import type { IncomingMessage, Server } from 'node:http';
 
 import { createGameApi, createPlayerRecord, isAction, listen, replayAccount, type Books, type PlayerRecord, type PlayerStore } from '../src';
@@ -11,6 +11,17 @@ const PLAYER = 'player-1';
 let bundle: Bundle;
 let server: Server | undefined;
 const health = { up: true };
+
+test('the wire accepts each hunting action and keeps search takes distinct', () => {
+  const at = [2, 3];
+  expect(isAction({ t: 'take', prey: 0, at })).toBe(true);
+  expect(isAction({ t: 'take', spot: 'core/hollow-tree', row: 0, at })).toBe(true);
+  expect(isAction({ t: 'take', prey: 0, spot: 'core/hollow-tree', at })).toBe(false);
+  expect(isAction({ t: 'take', prey: -1, at })).toBe(false);
+  expect(isAction({ t: 'set_snare', tile: at, at })).toBe(true);
+  expect(isAction({ t: 'check_snare', tile: at, at })).toBe(true);
+  expect(isAction({ t: 'check_snare', tile: at, at, kind: 'core/wolf' })).toBe(false);
+});
 
 beforeAll(() => {
   bundle = loadBundle();
@@ -862,5 +873,110 @@ describe('the players counter (GET /stats)', () => {
   test('is not found where players are not accounts (the header mode passes no counter)', async () => {
     const { base } = await api(started());
     expect((await fetch(`${base}/stats`)).status).toBe(404);
+  });
+});
+
+describe('the jump on the wire (DECISIONS 2026-11-22, the jump and the fall)', () => {
+  /** A pair of real valley tiles a walk cannot cross and a jump can: `drop` levels fallen (negative: climbed). */
+  function pair(drop: number): { from: Tile; to: Tile } {
+    const walkable = makeWalkable(bundle);
+    const view = { restored: [] as string[], camp: [] as string[] };
+    const open = stepRuleFor(bundle);
+    for (let y = 0; y < bundle.map.height; y++) {
+      for (let x = 0; x < bundle.map.width; x++) {
+        if (!walkable(x, y, view)) continue;
+        for (const t of jumpTargets(bundle, [x, y])) {
+          if (t.across || t.drop !== drop || !walkable(t.to[0], t.to[1], view) || open(x, y, t.to[0], t.to[1])) continue;
+          return { from: [x, y], to: t.to };
+        }
+      }
+    }
+    throw new Error(`The valley has no pair of tiles for a jump of ${drop} levels.`);
+  }
+
+  function jumper(at: Tile): State {
+    const s = started();
+    return { ...s, player: { ...s.player, at, movedAt: 0 } };
+  }
+
+  test('a jump is an action: it climbs a face a walk cannot, and is booked as sent', async () => {
+    const { from, to } = pair(-1);
+    expect(levelAt(bundle.map, to[0], to[1])).toBe(levelAt(bundle.map, from[0], from[1]) + 1);
+    const state = jumper(from);
+    const { base, store, clock } = await api(state);
+    clock.now += 70_000;
+    const walked = await post(base, '/moves', { version: 1, moves: [move(to, 70_000)] });
+    expect(walked.status, 'a walk cannot cross the face').toBe(409);
+    const early = await post(base, '/action', { version: 1, tick: 30_000, action: { t: 'jump', at: to } });
+    expect(early.status).toBe(409);
+    expect(((await early.json()) as { error: string }).error).toBe('You have only just woken. Your legs are not ready to jump.');
+    const r = await post(base, '/action', { version: 1, tick: 70_000, action: { t: 'jump', at: to } });
+    expect(r.status, await r.clone().text()).toBe(200);
+    expect(store.record.state.player.at).toEqual(to);
+    expect(store.record.state.player.breath).toBeDefined();
+    expect(store.actionLog.at(-1)!.books.action).toEqual({ t: 'jump', at: to });
+  });
+
+  test('the wire knows the jump and no more than its tile', () => {
+    expect(isAction({ t: 'jump', at: [3, 4] })).toBe(true);
+    expect(isAction({ t: 'jump' })).toBe(false);
+    expect(isAction({ t: 'jump', at: [3, 4], gait: 'run' })).toBe(false);
+    expect(isAction({ t: 'jump', at: [3.5, 4] })).toBe(false);
+  });
+
+  test('a fall of two levels takes a fifth of the health over the wire', async () => {
+    // the valley's faces are one level high: make one of them two, in a copy of the world
+    const { from: low, to: high } = pair(-1);
+    const world = structuredClone(bundle);
+    const levels = world.map.levels!.map((r) => r.split(''));
+    levels[low[1]]![low[0]] = '0';
+    levels[high[1]]![high[0]] = '2';
+    world.map.levels = levels.map((r) => r.join(''));
+    const state = jumper(high);
+    const { base, store, clock } = await api(state, 1_000_000, world);
+    clock.now += 70_000;
+    const r = await post(base, '/action', { version: 1, tick: 70_000, action: { t: 'jump', at: low } });
+    expect(r.status, await r.clone().text()).toBe(200);
+    const events = ((await r.json()) as { events: { e: string; by?: string }[] }).events;
+    expect(events.find((e) => e.e === 'hurt')).toMatchObject({ by: 'fall' });
+    const cap = hpCap(world, state);
+    expect(state.player.hp - store.record.state.player.hp).toBe(cap / 5);
+  });
+});
+
+describe('loose stones on the wire (DECISIONS 2026-11-22)', () => {
+  test('the wire knows lift, setdown and throw, with their tiles and no more', () => {
+    expect(isAction({ t: 'lift', size: 'small', at: [3, 4] })).toBe(true);
+    expect(isAction({ t: 'lift', size: 'large', at: [3, 4], qty: 2 })).toBe(true);
+    expect(isAction({ t: 'lift', size: 'huge', at: [3, 4] })).toBe(false);
+    expect(isAction({ t: 'lift', at: [3, 4] })).toBe(false);
+    expect(isAction({ t: 'setdown', at: [3, 4] })).toBe(true);
+    expect(isAction({ t: 'setdown', at: [3, 4], size: 'large' })).toBe(false);
+    expect(isAction({ t: 'throw', at: [3, 4], aim: [8, 4] })).toBe(true);
+    expect(isAction({ t: 'throw', at: [3, 4], aim: [8, 4], power: 1000 })).toBe(true);
+    expect(isAction({ t: 'throw', at: [3, 4] })).toBe(false);
+    expect(isAction({ t: 'throw', at: [3, 4], aim: [8.5, 4] })).toBe(false);
+    expect(isAction({ t: 'pickup', item: 'core/stone', at: [3, 4], qty: 2 })).toBe(true);
+    expect(isAction({ t: 'pickup', item: 'core/stone', at: [3, 4], qty: 1.5 })).toBe(false);
+  });
+
+  test('a stone is lifted at its spot and thrown, and both are booked as sent', async () => {
+    const spot = bundle.map.stones!.spots.find((s) => s.size === 'small')!;
+    const at: Tile = [spot.x, spot.y];
+    const s0 = started();
+    const state: State = { ...s0, player: { ...s0.player, at, movedAt: 0 } };
+    const { base, store, clock } = await api(state);
+    clock.now += 70_000;
+    const lifted = await post(base, '/action', { version: 1, tick: 70_000, action: { t: 'lift', size: 'small', at } });
+    expect(lifted.status, await lifted.clone().text()).toBe(200);
+    expect(store.record.state.player.bag['core/stone']).toBe(1);
+    expect(store.record.state.player.stones?.taken).toEqual({ [String(bundle.map.stones!.spots.indexOf(spot))]: true });
+    clock.now += 10_000;
+    const aim: Tile = [at[0] + 1, at[1]];
+    const thrown = await post(base, '/action', { version: 2, tick: 80_000, action: { t: 'throw', at, aim } });
+    expect(thrown.status, await thrown.clone().text()).toBe(200);
+    expect(((await thrown.json()) as { events: { e: string }[] }).events.some((e) => e.e === 'stone_thrown')).toBe(true);
+    expect(store.record.state.player.bag['core/stone']).toBeUndefined();
+    expect(store.actionLog.at(-1)!.books.action).toEqual({ t: 'throw', at, aim });
   });
 });

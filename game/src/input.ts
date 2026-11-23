@@ -7,7 +7,7 @@
 import type { Gait } from '@game/kernel';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type Button = 'a' | 'b' | 'bag' | 'journal' | 'menu' | 'up' | 'down';
+export type Button = 'a' | 'b' | 'bag' | 'journal' | 'menu' | 'up' | 'down' | 'jump';
 
 export const DIRS: Record<Dir, readonly [number, number]> = {
   up: [0, -1],
@@ -52,6 +52,8 @@ const KEY_BUTTON: Record<string, Button> = {
   KeyI: 'bag',
   KeyJ: 'journal',
   KeyM: 'menu',
+  // the jump (DECISIONS 2026-11-22): one hop ahead, or across a gap of water
+  KeyC: 'jump',
 };
 
 /** The dialogue, menu or title screen that has the player's attention. */

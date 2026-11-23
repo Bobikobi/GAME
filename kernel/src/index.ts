@@ -7,6 +7,8 @@ export * from './equipment';
 export * from './fightmath';
 export { bellTicks, bellsRung, inside, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 export * from './hunt';
+export * from './jump';
+export * from './stones';
 export * from './load';
 export * from './num';
 export * from './patch';

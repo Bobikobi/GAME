@@ -99,6 +99,38 @@ describe('the assembler carries the clips and refuses two for one lookup', () =>
     expect(errors[0]!.message).toMatch(/strike core\/human left/);
   });
 
+  test('a hand is at most one point a frame: carried to the bundle, refused above its frames, and a clip with none still assembles', () => {
+    // the fixture's clips have no hand: they assemble and the bundle's clip has no `hand` key
+    const plain = run();
+    expect(plain.issues.filter((i) => i.level === 'error')).toEqual([]);
+    expect(Object.keys((plain.bundle!.sprites[`core/clip-fixture:${STRIKE}`] as unknown as { clip: object }).clip)).not.toContain('hand');
+    // four frames, four points: the bundle carries them as whole numbers
+    const hand = [[10, 20], [11, 21], [12, 22], [13, 23]];
+    const withHand = run((d) => {
+      d.kit.sprites[STRIKE]!.clip.hand = hand;
+    });
+    expect(withHand.issues.filter((i) => i.level === 'error')).toEqual([]);
+    const info = withHand.bundle!.sprites[`core/clip-fixture:${STRIKE}`] as unknown as { clip: { hand: number[][] } };
+    expect(info.clip.hand).toEqual(hand);
+    expect(() => canonical(withHand.bundle!)).not.toThrow();
+    // fewer points than frames is fine (a hand is needed only while the thing is held); more than the clip has is an error that names the field
+    const short = run((d) => {
+      d.kit.sprites[STRIKE]!.clip.hand = hand.slice(0, 3);
+    });
+    expect(short.issues.filter((i) => i.level === 'error')).toEqual([]);
+    const long = run((d) => {
+      d.kit.sprites[STRIKE]!.clip.hand = [...hand, [14, 24]];
+    });
+    expect(long.issues.filter((i) => i.level === 'error').map((e) => e.where)).toEqual([`kit.sprites.${STRIKE}.clip.hand`]);
+  });
+
+  test('the schema takes a hand of whole points inside the frame and refuses the rest', () => {
+    expect(refuse('hand', [[1, 2], [3, 4]])).toEqual([]);
+    for (const bad of [[], [[1]], [[1.5, 2]], [[-1, 2]], [[1, 400]], 'left', [null]]) {
+      expect(refuse('hand', bad).some((i) => i.path.includes('/clip/hand')), JSON.stringify(bad)).toBe(true);
+    }
+  });
+
   test('a clip for something that is not a race is an error that names the field', () => {
     const a = run((d) => {
       d.kit.sprites[STRIKE]!.clip.race = 'core/dragon';

@@ -372,6 +372,16 @@
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:32"
         }
       },
+      "items/stone_small": {
+        "file": "items/stone_small.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ]
+      },
       "items/stone-idol": {
         "file": "items/stone-idol.png",
         "w": 64,
@@ -3960,6 +3970,1327 @@
             103
           ],
           "fit_permille": 562
+        },
+        "scale": 0.74
+      },
+      "chars/human_carry_back": {
+        "file": "chars/human_carry_back.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 740,
+          "hand": [
+            [
+              95,
+              65
+            ],
+            [
+              95,
+              64
+            ],
+            [
+              95,
+              65
+            ],
+            [
+              95,
+              68
+            ],
+            [
+              95,
+              65
+            ],
+            [
+              95,
+              64
+            ],
+            [
+              95,
+              65
+            ],
+            [
+              95,
+              68
+            ],
+            [
+              95,
+              68
+            ]
+          ]
+        },
+        "scale": 1.36
+      },
+      "chars/human_carry_front": {
+        "file": "chars/human_carry_front.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 698,
+          "hand": [
+            [
+              96,
+              67
+            ],
+            [
+              96,
+              68
+            ],
+            [
+              96,
+              70
+            ],
+            [
+              96,
+              68
+            ],
+            [
+              96,
+              65
+            ],
+            [
+              96,
+              69
+            ],
+            [
+              96,
+              70
+            ],
+            [
+              96,
+              68
+            ],
+            [
+              96,
+              68
+            ]
+          ]
+        },
+        "scale": 1.33
+      },
+      "chars/human_carry_left": {
+        "file": "chars/human_carry_left.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            166
+          ],
+          "fit_permille": 719,
+          "hand": [
+            [
+              96,
+              77
+            ],
+            [
+              96,
+              77
+            ],
+            [
+              96,
+              76
+            ],
+            [
+              96,
+              76
+            ],
+            [
+              96,
+              79
+            ],
+            [
+              96,
+              81
+            ],
+            [
+              96,
+              81
+            ],
+            [
+              96,
+              75
+            ],
+            [
+              96,
+              75
+            ]
+          ]
+        },
+        "scale": 1.24
+      },
+      "chars/human_push_back": {
+        "file": "chars/human_push_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 740,
+          "hand": [
+            [
+              63,
+              4
+            ],
+            [
+              62,
+              46
+            ],
+            [
+              63,
+              47
+            ]
+          ]
+        },
+        "scale": 0.98
+      },
+      "chars/human_push_front": {
+        "file": "chars/human_push_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698,
+          "hand": [
+            [
+              64,
+              4
+            ],
+            [
+              78,
+              78
+            ],
+            [
+              95,
+              75
+            ]
+          ]
+        },
+        "scale": 0.92
+      },
+      "chars/human_push_left": {
+        "file": "chars/human_push_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 719,
+          "hand": [
+            [
+              64,
+              11
+            ],
+            [
+              40,
+              68
+            ],
+            [
+              35,
+              62
+            ]
+          ]
+        },
+        "scale": 0.95
+      },
+      "chars/human_throw_back": {
+        "file": "chars/human_throw_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 740,
+          "hand": [
+            [
+              82,
+              82
+            ],
+            [
+              74,
+              62
+            ],
+            [
+              79,
+              46
+            ],
+            [
+              91,
+              77
+            ],
+            [
+              91,
+              75
+            ]
+          ]
+        },
+        "scale": 0.98
+      },
+      "chars/human_throw_front": {
+        "file": "chars/human_throw_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 698,
+          "hand": [
+            [
+              43,
+              81
+            ],
+            [
+              39,
+              71
+            ],
+            [
+              38,
+              40
+            ],
+            [
+              58,
+              18
+            ],
+            [
+              44,
+              16
+            ]
+          ]
+        },
+        "scale": 1.04
+      },
+      "chars/human_throw_left": {
+        "file": "chars/human_throw_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 719,
+          "hand": [
+            [
+              77,
+              81
+            ],
+            [
+              74,
+              60
+            ],
+            [
+              88,
+              31
+            ],
+            [
+              97,
+              38
+            ],
+            [
+              90,
+              35
+            ],
+            [
+              31,
+              70
+            ]
+          ]
+        },
+        "scale": 0.95
+      },
+      "chars/elf_carry_back": {
+        "file": "chars/elf_carry_back.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            164
+          ],
+          "fit_permille": 840,
+          "hand": [
+            [
+              96,
+              70
+            ],
+            [
+              96,
+              66
+            ],
+            [
+              96,
+              66
+            ],
+            [
+              96,
+              66
+            ],
+            [
+              96,
+              70
+            ],
+            [
+              96,
+              66
+            ],
+            [
+              96,
+              65
+            ],
+            [
+              96,
+              66
+            ],
+            [
+              96,
+              66
+            ]
+          ]
+        },
+        "scale": 1.55
+      },
+      "chars/elf_carry_front": {
+        "file": "chars/elf_carry_front.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            166
+          ],
+          "fit_permille": 790,
+          "hand": [
+            [
+              96,
+              68
+            ],
+            [
+              96,
+              71
+            ],
+            [
+              96,
+              71
+            ],
+            [
+              96,
+              67
+            ],
+            [
+              96,
+              72
+            ],
+            [
+              96,
+              71
+            ],
+            [
+              96,
+              71
+            ],
+            [
+              96,
+              67
+            ],
+            [
+              96,
+              67
+            ]
+          ]
+        },
+        "scale": 1.49
+      },
+      "chars/elf_carry_left": {
+        "file": "chars/elf_carry_left.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 840,
+          "hand": [
+            [
+              94,
+              70
+            ],
+            [
+              94,
+              70
+            ],
+            [
+              94,
+              71
+            ],
+            [
+              94,
+              71
+            ],
+            [
+              94,
+              69
+            ],
+            [
+              94,
+              69
+            ],
+            [
+              94,
+              71
+            ],
+            [
+              94,
+              71
+            ],
+            [
+              94,
+              71
+            ]
+          ]
+        },
+        "scale": 1.52
+      },
+      "chars/elf_push_back": {
+        "file": "chars/elf_push_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840,
+          "hand": [
+            [
+              64,
+              2
+            ],
+            [
+              64,
+              41
+            ],
+            [
+              64,
+              39
+            ]
+          ]
+        },
+        "scale": 1.17
+      },
+      "chars/elf_push_front": {
+        "file": "chars/elf_push_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 790,
+          "hand": [
+            [
+              64,
+              3
+            ],
+            [
+              62,
+              74
+            ],
+            [
+              63,
+              75
+            ]
+          ]
+        },
+        "scale": 1.08
+      },
+      "chars/elf_push_left": {
+        "file": "chars/elf_push_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840,
+          "hand": [
+            [
+              62,
+              7
+            ],
+            [
+              54,
+              71
+            ],
+            [
+              40,
+              60
+            ]
+          ]
+        },
+        "scale": 1.15
+      },
+      "chars/elf_throw_back": {
+        "file": "chars/elf_throw_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 840,
+          "hand": [
+            [
+              77,
+              74
+            ],
+            [
+              76,
+              70
+            ],
+            [
+              77,
+              58
+            ],
+            [
+              78,
+              50
+            ],
+            [
+              79,
+              45
+            ],
+            [
+              90,
+              71
+            ]
+          ]
+        },
+        "scale": 1.16
+      },
+      "chars/elf_throw_front": {
+        "file": "chars/elf_throw_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            102
+          ],
+          "fit_permille": 790,
+          "hand": [
+            [
+              50,
+              75
+            ],
+            [
+              49,
+              73
+            ],
+            [
+              40,
+              29
+            ],
+            [
+              59,
+              13
+            ],
+            [
+              48,
+              15
+            ]
+          ]
+        },
+        "scale": 1.18
+      },
+      "chars/elf_throw_left": {
+        "file": "chars/elf_throw_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 840,
+          "hand": [
+            [
+              52,
+              69
+            ],
+            [
+              51,
+              60
+            ],
+            [
+              70,
+              41
+            ],
+            [
+              89,
+              21
+            ],
+            [
+              90,
+              22
+            ]
+          ]
+        },
+        "scale": 1.17
+      },
+      "chars/skeleton_carry_back": {
+        "file": "chars/skeleton_carry_back.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              96,
+              68
+            ],
+            [
+              96,
+              69
+            ],
+            [
+              96,
+              70
+            ],
+            [
+              96,
+              70
+            ],
+            [
+              96,
+              68
+            ],
+            [
+              96,
+              69
+            ],
+            [
+              96,
+              70
+            ],
+            [
+              96,
+              70
+            ],
+            [
+              96,
+              70
+            ]
+          ]
+        },
+        "scale": 1.04
+      },
+      "chars/skeleton_carry_front": {
+        "file": "chars/skeleton_carry_front.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              96,
+              72
+            ],
+            [
+              96,
+              72
+            ],
+            [
+              96,
+              71
+            ],
+            [
+              96,
+              71
+            ],
+            [
+              96,
+              73
+            ],
+            [
+              96,
+              72
+            ],
+            [
+              96,
+              74
+            ],
+            [
+              96,
+              71
+            ],
+            [
+              96,
+              71
+            ]
+          ]
+        },
+        "scale": 1
+      },
+      "chars/skeleton_carry_left": {
+        "file": "chars/skeleton_carry_left.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "carry",
+          "frame_ms": 100,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              95,
+              74
+            ],
+            [
+              95,
+              73
+            ],
+            [
+              95,
+              75
+            ],
+            [
+              95,
+              72
+            ],
+            [
+              95,
+              72
+            ],
+            [
+              95,
+              70
+            ],
+            [
+              95,
+              71
+            ],
+            [
+              95,
+              72
+            ],
+            [
+              95,
+              72
+            ]
+          ]
+        },
+        "scale": 0.99
+      },
+      "chars/skeleton_push_back": {
+        "file": "chars/skeleton_push_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              64,
+              6
+            ],
+            [
+              64,
+              49
+            ],
+            [
+              64,
+              45
+            ]
+          ]
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_push_front": {
+        "file": "chars/skeleton_push_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              64,
+              7
+            ],
+            [
+              64,
+              82
+            ],
+            [
+              71,
+              74
+            ]
+          ]
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_push_left": {
+        "file": "chars/skeleton_push_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "push",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              63,
+              8
+            ],
+            [
+              50,
+              72
+            ],
+            [
+              34,
+              55
+            ]
+          ]
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_throw_back": {
+        "file": "chars/skeleton_throw_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              81,
+              80
+            ],
+            [
+              71,
+              46
+            ],
+            [
+              68,
+              45
+            ],
+            [
+              68,
+              47
+            ],
+            [
+              91,
+              43
+            ],
+            [
+              92,
+              78
+            ]
+          ]
+        },
+        "scale": 0.74
+      },
+      "chars/skeleton_throw_front": {
+        "file": "chars/skeleton_throw_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              47,
+              81
+            ],
+            [
+              49,
+              40
+            ],
+            [
+              47,
+              25
+            ],
+            [
+              47,
+              25
+            ],
+            [
+              48,
+              44
+            ]
+          ]
+        },
+        "scale": 0.75
+      },
+      "chars/skeleton_throw_left": {
+        "file": "chars/skeleton_throw_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "throw",
+          "frame_ms": 78,
+          "anchor": [
+            64,
+            103
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              70,
+              81
+            ],
+            [
+              74,
+              62
+            ],
+            [
+              78,
+              42
+            ],
+            [
+              89,
+              31
+            ],
+            [
+              87,
+              31
+            ],
+            [
+              40,
+              41
+            ]
+          ]
         },
         "scale": 0.74
       },

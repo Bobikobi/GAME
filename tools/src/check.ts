@@ -15,12 +15,14 @@ import {
   huntGoods,
   idiv,
   itemCategory,
+  makeWalkable,
   MAX_SHEET_PX,
   minChargeFor,
   missOutcome,
   rarityBudget,
   rarityRank,
   sheetGrid,
+  tagAt,
   wearReqLevel,
 } from '@game/kernel';
 import { GOODS, RARITIES, TRAIT_SLOTS, type ChunkFile, type ParamsBody } from '@game/schema';
@@ -83,6 +85,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkWear(b));
     issues.push(...checkEquipment(b));
     issues.push(...checkHunt(b, assembled.origin));
+    issues.push(...checkStones(b, assembled.origin));
     const chunks = files
       .filter((f) => (f.data as { type: string }).type === 'chunk')
       .map((f) => ({ chunk: (f.data as unknown as ChunkFile).chunk, file: toRepoPath(f.abs) }));
@@ -438,6 +441,12 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   if (!(p.gait.noise_still <= p.gait.noise_sneak && p.gait.noise_sneak <= p.gait.noise_walk && p.gait.noise_walk <= p.gait.noise_run)) {
     err(PARAMS_FILE, 'params.gait', 'the noise grows with the pace: noise_still <= noise_sneak <= noise_walk <= noise_run');
   }
+  // the jump and the fall (DECISIONS.md, 2026-11-22): the fall hurts more with height and a death comes after the last hurt
+  if (!(0 < p.jump.fall_two_bp && p.jump.fall_two_bp < p.jump.fall_three_bp && p.jump.fall_three_bp < 10_000)) {
+    err(PARAMS_FILE, 'params.jump', 'a fall hurts more with its height and never takes the whole bar short of death: 0 < fall_two_bp < fall_three_bp < 10000');
+  }
+  if (p.jump.death_levels < 4) err(PARAMS_FILE, 'params.jump.death_levels', 'a fall of one, two or three levels never kills by its height alone: death_levels is 4 or more');
+  if (p.jump.breath_cost > p.combat.breath_base) err(PARAMS_FILE, 'params.jump.breath_cost', 'one jump costs no more breath than the lowest breath cap (combat.breath_base), or a player with no stamina could never jump');
   if (p.load.light_permille >= 1000) err(PARAMS_FILE, 'params.load.light_permille', 'the light pace ends before the limit: under 1000');
   if (p.load.max_permille <= 1000) err(PARAMS_FILE, 'params.load.max_permille', 'the hard edge lies beyond the limit: over 1000');
 
@@ -809,6 +818,43 @@ const RETIRED_WORDS: { file: string; word: RegExp; now: string }[] = [
 const HUNT_CAPS = [12, 8, 5] as const;
 
 /**
+ * Loose stones (DECISIONS.md, 2026-11-22; docs/design/LOOSE_STONES.md): the numbers say what they must (a large stone
+ * is thrown shorter than a small one, needs the might a bare-handed start lacks yet a start with one point has, and
+ * every pile fits its area), and each spot lies on ground a foot stands on, once, with room left in its area for the
+ * stones a player sets down and throws.
+ */
+function checkStones(b: Bundle, origin: Record<string, string>): Issue[] {
+  const issues: Issue[] = [];
+  const mapFile = origin[b.map.id] ?? 'content';
+  const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
+  const c = b.params.stones;
+  if (c.large_range > c.small_range) err(PARAMS_FILE, 'params.stones.large_range', 'a large stone is thrown shorter than a small one: large_range <= small_range');
+  if (c.large_roll > c.small_roll) err(PARAMS_FILE, 'params.stones.large_roll', 'a large stone runs on less than a small one: large_roll <= small_roll');
+  if (c.pile_max > c.area_cap) err(PARAMS_FILE, 'params.stones.pile_max', 'a pile never holds more than an area does: pile_max <= area_cap');
+  const hardEdge = (might: number) => idiv((b.params.load.base + b.params.per_point.might * might) * b.params.load.max_permille, 1000);
+  if (c.large_weight <= hardEdge(0)) err(PARAMS_FILE, 'params.stones.large_weight', `a large stone asks for strength: it weighs more than the hard edge of a figure with no might (${hardEdge(0)})`);
+  if (c.large_weight > hardEdge(1)) err(PARAMS_FILE, 'params.stones.large_weight', `a large stone can be lifted by a figure with one point of might: it weighs at most the hard edge there (${hardEdge(1)})`);
+  const spots = b.map.stones?.spots ?? [];
+  const walkable = makeWalkable(b);
+  const seen = new Set<string>();
+  const perArea: Record<string, number> = {};
+  spots.forEach((spot, i) => {
+    const where = `map.stones.spots[${i}]`;
+    const key = `${spot.x},${spot.y}`;
+    if (spot.x >= b.map.width || spot.y >= b.map.height) return err(mapFile, where, `(${key}) is outside the map`);
+    if (!walkable(spot.x, spot.y, { restored: [], camp: [] }) || tagAt(b.map, spot.x, spot.y) === 'water') err(mapFile, where, `(${key}) is not ground a foot stands on: a stone lies where it can be lifted`);
+    if (seen.has(key)) err(mapFile, where, `two stones lie at ${key}: one spot a tile`);
+    seen.add(key);
+    const area = `${idiv(spot.x, c.area_tiles)},${idiv(spot.y, c.area_tiles)}`;
+    perArea[area] = (perArea[area] ?? 0) + 1;
+  });
+  for (const [area, n] of Object.entries(perArea).sort(([x], [y]) => (x < y ? -1 : 1))) {
+    if (n > c.area_cap - 2) err(mapFile, 'map.stones.spots', `area ${area} holds ${n} stones at their spots: at most area_cap - 2 (${c.area_cap - 2}), so stones can still be set down and thrown there`);
+  }
+  return issues;
+}
+
+/**
  * The hunt foundations (docs/design/HUNTING.md sections 5-10; DECISIONS.md, "The hunt foundations"): a hunted kind drops plain goods
  * of the five goods classes at or below its tier, with shares that sum to 100, under the spawn cap of its danger; a
  * protected kind is never dressed; a grade is a plain good's twin; and no good of the hunt is sold.
@@ -947,7 +993,15 @@ function sizeRule(name: string, m: number): { w: number; h: number; exact: boole
   return { w: top, h: top, exact: false, what: `${group} are at most` };
 }
 
+/**
+ * A clip that needs more room than the walk's frame is drawn on a 192 px frame (DECISIONS 2026-11-23): the carry clip, a figure with a
+ * stone held over its head. The 128 frame stands bottom-centred on it, so the feet keep their place; only the carry verb has one.
+ */
+const WIDE_FRAME = 192;
+const WIDE_CLIP = /^chars\/[a-z0-9]+_carry_(left|front|back)$/;
+
 function fits(name: string, w: number, h: number, m: number): boolean {
+  if (m === 4 && WIDE_CLIP.test(name) && w === WIDE_FRAME && h === WIDE_FRAME) return true;
   const r = sizeRule(name, m);
   return r.exact ? w === r.w && h === r.h : w <= r.w && h <= r.h;
 }

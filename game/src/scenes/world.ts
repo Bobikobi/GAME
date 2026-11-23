@@ -48,9 +48,14 @@ import {
   treasureKind,
   windowOpen,
   type WorkKind,
+  STONE_ITEM,
+  lyingAt,
+  settled,
 } from '@game/kernel';
 import { app } from '../app';
 import { Piles, pileAt } from './piles';
+import { StoneLayer } from './stones';
+import { carriedShare } from '../stone-art';
 import { sound, type Heard, type Owner, type SongId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
@@ -66,6 +71,8 @@ import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels }
 import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
+import { EffectLayer } from '../effect-layer';
+import { landingDust, spawnsOf } from '../effects';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
@@ -85,7 +92,7 @@ import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '.
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
-import { questTargets } from '../targets';
+import { huntingAt, huntingNearby, questTargets } from '../targets';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
@@ -94,10 +101,10 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
-import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep, wornSetSheet } from '../walking';
+import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -114,6 +121,8 @@ const NEIGHBOURS: readonly [number, number][] = [
 ];
 /** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
 const WHEEL_GLIDE_MS = 160;
+/** How long after a throw begins the stone leaves the hand when the clip names no hand (the arm winds back first; a two-hand push lets go early), ms. With a hand it is the clip's last hand point (`clip.hand`). */
+const THROW_RELEASE_MS = { throw: 312, push: 156 } as const;
 const WHEEL_GAP_MS = 180;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
@@ -220,9 +229,14 @@ interface Fire {
   breath: FireFlicker | undefined;
   /** the fire's own draws, for its sparks */
   rng: () => number;
+  /** the pack's camp-fire loop (effects.ts), shown in place of the kit's burning look while the wood is full or steady, and whether it is up now */
+  pv?: Phaser.GameObjects.Sprite;
+  pvOn?: boolean;
 }
 
 /** The burning look of a fire prop, from the base kit, and the cold look of the fire the player kindles. */
+/** The pack's camp fire is 40 art px wide and the kit's lit hearth shows about 48: the fit that makes the two stand as wide (effects.ts). */
+const CAMPFIRE_FIT = 1.2;
 const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
 const FIRE_UNLIT_SPRITE = 'core/base-kit:props/campfire_unlit';
 /** A flame's frame time: the kit's three frames while the fire is full. */
@@ -390,6 +404,8 @@ export class WorldScene extends Phaser.Scene {
   private leaves: Emitter | undefined;
   private bursts = new Map<string, Emitter>();
   private puffs = new Map<string, Emitter>();
+  /** the pack's effects (effects.ts): a spark on a hit, a starburst on a bite, dust on a landing, the camp fire's flame */
+  private effects!: EffectLayer;
   /** the old picture's dark frame, drawn under the cut-out instead of as a filter over everything (WebGL) */
   private vignette: Phaser.GameObjects.Image | undefined;
   private frameLook = { strength: 0.3, radius: 0.8 };
@@ -497,6 +513,8 @@ export class WorldScene extends Phaser.Scene {
   private refreshIn = 0;
   /** what the player put down, drawn on its tiles */
   private piles?: Piles;
+  /** the loose stones, by count, and the flight of a thrown one (DECISIONS 2026-11-22, #831) */
+  private stones?: StoneLayer;
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
@@ -544,6 +562,18 @@ export class WorldScene extends Phaser.Scene {
   private lanternFor: number | undefined;
   /** while the fall plays: no walking, and the player's sprite belongs to the animation */
   private falling = false;
+  /**
+   * The jump in the air (DECISIONS 2026-11-22). STAND-IN until the drawn jump clip comes from the anim lane (ANIMATION.md
+   * section 2, "the jump row"): the figure holds its standing frame and rises on an arc while its feet, and so the cast
+   * shadow, travel the ground from the takeoff tile to the landing tile. `start` and `ms` are the scene clock's.
+   */
+  private hop: { from: [number, number]; to: [number, number]; start: number; ms: number; peak: number } | null = null;
+  /** a jump asked of the kernel and not answered yet (a server answers later): the hop's wait stands from now */
+  private hopAsked = false;
+  /** a fall that the hop in the air holds back until it lands: where the body fell, and where it wakes */
+  private fellAfterHop: { from: [number, number]; to: [number, number] } | null = null;
+  /** how high the drawing rides above the body, in art pixels: the hop's arc (the shadow keeps the ground) */
+  private lift = 0;
   /** the kit's clip under way on the player's figure (#742): while it plays it owns the frame shown, and the kernel knows nothing of it */
   private readonly figure = new ClipPlayer();
   /** the "!" over a predator that has just seen the player */
@@ -566,6 +596,7 @@ export class WorldScene extends Phaser.Scene {
     app.ui.root.prepend(this.labels);
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
+    this.effects = new EffectLayer(this, DEPTH.fx, T);
     const read = this.b.params.light?.read;
     if (RICH.light) this.light = new LightLayer(this, this.lightTable, { floor: (read?.floor ?? READ.floor) / 100 }, { shade: DEPTH.shade, pools: DEPTH.shade + 0.2 });
     this.buildGround();
@@ -1345,6 +1376,28 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
+   * The pack's camp fire (effects.ts) over a fire's hearth: shown in place of the kit's burning look while the wood is full or
+   * steady, a little smaller when it settles, at the night's height over the shade; the kit's look comes back when it is not up.
+   * Without motion it stands on its first frame.
+   */
+  private campfireFlame(f: Fire, on: boolean, stage: FireStage, night: boolean, gone: boolean): void {
+    if (on) {
+      f.pv ??= this.effects.make('campfire', f.spr.x, f.spr.y, f.baseDepth);
+      if (!f.pv) return;
+      const fit = (stage === 'full' ? 1 : 0.9) * CAMPFIRE_FIT;
+      f.pv.setPosition(f.spr.x, f.spr.y - 1).setScale(this.effects.scale * fit).setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth).setVisible(true);
+      if (!RICH.motion) f.pv.setFrame(0);
+      f.spr.setVisible(false);
+      f.pvOn = true;
+    } else if (f.pvOn) {
+      f.pv?.setVisible(false);
+      // (the fire the player kindled and then lost has no look to give back)
+      if (!gone) f.spr.setVisible(true);
+      f.pvOn = false;
+    }
+  }
+
+  /**
    * The fire the player kindled (NEXT 21b): one sprite that follows the tile the kernel names, cold until it is
    * lit. It is not a map prop, so nothing builds it at bind time; refreshFires() calls this first.
    */
@@ -1389,7 +1442,10 @@ export class WorldScene extends Phaser.Scene {
       // by day the kit's own flame shows while the wood is full; at night the shade would hide it, so the drawn tongue
       // carries the flame over the dark at every stage
       const night = this.night > 0.15;
-      const drawn = stage === 'low' || stage === 'embers' || (night && full);
+      // the pack's camp-fire loop stands in for the kit's burning look while the wood is full or steady, by day and by night, so
+      // the drawn tongue is not laid over it too
+      const pvOn = full && this.effects.has('campfire');
+      const drawn = !pvOn && (stage === 'low' || stage === 'embers' || (night && full));
       const look = full ? f.lit : f.unlit;
       if (f.spr.texture.key !== look) {
         retex(f.spr, look, 0);
@@ -1407,6 +1463,7 @@ export class WorldScene extends Phaser.Scene {
       f.baseX = sx;
       f.baseY = sy;
       f.spr.setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth);
+      this.campfireFlame(f, pvOn, stage, night, id === OWN_FIRE && s.state.player.own === null);
       f.flame.setDepth(night ? DEPTH.shade + 1 : f.baseDepth + 0.01);
       f.sparks?.setDepth(night ? DEPTH.shade + 0.9 : f.baseDepth + 0.02);
       // with the light layer on, the fire's pool lights its ring; the old soft disc would light it twice
@@ -1467,6 +1524,13 @@ export class WorldScene extends Phaser.Scene {
       scale: drawn ? f.baseY : f.spr.scaleX,
       stage: f.stage,
     };
+  }
+
+  /** The pack's camp fire over a fire's hearth now, for a test: whether it is up, the frame it shows, and whether the kit's own look is hidden under it. */
+  campfireLook(id: string): { up: boolean; frame: number; kitHidden: boolean } | undefined {
+    const f = this.fires.get(id);
+    if (!f) return undefined;
+    return { up: !!f.pvOn && !!f.pv?.visible, frame: f.pv ? Number(f.pv.frame.name) : -1, kitHidden: !f.spr.visible };
   }
 
   /** Whether a rectangle of tiles is on the screen now. */
@@ -2185,6 +2249,11 @@ export class WorldScene extends Phaser.Scene {
     this.falling = false;
     this.figure.stop();
     this.stoneHeld = false;
+    this.releases = [];
+    this.grip = undefined;
+    this.stones?.destroy();
+    this.stones = undefined;
+    this.effects.clear();
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
@@ -2197,13 +2266,15 @@ export class WorldScene extends Phaser.Scene {
     this.telegraph = new Telegraph(this.b);
     this.bites = new Bites(this.b);
     this.unbind = [
-      session.on('busy', ({ ms }) => {
+      session.on('busy', ({ verb, ms }) => {
         this.busyFrom = session.tick;
-        this.busyMs = ms;
+        // a stone lifted, set down or thrown is its own motion, not work: no bar and no working frames over it
+        this.busyMs = verb === 'lift' || verb === 'setdown' || verb === 'throw' ? 0 : ms;
       }),
       session.on('events', (events) => {
         this.biteDrawn(events);
         this.fightClips(events);
+        this.fightEffects(events);
         this.celebrate(events);
         for (const event of events) if (event.e === 'cue') this.playCue(event);
       }),
@@ -2250,15 +2321,18 @@ export class WorldScene extends Phaser.Scene {
     const info = this.b.sprites[k];
     const st = info?.stride;
     // art px, down is positive: the bob is negative or zero
-    const dy = !st
-      ? (info as ClipSprite | undefined)?.clip
-        ? 0
-        : walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE)
-      : st.bob === false
-        ? 0
-        : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000);
+    const dy =
+      (!st
+        ? (info as ClipSprite | undefined)?.clip
+          ? 0
+          : walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE)
+        : st.bob === false
+          ? 0
+          : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000)) - this.lift;
     // a bite's flinch moves the drawn player only, never where the body stands
-    const [fx, fy] = this.flinch;
+    const [fx0, fy0] = this.flinch;
+    const fx = fx0;
+    const fy = fy0;
     this.player.setOrigin(0.5 - fx / (this.player.displayWidth || 1), footOrigin(k) - (dy * (T / ART_PX) + fy) / (this.player.displayHeight || 1));
   }
 
@@ -2317,6 +2391,7 @@ export class WorldScene extends Phaser.Scene {
   private faceFrame(frame?: number, pose?: number): void {
     const s = this.session;
     if (!s) return;
+    if (frame === undefined && pose === undefined && this.carryFigure(false)) return;
     const { key: k, flip } = this.playerFrame(s.facing, 'walk', this.lookOf(s));
     const info = this.b.sprites[k];
     const frames = info?.frames ?? 1;
@@ -2329,6 +2404,7 @@ export class WorldScene extends Phaser.Scene {
   private walkFrame(): void {
     const s = this.session;
     if (!s) return;
+    if (this.carryFigure(true)) return;
     const k = this.playerFrame(s.facing, 'walk', this.look).key;
     const info = this.b.sprites[k];
     if (info?.stride) return this.faceFrame(undefined, poseFrame(this.body.walked, info.stride.travel_mpx / 1000, info.frames, this.paceMs));
@@ -2445,6 +2521,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshNodes();
     this.refreshFires(s);
     (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
+    (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig)).refresh(s.state, s.tick);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -2562,11 +2639,16 @@ export class WorldScene extends Phaser.Scene {
       this.refreshIn = 250;
       this.refreshNodes();
       this.refreshFires(s);
+      // a thrown stone that has been out its time goes home with no step to say so
+      this.stones?.refresh(s.state, s.tick);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
     }
+    this.hopFrame(s);
     this.walk(s, real);
+    this.releaseStones(this.time.now);
+    this.stones?.frame(this.time.now);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
     this.placeShaft(minuteOfDay(this.b, s.tick));
@@ -2581,6 +2663,7 @@ export class WorldScene extends Phaser.Scene {
     this.drawFishing(s, time);
     this.drawBusy(s);
     this.drawClip(time);
+    this.gripFrame(this.time.now);
     this.updatePrompt(s);
     this.haunt(s, time);
   }
@@ -2592,6 +2675,8 @@ export class WorldScene extends Phaser.Scene {
    */
   private animate(time: number, delta: number): void {
     this.driftAir(time, delta);
+    this.effects.update(time);
+    for (const f of this.fires.values()) if (f.pv && f.pvOn && RICH.motion) this.effects.loop(f.pv, 'campfire', time, f.phase * 1000);
     for (const d of this.drifting) d.update(time);
     if (RICH.motion) this.maskSway.update(time, this.cameras.main.worldView);
     for (const c of this.cycles) {
@@ -2898,12 +2983,14 @@ export class WorldScene extends Phaser.Scene {
    * its feet enter is the player's, told to the kernel in order. The facing follows the motion's leading axis.
    */
   private walk(s: GameSession, delta: number): void {
-    if (this.falling) return;
+    if (this.falling || this.hop || this.hopAsked) return;
     // the session may have put the player elsewhere: a load, a fall, the server's tile taken back
     const moved = this.body.follow(s.pos);
     const was = this.body.moving;
     const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
-    const gait = app.controls.gait(performance.now());
+    // both hands hold a stone: no running (the kernel refuses it), the load slows the walk itself
+    const asked = app.controls.gait(performance.now());
+    const gait = asked === 'run' && s.state.player.stones?.carry === 'large' ? 'walk' : asked;
     const facing = facingFor(input, s.facing);
     const look = facing8For(input, this.lookOf(s));
     const turned = facing !== s.facing || look !== this.look;
@@ -2929,6 +3016,22 @@ export class WorldScene extends Phaser.Scene {
     this.drawBody();
     if (this.body.moving) this.walkFrame();
     else this.faceFrame();
+  }
+
+  /** The effects a batch of the kernel's events starts (effects.ts `spawnsOf`): a spark on a landed hit, a starburst on a bite or a critical blow. Motion only. */
+  private fightEffects(events: readonly GameEvent[]): void {
+    if (!RICH.motion || !this.session) return;
+    for (const spawn of spawnsOf(events, this.session.pos)) this.effects.playSpawn(spawn, this.time.now);
+  }
+
+  /**
+   * Where a jump or a thrown stone comes down: the pack's dust on dry ground (path, bank, town, ruin), the old puff on the rest
+   * (leaves on a meadow), and the old puff on dry ground too when the sheet did not load.
+   */
+  private dustAt(x: number, y: number): void {
+    const tag = this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag;
+    if (landingDust(tag) && this.effects.has('landing-dust')) this.effects.playSpawn({ id: 'landing-dust', tile: [x, y] }, this.time.now, DEPTH.puff);
+    else this.puffAt(x, y);
   }
 
   /** A little dust at the feet as a step starts, in the colour of the ground left behind. */
@@ -3550,6 +3653,12 @@ export class WorldScene extends Phaser.Scene {
   private fallDown(from: readonly [number, number], to: readonly [number, number]): void {
     const s = this.session;
     if (!s) return;
+    // a jump off a cliff lands first: the fall begins where the body came down, once the hop in the air is over
+    if (this.hop || this.hopAsked) {
+      this.falling = true;
+      this.fellAfterHop = { from: [from[0], from[1]], to: [to[0], to[1]] };
+      return;
+    }
     this.falling = true;
     this.figure.stop();
     // work under way is not taken back: it is simply over (the session drops its undo)
@@ -3854,8 +3963,14 @@ export class WorldScene extends Phaser.Scene {
     for (const e of events) {
       // the jolt and the flash belong to danger (joltOf); a success moves no camera and flashes nothing
       const jolt = joltOf(e, RICH.motion);
-      if (jolt?.flash) this.cameras.main.flash(jolt.flash.ms, ...jolt.flash.rgb);
-      if (jolt?.shake) this.cameras.main.shake(jolt.shake.ms, jolt.shake.intensity);
+      // a landing that hurts shows its flash and shake when the feet come down, not at the takeoff
+      const landsIn = e.e === 'hurt' && e.by === 'fall' ? this.hopLeft() : 0;
+      const shock = () => {
+        if (jolt?.flash) this.cameras.main.flash(jolt.flash.ms, ...jolt.flash.rgb);
+        if (jolt?.shake) this.cameras.main.shake(jolt.shake.ms, jolt.shake.intensity);
+      };
+      if (landsIn > 0) this.time.delayedCall(landsIn, shock);
+      else shock();
       if (e.e === 'fall') this.fallDown(e.from, e.at);
       if (e.e === 'restore' || e.e === 'build') {
         const slot = e.e === 'restore' ? findSlot(this.b.map, this.b.restores[e.restore]?.place.slot ?? '') : undefined;
@@ -3898,6 +4013,230 @@ export class WorldScene extends Phaser.Scene {
     }
     this.marker.setVisible(!!t);
     if (t) this.marker.setPosition(t.tile[0] * T + T / 2, (t.tile[1] + 1) * T - t.top - 1);
+  }
+
+  /** Milliseconds until the hop in the air lands: the whole hop while a jump is asked and not answered, 0 on the ground. */
+  private hopLeft(): number {
+    if (this.hop) return Math.max(0, this.hop.start + this.hop.ms - this.time.now);
+    return this.hopAsked ? this.b.params.jump.air_ms : 0;
+  }
+
+  /**
+   * The jump key and the phone's jump button (DECISIONS 2026-11-22, the jump and the fall): one hop ahead the way the
+   * player faces, or two across a gap of water. The landing is `jumpTarget`'s, the kernel answers by its own rule (breath,
+   * the first minute, a face too high) and the refusal is told in its words. The hop's look is a code STAND-IN (`hop`).
+   */
+  jump(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    const to = jumpTarget(this.b, this.walkable, this.nodeAt, s);
+    if (!to) {
+      app.ui.toast('There is nothing to land on there.', 'info');
+      return;
+    }
+    const from: [number, number] = [s.pos[0], s.pos[1]];
+    this.hopAsked = true;
+    void Promise.resolve(s.act({ t: 'jump', at: to })).then((r) => {
+      this.hopAsked = false;
+      if (!r.ok) {
+        app.ui.toast(r.error, 'info');
+        return;
+      }
+      const lands = r.events.find((e) => e.e === 'jump');
+      if (lands?.e !== 'jump') return;
+      sound.sfx('step');
+      // the figure holds its standing frame in the air; a longer way over a gap rises a little higher
+      this.faceFrame();
+      this.hop = { from, to: [to[0], to[1]], start: this.time.now, ms: this.b.params.jump.air_ms, peak: lands.across ? 26 : 18 };
+    });
+  }
+
+  // ------------------------------------------------------------ loose stones (DECISIONS 2026-11-22, #831)
+
+  /** Whether both hands hold a large stone over the head and the lift is over (the kernel's `carry`; a lift's own time is the pickup clip's). */
+  private holdsLarge(): boolean {
+    return this.session?.state.player.stones?.carry === 'large' && !this.falling && !this.lifting;
+  }
+
+  /**
+   * The figure holding a large stone over its head: the kit's carry clip (DECISIONS 2026-11-23, the stones' art) for the race and the
+   * way it faces. Its frames are the walk's poses in order and, last, the standing pose, laid by the distance walked at the walk's own
+   * stride, so the feet keep the ground. True when it drew the figure; a race with no carry clip (or one whose sheet is not in yet)
+   * keeps the plain figure.
+   */
+  private carryFigure(moving: boolean): boolean {
+    const s = this.session;
+    if (!s || !this.holdsLarge()) return false;
+    const found = clipFor(this.b.sprites as ClipSprites, 'carry', s.state.player.race, s.facing);
+    if (!found || !this.textures.exists(found.key)) return false;
+    const poses = found.frames - 1;
+    let frame = poses;
+    const walk = this.b.sprites[this.playerFrame(s.facing, 'walk', this.lookOf(s)).key]?.stride;
+    const cycle = this.b.sprites[this.playerFrame(s.facing, 'walk', this.lookOf(s)).key]?.frames;
+    if (moving && walk && cycle && poses > 0) {
+      // one stride of the walk is one cycle of the carry, however many poses each has
+      frame = poseFrame(this.body.walked, (walk.travel_mpx * (cycle - 1)) / poses / 1000, found.frames, this.paceMs);
+    }
+    this.showPlayer(found.key, frame, found.flip);
+    return true;
+  }
+
+  /** The stone in the figure's hand from the press of B to the release: the clip that holds it, when that began (the scene clock), and the share of its flying size it has in the hand. */
+  private grip?: { found: Found; start: number; share: number };
+
+  /** The world point of the clip's drawn hand `elapsed` ms into the clip, or nothing when the clip names no hand or the figure is not drawn in it. */
+  private handNow(found: Found, elapsed: number): { x: number; y: number } | undefined {
+    const point = handAt(found, elapsed);
+    const img = this.player;
+    if (!point || img.texture.key !== found.key) return undefined;
+    return handWorld(
+      { x: img.x, y: img.y, originX: img.originX, originY: img.originY, scaleX: img.scaleX, scaleY: img.scaleY, w: img.frame.realWidth, h: img.frame.realHeight, flip: img.flipX },
+      point,
+    );
+  }
+
+  /** The stone in the hand follows the hand of the frame the figure shows (called after the figure is drawn for the frame). */
+  private gripFrame(now: number): void {
+    const g = this.grip;
+    if (!g || !this.stones?.gripped) return;
+    const at = this.handNow(g.found, now - g.start);
+    if (at) this.stones.moveInHand(at.x, at.y, this.player.y);
+  }
+
+  /** Stones waiting for the release frame of the throw clip, to leave the hand at `at` (the scene clock, ms). */
+  private releases: { at: number; run: () => void }[] = [];
+
+  /** Lets go the stones whose release frame has come. */
+  private releaseStones(now: number): void {
+    if (this.releases.length === 0) return;
+    const due = this.releases.filter((r) => r.at <= now);
+    this.releases = this.releases.filter((r) => r.at > now);
+    for (const r of due) r.run();
+  }
+
+  /** Whether a lift is under way: the kernel's busy time after a `lift` of a large stone. */
+  private lifting = false;
+
+  /**
+   * A on a tile where stones lie (or the spot's own stone): lift one, a small one into the bag, a large one over the head.
+   * The kernel answers by its own rules (strength, load, hands) and the refusal is told in its words.
+   */
+  liftStone(size: 'small' | 'large'): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    this.lifting = size === 'large';
+    void Promise.resolve(s.act({ t: 'lift', size, at: s.pos })).then((r) => {
+      if (!r.ok) {
+        this.lifting = false;
+        app.ui.toast(r.error, 'bad');
+        return;
+      }
+      sound.sfx('pickup');
+      // the figure plays the pickup clip for the lift's time; the carry clip takes over once it is out
+      this.playClip('pickup', this.b.params.stones.lift_ms);
+      this.time.delayedCall(this.b.params.stones.lift_ms, () => {
+        this.lifting = false;
+        if (!this.body.moving) this.faceFrame();
+      });
+    });
+  }
+
+  /** A while both hands hold the stone: set it down on the tile underfoot, on the pile there if there is one. */
+  setDownStone(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || !this.canControl(s)) return;
+    void Promise.resolve(s.act({ t: 'setdown', at: s.pos })).then((r) => {
+      if (!r.ok) app.ui.toast(r.error, 'bad');
+      else sound.sfx('step');
+    });
+  }
+
+  /**
+   * The B key and the phone's B button (DECISIONS 2026-11-22, #831): throw a stone the way the player faces. A large stone over the
+   * head goes first, else a small one from the bag; the full power for now (the kernel's `power`, a held press charges it later).
+   * The flight is the kernel's own (`throwFlight`): this plays it as an arc with bounces and a slide, the landing hidden until it lands.
+   */
+  throwStone(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    const large = s.state.player.stones?.carry === 'large';
+    if (!large && (s.state.player.bag[STONE_ITEM] ?? 0) < 1) {
+      app.ui.toast('You have no stone to throw.', 'info');
+      return;
+    }
+    const aim = throwAim(this.b, s, this.lookOf(s));
+    if (!aim) return;
+    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim })).then((r) => {
+      if (!r.ok) {
+        app.ui.toast(r.error, 'bad');
+        return;
+      }
+      const thrown = r.events.find((e) => e.e === 'stone_thrown');
+      if (thrown?.e !== 'stone_thrown') return;
+      const layer = (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig));
+      // the figure throws overhand (a small stone) or pushes with both hands (a large one); the stone leaves the hand at the clip's release
+      const verb = thrown.size === 'large' ? 'push' : 'throw';
+      const played = this.playClip(verb, undefined);
+      // the stone is in the hand from the first frame of the clip, and follows the drawn hand to the release (the clip's `hand` points)
+      const found = played ? clipFor(this.b.sprites as ClipSprites, verb, s.state.player.race, s.facing) : undefined;
+      // it leaves the hand at the clip's last hand point (the frame where the drawing opens the hand), else at the old fixed time
+      const release = !played ? 0 : found?.hand ? (found.hand.length - 1) * found.frame_ms : THROW_RELEASE_MS[verb];
+      const share = thrown.size === 'large' && found ? carriedShare(found.fit) : 1;
+      this.grip = found?.hand ? { found, start: this.time.now, share } : undefined;
+      if (this.grip) layer.takeInHand(thrown.size, share);
+      // the landing tile waits for the flight, which starts when the stone leaves the hand: held without an end until then
+      const held = thrown.at ? layer.hold(key(thrown.at[0], thrown.at[1]), thrown.size, this.time.now, release > 0 ? Infinity : thrown.ms) : undefined;
+      const fly = (): void => {
+        if (held) layer.holdUntil(held, this.time.now + thrown.ms);
+        // it leaves the drawn hand where the clip has it at the release, at the height of the hand above the feet
+        const g = this.grip;
+        const at = g ? this.handNow(g.found, release) : undefined;
+        this.grip = undefined;
+        layer.letGo();
+        const leaving = at ? { ...thrown, hand: { x: at.x / T, y: this.player.y / T, lift: (this.player.y - at.y) / T, share: g!.share } } : thrown;
+        layer.fly(leaving, this.time.now, (tile, sank) => {
+          sound.sfx('step');
+          if (sank) this.splashAt(tile);
+          else if (RICH.motion) this.dustAt(tile[0], tile[1]);
+        });
+      };
+      // by the scene's own clock, the one the clip is laid by: a timer's delta runs behind it when frames come slowly
+      if (release > 0) this.releases.push({ at: this.time.now + release, run: fly });
+      else fly();
+    });
+  }
+
+  /** A ring spreading on the water where a stone went under. */
+  private splashAt(tile: Tile): void {
+    const ring = this.add.ellipse((tile[0] + 0.5) * T, (tile[1] + 0.6) * T, 4, 2).setStrokeStyle(1, 0xf5f4ef, 0.9).setDepth(DEPTH.puff);
+    this.tweens.add({ targets: ring, scaleX: 3.5, scaleY: 3.5, alpha: 0, duration: 420, onComplete: () => ring.destroy() });
+  }
+
+  /** One frame of the hop's stand-in: the feet go from tile to tile, the drawing rides the arc, and on landing the body stands on the tile. */
+  private hopFrame(s: GameSession): void {
+    const hop = this.hop;
+    if (!hop) return;
+    const k = Math.min(1, (this.time.now - hop.start) / hop.ms);
+    this.body.x = (hop.from[0] + (hop.to[0] - hop.from[0]) * k) * ART_PX + ART_PX / 2;
+    this.body.y = (hop.from[1] + (hop.to[1] - hop.from[1]) * k) * ART_PX + ART_PX / 2;
+    this.body.moving = false;
+    this.lift = hop.peak * 4 * k * (1 - k);
+    this.drawBody();
+    if (k < 1) return;
+    this.hop = null;
+    this.lift = 0;
+    const fell = this.fellAfterHop;
+    this.fellAfterHop = null;
+    if (fell) {
+      this.fallDown(fell.from, fell.to);
+      return;
+    }
+    s.pos = [hop.to[0], hop.to[1]];
+    this.body.place(hop.to);
+    if (RICH.motion) this.dustAt(hop.to[0], hop.to[1]);
+    this.arrive(s);
+    this.drawBody();
+    this.faceFrame();
   }
 
   /** The A button: act on what the player faces, stands on, or stands next to. */
@@ -3949,6 +4288,8 @@ export class WorldScene extends Phaser.Scene {
 
   private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
+    // both hands hold a large stone: A sets it down (the kernel allows nothing else but walking and throwing, B)
+    if (s.state.player.stones?.carry === 'large') return { label: 'Set the stone down', run: () => this.setDownStone(), tile: [x, y], top: T };
     const [fx, fy] = DIRS[s.facing];
     const order: [number, number][] = [facedTile(s), [x, y]];
     for (const [dx, dy] of NEIGHBOURS) {
@@ -3962,6 +4303,8 @@ export class WorldScene extends Phaser.Scene {
     // on the jetty a passage leaves from, once the opening has reached it, the boat is offered (SEA_CROSSING.md); its hours and fare are the kernel's to refuse
     const passage = passageAt(this.b, s.state, s.pos);
     if (passage) return { label: `Board: ${this.b.passages[passage]!.title}`, run: () => void app.ui.board(passage), tile: [s.pos[0], s.pos[1]], top: T };
+    const prey = huntingNearby(this.b, s.state, s.tick, s.pos);
+    if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: T / 2 };
     // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
     // It comes after every other target, so a fire never hides a thing the player already faces.
     return this.kindleTarget(s);
@@ -3979,15 +4322,31 @@ export class WorldScene extends Phaser.Scene {
     return { label: 'Build a fire', run: () => app.ui.kindle(tile), tile, top: T };
   }
 
+  /** The A button over stones at the player's feet: a small one first (the bag takes it), else a large one (both hands). */
+  private stoneTarget(s: GameSession, tile: [number, number]): Target | undefined {
+    const here = lyingAt(this.b, settled(this.b, s.state, s.tick), tile);
+    if (here.count === 0) return undefined;
+    const small = here.small > 0 || here.spot === 'small';
+    const size = small ? 'small' : 'large';
+    const pile = here.count > 1;
+    const label = pile ? 'Take a stone from the pile' : size === 'small' ? 'Lift the stone' : 'Lift the large stone';
+    return { label, run: () => this.liftStone(size), tile, top: T };
+  }
+
   private targetAt(s: GameSession, x: number, y: number): Target | undefined {
     const b = this.b;
     const p = s.state.player;
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? T;
+    // stones lying under the feet, or the spot's own: lift one (a pile is taken apart a stone at a time)
+    const stone = x === s.pos[0] && y === s.pos[1] ? this.stoneTarget(s, tile) : undefined;
+    if (stone) return stone;
     // a pile the player put down, under their feet
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };
+    const hunt = huntingAt(b, s.state, s.tick, s.pos, tile);
+    if (hunt) return { ...hunt, run: () => void app.ui.hunt(hunt.action), top: T / 2 };
     const door = this.doors.get(k);
     if (door) {
       // the door is used from the step in front of it, facing in

@@ -38,6 +38,14 @@ describe('spriteSizeProblem', () => {
     }
   });
 
+  it('accepts the carry clip\'s 192 px frame and no other wide character frame (DECISIONS 2026-11-23)', () => {
+    expect(spriteSizeProblem('chars/human_carry_left', { w: 192, h: 192, density: 4 })).toBeUndefined();
+    expect(spriteSizeProblem('chars/elf_carry_back', { w: 192, h: 192, density: 4 })).toBeUndefined();
+    expect(spriteSizeProblem('chars/human_throw_left', { w: 192, h: 192, density: 4 })).toBeDefined();
+    expect(spriteSizeProblem('chars/human_carry_left', { w: 192, h: 128, density: 4 })).toBeDefined();
+    expect(spriteSizeProblem('items/stone', { w: 192, h: 192, density: 4 })).toBeDefined();
+  });
+
   it('refuses a size that belongs to the other density, and says which', () => {
     expect(spriteSizeProblem('tiles/grass', { w: 64, h: 64 })).toContain('set "density": 4');
     expect(spriteSizeProblem('chars/pell', { w: 16, h: 24, density: 4 })).toContain('set "density": 1');
