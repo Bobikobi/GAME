@@ -14,6 +14,7 @@ import * as Phaser from 'phaser';
 import {
   type Action,
   type Bundle,
+  type FightOutcome,
   type GameEvent,
   attrAt,
   type Hazard,
@@ -74,6 +75,7 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { EffectLayer } from '../effect-layer';
 import { landingDust, spawnsOf } from '../effects';
+import { FightWordLayer, type FightWordPoint } from '../fight-word-layer';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { EDGE_PX } from '../pathedge';
@@ -407,6 +409,7 @@ export class WorldScene extends Phaser.Scene {
   private puffs = new Map<string, Emitter>();
   /** the pack's effects (effects.ts): a spark on a hit, a starburst on a bite, dust on a landing, the camp fire's flame */
   private effects!: EffectLayer;
+  private fightWords!: FightWordLayer;
   /** the old picture's dark frame, drawn under the cut-out instead of as a filter over everything (WebGL) */
   private vignette: Phaser.GameObjects.Image | undefined;
   private frameLook = { strength: 0.3, radius: 0.8 };
@@ -595,6 +598,7 @@ export class WorldScene extends Phaser.Scene {
     this.labels = document.createElement('div');
     this.labels.className = 'world-labels';
     app.ui.root.prepend(this.labels);
+    this.fightWords = new FightWordLayer(this.labels, (outcome, point) => this.fightWordHead(outcome, point));
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
     this.effects = new EffectLayer(this, DEPTH.fx, T);
@@ -640,6 +644,9 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(DEPTH.shade + 10)
       .setVisible(false);
     const cam = this.cameras.main;
+    cam.on(Phaser.Cameras.Scene2D.Events.POST_RENDER, () => {
+      if (this.fightWords.active) this.fightWords.update(performance.now(), document.documentElement.dataset.motion === 'reduced');
+    });
     cam.setBounds(0, 0, this.b.map.width * T, this.b.map.height * T);
     cam.setRoundPixels(true);
     // the sway goes on before the camera's grade, so it reads the palette's own colours
@@ -657,7 +664,11 @@ export class WorldScene extends Phaser.Scene {
     sound.installUnlock();
     sound.music('valley', 1500);
     // the crackle holds its nodes only while heard: none outlives the world
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => sound.crackle(0));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      sound.crackle(0);
+      this.fightWords.clear();
+      this.labels.remove();
+    });
     app.world = this;
     app.ui.worldReady();
   }
@@ -2198,6 +2209,7 @@ export class WorldScene extends Phaser.Scene {
     this.stones?.destroy();
     this.stones = undefined;
     this.effects.clear();
+    this.fightWords.clear();
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
@@ -2219,6 +2231,7 @@ export class WorldScene extends Phaser.Scene {
         this.biteDrawn(events);
         this.fightClips(events);
         this.fightEffects(events);
+        this.fightWords.play(events, performance.now());
         this.celebrate(events);
         for (const event of events) if (event.e === 'cue') this.playCue(event);
       }),
@@ -2966,6 +2979,25 @@ export class WorldScene extends Phaser.Scene {
   private fightEffects(events: readonly GameEvent[]): void {
     if (!RICH.motion || !this.session) return;
     for (const spawn of spawnsOf(events, this.session.pos)) this.effects.playSpawn(spawn, this.time.now);
+  }
+
+  private fightWordHead({ struck, at }: FightOutcome, point: FightWordPoint): boolean {
+    let figure: Phaser.GameObjects.Sprite | undefined;
+    if (struck.side === 'player') {
+      figure = this.player;
+    } else {
+      for (const hazard of this.hazards) {
+        if (hazard.rule?.id !== struck.id) continue;
+        figure = hazard.spr;
+        break;
+      }
+    }
+    // A miss's tile is the swing's reach. Use the recipient's figure whenever it is drawn.
+    const x = figure?.visible ? figure.x : (at[0] + 0.5) * T;
+    const y = figure?.visible ? figure.y - figure.displayHeight * figure.originY : (at[1] - 0.5) * T;
+    const cam = this.cameras.main;
+    worldToPage(cam.worldView, cam.zoom, pixelRatio(), x, y, point);
+    return true;
   }
 
   /**

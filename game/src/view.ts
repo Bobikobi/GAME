@@ -39,9 +39,11 @@ export function wheelZoom(shortSide: number, step: number): number {
 }
 
 /** A world point as a CSS-pixel point on the page, for what the page lays over the world: the camera's zoom is in canvas pixels. */
-export function worldToPage(view: { x: number; y: number }, zoom: number, canvasPerCss: number, x: number, y: number): { x: number; y: number } {
+export function worldToPage(view: { x: number; y: number }, zoom: number, canvasPerCss: number, x: number, y: number, out = { x: 0, y: 0 }): { x: number; y: number } {
   const k = zoom / canvasPerCss;
-  return { x: (x - view.x) * k, y: (y - view.y) * k };
+  out.x = (x - view.x) * k;
+  out.y = (y - view.y) * k;
+  return out;
 }
 
 let ratio = 1;
