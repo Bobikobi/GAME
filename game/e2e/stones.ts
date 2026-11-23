@@ -141,10 +141,13 @@ async function main(): Promise<void> {
     })()`);
     await page.tap('.tbtn.b');
     await page.waitFor(`window.__fx.length > 0`, 'the stone to leave the hand', 5000);
-    // the stone left the hand while the figure was in its throw clip, at the release frame (312 ms of 78-ms frames: the fourth)
+    // the stone left the hand while the figure was in its throw clip, at the release frame (the clip's last hand point: the fourth frame, or the fifth where the drawing opens the hand later)
     const release = await page.eval<{ key: string; frame: number }>(`window.__release`);
     if (!release.key.includes('_throw_')) throw new Error(`the stone left the hand while the figure showed ${release.key}, not its throw clip`);
-    if (!(release.frame >= 4 && release.frame <= 5)) throw new Error(`the stone left the hand at frame ${release.frame} of the throw, not the release (4 or 5)`);
+    // the cell's own release frame is its clip's last hand point (the frame where the drawing opens the hand)
+    const want = await page.eval<number>(`(() => { const w = window.__game.world; const c = w.b.sprites['core/base-kit:' + ${JSON.stringify(release.key.replace('core/base-kit:', ''))}]?.clip; return c?.hand ? c.hand.length - 1 : -1; })()`);
+    if (want < 0) throw new Error(`${release.key} names no hand, so it has no release frame`);
+    if (release.frame !== want) throw new Error(`the stone left the hand at frame ${release.frame} of ${release.key}, not its release frame ${want}`);
     console.log(`stones: the stone left the hand at frame ${release.frame} of ${release.key}`);
     await page.waitFor(`${ground(rest)} === 1 && !window.__game.world.stones.busy`, 'the stone to land and stop', 5000);
     const early = await page.eval<number>(`window.__early`);

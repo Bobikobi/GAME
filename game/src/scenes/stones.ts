@@ -9,7 +9,7 @@ import type * as Phaser from 'phaser';
 import { type Bundle, type PublicState, type Tile, STONE_ITEM, lyingAt, settled, stoneSpots } from '@game/kernel';
 import { T } from '../config';
 import { baseOf, kitImage } from '../kitart';
-import { SMALL_STONE_SCALE, STONE_SCALE, type StonePicture, type StoneSize, type Throw, pileLayout, stoneMotion } from '../stone-art';
+import { SMALL_STONE_SCALE, STONE_CENTRE, STONE_SCALE, type StonePicture, type StoneSize, type Throw, pileLayout, stoneMotion } from '../stone-art';
 
 /** The ink of every shadow in the world (the cast layer's own). */
 const INK = 0x1b1a2e;
@@ -124,10 +124,44 @@ export class StoneLayer {
     return v ? v.images.length : 0;
   }
 
+  /** The stone in the hand before it is thrown, if any: the picture and its size's share of the flying one. */
+  private inHand?: { image: Phaser.GameObjects.Image; scale: number };
+
+  /**
+   * Puts a stone in the figure's hand: drawn at `share` of its flying size, moved with `moveInHand` every frame until `letGo`
+   * (the flight begins where it was let go). One at a time; a second takes the first's place.
+   */
+  takeInHand(size: StoneSize, share = 1): void {
+    this.letGo();
+    const image = kitImage(this.scene, 0, 0, this.refs[size]).setOrigin(...STONE_CENTRE[size]);
+    const scale = baseOf(image) * (size === 'large' ? STONE_SCALE.large : SMALL_STONE_SCALE) * share;
+    image.setScale(scale);
+    image.setVisible(false);
+    this.inHand = { image, scale };
+  }
+
+  /** Lays the stone in the hand at a world point (pixels), in front of the figure whose feet are on `footY`. */
+  moveInHand(x: number, y: number, footY: number): void {
+    const h = this.inHand;
+    if (!h) return;
+    h.image.setPosition(x, y).setVisible(true).setDepth(Math.round(footY + T / 2) + 2);
+  }
+
+  /** Whether a stone is in the hand. */
+  get gripped(): boolean {
+    return this.inHand !== undefined;
+  }
+
+  /** The hand opens: the picture goes (the flight, if there is one, draws its own). */
+  letGo(): void {
+    this.inHand?.image.destroy();
+    this.inHand = undefined;
+  }
+
   /** Starts the flight of a thrown stone from the hand; `onTouch` is told once, where it first comes down (a puff, a splash). */
   fly(throwEv: Throw, now: number, onTouch: (tile: Tile, sank: boolean) => void): void {
     const motion = stoneMotion(throwEv);
-    const image = kitImage(this.scene, 0, 0, this.refs[throwEv.size]).setOrigin(0.5, 0.5);
+    const image = kitImage(this.scene, 0, 0, this.refs[throwEv.size]).setOrigin(...STONE_CENTRE[throwEv.size]);
     image.setData('scale', baseOf(image) * (throwEv.size === 'large' ? STONE_SCALE.large : SMALL_STONE_SCALE));
     const shadow = this.scene.add.ellipse(0, 0, 8, 4, INK, 0.35);
     this.flying.push({ image, shadow, throwEv, motion, start: now, touched: false, onTouch });
@@ -179,6 +213,7 @@ export class StoneLayer {
   }
 
   destroy(): void {
+    this.letGo();
     for (const v of this.shown.values()) for (const img of v.images) img.destroy();
     this.shown.clear();
     for (const f of this.flying) {

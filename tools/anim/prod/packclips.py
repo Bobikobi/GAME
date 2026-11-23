@@ -27,7 +27,7 @@ tools/src/kit/ink.ts) become the ink #1b1a2e.
 
 A cell whose displayed height or feet are out of the band is REFUSED and listed. With --write each passing cell is written as one
 horizontal strip (`chars/<race>_<verb>_<view>.png`, the take's frames as they are; a clip over 32 frames wraps into rows of 16 and its row says `cols`), with the same bytes every run, and with
---write-kit its row (the walk's ramps, the clip block with its fit; `scale` follows from `pnpm art:scale --declare`, which measures a clip sheet at its fit) is put into the kit's kit.json, replacing the
+--write-kit its row (the walk's ramps, the clip block with its fit, and the `hand` points an earlier run's row had; `scale` follows from `pnpm art:scale --declare`, which measures a clip sheet at its fit) is put into the kit's kit.json, replacing the
 rows of an earlier run; without it the rows are printed as JSON. Python 3 with numpy and Pillow only; every path is an argument."""
 import argparse, json, re, sys
 from pathlib import Path
@@ -247,6 +247,11 @@ def main():
     if a.write_kit:
         path = Path(a.kit) / "kit.json"
         data = json.loads(path.read_text())
+        # a clip's hand points (read from the drawn hand, by eye) are not in the take: the row an earlier run wrote keeps them
+        hands = {k: v["clip"]["hand"] for k, v in data["kit"]["sprites"].items() if "clip" in v and "hand" in v["clip"]}
+        for k, row in rows_out.items():
+            if k in hands:
+                row["clip"]["hand"] = hands[k][: row["frames"]]
         sprites = {k: v for k, v in data["kit"]["sprites"].items() if "clip" not in v}
         keys = list(sprites)
         last = max(i for i, k in enumerate(keys) if re.fullmatch(r"chars/(human|elf|skeleton)_(down|up|left)", k))

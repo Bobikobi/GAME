@@ -35,6 +35,10 @@ export interface Found {
   frames: number;
   frame_ms: number;
   anchor: readonly [number, number];
+  /** The clip's fit as a share (its `fit_permille` over 1000, 1 when it has none). */
+  fit: number;
+  /** Where the drawn hand is at the start of each frame, from the first (sheet pixels), when the clip says: what the figure holds is laid there. */
+  hand?: readonly (readonly [number, number])[];
 }
 
 const lookup = (verb: string, race: string, view: string): string => `${verb}|${race}|${view}`;
@@ -75,7 +79,47 @@ export function clipFor(sprites: ClipSprites, verb: ClipVerb, race: string, dir:
   const key = indexOf(sprites).get(lookup(verb, race, view));
   const info = key === undefined ? undefined : sprites[key];
   if (key === undefined || !info?.clip) return undefined;
-  return { key, flip, frames: info.frames, frame_ms: info.clip.frame_ms, anchor: info.clip.anchor };
+  return { key, flip, frames: info.frames, frame_ms: info.clip.frame_ms, anchor: info.clip.anchor, fit: (info.clip.fit_permille ?? 1000) / 1000, ...(info.clip.hand ? { hand: info.clip.hand } : {}) };
+}
+
+/**
+ * Where the drawn hand is `elapsed` ms into the clip, in sheet pixels: the point of the frame that shows, gliding in a straight line to
+ * the next frame's point, so what the hand holds moves with it and not in steps. Past the last point it stays on it. Nothing when the
+ * clip names no hand (or it is not begun).
+ */
+export function handAt(found: Pick<Found, 'hand' | 'frame_ms'>, elapsed: number): readonly [number, number] | undefined {
+  const pts = found.hand;
+  if (!pts || pts.length === 0 || !(found.frame_ms > 0) || !(elapsed >= 0)) return undefined;
+  const at = elapsed / found.frame_ms;
+  const i = Math.floor(at);
+  if (i >= pts.length - 1) return pts[pts.length - 1]!;
+  const a = pts[i]!;
+  const b = pts[i + 1]!;
+  const u = at - i;
+  return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+}
+
+/** A figure's image as the world draws it: its place, origin and scale, the frame's size, and whether the sheet is drawn flipped. */
+export interface DrawnFigure {
+  x: number;
+  y: number;
+  originX: number;
+  originY: number;
+  scaleX: number;
+  scaleY: number;
+  /** the frame's size in sheet pixels */
+  w: number;
+  h: number;
+  flip: boolean;
+}
+
+/**
+ * Where a point of the drawn frame (sheet pixels) is in the world: Phaser puts a flipped frame's pixel `px` at the origin less its
+ * distance from the origin, so a figure facing right has its hand the left sheet's mirrored about the body.
+ */
+export function handWorld(fig: DrawnFigure, point: readonly [number, number]): { x: number; y: number } {
+  const dx = point[0] - fig.originX * fig.w;
+  return { x: fig.x + (fig.flip ? -dx : dx) * Math.abs(fig.scaleX), y: fig.y + (point[1] - fig.originY * fig.h) * Math.abs(fig.scaleY) };
 }
 
 /**
