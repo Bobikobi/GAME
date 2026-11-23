@@ -144,3 +144,16 @@ Recorded in DECISIONS.md (2026-10-29). Nothing here has a drawn wolf: the loops 
 4. The gaits (`walk`, `run`, `sneak`) in the kernel, params first and in their own small pull request, coordinated with COMBAT's breath and noise numbers.
 5. The hop, only on the owner's yes.
 6. The opening's activity pass: a run along the path to the bridge, the sneak past the wolf, the hop down the terrace if picked. `game/e2e/opening.ts` is protected; the change is sent to the manager first, and the state tests carry the rest.
+
+## 8. Effects (the first four, 2026-11-23)
+
+A client-only layer, display only: it reads the kernel's events and changes nothing in the kernel (`game/src/effects.ts` is the pure half, `game/src/effect-layer.ts` the scene half). Source and licence: `game/public/fx/pvfx/SOURCE.md` (PVFX Foundry, CC0 1.0). Laid at the rich scale, 64 art px to a tile; each is a pure function of its age, so a still and a clip agree. A reduced-motion player (`RICH.motion` off) gets no one-shot effect and the camp fire holds frame 0.
+
+| effect | starts on | size in tiles (frame) | beside the figure (about 1 wide, 1.5 tall) |
+|---|---|---|---|
+| hit-spark | `hit` struck by the player, on the foe's tile | 1.0 x 1.0 | inside it |
+| crit-hit | a critical `hit` of the player; a `hit` by a foe; the chase's `hurt` by a predator (on the player) | 1.5 x 1.25 | the figure's height |
+| landing-dust | where a `jump` lands and where a thrown stone lands, on dry ground (path, riverbank, town, ruin); a meadow keeps its leaves | 1.375 x 0.72 | under its knees |
+| campfire | a fire standing `full`; the kit's burning look is hidden while it shows | 0.63 x 0.88, shown at 1.2x | a fire may stand taller than a figure's waist |
+
+No event exists yet for a wolf's leap, so the leap raises no dust until the kernel names its landing. The 3D door (`/play3d/`) is paused and has none of these.
