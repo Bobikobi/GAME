@@ -2,12 +2,12 @@
  * Proves the loose stones on a phone on its side (DECISIONS 2026-11-22, #831), 844 by 390 CSS px, in a real browser:
  *
  * - standing on a spot's stone, A offers "Lift the stone" and puts it in the bag;
- * - B throws it the way the figure faces: the stone leaves the hand, rises on an arc, comes down at the kernel's touch tile, BOUNCES
+ * - B throws it the way the figure faces: the figure plays the throw clip, the stone leaves the hand at the clip's release frame, rises on an arc, comes down at the kernel's touch tile, BOUNCES
  *   (it rises off the ground again after touching) and slides on to its rest tile, and is not drawn on that tile before it lands;
  * - the stone lies where it landed; it is lifted again from there, and a second one from another spot;
  * - two set down on one tile from the bag are a pile counted by number (2 pictures), taken apart with A a stone at a time;
  * - a figure with no might is refused a large stone in the kernel's words; with a point of might it lifts it, the stone rides over
- *   its head (the STAND-IN hold), the walk slows, and A sets it down.
+ *   its head (the figure's carry clip, the stone drawn in its hands), the walk slows with the carry frames moving, and A sets it down.
  *
  * Every check waits on a condition, never on a fixed time. The screenshots go to the out-dir (default .scratch/e2e).
  */
@@ -106,6 +106,13 @@ async function main(): Promise<void> {
     const touch: [number, number] = [THROWER[0] + params.range, THROWER[1]];
     const rest: [number, number] = [touch[0] + params.roll, touch[1]];
 
+    // the race's clip sheets arrive in the background after the player wakes: the throw, push and carry of the way the figure faces
+    await page.waitFor(
+      `['throw', 'push', 'carry'].every((v) => window.__game.world.textures.exists('core/base-kit:chars/elf_' + v + '_left'))`,
+      'the stones\' clip sheets to load',
+      30_000,
+    );
+
     // A on a spot's stone lifts it into the bag
     await page.eval(place(THROWER, 'right'));
     await page.waitFor(`${prompt}.includes('Lift the stone')`, 'A to offer the stone', 5000);
@@ -124,6 +131,7 @@ async function main(): Promise<void> {
         const w = window.__game.world, f = w.stones?.flying?.[0];
         if (f) {
           window.__flight ??= f;
+          if (window.__fx.length === 0) window.__release = { key: w.player.texture.key, frame: Number(w.player.frame.name) };
           window.__fx.push({ x: f.image.x, lift: (f.shadow.y - 1 - f.image.y) });
           if (w.stones.countAt('${rest[0]},${rest[1]}') > 0) window.__early++;
         }
@@ -133,7 +141,11 @@ async function main(): Promise<void> {
     })()`);
     await page.tap('.tbtn.b');
     await page.waitFor(`window.__fx.length > 0`, 'the stone to leave the hand', 5000);
-    await page.screenshot(join(OUT, 'stones-air.png'));
+    // the stone left the hand while the figure was in its throw clip, at the release frame (312 ms of 78-ms frames: the fourth)
+    const release = await page.eval<{ key: string; frame: number }>(`window.__release`);
+    if (!release.key.includes('_throw_')) throw new Error(`the stone left the hand while the figure showed ${release.key}, not its throw clip`);
+    if (!(release.frame >= 4 && release.frame <= 5)) throw new Error(`the stone left the hand at frame ${release.frame} of the throw, not the release (4 or 5)`);
+    console.log(`stones: the stone left the hand at frame ${release.frame} of ${release.key}`);
     await page.waitFor(`${ground(rest)} === 1 && !window.__game.world.stones.busy`, 'the stone to land and stop', 5000);
     const early = await page.eval<number>(`window.__early`);
     if (early > 0) throw new Error(`the stone was drawn on its resting tile ${early} frames before it landed`);
@@ -201,6 +213,18 @@ async function main(): Promise<void> {
     await page.waitFor(`${drawn(PILE)} === 1`, 'one picture for the pile that is left', 5000);
     console.log('stones: A took one from the pile, one is left');
 
+    // the last stone thrown again, the game put to sleep the frame the stone leaves the hand: the picture is the release frame itself
+    await page.eval(`(() => {
+      const w = window.__game.world;
+      const watch = () => (w.stones?.flying?.length ? (w.game.loop.sleep(), (window.__asleep = true)) : requestAnimationFrame(watch));
+      watch();
+    })()`);
+    await page.tap('.tbtn.b');
+    await page.waitFor(`window.__asleep === true`, 'the stone to leave the hand', 5000);
+    await page.screenshot(join(OUT, 'stones-release.png'));
+    await page.eval(`window.__game.world.game.loop.wake()`);
+    await page.waitFor(`!window.__game.world.stones.busy && ${bag} === 0`, 'the second throw to land', 8000);
+
     // a large stone: refused with no might, lifted with a point of it, held over the head, set down by A
     await page.eval(place(LARGE, 'right'));
     await page.waitFor(`${prompt}.includes('Lift the large stone')`, 'A to offer the large stone', 5000);
@@ -210,25 +234,26 @@ async function main(): Promise<void> {
     await page.eval(`(() => { const p = window.__game.session.state.player; p.bag['core/stone'] = 0; p.attrs.might = 1; })()`);
     await page.waitFor(idle, 'the busy time to pass', 5000);
     await page.tap('.tbtn.a');
-    await page.waitFor(`window.__game.session.state.player.stones?.carry === 'large' && !!window.__game.world.carryImg`, 'the large stone over the head', 5000);
-    await page.waitFor(`window.__game.world.carryRise === 1`, 'the lift to finish', 5000);
-    const carried = await page.eval<{ stone: number; feet: number; height: number }>(
-      `(() => { const w = window.__game.world; return { stone: w.carryImg.y, feet: w.player.y, height: w.player.displayHeight }; })()`,
+    await page.waitFor(`window.__game.session.state.player.stones?.carry === 'large'`, 'the large stone lifted', 5000);
+    await page.waitFor(`window.__game.world.player.texture.key.includes('_carry_')`, 'the figure to show its carry clip', 5000);
+    // the stone is in the figure's hands over its head: the carry sheet is taller than the walk, 192 px, and its standing pose is the last frame
+    const carried = await page.eval<{ key: string; frame: number; frames: number; height: number }>(
+      `(() => { const w = window.__game.world, t = w.player.texture; return { key: t.key, frame: Number(w.player.frame.name), frames: t.getFrameNames().length, height: w.player.displayHeight }; })()`,
     );
-    // the stone's foot is up past the middle of the figure, near its head: held over the head, not at the feet
-    if (!(carried.stone < carried.feet - 0.4 * carried.height)) throw new Error(`the held stone is not over the head: its foot is at ${carried.stone}, the feet at ${carried.feet}, the figure ${carried.height} px tall`);
+    if (!(carried.frame === carried.frames - 1)) throw new Error(`the figure standing under the stone is on frame ${carried.frame} of ${carried.frames}, not the standing pose`);
     // a step while carrying: the pace the walk reports is the kernel's, slower under the stone's weight
     await page.key('ArrowRight', 'keyDown');
     await page.waitFor(`window.__game.world.body.moving`, 'the walk to begin', 5000);
     const slow = await page.eval<number>(`window.__game.world.paceMs`);
+    await page.waitFor(`window.__game.world.player.frame.name !== '${carried.frame}'`, 'the carry frames to step with the walk', 5000);
     await page.key('ArrowRight', 'keyUp');
     await page.waitFor(`!window.__game.world.body.moving && window.__game.controls.vector()[0] === 0`, 'the walk to stop', 5000);
     if (!(pace0 === 0 || slow > pace0)) throw new Error(`the walk did not slow under the stone: ${pace0} then ${slow} ms a tile`);
     await page.screenshot(join(OUT, 'stones-carry.png'));
-    console.log(`stones: no might: refused "too heavy"; with might the large stone rode over the head (STAND-IN), the walk step went ${pace0 || 'n/a'} to ${slow} ms a tile`);
+    console.log(`stones: no might: refused "too heavy"; with might the large stone rode over the head in the carry clip ${carried.key}, the walk step went ${pace0 || 'n/a'} to ${slow} ms a tile`);
     await page.waitFor(`${prompt}.includes('Set the stone down')`, 'A to offer setting the stone down', 5000);
     await page.tap('.tbtn.a');
-    await page.waitFor(`!window.__game.session.state.player.stones?.carry && !window.__game.world.carryImg`, 'the stone to be set down', 5000);
+    await page.waitFor(`!window.__game.session.state.player.stones?.carry && !window.__game.world.player.texture.key.includes('_carry_')`, 'the stone to be set down', 5000);
 
     if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
   } catch (err) {

@@ -120,9 +120,8 @@ const NEIGHBOURS: readonly [number, number][] = [
 ];
 /** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
 const WHEEL_GLIDE_MS = 160;
-/** the throw's stand-in lean, ms, and the share of the item picture a stone held over the head shows at (STONE_SCALE.large, held) */
-const LUNGE_MS = 260;
-const STONE_CARRY_SCALE = 0.8;
+/** How long after a throw begins the stone leaves the hand, by the clip that throws it (the arm winds back first; a two-hand push lets go early), ms. */
+const THROW_RELEASE_MS = { throw: 312, push: 156 } as const;
 const WHEEL_GAP_MS = 180;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
@@ -515,16 +514,6 @@ export class WorldScene extends Phaser.Scene {
   private piles?: Piles;
   /** the loose stones, by count, and the flight of a thrown one (DECISIONS 2026-11-22, #831) */
   private stones?: StoneLayer;
-  /**
-   * The large stone held over the head. STAND-IN until the anim lane's carry clip lands (docs/design/LOOSE_STONES.md, the
-   * pictures it needs): the figure keeps its standing frame and the stone rides above the head. `rise` is the share of the
-   * way up from the ground while the lift runs (0 on the ground, 1 held).
-   */
-  private carryImg?: Phaser.GameObjects.Image;
-  private carryRise = 1;
-  private carryFrom = 0;
-  /** the throw's lean, STAND-IN until the throw clip: the drawn figure leans into the throw and settles back, [dir x, dir y, start ms] */
-  private lunge: [number, number, number] | null = null;
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
@@ -2259,12 +2248,10 @@ export class WorldScene extends Phaser.Scene {
     this.falling = false;
     this.figure.stop();
     this.stoneHeld = false;
+    this.releases = [];
     this.stones?.destroy();
     this.stones = undefined;
     this.effects.clear();
-    this.carryImg?.destroy();
-    this.carryImg = undefined;
-    this.lunge = null;
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
@@ -2342,9 +2329,8 @@ export class WorldScene extends Phaser.Scene {
           : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000)) - this.lift;
     // a bite's flinch moves the drawn player only, never where the body stands
     const [fx0, fy0] = this.flinch;
-    const [lx, ly] = this.lungeOffset();
-    const fx = fx0 + lx;
-    const fy = fy0 + ly;
+    const fx = fx0;
+    const fy = fy0;
     this.player.setOrigin(0.5 - fx / (this.player.displayWidth || 1), footOrigin(k) - (dy * (T / ART_PX) + fy) / (this.player.displayHeight || 1));
   }
 
@@ -2403,6 +2389,7 @@ export class WorldScene extends Phaser.Scene {
   private faceFrame(frame?: number, pose?: number): void {
     const s = this.session;
     if (!s) return;
+    if (frame === undefined && pose === undefined && this.carryFigure(false)) return;
     const { key: k, flip } = this.playerFrame(s.facing, 'walk', this.lookOf(s));
     const info = this.b.sprites[k];
     const frames = info?.frames ?? 1;
@@ -2415,6 +2402,7 @@ export class WorldScene extends Phaser.Scene {
   private walkFrame(): void {
     const s = this.session;
     if (!s) return;
+    if (this.carryFigure(true)) return;
     const k = this.playerFrame(s.facing, 'walk', this.look).key;
     const info = this.b.sprites[k];
     if (info?.stride) return this.faceFrame(undefined, poseFrame(this.body.walked, info.stride.travel_mpx / 1000, info.frames, this.paceMs));
@@ -2657,8 +2645,8 @@ export class WorldScene extends Phaser.Scene {
     }
     this.hopFrame(s);
     this.walk(s, real);
+    this.releaseStones(this.time.now);
     this.stones?.frame(this.time.now);
-    this.carryFrame(s);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
     this.placeShaft(minuteOfDay(this.b, s.tick));
@@ -4062,47 +4050,43 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ loose stones (DECISIONS 2026-11-22, #831)
 
-  /** The lean of the throw's stand-in as an offset of the drawn figure, in game px: toward the throw, then back (over `LUNGE_MS`). */
-  private lungeOffset(): [number, number] {
-    const l = this.lunge;
-    if (!l) return [0, 0];
-    const k = (this.time.now - l[2]) / LUNGE_MS;
-    if (k >= 1) {
-      this.lunge = null;
-      return [0, 0];
-    }
-    // out fast, back slower: the arm swings through
-    const out = k < 0.3 ? k / 0.3 : 1 - (k - 0.3) / 0.7;
-    return [l[0] * 2 * out, l[1] * 2 * out];
+  /** Whether both hands hold a large stone over the head and the lift is over (the kernel's `carry`; a lift's own time is the pickup clip's). */
+  private holdsLarge(): boolean {
+    return this.session?.state.player.stones?.carry === 'large' && !this.falling && !this.lifting;
   }
 
-  /** The tile where the stone's picture over the head stands: just above the head of the drawn figure. */
-  private carryFrame(s: GameSession): void {
-    const carrying = s.state.player.stones?.carry === 'large' && !this.falling;
-    if (!carrying) {
-      if (this.carryImg) {
-        this.carryImg.destroy();
-        this.carryImg = undefined;
-      }
-      this.carryRise = 1;
-      return;
+  /**
+   * The figure holding a large stone over its head: the kit's carry clip (DECISIONS 2026-11-23, the stones' art) for the race and the
+   * way it faces. Its frames are the walk's poses in order and, last, the standing pose, laid by the distance walked at the walk's own
+   * stride, so the feet keep the ground. True when it drew the figure; a race with no carry clip (or one whose sheet is not in yet)
+   * keeps the plain figure.
+   */
+  private carryFigure(moving: boolean): boolean {
+    const s = this.session;
+    if (!s || !this.holdsLarge()) return false;
+    const found = clipFor(this.b.sprites as ClipSprites, 'carry', s.state.player.race, s.facing);
+    if (!found || !this.textures.exists(found.key)) return false;
+    const poses = found.frames - 1;
+    let frame = poses;
+    const walk = this.b.sprites[this.playerFrame(s.facing, 'walk', this.lookOf(s)).key]?.stride;
+    const cycle = this.b.sprites[this.playerFrame(s.facing, 'walk', this.lookOf(s)).key]?.frames;
+    if (moving && walk && cycle && poses > 0) {
+      // one stride of the walk is one cycle of the carry, however many poses each has
+      frame = poseFrame(this.body.walked, (walk.travel_mpx * (cycle - 1)) / poses / 1000, found.frames, this.paceMs);
     }
-    if (!this.carryImg) {
-      // the lift has just begun: the stone comes up from the feet to over the head across the kernel's lift time
-      const ref = this.b.items['core/stone']?.sprite ?? 'core/base-kit:items/stone';
-      this.carryImg = kitImage(this, 0, 0, ref).setOrigin(0.5, 1);
-      this.carryImg.setData('scale', baseOf(this.carryImg) * STONE_CARRY_SCALE);
-      this.carryImg.setScale(this.carryImg.getData('scale') as number);
-      this.carryFrom = this.time.now;
-      this.carryRise = this.lifting ? 0 : 1;
-    }
-    if (this.carryRise < 1) this.carryRise = Math.min(1, (this.time.now - this.carryFrom) / this.b.params.stones.lift_ms);
-    // STAND-IN: the figure keeps its standing frame; the stone rides above its head and bobs with the walk
-    const headTop = this.player.getTopCenter().y + this.figureTop(this.player.texture.key, Number(this.player.frame.name) || 0) * (T / ART_PX);
-    const heldY = headTop + 2 - this.lift;
-    const feetY = this.player.y;
-    this.carryImg.setPosition(this.player.x, feetY + (heldY - feetY) * this.carryRise);
-    this.carryImg.setDepth(this.player.depth + 1);
+    this.showPlayer(found.key, frame, found.flip);
+    return true;
+  }
+
+  /** Stones waiting for the release frame of the throw clip, to leave the hand at `at` (the scene clock, ms). */
+  private releases: { at: number; run: () => void }[] = [];
+
+  /** Lets go the stones whose release frame has come. */
+  private releaseStones(now: number): void {
+    if (this.releases.length === 0) return;
+    const due = this.releases.filter((r) => r.at <= now);
+    this.releases = this.releases.filter((r) => r.at > now);
+    for (const r of due) r.run();
   }
 
   /** Whether a lift is under way: the kernel's busy time after a `lift` of a large stone. */
@@ -4123,12 +4107,12 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       sound.sfx('pickup');
-      if (size === 'large') {
-        this.carryFrom = this.time.now;
-        this.carryRise = 0;
-      }
-      // the picture is up over the head once the lift's time is out
-      this.time.delayedCall(this.b.params.stones.lift_ms, () => (this.lifting = false));
+      // the figure plays the pickup clip for the lift's time; the carry clip takes over once it is out
+      this.playClip('pickup', this.b.params.stones.lift_ms);
+      this.time.delayedCall(this.b.params.stones.lift_ms, () => {
+        this.lifting = false;
+        if (!this.body.moving) this.faceFrame();
+      });
     });
   }
 
@@ -4165,15 +4149,22 @@ export class WorldScene extends Phaser.Scene {
       const thrown = r.events.find((e) => e.e === 'stone_thrown');
       if (thrown?.e !== 'stone_thrown') return;
       const layer = (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig));
-      if (thrown.at) layer.hold(key(thrown.at[0], thrown.at[1]), thrown.size, this.time.now, thrown.ms);
-      layer.fly(thrown, this.time.now, (tile, sank) => {
-        sound.sfx('step');
-        if (sank) this.splashAt(tile);
-        else if (RICH.motion) this.dustAt(tile[0], tile[1]);
-      });
-      // STAND-IN throw: the figure leans into the throw and settles back
-      const [dx, dy] = DIRS[s.facing];
-      this.lunge = [dx, dy, this.time.now];
+      // the figure throws overhand (a small stone) or pushes with both hands (a large one); the stone leaves the hand at the clip's release
+      const verb = thrown.size === 'large' ? 'push' : 'throw';
+      const release = this.playClip(verb, undefined) ? THROW_RELEASE_MS[verb] : 0;
+      // the landing tile waits for the flight, which starts when the stone leaves the hand: held without an end until then
+      const held = thrown.at ? layer.hold(key(thrown.at[0], thrown.at[1]), thrown.size, this.time.now, release > 0 ? Infinity : thrown.ms) : undefined;
+      const fly = (): void => {
+        if (held) layer.holdUntil(held, this.time.now + thrown.ms);
+        layer.fly(thrown, this.time.now, (tile, sank) => {
+          sound.sfx('step');
+          if (sank) this.splashAt(tile);
+          else if (RICH.motion) this.dustAt(tile[0], tile[1]);
+        });
+      };
+      // by the scene's own clock, the one the clip is laid by: a timer's delta runs behind it when frames come slowly
+      if (release > 0) this.releases.push({ at: this.time.now + release, run: fly });
+      else fly();
     });
   }
 

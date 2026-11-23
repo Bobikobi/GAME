@@ -45,6 +45,33 @@ def check(name, cond):
 check.bad = 0
 
 
+def pack_one(tmp, size):
+    """A take of `size` px frames packed against a synthetic walk: the kit row packclips writes for it."""
+    import packclips
+    tmp = Path(tmp); kit = tmp / "kit"; (kit / "chars").mkdir(parents=True)
+    hexes = ["#%02x%02x%02x" % c for c in (BONE, DARK, SKIN, (27, 26, 46))]
+    walk = np.concatenate([figure(), figure()], axis=1)
+    Image.fromarray(walk, "RGBA").save(kit / "chars" / "human_left.png")
+    (kit / "kit.json").write_text(json.dumps({"kit": {"palette": hexes, "sprites": {"chars/human_left": {"file": "chars/human_left.png", "w": 128, "h": 128, "frames": 2, "density": 4,
+        "stride": {"travel_mpx": 1, "anchor": [64, GROUND]}}}}}))
+    take = tmp / "set" / "human" / "carry-left"; take.mkdir(parents=True)
+    for i in range(4):
+        f = gates.embed_stance(figure(arm=4 * (i % 2)), size)
+        Image.fromarray(f, "RGBA").save(take / f"f{i:02d}.png")
+    (take / "clip.json").write_text(json.dumps({"verdict": "PASS (eye)", "ms": 100, "c_stance_height": STAND}))
+    (tmp / "table.md").write_text("| verb | human left |\n|---|---|\n| carry | PASS |\n")
+    (tmp / "palette.ts").write_text("")
+    argv = sys.argv
+    sys.argv = ["packclips.py", "--set", str(tmp / "set"), "--table", str(tmp / "table.md"), "--kit", str(kit), "--palette", str(tmp / "palette.ts"), "--write", "--write-kit"]
+    try:
+        packclips.main()
+    finally:
+        sys.argv = argv
+    row = json.loads((kit / "kit.json").read_text())["kit"]["sprites"]["chars/human_carry_left"]
+    sheet = Image.open(kit / row["file"])
+    return row, sheet.size
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         k = kept(Path(tmp) / "kept")
@@ -127,6 +154,14 @@ def main():
         info = card.make_gif(d, "skeleton", 100, tile, Path(tmp) / "c.gif")
         gif = Image.open(Path(tmp) / "c.gif")
         check("card.py writes a moving 384 px GIF with the halo layer behind", gif.size == (384, 384) and gif.n_frames == info["frames"] * info["loops"] and gif.n_frames > 1)
+        r128, sz128 = pack_one(Path(tmp) / "p128", 128)
+        r192, sz192 = pack_one(Path(tmp) / "p192", 192)
+        check("a 192 px take is packed as 192 px frames, 4 side by side", (r192["w"], r192["h"], sz192) == (192, 192, (768, 192)) and (r128["w"], sz128) == (128, (512, 128)))
+        check("a 192 px frame keeps the feet on the same anchor as a 128 px frame: the same fit, the anchor 64 rows lower, the figure's column in the middle",
+              r192["clip"]["fit_permille"] == r128["clip"]["fit_permille"] and r192["clip"]["anchor"][1] == r128["clip"]["anchor"][1] + 64 and r192["clip"]["anchor"][0] == 96)
+        ref192 = gates.Reference(k, "t", "left", 192)
+        _, m192 = gates.run([gates.embed_stance(figure(), 192), gates.embed_stance(figure(arm=8), 192), gates.embed_stance(figure(), 192)], ref192)
+        check("gates read a 192 px clip against the stance stood on it: the ground row is 64 lower, the stance height is the same", ref192.ground == GROUND + 64 and ref192.stand_h == STAND and m192["gate_a"] == m192["gate_c"] == "PASS")
     print("selftest:", "FAILED %d" % check.bad if check.bad else "all passed")
     return 1 if check.bad else 0
 

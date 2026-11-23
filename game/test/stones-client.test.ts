@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { type Bundle, type State, type Tile, newState, step, throwFlight } from '@game/kernel';
 import type { Facing, GameSession } from '../src/session-surface';
 import { THROW_AIM_TILES, type Facing8, throwAim } from '../src/walking';
-import { STONE_SCALE, drawnCount, pileLayout, pileLook, stoneMotion } from '../src/stone-art';
+import { HEAP_SCALE, SMALL_STONE_SCALE, STONE_SCALE, drawnCount, pileLayout, pileLook, stoneMotion } from '../src/stone-art';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let base: Bundle;
@@ -67,9 +67,20 @@ describe('a pile shows by its count', () => {
     expect(pileLook(9)).toBe('heap');
   });
 
-  test('the pictures drawn: the count up to three, five for a heap, and the same for every count of a look above it', () => {
-    expect([0, 1, 2, 3, 4, 5, 8].map(drawnCount)).toEqual([0, 1, 2, 3, 5, 5, 5]);
+  test('the pictures drawn: the count up to three, one rubble heap for four or more small stones, five when a large stone lies among them', () => {
+    expect([0, 1, 2, 3, 4, 5, 8].map((n) => drawnCount(n))).toEqual([0, 1, 2, 3, 1, 1, 1]);
+    expect([4, 5, 8].map((n) => drawnCount(n, 1))).toEqual([5, 5, 5]);
     for (const n of [0, 1, 2, 3, 4, 7]) expect(pileLayout(n).length).toBe(drawnCount(n));
+    for (const n of [4, 7]) expect(pileLayout(n, 1).length).toBe(drawnCount(n, 1));
+  });
+
+  test('the pictures by kind: a small stone is its own drawing, a large one the item picture, four small ones the rubble heap', () => {
+    expect(pileLayout(1, 0).map((s) => s.picture)).toEqual(['small']);
+    expect(pileLayout(1, 1).map((s) => s.picture)).toEqual(['large']);
+    expect(pileLayout(3, 0).map((s) => s.picture)).toEqual(['small', 'small', 'small']);
+    expect(pileLayout(6, 0)).toEqual([{ dx: 0, dy: 0, size: 'small', scale: HEAP_SCALE, picture: 'heap' }]);
+    expect(pileLayout(4, 1).filter((s) => s.picture === 'large')).toHaveLength(1);
+    expect(pileLayout(4, 1).filter((s) => s.picture === 'heap')).toHaveLength(0);
   });
 
   test('no two pictures of a pile stand on one spot, and all stay inside the tile', () => {
@@ -85,13 +96,17 @@ describe('a pile shows by its count', () => {
     }
   });
 
-  test('a large stone is drawn larger than a small one, the same picture scaled', () => {
-    expect(STONE_SCALE.large).toBeGreaterThan(STONE_SCALE.small * 1.5);
+  test('a large stone is drawn larger than a small one: about 60 x 50 art pixels against about 28 x 24', () => {
+    // the small drawing is 28 x 24 at its own size; the item picture is 60 x 49 and shows at 95 percent
+    expect(60 * STONE_SCALE.large).toBeGreaterThan(28 * SMALL_STONE_SCALE * 1.5);
     expect(pileLayout(1, 1)[0]).toMatchObject({ size: 'large', scale: STONE_SCALE.large });
-    expect(pileLayout(1, 0)[0]).toMatchObject({ size: 'small', scale: STONE_SCALE.small });
+    expect(pileLayout(1, 0)[0]).toMatchObject({ size: 'small', scale: SMALL_STONE_SCALE });
     const mixed = pileLayout(3, 1);
     expect(mixed.filter((s) => s.size === 'large')).toHaveLength(1);
-    expect(mixed[0]!.scale).toBeGreaterThan(mixed[1]!.scale);
+    // drawn widths, the large picture being 60 art pixels wide and the small one 28
+    const large = mixed.find((s) => s.size === 'large')!;
+    const small = mixed.find((s) => s.size === 'small')!;
+    expect(60 * large.scale).toBeGreaterThan(28 * small.scale);
   });
 });
 
