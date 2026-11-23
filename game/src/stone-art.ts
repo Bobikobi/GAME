@@ -12,6 +12,13 @@ export type StoneSize = 'small' | 'large';
 /** The scale of the item picture `items/stone` (nearly tile-wide), as a share of its own size: a large stone on the ground (95 percent), and a small one before it had its own drawing (46 percent, kept as the unit a large stone among small ones is sized by). */
 export const STONE_SCALE: Readonly<Record<StoneSize, number>> = { small: 0.46, large: 0.95 };
 
+/**
+ * Where the middle of the drawn stone is in its picture, as a share of the picture (origin x, y): the middle of the opaque box, which for
+ * the small stone is low in its 64 px frame (the box is rows 37 to 59) and for the large one is the frame's middle (rows 7 to 55). A stone in
+ * the hand or in the air is drawn about this point, so the point laid at the hand is where the stone looks to be.
+ */
+export const STONE_CENTRE: Readonly<Record<StoneSize, readonly [number, number]>> = { small: [0.5, 48.5 / 64], large: [0.5, 31.5 / 64] };
+
 /** Which picture a slot shows: the small stone's own drawing, the item picture (a large stone), or the rubble heap. */
 export type StonePicture = 'small' | 'large' | 'heap';
 
@@ -72,9 +79,24 @@ export function pileLayout(count: number, large = 0): Slot[] {
   });
 }
 
+/**
+ * Where a thrown stone leaves from: the drawn hand (STONE HAND, #793), in tiles. `x` and `y` are the ground point under the hand,
+ * `lift` its height above that, and `share` how big the stone is in it as a share of its flying size (a large stone carried is drawn
+ * smaller than it lies on the ground): it grows to its own size by the middle of the flight, so it never pops. Left out, the stone
+ * leaves the middle of the tile at the height of a hand.
+ */
+export interface Grip {
+  x: number;
+  y: number;
+  lift: number;
+  share?: number;
+}
+
 /** A throw as the kernel tells it (the `stone_thrown` event). */
 export interface Throw {
   size: StoneSize;
+  /** where the hand was at the release, when the figure's clip names it */
+  hand?: Grip;
   from: Tile;
   touch: Tile;
   /** where it rests; null when it sank */
@@ -108,6 +130,15 @@ export interface Motion {
   at(t: number): Pose;
 }
 
+/** How wide the large stone is in the carry sheets' hands, in sheet pixels (measured on all nine: 40 to 46), and how wide the kit's stone picture is (its drawn part, 60 of 64): their ratio, at a clip's own fit, is the share a carried stone has of the stone that flies. */
+export const CARRIED_STONE_PX = 45;
+export const STONE_PICTURE_PX = 60;
+
+/** The share of its flying size a large stone has in the hands of a clip drawn at `fit` (its fit as a share, 0.698 for 698 permille): the carried stone is as wide as the carry sheets drew it, the flying one is the ground picture. */
+export function carriedShare(fit: number): number {
+  return (CARRIED_STONE_PX * fit) / (STONE_PICTURE_PX * STONE_SCALE.large);
+}
+
 /** The height of the hand a stone leaves from, in tiles. */
 const HAND = 0.55;
 /** The first and the second bounce, by size: a small stone hops, a large one thuds. */
@@ -126,7 +157,10 @@ const arch = (v: number): number => 4 * v * (1 - v);
  * Never flat: even a stone that rests where it touched bounces in place. Pure and fixed by the throw, so every client draws the same.
  */
 export function stoneMotion(throwEv: Throw): Motion {
-  const { size, from, touch, at, ms } = throwEv;
+  const { size, from, touch, at, ms, hand } = throwEv;
+  const sx = hand?.x ?? from[0] + 0.5;
+  const sy = hand?.y ?? from[1] + 0.5;
+  const share = hand?.share ?? 1;
   const airMs = ms * AIR;
   const landMs = ms - airMs;
   const rest = at ?? touch;
@@ -142,12 +176,12 @@ export function stoneMotion(throwEv: Throw): Motion {
       if (t < airMs) {
         const u = clamp01(t / airMs);
         return {
-          x: from[0] + 0.5 + (touch[0] - from[0]) * u,
-          y: from[1] + 0.5 + (touch[1] - from[1]) * u,
-          lift: HAND * (1 - u) + peak * arch(u),
+          x: sx + (touch[0] + 0.5 - sx) * u,
+          y: sy + (touch[1] + 0.5 - sy) * u,
+          lift: (hand?.lift ?? HAND) * (1 - u) + peak * arch(u),
           spin: 2 * Math.PI * turns.air * u,
           alpha: 1,
-          shrink: 1,
+          shrink: share + (1 - share) * clamp01(u * 2),
           touched: false,
           done: false,
           phase: 0,

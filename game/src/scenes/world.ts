@@ -55,6 +55,7 @@ import {
 import { app } from '../app';
 import { Piles, pileAt } from './piles';
 import { StoneLayer } from './stones';
+import { carriedShare } from '../stone-art';
 import { sound, type Heard, type Owner, type SongId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
@@ -100,7 +101,7 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
@@ -120,7 +121,7 @@ const NEIGHBOURS: readonly [number, number][] = [
 ];
 /** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
 const WHEEL_GLIDE_MS = 160;
-/** How long after a throw begins the stone leaves the hand, by the clip that throws it (the arm winds back first; a two-hand push lets go early), ms. */
+/** How long after a throw begins the stone leaves the hand when the clip names no hand (the arm winds back first; a two-hand push lets go early), ms. With a hand it is the clip's last hand point (`clip.hand`). */
 const THROW_RELEASE_MS = { throw: 312, push: 156 } as const;
 const WHEEL_GAP_MS = 180;
 /** Signatures show over signs this close to the player, in tiles. */
@@ -2249,6 +2250,7 @@ export class WorldScene extends Phaser.Scene {
     this.figure.stop();
     this.stoneHeld = false;
     this.releases = [];
+    this.grip = undefined;
     this.stones?.destroy();
     this.stones = undefined;
     this.effects.clear();
@@ -2661,6 +2663,7 @@ export class WorldScene extends Phaser.Scene {
     this.drawFishing(s, time);
     this.drawBusy(s);
     this.drawClip(time);
+    this.gripFrame(this.time.now);
     this.updatePrompt(s);
     this.haunt(s, time);
   }
@@ -4078,6 +4081,28 @@ export class WorldScene extends Phaser.Scene {
     return true;
   }
 
+  /** The stone in the figure's hand from the press of B to the release: the clip that holds it, when that began (the scene clock), and the share of its flying size it has in the hand. */
+  private grip?: { found: Found; start: number; share: number };
+
+  /** The world point of the clip's drawn hand `elapsed` ms into the clip, or nothing when the clip names no hand or the figure is not drawn in it. */
+  private handNow(found: Found, elapsed: number): { x: number; y: number } | undefined {
+    const point = handAt(found, elapsed);
+    const img = this.player;
+    if (!point || img.texture.key !== found.key) return undefined;
+    return handWorld(
+      { x: img.x, y: img.y, originX: img.originX, originY: img.originY, scaleX: img.scaleX, scaleY: img.scaleY, w: img.frame.realWidth, h: img.frame.realHeight, flip: img.flipX },
+      point,
+    );
+  }
+
+  /** The stone in the hand follows the hand of the frame the figure shows (called after the figure is drawn for the frame). */
+  private gripFrame(now: number): void {
+    const g = this.grip;
+    if (!g || !this.stones?.gripped) return;
+    const at = this.handNow(g.found, now - g.start);
+    if (at) this.stones.moveInHand(at.x, at.y, this.player.y);
+  }
+
   /** Stones waiting for the release frame of the throw clip, to leave the hand at `at` (the scene clock, ms). */
   private releases: { at: number; run: () => void }[] = [];
 
@@ -4151,12 +4176,25 @@ export class WorldScene extends Phaser.Scene {
       const layer = (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig));
       // the figure throws overhand (a small stone) or pushes with both hands (a large one); the stone leaves the hand at the clip's release
       const verb = thrown.size === 'large' ? 'push' : 'throw';
-      const release = this.playClip(verb, undefined) ? THROW_RELEASE_MS[verb] : 0;
+      const played = this.playClip(verb, undefined);
+      // the stone is in the hand from the first frame of the clip, and follows the drawn hand to the release (the clip's `hand` points)
+      const found = played ? clipFor(this.b.sprites as ClipSprites, verb, s.state.player.race, s.facing) : undefined;
+      // it leaves the hand at the clip's last hand point (the frame where the drawing opens the hand), else at the old fixed time
+      const release = !played ? 0 : found?.hand ? (found.hand.length - 1) * found.frame_ms : THROW_RELEASE_MS[verb];
+      const share = thrown.size === 'large' && found ? carriedShare(found.fit) : 1;
+      this.grip = found?.hand ? { found, start: this.time.now, share } : undefined;
+      if (this.grip) layer.takeInHand(thrown.size, share);
       // the landing tile waits for the flight, which starts when the stone leaves the hand: held without an end until then
       const held = thrown.at ? layer.hold(key(thrown.at[0], thrown.at[1]), thrown.size, this.time.now, release > 0 ? Infinity : thrown.ms) : undefined;
       const fly = (): void => {
         if (held) layer.holdUntil(held, this.time.now + thrown.ms);
-        layer.fly(thrown, this.time.now, (tile, sank) => {
+        // it leaves the drawn hand where the clip has it at the release, at the height of the hand above the feet
+        const g = this.grip;
+        const at = g ? this.handNow(g.found, release) : undefined;
+        this.grip = undefined;
+        layer.letGo();
+        const leaving = at ? { ...thrown, hand: { x: at.x / T, y: this.player.y / T, lift: (this.player.y - at.y) / T, share: g!.share } } : thrown;
+        layer.fly(leaving, this.time.now, (tile, sank) => {
           sound.sfx('step');
           if (sank) this.splashAt(tile);
           else if (RICH.motion) this.dustAt(tile[0], tile[1]);
