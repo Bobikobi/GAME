@@ -35,7 +35,7 @@ marks every card of it.
   on a POST (a missing one too), a body that is not JSON or is over 256 KB, an id the page does not hold, a state that is not one
   of the five, a note over 300 characters. No CORS header is ever sent. Any website open in a browser can post to localhost; that
   is what these refusals are for.
-- **Archive is a state.** Nothing is deleted from the store or from the thumbnails.
+- **Archive is a state.** Archiving on the page deletes nothing by itself. A draft the owner archived by hand is later removed from the store by `pnpm art:prune` (rule R1), after a dry run the manager reads; the page then no longer lists it (the index keeps its line, marked `removed`).
 - **Landing the choices.** `pnpm art:library:land` (a dry run: counts against `origin/develop`'s index), `--apply` (a worktree under
   `<repo>.worktrees/` on a fresh branch `art/library-reviews-<stamp>` from `origin/develop`, the amendment lines
   `{"id","amend":true,"review","review_by":"owner","review_note"}` appended, one commit that adds only the index), `--pr` (also

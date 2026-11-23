@@ -55,9 +55,11 @@ describe('the library page', () => {
     const out = join(scratch, 'real');
     const result = buildLibrary(index, out, { fetch: false });
     const html = readFileSync(join(out, 'index.html'), 'utf8');
-    expect(result.total).toBe(index.drafts.size);
-    expect(rowsOf(html)).toHaveLength(index.drafts.size);
-    expect(/data-total="(\d+)"/.exec(html)?.[1]).toBe(String(index.drafts.size));
+    // a draft whose files were pruned out of the store is not on the page
+    const live = index.live().length;
+    expect(result.total).toBe(live);
+    expect(rowsOf(html)).toHaveLength(live);
+    expect(/data-total="(\d+)"/.exec(html)?.[1]).toBe(String(live));
   });
 
   test('a prompt cannot close the script element', () => {

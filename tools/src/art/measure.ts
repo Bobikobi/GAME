@@ -177,7 +177,7 @@ export function measurePool(pools: readonly PoolName[], names: readonly string[]
   for (const pool of pools) {
     for (const entry of readPool(pool, root)) {
       if (names !== undefined && !names.includes(entry.name)) continue;
-      for (const draft of index.drafts.values()) {
+      for (const draft of index.live()) {
         if (draft.name !== entry.name || (draft.pool !== null && draft.pool !== pool) || draft.review === 'archive') continue;
         const file = draftFile(draft, cache);
         if (file === null) continue;

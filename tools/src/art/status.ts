@@ -23,7 +23,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { type Draft, REVIEW_STATES, type ReviewState, foldIndex, gpuSecondsSince, parseIndex } from './drafts.js';
+import { type Draft, REVIEW_STATES, type ReviewState, foldIndex, gpuSecondsSince, isRemoved, parseIndex } from './drafts.js';
 import { type GenEntry, parseSpec } from '../kit/gen.js';
 import { formatQueue, queueSummary } from './queue.js';
 
@@ -141,7 +141,7 @@ export function loadEvidence(root = ROOT): Evidence {
   const index = join(root, DRAFTS_INDEX);
   const drafts = [...foldIndex(existsSync(index) ? parseIndex(readFileSync(index, 'utf8')) : []).values()];
   const draftsByName = new Map<string, Draft[]>();
-  for (const draft of drafts) draftsByName.set(draft.name, [...(draftsByName.get(draft.name) ?? []), draft]);
+  for (const draft of drafts.filter((d) => !isRemoved(d))) draftsByName.set(draft.name, [...(draftsByName.get(draft.name) ?? []), draft]);
   return { kit, picks, drafts, draftsByName };
 }
 
@@ -257,7 +257,7 @@ export function artStatus(root = ROOT, options: { next?: number; now?: Date } = 
     next_per_pool: nextCount,
     gpu_minutes_week: known ? week.minutes : null,
     gpu_runs_week: week.runs,
-    drafts: { source: DRAFTS_INDEX, count: evidence.drafts.length, known },
+    drafts: { source: DRAFTS_INDEX, count: evidence.drafts.filter((d) => !isRemoved(d)).length, known },
   };
 }
 

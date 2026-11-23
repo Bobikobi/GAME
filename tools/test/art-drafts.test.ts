@@ -339,6 +339,25 @@ describe('the drafts repo: push, fetch, verify', () => {
     expect(calls.flat()).not.toContain('--clobber');
   });
 
+  test('a removed draft is neither fetched nor pushed again, and stays removed', () => {
+    const { gh, calls } = fakeGh();
+    const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));
+    const item = collected(runFolder());
+    pushCollected([item], index, { gh });
+    expect(index.markRemoved(item.record.id, 'owner-archive', '2026-11-22T12:00:00Z')).toBe(true);
+    expect(index.live()).toHaveLength(0);
+    expect(index.drafts.get(item.record.id)?.removed).toBe('owner-archive');
+    const uploads = calls.filter((c) => c[1] === 'upload').length;
+    const again = pushCollected([item], index, { gh });
+    expect(again.uploaded).toBe(0);
+    expect(calls.filter((c) => c[1] === 'upload')).toHaveLength(uploads);
+    expect(index.drafts.get(item.record.id)?.removed).toBe('owner-archive');
+    const downloads = calls.filter((c) => c[1] === 'download').length;
+    const fetched = fetchDrafts(index, null, { gh, cache: folder('cache-removed') });
+    expect(fetched.fetched + fetched.present + fetched.missing.length).toBe(0);
+    expect(calls.filter((c) => c[1] === 'download')).toHaveLength(downloads);
+  });
+
   test('--tag puts everything in one release (the backfill)', () => {
     const { gh, store } = fakeGh();
     const index = DraftIndex.open(join(folder('index'), 'drafts.jsonl'));

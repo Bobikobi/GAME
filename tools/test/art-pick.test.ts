@@ -105,8 +105,11 @@ describe('art:pick', () => {
     expect(out.text).toContain('content/kit/core/tiles/snow.png');
     expect(existsSync(join(dir, 'content/kit/core/tiles/snow.png'))).toBe(false);
     expect(() => pickCli(['ground', 'ice', ID(1), '--dry'], ctx)).toThrow(/draw of snow/);
-    pickCli(['ground', 'snow', ID(1)], { ...ctx, today: '2026-10-30' });
+    expect(out.text).not.toContain('pick-closes.json');
+    const applied = pickCli(['ground', 'snow', ID(1)], { ...ctx, today: '2026-10-30' });
     expect(existsSync(join(dir, 'content/kit/core/tiles/snow.png'))).toBe(true);
+    // a pick that may close a trial points at the prune's R2 step
+    expect(applied.text).toContain('pnpm art:prune --dry --only R2');
   });
 });
 
