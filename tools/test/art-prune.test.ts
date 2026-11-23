@@ -7,6 +7,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import { type Draft, DraftIndex, type Gh, foldIndex, isRemoved } from '../src/art/drafts.js';
 import { type ListRow, coldCopy, deleteFromStore, parseList, rowsThatFail } from '../src/art/prune-apply.js';
+import { CLOSES_PATH, readCloses } from '../src/art/prune-cli.js';
 import { type Choice, type PickClose, type PruneInput, planPrune, protectedBy, sampleFor } from '../src/art/prune.js';
 
 const scratch = mkdtempSync(join(tmpdir(), 'art-prune-test-'));
@@ -282,5 +283,14 @@ describe('the removal', () => {
     expect(folded.removed_at).toBe('2026-11-22T12:00:00Z');
     expect(readdirSync(scratch).length).toBeGreaterThan(0);
     mkdirSync(join(scratch, 'x'), { recursive: true });
+  });
+});
+
+describe('the closed picks file', () => {
+  test('is read from where the code says, and sits outside the kit:gen specs that tools/kit-gen/*.json holds', () => {
+    expect(CLOSES_PATH.split('/')).toHaveLength(4); // tools/kit-gen/prune/pick-closes.json, one folder below the specs
+    const closes = readCloses();
+    expect(closes.length).toBeGreaterThan(0);
+    for (const c of closes) expect(c.id).toMatch(/^[a-z0-9-]+$/);
   });
 });

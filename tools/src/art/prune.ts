@@ -4,7 +4,7 @@
  * report and the contact sheets, and (after the manager's GO) removes the files. Nothing here reads the disk or the network.
  *
  *   R1 owner-archive    the owner's own review is `archive` (his hand sort on the library page, or an index review stamped by him)
- *   R2 pick-lost        an option of an owner pick that closed on another option (`tools/kit-gen/pick-closes.json`)
+ *   R2 pick-lost        an option of an owner pick that closed on another option (`tools/kit-gen/prune/pick-closes.json`)
  *   R3 old-era          drawn for the 16 px or 32 px game, before the 64 px decision of 18.10
  *   R4 retired-subject  its subject is retired in the pools and a grep of content/ and docs/design/ finds it nowhere
  *   R5 duplicate        its raw picture is byte for byte another draft's picture, and the other draft ranks higher

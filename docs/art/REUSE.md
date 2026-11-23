@@ -157,7 +157,7 @@ must-remove and a must-keep fixture for each.
 | Rule | Removes | Never when |
 |---|---|---|
 | R1 `owner-archive` | a draft the owner archived by hand (the page's `reviews.jsonl`, or an index archive stamped `owner`/`elad`) | his page says keep, or it is reviewed keep/rework/reuse-parts in the index |
-| R2 `pick-lost` | a draft whose every source is an option of a closed owner pick that lost (`tools/kit-gen/pick-closes.json`) | a source is in the close's `keep` list (every bite, the R2b wolf, the R3 poses) |
+| R2 `pick-lost` | a draft whose every source is an option of a closed owner pick that lost (`tools/kit-gen/prune/pick-closes.json`) | a source is in the close's `keep` list (every bite, the R2b wolf, the R3 poses) |
 | R3 `old-era` | a draft made for the 16 px or 32 px game, dated on or before 2026-10-18 (the 64 px decision), or named as one | a file uses it; it is undated and the name does not say 16/32 px |
 | R4 `retired-subject` | a draft of a pool entry marked `retired` that no file of `content/` or `docs/design/` still names (a word-bounded grep) | any hit, however old |
 | R5 `duplicate` | a draft whose every file lives on in another draft that is not removed | the other draft is itself removed |
@@ -172,7 +172,7 @@ approves a list by its sha256; `pnpm art:prune --apply --list FILE --go SHA256` 
 from the releases (an empty release too) and appends `{"id","amend":true,"removed":"<code>","at"}` per draft. The cold copy is deleted 30 days later,
 on the manager's word.
 
-**When an owner pick closes**, add its entry to `tools/kit-gen/pick-closes.json` in the same pull request that records the pick (the hub answer, the
+**When an owner pick closes**, add its entry to `tools/kit-gen/prune/pick-closes.json` in the same pull request that records the pick (the hub answer, the
 DECISIONS heading, the losing options as regular expressions on a source's label, run and file), then run `pnpm art:prune --dry --only R2`: the report
 names the losers and shows them on a sheet. The run that applies it waits for the manager's word like any other. The kit picks flow (`pnpm art:pick`)
 prints this step when it applies a pick. A weekly dry run is proposed in the pull request that brought this tool, and is not installed.

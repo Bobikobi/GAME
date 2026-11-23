@@ -35,7 +35,7 @@ import { type Choice, type PickClose, type Plan, type PruneInput, type RetiredEn
 import { coldCopy, deleteFromStore, expectedHashes, markRemoved, parseList, rowsThatFail, sha256OfText, writeManifest } from './prune-apply.js';
 import { ROOT } from './queue.js';
 
-export const CLOSES_PATH = 'tools/kit-gen/pick-closes.json';
+export const CLOSES_PATH = 'tools/kit-gen/prune/pick-closes.json';
 const POOLS_DIR = 'tools/kit-gen/pools';
 export const DEFAULT_SEED = 812;
 const SHEET_COLS = 8;

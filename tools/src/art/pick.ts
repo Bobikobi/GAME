@@ -212,7 +212,7 @@ export function pickCli(args: readonly string[], ctx: PickContext = {}): { text:
   if (!dry) applyPicks(file, steps, ctx);
   // a pick that closes a trial leaves its losers behind: the next step is the prune's R2 (docs/art/REUSE.md, "Pruning the drafts store")
   const next = !dry && steps.some((s) => s.action.action === 'pick')
-    ? 'next: if this pick closed a trial, add it to tools/kit-gen/pick-closes.json and run `pnpm art:prune --dry --only R2` to see the losers\n'
+    ? 'next: if this pick closed a trial, add it to tools/kit-gen/prune/pick-closes.json and run `pnpm art:prune --dry --only R2` to see the losers\n'
     : '';
   return { text: formatSteps(steps, dry) + next, code: 0 };
 }
