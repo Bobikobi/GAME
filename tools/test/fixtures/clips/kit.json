@@ -484,6 +484,159 @@
             88
           ]
         }
+      },
+      "chars/human_carry_left": {
+        "file": "chars/human_carry_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "carry",
+          "frame_ms": 300,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_carry_front": {
+        "file": "chars/human_carry_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "carry",
+          "frame_ms": 301,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_carry_back": {
+        "file": "chars/human_carry_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "carry",
+          "frame_ms": 302,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_throw_left": {
+        "file": "chars/human_throw_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "throw",
+          "frame_ms": 303,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_throw_front": {
+        "file": "chars/human_throw_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "throw",
+          "frame_ms": 304,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_throw_back": {
+        "file": "chars/human_throw_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "throw",
+          "frame_ms": 305,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_push_left": {
+        "file": "chars/human_push_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "push",
+          "frame_ms": 306,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_push_front": {
+        "file": "chars/human_push_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "push",
+          "frame_ms": 307,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_push_back": {
+        "file": "chars/human_push_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "push",
+          "frame_ms": 308,
+          "anchor": [
+            64,
+            90
+          ]
+        }
       }
     }
   }
