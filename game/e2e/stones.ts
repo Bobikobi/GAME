@@ -16,6 +16,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, type Page } from './cdp';
+import { T as TILE } from '../src/config';
 import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
@@ -87,11 +88,6 @@ const ground = (t: readonly number[]) => `(window.__game.session.state.player.gr
 const drawn = (t: readonly number[]) => `(window.__game.world.stones?.countAt('${t[0]},${t[1]}') ?? 0)`;
 const idle = `window.__game.session.tick >= window.__game.session.state.player.busyUntil`;
 
-interface Sample {
-  x: number;
-  lift: number;
-}
-
 async function main(): Promise<void> {
   const remote = process.env.E2E_URL;
   if (!remote && !existsSync(join(DIST, 'index.html'))) throw new Error('no game/dist: run "pnpm build" first');
@@ -117,13 +113,17 @@ async function main(): Promise<void> {
     await page.waitFor(`${bag} === 1 && ${idle}`, 'the stone in the bag', 5000);
     console.log(`stones: A lifted the spot's stone at ${THROWER.join(',')} into the bag`);
 
-    // B throws it: the stone is sampled every frame, and the tile it lands on must not show it before it lands
+    // B throws it. Two readings: the frames are sampled while it flies (they must show the stone off its resting tile until it lands, and
+    // every frame must sit on the flight's own curve), and the flight's curve itself is read from the scene's own motion (its pure
+    // function of time), a millisecond at a time - a loaded machine drops frames and cannot make a bounce lost from that curve.
     await page.eval(`(() => {
       window.__fx = [];
       window.__early = 0;
+      window.__flight = null;
       const sample = () => {
         const w = window.__game.world, f = w.stones?.flying?.[0];
         if (f) {
+          window.__flight ??= f;
           window.__fx.push({ x: f.image.x, lift: (f.shadow.y - 1 - f.image.y) });
           if (w.stones.countAt('${rest[0]},${rest[1]}') > 0) window.__early++;
         }
@@ -135,20 +135,38 @@ async function main(): Promise<void> {
     await page.waitFor(`window.__fx.length > 0`, 'the stone to leave the hand', 5000);
     await page.screenshot(join(OUT, 'stones-air.png'));
     await page.waitFor(`${ground(rest)} === 1 && !window.__game.world.stones.busy`, 'the stone to land and stop', 5000);
-    const fx = await page.eval<Sample[]>(`window.__fx`);
     const early = await page.eval<number>(`window.__early`);
     if (early > 0) throw new Error(`the stone was drawn on its resting tile ${early} frames before it landed`);
+    const arc = await page.eval<{ frames: number; off: number; peak: number; touchLift: number; bounce: number; slid: number; ms: number }>(`(() => {
+      const f = window.__flight, T = ${TILE}, m = f.motion, ms = Math.ceil(m.ms);
+      const curve = [];
+      for (let t = 0; t <= ms; t++) { const p = m.at(t); curve.push({ x: p.x * T, lift: p.lift * T, touched: p.touched }); }
+      // a frame that was drawn is on the curve (to a pixel): the scene draws the flight it was given
+      let off = 0;
+      for (const q of window.__fx) off = Math.max(off, Math.min(...curve.map((c) => Math.hypot(c.x - q.x, c.lift - q.lift))));
+      const first = curve.findIndex((c) => c.touched);
+      const after = curve.slice(first);
+      // it rose again after the first touch: the lift came back under half a pixel at the touch, then went over 0.8 px
+      const down = after.findIndex((c) => c.lift < 0.5);
+      const bounce = down < 0 ? 0 : Math.max(...after.slice(down).map((c) => c.lift));
+      return {
+        frames: window.__fx.length,
+        off,
+        peak: Math.max(...curve.slice(0, first).map((c) => c.lift)),
+        touchLift: first < 0 ? -1 : curve[first].lift,
+        bounce,
+        slid: after[after.length - 1].x - after[0].x,
+        ms: m.ms,
+      };
+    })()`);
     // the arc: it rose, came down (lift back to ~0), rose again (a bounce), and slid on (x kept growing after the first touch)
-    const peak = Math.max(...fx.map((p) => p.lift));
-    const firstDown = fx.findIndex((p, i) => i > 0 && p.lift < 0.5 && fx[i - 1]!.lift >= 0.5);
-    if (!(peak >= 4)) throw new Error(`the throw's arc peaked at ${peak} px, under 4`);
-    if (firstDown < 0) throw new Error('the stone never came down from its arc');
-    const after = fx.slice(firstDown);
-    const bounced = after.some((p, i) => i > 0 && p.lift > 0.8 && after.slice(0, i).some((q) => q.lift < 0.5));
-    if (!bounced) throw new Error(`the stone came down and did not bounce: lifts after the touch ${after.map((p) => p.lift.toFixed(1)).join(' ')}`);
-    const slid = after[after.length - 1]!.x - after[0]!.x;
-    if (!(slid > 2)) throw new Error(`the stone did not slide on after touching: moved ${slid} px`);
-    console.log(`stones: thrown from ${THROWER.join(',')}, arc peak ${peak.toFixed(1)} px, touched ${touch.join(',')}, bounced, slid ${slid.toFixed(1)} px to ${rest.join(',')}`);
+    if (arc.frames < 2) throw new Error(`only ${arc.frames} frame(s) of the flight were seen`);
+    if (arc.off > 1) throw new Error(`a drawn frame of the flight is ${arc.off.toFixed(1)} px off the flight's own curve`);
+    if (!(arc.peak >= 4)) throw new Error(`the throw's arc peaked at ${arc.peak} px, under 4`);
+    if (!(arc.touchLift < 0.5)) throw new Error(`the stone did not come down: ${arc.touchLift} px up at its first touch`);
+    if (!(arc.bounce > 0.8)) throw new Error(`the stone came down and did not bounce: it rose ${arc.bounce.toFixed(1)} px after the touch`);
+    if (!(arc.slid > 2)) throw new Error(`the stone did not slide on after touching: moved ${arc.slid} px`);
+    console.log(`stones: thrown from ${THROWER.join(',')}, arc peak ${arc.peak.toFixed(1)} px, touched ${touch.join(',')}, bounced ${arc.bounce.toFixed(1)} px, slid ${arc.slid.toFixed(1)} px to ${rest.join(',')} (${arc.frames} frames seen)`);
     await page.screenshot(join(OUT, 'stones-landed.png'));
     if ((await page.eval<number>(drawn(rest))) !== 1) throw new Error('the landed stone is not drawn on its tile after the flight');
 
