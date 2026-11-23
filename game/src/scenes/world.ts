@@ -53,6 +53,7 @@ import {
   settled,
 } from '@game/kernel';
 import { app } from '../app';
+import { RING_TOTAL_MS, ringPixels, ringsAt } from '../ring';
 import { Piles, pileAt } from './piles';
 import { StoneLayer } from './stones';
 import { carriedShare } from '../stone-art';
@@ -2376,7 +2377,7 @@ export class WorldScene extends Phaser.Scene {
    * one rule for how long). True when the kit has one; with none the figure keeps today's walk sheet or code-drawn motion, and
    * a clip still playing is dropped, so a verb with no art never shows the last one's.
    */
-  private playClip(verb: ClipVerb, lasts?: number): boolean {
+  private playClip(verb: ClipVerb, lasts?: number, stretch = false): boolean {
     const s = this.session;
     const race = s?.state.player.race;
     if (!s || !race || this.falling) return false;
@@ -2389,7 +2390,7 @@ export class WorldScene extends Phaser.Scene {
       this.figure.stop();
       return false;
     }
-    this.figure.start(found, this.time.now, lasts);
+    this.figure.start(found, this.time.now, lasts, stretch);
     this.drawClip(this.time.now);
     return true;
   }
@@ -4075,8 +4076,9 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       sound.sfx('pickup');
-      // the figure plays the pickup clip for the lift's time; the carry clip takes over once it is out
-      this.playClip('pickup', this.b.params.stones.lift_ms);
+      // the figure plays the lift clip across the lift's own time (the kernel's `lift_ms`, the one number); the carry clip takes over once it is out
+      if (size === 'large') this.playClip('lift', this.b.params.stones.lift_ms, true);
+      else this.playClip('pickup', this.b.params.stones.lift_ms);
       this.time.delayedCall(this.b.params.stones.lift_ms, () => {
         this.lifting = false;
         if (!this.body.moving) this.faceFrame();
@@ -4149,10 +4151,20 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** A ring spreading on the water where a stone went under. */
+  /** Rings spreading and fading on the water where a stone went under (the timeline is ring.ts's). */
   private splashAt(tile: Tile): void {
-    const ring = this.add.ellipse((tile[0] + 0.5) * T, (tile[1] + 0.6) * T, 4, 2).setStrokeStyle(1, 0xf5f4ef, 0.9).setDepth(DEPTH.puff);
-    this.tweens.add({ targets: ring, scaleX: 3.5, scaleY: 3.5, alpha: 0, duration: 420, onComplete: () => ring.destroy() });
+    const g = this.add.graphics().setPosition((tile[0] + 0.5) * T, (tile[1] + 0.6) * T).setDepth(DEPTH.fx - 1);
+    const start = this.time.now;
+    const draw = () => {
+      g.clear();
+      for (const r of ringsAt(this.time.now - start)) {
+        g.fillStyle(0xf5f4ef, r.alpha);
+        for (const [x, y] of ringPixels(r)) g.fillRect(x, y, 1, 1);
+      }
+    };
+    draw();
+    const tick = () => (this.time.now - start >= RING_TOTAL_MS ? (this.events.off('update', tick), g.destroy()) : draw());
+    this.events.on('update', tick);
   }
 
   /** One frame of the hop's stand-in: the feet go from tile to tile, the drawing rides the arc, and on landing the body stands on the tile. */

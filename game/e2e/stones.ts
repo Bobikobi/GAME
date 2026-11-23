@@ -108,7 +108,7 @@ async function main(): Promise<void> {
 
     // the race's clip sheets arrive in the background after the player wakes: the throw, push and carry of the way the figure faces
     await page.waitFor(
-      `['throw', 'push', 'carry'].every((v) => window.__game.world.textures.exists('core/base-kit:chars/elf_' + v + '_left'))`,
+      `['throw', 'push', 'carry', 'lift'].every((v) => window.__game.world.textures.exists('core/base-kit:chars/elf_' + v + '_left'))`,
       'the stones\' clip sheets to load',
       30_000,
     );
@@ -236,8 +236,17 @@ async function main(): Promise<void> {
     const pace0 = await page.eval<number>(`window.__game.world.paceMs ?? 0`);
     await page.eval(`(() => { const p = window.__game.session.state.player; p.bag['core/stone'] = 0; p.attrs.might = 1; })()`);
     await page.waitFor(idle, 'the busy time to pass', 5000);
+    // the lift plays its own clip across the kernel's lift time: sampled every frame from the press of A to the carry clip taking over
+    await page.eval(`(() => { const w = window.__game.world; window.__lift = { t0: 0, seen: [], done: false }; const watch = () => { const k = w.player.texture.key; if (k.includes('_lift_')) { if (!window.__lift.t0) window.__lift.t0 = performance.now(); window.__lift.seen.push([Math.round(performance.now() - window.__lift.t0), Number(w.player.frame.name), w.player.texture.getFrameNames().length]); } else if (window.__lift.seen.length > 0) { window.__lift.done = true; window.__lift.end = performance.now() - window.__lift.t0; window.__lift.next = k; return; } requestAnimationFrame(watch); }; watch(); })()`);
     await page.tap('.tbtn.a');
     await page.waitFor(`window.__game.session.state.player.stones?.carry === 'large'`, 'the large stone lifted', 5000);
+    await page.waitFor(`window.__lift.done`, 'the lift clip to play out', 5000);
+    const lift = await page.eval<{ seen: number[][]; end: number; next: string }>(`window.__lift`);
+    const frames = lift.seen.map((q) => q[1]!);
+    if (!(frames.length > 4 && frames.every((f, i) => i === 0 || f >= frames[i - 1]!) && frames[0] === 0 && frames[frames.length - 1]! >= lift.seen[0]![2]! - 2)) throw new Error(`the lift clip did not run from its first frame to its last, in order: ${JSON.stringify(frames)}`);
+    if (!(Math.abs(lift.end - params.lift) <= 150)) throw new Error(`the lift clip lasted ${Math.round(lift.end)} ms, the kernel's lift is ${params.lift} ms`);
+    if (!lift.next.includes('_carry_') && !lift.next.includes('_walk') && !lift.next.includes('_idle')) throw new Error(`after the lift the figure shows ${lift.next}`);
+    console.log(`stones: the large stone's lift played ${frames.length} frames over ${Math.round(lift.end)} ms (the kernel's lift_ms is ${params.lift}), then ${lift.next}`);
     await page.waitFor(`window.__game.world.player.texture.key.includes('_carry_')`, 'the figure to show its carry clip', 5000);
     // the stone is in the figure's hands over its head: the carry sheet is taller than the walk, 192 px, and its standing pose is the last frame
     const carried = await page.eval<{ key: string; frame: number; frames: number; height: number }>(

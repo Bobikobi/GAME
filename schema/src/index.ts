@@ -2024,7 +2024,7 @@ export const RampBody = Type.Object(
 /** The views of a character clip: the right side is the left one flipped, as the walk's is (the front faces the viewer, the back faces away). */
 export const CLIP_VIEWS = ['left', 'front', 'back'] as const;
 /** The verbs a character clip plays: the fight's outcome kinds (kernel/src/events.ts, #726) and the work actions. Display only. */
-export const CLIP_VERBS = ['strike', 'guard', 'dodge', 'hit', 'fell', 'quarry', 'fish', 'pickup', 'dig', 'carry', 'throw', 'push'] as const;
+export const CLIP_VERBS = ['strike', 'guard', 'dodge', 'hit', 'fell', 'quarry', 'fish', 'pickup', 'dig', 'carry', 'throw', 'push', 'lift'] as const;
 
 /**
  * A named character clip (#742): one sheet that plays one verb for one race in one view. The sheet's `frames` is the clip's
@@ -2036,7 +2036,7 @@ export const ClipBody = Type.Object(
   {
     race: Type.String({ pattern: ID_PATTERN, maxLength: 80, description: 'The race id the clip is drawn for, for example "core/human".' }),
     view: Type.Union(CLIP_VIEWS.map((v) => Type.Literal(v)), { description: 'left, front or back; the right side is the left one flipped.' }),
-    verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand) or push (two hands).' }),
+    verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands) or lift (a large stone from the ground to over the head).' }),
     frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
     anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
     fit_permille: Type.Optional(

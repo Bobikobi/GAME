@@ -604,6 +604,23 @@
           ]
         }
       },
+      "chars/human_lift_left": {
+        "file": "chars/human_lift_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "lift",
+          "frame_ms": 309,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
       "chars/human_push_front": {
         "file": "chars/human_push_front.png",
         "w": 128,
@@ -621,6 +638,23 @@
           ]
         }
       },
+      "chars/human_lift_front": {
+        "file": "chars/human_lift_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "lift",
+          "frame_ms": 310,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
       "chars/human_push_back": {
         "file": "chars/human_push_back.png",
         "w": 128,
@@ -632,6 +666,23 @@
           "view": "back",
           "verb": "push",
           "frame_ms": 308,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_lift_back": {
+        "file": "chars/human_lift_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 4,
+        "density": 4,
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "lift",
+          "frame_ms": 311,
           "anchor": [
             64,
             90

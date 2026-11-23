@@ -1053,7 +1053,7 @@
                       ]
                     },
                     "verb": {
-                      "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand) or push (two hands).",
+                      "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands) or lift (a large stone from the ground to over the head).",
                       "anyOf": [
                         {
                           "const": "strike",
@@ -1101,6 +1101,10 @@
                         },
                         {
                           "const": "push",
+                          "type": "string"
+                        },
+                        {
+                          "const": "lift",
                           "type": "string"
                         }
                       ]
