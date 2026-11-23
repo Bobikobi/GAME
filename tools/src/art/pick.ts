@@ -15,7 +15,7 @@
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
-import { CACHE_DIR, type Draft, DraftIndex, pngDims } from './drafts.js';
+import { CACHE_DIR, type Draft, DraftIndex, isRemoved, pngDims } from './drafts.js';
 import { ROOT } from './queue.js';
 import { POOLS, type PoolEntry, type PoolName, readPool } from './status.js';
 
@@ -102,6 +102,7 @@ export function planPicks(file: PicksFile, ctx: PickContext = {}): Step[] {
   return file.picks.map((action) => {
     const draft = index.drafts.get(action.draft);
     if (draft === undefined) throw new Error(`no draft ${action.draft} in the index`);
+    if (isRemoved(draft)) throw new Error(`draft ${action.draft} was removed from the store (${draft.removed}); its picture is only in the cold copy`);
     if (seen.has(action.draft)) throw new Error(`draft ${action.draft} is in the file twice`);
     seen.add(action.draft);
     const { pool, entry } = findEntry(root, draft, action.entry);
@@ -209,5 +210,9 @@ export function pickCli(args: readonly string[], ctx: PickContext = {}): { text:
   }
   const steps = planPicks(file, ctx);
   if (!dry) applyPicks(file, steps, ctx);
-  return { text: formatSteps(steps, dry), code: 0 };
+  // a pick that closes a trial leaves its losers behind: the next step is the prune's R2 (docs/art/REUSE.md, "Pruning the drafts store")
+  const next = !dry && steps.some((s) => s.action.action === 'pick')
+    ? 'next: if this pick closed a trial, add it to tools/kit-gen/prune/pick-closes.json and run `pnpm art:prune --dry --only R2` to see the losers\n'
+    : '';
+  return { text: formatSteps(steps, dry) + next, code: 0 };
 }

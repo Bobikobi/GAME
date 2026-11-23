@@ -100,7 +100,7 @@ export interface BuildResult { total: number; html: string; thumbs: ThumbReport;
 
 /** The whole build: thumbnails, then the page. Throws only when the index cannot be read. */
 export function buildLibrary(index: DraftIndex, out: string, opts: ThumbOptions & { builtAt?: string } = {}): BuildResult {
-  const drafts = [...index.drafts.values()];
+  const drafts = index.live();
   const thumbDir = join(out, 'thumb');
   const thumbs = ensureThumbs(drafts, thumbDir, opts);
   // the owner's hand sort (reviews.jsonl, kept in the page's folder by tools/art-library/serve.py) is laid over the index: his choice wins

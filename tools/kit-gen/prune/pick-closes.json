@@ -1,0 +1,48 @@
+{
+  "$comment": "Owner picks that closed. A draft whose every source is an option that lost is removed by `pnpm art:prune` (rule R2, pick-lost); a draft with a source in `keep` is never removed by any rule. Add an entry when a pick closes: the hub answer that holds the pick, the DECISIONS heading, and the losing options as regular expressions on a source's label, run folder and file (all fields given must match).",
+  "closes": [
+    {
+      "id": "creature-clips-1122",
+      "closed": "2026-11-22",
+      "decision": "Creature walks and plain attacks are made by PixelLab's PixMiniMax at 8 frames (1 to 2 generations a clip); the wolf bite needs keyed segments and room on the canvas (#793)",
+      "hub": "creature-clips-1122",
+      "picked": "walk 1b (R1c-wolf-walk8) and punch 1b (R1d-human-strike8-s303)",
+      "note": "The owner picked route 1b. The losers are the skeleton endpoint (R1) and the Blender motion under a PixelLab drawing (R2) of the walk, and the skeleton endpoint of the punch. Every bite, the R2b wolf and its recolours, and the R3 Codex poses stay: the owner liked the R2b wolf for the world of the dead and the bite is still open.",
+      "lost": [
+        {
+          "label": "creature clips? trial 793",
+          "run": "^R1-wolf-walk(8|15)$"
+        },
+        {
+          "label": "creature clips? trial 793",
+          "run": "^R2-wolf-walk(8|15)$"
+        },
+        {
+          "label": "creature clips? trial 793",
+          "run": "^R1-human-strike(8|15)$"
+        }
+      ],
+      "keep": [
+        {
+          "label": "creature clips? trial 793",
+          "run": "(bite|R2b|R3)"
+        }
+      ],
+      "scratch": [
+        {
+          "label": "creature clips? trial 793",
+          "run": "^(frames|out_0|walk8|walk15|h_strike8|h_strike15)$"
+        }
+      ]
+    },
+    {
+      "id": "valley-look-1122",
+      "closed": "2026-11-22",
+      "decision": "The first valley's base look is the painted new world (still B, the owner's pick)",
+      "hub": "valley-look-1122",
+      "picked": "B, the painted new world",
+      "note": "Stills A (the pixel valley) and C (painted ground with pixel things) cost no new drawing and are not in the drafts store, so nothing matches today. Still A stays as the way back (DECISIONS). An entry for a later pick whose options were drafts goes here with its matchers.",
+      "lost": []
+    }
+  ]
+}
