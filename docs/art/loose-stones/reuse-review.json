@@ -1,0 +1,79 @@
+{
+ "note": "Agent-written under docs/art/REUSE.md for the loose stones' art (DECISIONS 2026-11-23). Statuses are the agent's suggestions. The 27 carry, throw and push clips are new PixMiniMax takes (route and prompts: the drafts index, labels pixminimax-stone-clips and stone-clip-inputs); no existing clip held a carry, a throw or a push, so none was reused. The sheets in content/kit/core/chars/*_carry_*, *_throw_*, *_push_* are the committed art; every take (kept and refused) is in the drafts store.",
+ "assets": [
+  {
+   "id": "stone-large-items-stone",
+   "sha256": "1730c7436f4438700be678ea6698e1f3fe251f079ecae51186121c5e7f953f06",
+   "source": "content/kit/core/items/stone.png",
+   "depicts": "a river stone, about 60 x 49 art px",
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Reused whole as the large loose stone: the right size and read, already in the live kit.",
+   "reuse": [
+    "whole asset: the large stone on the ground, thrown and carried (the carry clip draws its own)"
+   ]
+  },
+  {
+   "id": "stone-heap-rock-stones",
+   "sha256": "faafae8836366f33a8d6a4a09ea22d0b9226441cc84a43d69f48261b4f701cdc",
+   "source": "content/kit/core/props/rock_stones.png",
+   "depicts": "a rubble heap of small stones, 61 x 49 art px",
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Reused whole as the picture of four or more small stones.",
+   "reuse": [
+    "whole asset: heap of 4+ small stones"
+   ]
+  },
+  {
+   "id": "stone-pebbles-considered",
+   "sha256": "fe5774da8e8a904ae5c4bb3054d10e6685fb39bc1d8a881001e30ab8096b12eb",
+   "source": "content/kit/core/props/pebbles.png",
+   "depicts": "six scattered pebbles on one tile",
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Checked for a pile of 2-3 stones and not adopted: one picture for two or three stones hides the count the pile shows by number. Kept for its own use as ground dressing.",
+   "reuse": [
+    "another role: ground dressing, small scatter"
+   ]
+  },
+  {
+   "id": "stone-rock-small-considered",
+   "sha256": "6c7206d40ba10e2ad932e92f8da8740d17b8409d09544d5f35ab9bac01776040",
+   "source": "content/kit/core/props/rock_small.png",
+   "depicts": "a cracked grey boulder, 60 x 37 art px",
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Checked as the small stone: it is as wide as the large stone, so it cannot read as the smaller one. Not adopted.",
+   "reuse": [
+    "another role: field rock"
+   ]
+  },
+  {
+   "id": "stone-rock-mossy-considered",
+   "sha256": "78ec614675857ab1207f1ac9eb35544de00fc5d2d1ca0b410148f6ea3d88478c",
+   "source": "content/kit/core/props/rock_mossy.png",
+   "depicts": "a boulder under moss, the full tile wide",
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Checked as the small stone: tile-wide and moss is a place's look, not a loose stone's. Not adopted.",
+   "reuse": [
+    "another role: mossy outcrop"
+   ]
+  },
+  {
+   "id": "stone-small-new",
+   "sha256": "a0f11d75f7347ab0c783dfd347d558f144c62a8ffe5169338e031c8ffd11d8f6",
+   "source": "content/kit/core/items/stone_small.png",
+   "depicts": "a hand stone, about 28 x 24 art px, ink edge by kit:ink",
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Drawn for this (PixelLab pixflux, draft b of three, reduced to 28 px): no existing picture was a hand-sized stone. Drafts a and c are in the drafts store.",
+   "reuse": [
+    "whole asset: the small loose stone, in a pile and in the air"
+   ],
+   "provenance": "PixelLab pixflux, label pixellab-stone-small in tools/kit-gen/drafts.jsonl; prompts in the lane's ignored scratch (unknown beyond the drafts index)",
+   "licence": "made by us"
+  }
+ ]
+}

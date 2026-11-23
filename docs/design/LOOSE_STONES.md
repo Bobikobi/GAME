@@ -28,29 +28,25 @@ A large stone is held over the head: the walk is slower (the load band of its we
 
 ## Client
 
-- Stones are drawn by count: one, two or three, and four or more (a heap of five pictures). A large stone is the same picture scaled up.
+- Stones are drawn by count: one, two or three small ones each its own picture; four or more small ones are one rubble heap (the existing `props/rock_stones`); with a large stone among them, a heap of five pictures. A small stone is its own drawing (`items/stone_small`, 28 x 24 art px), a large one the item picture `items/stone` (60 x 49).
 - A thrown stone flies on an arc (a longer throw rises higher), touches, bounces twice (a small stone hops, a large one thuds), slides on along the line while it slows, and turns as it goes. A stone that sinks goes under, smaller and fainter. Its shadow stays on the ground and thins as the stone rises. All of it is numbers in `game/src/stone-art.ts`: no picture is drawn by code.
 - The landing tile shows the stone only after the flight ends.
 - Phone (844 x 390) and desktop use the same code; the phone e2e is the group `stones-phone`.
 
-## STAND-INs (marked `STAND-IN` in `world.ts`)
+## Pictures and clips (DECISIONS 2026-11-23)
 
-1. The large stone held over the head: the one stone picture above the figure's head, bobbing with the walk, until the carry clip is drawn.
-2. The throw's lean: the drawn figure leans into the throw and settles back, until the throw clip is drawn.
-3. The sink ring is a plain splash puff in code.
-
-## Pictures the animation lane will need
-
-No new picture is needed for stage 1 and 2 to play. These make it finished:
-
-| Picture | Size | Notes |
+| Picture | Where | Notes |
 |---|---|---|
-| Stone, small (the item picture, scaled to 0.46, today) | about 28 x 24 art px at 64 art px per tile | its own drawing, so a pile reads as stones and not copies |
-| Stone, large (the item picture, scaled to 0.95, today) | about 60 x 50 art px at 64 art px per tile | |
-| Pile of 2-3 and heap of 4+ | one tile (64 x 64 art px) each | optional; the scaled stone picture stands in |
-| Throw clip | the standard 8-frame clip, all eight directions, over-hand for a small stone, two-hand push for a large one | replaces the lean |
-| Carry clip (walk with a large stone over the head) | the standard 8-frame walk, eight directions | replaces the stone riding above the standing frame |
-| Lift clip | the existing pickup clip (DECISIONS 2026-11-20) serves both sizes | no new one |
+| Stone, small | `items/stone_small`, drawn for this (PixelLab, draft b of three) | 28 x 24 art px, shown at 1:1 |
+| Stone, large | `items/stone`, reused | 60 x 49 art px |
+| Heap of 4+ small stones | `props/rock_stones`, reused | shown at 0.8 |
+| Pebbles (2-3 stones) | `props/pebbles` considered and not adopted | one picture for 2 or 3 stones hides the count; each stone keeps its own drawing |
+| Carry clip | `chars/<race>_carry_<view>`, 3 races x 3 views, 8 poses and the standing pose, 192 px frames | the figure walks with the stone over its head; the pose follows the distance walked at the walk's stride |
+| Throw clip (small stone, overhand) | `chars/<race>_throw_<view>`, 9 frames at 78 ms | the stone leaves the hand at frame 4 (312 ms) |
+| Push clip (large stone, two hands) | `chars/<race>_push_<view>`, 9 frames at 78 ms | the stone leaves the hands at frame 2 (156 ms) |
+| Lift | the existing pickup clip, played for the lift's time | no new one |
+
+Right and back-right views are the left ones mirrored (flips only left to right). The sink ring is still a plain splash puff in code (STAND-IN).
 
 ## Tree
 

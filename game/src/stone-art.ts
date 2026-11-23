@@ -1,29 +1,45 @@
 /**
  * The look of loose stones in code (DECISIONS 2026-11-22, loose stones, #831): where the pictures of a pile stand by its count,
- * and the motion of a thrown stone from the hand to where it rests. No picture is drawn here: every stone is the one item
- * picture `core/base-kit:items/stone`, scaled; this file is only numbers, so a test can play it with no renderer.
+ * and the motion of a thrown stone from the hand to where it rests. No picture is drawn here: a small stone is its own drawing
+ * (`items/stone_small`), a large one is the item picture `core/base-kit:items/stone`, scaled, and a heap of four or more small ones
+ * is the kit's rubble heap (`props/rock_stones`); this file is only numbers, so a test can play it with no renderer.
  * Units are tiles (a tile is 1, a pile's slot offsets and a stone's height are shares of it); the scene turns them into pixels.
  */
 import type { Tile } from '@game/kernel';
 
 export type StoneSize = 'small' | 'large';
 
-/** The scale of the item picture, as a share of its own (nearly tile-wide) size: a small stone in the hand, a large one on the ground. */
+/** The scale of the item picture `items/stone` (nearly tile-wide), as a share of its own size: a large stone on the ground (95 percent), and a small one before it had its own drawing (46 percent, kept as the unit a large stone among small ones is sized by). */
 export const STONE_SCALE: Readonly<Record<StoneSize, number>> = { small: 0.46, large: 0.95 };
+
+/** Which picture a slot shows: the small stone's own drawing, the item picture (a large stone), or the rubble heap. */
+export type StonePicture = 'small' | 'large' | 'heap';
+
+/** The small stone's own drawing (about 28 x 24 art pixels) is drawn at its true size: a share of itself of 1. */
+export const SMALL_STONE_SCALE = 1;
+
+/** The rubble heap of four or more small stones, as a share of its picture (61 x 49 art pixels, nearly a tile): a little smaller than a large stone. */
+export const HEAP_SCALE = 0.8;
 
 /** One picture of a pile: its offset from the tile's bottom middle (up is positive), and the size it shows. */
 export interface Slot {
   dx: number;
   dy: number;
   size: StoneSize;
-  /** the picture's scale, a share of the item picture */
+  /** the picture's scale, a share of its own picture */
   scale: number;
+  /** which picture it shows */
+  picture: StonePicture;
 }
 
-/** How many pictures a pile of `count` stones shows: the count itself up to three, five for four or more ("1, 2-3, 4+" of the brief). */
-export function drawnCount(count: number): number {
+/**
+ * How many pictures a pile of `count` stones shows: the count itself up to three, and for four or more the one rubble heap, or five
+ * pictures when a large stone lies among them ("1, 2-3, 4+" of the brief).
+ */
+export function drawnCount(count: number, large = 0): number {
   if (count <= 0) return 0;
-  return count >= 4 ? 5 : count;
+  if (count < 4) return count;
+  return large > 0 ? 5 : 1;
 }
 
 /** Which of the three looks a pile has: a lone stone, a few (2-3), or a heap (4+). */
@@ -36,6 +52,8 @@ export function pileLook(count: number): 'none' | 'one' | 'few' | 'heap' {
 /** The slots of a pile, back to front (the lower stones first). The first `large` of them are large stones, the rest small. */
 export function pileLayout(count: number, large = 0): Slot[] {
   const look = pileLook(count);
+  // four or more small stones are one heap picture, the kit's own rubble
+  if (look === 'heap' && large === 0) return [{ dx: 0, dy: 0, size: 'small', scale: HEAP_SCALE, picture: 'heap' }];
   const spots: [number, number, number][] =
     look === 'one'
       ? [[0, 0, 1]]
@@ -49,8 +67,8 @@ export function pileLayout(count: number, large = 0): Slot[] {
   return spots.map(([dx, dy, k], i) => {
     const size: StoneSize = i < large ? 'large' : 'small';
     // a large stone alone fills its tile; among others it keeps the slot's room
-    const scale = size === 'large' ? (look === 'one' ? STONE_SCALE.large : STONE_SCALE.small * 1.5 * k) : STONE_SCALE.small * k;
-    return { dx, dy, size, scale };
+    const scale = size === 'large' ? (look === 'one' ? STONE_SCALE.large : STONE_SCALE.small * 1.5 * k) : SMALL_STONE_SCALE * k;
+    return { dx, dy, size, scale, picture: size };
   });
 }
 

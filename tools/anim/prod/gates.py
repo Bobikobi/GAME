@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gates for one animation clip of a kept figure (anim lane, #716). Library: numpy + Pillow only, no paths of its own.
 
-A clip is a list of 128 x 128 RGBA frames. The kept set is `<kept>/<race>/<motion>-<view>/f0..f3.png`; the reference of a
+A clip is a list of 128 x 128 RGBA frames (192 x 192 for a clip that needs room above the head). The kept set is `<kept>/<race>/<motion>-<view>/f0..f3.png`; the reference of a
 (race, view) is its `idle-<view>` set: the ground row (lowest opaque row of f0), the stance height, the palettes.
 
 Gates, as the brief of 14.11 words them:
@@ -19,6 +19,9 @@ import numpy as np
 from PIL import Image
 
 SIZE = 128
+# A clip that needs room above the head (a stone held over it) is drawn on a 192 px frame: the 128 px frame bottom-centred on it, so the feet keep
+# their column and stand 64 rows lower (embed_stance).
+SIZES = (128, 192)
 FEET_SPREAD_MAX, BOB_MAX, IDENTITY_MAX, HEIGHT_DEV_MAX = 2, 3, 18.0, 3
 
 
@@ -33,8 +36,17 @@ def lab(rgb):
 
 def load(path):
     a = np.array(Image.open(path).convert("RGBA"))
-    assert a.shape == (SIZE, SIZE, 4), f"{path}: frames must be {SIZE}x{SIZE}"
+    assert a.shape in [(n, n, 4) for n in SIZES], f"{path}: frames must be {' or '.join(f'{n}x{n}' for n in SIZES)}"
     return a
+
+
+def embed_stance(a, size):
+    """A 128 px kept frame stood on a `size` px canvas, bottom-centred: the frame a larger clip is measured against."""
+    if size == a.shape[0]:
+        return a
+    out = np.zeros((size, size, 4), a.dtype)
+    out[size - a.shape[0]:, (size - a.shape[1]) // 2:(size - a.shape[1]) // 2 + a.shape[1]] = a
+    return out
 
 
 def colours(arrays):
@@ -57,11 +69,11 @@ def height(a):
 class Reference:
     """What a (race, view) keeps: ground row, stance height, palettes, ink share of the stance."""
 
-    def __init__(self, kept, race, view):
+    def __init__(self, kept, race, view, size=SIZE):
         base = Path(kept) / race
         stance = sorted(glob.glob(str(base / f"idle-{view}" / "f[0-9]*.png")))
         assert stance, f"no kept stance at {base}/idle-{view}"
-        self.stance_frames = [load(p) for p in stance]
+        self.stance_frames = [embed_stance(load(p), size) for p in stance]
         self.stance = self.stance_frames[0]
         self.ground = extent(self.stance)[1]
         self.stand_h = height(self.stance)
@@ -137,7 +149,7 @@ def components(a):
             for dy in (-1, 0, 1):
                 for dx in (-1, 0, 1):
                     ny, nx = cy + dy, cx + dx
-                    if 0 <= ny < SIZE and 0 <= nx < SIZE and m[ny, nx] and not seen[ny, nx]:
+                    if 0 <= ny < m.shape[0] and 0 <= nx < m.shape[1] and m[ny, nx] and not seen[ny, nx]:
                         seen[ny, nx] = True
                         stack.append((ny, nx))
         areas.append(n)
@@ -171,7 +183,7 @@ def run(frames, ref, *, air=(), bend=(), loop=False, loop_from=0, no_resnap=Fals
         fr = [np.roll(x, d, axis=1) if d else x for x, d in zip(fr, xshift)]
         for i, d in enumerate(xshift):
             if d:   # nothing may wrap or leave the frame
-                assert (fr[i][:, :max(d, 0)][..., 3] == 0).all() and (fr[i][:, 128 + min(d, 0):][..., 3] == 0).all(), f"frame {i}: the x anchor pushed the figure out of the frame"
+                assert (fr[i][:, :max(d, 0)][..., 3] == 0).all() and (fr[i][:, fr[i].shape[1] + min(d, 0):][..., 3] == 0).all(), f"frame {i}: the x anchor pushed the figure out of the frame"
     ext = [extent(x) for x in fr]
     heights = [e[1] - e[0] + 1 for e in ext]
     grounded = [i for i in range(len(fr)) if i not in air]

@@ -37,6 +37,7 @@ from PIL import Image
 RACES = ("human", "elf", "skeleton")
 WALK_VIEW = {"left": "left", "front": "down", "back": "up"}
 FRAME = 128
+FRAMES = (128, 192)  # a clip with room above the head (a stone held over it) is drawn on 192 px frames: the 128 frame bottom-centred on one
 DENSITY = 4
 REJECTED = re.compile(r"-s\d+$")
 
@@ -151,8 +152,8 @@ def load_take(folder):
     files = sorted(folder.glob("f[0-9][0-9].png"))
     frames = [np.array(Image.open(f).convert("RGBA")) for f in files]
     for f in frames:
-        if f.shape != (FRAME, FRAME, 4):
-            raise SystemExit(f"{folder}: a frame is not {FRAME} x {FRAME}")
+        if f.shape[0] not in FRAMES or f.shape != frames[0].shape or f.shape[0] != f.shape[1]:
+            raise SystemExit(f"{folder}: the frames are not all {' or '.join(f'{n} x {n}' for n in FRAMES)}")
     return frames, json.loads((folder / "clip.json").read_text())
 
 
@@ -160,14 +161,14 @@ MAX_SHEET_PX = 4096  # a picture wider or taller than this may be refused by a b
 WRAP_COLS = 16       # a longer clip wraps into rows of this many frames: 45 frames are 2048 x 384
 
 
-def cols_for(n):
+def cols_for(n, frame=FRAME):
     """Frames per row: none (one row) while the strip fits, else WRAP_COLS (kit.json's `cols`)."""
-    return None if n * FRAME <= MAX_SHEET_PX else WRAP_COLS
+    return None if n * frame <= MAX_SHEET_PX else WRAP_COLS
 
 
 def strip(frames):
     """The take's frames side by side (in rows of `cols_for` when it is too long for one), bytes fixed by the pixels alone (no metadata, no timestamps)."""
-    cols = cols_for(len(frames))
+    cols = cols_for(len(frames), frames[0].shape[0])
     if cols is None:
         sheet = np.concatenate(frames, axis=1)
     else:
@@ -221,7 +222,8 @@ def main():
         f = fit / 1000
         tlow = int(np.median([b[3] for b in boxes]))
         offset = wlow - anchor[1]                      # the walk's feet under its anchor, sheet rows
-        anc = [anchor[0], round(tlow - offset / f)]
+        size = frames[0].shape[0]
+        anc = [anchor[0] + (size - FRAME) // 2, round(tlow - offset / f)]   # a larger frame keeps the figure's column in its middle
         shown_h = th * f / DENSITY                     # world pixels
         walk_h = wh / DENSITY
         feet = ((tlow - anc[1]) * f - offset) / DENSITY  # the take's feet under the body point against the walk's, world pixels
@@ -237,7 +239,7 @@ def main():
             save(strip(frames), Path(a.kit) / f"{sheet}.png")
         if ok:
             clip = {"race": f"core/{race}", "view": view, "verb": verb, "frame_ms": int(meta["ms"]), "anchor": anc, "fit_permille": fit}
-            row = {"file": f"{sheet}.png", "w": FRAME, "h": FRAME, "frames": len(frames), **({"cols": cols_for(len(frames))} if cols_for(len(frames)) else {}), "density": DENSITY}
+            row = {"file": f"{sheet}.png", "w": size, "h": size, "frames": len(frames), **({"cols": cols_for(len(frames), size)} if cols_for(len(frames), size) else {}), "density": DENSITY}
             if "ramps" in walk:
                 row["ramps"] = walk["ramps"]
             row["clip"] = clip
