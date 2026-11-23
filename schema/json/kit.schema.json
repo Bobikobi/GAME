@@ -1135,6 +1135,30 @@
                       "maximum": 4000,
                       "description": "The factor the clip shows at on top of its density's base scale (1 / density), in thousandths (the bundle holds whole numbers only): a take drawn larger than the race's walk shows smaller, so its figure stands as tall as the walk's. Left out, 1000. The feet stay on the anchor whatever the fit.",
                       "type": "integer"
+                    },
+                    "hand": {
+                      "minItems": 1,
+                      "maxItems": 64,
+                      "description": "Where the drawn hand is in each frame, one point a frame from the first, in pixels of the frame (the same grid as `anchor`): the hand that throws, or the middle between the two hands that push or hold a stone. What a thing the figure holds is laid at the point of the frame that shows, and glides in a straight line to the next frame's point, so it follows the hand from the first frame to the one that lets it go. Points run from the first frame on, as many as the clip needs the hand for (never more than its frames). Left out, the clip has no hand to hold anything by.",
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": [
+                          {
+                            "minimum": 0,
+                            "maximum": 384,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 0,
+                            "maximum": 384,
+                            "type": "integer"
+                          }
+                        ],
+                        "additionalItems": false,
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
                     }
                   }
                 },
