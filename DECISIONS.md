@@ -4847,3 +4847,13 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **Why:** proven for the numbers (tests on the data, the glide, the share and the stone's centre); the placement of each point is the builder's eye, hypothesis until the owner sees the live game.
 
 **Retry when:** the owner finds a point off on the live game (move that one pair in `kit.json`; `tools/anim/prod/packclips.py --write-kit` keeps the points when a clip is repacked), or a clip is redrawn (its points are read again). **Model:** Claude Sonnet 5.5 (anim-routes lane). **Link:** #841 (the field), the stone hand art PR.
+
+## 2026-11-23 ✅ The wolf's front and back views are drawn and liked, and wait in the drafts store (#793)
+
+**What:** the wolf at the game's angle (DECISIONS 2026-11-22 "The wolf at the game's angle") got a front view and a back view, each a still, a walk and an idle by PixelLab. The owner liked the front on 22.11 at 21:02 (no note) and the back on 23.11 at 09:58 (the card `wolf-back-view-card-2-2211`, no note; read by the manager as the first back still, turned grey, which he had already called ok on 22.11 23:55). They are in the drafts store (#832 for the front and the first back, #834 for the back's second try), not in the kit.
+- **Route:** `edit_with_reference` from the game's own render of the wolf seen from the front and from behind, with the side wolf's final still as the colour reference; then a PixMiniMax walk and idle of 8 frames from the still (second tries with `last_frame` set to the still, seed 303, for the back). The back's first try came out brown with ears like a cat's (blind read: "a cat on two legs"); the grey-coat edit of the same still fixed the colour and the blind read, and the owner took it over a second try drawn from the game's up-view render (that one read as a wolf on four legs facing away, upright).
+- **Cost:** 55 PixelLab generations in all: the first round 27 (front and back stills 10 each, clips 1 each, retries), the back's second round 28 (version A the grey still 14, version B the render redraw 14).
+- **Bars measured, not passed, kept as polish (the owner: no detail picks):** the front walk's lowest row 4 px against the limit 1; the back walk's lowest row spread 5 px (limit 1, B2) and the back idle's height drift 4 px (B1 limit 2); everything else (loop closes, one component, palette distance 0) passes. Numbers are in the drafts' `bars-*.json`.
+- **Why:** proven for the numbers; the liking is the owner's eye on the cards.
+
+**Retry when:** the creature-clip shape (schema, loader, world.ts wolf) is built: then the views go into the kit, and the foot bars above are the first thing to polish. **Model:** Claude Sonnet 5.5 (anim-routes lane). **Link:** #832, #834, #820.
