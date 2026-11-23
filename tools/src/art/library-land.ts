@@ -17,7 +17,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 
-import { DraftIndex } from './drafts.js';
+import { DraftIndex, isRemoved } from './drafts.js';
 import { type Choice, REVIEWS_FILE, readReviews } from './library-reviews.js';
 import { ROOT } from './queue.js';
 
@@ -31,7 +31,7 @@ export function landChoices(index: DraftIndex, choices: ReadonlyMap<string, Choi
   const report: LandReport = { written: [], same: 0 };
   for (const choice of choices.values()) {
     const have = index.drafts.get(choice.id);
-    if (have === undefined) continue;
+    if (have === undefined || isRemoved(have)) continue;
     const haveNote = have.review_note ?? '';
     // choosing "unreviewed" on a draft nobody sorted says nothing
     if (choice.review === 'unreviewed' && have.review === 'unreviewed' && choice.note === '' && haveNote === '') { report.same += 1; continue; }

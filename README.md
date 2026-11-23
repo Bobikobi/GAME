@@ -4,11 +4,15 @@
 
 **WAKE BY THE BROKEN BRIDGE. FOLLOW THE LANTERNS. LEAVE YOUR MARK ON THE MIST.**
 
-Loomvale is a free pixel-art adventure about a valley that is never finished. Gather, cook and dig through ruins whose names are lost. Stay near the fire after dark - the eyes beyond it are patient.
+Loomvale is a free, open-source pixel-art world that players build together, and you explore it. Gather, cook and dig through ruins whose names are lost. Stay near the fire after dark - the eyes beyond it are patient.
 
-Every herb, quest, stranger and ruin was made by a player. The next one is yours.
+Every herb, quest, stranger and ruin was made by a player, in plain files anyone can read and add to. The code is open, the content is open, and it is built to work well with AI tools. The next piece is yours.
 
 **[Enter the valley](https://loomvale.vercel.app)** - free, in any browser, on a phone or a computer. No install, no account.
+
+[![Play free](https://img.shields.io/badge/play-free%20in%20your%20browser-3b7)](https://loomvale.vercel.app) [![CI](https://github.com/Bobikobi/loomvale/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/Bobikobi/loomvale/actions/workflows/ci.yml) [![Code: AGPL-3.0](https://img.shields.io/badge/code-AGPL--3.0-blue)](LICENSE) [![Content: CC BY-SA 4.0](https://img.shields.io/badge/content-CC%20BY--SA%204.0-blue)](content/LICENSE) [![Good first issues](https://img.shields.io/github/issues/Bobikobi/loomvale/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/Bobikobi/loomvale/labels/good%20first%20issue)
+
+Like where this is going? **Star the repo** so others find it, or pick a [good first issue](https://github.com/Bobikobi/loomvale/labels/good%20first%20issue) and add your first townsperson in 15 minutes.
 
 A project by [Elad Saadon](https://www.eladsaadon.dev) - [see more projects](https://www.eladsaadon.dev/projects).
 
