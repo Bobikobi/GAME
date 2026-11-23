@@ -4,9 +4,9 @@
 
 **WAKE BY THE BROKEN BRIDGE. FOLLOW THE LANTERNS. LEAVE YOUR MARK ON THE MIST.**
 
-Loomvale is a free pixel-art adventure about a valley that is never finished. Gather, cook and dig through ruins whose names are lost. Stay near the fire after dark - the eyes beyond it are patient.
+Loomvale is a free, open-source pixel-art world that players build together, and you explore it. Gather, cook and dig through ruins whose names are lost. Stay near the fire after dark - the eyes beyond it are patient.
 
-Every herb, quest, stranger and ruin was made by a player. The next one is yours.
+Every herb, quest, stranger and ruin was made by a player, in plain files anyone can read and add to. The code is open, the content is open, and it is built to work well with AI tools. The next piece is yours.
 
 **[Enter the valley](https://loomvale.vercel.app)** - free, in any browser, on a phone or a computer. No install, no account.
 
