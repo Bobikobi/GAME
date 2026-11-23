@@ -170,26 +170,42 @@ describe('the idle queue', () => {
 function fakeScene() {
   const live = new Set<string>();
   const images = new Set<object>();
+  const shown: string[] = [];
   const scene = {
     textures: {
       createCanvas: (key: string) => (live.add(key), { refresh: () => undefined }),
       remove: (key: string) => void live.delete(key),
     },
     add: {
-      image: () => {
-        const img = { setOrigin: () => img, setScale: () => img, setDepth: () => img, setTexture: () => img, destroy: () => void images.delete(img) };
+      image: (_x: number, _y: number, key: string) => {
+        const img = { setOrigin: () => img, setScale: () => img, setDepth: () => img, setTexture: (key: string) => (shown.push(key), img), destroy: () => void images.delete(img) };
+        shown.push(key);
         images.add(img);
         return img;
       },
     },
   };
-  return { scene: scene as unknown as Phaser.Scene, live, images };
+  return { scene: scene as unknown as Phaser.Scene, live, images, shown };
 }
 
 describe('the ground pages through the stream', () => {
   const unit = 16;
   const side = CHUNK * unit;
   const view = (px: number, py: number) => ({ x: px * side + 4, y: py * side + 4, right: px * side + 180, bottom: py * side + 390 });
+
+  test('one painter bakes all frames of an animated page and the image shows each in turn', () => {
+    const { scene, shown } = fakeScene();
+    const baked: number[][] = [];
+    const g = new GroundChunks(scene, CHUNK, CHUNK, 4, unit, 4, 0, () => {
+      const frames: number[] = [];
+      baked.push(frames);
+      return (_tex, frame) => (frames.push(frame), true);
+    });
+    g.update(view(0, 0));
+    expect(baked).toEqual([[0, 1, 2, 3]]);
+    for (const frame of [1, 2, 3, 0]) g.setFrame(frame);
+    expect(shown).toEqual([0, 1, 2, 3, 0].map((frame) => `ground-c0x0-${frame}`));
+  });
 
   test('the pages in view bake at once, the ring waits for an idle slice, and a held chunk limits the pages', () => {
     const { scene, live } = fakeScene();
@@ -198,7 +214,7 @@ describe('the ground pages through the stream', () => {
     const stream = new ChunkStream(world);
     stream.update(96, 96);
     const painted: string[] = [];
-    const g = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, (_t, _f, tx, ty) => (painted.push(`${tx / CHUNK},${ty / CHUNK}`), false), (tx, ty) => stream.holds(tx, ty), q);
+    const g = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => (_t, _f, tx, ty) => (painted.push(`${tx / CHUNK},${ty / CHUNK}`), false), (tx, ty) => stream.holds(tx, ty), q);
     g.update(view(6, 6), '1,1');
     // the view at (6,6) spans pages x 6..6 and y 6..7 (180 by 390 units), the ring adds one around it
     expect(painted).toEqual(['6,6', '6,7']);
@@ -209,7 +225,7 @@ describe('the ground pages through the stream', () => {
     expect(g.waiting).toBe(0);
     expect(live.size).toBe(12);
     // a page of a chunk that is not held is never asked for
-    const far = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => false, () => false, new IdleQueue(() => undefined));
+    const far = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => () => false, () => false, new IdleQueue(() => undefined));
     far.update(view(6, 6));
     expect(far.count).toBe(0);
     expect(far.waiting).toBe(0);
@@ -219,7 +235,7 @@ describe('the ground pages through the stream', () => {
     const { scene, live } = fakeScene();
     const idle: ((s: Slice) => void)[] = [];
     const q = new IdleQueue((run) => void idle.push(run), () => 0);
-    const g = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => false, () => true, q);
+    const g = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => () => false, () => true, q);
     g.update(view(2, 2));
     g.update(view(9, 9));
     expect(g.waiting).toBeLessThanOrEqual(12);
