@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Every script, in the order `pnpm e2e` plays them. A new script goes here and into one group below. */
-const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea', 'clips', 'jump', 'stones'];
+const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea', 'clips', 'jump', 'stones', 'effects'];
 
 interface Entry {
   name: string;
@@ -53,6 +53,8 @@ const GROUPS: Record<string, Group> = {
   'jump-phone': { entries: ['jump'].map(plain), minutes: 8 },
   // the loose stones on a phone on its side: lift, throw, bounce, pile, carry
   'stones-phone': { entries: ['stones'].map(plain), minutes: 8 },
+  // the first effects on a phone on its side: a spark, a starburst, dust on a landing, the camp fire's loop
+  'effects-phone': { entries: ['effects'].map(plain), minutes: 8 },
   'map-and-shop': { entries: ['map', 'shop', 'fishing'].map(plain), minutes: 10 },
   'shop-rooms-and-signin': { entries: ['shop-stock', 'shop-interior', 'signin'].map(plain), minutes: 10 },
 };
