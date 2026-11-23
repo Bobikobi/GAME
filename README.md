@@ -1,6 +1,6 @@
 # Loomvale
 
-[![Loomvale key art: an elf, a wanderer and a skeleton above a misty valley of ruins and a river town. Click to play in the browser.](web/public/keyart/hero-poster.jpg)](https://loomvale.vercel.app)
+[![Loomvale key art: an elf, a wanderer and a skeleton above a misty valley of ruins and a river town. Click to play in the browser.](docs/readme-hero.gif)](https://loomvale.vercel.app)
 
 **WAKE BY THE BROKEN BRIDGE. FOLLOW THE LANTERNS. LEAVE YOUR MARK ON THE MIST.**
 
