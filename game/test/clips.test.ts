@@ -35,8 +35,8 @@ beforeAll(() => {
 });
 
 describe('B2: a clip is found by verb, race and view', () => {
-  test('all 9 verbs x 3 views are 27 lookups, each returning that sheet and its own frame time', () => {
-    expect(CLIP_VERBS).toHaveLength(9);
+  test('all 12 verbs x 3 views are 36 lookups, each returning that sheet and its own frame time', () => {
+    expect(CLIP_VERBS).toHaveLength(12);
     expect(CLIP_VIEWS).toHaveLength(3);
     let looked = 0;
     const times = new Set<number>();
@@ -54,9 +54,9 @@ describe('B2: a clip is found by verb, race and view', () => {
         looked += 1;
       }
     }
-    expect(looked).toBe(27);
+    expect(looked).toBe(36);
     // every sheet is told apart by its own time: a lookup that ignored the verb or the view would show up as a repeat
-    expect(times.size).toBe(27);
+    expect(times.size).toBe(36);
   });
 
   test('the clip\'s display fit (permille) rides through the schema and the assembler to the bundle, and a clip with none has none', () => {
