@@ -60,7 +60,7 @@ export class GroundChunks {
     private readonly unit: number,
     private readonly frames: number,
     private readonly depth: number,
-    private readonly paint: ChunkPainter,
+    private readonly makePainter: () => ChunkPainter,
     private readonly allow: (tx: number, ty: number) => boolean = () => true,
     private readonly queue: IdleQueue = new IdleQueue(),
   ) {}
@@ -143,13 +143,14 @@ export class GroundChunks {
     const ty0 = cy * CHUNK;
     const tw = Math.min(CHUNK, this.tilesW - tx0);
     const th = Math.min(CHUNK, this.tilesH - ty0);
+    const paint = this.makePainter();
     const keys: string[] = [];
     const make = (frame: number): boolean => {
       const key = `ground-c${cx}x${cy}-${frame}`;
       const tex = this.scene.textures.createCanvas(key, tw * this.unit * this.density, th * this.unit * this.density);
       if (!tex) throw new Error(`no canvas for ${key}`);
       keys.push(key);
-      const animated = this.paint(tex, frame, tx0, ty0, tw, th);
+      const animated = paint(tex, frame, tx0, ty0, tw, th);
       tex.refresh();
       return animated;
     };

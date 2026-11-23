@@ -303,6 +303,8 @@ export function showTitle(ui: UI): Promise<void> {
     };
 
     home();
+    // Give the browser a paint opportunity before recording when the title is on screen.
+    requestAnimationFrame(() => requestAnimationFrame(() => performance.mark('title')));
   });
 }
 
