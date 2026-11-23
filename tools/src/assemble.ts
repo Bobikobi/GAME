@@ -434,7 +434,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
               ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
-              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number], ...(s.clip.fit_permille === undefined ? {} : { fit_permille: s.clip.fit_permille }) } } : {}),
+              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number], ...(s.clip.fit_permille === undefined ? {} : { fit_permille: s.clip.fit_permille }), ...(s.clip.hand === undefined ? {} : { hand: s.clip.hand.map((h) => [h[0], h[1]] as [number, number]) }) } } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -468,6 +468,10 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
       const where = `kit.sprites.${name}.clip`;
       const file = kitFiles[kitId]!;
       if (!records.races[s.clip.race]) issues.push({ file, where: `${where}.race`, message: `"${s.clip.race}" is not a race`, level: 'error' });
+      // a hand is one point a frame from the first: more points than frames would name frames the clip does not have
+      if (s.clip.hand && s.clip.hand.length > s.frames) {
+        issues.push({ file, where: `${where}.hand`, message: `${s.clip.hand.length} hand points for ${s.frames} frames: a hand is at most one point a frame`, level: 'error' });
+      }
       const lookup = `${s.clip.verb} ${s.clip.race} ${s.clip.view}`;
       const other = clipAt.get(lookup);
       if (other) issues.push({ file, where, message: `${other} already plays ${lookup}: a clip is one sheet for one verb, race and view`, level: 'error' });
