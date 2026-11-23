@@ -10,6 +10,10 @@ Every herb, quest, stranger and ruin was made by a player, in plain files anyone
 
 **[Enter the valley](https://loomvale.vercel.app)** - free, in any browser, on a phone or a computer. No install, no account.
 
+[![Play free](https://img.shields.io/badge/play-free%20in%20your%20browser-3b7)](https://loomvale.vercel.app) [![CI](https://github.com/Bobikobi/loomvale/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/Bobikobi/loomvale/actions/workflows/ci.yml) [![Code: AGPL-3.0](https://img.shields.io/badge/code-AGPL--3.0-blue)](LICENSE) [![Content: CC BY-SA 4.0](https://img.shields.io/badge/content-CC%20BY--SA%204.0-blue)](content/LICENSE) [![Good first issues](https://img.shields.io/github/issues/Bobikobi/loomvale/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/Bobikobi/loomvale/labels/good%20first%20issue)
+
+Like where this is going? **Star the repo** so others find it, or pick a [good first issue](https://github.com/Bobikobi/loomvale/labels/good%20first%20issue) and add your first townsperson in 15 minutes.
+
 A project by [Elad Saadon](https://www.eladsaadon.dev) - [see more projects](https://www.eladsaadon.dev/projects).
 
 **Stage 1 is a demo.** Progress is saved in your browser only and will not move to an account later; demo players get a title and a cosmetic item instead.
