@@ -257,7 +257,7 @@ describe('the packed kit', () => {
     }
   });
 
-  test('the boot loads no clip sheet; a race\'s clips are the 32 sheets of that race (23 or 24 and the stones\' carry, throw and push) and nothing of another', () => {
+  test('the boot loads no clip sheet; a race\'s clips are the 35 sheets of that race (23 or 24 and the stones\' carry, throw, push and lift) and nothing of another', () => {
     const boot = bootSprites(real);
     expect(boot.some(([, s]) => s.clip !== undefined)).toBe(false);
     expect(boot.length + Object.values(real).filter((s) => s.clip).length).toBe(Object.keys(real).length);
@@ -268,7 +268,7 @@ describe('the packed kit', () => {
       expect(own.length, race).toBeGreaterThanOrEqual(23);
       all += own.length;
     }
-    expect(all).toBe(98);
+    expect(all).toBe(107);
     expect(raceClips(real, 'core/dragon')).toEqual([]);
   });
 

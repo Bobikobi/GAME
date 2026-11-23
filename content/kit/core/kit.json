@@ -5294,6 +5294,561 @@
         },
         "scale": 0.74
       },
+      "chars/human_lift_back": {
+        "file": "chars/human_lift_back.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 740,
+          "hand": [
+            [
+              95,
+              144
+            ],
+            [
+              90,
+              157
+            ],
+            [
+              92,
+              159
+            ],
+            [
+              95,
+              161
+            ],
+            [
+              95,
+              162
+            ],
+            [
+              95,
+              157
+            ],
+            [
+              92,
+              143
+            ],
+            [
+              94,
+              98
+            ],
+            [
+              93,
+              68
+            ]
+          ]
+        },
+        "scale": 1.32
+      },
+      "chars/human_lift_front": {
+        "file": "chars/human_lift_front.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 698,
+          "hand": [
+            [
+              95,
+              160
+            ],
+            [
+              93,
+              160
+            ],
+            [
+              92,
+              160
+            ],
+            [
+              92,
+              160
+            ],
+            [
+              94,
+              155
+            ],
+            [
+              94,
+              143
+            ],
+            [
+              95,
+              114
+            ],
+            [
+              94,
+              71
+            ],
+            [
+              95,
+              66
+            ]
+          ]
+        },
+        "scale": 1.27
+      },
+      "chars/human_lift_left": {
+        "file": "chars/human_lift_left.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            166
+          ],
+          "fit_permille": 719,
+          "hand": [
+            [
+              81,
+              160
+            ],
+            [
+              79,
+              160
+            ],
+            [
+              79,
+              160
+            ],
+            [
+              75,
+              160
+            ],
+            [
+              75,
+              160
+            ],
+            [
+              76,
+              160
+            ],
+            [
+              79,
+              144
+            ],
+            [
+              78,
+              108
+            ],
+            [
+              94,
+              73
+            ]
+          ]
+        },
+        "scale": 1.24
+      },
+      "chars/elf_lift_back": {
+        "file": "chars/elf_lift_back.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "back",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            164
+          ],
+          "fit_permille": 840,
+          "hand": [
+            [
+              80,
+              156
+            ],
+            [
+              95,
+              150
+            ],
+            [
+              94,
+              158
+            ],
+            [
+              96,
+              164
+            ],
+            [
+              96,
+              164
+            ],
+            [
+              92,
+              145
+            ],
+            [
+              96,
+              137
+            ],
+            [
+              95,
+              87
+            ],
+            [
+              94,
+              63
+            ]
+          ]
+        },
+        "scale": 1.55
+      },
+      "chars/elf_lift_front": {
+        "file": "chars/elf_lift_front.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "front",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            166
+          ],
+          "fit_permille": 790,
+          "hand": [
+            [
+              92,
+              159
+            ],
+            [
+              92,
+              159
+            ],
+            [
+              92,
+              159
+            ],
+            [
+              92,
+              159
+            ],
+            [
+              94,
+              159
+            ],
+            [
+              94,
+              151
+            ],
+            [
+              94,
+              113
+            ],
+            [
+              94,
+              76
+            ],
+            [
+              96,
+              64
+            ]
+          ]
+        },
+        "scale": 1.45
+      },
+      "chars/elf_lift_left": {
+        "file": "chars/elf_lift_left.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/elf",
+          "view": "left",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 840,
+          "hand": [
+            [
+              78,
+              159
+            ],
+            [
+              78,
+              159
+            ],
+            [
+              76,
+              159
+            ],
+            [
+              76,
+              159
+            ],
+            [
+              76,
+              159
+            ],
+            [
+              79,
+              155
+            ],
+            [
+              80,
+              128
+            ],
+            [
+              78,
+              84
+            ],
+            [
+              90,
+              68
+            ]
+          ]
+        },
+        "scale": 1.5
+      },
+      "chars/skeleton_lift_back": {
+        "file": "chars/skeleton_lift_back.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "back",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              80,
+              156
+            ],
+            [
+              95,
+              155
+            ],
+            [
+              95,
+              162
+            ],
+            [
+              90,
+              166
+            ],
+            [
+              91,
+              160
+            ],
+            [
+              82,
+              141
+            ],
+            [
+              86,
+              114
+            ],
+            [
+              90,
+              86
+            ],
+            [
+              90,
+              64
+            ]
+          ]
+        },
+        "scale": 1.02
+      },
+      "chars/skeleton_lift_front": {
+        "file": "chars/skeleton_lift_front.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "front",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              90,
+              158
+            ],
+            [
+              90,
+              158
+            ],
+            [
+              90,
+              158
+            ],
+            [
+              90,
+              158
+            ],
+            [
+              88,
+              158
+            ],
+            [
+              90,
+              146
+            ],
+            [
+              91,
+              107
+            ],
+            [
+              91,
+              68
+            ],
+            [
+              88,
+              66
+            ]
+          ]
+        },
+        "scale": 1
+      },
+      "chars/skeleton_lift_left": {
+        "file": "chars/skeleton_lift_left.png",
+        "w": 192,
+        "h": 192,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "clip": {
+          "race": "core/skeleton",
+          "view": "left",
+          "verb": "lift",
+          "frame_ms": 67,
+          "anchor": [
+            96,
+            167
+          ],
+          "fit_permille": 562,
+          "hand": [
+            [
+              78,
+              158
+            ],
+            [
+              78,
+              158
+            ],
+            [
+              74,
+              158
+            ],
+            [
+              75,
+              158
+            ],
+            [
+              75,
+              158
+            ],
+            [
+              80,
+              158
+            ],
+            [
+              79,
+              142
+            ],
+            [
+              74,
+              102
+            ],
+            [
+              86,
+              70
+            ]
+          ]
+        },
+        "scale": 0.98
+      },
       "tiles/planks": {
         "file": "tiles/planks.png",
         "w": 64,
