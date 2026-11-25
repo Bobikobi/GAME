@@ -107,6 +107,6 @@ export function scaleProblems(name: string, scale: number | undefined, isClip = 
   }
   const kind = scaleKindOf(name);
   return kind && scale < passes(kind.floor)
-    ? [`scale ${scale} is under the floor of a ${kind.kind}, ${kind.floor} characters (NATURE section 1, STYLE 1b; a tenth under still passes); bigger is open`]
+    ? [`scale ${scale} is under the floor for ${kind.kind}, ${kind.floor} characters (NATURE section 1, STYLE 1b; a tenth under still passes); bigger is open`]
     : [];
 }
