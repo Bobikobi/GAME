@@ -4865,3 +4865,13 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **Why:** proven for the timing, the hand-over and the pack band; the look of the crouch and the ring (timing, size) is the builder's eye, hypothesis until the owner sees the live game.
 
 **Retry when:** the owner finds the lift stiff or a stone off on the live game (redraw those cells with a slower wording, or move a hand point in `kit.json`), or gate a learns to read a declared bend. **Model:** Claude Sonnet 5.5 (anim-routes lane). **Link:** #793, #840, #842.
+
+## 2026-11-25 ✅ A small health bar under the foe, with its number (#866)
+
+**What:** the screen step of #549 draws a small health bar under each fighting creature: the filled share is the creature's `health / fight.hp`, the current health printed beside it in the fight words' Jersey 15 label. It appears when the creature is first hit or engages the player, stays while it fights, fades over two seconds once the fight ends, and is gone at once on death; a full-health creature nobody fights shows none. The bar reads the fight's own state, no new kernel field: a hit already carries `foe: { left, whole }` (#715). The numbers and the flight are pure (`game/src/foe-bar.ts`, unit-tested); the DOM is a thin layer (`game/src/foe-bar-layer.ts`) over the world labels, anchored under the creature's feet so it never covers the face or the fight words, and it follows the sprite as it moves. Colours are the existing palette's (ink track, paper edge, green2 fill, paper number).
+- **Result:** `pnpm verify` green; 7 unit tests cover full/half/one-health fill, shown on hit, hidden when untouched, faded after the fight, gone on death, two creatures two bars, and the under-the-feet placement clear of the words.
+- **Why:** the bar is pure screen code reading the event the tick already tells; the fight chunk itself is still not wired into the game (the events flow once it is).
+- **3D:** paused; the layer is door-agnostic and would hang off `/play3d/`'s labels with a feet projector, as the fight words already do.
+- **Retry when:** the fight tick is wired (then the bar lights up on the valley's wolf and hunt), or a school file holding fight nodes lands (to move the PR's `Tree:` off `none`).
+
+**Tree:** none: no school file holds fight nodes yet; the bar serves every fight node to come. **Model:** deepseek-v4-pro. **Link:** #866.
