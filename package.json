@@ -57,6 +57,7 @@
     "loop": "tsx tools/src/loop/cli.ts",
     "streams": "tsx tools/src/streams/cli.ts",
     "quests": "tsx tools/src/quests/cli.ts",
+    "slots": "tsx tools/src/slots.ts",
     "map:difficulty": "tsx tools/src/balance/reckon-cli.ts",
     "map:playtest": "tsx tools/src/balance/playtest-cli.ts",
     "balance": "tsx tools/src/balance/cli.ts",

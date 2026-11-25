@@ -45,6 +45,23 @@ function folderOf(handle: string): string {
   return handle === 'core' ? 'content/core' : `content/extensions/${handle}`;
 }
 
+/** The map's slots, one per entry: id, kind, and the record that fills each one, or null when it awaits a creator. */
+export function mapSlots(bundle: Bundle): HubSlot[] {
+  const slots = slotOf(bundle);
+  const filledBy = new Map<string, string>();
+  for (const [id, slot] of [...slots].sort((a, b) => a[0].localeCompare(b[0]))) if (!filledBy.has(slot)) filledBy.set(slot, id);
+  return bundle.map.slots.map((s) => ({
+    id: s.id,
+    kind: s.kind as HubSlot['kind'],
+    ...(s.label ? { label: s.label } : {}),
+    x: s.x,
+    y: s.y,
+    w: s.w,
+    h: s.h,
+    filled_by: filledBy.get(s.id) ?? null,
+  }));
+}
+
 export function contentSections(
   bundle: Bundle,
   kits: Assembled['kits'],
@@ -105,20 +122,7 @@ export function contentSections(
     };
   });
 
-  const filledBy = new Map<string, string>();
-  for (const [id, slot] of [...slots].sort((a, b) => a[0].localeCompare(b[0]))) if (!filledBy.has(slot)) filledBy.set(slot, id);
-  const slotList: HubSlot[] = bundle.map.slots.map((s) => ({
-    id: s.id,
-    kind: s.kind as HubSlot['kind'],
-    ...(s.label ? { label: s.label } : {}),
-    x: s.x,
-    y: s.y,
-    w: s.w,
-    h: s.h,
-    filled_by: filledBy.get(s.id) ?? null,
-  }));
-
-  return { creators, extensions, kits: kitList, slots: slotList };
+  return { creators, extensions, kits: kitList, slots: mapSlots(bundle) };
 }
 
 interface BoundedValue {
