@@ -60,7 +60,7 @@ pnpm verify                # schemas, content check, lint, types, tests, build
 # CI plays the opening e2e (skipped on a docs-only pull request); run it locally only to debug a red run, under flock /tmp/game-e2e.lock
 ```
 
-The description says what changed and why, not a list of files, and how you checked it. CI runs the same checks; the required job is "Check, test, build and play". A pull request that changes only prose (everything under `docs/`, any Markdown file outside `game/`, `DECISIONS.md`, `.github/prompts/`, `tools/kit-gen/*.json`) skips the browser tests; the required job still reports. Vercel posts a preview link; reviewers play that, not the code alone.
+The description says what changed and why, not a list of files, and how you checked it. CI runs the same checks; the required job is "Check, test, build and play". A pull request that changes only prose (everything under `docs/`, any Markdown file outside `game/`, `DECISIONS.md`, `.github/prompts/`, a kit-gen spec under `tools/kit-gen/`) skips the browser tests; the required job still reports. Vercel posts a preview link; reviewers play that, not the code alone.
 
 The reviewer checks four things:
 
@@ -86,7 +86,7 @@ To roll back, promote the previous production deployment in Vercel, then revert 
 
 ## Secrets
 
-Nothing secret goes into git, not even in a private repository: no `.env`, keys or tokens. They live with their owner, and the deploy reads them from Vercel's environment settings. If one is committed by mistake, treat it as exposed: rotate it first, then clean up.
+Nothing secret goes into git, not even in a private repository: no env files, keys or tokens. They live with their owner, and the deploy reads them from Vercel's environment settings. If one is committed by mistake, treat it as exposed: rotate it first, then clean up.
 
 CI scans every pull request, and the full history of `develop` and `main`, with gitleaks (`.github/workflows/secrets.yml`). A hit names the commit, the file and the rule, redacted; a red run is a stop: rotate the secret and remove it, then continue.
 
