@@ -90,7 +90,7 @@ A townsperson has no price, stat or reward of their own. What they ask of the pl
 pnpm check
 ```
 
-Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout may already print warnings about core files; read any line from your folder. It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
+Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and the last line counts yours apart from the core's, for example `129 files checked: 0 errors, 27 warnings (0 in content/extensions)`: read any warning under your `content/extensions/<your-handle>/` folder, and leave the core's. It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
 
 ## 5. See it in the game (3 minutes)
 
