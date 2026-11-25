@@ -15,7 +15,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { type Bundle, EFFORT_TIERS, type Params, activitiesOf, clamp, computeValues, effortTier, idiv, mulDiv, mulDivUp, payFor } from '@game/kernel';
+import { type Bundle, EFFORT_TIERS, type Params, activitiesOf, clamp, computeValues, effortTier, idiv, inRect, mulDiv, mulDivUp, payFor, tagAt } from '@game/kernel';
 import { TILE_TAGS } from '@game/schema';
 import { thresholdsOf } from './curve';
 import { RARITY_NAMES, type Rules } from './rules';
@@ -91,6 +91,8 @@ export interface KindRow {
   habitat_tag: (typeof TILE_TAGS)[number] | null;
   /** the map's tiles of the habitat tag, solid ones counted (CREATURE_BEHAVIOUR 3); never typed, counted by `onMap`; null with no tag or before `onMap` */
   habitat_tiles: number | null;
+  /** the same tiles by danger band d0, d1 and d2 (G64), so a kind's region is its own danger band (BESTIARY_LANDS 4); never typed, counted by `onMap` */
+  region_habitat_tiles: [number, number, number] | null;
   /** solo / pair / small / large weights, CREATURE_BEHAVIOUR 5.1.6 */
   group: [number, number, number, number];
   /** the rarest drop's rank, 0 common to 3 legendary, for a kind that has spots; absent: no spots, no rarity bonus */
@@ -307,6 +309,7 @@ function readKind(v: unknown, path: string): KindRow {
     smell: intOrNull(o.smell, `${path}.smell`, 0, 16),
     habitat_tag: tag,
     habitat_tiles: null,
+    region_habitat_tiles: null,
     group: group as KindRow['group'],
     ...(o.rarity !== undefined ? { rarity: int(o.rarity, `${path}.rarity`, 0, 3) } : {}),
     source: str(o.source, `${path}.source`),
@@ -461,6 +464,46 @@ export function standing(k: KindRow): number | null {
 export function dailyYield(k: KindRow): { num: number; den: number; per1000: boolean } {
   const s = standing(k);
   return s === null ? { num: k.cap_per_1000, den: k.refill_d, per1000: true } : { num: s, den: k.refill_d, per1000: false };
+}
+
+/** BESTIARY_LANDS 4: the standing count in the kind's own region band (its danger): floor(cap * the band's habitat tiles / 1000), one at least where the band has any habitat; null with no tile count. */
+export function standingInRegion(k: KindRow): number | null {
+  if (k.region_habitat_tiles === null) return null;
+  const tiles = k.region_habitat_tiles[k.danger]!;
+  if (tiles === 0) return 0;
+  return Math.max(1, mulDiv(k.cap_per_1000, tiles, 1000));
+}
+
+/** The hunt balance rows (BESTIARY_LANDS 4): one per kind in its own region band, the standing, the takes a day and the players at which it empties in one day. */
+export interface HuntBalanceRow {
+  id: string;
+  name: string;
+  /** the kind's region band d (0, 1 or 2): its own danger, until a spot carries a region */
+  region: 0 | 1 | 2;
+  /** the standing count in that band; null with no habitat tag */
+  standing: number | null;
+  /** the takes a day: the standing over the refill */
+  takes: { num: number; den: number };
+  /** the players at which the kind empties in one day: the standing count, one take per player a day */
+  players: number | null;
+  /** true when a d0 kind empties under 8 players in its region, the threshold BESTIARY_LANDS 4 proposes */
+  red: boolean;
+}
+
+/** BESTIARY_LANDS 4's prover rows, computed from the ladder with its habitat tiles counted on the map (`onMap`). */
+export function huntBalance(ladder: Ladder): HuntBalanceRow[] {
+  return ladder.kinds.map((k) => {
+    const s = standingInRegion(k);
+    return {
+      id: k.id,
+      name: k.name,
+      region: k.danger,
+      standing: s,
+      takes: { num: s ?? 0, den: k.refill_d },
+      players: s,
+      red: k.danger === 0 && s !== null && s > 0 && s < 8,
+    };
+  });
 }
 
 /** The proposed rank by cap over refill: at or above the first cut 0 (common), the second 1, the third 2, else 3. */
@@ -955,10 +998,46 @@ export function tagTiles(map: Bundle['map']): Record<string, number> {
   return out;
 }
 
+/** The danger band d of a map tile (G64, CR-38), as the kernel's `dangerAt` reads it: 0 on safe ground (the town and the safe slots), else the smallest area slot's danger, else 1 for wild ground in no area. */
+function bandAt(map: Bundle['map'], x: number, y: number): number {
+  if (tagAt(map, x, y) === 'town') return 0;
+  for (const s of map.slots) if (s.safe === true && inRect(x, y, s)) return 0;
+  let found: { d: number; size: number } | undefined;
+  for (const s of map.slots) {
+    if (s.kind !== 'area' || s.danger === undefined || !inRect(x, y, s)) continue;
+    const size = s.w * s.h;
+    if (!found || size < found.size) found = { d: s.danger, size };
+  }
+  return found ? found.d : 1;
+}
+
+/** The map's tiles of each ground tag, counted by danger band d0, d1 and d2; a tile in a band above 2 is not counted for any kind today. */
+export function tagTilesByBand(map: Bundle['map']): Record<string, [number, number, number]> {
+  const out: Record<string, [number, number, number]> = {};
+  map.ground.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const tag = map.legend[row[x]!]?.tag;
+      if (tag === undefined) continue;
+      const band = bandAt(map, x, y);
+      if (band < 0 || band > 2) continue;
+      (out[tag] ??= [0, 0, 0])[band]!++;
+    }
+  });
+  return out;
+}
+
 /** The ladder with each kind's habitat tiles counted on the map, so a change of the map moves the standing and the yield. */
 export function onMap(ladder: Ladder, map: Bundle['map']): Ladder {
   const tiles = tagTiles(map);
-  return { ...ladder, kinds: ladder.kinds.map((k) => ({ ...k, habitat_tiles: k.habitat_tag === null ? null : (tiles[k.habitat_tag] ?? 0) })) };
+  const bands = tagTilesByBand(map);
+  return {
+    ...ladder,
+    kinds: ladder.kinds.map((k) => ({
+      ...k,
+      habitat_tiles: k.habitat_tag === null ? null : (tiles[k.habitat_tag] ?? 0),
+      region_habitat_tiles: k.habitat_tag === null ? null : (bands[k.habitat_tag] ?? [0, 0, 0]),
+    })),
+  };
 }
 
 /** The page and the proposed experience table, as the CLI writes them; the habitat is counted on the bundle's map. */
