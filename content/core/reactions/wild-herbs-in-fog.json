@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schema/json/reaction.schema.json",
+  "format": 1,
+  "type": "reaction",
+  "id": "core/wild-herbs-in-fog",
+  "title": "Wild herbs wait longer in the fog",
+  "creator": "core",
+  "reaction": {
+    "on": { "resource": "core/wild-herbs" },
+    "when": { "weather": "fog" },
+    "then": { "wait": 1500 }
+  }
+}
