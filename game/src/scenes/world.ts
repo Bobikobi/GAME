@@ -113,7 +113,7 @@ import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, st
 import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
-import { ChunkStream, WORLD_CHUNK } from '../stream';
+import { ChunkStream, WORLD_CHUNK, idleSlice } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraZoom, pixelRatio, wheelStep, wheelZoom, worldToPage } from '../view';
 import { ROOM, doorsOf, type RoomScene } from './room';
@@ -1040,6 +1040,23 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * After first light, never before it, the pixels of the ground sprites are read one sprite a slice: the first read of
+   * a sprite is a one-time image decode (190-270 ms), which would otherwise land in the slice of the first walk into a
+   * page that meets it (groundchunks.ts, #879).
+   */
+  private warmed = false;
+  private warmGround(): void {
+    this.warmed = true;
+    if (!RICH.detail) return;
+    const jobs = Object.entries(this.b.sprites).filter(([ref]) => /(^|:)tiles\//.test(ref)).flatMap(([ref, i]) => Array.from({ length: i.frames }, (_, f) => [ref, f] as const));
+    const next = (): void => {
+      const job = jobs.shift();
+      if (job) idleSlice(() => (this.pixelsOf(job[0], job[1]), next()));
+    };
+    next();
+  }
+
   /** The pixels of the first frame of a ground sprite (or of a toned copy of it), cached. */
   private pixelCache = new Map<string, Uint8ClampedArray | null>();
   private pixelsOf(ref: string, frame = 0): Uint8ClampedArray | null {
@@ -1055,7 +1072,7 @@ export class WorldScene extends Phaser.Scene {
       const c = document.createElement('canvas');
       c.width = EDGE_PX;
       c.height = EDGE_PX;
-      const ctx = c.getContext('2d');
+      const ctx = c.getContext('2d', { willReadFrequently: true });
       if (ctx) {
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(f.source.image as CanvasImageSource, cut.x, cut.y, EDGE_PX, EDGE_PX, 0, 0, EDGE_PX, EDGE_PX);
@@ -2603,6 +2620,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.stream) this.stream.update(this.player ? Math.floor(this.player.x / T) : 0, this.player ? Math.floor(this.player.y / T) : 0);
     const at = this.stream?.centre;
     this.chunks?.update(this.cameras.main.worldView, at ? `${at.cx},${at.cy}` : '');
+    if (this.chunks && !this.warmed) this.warmGround();
     this.placePinned();
     const s = this.session;
     if (!s || !s.started) {
