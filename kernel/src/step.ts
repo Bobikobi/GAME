@@ -142,7 +142,7 @@ export type Action =
   /**
    * throw a stone toward the tile `aim` (DECISIONS.md, 2026-11-22): the one held over the head if there is one, else a small one
    * from the bag. It flies the size's range along the line to `aim`, lands and runs on (`throwFlight`), and goes home after
-   * `stones.return_ms`. `power` is a thousandth part, 1000 (left out) a full throw: the place for the charged throw to come.
+   * `stones.return_ms`. `power` is a thousandth part, from `stones.throw_min_power` (a tap) to `FULL_POWER` (a held press charges to it).
    */
   | { t: 'throw'; at: Tile; aim: Tile; power?: number }
   /** dress one part of a taken animal lying at `at` (docs/design/HUNTING.md section 6): a small animal is one part, a medium two, a large four; with the last part its goods at its grade come into the bag, and what does not fit lies on the player's tile */
@@ -2262,7 +2262,7 @@ function throwLoose(ctx: Ctx, aim: Tile, power: number = FULL_POWER): void {
   const { b, s, tick } = ctx;
   const p = s.player;
   if (!Array.isArray(aim) || aim.length !== 2 || !Number.isSafeInteger(aim[0]) || !Number.isSafeInteger(aim[1])) refuse('Aim at a tile.');
-  if (!Number.isSafeInteger(power) || power < 1 || power > FULL_POWER) refuse('That is not a throw.');
+  if (!Number.isSafeInteger(power) || power < b.params.stones.throw_min_power || power > FULL_POWER) refuse('That is not a throw.');
   if (p.fight != null) refuse('Not during a fight.');
   const size = p.stones?.carry === 'large' ? 'large' : 'small';
   if (size === 'small' && (p.bag[STONE_ITEM] ?? 0) < 1) refuse('You have no stone to throw.');

@@ -28,6 +28,7 @@ app.controls = new Controls();
 app.ui = new UI(document.getElementById('ui')!);
 app.sound = sound;
 app.controls.onButton((b) => app.ui.handle(b));
+app.controls.onButtonUp((b) => app.ui.handleUp(b));
 
 const query = location.search;
 const perf = startPerf(query, safeStorage());

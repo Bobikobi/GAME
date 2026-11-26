@@ -213,6 +213,9 @@ export function flattenParams(p: ParamsBody): Params {
       pile_max: p.stones.pile_max.value,
       lift_ms: p.stones.lift_ms.value,
       throw_ms: p.stones.throw_ms.value,
+      throw_min_power: p.stones.throw_min_power.value,
+      throw_charge_ms: p.stones.throw_charge_ms.value,
+      throw_hold_ms: p.stones.throw_hold_ms.value,
     },
     hunt: {
       dress_step_ms: p.hunt.dress_step_ms.value,

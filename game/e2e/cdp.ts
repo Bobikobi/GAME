@@ -419,6 +419,34 @@ export class Page {
     await this.tapAt(at.x, at.y);
   }
 
+  /** Presses the first visible element matching `selector` and holds it for `holdMs` before releasing (a charged press). */
+  async holdTap(selector: string, holdMs: number, text = ''): Promise<void> {
+    const at = await this.waitFor<{ x: number; y: number }>(
+      `(async () => {
+        const el = ${byText(selector, text)};
+        if (!el) return null;
+        el.scrollIntoView({ block: 'nearest' });
+        const centre = () => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, shown: r.width > 0 && r.height > 0 }; };
+        const a = centre();
+        await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+        const b = centre();
+        return b.shown && Math.abs(b.x - a.x) < 1 && Math.abs(b.y - a.y) < 1 ? b : null;
+      })()`,
+      `${selector} "${text}"`,
+      15_000,
+    );
+    if (this.mobile) {
+      await this.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
+      await sleep(holdMs);
+      await this.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      return;
+    }
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: at.x, y: at.y });
+    await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: at.x, y: at.y, button: 'left', clickCount: 1 });
+    await sleep(holdMs);
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: at.x, y: at.y, button: 'left', clickCount: 1 });
+  }
+
   /**
    * Records the page as JPEG frames in `dir`, one file per screen change, with
    * `frames.txt` listing the millisecond of each; a video tool stitches them.
