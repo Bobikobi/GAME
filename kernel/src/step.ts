@@ -745,6 +745,17 @@ function gather(ctx: Ctx, nodeId: string, at: Tile): void {
   gainXp(ctx, verb, unitShare(r.active_ms, r.yield, done));
 }
 
+/** Whether a dig's find is a recipe scrap of a recipe the player already knows or carries (DECISIONS.md, 2026-10-10: a dig draws only among recipes neither known nor carried). */
+function scrapKnownOrCarried(b: Bundle, s: State, itemId: string): boolean {
+  const unlocks = b.items[itemId]?.fragment?.unlocks;
+  if (!unlocks) return false;
+  if (s.player.recipes.includes(unlocks)) return true;
+  for (const id of Object.keys(s.player.bag)) {
+    if ((s.player.bag[id] ?? 0) > 0 && b.items[id]?.fragment?.unlocks === unlocks) return true;
+  }
+  return false;
+}
+
 function dig(ctx: Ctx, spotId: string, at: Tile): void {
   const { b, s } = ctx;
   const inst = b.instances[spotId];
@@ -772,6 +783,9 @@ function dig(ctx: Ctx, spotId: string, at: Tile): void {
   // a pocket's own spot always gives its one find: no start ends at a wall
   let found: string | undefined = d.pocket !== undefined ? d.finds[0]?.item : undefined;
   for (const f of found ? [] : d.finds) {
+    // a dig draws only among recipes neither known nor carried (DECISIONS.md, 2026-10-10): a scrap of a recipe the
+    // player knows or already carries is left out of the draw, and the other rows keep their own chances.
+    if (scrapKnownOrCarried(b, s, f.item)) continue;
     let bp = f.chance_pct * 100;
     if (rarityRank(b.items[f.item]?.rarity ?? 'common') >= 2) bp = mulDiv(bp, luck, 1000);
     edge = Math.min(10_000, edge + bp);
