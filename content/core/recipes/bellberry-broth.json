@@ -1,0 +1,47 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/bellberry-broth",
+  "title": "Bellberry broth",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/bellberry-broth",
+      "name": "Bellberry broth",
+      "description": "Dark berries stewed with wild herbs, sweet and warm.",
+      "kind": "food",
+      "rarity": "uncommon",
+      "class": "meal",
+      "tier": 1,
+      "sprite": "core/base-kit:items/herb-stew",
+      "weight": 1,
+      "food": {
+        "satiety": 30
+      }
+    }
+  ],
+  "recipe": {
+    "station": "fire",
+    "active_ms": 5000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/bellberry",
+        "qty": 2
+      },
+      {
+        "item": "core/herb",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/bellberry-broth",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}
