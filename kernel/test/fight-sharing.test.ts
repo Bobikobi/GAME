@@ -40,6 +40,7 @@ const RECIPES_ADDED_SINCE = new Set([
   'core/tan-hare-fur',
   'core/tan-hare-leather',
   'core/tan-roe-leather',
+  'ceosisrael/wayfarers-scarf',
 ]);
 function developWorld(world: FightWorld): FightWorld {
   const old = structuredClone(world);
