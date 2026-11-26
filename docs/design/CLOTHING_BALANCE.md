@@ -60,22 +60,24 @@ Seed 1, from the morning after the opening (`clothing-route-cli.ts --seeds 1,2,3
 
 *Re-measured 22.11 (#769), after the hide chain was built (#788, #797).* The first run of this page played a copy of the chain kept inside the route's own code (scrape 6 s, then tan 4 s). The route now reads the chain from the content: scrape and tan are one 6 s action, and the roe jerkin and leggings take one thread. The route also sets out only in the hours of the day (the bank wolf walks the road by night), so the first set now passes one night. What moved: the kit 9.0 to 8.7 (active 7.7 to 7.4), the known set 21.3 to 24.3 (active 13.4 to 13.1), the dug-up median 64.1 to 64.2. The first piece is unchanged.
 
-*Checked again 23.11 (#769), after early hunting landed (#827, 520e3444).* Nothing moved: the first piece 4.4, the kit 8.7 (7.4 active) and the known set 24.2 to 24.4 on seeds 1 to 5 (24.3 on seed 1), seed 16 found 39.8, and the dug-up median 64.2 (28.9 to 208.6) on seeds 1 to 20, all as before. The reason is that the route still takes an animal the way the hunt fields state it, standing at its spot for its `take_s`; it does not throw the stone or set the snare. A route that throws at the hare (40 s at its spot today) may well be shorter, so the figures stand as the route of the hunt fields, not yet of the thrown stone; the roe (a medium animal, 90 s) is not taken by the stone. **The dug-up median goes stale when the dig rule lands** (DECISIONS 2026-11-22, "Digging: areas with a winning pattern"): it rests on today's digs of the gate rubble and is not re-measured before then.
+*Checked again 23.11 (#769), after early hunting landed (#827, 520e3444).* Nothing moved: the first piece 4.4, the kit 8.7 (7.4 active) and the known set 24.2 to 24.4 on seeds 1 to 5 (24.3 on seed 1), seed 16 found 39.8, and the dug-up median 64.2 (28.9 to 208.6) on seeds 1 to 20, all as before. The reason is that the route still takes an animal the way the hunt fields state it, standing at its spot for its `take_s`; it does not throw the stone or set the snare. A route that throws at the hare (40 s at its spot today) may well be shorter, so the figures stand as the route of the hunt fields, not yet of the thrown stone; the roe (a medium animal, 90 s) is not taken by the stone.
+
+*Re-measured 26.11 (#871), when the dig rule landed (DECISIONS 2026-10-10: a dig draws only among recipes neither known nor carried).* A scrap of a recipe already known is now skipped and its chance goes to the other rows, so the dug-up set comes sooner: seed 16 found 28.5 (was 39.8), and the dug-up median 42.3 (28.5 to 129.2) on seeds 1 to 20 (was 64.2, 28.9 to 208.6).
 
 | Milestone | Minutes passed (active) | Where the time went |
 |---|---|---|
 | First piece worn (hare-leather shoes) | 4.4 (3.6 active) | hunt 2.6, walk 0.3, gather 0.3, craft 0.4, waiting on a node 0.8; Handcraft level 2 |
 | Tier-1 kit worn (4 pieces) | 8.7 (7.4 active) | hunt 5.2, walk 0.6, gather 0.6, craft 1.0, node 1.2 |
 | First set worn, recipes known from the start | 24.3 (13.1 active) | hunt 8.8, walk 1.2, gather 1.0, craft 2.0, node 2.1, night 9.2: 13.1 active |
-| First set worn, recipes dug up (`--found`, seeds 1 to 20) | median 64.2 (28.9 to 208.6) | active median 15.8 (13.9 to 25.2); waiting on the rubble median 21.3; night median 26.7; digs median 36.5 (9 to 160) |
+| First set worn, recipes dug up (`--found`, seeds 1 to 20) | median 42.3 (28.5 to 129.2) | active median 14.4 (13.6 to 20.4); waiting on the rubble median 11.3; night median 18.3; digs median 16 (7 to 95) |
 
 | Link | Band | Loomvale | Verdict |
 |---|---|---|---|
 | Prep steps to the first piece | 2 to 4 | 4 on the main line: hunt, take, scrape and tan (one action since step C, #797), sew. Two side steps: knap flakes, twist sinew thread | inside (was 5, **too long** by one step, before step C) |
 | Stations | 0 to 2 | the work stone (tier 1); the workbench (tier 2) | inside |
 | First piece | 7 to 27 | 3.6 active (4.4 passed, 0.8 of it waiting on a node) | **too short** |
-| First outfit | 30 to 90 | tier-1 kit 7.4 active (8.7 passed, 1.2 of it waiting on a node); bonus set 13.1 (known) or 15.8 active (found, median) | **too short** in work |
-| First bonus set, minutes passed | 30 to 90 | 24.3 (known); 64.2 median (found) | known **too short**; found **inside** |
+| First outfit | 30 to 90 | tier-1 kit 7.4 active (8.7 passed, 1.2 of it waiting on a node); bonus set 13.1 (known) or 14.4 active (found, median) | **too short** in work |
+| First bonus set, minutes passed | 30 to 90 | 24.3 (known); 42.3 median (found) | known **too short**; found **inside** |
 | Waits | 0 | the hide's day of curing, 20 real minutes (DECISIONS 2026-11-19; not built, so not in the run) | **long**, on the owner's own decision; passive |
 | Travel | a few minutes (not measured for the games) | 0.3 to 1.2 minutes of walking | short |
 | Shop price against make cost | 2 to 17.5 | a shop price is at least 10 times the value (R8; the satchel is sold at exactly 10). But no garment is sold | **missing** |

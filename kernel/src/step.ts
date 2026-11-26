@@ -779,19 +779,30 @@ function dig(ctx: Ctx, spotId: string, at: Tile): void {
   const luck = rareFindPermille(b, s);
   const roll = drawBasisPoints(s.seed, spotId, node.draws);
   node.draws += 1;
-  let edge = 0;
   // a pocket's own spot always gives its one find: no start ends at a wall
   let found: string | undefined = d.pocket !== undefined ? d.finds[0]?.item : undefined;
-  for (const f of found ? [] : d.finds) {
+  if (found === undefined) {
     // a dig draws only among recipes neither known nor carried (DECISIONS.md, 2026-10-10): a scrap of a recipe the
-    // player knows or already carries is left out of the draw, and the other rows keep their own chances.
-    if (scrapKnownOrCarried(b, s, f.item)) continue;
-    let bp = f.chance_pct * 100;
-    if (rarityRank(b.items[f.item]?.rarity ?? 'common') >= 2) bp = mulDiv(bp, luck, 1000);
-    edge = Math.min(10_000, edge + bp);
-    if (roll < edge) {
-      found = f.item;
-      break;
+    // player knows or already carries is left out, and its chance is given back to the rows that stay, so a known
+    // scrap becomes an ordinary find rather than nothing (with none left, the dig gives its other rows).
+    const rows: { item: string; bp: number }[] = [];
+    let total = 0;
+    for (const f of d.finds) {
+      let bp = f.chance_pct * 100;
+      if (rarityRank(b.items[f.item]?.rarity ?? 'common') >= 2) bp = mulDiv(bp, luck, 1000);
+      total += bp;
+      if (scrapKnownOrCarried(b, s, f.item)) continue;
+      rows.push({ item: f.item, bp });
+    }
+    const eligible = rows.reduce((n, r) => n + r.bp, 0);
+    let edge = 0;
+    for (const r of rows) {
+      const bp = eligible === 0 ? 0 : mulDiv(r.bp, total, eligible);
+      edge = Math.min(10_000, edge + bp);
+      if (roll < edge) {
+        found = r.item;
+        break;
+      }
     }
   }
   if (found) take(ctx, found, 1);

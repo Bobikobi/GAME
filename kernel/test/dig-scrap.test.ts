@@ -1,7 +1,7 @@
 /**
  * A dig draws only among recipes neither known nor carried (DECISIONS.md, 2026-10-10): a scrap of a recipe the player
- * knows or already carries is left out of the draw, and the other rows keep their own chances. A known scrap is never
- * drawn, an unknown one still is, and with a scrap blocked the dig gives its other rows or nothing.
+ * knows or already carries is left out of the draw, and its chance is given back to the rows that stay, so a known
+ * scrap becomes an ordinary find rather than nothing. A known scrap is never drawn and an unknown one still is.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
@@ -111,11 +111,11 @@ describe('a dig draws only among recipes neither known nor carried', () => {
     expect(r.state.player.bag[PAGE]).toBe(1);
   });
 
-  test('the other rows still draw when a scrap is skipped', () => {
+  test('a skipped scrap becomes an ordinary find, not nothing', () => {
     const s = started();
     s.player.recipes = [...s.player.recipes, COAT];
-    const r = dig(s, DEEP, drawsOn(s, DEEP, 'core/pottery-shard'));
-    expect(r.state.player.bag['core/pottery-shard']).toBe(1);
+    const r = dig(s, DEEP, drawsOn(s, DEEP, PAGE));
     expect(r.state.player.bag[PAGE] ?? 0).toBe(0);
+    expect(r.events).not.toContainEqual({ e: 'nothing', verb: 'dig' });
   });
 });
