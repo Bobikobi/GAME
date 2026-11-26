@@ -15,7 +15,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { type Bundle, EFFORT_TIERS, type Params, activitiesOf, clamp, computeValues, effortTier, idiv, inRect, mulDiv, mulDivUp, payFor, tagAt } from '@game/kernel';
+import { type Bundle, EFFORT_TIERS, type Params, activitiesOf, clamp, computeValues, dangerAt, effortTier, idiv, mulDiv, mulDivUp, payFor } from '@game/kernel';
 import { TILE_TAGS } from '@game/schema';
 import { thresholdsOf } from './curve';
 import { RARITY_NAMES, type Rules } from './rules';
@@ -486,6 +486,8 @@ export interface HuntBalanceRow {
   takes: { num: number; den: number };
   /** the players at which the kind empties in one day: the standing count, one take per player a day */
   players: number | null;
+  /** true when the kind's region band holds no habitat tiles at all: it cannot be hunted there (standing 0, not a healthy empty) */
+  none: boolean;
   /** true when a d0 kind empties under 8 players in its region, the threshold BESTIARY_LANDS 4 proposes */
   red: boolean;
 }
@@ -501,6 +503,7 @@ export function huntBalance(ladder: Ladder): HuntBalanceRow[] {
       standing: s,
       takes: { num: s ?? 0, den: k.refill_d },
       players: s,
+      none: s === 0,
       red: k.danger === 0 && s !== null && s > 0 && s < 8,
     };
   });
@@ -998,27 +1001,14 @@ export function tagTiles(map: Bundle['map']): Record<string, number> {
   return out;
 }
 
-/** The danger band d of a map tile (G64, CR-38), as the kernel's `dangerAt` reads it: 0 on safe ground (the town and the safe slots), else the smallest area slot's danger, else 1 for wild ground in no area. */
-function bandAt(map: Bundle['map'], x: number, y: number): number {
-  if (tagAt(map, x, y) === 'town') return 0;
-  for (const s of map.slots) if (s.safe === true && inRect(x, y, s)) return 0;
-  let found: { d: number; size: number } | undefined;
-  for (const s of map.slots) {
-    if (s.kind !== 'area' || s.danger === undefined || !inRect(x, y, s)) continue;
-    const size = s.w * s.h;
-    if (!found || size < found.size) found = { d: s.danger, size };
-  }
-  return found ? found.d : 1;
-}
-
-/** The map's tiles of each ground tag, counted by danger band d0, d1 and d2; a tile in a band above 2 is not counted for any kind today. */
-export function tagTilesByBand(map: Bundle['map']): Record<string, [number, number, number]> {
+/** The map's tiles of each ground tag, counted by the kernel's `dangerAt` band d0, d1 and d2; a tile in a band above 2 is not counted for any kind today. */
+export function tagTilesByBand(bundle: Bundle): Record<string, [number, number, number]> {
   const out: Record<string, [number, number, number]> = {};
-  map.ground.forEach((row, y) => {
+  bundle.map.ground.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
-      const tag = map.legend[row[x]!]?.tag;
+      const tag = bundle.map.legend[row[x]!]?.tag;
       if (tag === undefined) continue;
-      const band = bandAt(map, x, y);
+      const band = dangerAt(bundle, [x, y]);
       if (band < 0 || band > 2) continue;
       (out[tag] ??= [0, 0, 0])[band]!++;
     }
@@ -1027,9 +1017,9 @@ export function tagTilesByBand(map: Bundle['map']): Record<string, [number, numb
 }
 
 /** The ladder with each kind's habitat tiles counted on the map, so a change of the map moves the standing and the yield. */
-export function onMap(ladder: Ladder, map: Bundle['map']): Ladder {
-  const tiles = tagTiles(map);
-  const bands = tagTilesByBand(map);
+export function onMap(ladder: Ladder, bundle: Bundle): Ladder {
+  const tiles = tagTiles(bundle.map);
+  const bands = tagTilesByBand(bundle);
   return {
     ...ladder,
     kinds: ladder.kinds.map((k) => ({
@@ -1042,7 +1032,7 @@ export function onMap(ladder: Ladder, map: Bundle['map']): Ladder {
 
 /** The page and the proposed experience table, as the CLI writes them; the habitat is counted on the bundle's map. */
 export function ladderOutputs(bundle: Bundle, rules: Rules, raw = readLadder()): { report: Report; markdown: string; xpJson: string } {
-  const ladder = onMap(raw, bundle.map);
+  const ladder = onMap(raw, bundle);
   const professions: Record<string, number[]> = {};
   for (const id of Object.keys(bundle.professions).sort()) professions[id] = [...bundle.professions[id]!.xp_levels];
   const report = buildReport(ladder, bundle.params, professions, { t1Ms: rules.t1Ms, ratioPermille: rules.ratioPermille });
