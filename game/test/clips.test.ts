@@ -162,6 +162,24 @@ describe('the frame rule: one for every verb, the clip\'s own time', () => {
     player.stop();
     expect(player.frameAt(10)).toBeUndefined();
   });
+
+  test('its record, when a test turns it on, holds the start, each frame once as it changes, and the end; off, it holds nothing', () => {
+    const found = clipFor(sprites, 'dig', HUMAN, 'down')!;
+    const player = new ClipPlayer();
+    player.start(found, 0);
+    player.frameAt(0);
+    expect(player.trace).toBeUndefined();
+    player.trace = [];
+    player.start(found, 1000, 600, true);
+    // drawn twice inside frame 0, then a slow frame that jumps over the frames between (4 frames across 600 ms: 450 ms is the last), then the end
+    for (const at of [1000, 1010, 1450, 1600]) player.frameAt(at);
+    expect(player.trace).toEqual([
+      { e: 'start', key: found.key, at: 1000, frames: found.frames, frameMs: found.frame_ms, lasts: 600, stretch: true },
+      { e: 'frame', frame: 0, at: 1000 },
+      { e: 'frame', frame: found.frames - 1, at: 1450 },
+      { e: 'end', at: 1600 },
+    ]);
+  });
 });
 
 describe('which verb answers what', () => {

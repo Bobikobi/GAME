@@ -16,6 +16,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, type Page } from './cdp';
+import { clipFrame, type ClipTrace } from '../src/clips';
 import { T as TILE } from '../src/config';
 import { PHONE } from './viewports';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
@@ -123,6 +124,8 @@ async function main(): Promise<void> {
     // B throws it. Two readings: the frames are sampled while it flies (they must show the stone off its resting tile until it lands, and
     // every frame must sit on the flight's own curve), and the flight's curve itself is read from the scene's own motion (its pure
     // function of time), a millisecond at a time - a loaded machine drops frames and cannot make a bounce lost from that curve.
+    // the figure's clip player keeps a record of what it set (clips.ts `trace`): which clip began, every frame it set, when it ended, and the frame the stone's release was laid on
+    await page.eval(`window.__game.world.figure.trace = window.__trace = []`);
     await page.eval(`(() => {
       window.__fx = [];
       window.__early = 0;
@@ -131,7 +134,6 @@ async function main(): Promise<void> {
         const w = window.__game.world, f = w.stones?.flying?.[0];
         if (f) {
           window.__flight ??= f;
-          if (window.__fx.length === 0) window.__release = { key: w.player.texture.key, frame: Number(w.player.frame.name) };
           window.__fx.push({ x: f.image.x, lift: (f.shadow.y - 1 - f.image.y) });
           if (w.stones.countAt('${rest[0]},${rest[1]}') > 0) window.__early++;
         }
@@ -141,14 +143,16 @@ async function main(): Promise<void> {
     })()`);
     await page.holdTap('.tbtn.b', 800);
     await page.waitFor(`window.__fx.length > 0`, 'the stone to leave the hand', 5000);
-    // the stone left the hand while the figure was in its throw clip, at the release frame (the clip's last hand point: the fourth frame, or the fifth where the drawing opens the hand later)
-    const release = await page.eval<{ key: string; frame: number }>(`window.__release`);
-    if (!release.key.includes('_throw_')) throw new Error(`the stone left the hand while the figure showed ${release.key}, not its throw clip`);
+    // the stone left the hand while the figure was in its throw clip, at the release frame (the clip's last hand point: the fourth frame, or the fifth where the drawing opens the hand later).
+    // Read from the clip's own record, not from a sampled frame: a slow frame delays the sample, never the frame the game laid the release on
+    const trace = await page.eval<ClipTrace[]>(`window.__trace`);
+    const release = trace.find((t): t is Extract<ClipTrace, { e: 'release' }> => t.e === 'release');
+    if (!release?.key?.includes('_throw_') || release.frame === undefined) throw new Error(`the stone left the hand while the figure showed ${release?.key}, not its throw clip`);
     // the cell's own release frame is its clip's last hand point (the frame where the drawing opens the hand)
     const want = await page.eval<number>(`(() => { const w = window.__game.world; const c = w.b.sprites['core/base-kit:' + ${JSON.stringify(release.key.replace('core/base-kit:', ''))}]?.clip; return c?.hand ? c.hand.length - 1 : -1; })()`);
     if (want < 0) throw new Error(`${release.key} names no hand, so it has no release frame`);
     if (release.frame !== want) throw new Error(`the stone left the hand at frame ${release.frame} of ${release.key}, not its release frame ${want}`);
-    console.log(`stones: the stone left the hand at frame ${release.frame} of ${release.key}`);
+    console.log(`stones: the stone left the hand at frame ${release.frame} of ${release.key} (run ${Math.round(release.at - release.due)} ms after the scene laid it)`);
     await page.waitFor(`${ground(rest)} === 1 && !window.__game.world.stones.busy`, 'the stone to land and stop', 5000);
     const early = await page.eval<number>(`window.__early`);
     if (early > 0) throw new Error(`the stone was drawn on its resting tile ${early} frames before it landed`);
@@ -236,19 +240,28 @@ async function main(): Promise<void> {
     const pace0 = await page.eval<number>(`window.__game.world.paceMs ?? 0`);
     await page.eval(`(() => { const p = window.__game.session.state.player; p.bag['core/stone'] = 0; p.attrs.might = 1; })()`);
     await page.waitFor(idle, 'the busy time to pass', 5000);
-    // the lift plays its own clip across the kernel's lift time: sampled every frame from the press of A to the carry clip taking over
-    await page.eval(`(() => { const w = window.__game.world; window.__lift = { t0: 0, seen: [], done: false }; const watch = () => { const k = w.player.texture.key; if (k.includes('_lift_')) { if (!window.__lift.t0) window.__lift.t0 = performance.now(); window.__lift.seen.push([Math.round(performance.now() - window.__lift.t0), Number(w.player.frame.name), w.player.texture.getFrameNames().length]); } else if (window.__lift.seen.length > 0) { window.__lift.done = true; window.__lift.end = performance.now() - window.__lift.t0; window.__lift.next = k; return; } requestAnimationFrame(watch); }; watch(); })()`);
+    // the lift plays its own clip across the kernel's lift time: read from the clip player's own record from the press of A to the clip's end
+    // (the frames the game set, each at its scene-clock time), so a slow frame on a loaded runner cannot move what is asserted
+    const mark = await page.eval<number>(`window.__trace.length`);
     await page.tap('.tbtn.a');
     await page.waitFor(`window.__game.session.state.player.stones?.carry === 'large'`, 'the large stone lifted', 5000);
-    await page.waitFor(`window.__lift.done`, 'the lift clip to play out', 5000);
-    const lift = await page.eval<{ seen: number[][]; end: number; next: string }>(`window.__lift`);
-    const frames = lift.seen.map((q) => q[1]!);
-    // the clip is stretched over the kernel's lift time (~67 ms a frame): on a loaded CI runner the first sampled
-    // animation frame can land after frame 0's slot, so the first frame seen may be 1 (CI 26.11, three reds: [1,2,3,...])
-    if (!(frames.length > 4 && frames.every((f, i) => i === 0 || f >= frames[i - 1]!) && frames[0]! <= 1 && frames[frames.length - 1]! >= lift.seen[0]![2]! - 2)) throw new Error(`the lift clip did not run from its first frame to its last, in order: ${JSON.stringify(frames)}`);
-    if (!(Math.abs(lift.end - params.lift) <= 150)) throw new Error(`the lift clip lasted ${Math.round(lift.end)} ms, the kernel's lift is ${params.lift} ms`);
-    if (!lift.next.includes('_carry_') && !lift.next.includes('_walk') && !lift.next.includes('_idle')) throw new Error(`after the lift the figure shows ${lift.next}`);
-    console.log(`stones: the large stone's lift played ${frames.length} frames over ${Math.round(lift.end)} ms (the kernel's lift_ms is ${params.lift}), then ${lift.next}`);
+    await page.waitFor(`window.__trace.slice(${mark}).some((t) => t.e === 'end')`, 'the lift clip to play out', 5000);
+    const since = (await page.eval<ClipTrace[]>(`window.__trace.slice(${mark})`));
+    const begun = since.find((t): t is Extract<ClipTrace, { e: 'start' }> => t.e === 'start');
+    if (!begun?.key.includes('_lift_')) throw new Error(`A on the large stone began ${begun?.key ?? 'no clip'}, not the lift clip`);
+    const after = since.slice(since.indexOf(begun) + 1);
+    const ended = after.find((t): t is Extract<ClipTrace, { e: 'end' }> => t.e === 'end');
+    const set = after.slice(0, ended ? after.indexOf(ended) : undefined).filter((t): t is Extract<ClipTrace, { e: 'frame' }> => t.e === 'frame');
+    const frames = set.map((t) => t.frame);
+    // the clip is stretched over the kernel's lift time (clips.ts), its first frame set at the press, each frame the one the rule gives for its time
+    if (!(begun.stretch === true && begun.lasts === params.lift)) throw new Error(`the lift clip is not laid across the kernel's ${params.lift} ms: ${JSON.stringify({ lasts: begun.lasts, stretch: begun.stretch })}`);
+    if (!(frames.length >= 3 && frames.every((f, i) => i === 0 || f >= frames[i - 1]!) && frames[0]! <= 1)) throw new Error(`the lift clip did not run from its first frame, in order: ${JSON.stringify(frames)}`);
+    const wrong = set.filter((t) => clipFrame(t.at - begun.at, begun.frames, begun.frameMs, begun.lasts, begun.stretch) !== t.frame);
+    if (wrong.length > 0) throw new Error(`the lift clip set frames the clip's own rule does not give for their time: ${JSON.stringify(wrong)}`);
+    // it reached its end: the last frame is set in the clip's final slots unless a slow frame jumped over them (the end is then the next frame the scene drew)
+    const last = set[set.length - 1]!;
+    if (!(ended && ended.at - begun.at >= params.lift && (frames[frames.length - 1]! >= begun.frames - 2 || ended.at - last.at >= (params.lift / begun.frames) * 2))) throw new Error(`the lift clip did not reach its end: ${JSON.stringify(since)}`);
+    console.log(`stones: the large stone's lift set ${frames.length} of ${begun.frames} frames across ${params.lift} ms (the kernel's lift_ms), ended ${Math.round(ended.at - begun.at)} ms after the press`);
     await page.waitFor(`window.__game.world.player.texture.key.includes('_carry_')`, 'the figure to show its carry clip', 5000);
     // the stone is in the figure's hands over its head: the carry sheet is taller than the walk, 192 px, and its standing pose is the last frame
     const carried = await page.eval<{ key: string; frame: number; frames: number; height: number }>(

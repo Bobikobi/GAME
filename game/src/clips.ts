@@ -160,9 +160,19 @@ export function verbOfOutcome(o: OutcomeLike): ClipVerb | undefined {
   return undefined;
 }
 
+/** What a clip's own record holds (a test reads it, e2e/stones.ts): a clip began, a frame was set, a clip ended, a stone left the hand. `at` is the scene clock, ms. */
+export type ClipTrace =
+  | { e: 'start'; key: string; at: number; frames: number; frameMs: number; lasts?: number; stretch?: boolean }
+  | { e: 'frame'; frame: number; at: number }
+  | { e: 'end'; at: number }
+  | { e: 'release'; key: string | undefined; frame: number | undefined; due: number; at: number };
+
 /** One clip under way on the figure: which sheet, when it began, and how long the action lasts when it has a length. */
 export class ClipPlayer {
   private run: { found: Found; start: number; lasts?: number; stretch?: boolean } | null = null;
+  /** Test-only: while set, every start, frame change and end is pushed here, so a test reads what the game set rather than sampling the screen. Off (undefined) in play. */
+  trace: ClipTrace[] | undefined;
+  private shown = -1;
 
   /** Whether a clip is under way (it may be over by now: `frameAt` says). */
   get active(): boolean {
@@ -172,6 +182,8 @@ export class ClipPlayer {
   /** Begins a clip at `now`; one already playing is replaced, so a new blow restarts the swing. */
   start(found: Found, now: number, lasts?: number, stretch = false): void {
     this.run = { found, start: now, ...(lasts === undefined ? {} : { lasts }), ...(stretch ? { stretch } : {}) };
+    this.shown = -1;
+    this.trace?.push({ e: 'start', key: found.key, at: now, frames: found.frames, frameMs: found.frame_ms, ...(lasts === undefined ? {} : { lasts }), ...(stretch ? { stretch } : {}) });
   }
 
   /** Ends the clip without a word: the caller puts the figure back. */
@@ -186,8 +198,11 @@ export class ClipPlayer {
     const frame = clipFrame(now - r.start, r.found.frames, r.found.frame_ms, r.lasts, r.stretch);
     if (frame === undefined) {
       this.run = null;
+      this.trace?.push({ e: 'end', at: now });
       return undefined;
     }
+    if (this.trace && frame !== this.shown) this.trace.push({ e: 'frame', frame, at: now });
+    this.shown = frame;
     return { found: r.found, frame };
   }
 }
