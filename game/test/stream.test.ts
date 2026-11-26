@@ -3,9 +3,9 @@
  * held, the pages baked in idle slices, the seam under the mist. The test world is generated ground, 3 by 3 chunks.
  */
 import { describe, expect, test } from 'vitest';
-import type * as Phaser from 'phaser';
 import { CHUNK, GroundChunks } from '../src/groundchunks';
 import { MIST } from '../src/mist';
+import { fakeScene } from './groundfake';
 import { ChunkStream, IdleQueue, MAX_HELD, WORLD_CHUNK, chunkOfTile, inWindow, type Slice } from '../src/stream';
 
 /** A plain generated chunk: 64 by 64 tiles of a ground letter from a fixed integer hash. */
@@ -167,27 +167,6 @@ describe('the idle queue', () => {
 });
 
 /** A scene with just enough of Phaser for the ground pages: canvases made and removed, images added and destroyed. */
-function fakeScene() {
-  const live = new Set<string>();
-  const images = new Set<object>();
-  const shown: string[] = [];
-  const scene = {
-    textures: {
-      createCanvas: (key: string) => (live.add(key), { refresh: () => undefined }),
-      remove: (key: string) => void live.delete(key),
-    },
-    add: {
-      image: (_x: number, _y: number, key: string) => {
-        const img = { setOrigin: () => img, setScale: () => img, setDepth: () => img, setTexture: (key: string) => (shown.push(key), img), destroy: () => void images.delete(img) };
-        shown.push(key);
-        images.add(img);
-        return img;
-      },
-    },
-  };
-  return { scene: scene as unknown as Phaser.Scene, live, images, shown };
-}
-
 describe('the ground pages through the stream', () => {
   const unit = 16;
   const side = CHUNK * unit;
