@@ -59,6 +59,7 @@ export function mapSlots(bundle: Bundle): HubSlot[] {
     w: s.w,
     h: s.h,
     filled_by: filledBy.get(s.id) ?? null,
+    ...(s.reserved !== undefined ? { reserved: s.reserved } : {}),
   }));
 }
 

@@ -77,6 +77,17 @@ const mending = (name: string, slot: string) => ({
   },
 });
 
+/** An npc that stands in one slot. */
+const villager = (name: string, slot: string) => ({
+  ...envelope('npc', name),
+  npc: {
+    name,
+    sprite: 'core/base-kit:chars/elder',
+    place: { slot },
+    dialogue: { stranger: ['Hello.'] },
+  },
+});
+
 describe('a slot clash names what is still free', () => {
   it('lists the free slots of the same kind when some are free', () => {
     const { messages } = world({
@@ -95,6 +106,24 @@ describe('a slot clash names what is still free', () => {
     });
     expect(messages).toContainEqual(
       'slot "core/west-glade" is taken by more than one extension: tester/one, tester/two; no resource slot is free: open a "Request for the valley" issue to ask for one',
+    );
+  });
+});
+
+describe('a reserved slot is taken, not free', () => {
+  it('refuses an extension that names a reserved slot and says why', () => {
+    const root = mkdtempSync(join(tmpdir(), 'loomvale-reserved-'));
+    roots.push(root);
+    cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
+    cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+    const abs = join(root, 'extensions', 'tester', 'npcs', 'one.json');
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, JSON.stringify(villager('one', 'core/grove-clearing'), null, 2));
+    const messages = runCheck(root)
+      .issues.filter((i) => i.level === 'error')
+      .map((i) => i.message);
+    expect(messages).toContain(
+      '"core/grove-clearing" is reserved: The grove clearing is the traveller\'s ember camp (decision 35 of 22.10)',
     );
   });
 });

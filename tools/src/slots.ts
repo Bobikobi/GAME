@@ -25,5 +25,5 @@ if (!bundle) {
 
 let slots = mapSlots(bundle).sort((a, b) => a.id.localeCompare(b.id));
 if (kind !== undefined) slots = slots.filter((s) => s.kind === kind);
-if (free) slots = slots.filter((s) => s.filled_by === null);
-for (const s of slots) console.log(`${s.id} ${s.kind} ${s.filled_by ?? 'free'}`);
+if (free) slots = slots.filter((s) => s.filled_by === null && s.reserved === undefined);
+for (const s of slots) console.log(`${s.id} ${s.kind} ${s.filled_by ?? (s.reserved !== undefined ? `reserved: ${s.reserved}` : 'free')}`);

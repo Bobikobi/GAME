@@ -10,10 +10,10 @@ describe('mapSlots', () => {
   it('lists the free townsperson places', () => {
     const slots = mapSlots(bundle!);
     const freeNpc = slots
-      .filter((s) => s.kind === 'npc' && s.filled_by === null)
+      .filter((s) => s.kind === 'npc' && s.filled_by === null && s.reserved === undefined)
       .map((s) => s.id)
       .sort();
-    expect(freeNpc).toEqual(['core/grove-clearing', 'core/town-corner', 'core/trainers-stall']);
+    expect(freeNpc).toEqual(['core/trainers-stall']);
   });
 
   it('names who fills each occupied npc slot', () => {
@@ -22,6 +22,15 @@ describe('mapSlots', () => {
     expect(filled).toEqual({
       'core/elder-house': 'core/elder',
       'core/trader-stall': 'core/trader',
+    });
+  });
+
+  it('marks the two decided slots reserved, not free', () => {
+    const slots = mapSlots(bundle!);
+    const reserved = Object.fromEntries(slots.filter((s) => s.reserved !== undefined).map((s) => [s.id, s.reserved]));
+    expect(reserved).toEqual({
+      'core/grove-clearing': 'The grove clearing is the traveller\'s ember camp (decision 35 of 22.10)',
+      'core/town-corner': 'A player places a stall at the town\'s free corner (the owner\'s answer)',
     });
   });
 

@@ -51,8 +51,9 @@ describe('the clothing route', () => {
     expect(run.digs).toBeGreaterThan(0);
     const set = run.milestones[run.milestones.length - 1]!;
     expect(set.split.dig).toBeGreaterThan(0);
-    // seed 16 digs 10 times: 39.8 minutes passed. The page's median of 64.2 over seeds 1 to 20 is not pinned here: twenty
-    // found runs take minutes of wall time, too long for a unit test; `clothing-route-cli.ts --found --seeds 1,...,20` reproduces it.
-    expect(Math.round(set.at / MIN * 10) / 10).toBe(39.8);
+    // seed 16 digs 10 times: 28.5 minutes passed (39.8 before the dig rule landed: a scrap of a recipe already known is
+    // skipped and its chance goes to the other rows, so the set comes sooner). The page's median over seeds 1 to 20 is
+    // not pinned here: twenty found runs take minutes of wall time; `clothing-route-cli.ts --found --seeds 1,...,20` reproduces it.
+    expect(Math.round(set.at / MIN * 10) / 10).toBe(28.5);
   }, 120_000);
 });
