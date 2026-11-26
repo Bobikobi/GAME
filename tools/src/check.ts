@@ -1170,7 +1170,8 @@ export function formatIssues(result: CheckResult): string {
   }
   const errors = result.issues.filter((i) => i.level === 'error').length;
   const warnings = result.issues.length - errors;
-  lines.push(`\n${result.files} files checked: ${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}.`);
+  const extensionWarnings = result.issues.filter((i) => i.level === 'warning' && i.file.startsWith('content/extensions/')).length;
+  lines.push(`\n${result.files} files checked: ${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'} (${extensionWarnings} in content/extensions).`);
   if (errors === 0) lines.push('Everything passes.');
   return lines.join('\n');
 }

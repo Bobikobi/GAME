@@ -209,7 +209,17 @@ describe('the window keeps the floor at every text size (G29)', () => {
     const body = settingsBody(setup().apply, undefined, undefined, false) as unknown as MiniElement;
     const group = elements(body).find((el) => el.attributes['aria-label'] === 'Text size');
     expect(group?.children.map((child) => child.textContent)).toEqual(['16', '18', '20']);
-    expect(css).toMatch(/\.text-size-options\s+\.set-opt\s*{[^}]*font-family:\s*'Atkinson Hyperlegible Next'/s);
+    expect(css).toMatch(/\.panel\.settings\s+\.text-size-options\s+\.set-opt\s*{[^}]*font-family:\s*'Atkinson Hyperlegible Next'/s);
+  });
+
+  it('the distinct-digit face wins over the window\'s own font shorthand', () => {
+    // .panel.settings .btn.set-opt sets `font: ... var(--font)` (Jersey 15), whose 6 reads as 8; the face rule
+    // must be at least as specific and come after it, or the shorthand puts the 6 back and 16 reads as 18.
+    const cls = (sel: string) => (sel.match(/\.[\w-]+/g) ?? []).length;
+    const shorthand = css.indexOf('font: 400 var(--kit-text) / 1 var(--font)');
+    const face = css.indexOf("font-family: 'Atkinson Hyperlegible Next', sans-serif");
+    expect(face).toBeGreaterThan(shorthand);
+    expect(cls('.panel.settings .text-size-options .set-opt')).toBeGreaterThanOrEqual(cls('.panel.settings .btn.set-opt'));
   });
 });
 
