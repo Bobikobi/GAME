@@ -9,8 +9,8 @@ import type { Tile } from '@game/kernel';
 
 export type StoneSize = 'small' | 'large';
 
-/** The scale of the item picture `items/stone` (nearly tile-wide), as a share of its own size: a large stone on the ground (95 percent), and a small one before it had its own drawing (46 percent, kept as the unit a large stone among small ones is sized by). */
-export const STONE_SCALE: Readonly<Record<StoneSize, number>> = { small: 0.46, large: 0.95 };
+/** The scale of the item picture `items/stone` (nearly tile-wide), as a share of its own size: a large stone on the ground (70 percent: the owner's rule of 26.11 is that an object keeps its size from the ground into the hands and back, and 70 is the size a figure's lift and carry clips can hold, #874), and a small one before it had its own drawing (46 percent, kept as the unit a large stone among small ones is sized by). */
+export const STONE_SCALE: Readonly<Record<StoneSize, number>> = { small: 0.46, large: 0.7 };
 
 /**
  * Where the middle of the drawn stone is in its picture, as a share of the picture (origin x, y): the middle of the opaque box, which for
@@ -73,16 +73,16 @@ export function pileLayout(count: number, large = 0): Slot[] {
           : [];
   return spots.map(([dx, dy, k], i) => {
     const size: StoneSize = i < large ? 'large' : 'small';
-    // a large stone alone fills its tile; among others it keeps the slot's room
-    const scale = size === 'large' ? (look === 'one' ? STONE_SCALE.large : STONE_SCALE.small * 1.5 * k) : SMALL_STONE_SCALE * k;
+    // every stone of a pile is drawn at its own size times the slot's room k (1 for a lone stone), so a large one stays that much larger than a small one
+    const scale = (size === 'large' ? STONE_SCALE.large : SMALL_STONE_SCALE) * k;
     return { dx, dy, size, scale, picture: size };
   });
 }
 
 /**
  * Where a thrown stone leaves from: the drawn hand (STONE HAND, #793), in tiles. `x` and `y` are the ground point under the hand,
- * `lift` its height above that, and `share` how big the stone is in it as a share of its flying size (a large stone carried is drawn
- * smaller than it lies on the ground): it grows to its own size by the middle of the flight, so it never pops. Left out, the stone
+ * `lift` its height above that, and `share` how big the stone is in it as a share of its flying size (1 for every stone since #874: an
+ * object keeps its size; a share under 1 grows to its own size by the middle of the flight). Left out, the stone
  * leaves the middle of the tile at the height of a hand.
  */
 export interface Grip {
@@ -128,15 +128,6 @@ export interface Motion {
   /** the moment the stone first comes down, ms from the throw */
   touchMs: number;
   at(t: number): Pose;
-}
-
-/** How wide the large stone is in the carry sheets' hands, in sheet pixels (measured on all nine: 40 to 46), and how wide the kit's stone picture is (its drawn part, 60 of 64): their ratio, at a clip's own fit, is the share a carried stone has of the stone that flies. */
-export const CARRIED_STONE_PX = 45;
-export const STONE_PICTURE_PX = 60;
-
-/** The share of its flying size a large stone has in the hands of a clip drawn at `fit` (its fit as a share, 0.698 for 698 permille): the carried stone is as wide as the carry sheets drew it, the flying one is the ground picture. */
-export function carriedShare(fit: number): number {
-  return (CARRIED_STONE_PX * fit) / (STONE_PICTURE_PX * STONE_SCALE.large);
 }
 
 /** The height of the hand a stone leaves from, in tiles. */
