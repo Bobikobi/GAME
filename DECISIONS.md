@@ -4865,3 +4865,11 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **Why:** proven for the timing, the hand-over and the pack band; the look of the crouch and the ring (timing, size) is the builder's eye, hypothesis until the owner sees the live game.
 
 **Retry when:** the owner finds the lift stiff or a stone off on the live game (redraw those cells with a slower wording, or move a hand point in `kit.json`), or gate a learns to read a declared bend. **Model:** Claude Sonnet 5.5 (anim-routes lane). **Link:** #793, #840, #842.
+
+## 2026-11-25 ✅ The Text size "16" really reads 16, not 18 (#718)
+
+**What:** #765 put the three numeric options in Atkinson Hyperlegible Next so their 6 stays open, but the rule lost: `.text-size-options .set-opt` (2 classes) is beaten by the window's `.panel.settings .btn.set-opt` `font` shorthand (4 classes, Jersey 15), so the labels still drew in Jersey 15 and 16 read as 18. The fix prefixes the face rule with `.panel.settings` so it wins, and the controls e2e now draws each label in its computed font and holds every pair of 16/18/20 to a minimum pixel difference, so a face that closes the 6 into an 8 fails.
+- **Result:** computed font on the three buttons is Atkinson Hyperlegible Next (was Jersey 15). In Jersey the 6 and 8 glyphs overlap within 2-10 px (a 0.01-0.04 share of differing ink); in Atkinson they are ~0.2 apart. The e2e fails on the old rule and passes on the new one, at all three text sizes.
+- **Why:** proven in the browser (computed style and drawn glyphs); the earlier e2e read `textContent` only, which is why a rule that never applied passed.
+
+**Retry when:** the options read alike again (check the computed font first, then the glyph difference), or the face is changed for a new one (keep the glyph check). **Model:** deepseek-v4-pro (builder, #718). **Link:** #718, #765.

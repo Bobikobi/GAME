@@ -30,6 +30,7 @@ const RECORDED_CONTENT = '8316c46193598c5d';
 const RECIPES_ADDED_SINCE = new Set([
   'ceosisrael/dried-herbs+core/herb',
   'ceosisrael/dried-herbs+core/sunleaf',
+  'core/bellberry-broth',
   'core/hare-fur-hood',
   'core/hare-leather-shoes',
   'core/roe-leather-jerkin',
@@ -39,6 +40,7 @@ const RECIPES_ADDED_SINCE = new Set([
   'core/tan-hare-fur',
   'core/tan-hare-leather',
   'core/tan-roe-leather',
+  'ceosisrael/wayfarers-scarf',
 ]);
 function developWorld(world: FightWorld): FightWorld {
   const old = structuredClone(world);

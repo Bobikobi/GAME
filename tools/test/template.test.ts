@@ -58,3 +58,35 @@ describe('templates/extension', () => {
     for (const s of slots) expect([s.x, s.y]).toEqual([s.parent.x - 1, s.parent.y]);
   });
 });
+
+/**
+ * The townsperson path depends on "core/trainers-stall" staying free. The check above holds the template against core
+ * alone; here it is held against every landed extension too, so an extension that fills the stall fails before the
+ * next newcomer copies the guide. The fruit path is out of scope: every resource slot is taken today.
+ */
+describe('templates/extension beside the landed extensions', () => {
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-template-valley-'));
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
+  cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+  cpSync(join(CONTENT_DIR, 'extensions'), join(root, 'extensions'), { recursive: true });
+  cpSync(join(REPO_ROOT, 'templates', 'extension', 'npcs'), join(root, 'extensions', 'your-handle', 'npcs'), {
+    recursive: true,
+    filter: (src) => !src.endsWith('.md'),
+  });
+  const result = runCheck(root);
+
+  it('still has a free place to stand beside every extension', () => {
+    const b = result.assembled.bundle!;
+    const wren = b.npcs['your-handle/wren']!;
+    expect(wren.place.slot).toBe('core/trainers-stall');
+    const sharing = Object.values(b.npcs)
+      .filter((n) => n.id !== wren.id && n.place.slot === wren.place.slot)
+      .map((n) => n.id);
+    expect(
+      sharing,
+      `the template's townsperson has no free place to stand: ${sharing.join(', ')} also stands at "${wren.place.slot}". Move the template's townsperson to a free "npc" slot.`,
+    ).toEqual([]);
+  });
+});
