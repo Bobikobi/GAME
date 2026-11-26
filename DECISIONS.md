@@ -4890,3 +4890,11 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **Waits:** the drawn wind-up stages and the bow (there is no bow yet, and the wind-up clips come from the art lane). The wind-up uses the existing carry/throw clips until then.
 
 **Tree:** none: throwing is a fight act and no school file holds fight nodes yet; a tap's minimum power is a params value, not a node. **Model:** deepseek-v4-pro. **Link:** #870.
+## 2026-11-26 ✅ Lifting is general: an object's entry carries a weight class, the kernel reads the class (direction, not built)
+
+**What:** the owner's word (26.11.2026 evening): lifting must be wide, never written for one specific stone. Whether an object can be lifted, and how heavy it is, belongs to the object's entry; what a player can do with it follows from that. The shape: a weight class on any object entry - in hand / carry in arms / heavy (two hands, slow, overhead) / push only / fixed. The kernel offers lift, carry, throw and push by class, never by stone id; clips are chosen by class and size; the held size follows the size rule of #874 (within 10% of the object's world sprite). The same evening he added that a lifted object must read as liftable in the world ("a stone you lift is not a quarry stone"): the class follows what the object is, not only its pixel size.
+- **Result:** none yet: on paper. Today the loose stones (kernel 0.35.0, #831) and the lift clips (#850) are coded per stone kind.
+- **Why:** every new liftable object would otherwise need its own code and clips. Precedent: Divinity: Original Sin 2 gives world objects a weight gated by Strength; Zelda: Breath of the Wild / Tears of the Kingdom uses carryable classes.
+- **Waits:** the kernel generalisation (#876), queued behind the valley MVP steps; later, weight ties to a strength node in the tree.
+
+**Retry when:** -. **Model:** opus (manager). **Link:** #874, #876.
