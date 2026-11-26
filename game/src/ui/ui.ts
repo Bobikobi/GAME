@@ -216,12 +216,17 @@ export class UI {
     }
     if (b === 'a') app.world?.interact();
     else if (b === 'jump') app.world?.jump?.();
-    // B throws a stone the way the player faces (DECISIONS 2026-11-22, #831); with none in hand it says so
-    else if (b === 'b') app.world?.throwStone?.();
+    // B held charges a throw (DECISIONS 2026-11-22): released, the stone leaves at the power reached; with none in hand it says so
+    else if (b === 'b') app.world?.throwPress?.();
     else if (b === 'bag') this.panel(() => openBag(this));
     else if (b === 'journal') this.panel(() => openJournal(this));
     else if (b === 'menu') this.panel(() => openMenu(this));
     return true;
+  }
+
+  /** A button's key or touch rose: only the throw's charge reads it (B released throws at the power reached). */
+  handleUp(b: Button): void {
+    if (b === 'b') app.world?.throwRelease?.();
   }
 
   // ------------------------------------------------------------ boot

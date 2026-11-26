@@ -77,6 +77,7 @@ export class Controls {
   /** the sneak button, a toggle */
   private sneaking = false;
   private handlers = new Set<(b: Button) => boolean | void>();
+  private upHandlers = new Set<(b: Button) => void>();
 
   constructor() {
     window.addEventListener('keydown', (e) => this.keyDown(e));
@@ -158,9 +159,19 @@ export class Controls {
     this.handlers.add(fn);
   }
 
+  /** A button's key or touch rose: the app routes it like a press, but only the world listens for it now. */
+  onButtonUp(fn: (b: Button) => void): void {
+    this.upHandlers.add(fn);
+  }
+
   press(button: Button): void {
     if (this.paused) return;
     for (const fn of this.handlers) if (fn(button) === true) return;
+  }
+
+  release(button: Button): void {
+    if (this.paused) return;
+    for (const fn of this.upHandlers) fn(button);
   }
 
   private typing(e: KeyboardEvent): boolean {
@@ -194,6 +205,11 @@ export class Controls {
   private keyUp(e: KeyboardEvent): void {
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.shift = false;
     const dir = KEY_DIR[e.code];
-    if (dir) this.held = this.held.filter((d) => d !== dir);
+    if (dir) {
+      this.held = this.held.filter((d) => d !== dir);
+      return;
+    }
+    const button = KEY_BUTTON[e.code];
+    if (button) this.release(button);
   }
 }

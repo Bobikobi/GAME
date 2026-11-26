@@ -139,7 +139,7 @@ async function main(): Promise<void> {
       };
       sample();
     })()`);
-    await page.tap('.tbtn.b');
+    await page.holdTap('.tbtn.b', 800);
     await page.waitFor(`window.__fx.length > 0`, 'the stone to leave the hand', 5000);
     // the stone left the hand while the figure was in its throw clip, at the release frame (the clip's last hand point: the fourth frame, or the fifth where the drawing opens the hand later)
     const release = await page.eval<{ key: string; frame: number }>(`window.__release`);
@@ -222,7 +222,7 @@ async function main(): Promise<void> {
       const watch = () => (w.stones?.flying?.length ? (w.game.loop.sleep(), (window.__asleep = true)) : requestAnimationFrame(watch));
       watch();
     })()`);
-    await page.tap('.tbtn.b');
+    await page.holdTap('.tbtn.b', 800);
     await page.waitFor(`window.__asleep === true`, 'the stone to leave the hand', 5000);
     await page.screenshot(join(OUT, 'stones-release.png'));
     await page.eval(`window.__game.world.game.loop.wake()`);

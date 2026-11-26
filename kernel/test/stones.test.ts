@@ -11,10 +11,12 @@ import {
   type GameEvent,
   type State,
   type Tile,
+  FULL_POWER,
   STONE_ITEM,
   STONE_RANGE,
   THROW_STONE,
   canonical,
+  chargePower,
   gaitStepMs,
   loadBand,
   loadMax,
@@ -26,6 +28,7 @@ import {
   settled,
   step,
   throwFlight,
+  throwHoldLimit,
   walkableFor,
   walkStepMs,
 } from '@game/kernel';
@@ -305,6 +308,71 @@ describe('the throw', () => {
     const rest: Tile = [1 + S.small_range + S.small_roll, 1];
     expect(lyingAt(b, r.state, rest).small).toBe(1);
     expect(lyingAt(b, settled(b, r.state, r.state.tick + S.return_ms), rest).count).toBe(0);
+  });
+});
+
+describe('the charged throw (DECISIONS 2026-11-22)', () => {
+  test('the charge curve: a tap gives the minimum, holding charges evenly to full, and the hold limit stays at full', () => {
+    const b = base;
+    // a tap is the minimum; it never goes below it, and it never passes full
+    expect(chargePower(b, 0)).toBe(S.throw_min_power);
+    const mid = chargePower(b, Math.floor(S.throw_charge_ms / 2));
+    expect(mid).toBeGreaterThan(S.throw_min_power);
+    expect(mid).toBeLessThan(FULL_POWER);
+    expect(chargePower(b, S.throw_charge_ms)).toBe(FULL_POWER);
+    // past full the power stays full, and the hold limit releases at full: a charge cannot be held for ever
+    expect(throwHoldLimit(b)).toBe(S.throw_charge_ms + S.throw_hold_ms);
+    expect(chargePower(b, throwHoldLimit(b))).toBe(FULL_POWER);
+    expect(chargePower(b, throwHoldLimit(b) + 1000)).toBe(FULL_POWER);
+    // monotone and bounded across the whole hold
+    let last = S.throw_min_power - 1;
+    for (let t = 0; t <= throwHoldLimit(b); t += 11) {
+      const p = chargePower(b, t);
+      expect(p).toBeGreaterThanOrEqual(S.throw_min_power);
+      expect(p).toBeLessThanOrEqual(FULL_POWER);
+      expect(p).toBeGreaterThanOrEqual(last);
+      last = p;
+    }
+  });
+
+  test('the range grows with the power and is capped at full', () => {
+    const b = world({ ground: ['..................'], spots: [] });
+    const touchAt = (power: number) => {
+      const f = throwFlight(b, standing(b, [1, 0]), 'small', [17, 0], power);
+      if ('error' in f) throw new Error(f.error);
+      return f.touch[0] - f.from[0];
+    };
+    const min = touchAt(S.throw_min_power);
+    const full = touchAt(FULL_POWER);
+    expect(min).toBeGreaterThan(0);
+    expect(min).toBeLessThan(full);
+    expect(full).toBe(S.small_range);
+    // the cap: a power over full is not a flight (the action refuses it), so full is the longest range
+    expect(full).toBeGreaterThanOrEqual(min);
+  });
+
+  test('a power out of bounds is refused: below the minimum and above full', () => {
+    const b = world({ ground: FIELD });
+    const s = standing(b, [1, 1]);
+    expect(refused(b, s, { t: 'throw', at: [1, 1], aim: [5, 1], power: S.throw_min_power - 1 })).toBe('That is not a throw.');
+    expect(refused(b, s, { t: 'throw', at: [1, 1], aim: [5, 1], power: 0 })).toBe('That is not a throw.');
+    expect(refused(b, s, { t: 'throw', at: [1, 1], aim: [5, 1], power: FULL_POWER + 1 })).toBe('That is not a throw.');
+  });
+
+  test('the minimum itself throws: a tap is a throw, not a refusal', () => {
+    const b = world({ ground: FIELD });
+    const withStone = { ...standing(b, [1, 1]), player: { ...standing(b, [1, 1]).player, bag: { [STONE_ITEM]: 1 } } };
+    const r = run(b, withStone, throwTo([9, 1], S.throw_min_power));
+    expect(r.events.find((e) => e.e === 'stone_thrown')).toMatchObject({ size: 'small' });
+  });
+
+  test('the same charge and power give the same flight, every time (determinism)', () => {
+    const b = world({ ground: ['..................'], spots: [] });
+    const held = Math.floor(S.throw_charge_ms / 3);
+    const power = chargePower(b, held);
+    const a = throwFlight(b, standing(b, [1, 0]), 'small', [17, 0], power);
+    const c = throwFlight(b, standing(b, [1, 0]), 'small', [17, 0], chargePower(b, held));
+    expect(a).toEqual(c);
   });
 });
 

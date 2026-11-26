@@ -197,11 +197,33 @@ export function mountTouch(root: HTMLElement): void {
       window.setTimeout(() => btn.classList.remove('down'), 120);
     });
   tap(a, 'a');
-  tap(b, 'b');
   tap(jump, 'jump');
   tap(bag, 'bag');
   tap(journal, 'journal');
   tap(menu, 'menu');
+
+  // B held and dragged charges the throw and aims it (DECISIONS 2026-11-22): a tap still throws at once
+  let bDown: { x: number; y: number } | null = null;
+  b.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    b.classList.add('down');
+    buzz(TAP);
+    bDown = { x: e.clientX, y: e.clientY };
+    b.setPointerCapture(e.pointerId);
+    app.controls.press('b');
+  });
+  b.addEventListener('pointermove', (e) => {
+    if (!bDown) return;
+    app.world?.throwDrag?.(e.clientX - bDown.x, e.clientY - bDown.y);
+  });
+  const bLift = () => {
+    if (!bDown) return;
+    bDown = null;
+    b.classList.remove('down');
+    app.controls.release('b');
+  };
+  b.addEventListener('pointerup', bLift);
+  b.addEventListener('pointercancel', bLift);
 
   // the arc's bag and journal come with the HUD's: hidden until the hook ladder opens them
   const hud = root.querySelector('.hud');
