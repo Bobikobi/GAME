@@ -76,6 +76,7 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { EffectLayer } from '../effect-layer';
 import { landingDust, spawnsOf } from '../effects';
 import { FightWordLayer, type FightWordPoint } from '../fight-word-layer';
+import { FoeBarLayer, type FoeBarPoint } from '../foe-bar-layer';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { EDGE_PX } from '../pathedge';
@@ -410,6 +411,8 @@ export class WorldScene extends Phaser.Scene {
   /** the pack's effects (effects.ts): a spark on a hit, a starburst on a bite, dust on a landing, the camp fire's flame */
   private effects!: EffectLayer;
   private fightWords!: FightWordLayer;
+  /** the small health bar under each fighting creature, with its number (#866) */
+  private foeBars!: FoeBarLayer;
   /** the old picture's dark frame, drawn under the cut-out instead of as a filter over everything (WebGL) */
   private vignette: Phaser.GameObjects.Image | undefined;
   private frameLook = { strength: 0.3, radius: 0.8 };
@@ -599,6 +602,7 @@ export class WorldScene extends Phaser.Scene {
     this.labels.className = 'world-labels';
     app.ui.root.prepend(this.labels);
     this.fightWords = new FightWordLayer(this.labels, (outcome, point) => this.fightWordHead(outcome, point));
+    this.foeBars = new FoeBarLayer(this.labels, (id, point) => this.foeBarFeet(id, point));
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
     this.effects = new EffectLayer(this, DEPTH.fx, T);
@@ -645,7 +649,9 @@ export class WorldScene extends Phaser.Scene {
       .setVisible(false);
     const cam = this.cameras.main;
     cam.on(Phaser.Cameras.Scene2D.Events.POST_RENDER, () => {
-      if (this.fightWords.active) this.fightWords.update(performance.now(), document.documentElement.dataset.motion === 'reduced');
+      const reduced = document.documentElement.dataset.motion === 'reduced';
+      if (this.fightWords.active) this.fightWords.update(performance.now(), reduced);
+      if (this.foeBars.active) this.foeBars.update(performance.now(), this.session?.state.player.fight?.foe, reduced);
     });
     cam.setBounds(0, 0, this.b.map.width * T, this.b.map.height * T);
     cam.setRoundPixels(true);
@@ -667,6 +673,7 @@ export class WorldScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       sound.crackle(0);
       this.fightWords.clear();
+      this.foeBars.clear();
       this.labels.remove();
     });
     app.world = this;
@@ -2210,6 +2217,7 @@ export class WorldScene extends Phaser.Scene {
     this.stones = undefined;
     this.effects.clear();
     this.fightWords.clear();
+    this.foeBars.clear();
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
@@ -2232,6 +2240,7 @@ export class WorldScene extends Phaser.Scene {
         this.fightClips(events);
         this.fightEffects(events);
         this.fightWords.play(events, performance.now());
+        this.foeBars.play(events, performance.now());
         this.celebrate(events);
         for (const event of events) if (event.e === 'cue') this.playCue(event);
       }),
@@ -2998,6 +3007,18 @@ export class WorldScene extends Phaser.Scene {
     const cam = this.cameras.main;
     worldToPage(cam.worldView, cam.zoom, pixelRatio(), x, y, point);
     return true;
+  }
+
+  /** The bar's anchor under a foe's feet: the sprite's origin stands on the feet line and follows it as it moves. */
+  private foeBarFeet(id: string, point: FoeBarPoint): boolean {
+    for (const hazard of this.hazards) {
+      if (hazard.rule?.id !== id) continue;
+      if (!hazard.spr.visible) return false;
+      const cam = this.cameras.main;
+      worldToPage(cam.worldView, cam.zoom, pixelRatio(), hazard.spr.x, hazard.spr.y, point);
+      return true;
+    }
+    return false;
   }
 
   /**

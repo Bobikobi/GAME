@@ -2338,6 +2338,35 @@ body {
   transform-origin: center bottom;
 }
 
+/* the small health bar under a fighting creature (#866): a dark track with a paper edge and the
+   health's green fill, the current health in the fight words' face beside it */
+.foe-bar {
+  width: 24px;
+  height: 5px;
+  background: var(--ink);
+  box-shadow: 0 0 0 1px var(--paper);
+}
+
+.foe-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--green2);
+}
+
+.foe-bar-num {
+  position: absolute;
+  left: 100%;
+  margin-left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--paper);
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
 .whisper {
   color: #d9d4f0;
   text-shadow:
