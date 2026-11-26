@@ -243,7 +243,9 @@ async function main(): Promise<void> {
     await page.waitFor(`window.__lift.done`, 'the lift clip to play out', 5000);
     const lift = await page.eval<{ seen: number[][]; end: number; next: string }>(`window.__lift`);
     const frames = lift.seen.map((q) => q[1]!);
-    if (!(frames.length > 4 && frames.every((f, i) => i === 0 || f >= frames[i - 1]!) && frames[0] === 0 && frames[frames.length - 1]! >= lift.seen[0]![2]! - 2)) throw new Error(`the lift clip did not run from its first frame to its last, in order: ${JSON.stringify(frames)}`);
+    // the clip is stretched over the kernel's lift time (~67 ms a frame): on a loaded CI runner the first sampled
+    // animation frame can land after frame 0's slot, so the first frame seen may be 1 (CI 26.11, three reds: [1,2,3,...])
+    if (!(frames.length > 4 && frames.every((f, i) => i === 0 || f >= frames[i - 1]!) && frames[0]! <= 1 && frames[frames.length - 1]! >= lift.seen[0]![2]! - 2)) throw new Error(`the lift clip did not run from its first frame to its last, in order: ${JSON.stringify(frames)}`);
     if (!(Math.abs(lift.end - params.lift) <= 150)) throw new Error(`the lift clip lasted ${Math.round(lift.end)} ms, the kernel's lift is ${params.lift} ms`);
     if (!lift.next.includes('_carry_') && !lift.next.includes('_walk') && !lift.next.includes('_idle')) throw new Error(`after the lift the figure shows ${lift.next}`);
     console.log(`stones: the large stone's lift played ${frames.length} frames over ${Math.round(lift.end)} ms (the kernel's lift_ms is ${params.lift}), then ${lift.next}`);

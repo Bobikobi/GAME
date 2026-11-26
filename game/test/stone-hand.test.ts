@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { REPO_ROOT } from '../../tools/src/load';
 import { handAt, handWorld } from '../src/clips';
-import { CARRIED_STONE_PX, STONE_PICTURE_PX, STONE_SCALE, carriedShare, stoneMotion } from '../src/stone-art';
+import { stoneMotion } from '../src/stone-art';
 
 type Clip = { race: string; view: string; verb: string; frame_ms: number; anchor: [number, number]; fit_permille?: number; hand?: [number, number][] };
 type Sprite = { file: string; w: number; h: number; frames: number; clip?: Clip };
@@ -106,9 +106,8 @@ describe('a stone leaves the hand', () => {
     expect(m.at(m.touchMs / 2).shrink).toBeCloseTo(1);
     expect(m.at(m.touchMs - 1).shrink).toBe(1);
   });
-  test('a carried large stone is about half to two thirds of the one that flies, by the clip\'s fit', () => {
-    expect(carriedShare(0.698)).toBeCloseTo((CARRIED_STONE_PX * 0.698) / (STONE_PICTURE_PX * STONE_SCALE.large));
-    for (const fit of [0.562, 0.698, 0.84]) expect(carriedShare(fit)).toBeGreaterThan(0.4);
-    for (const fit of [0.562, 0.698, 0.84]) expect(carriedShare(fit)).toBeLessThan(0.75);
+  test('a stone in the hand with no share is its own size all the way: an object keeps its size (#874)', () => {
+    const m = stoneMotion({ ...base, hand: { x: 5.5, y: 5.5, lift: 0.8 } });
+    for (const t of [0, m.touchMs / 4, m.touchMs / 2, m.touchMs - 1]) expect(m.at(t).shrink).toBe(1);
   });
 });
