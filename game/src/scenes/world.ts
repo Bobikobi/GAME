@@ -107,7 +107,7 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
@@ -4299,7 +4299,10 @@ export class WorldScene extends Phaser.Scene {
       if (this.grip) layer.takeInHand(thrown.size);
       // the landing tile waits for the flight, which starts when the stone leaves the hand: held without an end until then
       const held = thrown.at ? layer.hold(key(thrown.at[0], thrown.at[1]), thrown.size, this.time.now, release > 0 ? Infinity : thrown.ms) : undefined;
+      const due = this.time.now + release;
       const fly = (): void => {
+        // the clip's own record (a test reads it, e2e/stones.ts): the frame the clip is on at the instant the release was laid for, and how late the scene ran it
+        this.figure.trace?.push({ e: 'release', key: found?.key, frame: found && release > 0 ? clipFrame(release, found.frames, found.frame_ms) : undefined, due, at: this.time.now });
         if (held) layer.holdUntil(held, this.time.now + thrown.ms);
         // it leaves the drawn hand where the clip has it at the release, at the height of the hand above the feet
         const g = this.grip;
@@ -4314,7 +4317,7 @@ export class WorldScene extends Phaser.Scene {
         });
       };
       // by the scene's own clock, the one the clip is laid by: a timer's delta runs behind it when frames come slowly
-      if (release > 0) this.releases.push({ at: this.time.now + release, run: fly });
+      if (release > 0) this.releases.push({ at: due, run: fly });
       else fly();
     });
   }
