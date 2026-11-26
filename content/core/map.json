@@ -5101,7 +5101,8 @@
         "w": 2,
         "h": 2,
         "tag": "town",
-        "label": "Empty corner"
+        "label": "Empty corner",
+        "reserved": "A player places a stall at the town's free corner (the owner's answer)"
       },
       {
         "id": "core/ruins-hall",
@@ -5141,7 +5142,8 @@
         "w": 3,
         "h": 2,
         "tag": "grove",
-        "label": "Clearing"
+        "label": "Clearing",
+        "reserved": "The grove clearing is the traveller's ember camp (decision 35 of 22.10)"
       },
       {
         "id": "core/lantern-foot",

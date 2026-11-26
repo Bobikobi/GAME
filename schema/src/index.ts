@@ -2170,6 +2170,14 @@ const Slot = Type.Object(
           'A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.',
       }),
     ),
+    reserved: Type.Optional(
+      Type.String({
+        minLength: 1,
+        maxLength: 120,
+        description:
+          'A slot a decision holds for something named (a character, a stall, a camp), empty on the map but not free for a creator: the DECISIONS heading that reserves it.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );

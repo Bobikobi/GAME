@@ -664,6 +664,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (!slot) return err(owner, 'place.slot', `no slot "${slotId}" on the map`);
     const allowed = SLOT_KINDS_FOR[type] ?? [];
     if (!allowed.includes(slot.kind)) err(owner, 'place.slot', `"${slotId}" is a ${slot.kind} slot; a ${type} needs one of: ${allowed.join(', ')}`);
+    if (slot.reserved !== undefined) err(owner, 'place.slot', `"${slotId}" is reserved: ${slot.reserved}`);
     (slotFill[slotId] ??= []).push(owner);
   };
 
@@ -871,7 +872,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [slotId, owners] of Object.entries(slotFill)) {
     if (owners.length > 1) {
       const kind = b.map.slots.find((s) => s.id === slotId)?.kind;
-      const free = b.map.slots.filter((s) => s.kind === kind && slotFill[s.id] === undefined).map((s) => s.id);
+      const free = b.map.slots.filter((s) => s.kind === kind && slotFill[s.id] === undefined && s.reserved === undefined).map((s) => s.id);
       const next =
         free.length > 0
           ? `; free ${kind} slots: ${free.join(', ')}`
