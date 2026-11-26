@@ -280,6 +280,43 @@ function sameBoxes(got: Boxes, want: Boxes, label: string, tol: number): void {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/**
+ * In the page: the Text size options' face, and how far apart each pair of labels draws in it (the share of inked
+ * pixels that differ). A face whose 6 closes into an 8 draws "16" and "18" almost the same (a ratio near 0); the
+ * distinct-digit face keeps the pair well apart. Reads the buttons' own computed font, so it proves what the rule
+ * actually applied, not what the stylesheet says.
+ */
+const READ_GLYPHS = `(() => {
+  const btns = [...document.querySelectorAll('[aria-label="Text size"] button')];
+  const cs = getComputedStyle(btns[0]);
+  const size = parseFloat(cs.fontSize);
+  const draw = (text) => {
+    const c = document.createElement('canvas');
+    const g = c.getContext('2d');
+    g.font = cs.font;
+    c.width = Math.ceil(g.measureText(text).width) + 8;
+    c.height = Math.ceil(size * 1.8) + 8;
+    const d = c.getContext('2d');
+    d.font = cs.font;
+    d.fillStyle = '#000';
+    d.textBaseline = 'alphabetic';
+    d.fillText(text, 4, size + 4);
+    return d.getImageData(0, 0, c.width, c.height).data;
+  };
+  const ratio = (a, b) => {
+    let n = 0, tot = 0;
+    for (let i = 3; i < a.length; i += 4) {
+      const da = a[i] > 128 ? 1 : 0;
+      const db = b[i] > 128 ? 1 : 0;
+      tot += da + db;
+      if (da !== db) n++;
+    }
+    return n / Math.max(1, tot);
+  };
+  const imgs = { '16': draw('16'), '18': draw('18'), '20': draw('20') };
+  return { font: cs.fontFamily, size, ratios: [ratio(imgs['16'], imgs['18']), ratio(imgs['18'], imgs['20']), ratio(imgs['16'], imgs['20'])] };
+})()`;
+
 async function main(): Promise<void> {
   const remote = process.env.E2E_URL;
   if (!remote && !existsSync(join(DIST, 'index.html'))) throw new Error('no game/dist: run "pnpm build" first');
@@ -432,12 +469,19 @@ async function main(): Promise<void> {
     await page.tap('.tbtn.menu');
     await page.tap('.menu-list button', 'Settings');
     await page.waitFor(`!![...document.querySelectorAll('.set-body h3')].find((h) => h.textContent === 'Controls')`, 'the Controls section');
-    // #718: the three Text size labels read right at each size; walked 20, 18, 16 so the page ends on the default 16 for the checks below
+    // #718: the three Text size labels read right at each size, in the distinct-digit face, not just as text;
+    // walked 20, 18, 16 so the page ends on the default 16 for the checks below
     for (const size of ['20', '18', '16']) {
       const option = `[aria-label="Text size"] button:nth-child(${size === '16' ? 1 : size === '18' ? 2 : 3})`;
       await page.tap(option, size); // tap's second argument filters by the button's own text, here the size
       const labels = await page.eval<string[]>(`[...document.querySelectorAll('[aria-label="Text size"] button')].map((b) => b.textContent)`);
       if (labels.join(',') !== '16,18,20') fail(`at text size ${size}, the labels read ${labels.join(',')}, not 16,18,20`);
+      const glyphs = await page.eval<{ font: string; size: number; ratios: number[] }>(READ_GLYPHS);
+      if (!glyphs.font.includes('Atkinson Hyperlegible Next')) fail(`at text size ${size}, the Text size face is ${glyphs.font}, not the distinct-digit face`);
+      const pairs = [['16', '18'], ['18', '20'], ['16', '20']] as const;
+      pairs.forEach(([a, b], i) => {
+        if (glyphs.ratios[i]! < 0.1) fail(`at text size ${size}, the drawn "${a}" and "${b}" differ by ${glyphs.ratios[i]!.toFixed(3)}, too close to tell apart`);
+      });
     }
     console.log('Text size landscape: the choices read 16, 18 and 20 at each of the three sizes');
     const words = await page.eval<{ text: string; px: number }[]>(`(() => {
