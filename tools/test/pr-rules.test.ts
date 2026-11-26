@@ -5,11 +5,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { decide, labelled, parseNameStatus, treeForm } from '../src/pr-rules';
+import { decide, labelled, parseNameStatus, treeForm, PLAYER_EYE_CLIPS } from '../src/pr-rules';
 
 const quest = { status: 'M', path: 'content/core/quests/first-fire.json' };
 const sprite = { status: 'A', path: 'content/kit/core/props/stool.png' };
 const docs = { status: 'M', path: 'AGENTS.md' };
+/** a picture that is neither an interaction clip nor an object: a character's blink, owed the source line only */
+const blink = { status: 'A', path: 'content/kit/core/chars/elder_blink.png' };
+const lift = { status: 'M', path: 'content/kit/core/chars/human_lift_left.png' };
+const world = 'Player eye: pass';
 /** every body owes the tree line, so the bodies below that should pass carry it */
 const tree = 'Tree: none: a test body, nothing a player grows in';
 /** a quest is story too, so a quest's body owes both lines */
@@ -37,8 +41,9 @@ describe('the body rule script', () => {
       if (status === 0) {
         expect(stdout).toBe('::notice::Release pull request. Each change carried its own lines when it entered develop.\n');
       } else {
-        expect(stdout.split('\n')[0]).toBe('quest files changed: 1; story files changed: 1; pictures added under content/kit/: 1; tree line: missing');
+        expect(stdout.split('\n')[0]).toBe('quest files changed: 1; story files changed: 1; pictures added under content/kit/: 1; player-eye pictures: 1; tree line: missing');
         expect(stdout.match(/^::error::/gm)).toHaveLength(4);
+        expect(stdout.match(/^::warning::/gm)).toHaveLength(1);
       }
     } finally {
       closeSync(input);
@@ -95,16 +100,82 @@ describe('the story review line', () => {
 
 describe('the source line', () => {
   it('is owed when a picture is added under content/kit/', () => {
-    expect(decide([sprite], '').problems[0]).toMatch(/PROP_FROM_REF/);
-    expect(decide([sprite], `Source: redrawn from the kit stool with kit:gen, no outside picture\n${tree}`).problems).toEqual([]);
+    expect(decide([blink], '').problems[0]).toMatch(/PROP_FROM_REF/);
+    expect(decide([blink], `Source: redrawn from the kit stool with kit:gen, no outside picture\n${tree}`).problems).toEqual([]);
   });
   it('is not owed for a changed picture, a picture elsewhere, or "none" when a picture was added', () => {
     expect(decide([{ status: 'M', path: 'content/kit/core/props/stool.png' }], tree).problems).toEqual([]);
     expect(decide([{ status: 'A', path: 'web/public/a.png' }], tree).problems).toEqual([]);
-    expect(decide([sprite], `Source: none\n${tree}`).problems).toHaveLength(1);
+    expect(decide([blink], `Source: none\n${tree}`).problems).toHaveLength(1);
   });
-  it('all four lines can be owed at once', () => {
-    expect(decide([quest, sprite], '').problems).toHaveLength(4);
+  it('four lines fail and the player eye line warns, all at once', () => {
+    const verdict = decide([quest, sprite], '');
+    expect(verdict.problems).toHaveLength(4);
+    expect(verdict.warnings).toHaveLength(1);
+  });
+});
+
+describe('the player eye line', () => {
+  it('is owed when an interaction clip is added, changed or renamed, in core or an extension kit', () => {
+    for (const status of ['A', 'M', 'R100']) {
+      for (const path of [
+        'content/kit/core/chars/human_lift_left.png',
+        'content/kit/core/chars/elf_carry_front.png',
+        'content/kit/core/chars/skeleton_throw_back.png',
+        'content/kit/core/chars/human_push_left.png',
+        'content/kit/kim/chars/kim_lift_left.png',
+      ]) {
+        expect(decide([{ status, path }], `Source: kit:gen\n${tree}`).warnings[0], `${status} ${path}`).toMatch(/player-eye skill/);
+      }
+    }
+  });
+  it('is owed when a new object is added, a prop or an item, and not when one is only changed or removed', () => {
+    expect(decide([sprite], `Source: kit:gen\n${tree}`).warnings[0]).toMatch(/player-eye skill/);
+    expect(decide([{ status: 'A', path: 'content/kit/core/items/stone_small.png' }], `Source: kit:gen\n${tree}`).warnings[0]).toMatch(/player-eye skill/);
+    expect(decide([{ status: 'A', path: 'content/kit/kim/props/pie.png' }], `Source: kit:gen\n${tree}`).warnings[0]).toMatch(/player-eye skill/);
+    expect(decide([{ status: 'M', path: 'content/kit/core/props/stool.png' }], tree).warnings).toEqual([]);
+    expect(decide([{ status: 'D', path: 'content/kit/core/props/stool.png' }], tree).warnings).toEqual([]);
+  });
+  it('is not owed for ground, a character that is not an interaction clip, a clip of another verb, or a picture elsewhere', () => {
+    for (const path of [
+      'content/kit/core/tiles/grass.png',
+      'content/kit/core/chars/elder_blink.png',
+      'content/kit/core/chars/human_dodge_left.png',
+      'content/kit/core/chars/human_left.png',
+      'content/kit/core/creatures/wolf.png',
+      'web/public/lift.png',
+    ]) {
+      expect(decide([{ status: 'A', path }], `Source: kit:gen\n${tree}`).warnings, path).toEqual([]);
+    }
+  });
+  it('is met by a verdict, pass, fail or unsure, and by nothing else', () => {
+    for (const line of ['Player eye: pass', 'Player eye: fail - Q3 the stone shrinks mid-lift', 'player eye: unsure - is a lifted stone the size of a loaf?']) {
+      expect(decide([lift], `${line}\n${tree}`).warnings, line).toEqual([]);
+    }
+    expect(decide([lift], `Player eye:\n${tree}`).warnings).toHaveLength(1);
+    expect(decide([lift], `Player eye: <verdict of the player-eye skill>\n${tree}`).warnings).toHaveLength(1);
+    expect(decide([lift], `<!-- Player eye: pass -->\n${tree}`).warnings).toHaveLength(1);
+  });
+  it('warns, and never fails the check, when the line is missing or is no verdict (warn-only until the judge has proved itself)', () => {
+    for (const body of [tree, `Player eye: n/a\n${tree}`, `Player eye: no new clip or object\n${tree}`, `Player eye: looks fine\n${tree}`]) {
+      const verdict = decide([lift], body);
+      expect(verdict.problems, body).toEqual([]);
+      expect(verdict.warnings, body).toHaveLength(1);
+    }
+    expect(decide([lift], tree).warnings[0]).toMatch(/Player eye/);
+    expect(decide([lift], `Player eye: n/a\n${tree}`).warnings[0]).toMatch(/adds or changes 1 picture/);
+    expect(decide([lift], `Player eye: looks fine\n${tree}`).warnings[0]).toMatch(/pass, fail or unsure/);
+    // the other lines still fail: a new prop owes its source, and only the source
+    expect(decide([sprite], tree).problems).toHaveLength(1);
+  });
+  it('lists the pictures it is owed for', () => {
+    expect(decide([lift, sprite, blink], `${world}\nSource: kit:gen\n${tree}`).playerEye).toEqual([lift.path, sprite.path]);
+  });
+  it('covers every clip in the core kit that carries hand data (a new held verb must be added to the rule)', () => {
+    const sprites = JSON.parse(readFileSync(fileURLToPath(new URL('../../content/kit/core/kit.json', import.meta.url)), 'utf8')).kit.sprites as Record<string, { file: string; clip?: { hand?: unknown } }>;
+    const held = Object.values(sprites).filter((s) => s.clip?.hand !== undefined);
+    expect(held.length).toBeGreaterThan(0);
+    for (const s of held) expect(PLAYER_EYE_CLIPS.test(`content/kit/core/${s.file}`), s.file).toBe(true);
   });
 });
 

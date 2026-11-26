@@ -15,8 +15,9 @@ if (isReleasePullRequest(BASE, HEAD_REF, HEAD_REPOSITORY, GITHUB_REPOSITORY)) {
   console.log('::notice::Release pull request. Each change carried its own lines when it entered develop.');
 } else {
   const verdict = decide(parseNameStatus(diff), PR_BODY ?? '');
-  console.log(`quest files changed: ${verdict.quests.length}; story files changed: ${verdict.stories.length}; pictures added under content/kit/: ${verdict.pictures.length}; tree line: ${verdict.tree}`);
+  console.log(`quest files changed: ${verdict.quests.length}; story files changed: ${verdict.stories.length}; pictures added under content/kit/: ${verdict.pictures.length}; player-eye pictures: ${verdict.playerEye.length}; tree line: ${verdict.tree}`);
   for (const p of verdict.problems) console.log(`::error::${p}`);
+  for (const w of verdict.warnings) console.log(`::warning::${w}`);
   if (verdict.problems.length === 0) console.log('The body says what the tools that fire on this pull request ask.');
   process.exit(verdict.problems.length === 0 ? 0 : 1);
 }

@@ -111,6 +111,7 @@ Commit only your own folder, push your branch to your fork, and open a pull requ
 - `Story review:` one line saying that every claim about the past in your character's lines has a speaker, and who it is. If your AI tool has the repository's story-keeper skill (`.claude/skills/story-keeper`), ask it to read your file and paste its verdict. "No story text changed" is refused for a character.
 - `Quest review:` "no quest changed", until you add the quest below.
 - `Source:` "no new picture" while you use the core's figures.
+- `Player eye:` asked (a notice, not a failed check, for now) when you add a new prop or item picture: one line, `pass`, `fail - ...` or `unsure - ...`, from the repository's player-eye skill (`.claude/skills/player-eye`). It looks at your picture as a player would (does it read as what it is, does it fit beside the same kind of thing). Without the owner's API credit run `python3 tools/player-eye/review.py --print-prompt ...` and answer the four questions yourself or with your own AI tool; "no new picture" while you add none.
 - `Tree:` `none:` and why, for example "none: a townsperson with words, nothing a player can grow in changes".
 
 Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; `pnpm check` is the part that matters for content). The same check runs on the pull request automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
