@@ -56,7 +56,7 @@ const tool = (id: string) => ladder.tools.find((t) => t.id === id)!;
 
 beforeAll(() => {
   ({ bundle, rules } = loadWorld());
-  ladder = onMap(readLadder(), bundle.map);
+  ladder = onMap(readLadder(), bundle);
   p = huntParams(bundle.params, ladder);
 });
 
@@ -106,7 +106,7 @@ describe('the loader', () => {
     // a map one meadow tile smaller: the hare's count follows it
     const y = bundle.map.ground.findIndex((row) => row.includes('.'));
     const ground = bundle.map.ground.map((row, i) => (i === y ? row.replace('.', ':') : row));
-    const smaller = onMap(readLadder(), { ...bundle.map, ground });
+    const smaller = onMap(readLadder(), { ...bundle, map: { ...bundle.map, ground } });
     expect(smaller.kinds.find((k) => k.id === 'hare')!.habitat_tiles).toBe(tiles.meadow! - 1);
   });
 
