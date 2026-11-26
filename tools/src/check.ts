@@ -34,6 +34,7 @@ import { holeProblems } from './kit/holes';
 import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { CORE_KIT, richProblem, staleLeft } from './kit/rich';
+import { HELD_WAIVERS, heldProblems, heldRows } from './kit/held';
 import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
 import { strayArt, strayIssue } from './art/stray';
@@ -1150,6 +1151,10 @@ export function checkKits(a: Assembled): Issue[] {
           });
         }
       }
+    }
+    // A clip that draws an object in the hands shows it at the size it has in the world (#874, DECISIONS 2026-11-26).
+    for (const p of heldProblems(heldRows(kit.dir, kit.sprites), kitId === CORE_KIT ? HELD_WAIVERS : {})) {
+      issues.push({ file: kitFile, where: `art.held.${kitId}:${p.clip}`, message: p.message, level: 'error' });
     }
     if (kitId === CORE_KIT) {
       for (const name of staleLeft(kit.sprites)) {

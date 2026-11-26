@@ -97,8 +97,8 @@ describe('a pile shows by its count', () => {
   });
 
   test('a large stone is drawn larger than a small one: about 60 x 50 art pixels against about 28 x 24', () => {
-    // the small drawing is 28 x 24 at its own size; the item picture is 60 x 49 and shows at 95 percent
-    expect(60 * STONE_SCALE.large).toBeGreaterThan(28 * SMALL_STONE_SCALE * 1.5);
+    // the small drawing is 28 x 24 at its own size; the item picture is 60 x 49 and shows at 70 percent (#874): 42 px against 28, the large one 1.4 times and more
+    expect(60 * STONE_SCALE.large).toBeGreaterThanOrEqual(28 * SMALL_STONE_SCALE * 1.4);
     expect(pileLayout(1, 1)[0]).toMatchObject({ size: 'large', scale: STONE_SCALE.large });
     expect(pileLayout(1, 0)[0]).toMatchObject({ size: 'small', scale: SMALL_STONE_SCALE });
     const mixed = pileLayout(3, 1);

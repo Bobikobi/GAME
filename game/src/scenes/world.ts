@@ -59,7 +59,6 @@ import { aimLine, chargeAt, trembleAt } from '../throw-charge';
 import { RING_TOTAL_MS, ringPixels, ringsAt } from '../ring';
 import { Piles, pileAt } from './piles';
 import { StoneLayer } from './stones';
-import { carriedShare } from '../stone-art';
 import { sound, type Heard, type Owner, type SongId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
@@ -4098,8 +4097,8 @@ export class WorldScene extends Phaser.Scene {
     return true;
   }
 
-  /** The stone in the figure's hand from the press of B to the release: the clip that holds it, when that began (the scene clock), and the share of its flying size it has in the hand. */
-  private grip?: { found: Found; start: number; share: number };
+  /** The stone in the figure's hand from the press of B to the release: the clip that holds it and when that began (the scene clock). It is drawn at its world size all the way (#874). */
+  private grip?: { found: Found; start: number };
 
   /** A throw being charged (DECISIONS 2026-11-22): when the press began (the scene clock), the aim tile, the stone's size, and which hand holds it. */
   private charge?: { start: number; aim: KernelTile; size: 'small' | 'large'; source: 'key' | 'mouse' };
@@ -4296,9 +4295,8 @@ export class WorldScene extends Phaser.Scene {
       const found = played ? clipFor(this.b.sprites as ClipSprites, verb, s.state.player.race, s.facing) : undefined;
       // it leaves the hand at the clip's last hand point (the frame where the drawing opens the hand), else at the old fixed time
       const release = !played ? 0 : found?.hand ? (found.hand.length - 1) * found.frame_ms : THROW_RELEASE_MS[verb];
-      const share = thrown.size === 'large' && found ? carriedShare(found.fit) : 1;
-      this.grip = found?.hand ? { found, start: this.time.now, share } : undefined;
-      if (this.grip) layer.takeInHand(thrown.size, share);
+      this.grip = found?.hand ? { found, start: this.time.now } : undefined;
+      if (this.grip) layer.takeInHand(thrown.size);
       // the landing tile waits for the flight, which starts when the stone leaves the hand: held without an end until then
       const held = thrown.at ? layer.hold(key(thrown.at[0], thrown.at[1]), thrown.size, this.time.now, release > 0 ? Infinity : thrown.ms) : undefined;
       const fly = (): void => {
@@ -4308,7 +4306,7 @@ export class WorldScene extends Phaser.Scene {
         const at = g ? this.handNow(g.found, release) : undefined;
         this.grip = undefined;
         layer.letGo();
-        const leaving = at ? { ...thrown, hand: { x: at.x / T, y: this.player.y / T, lift: (this.player.y - at.y) / T, share: g!.share } } : thrown;
+        const leaving = at ? { ...thrown, hand: { x: at.x / T, y: this.player.y / T, lift: (this.player.y - at.y) / T } } : thrown;
         layer.fly(leaving, this.time.now, (tile, sank) => {
           sound.sfx('step');
           if (sank) this.splashAt(tile);
