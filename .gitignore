@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# Python bytecode caches (tools/art/clothing)
+__pycache__/
 coverage/
 .vercel/
 .scratch/
