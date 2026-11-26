@@ -870,7 +870,13 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, p] of Object.entries(b.pockets)) p.ground.forEach((k, i) => item(id, `pocket.ground.${i}.item`, k.item));
   for (const [slotId, owners] of Object.entries(slotFill)) {
     if (owners.length > 1) {
-      for (const owner of owners) err(owner, 'place.slot', `slot "${slotId}" is taken by more than one extension: ${owners.join(', ')}`);
+      const kind = b.map.slots.find((s) => s.id === slotId)?.kind;
+      const free = b.map.slots.filter((s) => s.kind === kind && slotFill[s.id] === undefined).map((s) => s.id);
+      const next =
+        free.length > 0
+          ? `; free ${kind} slots: ${free.join(', ')}`
+          : `; no ${kind} slot is free: open a "Request for the valley" issue to ask for one`;
+      for (const owner of owners) err(owner, 'place.slot', `slot "${slotId}" is taken by more than one extension: ${owners.join(', ')}${next}`);
     }
   }
   checkMap(b, origin, issues);
