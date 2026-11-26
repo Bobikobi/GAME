@@ -1,0 +1,241 @@
+[
+ {
+  "id": "lift-human-before-fix",
+  "images": [
+   "content/kit/core/chars/human_lift_left.png"
+  ],
+  "roles": [
+   "figure=adult human, the lifter",
+   "stone=a large stone lifted by hand from the ground to overhead"
+  ],
+  "note": "One picture: the nine frames of one clip, left to right, in time order.",
+  "expect": "fail",
+  "expect_q": [
+   "Q3",
+   "Q4"
+  ],
+  "why": "The stone is large at the start, shrinks to half mid-lift and is overhead small: the shrink the owner caught (#874).",
+  "source": "brief-mandated (the lift clips of #850 before the scale fix)",
+  "kind": "size change"
+ },
+ {
+  "id": "lift-skeleton-before-fix",
+  "images": [
+   "content/kit/core/chars/skeleton_lift_left.png"
+  ],
+  "roles": [
+   "figure=a skeleton, the lifter",
+   "stone=a large stone lifted by hand from the ground to overhead"
+  ],
+  "note": "One picture: the nine frames of one clip, left to right, in time order.",
+  "expect": "fail",
+  "expect_q": [
+   "Q3",
+   "Q4"
+  ],
+  "why": "Same clip family and the same shrink and growth of the stone across frames.",
+  "source": "brief-mandated (the lift clips of #850 before the scale fix)",
+  "kind": "size change"
+ },
+ {
+  "id": "carry-human",
+  "images": [
+   "content/kit/core/chars/human_carry_left.png"
+  ],
+  "roles": [
+   "figure=adult human, walking",
+   "stone=a large stone carried overhead while walking"
+  ],
+  "note": "One picture: the nine frames of one walk cycle, left to right.",
+  "expect": "pass",
+  "why": "The stone keeps one size and sits on the raised hands through the cycle.",
+  "source": "constructed by the lane, from a clip in develop",
+  "kind": "object logic"
+ },
+ {
+  "id": "pebbles-beside-human",
+  "images": [
+   "tools/player-eye/eval/img/pebbles-beside-human.png"
+  ],
+  "roles": [
+   "figure=adult human, at game scale, on the left",
+   "pebbles=small stones, liftable by hand and thrown"
+  ],
+  "expect": "pass",
+  "why": "Hand-sized stones beside a person: readable as liftable and throwable.",
+  "source": "brief-mandated (a small stone in a hand should pass), built from kit sprites by compose.py",
+  "kind": "object logic"
+ },
+ {
+  "id": "chest-beside-human",
+  "images": [
+   "tools/player-eye/eval/img/chest-beside-human.png"
+  ],
+  "roles": [
+   "figure=adult human, at game scale, on the left",
+   "chest=a container a person opens by hand"
+  ],
+  "expect": "pass",
+  "why": "A small chest a person can open: a plain container.",
+  "source": "constructed by the lane, built from kit sprites by compose.py",
+  "kind": "object logic"
+ },
+ {
+  "id": "quarry-rock-liftable",
+  "images": [
+   "tools/player-eye/eval/img/rock_small-beside-human.png"
+  ],
+  "roles": [
+   "figure=adult human, at game scale, on the left",
+   "rock=a rock that is liftable by hand, one-handed"
+  ],
+  "expect": "fail",
+  "expect_q": [
+   "Q1",
+   "Q2"
+  ],
+  "why": "A quarry rock about the person's width and knee-high is not one-handed.",
+  "source": "brief-mandated (a quarry rock given the role liftable by hand)",
+  "kind": "object logic"
+ },
+ {
+  "id": "standing-stone-carried",
+  "images": [
+   "tools/player-eye/eval/img/standing_stone-beside-human.png"
+  ],
+  "roles": [
+   "figure=adult human, at game scale, on the left",
+   "stone=a stone carried in the arms"
+  ],
+  "expect": "fail",
+  "expect_q": [
+   "Q1",
+   "Q2",
+   "Q3"
+  ],
+  "why": "The stone stands taller than the person; nobody carries that in arms.",
+  "source": "constructed by the lane, built from kit sprites by compose.py",
+  "kind": "object logic"
+ },
+ {
+  "id": "bandage-as-weapon",
+  "images": [
+   "content/kit/core/items/bandage.png"
+  ],
+  "roles": [
+   "bandage=a weapon swung in one hand"
+  ],
+  "note": "An inventory icon: no figure beside it.",
+  "expect": "fail",
+  "expect_q": [
+   "Q1"
+  ],
+  "why": "A roll of cloth does not read as a weapon.",
+  "source": "constructed by the lane",
+  "kind": "object logic"
+ },
+ {
+  "id": "sheet070-new-stone-with-human",
+  "images": [
+   ".scratch/keep-2026-11-26/sheet070-row1-game-scale.png"
+  ],
+  "roles": [
+   "figure=adult human, leftmost, at game scale",
+   "stones, left to right=a large stone, a second large stone, a small stone, a quarry rock, a mossy rock, a rock pile",
+   "second large stone=a heavy stone a person lifts with both arms (a big lift, taken overhead) and carries"
+  ],
+  "note": "A crop of a trial sheet, objects drawn at game scale.",
+  "expect": "pass",
+  "why": "The owner's call: the new large stone with the human reads as liftable, not a quarry rock.",
+  "source": "owner-judged 26.11.2026 (hub answer stone-liftable-2611, relayed by the manager)",
+  "kind": "object logic"
+ },
+ {
+  "id": "sheet070-skeleton-carry",
+  "images": [
+   ".scratch/keep-2026-11-26/sheet070-row3-skeleton.png"
+  ],
+  "roles": [
+   "figure=a skeleton carrying a stone overhead",
+   "stone=a large stone carried overhead"
+  ],
+  "note": "A crop of a trial sheet: pairs of frames, a front view then a left view, then the stone as it lies on the ground.",
+  "expect": "fail",
+  "expect_q": [
+   "Q3",
+   "Q4"
+  ],
+  "why": "The owner's call: on the skeleton the stone takes an odd shape in some frames.",
+  "source": "owner-judged 26.11.2026 (hub answer stone-liftable-2611, relayed by the manager)",
+  "kind": "size change"
+ },
+ {
+  "id": "scene-camp-clean",
+  "images": [
+   ".scratch/keep-2026-11-26/scene-camp-clean.png"
+  ],
+  "roles": [
+   "figure=the player's character, walking on grass",
+   "campfire=a ring of stones with a fire, cooked at",
+   "tree, stump, grass tufts=scenery"
+  ],
+  "note": "A play screenshot of the game, cut to the world without the HUD.",
+  "expect": "pass",
+  "why": "A clean valley scene with nothing out of place.",
+  "source": "manager-mandated (a clean valley still should pass); a play screenshot of the perf-boot-blend lane's e2e run",
+  "kind": "clean scene"
+ },
+ {
+  "id": "scene-valley-path-clean",
+  "images": [
+   ".scratch/keep-2026-11-26/scene-valley-path-clean.png"
+  ],
+  "roles": [
+   "figure=the player's character on a sandy path",
+   "rocks, grass, a signpost=scenery beside the path; the river is on the right"
+  ],
+  "note": "A play screenshot of the game, cut to the world without the HUD.",
+  "expect": "pass",
+  "why": "A clean path beside a river with nothing out of place.",
+  "source": "manager-mandated (a clean valley still should pass); a play screenshot of the perf-boot-blend lane's e2e run",
+  "kind": "clean scene"
+ },
+ {
+  "id": "scene-figure-in-tree",
+  "images": [
+   ".scratch/keep-2026-11-26/scene-figure-in-tree.png"
+  ],
+  "roles": [
+   "figure=the player's character",
+   "tree=a tree the player cannot walk through"
+  ],
+  "note": "A play screenshot of the game, cut to the world without the HUD.",
+  "expect": "fail",
+  "expect_q": [
+   "Q2",
+   "Q4"
+  ],
+  "why": "A fixture: a second copy of the character is placed over the middle of the tree. A player sees someone drawn inside a tree.",
+  "source": "manager-mandated (a figure drawn over a tree should fail); constructed by the lane from a play screenshot and the kit figure (make_fixtures.py)",
+  "kind": "clipping"
+ },
+ {
+  "id": "scene-figure-on-water",
+  "images": [
+   ".scratch/keep-2026-11-26/scene-figure-on-water.png"
+  ],
+  "roles": [
+   "figure=the player's character",
+   "river=deep water the player cannot stand in; the bridge is at the bottom"
+  ],
+  "note": "A play screenshot of the game, cut to the world without the HUD.",
+  "expect": "fail",
+  "expect_q": [
+   "Q2",
+   "Q4"
+  ],
+  "why": "A fixture: a second copy of the character stands in the middle of the river. A player sees someone standing on deep water.",
+  "source": "manager-mandated (a figure out of place should fail); constructed by the lane from a play screenshot and the kit figure (make_fixtures.py)",
+  "kind": "clipping"
+ }
+]

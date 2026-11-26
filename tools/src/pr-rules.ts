@@ -1,12 +1,16 @@
 /**
- * What a pull request must say about the tools that fire on it (.github/workflows/pr-triggers.yml). Four lines of
- * the body; the first three are owed when the diff touches the thing they are about, the fourth always:
+ * What a pull request must say about the tools that fire on it (.github/workflows/pr-triggers.yml). Five lines of
+ * the body; the first four are asked when the diff touches the thing they are about (the player eye line only as a
+ * notice, never a failure), the fifth always:
  *   `Quest review:` the one-line verdict of the quest-designer skill, owed when a quest file changes (its reward and
  *                   its timing live in the quest file);
  *   `Story review:` the one-line verdict of the story-keeper skill, owed when a file a player reads as story changes
  *                   (a quest, an NPC's lines, a pocket's waking lines, the stone, a find, a race, a passage's boxes, the story pages);
  *   `Source:`       where a picture added under content/kit/ came from (docs/art/PROP_FROM_REF.md). Nothing else
  *                   checks that: `pnpm check` tests a sprite's size and palette, not where it came from.
+ *   `Player eye:`  (a warning, never a failure) the one-line verdict of the player-eye skill (pass, fail or unsure), asked when an interaction clip
+ *                   (lift, carry, throw, push: a clip with hand or held-object data) is added or changed, or a new
+ *                   object (a prop or an item) is added under content/kit/ (issue #878);
  *   `Tree:`         where the work sits in the skill tree, owed by every pull request (AGENTS.md, "Tree first, both
  *                   ways"): the school and the node ids it builds or serves, or the path of the proposal that extends
  *                   the tree, or `none:` and why nothing a player can grow in changes.
@@ -28,6 +32,18 @@ export const STORY_PATHS =
 
 /** A picture under a kit folder. */
 export const KIT_PICTURES = /^content\/kit\/.+\.png$/;
+
+/**
+ * An interaction clip: a character sheet whose verb carries hand or held-object data (`clip.hand` in kit.json), core's
+ * or an extension's. A new held verb is added to the list here; a test holds it to the core kit's clips.
+ */
+export const PLAYER_EYE_CLIPS = /^content\/kit\/[^/]+\/chars\/.+_(?:lift|carry|throw|push)_[a-z]+\.png$/;
+
+/** A new object a player sees or holds: a prop or an item (ground and characters are not objects). */
+export const PLAYER_EYE_OBJECTS = /^content\/kit\/[^/]+\/(?:props|items)\/.+\.png$/;
+
+/** A verdict of the player-eye skill: pass, fail or unsure, free words after it. */
+const PLAYER_EYE_VERDICT = /^(?:pass|fail|unsure)\b/i;
 
 /** The text of a labelled line of the body, with comments and the template's untouched placeholder read as missing. */
 export function labelled(body: string, label: string): string | undefined {
@@ -63,9 +79,13 @@ export function treeForm(value: string | undefined): TreeForm {
 export interface Verdict {
   /** the plain messages to fail the run with; empty when the pull request is in order */
   problems: string[];
+  /** notices that never fail the run: the player eye line is warn-only until the judge has proved itself (DECISIONS, 2026-11-26) */
+  warnings: string[];
   quests: string[];
   stories: string[];
   pictures: string[];
+  /** the pictures that owe a player-eye verdict: clips added, changed or renamed, new objects */
+  playerEye: string[];
   tree: TreeForm;
 }
 
@@ -74,7 +94,11 @@ export function decide(changes: readonly Change[], body: string): Verdict {
   const deletedQuests = changes.filter((c) => c.status === 'D' && QUEST_PATHS.test(c.path)).map((c) => c.path);
   const stories = changes.filter((c) => STORY_PATHS.test(c.path)).map((c) => c.path);
   const pictures = changes.filter((c) => c.status.startsWith('A') && KIT_PICTURES.test(c.path)).map((c) => c.path);
+  const playerEye = changes
+    .filter((c) => !c.status.startsWith('D') && (PLAYER_EYE_CLIPS.test(c.path) || (c.status.startsWith('A') && PLAYER_EYE_OBJECTS.test(c.path))))
+    .map((c) => c.path);
   const problems: string[] = [];
+  const warnings: string[] = [];
 
   const review = labelled(body, 'Quest review');
   if (quests.length + deletedQuests.length > 0) {
@@ -110,6 +134,21 @@ export function decide(changes: readonly Change[], body: string): Verdict {
     }
   }
 
+  // Warn-only (the manager's ruling, 26.11.2026): an LLM judge on pixel art is not yet proven, so a missing line is said but never fails the check.
+  const playerLine = labelled(body, 'Player eye');
+  if (playerEye.length > 0) {
+    const list = `${playerEye.slice(0, 3).join(', ')}${playerEye.length > 3 ? ', ...' : ''}`;
+    if (playerLine === undefined) {
+      warnings.push(
+        `This pull request adds or changes an interaction clip or a new object (${list}). Run the player-eye skill (.claude/skills/player-eye) on it and put its verdict in one line in the body, as "Player eye: <pass | fail - ... | unsure - ...>". (A notice for now: it does not fail the check.)`,
+      );
+    } else if (NONE.test(playerLine) || /^no\b/i.test(playerLine)) {
+      warnings.push(`The body says "Player eye: ${playerLine}", but this pull request adds or changes ${playerEye.length} picture${playerEye.length === 1 ? '' : 's'} that owe it (${list}). Run the player-eye skill and give its verdict. (A notice for now: it does not fail the check.)`);
+    } else if (!PLAYER_EYE_VERDICT.test(playerLine)) {
+      warnings.push(`The body says "Player eye: ${playerLine}", which is not a verdict (pass, fail or unsure) of the player-eye skill. Write "Player eye: pass", "Player eye: fail - <the question and why>" or "Player eye: unsure - <what to ask the owner>". (A notice for now: it does not fail the check.)`);
+    }
+  }
+
   const treeLine = labelled(body, 'Tree');
   const tree = treeForm(treeLine);
   const forms = '"Tree: <school>/<node ids>" for the nodes it builds or serves, "Tree: extends the tree: <path of the proposal>" for a new branch or node group, or "Tree: none: <why nothing a player can grow in changes>"';
@@ -118,7 +157,7 @@ export function decide(changes: readonly Change[], body: string): Verdict {
   } else if (tree === 'unreadable') {
     problems.push(`The body says "Tree: ${treeLine}", which is none of the three forms. Write ${forms}.`);
   }
-  return { problems, quests, stories, pictures, tree };
+  return { problems, warnings, quests, stories, pictures, playerEye, tree };
 }
 
 /** `git diff --name-status` output (tab separated; a rename lists both paths) as changes. */
