@@ -58,7 +58,7 @@ describe('which kind a sprite is', () => {
 describe('the scale warnings', () => {
   test('a kind with a scale under its floor is a warning', () => {
     const [problem] = scaleProblems('props/tree_oak', 2);
-    expect(problem).toContain('under the floor of a oak, 3 characters');
+    expect(problem).toContain('under the floor for oak, 3 characters');
     expect(scaleProblems('props/hazard_wolf', 0.4)[0]).toContain('0.55');
     expect(scaleProblems('chars/child_down', 0.5)[0]).toContain('child');
   });
@@ -116,7 +116,7 @@ describe('the scale warnings', () => {
 describe('the check on today content', () => {
   // The scale audit (31.10): every world sprite of the shipped kits declares its drawn height, so the floors hold
   // all of them. The floor lines that remain are the open list of the audit; a redraw takes its line away.
-  const lines = runCheck().issues.filter((i) => /scale|floor of a|creature declares/.test(i.message));
+  const lines = runCheck().issues.filter((i) => /scale|floor for|creature declares/.test(i.message));
 
   test('no world sprite of the shipped kits lacks a scale', () => {
     expect(lines.filter((i) => i.message.includes('declare "scale"'))).toEqual([]);
@@ -126,7 +126,7 @@ describe('the check on today content', () => {
     for (const i of lines) {
       expect(i.level).toBe('warning');
       expect(i.where).toMatch(/^art\.scale\./);
-      expect(i.message).toMatch(/^scale [\d.]+ is under the floor of a /);
+      expect(i.message).toMatch(/^scale [\d.]+ is under the floor for /);
     }
   });
 });
@@ -150,7 +150,7 @@ describe('the check, end to end, on a kit that declares a height', () => {
   test('an oak declared at 2 characters is a warning from the check, under the floor of 3', () => {
     const problem = issues.find((i) => i.where === 'art.scale.core/base-kit:props/tree_oak');
     expect(problem?.level).toBe('warning');
-    expect(problem?.message).toContain('under the floor of a oak, 3 characters');
+    expect(problem?.message).toContain('under the floor for oak, 3 characters');
   });
 
   test('a house at 3.5 characters, over its floor, says nothing, and nothing new is an error', () => {

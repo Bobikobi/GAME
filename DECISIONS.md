@@ -4875,3 +4875,10 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **Retry when:** the fight tick is wired (then the bar lights up on the valley's wolf and hunt), or a school file holding fight nodes lands (to move the PR's `Tree:` off `none`).
 
 **Tree:** none: no school file holds fight nodes yet; the bar serves every fight node to come. **Model:** deepseek-v4-pro. **Link:** #866.
+## 2026-11-25 ✅ The Text size "16" really reads 16, not 18 (#718)
+
+**What:** #765 put the three numeric options in Atkinson Hyperlegible Next so their 6 stays open, but the rule lost: `.text-size-options .set-opt` (2 classes) is beaten by the window's `.panel.settings .btn.set-opt` `font` shorthand (4 classes, Jersey 15), so the labels still drew in Jersey 15 and 16 read as 18. The fix prefixes the face rule with `.panel.settings` so it wins, and the controls e2e now draws each label in its computed font and holds every pair of 16/18/20 to a minimum pixel difference, so a face that closes the 6 into an 8 fails.
+- **Result:** computed font on the three buttons is Atkinson Hyperlegible Next (was Jersey 15). In Jersey the 6 and 8 glyphs overlap within 2-10 px (a 0.01-0.04 share of differing ink); in Atkinson they are ~0.2 apart. The e2e fails on the old rule and passes on the new one, at all three text sizes.
+- **Why:** proven in the browser (computed style and drawn glyphs); the earlier e2e read `textContent` only, which is why a rule that never applied passed.
+
+**Retry when:** the options read alike again (check the computed font first, then the glyph difference), or the face is changed for a new one (keep the glyph check). **Model:** deepseek-v4-pro (builder, #718). **Link:** #718, #765.
