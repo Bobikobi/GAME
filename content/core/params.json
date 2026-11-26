@@ -1434,6 +1434,24 @@
         "min": 300,
         "max": 1500,
         "step": 100
+      },
+      "throw_min_power": {
+        "value": 500,
+        "min": 200,
+        "max": 800,
+        "step": 100
+      },
+      "throw_charge_ms": {
+        "value": 600,
+        "min": 200,
+        "max": 1500,
+        "step": 100
+      },
+      "throw_hold_ms": {
+        "value": 600,
+        "min": 200,
+        "max": 2000,
+        "step": 100
       }
     }
   }

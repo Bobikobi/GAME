@@ -49,11 +49,13 @@ import {
   treasureKind,
   windowOpen,
   type WorkKind,
+  type Tile as KernelTile,
   STONE_ITEM,
   lyingAt,
   settled,
 } from '@game/kernel';
 import { app } from '../app';
+import { aimLine, chargeAt, trembleAt } from '../throw-charge';
 import { RING_TOTAL_MS, ringPixels, ringsAt } from '../ring';
 import { Piles, pileAt } from './piles';
 import { StoneLayer } from './stones';
@@ -109,7 +111,7 @@ import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { ClipPlayer, VERB_OF_AUTO, clipFor, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
-import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
+import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -665,6 +667,21 @@ export class WorldScene extends Phaser.Scene {
     this.addFilters(cam);
     this.scale.on('resize', () => this.fit());
     this.input.on('wheel', (_p: unknown, _over: unknown, _dx: number, dy: number) => this.onWheel(dy));
+    // the mouse charges the throw too (DECISIONS 2026-11-22): held aims at the pointer, released throws
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!(pointer.event instanceof MouseEvent) || !pointer.leftButtonDown()) return;
+      const tile = this.pointerTile(pointer);
+      if (tile) this.throwMousePress(tile);
+    });
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!(pointer.event instanceof MouseEvent) || this.charge?.source !== 'mouse') return;
+      const tile = this.pointerTile(pointer);
+      if (tile) this.throwAimTo(tile);
+    });
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (!(pointer.event instanceof MouseEvent)) return;
+      this.releaseCharge('mouse');
+    });
     this.fit();
     this.time.addEvent({ delay: 480, loop: true, callback: () => this.flipWater() });
     sound.installUnlock();
@@ -2213,6 +2230,8 @@ export class WorldScene extends Phaser.Scene {
     this.stoneHeld = false;
     this.releases = [];
     this.grip = undefined;
+    this.charge = undefined;
+    this.aimLineGfx?.setVisible(false);
     this.stones?.destroy();
     this.stones = undefined;
     this.effects.clear();
@@ -2615,6 +2634,7 @@ export class WorldScene extends Phaser.Scene {
     this.walk(s, real);
     this.releaseStones(this.time.now);
     this.stones?.frame(this.time.now);
+    this.chargeFrame(s);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
     this.placeShaft(minuteOfDay(this.b, s.tick));
@@ -4081,6 +4101,11 @@ export class WorldScene extends Phaser.Scene {
   /** The stone in the figure's hand from the press of B to the release: the clip that holds it, when that began (the scene clock), and the share of its flying size it has in the hand. */
   private grip?: { found: Found; start: number; share: number };
 
+  /** A throw being charged (DECISIONS 2026-11-22): when the press began (the scene clock), the aim tile, the stone's size, and which hand holds it. */
+  private charge?: { start: number; aim: KernelTile; size: 'small' | 'large'; source: 'key' | 'mouse' };
+  /** The aim line on the ground, drawn while a throw is charged. */
+  private aimLineGfx?: Phaser.GameObjects.Graphics;
+
   /** The world point of the clip's drawn hand `elapsed` ms into the clip, or nothing when the clip names no hand or the figure is not drawn in it. */
   private handNow(found: Found, elapsed: number): { x: number; y: number } | undefined {
     const point = handAt(found, elapsed);
@@ -4150,11 +4175,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * The B key and the phone's B button (DECISIONS 2026-11-22, #831): throw a stone the way the player faces. A large stone over the
-   * head goes first, else a small one from the bag; the full power for now (the kernel's `power`, a held press charges it later).
-   * The flight is the kernel's own (`throwFlight`): this plays it as an arc with bounces and a slide, the landing hidden until it lands.
+   * B held (the key or the phone's B button, DECISIONS 2026-11-22): the charged throw begins. A large stone over the head
+   * goes first, else a small one from the bag; the aim line grows with the power while the press is held. The aim starts the
+   * way the figure faces; a drag (phone) or the mouse (desktop) moves it. With no stone in hand it says so.
    */
-  throwStone(): void {
+  throwPress(): void {
     const s = this.session;
     if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
     const large = s.state.player.stones?.carry === 'large';
@@ -4164,7 +4189,99 @@ export class WorldScene extends Phaser.Scene {
     }
     const aim = throwAim(this.b, s, this.lookOf(s));
     if (!aim) return;
-    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim })).then((r) => {
+    this.charge = { start: this.time.now, aim, size: large ? 'large' : 'small', source: 'key' };
+  }
+
+  /** The mouse button held (desktop): the same charge, aimed at the pointer's tile. */
+  private throwMousePress(tile: KernelTile): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    if (tile[0] === s.pos[0] && tile[1] === s.pos[1]) return;
+    const large = s.state.player.stones?.carry === 'large';
+    if (!large && (s.state.player.bag[STONE_ITEM] ?? 0) < 1) return;
+    this.charge = { start: this.time.now, aim: [tile[0], tile[1]], size: large ? 'large' : 'small', source: 'mouse' };
+  }
+
+  /** A drag while the press is held (the phone's button or the mouse) moves the aim. */
+  private throwAimTo(tile: KernelTile): void {
+    if (!this.charge) return;
+    const s = this.session;
+    if (!s || (tile[0] === s.pos[0] && tile[1] === s.pos[1])) return;
+    this.charge.aim = [tile[0], tile[1]];
+  }
+
+  /** The map tile under a pointer, or undefined off the map. */
+  private pointerTile(pointer: Phaser.Input.Pointer): KernelTile | undefined {
+    const x = Math.floor(pointer.worldX / T);
+    const y = Math.floor(pointer.worldY / T);
+    if (x < 0 || y < 0 || x >= this.b.map.width || y >= this.b.map.height) return undefined;
+    return [x, y];
+  }
+
+  /** The phone's B button dragged by `dx, dy` pixels: aim the charged throw the way the thumb moved (eight ways). */
+  throwDrag(dx: number, dy: number): void {
+    if (!this.charge || Math.hypot(dx, dy) < 16) return;
+    const s = this.session;
+    if (!s) return;
+    const eighth = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
+    const aim: KernelTile = [s.pos[0] + Math.round(Math.cos(eighth)) * THROW_AIM_TILES, s.pos[1] + Math.round(Math.sin(eighth)) * THROW_AIM_TILES];
+    if (aim[0] < 0 || aim[1] < 0 || aim[0] >= this.b.map.width || aim[1] >= this.b.map.height) return;
+    this.throwAimTo(aim);
+  }
+
+  /** B released: the throw leaves at the power reached. */
+  throwRelease(): void {
+    this.releaseCharge('key');
+  }
+
+  /** The charge `source` ended: the throw leaves at the power reached (full when the hold limit sent it). */
+  private releaseCharge(source: 'key' | 'mouse'): void {
+    if (!this.charge || this.charge.source !== source) return;
+    const c = this.charge;
+    this.charge = undefined;
+    this.aimLineGfx?.setVisible(false);
+    this.throwNow(c.aim, chargeAt(this.b, Math.floor(this.time.now - c.start)).power);
+  }
+
+  /** One frame of a held throw: draw the aim line at the power reached, and let a charge held past full go on its own. */
+  private chargeFrame(s: GameSession): void {
+    const c = this.charge;
+    if (!c) return;
+    if (!this.canControl(s)) {
+      this.charge = undefined;
+      this.aimLineGfx?.setVisible(false);
+      return;
+    }
+    const held = chargeAt(this.b, Math.floor(this.time.now - c.start));
+    if (held.over) {
+      this.releaseCharge(c.source);
+      return;
+    }
+    const g = (this.aimLineGfx ??= this.add.graphics().setDepth(DEPTH.flat + 0.2));
+    g.clear();
+    const line = aimLine(this.b, s.state, c.size, c.aim, held.power);
+    if (line.length === 0) {
+      g.setVisible(false);
+      return;
+    }
+    g.setVisible(true);
+    for (let i = 0; i < line.length; i++) {
+      const [x, y] = line[i]!;
+      const tremble = i === line.length - 1 ? trembleAt(this.time.now, held.full) : 0;
+      const alpha = held.full && i === line.length - 1 ? 0.55 : 0.32;
+      g.fillStyle(0xf5f4ef, alpha);
+      g.fillRect(x * T + 3, y * T + 3 + tremble, T - 6, T - 6);
+    }
+  }
+
+  /**
+   * The throw itself (DECISIONS 2026-11-22, #831): the kernel flies it by `throwFlight` for `power` (a thousandth part).
+   * This plays the flight as an arc with bounces and a slide, the landing hidden until it lands.
+   */
+  private throwNow(aim: KernelTile, power: number): void {
+    const s = this.session;
+    if (!s) return;
+    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim, power })).then((r) => {
       if (!r.ok) {
         app.ui.toast(r.error, 'bad');
         return;

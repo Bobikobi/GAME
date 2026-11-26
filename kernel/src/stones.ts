@@ -15,7 +15,7 @@
  * A stone never changes the walk map: a stone or a pile is not a prop, nothing here is read by `makeWalkable`.
  */
 import type { Bundle } from './bundle';
-import { idiv } from './num';
+import { idiv, mulDiv } from './num';
 import { groundKey, type PublicState, type StoneSize, type StoneState } from './state';
 import { walkableFor, type Tile } from './step';
 import { levelAt, tagAt } from './world';
@@ -186,8 +186,26 @@ export function nextStoneReturn(state: PublicState): number | undefined {
 
 // ------------------------------------------------------------------ the throw
 
-/** The most a throw's power may be (a thousandth part each): a full throw. The charged throw (a later track) lowers it. */
+/** The most a throw's power may be (a thousandth part each): a full throw. */
 export const FULL_POWER = 1000;
+
+/**
+ * The power a held press charges to (DECISIONS.md, 2026-11-22, the charged throw): `stones.throw_min_power` the moment
+ * it is held (a tap throws at this), rising evenly to `FULL_POWER` over `stones.throw_charge_ms`, and full from then on.
+ * The one curve the throw action's lower bound and the client's charge share, so the aim line and the throw cannot disagree.
+ * `heldMs` is whole game milliseconds.
+ */
+export function chargePower(bundle: Bundle, heldMs: number): number {
+  const { throw_min_power, throw_charge_ms } = bundle.params.stones;
+  if (heldMs <= 0) return throw_min_power;
+  if (heldMs >= throw_charge_ms) return FULL_POWER;
+  return throw_min_power + mulDiv(FULL_POWER - throw_min_power, heldMs, throw_charge_ms);
+}
+
+/** The whole game milliseconds a press may be held: the charge to full plus the hold past full, after which the throw leaves on its own at full power. */
+export function throwHoldLimit(bundle: Bundle): number {
+  return bundle.params.stones.throw_charge_ms + bundle.params.stones.throw_hold_ms;
+}
 
 export interface Flight {
   /** the tile the throw left from */

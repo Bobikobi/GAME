@@ -1867,10 +1867,13 @@ export const ParamsBody = Type.Object(
         pile_max: { ...Bounded, description: 'The most stones set down on one tile. A pile is counted by number and never climbed.' },
         lift_ms: { ...Bounded, description: 'Game milliseconds lifting a stone keeps the player busy.' },
         throw_ms: { ...Bounded, description: 'Game milliseconds a throw keeps the player busy: the wind-up, the flight and the landing.' },
+        throw_min_power: { ...Bounded, description: 'The power a tap gives, in thousandths of the full throw: the least a throw flies. Always under full (1000), so a held press charges farther (DECISIONS.md, 2026-11-22, the charged throw).' },
+        throw_charge_ms: { ...Bounded, description: 'Game milliseconds a held press takes to charge from `throw_min_power` to full power.' },
+        throw_hold_ms: { ...Bounded, description: 'Game milliseconds a charge may be held past full before the throw leaves on its own at full power, so a charge cannot be held for ever.' },
       },
       {
         additionalProperties: false,
-        description: 'Loose stones (DECISIONS.md, 2026-11-22): lifted at the map\'s stone spots, carried (a large one over the head, at the pace its weight sets), thrown to a landing that runs on, set down and piled. All integers; the charged throw is a later track and rides the throw action\'s power.',
+        description: 'Loose stones (DECISIONS.md, 2026-11-22): lifted at the map\'s stone spots, carried (a large one over the head, at the pace its weight sets), thrown to a landing that runs on, set down and piled. All integers; the charged throw rides the throw action\'s power.',
       },
     ),
     hunt: Type.Object(
