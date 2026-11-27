@@ -154,12 +154,10 @@ const SPARK_MAX = 0.2;
 export function deepTile(tx: number, ty: number, frame: number, out: Uint8ClampedArray, px = 64): void {
   const l = read();
   const body = l.body.rgb;
-  const light = l.light.rgb;
   const [dx, dy] = drift(frame);
   const gx0 = tx * px;
   const gy0 = ty * px;
-  const noiseX = noiseRect(gx0, gy0, gx0 + px - 1, gy0 + px - 1, 51, 90);
-  const noiseY = noiseRect(gx0, gy0, gx0 + px - 1, gy0 + px - 1, 57, 90);
+  const { wx: warpX, wy: warpY, lv: level } = fieldsOf(tx, ty, px, l.light.rgb);
   const phase = (frame / FRAMES) * Math.PI * 2;
   // the body's colour at a fractional texel, bilinear, bouncing at the edges: the first scale's in a*, the second's in s*
   let ar = 0;
@@ -197,16 +195,13 @@ export function deepTile(tx: number, ty: number, frame: number, out: Uint8Clampe
       ab = b * (1 - fy) + bb * fy;
     }
   };
-  const bright = (u: number, v: number): number => {
-    const i = (bounceInt(Math.floor(v)) * SIZE + bounceInt(Math.floor(u))) * 3;
-    return (light[i]! + light[i + 1]! + light[i + 2]!) / 765;
-  };
   for (let y = 0; y < px; y++) {
     const gy = gy0 + y;
     for (let x = 0; x < px; x++) {
       const gx = gx0 + x;
-      const wx = (noiseX(gx, gy) - 0.5) * 2 * WARP;
-      const wy = (noiseY(gx, gy) - 0.5) * 2 * WARP;
+      const n = y * px + x;
+      const wx = warpX[n]!;
+      const wy = warpY[n]!;
       sampleBody(gx * SCALE_A + wx + dx, gy * SCALE_A + wy + dy, false);
       sampleBody(gx * SCALE_B + 61 - wy * 0.7 - dy, gy * SCALE_B + 23 + wx * 0.7 + dx, true);
       let r = BASE[0] * BASE_W + ar * WA + sr * WB + GRADE[0];
@@ -219,22 +214,73 @@ export function deepTile(tx: number, ty: number, frame: number, out: Uint8Clampe
         g -= cut;
         b -= cut;
       }
-      const lv = Math.max(bright(gx * 0.9 + 37 + wy * 0.8, gy * 0.9 + 71 + wx * 0.8), bright(gx * 0.55 + 90 - wx, gy * 0.55 + 12 + wy));
-      const pulse = 0.12 + 0.65 * Math.max(0, Math.sin(phase + gx * 0.045 + gy * 0.018)) ** 6;
-      const glint = Math.min(1, Math.max(0, (lv - 0.42) * 2.5)) * pulse;
-      if (glint > SPARK) {
-        const k = Math.min(SPARK_MAX, (glint - SPARK) * 2.2);
-        r = r * (1 - k) + SPARKLE[0] * k;
-        g = g * (1 - k) + SPARKLE[1] * k;
-        b = b * (1 - k) + SPARKLE[2] * k;
+      // the pulse is at most PULSE_MAX: a glint level too low to pass the spark even at the top of it needs no sine
+      const lit = level[n]!;
+      if (lit * PULSE_MAX > SPARK) {
+        const pulse = 0.12 + 0.65 * Math.max(0, Math.sin(phase + gx * 0.045 + gy * 0.018)) ** 6;
+        const glint = lit * pulse;
+        if (glint > SPARK) {
+          const k = Math.min(SPARK_MAX, (glint - SPARK) * 2.2);
+          r = r * (1 - k) + SPARKLE[0] * k;
+          g = g * (1 - k) + SPARKLE[1] * k;
+          b = b * (1 - k) + SPARKLE[2] * k;
+        }
       }
-      const i = (y * px + x) * 4;
+      const i = n * 4;
       out[i] = Math.min(255, Math.max(0, Math.round(r)));
       out[i + 1] = Math.min(255, Math.max(0, Math.round(g)));
       out[i + 2] = Math.min(255, Math.max(0, Math.round(b)));
       out[i + 3] = 255;
     }
   }
+}
+
+/** The most the pulse can reach (0.12 + 0.65), with a hair of room for rounding. */
+const PULSE_MAX = 0.7701;
+
+/** What a tile's pixels take from the place alone, the same in every frame: the slow lean in x and y, and the light layer's clamped glint level. */
+interface TileFields {
+  wx: Float64Array;
+  wy: Float64Array;
+  lv: Float64Array;
+}
+const FIELDS = new Map<string, TileFields>();
+/** The tiles' fields kept (a tile's four frames are painted close together; a walk's edge is a few dozen tiles). */
+const FIELDS_KEPT = 48;
+
+function fieldsOf(tx: number, ty: number, px: number, light: Uint8Array): TileFields {
+  const key = `${tx},${ty},${px}`;
+  const kept = FIELDS.get(key);
+  if (kept) {
+    FIELDS.delete(key);
+    FIELDS.set(key, kept);
+    return kept;
+  }
+  const gx0 = tx * px;
+  const gy0 = ty * px;
+  const noiseX = noiseRect(gx0, gy0, gx0 + px - 1, gy0 + px - 1, 51, 90);
+  const noiseY = noiseRect(gx0, gy0, gx0 + px - 1, gy0 + px - 1, 57, 90);
+  const bright = (u: number, v: number): number => {
+    const i = (bounceInt(Math.floor(v)) * SIZE + bounceInt(Math.floor(u))) * 3;
+    return (light[i]! + light[i + 1]! + light[i + 2]!) / 765;
+  };
+  const fields: TileFields = { wx: new Float64Array(px * px), wy: new Float64Array(px * px), lv: new Float64Array(px * px) };
+  for (let y = 0; y < px; y++) {
+    const gy = gy0 + y;
+    for (let x = 0; x < px; x++) {
+      const gx = gx0 + x;
+      const wx = (noiseX(gx, gy) - 0.5) * 2 * WARP;
+      const wy = (noiseY(gx, gy) - 0.5) * 2 * WARP;
+      const lv = Math.max(bright(gx * 0.9 + 37 + wy * 0.8, gy * 0.9 + 71 + wx * 0.8), bright(gx * 0.55 + 90 - wx, gy * 0.55 + 12 + wy));
+      const n = y * px + x;
+      fields.wx[n] = wx;
+      fields.wy[n] = wy;
+      fields.lv[n] = Math.min(1, Math.max(0, (lv - 0.42) * 2.5));
+    }
+  }
+  FIELDS.set(key, fields);
+  if (FIELDS.size > FIELDS_KEPT) FIELDS.delete(FIELDS.keys().next().value as string);
+  return fields;
 }
 
 /** The bed under the shallows at an art pixel, as the study's bed layer gives it: [r, g, b]. */
