@@ -18,6 +18,7 @@ import { formatIssues, runCheck, runRepoCheck } from './check';
 import { LOCK_FILE, REPO_ROOT } from './load';
 import { writeLock } from './lock';
 import { formatMaking, makingReport } from './making';
+import { buildInventory, checkLine } from './valley-inventory';
 
 const [command, ...args] = process.argv.slice(2);
 const json = args.includes('--json');
@@ -25,7 +26,15 @@ const json = args.includes('--json');
 function check(): ReturnType<typeof runCheck> {
   const result = runRepoCheck();
   if (json) console.log(JSON.stringify({ files: result.files, issues: result.issues }, null, 2));
-  else console.log(formatIssues(result));
+  else {
+    console.log(formatIssues(result));
+    // one info line, never a failure: how many things a player meets in the valley are in each art state (docs/design/VALLEY_INVENTORY.md)
+    try {
+      if (result.assembled.bundle) console.log(checkLine(buildInventory(result.assembled)));
+    } catch (err) {
+      console.log(`valley inventory: not counted (${err instanceof Error ? err.message : String(err)})`);
+    }
+  }
   return result;
 }
 
