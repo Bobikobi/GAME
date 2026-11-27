@@ -134,6 +134,61 @@ export function facedTile(s: Pick<GameSession, 'pos' | 'facing'>): [number, numb
  */
 export type Open = (x: number, y: number, from: readonly [number, number]) => boolean;
 
+/** A round blocker at art-pixel precision, in the world's art pixels: a tree's trunk foot (a painted land's `feet`). The tiles stay the walk's refusals for walls, cliffs and water; a disc refuses only the ground it covers, so a wood's crowns stay open and the body passes between trunks. */
+export interface Disc {
+  x: number;
+  y: number;
+  r: number;
+}
+
+/** How far (art px) the figure's drawn feet stand under the body's point: the world draws the sprite's foot half a tile under it (world.ts drawBody, T / 2 world px). */
+export const FOOT_DRAWN = ART_PX / 2;
+
+/**
+ * A painted land's trunk discs in the world's art px, from its `feet` ([x, y, r] in scene px, at the painted trunk's foot) and the land's tile origin. Each disc is kept where the body's point stands
+ * when the drawn feet stand on the trunk's foot, FOOT_DRAWN over it: a disc at the drawn foot itself stopped a walk north half a tile short of the bark and let a walk south tread over the trunk's foot
+ * (private #44 H1w, the trunk bars' frames).
+ */
+export function trunkDiscsOf(feet: readonly (readonly [number, number, number])[], x0: number, y0: number): Disc[] {
+  return feet.map(([x, y, r]) => ({ x: x0 * ART_PX + x, y: y0 * ART_PX + y - FOOT_DRAWN, r }));
+}
+
+/**
+ * Push the body's box (centre `x`, `y`, `BODY_BOX`) out of every disc it overlaps, along the line from the disc's centre to the box's nearest point, so a body walking at a trunk slides round it. Returns the new centre
+ * (the same object when nothing overlaps). Pure: the walker and its test both use it.
+ */
+export function pushOutOfDiscs(x: number, y: number, discs: readonly Disc[]): [number, number] {
+  const hw = BODY_BOX.w / 2;
+  const hh = BODY_BOX.h / 2;
+  let px = x;
+  let py = y;
+  for (const d of discs) {
+    if (Math.abs(d.x - px) > hw + d.r || Math.abs(d.y - py) > hh + d.r) continue;
+    const nx = Math.min(px + hw, Math.max(px - hw, d.x));
+    const ny = Math.min(py + hh, Math.max(py - hh, d.y));
+    let vx = nx - d.x;
+    let vy = ny - d.y;
+    const dist = Math.hypot(vx, vy);
+    if (dist >= d.r) continue;
+    if (dist === 0) {
+      // the disc's centre lies inside the box: leave by the nearer face
+      const left = d.x - (px - hw);
+      const right = px + hw - d.x;
+      const up = d.y - (py - hh);
+      const down = py + hh - d.y;
+      const least = Math.min(left, right, up, down);
+      vx = least === left ? 1 : least === right ? -1 : 0;
+      vy = least === up ? 1 : least === down ? -1 : 0;
+      if (vx !== 0) px += vx * (least + d.r);
+      else py += vy * (least + d.r);
+      continue;
+    }
+    px += (vx / dist) * (d.r - dist);
+    py += (vy / dist) * (d.r - dist);
+  }
+  return [px, py];
+}
+
 /**
  * The body walking freely over a world of tiles (NEXT 22 a): its feet at art-pixel precision, a velocity from
  * the held input at one tile per `walk_step_ms` whatever the angle, and a box at the feet that never overlaps a
@@ -175,7 +230,7 @@ export class Walker {
    * frame, `stepMs` the time a tile takes at full speed, `open` the tiles the body may cross into. Returns the tiles
    * the feet's centre entered, in order.
    */
-  frame(input: readonly [number, number], ms: number, stepMs: number, open: Open): [number, number][] {
+  frame(input: readonly [number, number], ms: number, stepMs: number, open: Open, discs: readonly Disc[] = []): [number, number][] {
     const entered: [number, number][] = [];
     const length = Math.hypot(input[0], input[1]);
     const x0 = this.x;
@@ -200,6 +255,7 @@ export class Walker {
         const gotX = this.slide(0, mx, open);
         note();
         const gotY = this.slide(1, my, open);
+        if (discs.length) this.shove(discs, open);
         note();
         // a straight walk that meets a corner is eased onto its lane, when the lane goes on
         if (my === 0 && gotX !== mx) this.toLane(1, Math.abs(mx - gotX), Math.sign(mx), open);
@@ -210,6 +266,21 @@ export class Walker {
     this.walked += walked;
     this.moving = walked > 0;
     return entered;
+  }
+
+  /** Round the body off a trunk: out of any disc it overlaps, unless that would put its box into a refused tile (then it stays where the tiles left it). */
+  private shove(discs: readonly Disc[], open: Open): void {
+    const [nx, ny] = pushOutOfDiscs(this.x, this.y, discs);
+    if (nx === this.x && ny === this.y) return;
+    const hw = BODY_BOX.w / 2;
+    const hh = BODY_BOX.h / 2;
+    const x0 = Math.floor((nx - hw) / ART_PX);
+    const x1 = Math.floor((nx + hw - 1e-6) / ART_PX);
+    const y0 = Math.floor((ny - hh) / ART_PX);
+    const y1 = Math.floor((ny + hh - 1e-6) / ART_PX);
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (!open(tx, ty, [Math.floor(this.x / ART_PX), Math.floor(this.y / ART_PX)])) return;
+    this.x = nx;
+    this.y = ny;
   }
 
   /** Move along one axis (0 is x) as far as the box may go, up to `d` art pixels. Returns how far it went. */

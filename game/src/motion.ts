@@ -13,7 +13,8 @@
  */
 import * as Phaser from 'phaser';
 
-import { GUST, MOVES } from './richground';
+import { GUST, MOVES, SWAY } from './richground';
+import { TILE_PX, type Wind } from './wind';
 
 const rgb = (c: number): [number, number, number] => [((c >> 16) & 0xff) / 255, ((c >> 8) & 0xff) / 255, (c & 0xff) / 255];
 
@@ -32,6 +33,11 @@ uniform vec3 w1;
 uniform float tol;
 uniform float speed;
 uniform float scale;
+uniform float table;
+uniform vec2 dir;
+uniform float span;
+uniform float phase;
+uniform float strength;
 varying vec2 outTexCoord;
 
 float kind(vec3 c) {
@@ -44,7 +50,8 @@ void main () {
   vec2 px = outTexCoord * resolution;
   // the art pixel this screen pixel shows, anchored to the world so the gust stays on the ground as the camera moves
   vec2 art = floor(vec2(px.x + scroll.x, resolution.y - px.y + scroll.y) / artPx);
-  float g = sin(art.x * scale + art.y * scale * 0.6 - time * speed);
+  // the classic gust (table 0), or the swing along the table's wind (wind.ts, table 1): span is the art px the front crosses in one period, phase is how far into the period the clock is
+  float g = table > 0.5 ? sin(6.2831853 * (dot(art, dir) / span - phase)) * strength : sin(art.x * scale + art.y * scale * 0.6 - time * speed);
   float lean = g > 0.85 ? 2.0 : (g > 0.55 ? 1.0 : 0.0);
   // rows alternate every 6 art px: one row leans a step less, so a blade bends instead of sliding
   if (mod(floor(art.y / 6.0), 2.0) > 0.5) lean = max(0.0, lean - 1.0);
@@ -96,6 +103,8 @@ type Context = Phaser.Renderer.WebGL.DrawingContext;
 /** The sway's controller: the clock and the camera's corner it reads every frame. */
 export class Sway extends Phaser.Filters.Controller {
   time = 0;
+  /** the table's wind at the hour now, when the door reads one (the painted door); the classic gust otherwise */
+  wind: Wind | undefined;
   scroll: [number, number] = [0, 0];
   artPx = 1;
   constructor(camera: Phaser.Cameras.Scene2D.Camera) {
@@ -143,6 +152,11 @@ export function installMotion(game: Phaser.Game): boolean {
           p.setUniform('tol', GUST.tolerance);
           p.setUniform('speed', GUST.speed);
           p.setUniform('scale', GUST.scale);
+          p.setUniform('table', c.wind ? 1 : 0);
+          p.setUniform('dir', c.wind ? [c.wind.x, c.wind.y] : [0, 0]);
+          p.setUniform('span', c.wind ? c.wind.speed * TILE_PX * SWAY.period : 1);
+          p.setUniform('phase', (c.time / SWAY.period) % 1);
+          p.setUniform('strength', c.wind ? c.wind.k : 1);
         }
       } as unknown as typeof Phaser.Renderer.WebGL.RenderNodes.RenderNode,
     );

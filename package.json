@@ -63,6 +63,7 @@
     "map:difficulty": "tsx tools/src/balance/reckon-cli.ts",
     "map:playtest": "tsx tools/src/balance/playtest-cli.ts",
     "balance": "tsx tools/src/balance/cli.ts",
+    "valley:inventory": "tsx tools/src/valley-inventory-cli.ts",
     "tree:coverage": "tsx tools/src/tree/cli.ts",
     "paths:depth": "tsx tools/src/paths/depth.ts",
     "hub:data": "tsx tools/src/hub/cli.ts",
