@@ -1,0 +1,170 @@
+{
+  "name": "valley-last-16px-ruins",
+  "out": ".scratch/pixellab/valley-last-16px/ruins",
+  "label": "pixellab-valley-last-16px-ruins",
+  "provenance": "PixelLab Pro grids on the paid account (trial1), our own 16 px ruin sprites x4 as the shape references and the kit's rich standing_stone and broken_statue as level and camera references. Lane valley-last-16px, public #917; DECISIONS 2026-11-02 PixelLab draws the world's pieces.",
+  "jobs": [
+    {
+      "id": "pillar",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a tall broken ancient stone pillar standing upright, pale grey weathered stone with cracks and a chipped broken top, a square base block, green moss and a few ivy leaves climbing the lower half, tall and narrow. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, short soft shadow side, painterly pixel art with many shades, moss and ivy on the shaded and lower parts, no thick black outline, weathered ancient ruin in a river valley, the whole object alone on a transparent background.",
+        "size": {
+          "width": 64,
+          "height": 128
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/ruin_pillar-x4.png",
+            "usage_description": "The object to redraw: the same tall broken pillar, same pose, same proportions and silhouette, but drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/standing_stone.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly stone with moss, no thick black outline. Do not copy this stone."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/broken_statue.png",
+            "usage_description": "Only the level of finish, the camera and the light, as the other picture. Do not copy this statue."
+          }
+        ]
+      },
+      "note": "ruins family, one Pro grid per piece at its final canvas (ruin_pillar); our own 16 px sprite x4 is the shape reference, the rich standing stone and broken statue set the level (DECISIONS 2026-11-02)."
+    },
+    {
+      "id": "wall",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a low crumbled section of an ancient ruined stone wall, wider than tall, dark grey stone blocks with a broken jagged top edge, earth-brown rubble and a few missing blocks, green moss and small plants on top and between the stones. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, short soft shadow side, painterly pixel art with many shades, moss and ivy on the shaded and lower parts, no thick black outline, weathered ancient ruin in a river valley, the whole object alone on a transparent background.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/ruin_wall-x4.png",
+            "usage_description": "The object to redraw: the same broken wall segment, same silhouette and proportions, drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/standing_stone.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly stone with moss, no thick black outline. Do not copy this stone."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/broken_statue.png",
+            "usage_description": "Only the level of finish, the camera and the light, as the other picture. Do not copy this statue."
+          }
+        ]
+      },
+      "note": "ruins family, one Pro grid per piece at its final canvas (ruin_wall); our own 16 px sprite x4 is the shape reference, the rich standing stone and broken statue set the level (DECISIONS 2026-11-02)."
+    },
+    {
+      "id": "arch",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "an ancient ruined sandstone archway, a tall rounded arch of warm ochre-tan cut stone blocks with a dark opening, one side higher and chipped, moss and ivy hanging over the top and down one side. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, short soft shadow side, painterly pixel art with many shades, moss and ivy on the shaded and lower parts, no thick black outline, weathered ancient ruin in a river valley, the whole object alone on a transparent background.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/ruin_arch-x4.png",
+            "usage_description": "The object to redraw: the same arch, same silhouette and proportions, drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/standing_stone.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly stone with moss, no thick black outline. Do not copy this stone."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/broken_statue.png",
+            "usage_description": "Only the level of finish, the camera and the light, as the other picture. Do not copy this statue."
+          }
+        ]
+      },
+      "note": "ruins family, one Pro grid per piece at its final canvas (ruin_arch); our own 16 px sprite x4 is the shape reference, the rich standing stone and broken statue set the level (DECISIONS 2026-11-02)."
+    },
+    {
+      "id": "rubble",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a low heap of fallen ruin stones on the ground, broken grey and ochre-tan blocks and chips piled loosely, a little moss between the stones, wider than tall. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, short soft shadow side, painterly pixel art with many shades, moss and ivy on the shaded and lower parts, no thick black outline, weathered ancient ruin in a river valley, the whole object alone on a transparent background.",
+        "size": {
+          "width": 128,
+          "height": 64
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/rubble-x4.png",
+            "usage_description": "The object to redraw: the same low pile of broken stones, same silhouette and proportions, drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/standing_stone.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly stone with moss, no thick black outline. Do not copy this stone."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/broken_statue.png",
+            "usage_description": "Only the level of finish, the camera and the light, as the other picture. Do not copy this statue."
+          }
+        ]
+      },
+      "note": "ruins family, one Pro grid per piece at its final canvas (rubble); our own 16 px sprite x4 is the shape reference, the rich standing stone and broken statue set the level (DECISIONS 2026-11-02)."
+    },
+    {
+      "id": "head",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a huge weathered ancient carved stone head of a bearded man half sunk in the ground, warm ochre-brown sandstone with a calm closed-eye face, moss growing on the brow and cheeks and ivy at the sides, only the head and the neck stone are seen. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, short soft shadow side, painterly pixel art with many shades, moss and ivy on the shaded and lower parts, no thick black outline, weathered ancient ruin in a river valley, the whole object alone on a transparent background.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/statue_head-x4.png",
+            "usage_description": "The object to redraw: the same big stone head, same silhouette and proportions, drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/standing_stone.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly stone with moss, no thick black outline. Do not copy this stone."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/broken_statue.png",
+            "usage_description": "Only the level of finish, the camera and the light, as the other picture. Do not copy this statue."
+          }
+        ]
+      },
+      "note": "ruins family, one Pro grid per piece at its final canvas (statue_head); our own 16 px sprite x4 is the shape reference, the rich standing stone and broken statue set the level (DECISIONS 2026-11-02)."
+    },
+    {
+      "id": "totem",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a tall narrow carved stone totem post of an ancient people, blue-grey stone with ochre-gold painted bands, stacked carved faces and symbols, a little moss at the foot, weathered and slightly leaning. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, short soft shadow side, painterly pixel art with many shades, moss and ivy on the shaded and lower parts, no thick black outline, weathered ancient ruin in a river valley, the whole object alone on a transparent background.",
+        "size": {
+          "width": 64,
+          "height": 128
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/totem-x4.png",
+            "usage_description": "The object to redraw: the same tall narrow totem, same silhouette and proportions, drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/standing_stone.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly stone with moss, no thick black outline. Do not copy this stone."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/broken_statue.png",
+            "usage_description": "Only the level of finish, the camera and the light, as the other picture. Do not copy this statue."
+          }
+        ]
+      },
+      "note": "ruins family, one Pro grid per piece at its final canvas (totem); our own 16 px sprite x4 is the shape reference, the rich standing stone and broken statue set the level (DECISIONS 2026-11-02)."
+    }
+  ]
+}

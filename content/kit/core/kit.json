@@ -388,10 +388,18 @@
       },
       "props/bush_empty": {
         "file": "props/bush_empty.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2,
-        "scale": 0.77
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-bush.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:177"
+        },
+        "scale": 0.58
       },
       "props/campfire_lit": {
         "file": "props/campfire_lit.png",
@@ -474,16 +482,35 @@
       },
       "props/young_tree": {
         "file": "props/young_tree.png",
-        "w": 16,
-        "h": 24,
-        "scale": 1.26
+        "w": 64,
+        "h": 96,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "green",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-plants.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:176"
+        },
+        "scale": 1
       },
       "props/dead_tree": {
         "file": "props/dead_tree.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "grey",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-plants.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:175"
+        },
+        "scale": 1.44
       },
       "props/dig_spot": {
         "file": "props/dig_spot.png",
@@ -563,10 +590,19 @@
       },
       "props/flowers_blue": {
         "file": "props/flowers_blue.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2,
-        "scale": 0.55
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "water",
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:184"
+        },
+        "scale": 0.73
       },
       "props/flowers_white": {
         "file": "props/flowers_white.png",
@@ -861,27 +897,68 @@
       },
       "props/rubble": {
         "file": "props/rubble.png",
-        "w": 32,
-        "h": 16,
-        "scale": 0.88
+        "w": 128,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:178"
+        },
+        "scale": 0.75
       },
       "props/ruin_arch": {
         "file": "props/ruin_arch.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.75
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "green"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:181"
+        },
+        "scale": 1.59
       },
       "props/ruin_pillar": {
         "file": "props/ruin_pillar.png",
-        "w": 16,
-        "h": 32,
-        "scale": 1.7
+        "w": 64,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:179"
+        },
+        "scale": 1.59
       },
       "props/ruin_wall": {
         "file": "props/ruin_wall.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.21
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:180"
+        },
+        "scale": 1.19
       },
       "props/shelf": {
         "file": "props/shelf.png",
@@ -932,9 +1009,19 @@
       },
       "props/statue_head": {
         "file": "props/statue_head.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.7
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "green"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:182"
+        },
+        "scale": 1.51
       },
       "props/stump": {
         "file": "props/stump.png",
@@ -953,16 +1040,36 @@
       },
       "props/totem": {
         "file": "props/totem.png",
-        "w": 16,
-        "h": 32,
-        "scale": 1.75
+        "w": 64,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "teal",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:183"
+        },
+        "scale": 1.67
       },
       "props/tree_oak": {
         "file": "props/tree_oak.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "green",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-plants.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:174"
+        },
+        "scale": 1.42
       },
       "props/well_old": {
         "file": "props/well_old.png",

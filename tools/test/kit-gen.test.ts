@@ -75,10 +75,14 @@ describe('the spec', () => {
 
 describe('the reference', () => {
   test('a sheet gives its first frame, a sprite itself', () => {
+    // a sprite of one frame is itself (the oak was a 32 px two-frame sheet until the valley's last 16 px pieces were redrawn)
     const oak = loadReference('props/tree_oak');
-    expect([oak.width, oak.height]).toEqual([32, 32]);
-    const sheet = PNG.sync.read(readFileSync(join(root, 'content/kit/core/props/tree_oak.png')));
-    expect(oak.data.subarray(0, 32 * 4)).toEqual(sheet.data.subarray(0, 32 * 4));
+    expect([oak.width, oak.height]).toEqual([128, 128]);
+    // a sheet gives its first frame: the shop window is 88 x 80 a frame, two frames side by side
+    const window = loadReference('props/shop_window');
+    expect([window.width, window.height]).toEqual([88, 80]);
+    const sheet = PNG.sync.read(readFileSync(join(root, 'content/kit/core/props/shop_window.png')));
+    expect(window.data.subarray(0, 88 * 4)).toEqual(sheet.data.subarray(0, 88 * 4));
     expect(() => loadReference('chars/nobody')).toThrow(/No core kit sprite/);
   });
 
