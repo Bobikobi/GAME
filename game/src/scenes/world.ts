@@ -45,6 +45,7 @@ import {
   spotOpen,
   frameRect,
   gaitStepMs,
+  type Gait,
   sheetGrid,
   treasureKind,
   windowOpen,
@@ -116,6 +117,7 @@ import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
+import { reportedGait, SpeedRamp } from '../walkfeel';
 import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK, idleSlice } from '../stream';
@@ -522,6 +524,8 @@ export class WorldScene extends Phaser.Scene {
   private pinned = new Set<Pinned>();
   /** the body walking freely between tiles (walking.ts); the session keeps the tile under its feet */
   readonly body = new Walker();
+  /** the standard walk's speed ramp (walkfeel.ts) */
+  private readonly ramp = new SpeedRamp();
   /** what the body is drawn facing: one of eight, leaning on the four-way facing the faced tile is read from */
   private look: Facing8 = 'down';
   /** The kernel's step time of the walk at the gait and load of the last frame (gaitStepMs), in ms a tile. */
@@ -3176,20 +3180,46 @@ export class WorldScene extends Phaser.Scene {
     // the session may have put the player elsewhere: a load, a fall, the server's tile taken back
     const moved = this.body.follow(s.pos);
     const was = this.body.moving;
-    const held: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
-    // a streamed painted land holds the step into a unit not drawn yet, a moment at most (painted.ts holdsWalk): she never walks onto the clear colour
-    const input: [number, number] = app.painted?.holdsWalk(held[0], held[1], performance.now()) ? [0, 0] : held;
+    // the way the body walks this frame in the standard walk: the last way pushed while it has speed (the frame or two a stop takes), nothing at rest
+    let drive: readonly [number, number] | undefined;
+    const control = this.canControl(s);
     // both hands hold a stone: no running (the kernel refuses it), the load slows the walk itself
-    const asked = app.controls.gait(performance.now());
-    const gait = asked === 'run' && carriedKind(this.b, s.state) !== undefined ? 'walk' : asked;
+    const carrying = carriedKind(this.b, s.state) !== undefined;
+    let input: [number, number];
+    let gait: Gait;
+    // the body's step time at the speed it walks at: the pace of the gait, or, in the standard walk, what the ramp has reached (walkfeel.ts)
+    let stepMs: number;
+    if (app.controls.mode === 'old') {
+      input = control ? app.controls.vector() : [0, 0];
+      const asked = app.controls.gait(performance.now());
+      gait = asked === 'run' && carrying ? 'walk' : asked;
+      this.paceMs = gaitStepMs(this.b, s.state, gait);
+      stepMs = this.paceMs;
+    } else {
+      const ask = control ? app.controls.ask() : { dir: [0, 0] as const, share: 0, gait: 'walk' as Gait };
+      const label: Gait = ask.gait === 'run' && carrying ? 'walk' : ask.gait;
+      // the ramp is counted in the walk's pace at this load; the thumb's share is of the pace of the gait it picked
+      const unit = (ART_PX * 1000) / gaitStepMs(this.b, s.state, 'walk');
+      if (!control || moved) this.ramp.reset();
+      const speed = this.ramp.step(ask.dir, ask.share * ((ART_PX * 1000) / gaitStepMs(this.b, s.state, label)), delta, unit);
+      gait = reportedGait(label, speed, unit);
+      this.paceMs = gaitStepMs(this.b, s.state, gait);
+      // the facing follows the thumb; a body still gliding to a stop walks on its last way without turning
+      input = [ask.dir[0], ask.dir[1]];
+      stepMs = speed > 0 ? (ART_PX * 1000) / speed : this.paceMs;
+      drive = speed > 0 ? this.ramp.dir : [0, 0];
+    }
+    // a streamed painted land holds the step into a unit not drawn yet, a moment at most (painted.ts holdsWalk): she never walks onto the clear colour
+    if (app.painted?.holdsWalk((drive ?? input)[0], (drive ?? input)[1], performance.now())) {
+      input = [0, 0];
+      if (drive) drive = [0, 0];
+    }
     const facing = facingFor(input, s.facing);
     const look = facing8For(input, this.lookOf(s));
     const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
     this.look = agrees(look, facing) ? look : facing;
-    // the kernel's step time at this gait and load: the walk's poses follow it (work.ts poseEvery)
-    this.paceMs = gaitStepMs(this.b, s.state, gait);
-    for (const tile of this.body.frame(input, delta, this.paceMs, (x, y, from) => this.canWalk(s, x, y, from), app.painted?.trunkDiscs)) {
+    for (const tile of this.body.frame(drive ?? input, delta, stepMs, (x, y, from) => this.canWalk(s, x, y, from), app.painted?.trunkDiscs)) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, tile, gait);
