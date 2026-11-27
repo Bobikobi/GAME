@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AIR_DENSITY, BANK_ALPHA, BANK_RGB, BANK_TILE, CLOUD_ALPHA, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, bankPixelsTiled, cloudBucket, cloudCover, cloudDrift, cloudField, cloudOffset, cloudPixels, cloudRows, fogStrength } from '../src/sky';
+import { AIR_DENSITY, BANK_ALPHA, BANK_RGB, BANK_TILE, CLOUD_ALPHA, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudField, cloudOffset, cloudPixels, cloudRows, fogStrength } from '../src/sky';
 
 /** The alpha and colour of one pixel of an RGBA buffer. */
 function at(buf: Uint8ClampedArray, w: number, x: number, y: number): [number, number, number, number] {
@@ -165,21 +165,21 @@ describe('how thick the banks lie by the hour', () => {
 });
 
 describe('the air cut for a quick boot (#843)', () => {
-  it('a bank copied from one period is the very same bytes as the bank computed whole', () => {
+  it('every period of a bank is its first period again, so one period copied along is the whole bank', () => {
     const period = 64;
     const h = 24;
-    for (const periods of [1, 2, 3, 7, 9]) {
+    for (const periods of [2, 3, 7, 9]) {
       for (const seed of [1.7, 3.1, 4.3]) {
         const whole = bankPixels(periods * period, h, seed, true, period);
-        const tiled = bankPixelsTiled(periods * period, h, seed, true, period);
-        expect(Buffer.compare(Buffer.from(tiled), Buffer.from(whole))).toBe(0);
+        const one = bankPixels(period, h, seed, true, period);
+        for (let y = 0; y < h; y++) {
+          for (let k = 0; k < periods; k++) {
+            const row = whole.subarray((y * periods * period + k * period) * 4, (y * periods * period + (k + 1) * period) * 4);
+            expect(Buffer.compare(Buffer.from(row), Buffer.from(one.subarray(y * period * 4, (y + 1) * period * 4)))).toBe(0);
+          }
+        }
       }
     }
-  });
-
-  it('a width that is not whole periods is computed whole, as before', () => {
-    const whole = bankPixels(150, 16, 1.7, true, 64);
-    expect(Buffer.compare(Buffer.from(bankPixelsTiled(150, 16, 1.7, true, 64)), Buffer.from(whole))).toBe(0);
   });
 
   it('a patch cut in bands of rows is the same bytes as the patch cut whole', () => {

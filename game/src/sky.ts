@@ -134,26 +134,6 @@ export function bankPixels(w: number, h: number, seed: number, crest = true, per
 }
 
 /**
- * The same bytes as `bankPixels(w, h, seed, crest, period)` for a `w` that is a whole number of periods, computed
- * for one period and copied along each row: the pattern reads x only through `x % period`, so every further period
- * is the first one again. About a ninth of the work for the widest bank (a boot-time freeze, #843).
- */
-export function bankPixelsTiled(w: number, h: number, seed: number, crest = true, period = w): Uint8ClampedArray<ArrayBuffer> {
-  if (period <= 0 || w % period !== 0 || w === period) return bankPixels(w, h, seed, crest, period);
-  const one = bankPixels(period, h, seed, crest, period);
-  const out = new Uint8ClampedArray(new ArrayBuffer(w * h * 4));
-  const rowIn = period * 4;
-  const rowOut = w * 4;
-  for (let y = 0; y < h; y++) {
-    const at = y * rowOut;
-    out.set(one.subarray(y * rowIn, (y + 1) * rowIn), at);
-    // the row doubles on itself until it is whole
-    for (let done = rowIn; done < rowOut; done *= 2) out.copyWithin(at + done, at, at + Math.min(done, rowOut - done));
-  }
-  return out;
-}
-
-/**
  * How thick the banks lie at a given minute of the day, 0 to 1: they gather before dawn, thin through the
  * morning, and come back with the dark. Nothing at midday, so the valley stays readable.
  */

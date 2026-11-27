@@ -25,6 +25,8 @@ export const STRIP_ROWS = 1;
 /** A piece of a strip that took longer than this halves the width of the next; one under FAST_MS doubles it (ms). */
 const SLOW_MS = 25;
 const FAST_MS = 8;
+/** Behind the title (`bakeView`) a piece is never wider than this many tiles: a slice there must stay under a frame's worth on a slow machine. */
+const QUIET_COLS = 1;
 /** The longest a page already in view waits for the GPU to be given what is baked of it, ms. */
 const UPLOAD_MS = 100;
 
@@ -231,23 +233,39 @@ export class GroundChunks {
    * Bakes strips of the pages the view touches (they come first in the queue) for up to `budget` ms; true when every one
    * of them is whole. The same pixels as a whole-page bake, a few ms at a time (#843).
    */
-  bakeView(budget: number): boolean {
+  bakeView(budget: number, pages = Infinity): boolean {
     const seen = this.seen;
     if (!seen) return true;
-    const first = (): Chunk | undefined => {
-      const c = this.todo[0];
-      return c && c.cx >= seen.x0 && c.cx <= seen.x1 && c.cy >= seen.y0 && c.cy <= seen.y1 ? c : undefined;
-    };
+    // the pages this priming bakes, the view's nearest ones first, are fixed on the first call: the rest of the view comes
+    // by idle strips, as the ring does
+    this.prime ??= this.todo.filter((c) => c.cx >= seen.x0 && c.cx <= seen.x1 && c.cy >= seen.y0 && c.cy <= seen.y1).slice(0, pages);
+    const prime = this.prime;
+    const first = (): Chunk | undefined => prime.find((c) => !c.complete && this.live.get(`${c.cx},${c.cy}`) === c);
     const t0 = this.now();
-    for (let c = first(); c; c = first()) {
-      this.bakeUnit(c);
-      if (this.now() - t0 >= budget) break;
+    // nothing is on screen yet: the GPU uploads wait for a slice of their own, so no slice holds a strip and an upload
+    this.quiet = true;
+    try {
+      for (;;) {
+        const up = this.uploads.shift();
+        if (up) up();
+        else {
+          const c = first();
+          if (!c) break;
+          // a page's canvas and painter are set up in a slice of their own, too
+          if (!c.paint) this.begin(c);
+          else this.bakeUnit(c);
+        }
+        if (this.now() - t0 >= budget) break;
+      }
+    } finally {
+      this.quiet = false;
     }
-    return !first();
+    return !first() && this.uploads.length === 0;
   }
 
   /** Starts the idle job for the strips still waiting: what `update` does unless it was `lazy`. */
   resume(): void {
+    this.prime = undefined;
     if (this.todo.length > 0) this.pump();
   }
 
@@ -316,6 +334,12 @@ export class GroundChunks {
     this.wholeLongest = Math.max(this.wholeLongest, this.now() - t0);
   }
 
+  /** The pages `bakeView` is baking: set by its first call, dropped by `resume`. */
+  private prime: Chunk[] | undefined;
+  /** `bakeView` is running: uploads to the GPU are queued, one to a slice, since nothing shows yet. */
+  private quiet = false;
+  private uploads: (() => void)[] = [];
+
   private upload(chunk: Chunk): void {
     chunk.texs[0]!.refresh();
     chunk.dirty = false;
@@ -344,24 +368,27 @@ export class GroundChunks {
    * A piece of one strip of one frame of a page: as many tiles as the last piece's cost allows. The strips of the first
    * frame come first; the other frames follow once a tile is known to be animated.
    */
+  private begin(chunk: Chunk): void {
+    if (chunk.paint) return;
+    chunk.paint = this.makePainter();
+    this.texture(chunk, 0);
+    chunk.keys = [chunk.all[0]!];
+    chunk.img = this.image(chunk);
+  }
+
   private bakeUnit(chunk: Chunk): void {
     const t0 = this.now();
     const n = chunk.strips.length;
     const frame = Math.floor(chunk.done / n);
     const strip = chunk.strips[chunk.done % n]!;
-    if (!chunk.paint) {
-      chunk.paint = this.makePainter();
-      this.texture(chunk, 0);
-      chunk.keys = [chunk.all[0]!];
-      chunk.img = this.image(chunk);
-    }
+    this.begin(chunk);
     // a frame's canvas is made as its first strip is baked, one at a time, so no slice makes three
     if (!chunk.texs[frame]) this.texture(chunk, frame);
-    const w = Math.min(this.pieceCols, strip.w - chunk.at);
+    const w = Math.min(this.quiet ? Math.min(this.pieceCols, QUIET_COLS) : this.pieceCols, strip.w - chunk.at);
     const rx = strip.x + chunk.at;
     const scratch = this.stripTexture();
     scratch.getContext().clearRect(0, 0, scratch.width, scratch.height);
-    const animated = chunk.paint(scratch, frame, chunk.tx0 + rx, chunk.ty0 + strip.y, w, strip.h);
+    const animated = chunk.paint!(scratch, frame, chunk.tx0 + rx, chunk.ty0 + strip.y, w, strip.h);
     const px = this.unit * this.density;
     const tex = chunk.texs[frame]!;
     tex.getContext().drawImage(scratch.getCanvas() as CanvasImageSource, 0, 0, w * px, strip.h * px, rx * px, strip.y * px, w * px, strip.h * px);
@@ -372,9 +399,17 @@ export class GroundChunks {
       chunk.done++;
       // the first frame shows as it is baked, as often as the GPU can be given it; the others show only whole
       if (frame === 0) chunk.dirty = true;
-      else if (chunk.done % n === 0) tex.refresh();
+      else if (chunk.done % n === 0) {
+        if (this.quiet) this.uploads.push(() => tex.refresh());
+        else tex.refresh();
+      }
     }
-    if (chunk.dirty && (chunk.done >= n || (chunk.visible && this.now() - chunk.uploaded >= UPLOAD_MS))) this.upload(chunk);
+    if (chunk.dirty && (chunk.done >= n || (!this.quiet && chunk.visible && this.now() - chunk.uploaded >= UPLOAD_MS))) {
+      if (this.quiet) {
+        chunk.dirty = false;
+        this.uploads.push(() => this.upload(chunk));
+      } else this.upload(chunk);
+    }
     if (chunk.done >= chunk.total) {
       chunk.complete = true;
       chunk.keys = chunk.all.slice();
@@ -383,7 +418,7 @@ export class GroundChunks {
     }
     const took = this.now() - t0;
     if (took > SLOW_MS) this.pieceCols = Math.max(1, this.pieceCols >> 1);
-    else if (took < FAST_MS) this.pieceCols = Math.min(this.stripCols, this.pieceCols * 2);
+    else if (took < FAST_MS) this.pieceCols = Math.min(this.quiet ? QUIET_COLS : this.stripCols, this.pieceCols * 2);
   }
 
   private stripTexture(): Phaser.Textures.CanvasTexture {

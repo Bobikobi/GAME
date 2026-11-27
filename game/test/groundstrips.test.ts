@@ -169,6 +169,25 @@ describe('a page baked in strips', () => {
     for (const [key, bytes] of want) expect(Buffer.from(got.get(key)!).equals(Buffer.from(bytes)), key).toBe(true);
   }, 60_000);
 
+  test('bakeView with a page count bakes only that many of the view\'s pages, the nearest first; the rest wait for idle strips (#843)', () => {
+    const w = 40;
+    const h = 36;
+    const idle: ((s: Slice) => void)[] = [];
+    const q = new IdleQueue((run) => void idle.push(run), () => 0);
+    const lazy = fakeScene();
+    let t = 0;
+    const g = new GroundChunks(lazy.scene, w, h, DENSITY, UNIT, 4, 0, painter, () => true, q, STRIP_COLS, STRIP_ROWS, () => (t += 40));
+    // a view over the corner of four pages
+    g.update({ x: 15 * UNIT, y: 15 * UNIT, right: 17 * UNIT, bottom: 17 * UNIT }, '', true);
+    while (!g.bakeView(100, 1));
+    const pages = new Set([...lazy.textures.keys()].filter((k) => k.startsWith('ground-c')).map((k) => k.replace(/-\d+$/, '')));
+    expect(pages.size).toBe(1);
+    g.resume();
+    drain(idle);
+    expect(g.waiting).toBe(0);
+    expect(new Set([...lazy.textures.keys()].filter((k) => k.startsWith('ground-c')).map((k) => k.replace(/-\d+$/, ''))).size).toBeGreaterThan(3);
+  }, 60_000);
+
   test('the view landing on pages nothing of which is held is baked whole at once, a walk-in is not', () => {
     const { scene } = fakeScene();
     const painted: string[] = [];
