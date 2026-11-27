@@ -181,28 +181,29 @@ describe('the ground pages through the stream', () => {
       return (_tex, frame) => (frames.push(frame), true);
     });
     g.update(view(0, 0));
-    expect(baked).toEqual([[0, 1, 2, 3]]);
+    // a page is four frames of eight bands, each band painted once in its frame
+    expect(baked).toEqual([[0, 1, 2, 3].flatMap((frame) => new Array<number>(8).fill(frame))]);
     for (const frame of [1, 2, 3, 0]) g.setFrame(frame);
-    expect(shown).toEqual([0, 1, 2, 3, 0].map((frame) => `ground-c0x0-${frame}`));
+    expect(shown.filter((key) => key.startsWith('ground-c0x0b3-'))).toEqual([0, 1, 2, 3, 0].map((frame) => `ground-c0x0b3-${frame}`));
   });
 
   test('the pages in view bake at once, the ring waits for an idle slice, and a held chunk limits the pages', () => {
-    const { scene, live } = fakeScene();
+    const { scene, pages } = fakeScene();
     const idle: ((s: Slice) => void)[] = [];
     const q = new IdleQueue((run) => void idle.push(run), () => 0);
     const stream = new ChunkStream(world);
     stream.update(96, 96);
     const painted: string[] = [];
-    const g = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => (_t, _f, tx, ty) => (painted.push(`${tx / CHUNK},${ty / CHUNK}`), false), (tx, ty) => stream.holds(tx, ty), q);
+    const g = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => (_t, _f, tx, ty) => (painted.push(`${tx / CHUNK},${Math.floor(ty / CHUNK)}`), false), (tx, ty) => stream.holds(tx, ty), q);
     g.update(view(6, 6), '1,1');
     // the view at (6,6) spans pages x 6..6 and y 6..7 (180 by 390 units), the ring adds one around it
-    expect(painted).toEqual(['6,6', '6,7']);
+    expect([...new Set(painted)]).toEqual(['6,6', '6,7']);
     expect(g.count).toBe(2);
     expect(g.waiting).toBe(10);
     idle.shift()!({ timeRemaining: () => 100 });
     expect(g.count).toBe(12);
     expect(g.waiting).toBe(0);
-    expect(live.size).toBe(12);
+    expect(pages.size).toBe(12);
     // a page of a chunk that is not held is never asked for
     const far = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => () => false, () => false, new IdleQueue(() => undefined));
     far.update(view(6, 6));
@@ -211,7 +212,7 @@ describe('the ground pages through the stream', () => {
   });
 
   test('walking on drops the pages left behind and cancels the ones still waiting for them', () => {
-    const { scene, live } = fakeScene();
+    const { scene, live, pages } = fakeScene();
     const idle: ((s: Slice) => void)[] = [];
     const q = new IdleQueue((run) => void idle.push(run), () => 0);
     const g = new GroundChunks(scene, 192, 192, 1, unit, 1, 0, () => () => false, () => true, q);
@@ -219,9 +220,9 @@ describe('the ground pages through the stream', () => {
     g.update(view(9, 9));
     expect(g.waiting).toBeLessThanOrEqual(12);
     idle.shift()!({ timeRemaining: () => 1000 });
-    expect(live.size).toBeLessThanOrEqual(12);
-    for (const key of live) {
-      const [x, y] = key.replace('ground-c', '').split('-')[0]!.split('x').map(Number) as [number, number];
+    expect(pages.size).toBeLessThanOrEqual(12);
+    for (const key of pages) {
+      const [x, y] = key.split('x').map(Number) as [number, number];
       expect(Math.abs(x - 9)).toBeLessThanOrEqual(2);
       expect(Math.abs(y - 9)).toBeLessThanOrEqual(3);
     }
