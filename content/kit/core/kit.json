@@ -740,7 +740,8 @@
         "w": 16,
         "h": 16,
         "frames": 2,
-        "scale": 0.66
+        "scale": 0.66,
+        "still_of": "core/wolf"
       },
       "props/herb_plant": {
         "file": "props/herb_plant.png",
@@ -6444,6 +6445,180 @@
         ],
         "scale": 0.9
       },
+      "creatures/wolf_walk_left": {
+        "file": "creatures/wolf_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            54,
+            91
+          ],
+          "fit_permille": 1000,
+          "head": [
+            21,
+            59
+          ]
+        },
+        "scale": 0.63
+      },
+      "creatures/wolf_idle_left": {
+        "file": "creatures/wolf_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            54,
+            91
+          ],
+          "fit_permille": 1000,
+          "head": [
+            21,
+            59
+          ]
+        },
+        "scale": 0.64
+      },
+      "creatures/wolf_walk_front": {
+        "file": "creatures/wolf_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            66,
+            99
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            79
+          ]
+        },
+        "scale": 0.81
+      },
+      "creatures/wolf_idle_front": {
+        "file": "creatures/wolf_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            66,
+            99
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            79
+          ]
+        },
+        "scale": 0.81
+      },
+      "creatures/wolf_walk_back": {
+        "file": "creatures/wolf_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            59,
+            109
+          ],
+          "fit_permille": 1000,
+          "head": [
+            59,
+            34
+          ]
+        },
+        "scale": 1.15
+      },
+      "creatures/wolf_idle_back": {
+        "file": "creatures/wolf_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            59,
+            109
+          ],
+          "fit_permille": 1000,
+          "head": [
+            59,
+            34
+          ]
+        },
+        "scale": 1.18
+      },
       "chars/human_hardened-leathers_down": {
         "file": "chars/human_hardened-leathers_down.png",
         "w": 128,
@@ -6768,6 +6943,52 @@
         },
         "scale": 0.75
       }
-    }
+    },
+    "ramps": [
+      {
+        "id": "wolf-fur-1",
+        "steps": [
+          "#1d141c",
+          "#251a1a",
+          "#28272d",
+          "#393632",
+          "#454541",
+          "#63554a"
+        ]
+      },
+      {
+        "id": "wolf-fur-2",
+        "steps": [
+          "#211519",
+          "#3e3a3a",
+          "#66625e",
+          "#756d69",
+          "#807873",
+          "#877d7a"
+        ]
+      },
+      {
+        "id": "wolf-fur-3",
+        "steps": [
+          "#1b1112",
+          "#211615",
+          "#221e2b",
+          "#332c2d",
+          "#45413e",
+          "#504c4a"
+        ]
+      },
+      {
+        "id": "wolf-fur-4",
+        "steps": [
+          "#231515",
+          "#595954",
+          "#625e5a",
+          "#6b6662",
+          "#8c827e",
+          "#9b8f8c"
+        ]
+      }
+    ]
   }
 }
