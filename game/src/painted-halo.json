@@ -1,0 +1,39 @@
+{
+  "note": "The halo of a race round the figure on a painted land (light-table brief 12.11, rulings 12.11 01:50): data per race, one soft glow the size of the see-through window, the same shape for every race, drawn above the lantern's layers with the figure cut out of it (so the ring does not swallow it, and the figure is never veiled). strength runs from `day` to `dim` (the table is dark though the sun is up: the dead world's noon) along smoothstep(from, to, d), then to `night` as the sun's own light goes out (the lantern's ring brightens the ground there, so a black halo needs less), d = 1 - luma(ambient + sun x elevation) / ref clamped to 0..1: one rule from the table's light, so the dead world (whose 13:00 light is already dark) and every night feel it and a bright land by day barely does. Elf: light add. Skeleton: the same shape in black. Human: none. The numbers are tuned (by hand, in this file only) against bar H of the rulings file (see DECISIONS 2026-11-12). No animation. `window` adds that much strength as far as the see-through window is open (behind a tall thing the glow is the pale wash of the window).",
+  "ref": 1.05,
+  "from": 0.05,
+  "to": 0.45,
+  "shape": {
+    "w": 44,
+    "h": 80,
+    "core": 0.62
+  },
+  "races": {
+    "core/elf": {
+      "colour": [
+        236,
+        246,
+        205
+      ],
+      "day": 0.03,
+      "dim": 0.12,
+      "night": 0.129,
+      "blend": "add",
+      "window": 0.09
+    },
+    "core/skeleton": {
+      "colour": [
+        0,
+        0,
+        0
+      ],
+      "day": 0.03,
+      "dim": 0.6,
+      "night": 0.31,
+      "blend": "normal",
+      "window": 0.09
+    },
+    "core/human": null
+  },
+  "sunOut": 0.03
+}

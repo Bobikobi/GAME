@@ -24,6 +24,7 @@ import * as Phaser from 'phaser';
 
 import { type Mask, type Shadow, type Sun, type SunTable, SHADOW, downsampleAlpha, footRows, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey } from './cast';
 import { bodyLight, litSide } from './light';
+import { type HerSun, composeShadows } from './her-shadow';
 
 /**
  * By night the sun is down, and a body inside a light's pool casts from that light (STYLE 4 "Night"): the scene
@@ -47,6 +48,8 @@ export interface Caster {
   enabled: boolean;
   /** a body (the player, the people): STYLE 4's body light, one step on each side, baked per sun key */
   readonly body: boolean;
+  /** by night, the shadows this caster casts from the lights near it, at its feet (world px): one thing's own answer, so nothing else casts from a light and no layer repaints when a light moves (her.ts) */
+  suns?: (x: number, y: number) => readonly HerSun[];
 }
 
 /** A moving caster's own shadow: its image, its contact line, and the texture both show now. */
@@ -129,6 +132,23 @@ export class CastLayer {
   private readonly bodyTex = new Set<string>();
   /** the lights' suns by night, when the scene has a light layer */
   night: NightSun | undefined;
+  /** a painted scene's shadow (painted.ts): white shapes multiplied in at this tint, so it takes the sun away and leaves the colour of what it falls on */
+  multiply: { tint: number; blur: number } | undefined;
+  /** the tint a shadow of a lamp's takes: what the light it adds leaves of the ground's flat light (by night, when the sun's own tint is none); set by a painted land */
+  nightTint: ((add: readonly number[]) => number) | undefined;
+  /**
+   * The share (0 to 1) of the light a cover already takes at a world point: a moving caster's own shadow weakens by it, so under a wood's cover the figure's shadow is not a second
+   * shade laid on the first. Unset leaves every shadow whole.
+   */
+  weaken: ((x: number, y: number) => number) | undefined;
+  /** a moving caster's own shadow is laid at this depth instead of its layer's (a measuring lever: S4's positive control lifts her shadow over what stands in front of her) */
+  ownDepth: number | undefined;
+  /** how many own shadow textures were made (each is one canvas upload): a walk among lights makes a few and then reuses them */
+  ownMade = 0;
+  /** counts the layers' paints, for whoever keeps a copy of them */
+  version = 0;
+  /** the layers' canvas now, in world units: a shader lying over them reads the shadow from it */
+  private box: { x: number; y: number; w: number; h: number } | undefined;
 
   constructor(scene: Phaser.Scene, sun: SunTable, density = 1, densityOf: (key: string) => number = () => 1) {
     this.scene = scene;
@@ -177,6 +197,11 @@ export class CastLayer {
     this.bodies.clear();
   }
 
+  /** Where the layers' canvas lies in the world, once something was laid. */
+  canvasBox(): { x: number; y: number; w: number; h: number } | undefined {
+    return this.box;
+  }
+
   /**
    * Lays the shadows of this minute into the two layers, around the view of the camera. Every
    * caster's runs are painted opaque, so two shadows that meet are one shape; the layer is
@@ -184,7 +209,7 @@ export class CastLayer {
    */
   update(minute: number, view?: Phaser.Geom.Rectangle): void {
     const day = sunAt(this.sun, minute);
-    if (!day.up && !this.night) {
+    if (!day.up && !this.night && !this.casters.some((c) => c.suns)) {
       this.hide();
       return;
     }
@@ -205,6 +230,7 @@ export class CastLayer {
     const ww = (Math.ceil(v.width / SNAP) + 1) * SNAP;
     const wh = (Math.ceil(v.height / SNAP) + 1) * SNAP;
     const area = new Phaser.Geom.Rectangle(ox, oy, ww, wh);
+    this.box = { x: ox, y: oy, w: ww, h: wh };
     const draws: Record<CastLayerName, Draw[]> = { under: [], standing: [] };
     const head = `${shear}|${ox},${oy},${ww},${wh}`;
     const sig: Record<CastLayerName, string> = { under: head, standing: head };
@@ -214,12 +240,15 @@ export class CastLayer {
       if (!caster.enabled) continue;
       const img = caster.image;
       if (!img.visible || img.alpha <= MIN_ALPHA) continue;
-      const sun = day.up ? day : this.night?.(img.x, img.y);
+      // by night a caster with its own lights (her) casts from each; the rest cast from the one light whose pool holds them, when the scene has a light layer
+      const mine = !day.up ? caster.suns?.(img.x, img.y) : undefined;
+      const sun = mine ? mine[0] : day.up ? day : this.night?.(img.x, img.y);
       if (!sun) continue;
-      const own = day.up ? '' : `@${sunKey(sun)}`;
+      const own = day.up ? '' : `@${mine ? mine.map((m) => `${sunKey(m)}:${m.alpha}`).join('+') : sunKey(sun)}`;
       if (caster.body && this.placeBody(caster, sun)) lit.add(caster);
       // a thing on a beat casts its first frame, so the beat leaves the layer as it is
-      const frame = caster.mode === 'rest' && img.texture.has('0') ? img.texture.get('0') : img.frame;
+      const rest = caster.mode === 'rest' ? (img.getData('rest') as string | undefined) : undefined;
+      const frame = rest !== undefined ? img.texture.get(rest) : caster.mode === 'rest' && img.texture.has('0') ? img.texture.get('0') : img.frame;
       if (!frame) continue;
       const tex = img.texture.key;
       const density = this.densityOf(tex);
@@ -227,20 +256,22 @@ export class CastLayer {
       const width = frame.cutWidth / density;
       const height = frame.cutHeight / density;
       const left = img.x - width / 2;
-      const feet = img.y;
+      // a frame with room below the feet stands on its origin; the shadow's rows are counted from the frame's bottom edge
+      const feet = this.multiply ? img.y + (1 - img.originY) * height : img.y;
       if (!this.inView(left, feet - height, width, height, area)) continue;
       const maskKey = `${tex}#${frame.name}`;
       const flip = img.flipX;
-      const shadow = this.shadowFor(maskKey, frame, density, flip, sun, own);
+      const shadow = mine ? this.shadowOfMany(maskKey, frame, density, flip, mine, own) : this.shadowFor(maskKey, frame, density, flip, sun, own);
       if (!shadow || shadow.spans.length === 0) continue;
       if (caster.mode === 'moving') {
-        this.placeOwn(caster, shadow, `${maskKey}${flip ? '~' : ''}${own}`, left, feet, sun.alpha);
+        this.placeOwn(caster, shadow, `${maskKey}${flip ? '~' : ''}${own}`, left, feet, mine ? mine.reduce((a, m) => Math.max(a, m.alpha), 0) * this.sun.alpha : sun.alpha, mine && this.nightTint ? this.nightTint(mine[0]!.add) : undefined);
         placed.add(caster);
         continue;
       }
       const x = Math.round((left - ox) * this.density);
       // the shadow's row 0 on the sprite's lowest row, not on the frame's edge under it (footRows)
-      const y = footRows(Math.round((feet - oy) * this.density), shadow).shadow;
+      // the standard's shadow starts a little under the feet, by 3% of the piece's height
+      const y = footRows(Math.round((feet - oy) * this.density), shadow).shadow + (this.multiply ? Math.trunc(frame.cutHeight * 0.03) : 0);
       draws[caster.layer].push({ layer: caster.layer, shadow, x, y });
       // a plane is drawn at one alpha: by night, the strongest of the gated lights its shadows come from
       nightAlpha = Math.max(nightAlpha, sun.alpha);
@@ -254,12 +285,26 @@ export class CastLayer {
         this.paint(p, draws[name], ww * this.density, wh * this.density, ox, oy);
         p.painted = sig[name];
       }
-      for (let i = 0; i < p.used; i++) p.cells[i]!.setAlpha(alpha);
-      p.contact.setPosition(ox, oy).setVisible(true);
+      for (let i = 0; i < p.used; i++) {
+        const cell = p.cells[i]!;
+        if (this.multiply) cell.setBlendMode(Phaser.BlendModes.MULTIPLY).setTint(this.multiply.tint).setAlpha(1);
+        else cell.setAlpha(alpha);
+      }
+      p.contact.setPosition(ox, oy).setVisible(!this.multiply);
     }
     for (const [caster, own] of this.owns) if (!placed.has(caster)) this.hideOwn(own);
     // the last shear's textures go once nothing shows them
-    for (const key of stale) if (!this.ownTex.has(key) && this.scene.textures.exists(key)) this.scene.textures.remove(key);
+    for (const key of stale) if (!this.ownTex.has(key)) this.dropTexture(key);
+  }
+
+  /**
+   * Removes an own shadow's texture and lets go of every image that still names it. A hidden image keeps the key of the texture it showed last: when that key came round again
+   * (the same sun and the same frame, a day later or in a measure that jumps the clock) the texture was made new under the old key, the image's key matched and it was never set to
+   * the new texture, so it was drawn from a destroyed frame and Phaser's render step died on a null source (found 14.11, round 5 R1; born with the pass on 24.10).
+   */
+  private dropTexture(key: string): void {
+    for (const own of this.owns.values()) if (own.key === key) own.key = '';
+    if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
   }
 
   /** Turns the pass off, for the night and for a scene that is leaving. */
@@ -358,22 +403,23 @@ export class CastLayer {
    * Lays a moving caster's shadow through its own image: the texture of this frame and shear is made the
    * first time it is needed and kept, so a walk only places an image and swaps among a few textures.
    */
-  private placeOwn(caster: Caster, shadow: Shadow, shadowKey: string, left: number, feet: number, alpha: number): void {
+  private placeOwn(caster: Caster, shadow: Shadow, shadowKey: string, left: number, feet: number, alpha: number, tint?: number): void {
     const key = `cast:${shadowKey}@${this.shadowsSun}`;
     let corner = this.ownTex.get(key);
     if (!corner) {
       const box = shadowBox(shadow);
-      if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+      this.dropTexture(key);
       const tex = this.scene.textures.createCanvas(key, box.w, box.h) as Phaser.Textures.CanvasTexture;
       tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
       const ctx = tex.getContext();
-      ctx.fillStyle = INK;
+      ctx.fillStyle = this.multiply ? '#ffffff' : INK;
       for (const span of shadow.spans) ctx.fillRect(span.x - box.x, span.y - box.y, span.w, 1);
       tex.refresh();
       corner = { x: box.x, y: box.y };
       this.ownTex.set(key, corner);
+      this.ownMade++;
     }
-    const depth = CAST_DEPTH[caster.layer];
+    const depth = this.ownDepth ?? CAST_DEPTH[caster.layer];
     let own = this.owns.get(caster);
     if (!own) {
       own = {
@@ -383,6 +429,7 @@ export class CastLayer {
       };
       this.owns.set(caster, own);
     }
+    own.image.setDepth(depth);
     const scale = 1 / this.density;
     if (own.key !== key) {
       own.image.setTexture(key);
@@ -394,8 +441,10 @@ export class CastLayer {
     // on the layer's grid, as a painted shadow would lie
     const x = Math.round(left * this.density) * scale;
     const y = footRows(Math.round(feet * this.density), shadow).shadow * scale;
-    own.image.setPosition(x + corner.x * scale, y + corner.y * scale).setScale(scale).setAlpha(alpha).setVisible(true);
-    own.contact.setPosition(x, y).setVisible(true);
+    const keep = this.multiply && this.weaken ? 1 - Math.min(1, Math.max(0, this.weaken(caster.image.x, feet))) : 1;
+    own.image.setPosition(x + corner.x * scale, y + corner.y * scale).setScale(scale).setAlpha(this.multiply ? keep : alpha).setVisible(true);
+    if (this.multiply) own.image.setBlendMode(Phaser.BlendModes.MULTIPLY).setTint(tint ?? this.multiply.tint);
+    own.contact.setPosition(x, y).setVisible(!this.multiply);
   }
 
   private hideOwn(own: Own): void {
@@ -406,10 +455,18 @@ export class CastLayer {
 
   /** Paints one layer's shadows and contact lines, uploads its canvas once, and lays the cells its shadows reach. */
   private paint(p: Plane, draws: readonly Draw[], cw: number, ch: number, ox: number, oy: number): void {
-    if (p.tex.width !== cw || p.tex.height !== ch) p.tex.setSize(cw, ch);
+    if (p.tex.width !== cw || p.tex.height !== ch) {
+      p.tex.setSize(cw, ch);
+      // the squares made before the canvas changed size keep the picture coordinates of the old size: lay them again on the new one (found 12.11 on the column: after a zoom change
+      // a shadow was cut at a square's edge, the square showing another part of the canvas)
+      for (const n of p.tex.getFrameNames(false)) {
+        const f = p.tex.get(n);
+        f.setCutPosition(f.cutX, f.cutY);
+      }
+    }
     const ctx = p.tex.getContext();
     ctx.clearRect(0, 0, cw, ch);
-    ctx.fillStyle = INK;
+    ctx.fillStyle = this.multiply ? '#ffffff' : INK;
     p.contact.clear();
     p.contact.fillStyle(SHADOW.ink, SHADOW.contact);
     const scale = 1 / this.density;
@@ -418,6 +475,14 @@ export class CastLayer {
       // the contact line under the feet: the decided 45%, one layer pixel deep, on the row under the feet row
       for (const [a, b] of d.shadow.contact) p.contact.fillRect((d.x + a) * scale, (d.y + 1) * scale, (b - a + 1) * scale, scale);
     }
+    if (this.multiply?.blur) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'copy';
+      ctx.filter = `blur(${this.multiply.blur}px)`;
+      ctx.drawImage(ctx.canvas, 0, 0);
+      ctx.restore();
+    }
+    this.version++;
     // the canvas was painted after it was made, so it is uploaded now
     p.tex.refresh();
     // the squares a shadow reaches, each drawn as a frame of the canvas (the canvas is a whole number of them)
@@ -453,6 +518,22 @@ export class CastLayer {
 
   private inView(x: number, y: number, w: number, h: number, view: Phaser.Geom.Rectangle): boolean {
     return x + w >= view.x - 8 && x <= view.right + 8 && y + h >= view.y - 8 && y <= view.bottom + 8;
+  }
+
+  /** A mask's shadows under several suns laid as one (her lights by night, her-shadow.ts), kept by the suns' keys. */
+  private shadowOfMany(maskKey: string, frame: Phaser.Textures.Frame, density: number, flip: boolean, suns: readonly HerSun[], own: string): Shadow | null {
+    const key = `${flip ? `${maskKey}~` : maskKey}${own}`;
+    const hit = this.shadows.get(key);
+    if (hit) return hit;
+    const each: Shadow[] = [];
+    for (const s of suns) {
+      const one = this.shadowFor(maskKey, frame, density, flip, s, `@${sunKey(s)}`);
+      if (one) each.push(one);
+    }
+    if (each.length === 0) return null;
+    const shadow = composeShadows(each, suns.map((s) => s.alpha));
+    this.shadows.set(key, shadow);
+    return shadow;
   }
 
   /** A mask's shadow under this sun, mirrored for a flipped sprite, kept until the shear moves. */

@@ -51,6 +51,12 @@ export interface Sun {
   length: number;
   /** the cast shadow's alpha for this bundle */
   alpha: number;
+  /**
+   * Art px of ground the caster's footprint is deep, across the whole shadow (round 5, R2): every row of the shadow is laid on `thick` ground rows (from `thick >> 1` above its line to the rest below it), the
+   * footprint swept along the shadow. Without it a light level with the caster collapses every row of the body onto one ground row, and the shadow is a ruled line 1 art px thick; with it the shadow keeps
+   * the footprint's depth at every angle. Absent or 0 is none (the day's sun has none: its shadow is the land's own and unchanged).
+   */
+  thick?: number;
 }
 
 /**
@@ -209,6 +215,9 @@ export function shadowOf(mask: Mask, sun: Sun): Shadow {
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
   let height = 0;
+  const thick = Math.max(0, Math.round(sun.thick ?? 0));
+  const k0 = -(thick >> 1);
+  const k1 = k0 + Math.max(1, thick) - 1;
   for (let y = 0; y <= mask.feet; y++) {
     const row = mask.rows[y];
     if (!row || row.length === 0) continue;
@@ -216,10 +225,12 @@ export function shadowOf(mask: Mask, sun: Sun): Shadow {
     const dy = roundHalf(z * sun.sy);
     const dx = roundHalf(z * sun.sx);
     for (const [a, b] of row) {
-      spans.push({ x: a + dx, y: dy, w: b - a + 1 });
+      for (let k = k0; k <= k1; k++) {
+        spans.push({ x: a + dx, y: dy + k, w: b - a + 1 });
+        height = Math.max(height, dy + k + 1);
+      }
       minX = Math.min(minX, a + dx);
       maxX = Math.max(maxX, b + dx);
-      height = Math.max(height, dy + 1);
     }
   }
   return { spans, minX: spans.length > 0 ? minX : 0, maxX, height, contact: mask.rows[mask.feet] ?? [], base: mask.feet - mask.h };
@@ -238,7 +249,7 @@ export function footRows(edge: number, shadow: Pick<Shadow, 'base'>): { feet: nu
 
 /** A stable key for the sun's shear, so the scene can tell when the direction moved. */
 export function sunKey(sun: Sun, precision = 64): string {
-  return `${roundHalf(sun.sx * precision)}:${roundHalf(sun.sy * precision)}`;
+  return `${roundHalf(sun.sx * precision)}:${roundHalf(sun.sy * precision)}${sun.thick ? `:t${sun.thick}` : ''}`;
 }
 
 /**

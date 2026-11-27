@@ -3,7 +3,21 @@ import { describe, expect, test } from 'vitest';
 import {
   DUSK, HEAD_GLOW, HOLE, LIGHT_POOL, NIGHT, POOL_DITHER, POOL_RADIUS, POOL_STEPS, READ, bankAt, bodyLight, bodyStep, cloudAt, cutAt, cutKeep, dappleAt, duskAt, frameAlpha, frameAt, hourAt,
   litSide, lumaOf, nightAt, poolAt, poolColour, poolDisc, poolStep, poolSun, readableAlpha, shadeAt, shaftAt, tableOf, washAt, warmth,
+  PAINTED_POOL,
+  paintedPoolTexel,
+  paintedPoolStep,
+  PAINTED_LIGHTS,
+  FLAME_LEVELS,
+  flameLevel,
+  lightNow,
+  poolJitter,
+  poolGain,
+  poolRadiusArt,
+  poolTexelValue,
 } from '../src/light.js';
+import { FIGURE_ART_H } from '../src/contact.js';
+import { groundLightOf, waterLook, type GroundLight } from '../src/look.js';
+import lightTables from '../src/painted-light.json';
 
 /**
  * ART_SYSTEM section 2: one module holds the light, and its numbers are today's numbers. Every
@@ -265,5 +279,231 @@ describe('frameAlpha: the frame is an edge by day and whole by night', () => {
       expect(a).toBeGreaterThanOrEqual(last - 1e-9);
       last = a;
     }
+  });
+});
+
+describe('the lantern on a painted land: light, not paint', () => {
+  const R = poolRadiusArt();
+  const c = R + 1;
+  test('the full radius is between 2.2 and 3 figure heights (P6) and the figure stands whole in the core', () => {
+    expect(R / FIGURE_ART_H).toBeGreaterThanOrEqual(2.2);
+    expect(R / FIGURE_ART_H).toBeLessThanOrEqual(3);
+    // her feet are 40 art px under the lamp, her head 11 above: the core's solid part holds both
+    expect(PAINTED_POOL.edges[0]! * R - PAINTED_POOL.band).toBeGreaterThan(40);
+  });
+  test('at least 5 whole steps fall from the core to nothing; none above 30 percent of the core, the outermost at most 10 percent (P2)', () => {
+    const lv = [...PAINTED_POOL.levels, 0];
+    expect(PAINTED_POOL.levels[0]).toBe(1);
+    expect(PAINTED_POOL.levels.length).toBeGreaterThanOrEqual(5);
+    for (let i = 0; i < lv.length - 1; i++) expect(lv[i]! - lv[i + 1]!).toBeLessThanOrEqual(0.3);
+    expect(PAINTED_POOL.levels[PAINTED_POOL.levels.length - 1]).toBeLessThanOrEqual(0.1);
+    // the outermost boundary's wanderings stay inside the full radius
+    const room = PAINTED_POOL.jitter.reduce((a, b) => a + b, 0);
+    expect(PAINTED_POOL.edges[PAINTED_POOL.edges.length - 1]! * R + room).toBeLessThanOrEqual(R);
+  });
+  test('the texture holds the steps and only the steps: a level, or the next level in the dither band, never a ramp (P3)', () => {
+    const seen = new Set<number>();
+    let inBand = 0;
+    let broken = 0;
+    for (let y = 0; y < 2 * c; y++) {
+      for (let x = 0; x < 2 * c; x++) {
+        const f = paintedPoolTexel(x, y, c);
+        seen.add(f);
+        const d = Math.hypot(x + 0.5 - c, y + 0.5 - c);
+        if (d > R) expect(f).toBe(0);
+        // the middle of one boundary's band, which wanders with the angle: both levels appear
+        const edge = PAINTED_POOL.edges[3]! * R + poolJitter(3, Math.atan2(y + 0.5 - c, x + 0.5 - c));
+        if (d > edge - PAINTED_POOL.band / 2 - 0.5 && d <= edge - PAINTED_POOL.band / 2 + 0.5) {
+          inBand++;
+          if (f === PAINTED_POOL.levels[4]) broken++;
+        }
+      }
+    }
+    expect([...seen].sort()).toEqual([0, ...PAINTED_POOL.levels].sort());
+    expect(broken / inBand).toBeGreaterThan(0.2);
+    expect(broken / inBand).toBeLessThan(0.8);
+  });
+  test('no step is a circle: along 16 rays each boundary\'s radius spreads by at least 2 art px (R1)', () => {
+    for (let i = 0; i < PAINTED_POOL.edges.length; i++) {
+      const r: number[] = [];
+      for (let k = 0; k < 16; k++) r.push(PAINTED_POOL.edges[i]! * R + poolJitter(i, ((k + 0.5) / 16) * 2 * Math.PI));
+      const m = r.reduce((a, b) => a + b, 0) / r.length;
+      const sd = Math.sqrt(r.reduce((a, b) => a + (b - m) ** 2, 0) / r.length);
+      expect(sd).toBeGreaterThanOrEqual(2);
+    }
+  });
+  test('the pattern is the texture\'s own and round: the same texel gives the same value, the four quarters mirror in what they hold', () => {
+    expect(paintedPoolTexel(20, 30, c)).toBe(paintedPoolTexel(20, 30, c));
+    // a texel inside the first step's solid part holds the core's level
+    expect(paintedPoolTexel(c, c, c)).toBe(1);
+    expect(paintedPoolTexel(0, 0, c)).toBe(0);
+  });
+  test('the gain per channel takes the flat ground from its light to its light plus the lamp, warm and never above one pass', () => {
+    const night = [0.172, 0.195, 0.396];
+    const g = poolGain(night, 1);
+    for (let k = 0; k < 3; k++) {
+      expect(g[k]).toBeGreaterThan(0);
+      expect(g[k]).toBeLessThanOrEqual(1);
+      const stack = (1 + g[k]!) ** PAINTED_POOL.passes;
+      expect(stack).toBeCloseTo((night[k]! + PAINTED_POOL.lamp[k]!) / night[k]!, 6);
+    }
+    // the lit ground reads warm: red over blue of the light is at least 1.25 of noon's (about 1)
+    const lit = night.map((b, k) => b + PAINTED_POOL.lamp[k]!);
+    expect(lit[0]! / lit[2]!).toBeGreaterThanOrEqual(1.25);
+    // no night, no light; a bright hour leaves a small gain
+    expect(poolGain(night, 0)).toEqual([0, 0, 0]);
+    expect(poolGain([1, 1, 1], 1)[0]).toBeLessThan(g[0]!);
+  });
+  test('the texture value of a step keeps its share of the core\'s lift on the green channel at night', () => {
+    expect(poolTexelValue(1)).toBeCloseTo(1, 6);
+    expect(poolTexelValue(0)).toBe(0);
+    const g = poolGain(PAINTED_POOL.nominalBase, 1)[1];
+    for (const f of PAINTED_POOL.levels) {
+      const F = (1 + g) ** PAINTED_POOL.passes;
+      const lift = (1 + g * poolTexelValue(f)) ** PAINTED_POOL.passes - 1;
+      expect(lift / (F - 1)).toBeCloseTo(f, 6);
+    }
+  });
+  test('it is drawn on the art pixel: at least 4 texels to the world pixel', () => {
+    expect(PAINTED_POOL.grain).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('the water follows the world table through the ground light (13.11 round 3, order 2)', () => {
+  const rows = (lightTables.worlds as unknown as Record<string, { rows: Array<GroundLight & { minute: number }> }>)['river']!.rows;
+  const at = (m: number): GroundLight => rows.find((r) => r.minute === m)!;
+  test('at 13:00 the factor is 1: the water keeps its old look', () => {
+    const noon = at(780);
+    const w = waterLook(noon, noon);
+    for (let c = 0; c < 3; c++) {
+      expect(w.tint[c]).toBeCloseTo(0.5 + 0.5 * (noon.amb[c]! + noon.sun[c]! * noon.elev), 9);
+      expect(w.refl[c]).toBeCloseTo(noon.amb[c]! + noon.sun[c]! * noon.elev * 0.8, 9);
+    }
+  });
+  test('at every hour the water tint over its noon look is the flat ground light over its noon light, per channel', () => {
+    const noon = at(780);
+    const w0 = waterLook(noon, noon);
+    for (const m of [0, 390, 450, 1050, 1170, 1230]) {
+      const w = waterLook(at(m), noon);
+      const f = groundLightOf(at(m)).flat;
+      const g = groundLightOf(noon).flat;
+      for (let c = 0; c < 3; c++) expect(w.tint[c]! / w0.tint[c]!).toBeCloseTo(f[c]! / g[c]!, 9);
+    }
+  });
+  test('the night water is dark and bluer than red (the ground beside it is)', () => {
+    const n = waterLook(at(0), at(780)).tint;
+    expect(n[2]!).toBeGreaterThan(n[0]!);
+    expect(n[0]!).toBeLessThan(0.25);
+  });
+});
+
+describe('the table of light kinds (order 3, F1 and F3)', () => {
+  test('the torch is a row of the one table, redder than the lantern, and the lantern is the pool\'s own colour', () => {
+    expect(PAINTED_LIGHTS.lantern.lamp).toEqual(PAINTED_POOL.lamp);
+    const rb = (k: 'lantern' | 'torch' | 'lamp') => PAINTED_LIGHTS[k].lamp[0] / PAINTED_LIGHTS[k].lamp[2];
+    expect(rb('torch')).toBeGreaterThan(rb('lantern'));
+    // the ground's red over blue under the torch against the lantern's, at the night's flat ground light: at least 1.10 (F1)
+    const base = PAINTED_POOL.nominalBase;
+    const rob = (k: 'lantern' | 'torch') => {
+      const g = poolGain(base, PAINTED_LIGHTS[k].strength, PAINTED_LIGHTS[k].lamp);
+      return (base[0]! * (1 + g[0]) ** PAINTED_POOL.passes) / (base[2]! * (1 + g[2]) ** PAINTED_POOL.passes);
+    };
+    expect(rob('torch') / rob('lantern')).toBeGreaterThanOrEqual(1.1);
+  });
+
+  test('switching the kind sends the table\'s numbers to the light (F3)', () => {
+    for (const k of ['lantern', 'torch', 'lamp'] as const) {
+      const row = PAINTED_LIGHTS[k];
+      const now = lightNow(row, 0);
+      expect(now.radius).toBe(Math.round(poolRadiusArt() * row.reach));
+      expect(now.strength).toBeCloseTo(row.strength, 9);
+      expect(poolGain(PAINTED_POOL.nominalBase, now.strength, row.lamp)).toEqual(poolGain(PAINTED_POOL.nominalBase, row.strength, row.lamp));
+    }
+  });
+
+  test('a steady kind never flickers; a flame is deterministic from the clock and stays within its levels', () => {
+    for (let ms = 0; ms < 5000; ms += 37) expect(flameLevel(PAINTED_LIGHTS.lantern, ms)).toBe(0);
+    const seen = new Set<number>();
+    for (let ms = 0; ms < 20000; ms += 40) {
+      const a = flameLevel(PAINTED_LIGHTS.torch, ms, 3);
+      expect(flameLevel(PAINTED_LIGHTS.torch, ms, 3)).toBe(a);
+      expect(Math.abs(a)).toBeLessThanOrEqual(FLAME_LEVELS);
+      seen.add(a);
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(4);
+    // another light's flame is not in step with this one
+    let same = 0;
+    for (let ms = 0; ms < 20000; ms += 40) if (flameLevel(PAINTED_LIGHTS.torch, ms, 3) === flameLevel(PAINTED_LIGHTS.torch, ms, 4)) same++;
+    expect(same).toBeLessThan(500 * 0.7);
+  });
+
+  test('the flame moves radius and strength together, and the core never moves more than 15% in a step (F2)', () => {
+    const row = PAINTED_LIGHTS.torch;
+    const lo = lightNow(row, -FLAME_LEVELS);
+    const hi = lightNow(row, FLAME_LEVELS);
+    expect(hi.radius).toBeGreaterThan(lo.radius);
+    expect(hi.strength).toBeGreaterThan(lo.strength);
+    let worst = 0;
+    let prev = lightNow(row, flameLevel(row, 0, 1)).strength;
+    for (let ms = row.flicker.every; ms < 60000; ms += row.flicker.every) {
+      const s = lightNow(row, flameLevel(row, ms, 1)).strength;
+      worst = Math.max(worst, Math.abs(s - prev) / prev);
+      prev = s;
+    }
+    expect(worst).toBeLessThanOrEqual(0.15);
+  });
+
+  test('the flame moves on most steps and by no more than two levels at a time', () => {
+    const row = PAINTED_LIGHTS.torch;
+    let moved = 0;
+    let worst = 0;
+    const n = 600;
+    for (let k = 1; k <= n; k++) {
+      const d = Math.abs(flameLevel(row, k * row.flicker.every, 2) - flameLevel(row, (k - 1) * row.flicker.every, 2));
+      worst = Math.max(worst, d);
+      if (d > 0) moved++;
+    }
+    expect(worst).toBeLessThanOrEqual(2);
+    expect(moved / n).toBeGreaterThan(0.5);
+  });
+
+  test('paintedPoolStep and the texel agree, outside is 0, the core is the first step', () => {
+    const R = poolRadiusArt();
+    const c = R + 2;
+    expect(paintedPoolStep(c, c, c)).toBe(1);
+    expect(paintedPoolStep(0, 0, c)).toBe(0);
+    expect(paintedPoolTexel(c, c, c)).toBe(PAINTED_POOL.levels[0]);
+    // a smaller radius is a smaller pool: nothing lit past it
+    for (let x = 0; x < 2 * c; x++) if (Math.hypot(x + 0.5 - c, 0.5) > R * 0.9 + 1) expect(paintedPoolStep(x, c, c, Math.round(R * 0.9))).toBe(0);
+  });
+});
+
+/** The wash as it was read before the ring of keys was walked without a copy: the reference the walk must equal at every minute. */
+function washRing(table: readonly { at: number; tint: number; pct: number }[], minute: number): { tint: number; alpha: number } {
+  const first = table[0]!;
+  if (table.length === 1) return { tint: first.tint, alpha: first.pct / 100 };
+  const last = table[table.length - 1]!;
+  const ring = [...table, { ...first, at: first.at + 1440 }];
+  const m = minute < first.at ? minute + 1440 : minute;
+  for (let i = 0; i < ring.length - 1; i += 1) {
+    const a = ring[i]!;
+    const b = ring[i + 1]!;
+    if (m < a.at || m > b.at) continue;
+    const span = b.at - a.at;
+    const t = span === 0 ? 0 : (m - a.at) / span;
+    return { tint: m === a.at ? a.tint : b.tint, alpha: Math.round(a.pct + (b.pct - a.pct) * t) / 100 };
+  }
+  return { tint: last.tint, alpha: last.pct / 100 };
+}
+
+describe('the wash walks the ring of keys without a copy', () => {
+  const tables = [
+    [{ at: 300, tint: 0x112233, pct: 40 }, { at: 420, tint: 0x445566, pct: 0 }, { at: 1080, tint: 0xeda83a, pct: 0 }, { at: 1200, tint: 0x112233, pct: 40 }],
+    [{ at: 0, tint: 0x112233, pct: 10 }, { at: 720, tint: 0x445566, pct: 0 }, { at: 1439, tint: 0xeda83a, pct: 30 }],
+    [{ at: 1000, tint: 0x112233, pct: 10 }, { at: 1000, tint: 0x445566, pct: 50 }, { at: 1300, tint: 0xeda83a, pct: 30 }],
+    [{ at: 600, tint: 0x112233, pct: 25 }],
+  ];
+  test.each(tables.map((t, i) => [i, t] as const))('table %i: every minute and some between, the same as the copy', (_i, table) => {
+    for (let m = -30; m < 1500; m += 0.5) expect(washAt(table, m)).toEqual(washRing(table, m));
   });
 });

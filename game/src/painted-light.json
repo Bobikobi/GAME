@@ -1,0 +1,1328 @@
+{
+ "rule": "THE RULE (the rows no one has tuned). Sun height h(m) = emax * sin(pi * (m - 330) / 900) between sunrise 05:30 and sunset 20:30 (solar noon 13:00 falls\nout at m = 780), emax = the world's 13:00 elevation; s = h / emax (1 at noon, 0.588 at 17:30). v = (1 - s) / (1 - 0.588) is how far the sun is\nfrom its noon height towards its 17:30 height, the same before and after noon.\n  sun colour, ambient, wall, spec, fill, shift, al, fog: noon row -> 17:30 row by min(v, 1) (a morning mirrors its evening), except the ends:\n  06:30 and 19:30 take DAWN and SUNSET in the elf world (a low sun that is red on the open ground, a shade that keeps its colour, light enough to read); the hour between a\n  key and the mirrored colours (07:30 between DAWN and 08:30, 18:30 between 17:30 and SUNSET) is the straight mix of the two.\n  below the 17:30 height the sun colour and `al` fade to 0 with s / 0.588 and the ambient falls towards the night ambient by 1 - s / 0.588.\n  shadow lean sl = sl13 -/+ (sl17 - sl13) * v, length sq = sq13 + (sq17 - sq13) * v (lean negative before noon: the morning leans left).\n  elevation = h (at least 0.05); the light's direction L keeps its 13:00 / 17:30 heading, turned the same way, one turn per day.\n  night rows (sun down): sun a hundredth of the 17:30 sun, `al` 0 (no sun shadow, the cast table has no key there), ambient = the night ambient\n  = the 17:30 ambient x (0.30, 0.34, 0.52), in the elf world x (0.345, 0.39, 0.60) (tuned on the column: its wild night at 00:00 within 3 levels\n  of the classic valley's); sunset and sunrise rows have `al` 0 so a shadow fades out instead of vanishing.",
+ "worlds": {
+  "undead": {
+   "lands": [
+    "ash"
+   ],
+   "rows": [
+    {
+     "at": "00:00",
+     "minute": 0,
+     "state": "untuned",
+     "sunUp": false,
+     "L": [
+      0.1913,
+      -0.9815
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.126,
+      0.17,
+      0.364
+     ],
+     "sun": [
+      0.0095,
+      0.0038,
+      0.0026
+     ],
+     "sl": 1.2,
+     "sq": 0.42,
+     "al": 0.0,
+     "wall": 8,
+     "spec": 0,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "03:00",
+     "minute": 180,
+     "state": "untuned",
+     "sunUp": false,
+     "L": [
+      -0.0896,
+      -0.996
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.126,
+      0.17,
+      0.364
+     ],
+     "sun": [
+      0.0095,
+      0.0038,
+      0.0026
+     ],
+     "sl": 1.2,
+     "sq": 0.42,
+     "al": 0.0,
+     "wall": 8,
+     "spec": 0,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "05:30",
+     "minute": 330,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.3192,
+      -0.9477
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.126,
+      0.17,
+      0.364
+     ],
+     "sun": [
+      0.0095,
+      0.0038,
+      0.0026
+     ],
+     "sl": -1.8833,
+     "sq": 0.5911,
+     "al": 0.0,
+     "wall": 8.0,
+     "spec": 0.0,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "06:30",
+     "minute": 390,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.4068,
+      -0.9135
+     ],
+     "elev": 0.1559,
+     "amb": [
+      0.23,
+      0.2867,
+      0.4829
+     ],
+     "sun": [
+      0.336,
+      0.1344,
+      0.092
+     ],
+     "sl": -1.4294,
+     "sq": 0.5306,
+     "al": 0.9,
+     "wall": 8.0,
+     "spec": 0.0,
+     "fill": 0.0106,
+     "shift": 0.0248,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "07:30",
+     "minute": 450,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.4908,
+      -0.8713
+     ],
+     "elev": 0.3051,
+     "amb": [
+      0.3294,
+      0.3984,
+      0.5965
+     ],
+     "sun": [
+      0.6574,
+      0.263,
+      0.1799
+     ],
+     "sl": -0.9953,
+     "sq": 0.4727,
+     "al": 0.9,
+     "wall": 8.0,
+     "spec": 0.0,
+     "fill": 0.0208,
+     "shift": 0.0484,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "08:30",
+     "minute": 510,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.5705,
+      -0.8213
+     ],
+     "elev": 0.4408,
+     "amb": [
+      0.42,
+      0.5,
+      0.7
+     ],
+     "sun": [
+      0.95,
+      0.38,
+      0.26
+     ],
+     "sl": -0.6,
+     "sq": 0.42,
+     "al": 0.9,
+     "wall": 8.0,
+     "spec": 0.0,
+     "fill": 0.03,
+     "shift": 0.07,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "09:30",
+     "minute": 570,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.6451,
+      -0.7641
+     ],
+     "elev": 0.5574,
+     "amb": [
+      0.3371,
+      0.3869,
+      0.5643
+     ],
+     "sun": [
+      0.6296,
+      0.282,
+      0.2449
+     ],
+     "sl": -0.2608,
+     "sq": 0.3748,
+     "al": 0.7492,
+     "wall": 6.116,
+     "spec": 0.0,
+     "fill": 0.0187,
+     "shift": 0.0436,
+     "fog": {
+      "bottom": 0.0902,
+      "top": 0.3478
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "10:30",
+     "minute": 630,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.714,
+      -0.7001
+     ],
+     "elev": 0.6495,
+     "amb": [
+      0.2715,
+      0.2975,
+      0.457
+     ],
+     "sun": [
+      0.3763,
+      0.2045,
+      0.233
+     ],
+     "sl": 0.0075,
+     "sq": 0.339,
+     "al": 0.63,
+     "wall": 4.625,
+     "spec": 0.0,
+     "fill": 0.0098,
+     "shift": 0.0228,
+     "fog": {
+      "bottom": 0.114,
+      "top": 0.4015
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "11:30",
+     "minute": 690,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.7766,
+      -0.63
+     ],
+     "elev": 0.7133,
+     "amb": [
+      0.2261,
+      0.2356,
+      0.3827
+     ],
+     "sun": [
+      0.2009,
+      0.1509,
+      0.2247
+     ],
+     "sl": 0.1931,
+     "sq": 0.3142,
+     "al": 0.5475,
+     "wall": 3.594,
+     "spec": 0.0,
+     "fill": 0.0036,
+     "shift": 0.0083,
+     "fog": {
+      "bottom": 0.1305,
+      "top": 0.4386
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "13:00",
+     "minute": 780,
+     "state": "tuned",
+     "sunUp": true,
+     "L": [
+      -0.5,
+      -0.3
+     ],
+     "elev": 0.75,
+     "amb": [
+      0.2,
+      0.2,
+      0.34
+     ],
+     "sun": [
+      0.1,
+      0.12,
+      0.22
+     ],
+     "sl": 0.3,
+     "sq": 0.3,
+     "al": 0.5,
+     "wall": 3,
+     "spec": 0,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.14,
+      "top": 0.46
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "17:30",
+     "minute": 1050,
+     "state": "tuned",
+     "sunUp": true,
+     "L": [
+      -0.85,
+      -0.1
+     ],
+     "elev": 0.4,
+     "amb": [
+      0.42,
+      0.5,
+      0.7
+     ],
+     "sun": [
+      0.95,
+      0.38,
+      0.26
+     ],
+     "sl": 1.2,
+     "sq": 0.42,
+     "al": 0.9,
+     "wall": 8,
+     "spec": 0,
+     "fill": 0.03,
+     "shift": 0.07,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "18:30",
+     "minute": 1110,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.9997,
+      -0.023
+     ],
+     "elev": 0.3051,
+     "amb": [
+      0.3294,
+      0.3984,
+      0.5965
+     ],
+     "sun": [
+      0.6574,
+      0.263,
+      0.1799
+     ],
+     "sl": 1.5953,
+     "sq": 0.4727,
+     "al": 0.9,
+     "wall": 8.0,
+     "spec": 0.0,
+     "fill": 0.0208,
+     "shift": 0.0484,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "19:30",
+     "minute": 1170,
+     "state": "proposal",
+     "sunUp": true,
+     "L": [
+      -0.9975,
+      0.071
+     ],
+     "elev": 0.4,
+     "amb": [
+      0.44,
+      0.5,
+      0.51
+     ],
+     "sun": [
+      1.2,
+      0.5,
+      0.1
+     ],
+     "sl": 2.0294,
+     "sq": 0.5306,
+     "al": 0.9,
+     "wall": 8.0,
+     "spec": 0.0,
+     "fill": 0.0106,
+     "shift": 0.0248,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "20:30",
+     "minute": 1230,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.9864,
+      0.1643
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.126,
+      0.17,
+      0.364
+     ],
+     "sun": [
+      0.0095,
+      0.0038,
+      0.0026
+     ],
+     "sl": 2.4833,
+     "sq": 0.5911,
+     "al": 0.0,
+     "wall": 8.0,
+     "spec": 0.0,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "21:30",
+     "minute": 1290,
+     "state": "untuned",
+     "sunUp": false,
+     "L": [
+      -0.9666,
+      0.2563
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.126,
+      0.17,
+      0.364
+     ],
+     "sun": [
+      0.0095,
+      0.0038,
+      0.0026
+     ],
+     "sl": 1.2,
+     "sq": 0.42,
+     "al": 0.0,
+     "wall": 8,
+     "spec": 0,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "23:00",
+     "minute": 1380,
+     "state": "untuned",
+     "sunUp": false,
+     "L": [
+      -0.921,
+      0.3897
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.126,
+      0.17,
+      0.364
+     ],
+     "sun": [
+      0.0095,
+      0.0038,
+      0.0026
+     ],
+     "sl": 1.2,
+     "sq": 0.42,
+     "al": 0.0,
+     "wall": 8,
+     "spec": 0,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.06,
+      "top": 0.28
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    }
+   ]
+  },
+  "river": {
+   "lands": [
+    "place-drowned-bay",
+    "place-high-rock",
+    "place-old-wood",
+    "pond",
+    "strip-elf-23-r2"
+   ],
+   "rows": [
+    {
+     "at": "00:00",
+     "minute": 0,
+     "state": "tuned on the column 12.11",
+     "sunUp": false,
+     "L": [
+      0.8233,
+      -0.5676
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.1725,
+      0.195,
+      0.396
+     ],
+     "sun": [
+      0.013,
+      0.0092,
+      0.005
+     ],
+     "sl": 1.05,
+     "sq": 0.42,
+     "al": 0.0,
+     "wall": 8,
+     "spec": 0.42,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.016,
+      "top": 0.038
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "03:00",
+     "minute": 180,
+     "state": "tuned on the column 12.11",
+     "sunUp": false,
+     "L": [
+      0.9983,
+      0.0585
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.1725,
+      0.195,
+      0.396
+     ],
+     "sun": [
+      0.013,
+      0.0092,
+      0.005
+     ],
+     "sl": 1.05,
+     "sq": 0.42,
+     "al": 0.0,
+     "wall": 8,
+     "spec": 0.42,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.016,
+      "top": 0.038
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "05:30",
+     "minute": 330,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      0.8195,
+      0.5731
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.1725,
+      0.195,
+      0.396
+     ],
+     "sun": [
+      0.013,
+      0.0092,
+      0.005
+     ],
+     "sl": -1.7935,
+     "sq": 0.5911,
+     "al": 0.0,
+     "wall": 8.0,
+     "spec": 0.42,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.018,
+      "top": 0.05
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "06:30",
+     "minute": 390,
+     "state": "tuned on the column 12.11; ambient lifted V5c 23.11 (the shade of a low sun kept the valley at luma 48 against 97 at noon, a figure at dE 14.6)",
+     "sunUp": true,
+     "L": [
+      0.6742,
+      0.7386
+     ],
+     "elev": 0.183,
+     "amb": [
+      0.64,
+      0.64,
+      0.7
+     ],
+     "sun": [
+      1.6,
+      0.9,
+      0.4
+     ],
+     "sl": -1.3749,
+     "sq": 0.5306,
+     "al": 0.9,
+     "wall": 8.0,
+     "spec": 0.42,
+     "fill": 0.15,
+     "shift": 0.95,
+     "fog": {
+      "bottom": 0.024,
+      "top": 0.06
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "07:30",
+     "minute": 450,
+     "state": "tuned on the column 12.11",
+     "sunUp": true,
+     "L": [
+      0.4961,
+      0.8683
+     ],
+     "elev": 0.3579,
+     "amb": [
+      0.58,
+      0.58,
+      0.68
+     ],
+     "sun": [
+      1.45,
+      0.91,
+      0.45
+     ],
+     "sl": -0.9745,
+     "sq": 0.4727,
+     "al": 0.9,
+     "wall": 8.0,
+     "spec": 0.42,
+     "fill": 0.0854,
+     "shift": 0.4992,
+     "fog": {
+      "bottom": 0.018,
+      "top": 0.045
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "08:30",
+     "minute": 510,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      0.294,
+      0.9558
+     ],
+     "elev": 0.5173,
+     "amb": [
+      0.5,
+      0.5,
+      0.66
+     ],
+     "sun": [
+      1.3,
+      0.92,
+      0.5
+     ],
+     "sl": -0.61,
+     "sq": 0.42,
+     "al": 0.9,
+     "wall": 8.0,
+     "spec": 0.42,
+     "fill": 0.03,
+     "shift": 0.07,
+     "fog": {
+      "bottom": 0.006,
+      "top": 0.016
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "09:30",
+     "minute": 570,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      0.0776,
+      0.997
+     ],
+     "elev": 0.654,
+     "amb": [
+      0.5452,
+      0.549,
+      0.66
+     ],
+     "sun": [
+      0.9834,
+      0.7429,
+      0.4698
+     ],
+     "sl": -0.2972,
+     "sq": 0.3748,
+     "al": 0.8435,
+     "wall": 5.739,
+     "spec": 0.2806,
+     "fill": 0.0187,
+     "shift": 0.0436,
+     "cover": 0.9731,
+     "fog": {
+      "bottom": 0,
+      "top": 0.006
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "10:30",
+     "minute": 630,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.1425,
+      0.9898
+     ],
+     "elev": 0.7621,
+     "amb": [
+      0.581,
+      0.5877,
+      0.66
+     ],
+     "sun": [
+      0.733,
+      0.6028,
+      0.446
+     ],
+     "sl": -0.0498,
+     "sq": 0.339,
+     "al": 0.7988,
+     "wall": 3.95,
+     "spec": 0.1703,
+     "fill": 0.0098,
+     "shift": 0.0228,
+     "cover": 0.675,
+     "fog": {
+      "bottom": 0,
+      "top": 0
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "11:30",
+     "minute": 690,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.3557,
+      0.9346
+     ],
+     "elev": 0.8369,
+     "amb": [
+      0.6058,
+      0.6146,
+      0.66
+     ],
+     "sun": [
+      0.5597,
+      0.5058,
+      0.4295
+     ],
+     "sl": 0.1215,
+     "sq": 0.3142,
+     "al": 0.7678,
+     "wall": 2.712,
+     "spec": 0.0939,
+     "fill": 0.0036,
+     "shift": 0.0083,
+     "cover": 0.4687,
+     "fog": {
+      "bottom": 0,
+      "top": 0
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "13:00",
+     "minute": 780,
+     "state": "tuned",
+     "sunUp": true,
+     "L": [
+      -0.25,
+      0.3
+     ],
+     "elev": 0.88,
+     "amb": [
+      0.62,
+      0.63,
+      0.66
+     ],
+     "sun": [
+      0.46,
+      0.45,
+      0.42
+     ],
+     "sl": 0.22,
+     "sq": 0.3,
+     "al": 0.75,
+     "wall": 2,
+     "spec": 0.05,
+     "fill": 0.0,
+     "shift": 0.0,
+     "cover": 0.35,
+     "fog": {
+      "bottom": 0,
+      "top": 0
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "17:30",
+     "minute": 1050,
+     "state": "tuned",
+     "sunUp": true,
+     "L": [
+      -0.85,
+      -0.1
+     ],
+     "elev": 0.5,
+     "amb": [
+      0.5,
+      0.5,
+      0.66
+     ],
+     "sun": [
+      1.3,
+      0.92,
+      0.5
+     ],
+     "sl": 1.05,
+     "sq": 0.42,
+     "al": 0.9,
+     "wall": 8,
+     "spec": 0.42,
+     "fill": 0.03,
+     "shift": 0.07,
+     "fog": {
+      "bottom": 0.026,
+      "top": 0.062
+     },
+     "warm": [
+      1.11,
+      0.97,
+      0.65
+     ],
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "18:30",
+     "minute": 1110,
+     "state": "tuned on the column 12.11",
+     "sunUp": true,
+     "L": [
+      -0.9435,
+      -0.3314
+     ],
+     "elev": 0.3579,
+     "amb": [
+      0.51,
+      0.47,
+      0.52
+     ],
+     "sun": [
+      1.45,
+      0.81,
+      0.4
+     ],
+     "sl": 1.4145,
+     "sq": 0.4727,
+     "al": 0.75,
+     "wall": 8.0,
+     "spec": 0.42,
+     "fill": 0.0854,
+     "shift": 0.4992,
+     "fog": {
+      "bottom": 0.03,
+      "top": 0.07
+     },
+     "warm": [
+      1.08,
+      0.97,
+      0.74
+     ],
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "19:30",
+     "minute": 1170,
+     "state": "tuned on the column 12.11",
+     "sunUp": true,
+     "L": [
+      -0.848,
+      -0.5299
+     ],
+     "elev": 0.183,
+     "amb": [
+      0.52,
+      0.44,
+      0.38
+     ],
+     "sun": [
+      1.6,
+      0.7,
+      0.3
+     ],
+     "sl": 1.8149,
+     "sq": 0.5306,
+     "al": 0.6,
+     "wall": 8.0,
+     "spec": 0.42,
+     "fill": 0.15,
+     "shift": 0.95,
+     "fog": {
+      "bottom": 0.034,
+      "top": 0.076
+     },
+     "warm": [
+      1.03,
+      0.98,
+      0.9
+     ],
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "20:30",
+     "minute": 1230,
+     "state": "untuned",
+     "sunUp": true,
+     "L": [
+      -0.7115,
+      -0.7027
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.1725,
+      0.195,
+      0.396
+     ],
+     "sun": [
+      0.013,
+      0.0092,
+      0.005
+     ],
+     "sl": 2.2335,
+     "sq": 0.5911,
+     "al": 0.0,
+     "wall": 8.0,
+     "spec": 0.42,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.03,
+      "top": 0.07
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "21:30",
+     "minute": 1290,
+     "state": "tuned on the column 12.11",
+     "sunUp": false,
+     "L": [
+      -0.5404,
+      -0.8414
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.1725,
+      0.195,
+      0.396
+     ],
+     "sun": [
+      0.013,
+      0.0092,
+      0.005
+     ],
+     "sl": 1.05,
+     "sq": 0.42,
+     "al": 0.0,
+     "wall": 8,
+     "spec": 0.42,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.022,
+      "top": 0.054
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    },
+    {
+     "at": "23:00",
+     "minute": 1380,
+     "state": "tuned on the column 12.11",
+     "sunUp": false,
+     "L": [
+      -0.2375,
+      -0.9714
+     ],
+     "elev": 0.05,
+     "amb": [
+      0.1725,
+      0.195,
+      0.396
+     ],
+     "sun": [
+      0.013,
+      0.0092,
+      0.005
+     ],
+     "sl": 1.05,
+     "sq": 0.42,
+     "al": 0.0,
+     "wall": 8,
+     "spec": 0.42,
+     "fill": 0.0,
+     "shift": 0.0,
+     "fog": {
+      "bottom": 0.016,
+      "top": 0.038
+     },
+     "wind": {
+      "none": [
+       0.97,
+       0.24,
+       2.8125,
+       1
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "overrides": {
+  "note": "none today: every land of a world takes the world's rows as they are. A land that must differ names the fields here, with the reason."
+ },
+ "aliases": {
+  "warm-ash": "river"
+ }
+}
