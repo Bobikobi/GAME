@@ -59,6 +59,16 @@ describe('which event starts which moment (momentsOf)', () => {
     expect(one({ e: 'fight_miss', ...outcome('foe', [2, 3]), kind: 'miss' })).toEqual([]);
   });
 
+  it('a stone that takes small game and one that comes down beside it have their moments (#923): quiet, laid by the scene when the stone lands', () => {
+    for (const id of ['game-hit', 'game-miss'] as const) {
+      expect(MOMENTS[id].danger, id).toBe(false);
+      expect(MOMENTS[id].parts.length, id).toBeGreaterThan(0);
+      expect(WORLD, id).toContain(`id: '${id}'`);
+    }
+    // the kernel tells the take before the stone has come down; the scene lays the moment at the landing
+    expect(momentsOf([{ e: 'take_prey' }])).toEqual([]);
+  });
+
   it('the rest of the kernel\'s events start no moment (they have their own: the item lifting, the coins, the banner)', () => {
     expect(momentsOf([{ e: 'gain', item: 'core/log', qty: 1 }, { e: 'gold', delta: 5 }, { e: 'place', id: 'core/town' }])).toEqual([]);
   });

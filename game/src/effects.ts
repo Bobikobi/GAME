@@ -173,7 +173,9 @@ export type MomentId =
   | 'foe-hurt'
   | 'dodge'
   | 'guard'
-  | 'foe-fall';
+  | 'foe-fall'
+  | 'game-hit'
+  | 'game-miss';
 
 export interface Moment {
   parts: readonly Part[];
@@ -220,6 +222,10 @@ export const MOMENTS: Readonly<Record<MomentId, Moment>> = {
   guard: { parts: [burst('fx-spark', 5, 'fan', 7)], danger: true },
   // a foe falls: the ground it hits
   'foe-fall': { parts: [ground(10), burst('fx-dust', 6, 'ground')], danger: true },
+  // a stone strikes small game (#923): the ground thrown up where it stood and a few motes rising, a quiet success
+  'game-hit': { parts: [ground(5, 'fan'), burst('fx-mote', 3, 'rise', 6)], danger: false },
+  // a stone comes down beside the game it was aimed at: the grass it startled kicked up where the animal was
+  'game-miss': { parts: [ground(4, 'step')], danger: false },
 };
 
 export const MOMENT_IDS = Object.keys(MOMENTS) as MomentId[];
@@ -242,7 +248,7 @@ export interface MomentSpawn {
  * The moments a batch of the kernel's events starts. A stone lifted, set down or pushed (`lift`, `setdown`, `push`); food eaten; a
  * tool broken; a level; a quest done; a fire out; a hunt ended in a safe place; a hurt of the player's body (`hurt`, or a foe's
  * `hit`), once a batch; a foe's body hit by the player; a blow dodged or guarded; a foe fallen. The jump's takeoff and landing and
- * the fish's catch are the scene's (they happen later than they are told, as the landing dust does).
+ * the fish's catch are the scene's (they happen later than they are told, as the landing dust does), and so are a stone's strike on small game and its miss beside it (`game-hit`, `game-miss`, #923): laid where the animal stood when the stone comes down.
  */
 export function momentsOf(events: readonly GameEvent[]): MomentSpawn[] {
   const out: MomentSpawn[] = [];

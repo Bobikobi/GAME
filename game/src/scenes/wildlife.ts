@@ -6,7 +6,7 @@
  * in the kit later is picked up with no code change. Display only: every rule is the kernel's.
  */
 import type * as Phaser from 'phaser';
-import { type Bundle, type PublicState, THINK_MS, type WildEvent, type WildSense, type WildWorld, wildShown, wildStep, wildWorld } from '@game/kernel';
+import { type Bundle, type PublicState, THINK_MS, type WildEvent, type WildSense, type WildWorld, wildNoise, wildShown, wildStep, wildWorld } from '@game/kernel';
 import { type CreatureSprites, WalkWatch, clipFrame, creatureClipFor, creatureSheets, creatureX, viewOfHeading } from '../clips';
 import { T } from '../config';
 import type { Dir } from '../input';
@@ -59,6 +59,11 @@ export class WildLife {
   /** The kernel's world, read only: the e2e and the tests read the animals' tiles from it. */
   get state(): Readonly<WildWorld> {
     return this.world;
+  }
+
+  /** A stone came down on `tile` at game ms `tick`: every animal near enough hears it at its next think (#923), a hare of them goes to ground. */
+  noise(tile: readonly [number, number], tick: number): void {
+    wildNoise(this.world, [tile[0], tile[1]], tick);
   }
 
   /** Steps the kernel's world to game ms `tick` and places every animal; `now` is the scene's clock for the sheets' frames. */
