@@ -603,7 +603,7 @@ export class WorldScene extends Phaser.Scene {
    * section 2, "the jump row"): the figure holds its standing frame and rises on an arc while its feet, and so the cast
    * shadow, travel the ground from the takeoff tile to the landing tile. `start` and `ms` are the scene clock's.
    */
-  private hop: { from: [number, number]; to: [number, number]; start: number; ms: number; peak: number } | null = null;
+  private hop: { from: [number, number]; to: [number, number]; start: number; ms: number; peak: number; harm: number } | null = null;
   /** a jump asked of the kernel and not answered yet (a server answers later): the hop's wait stands from now */
   private hopAsked = false;
   /** a fall that the hop in the air holds back until it lands: where the body fell, and where it wakes */
@@ -4432,7 +4432,9 @@ export class WorldScene extends Phaser.Scene {
       sound.sfx('step');
       // the figure holds its standing frame in the air; a longer way over a gap rises a little higher
       this.faceFrame();
-      this.hop = { from, to: [to[0], to[1]], start: this.time.now, ms: this.b.params.jump.air_ms, peak: lands.across ? 26 : 18 };
+      this.hop = { from, to: [to[0], to[1]], start: this.time.now, ms: this.b.params.jump.air_ms, peak: lands.across ? 26 : 18, harm: lands.harm };
+      // the feet leave the ground: a little of it kicked back where they stood
+      this.playMoment({ id: 'jump-off', at: { on: 'tile', tile: from } });
     });
   }
 
@@ -4720,6 +4722,8 @@ export class WorldScene extends Phaser.Scene {
     s.pos = [hop.to[0], hop.to[1]];
     this.body.place(hop.to);
     if (RICH.motion) this.dustAt(hop.to[0], hop.to[1]);
+    // a landing that hurt (a fall of two levels or more) throws more of the ground out under the dust
+    if (hop.harm > 0) this.playMoment({ id: 'hard-landing', at: { on: 'tile', tile: hop.to } });
     this.arrive(s);
     this.drawBody();
     this.faceFrame();

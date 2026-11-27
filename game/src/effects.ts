@@ -157,6 +157,11 @@ export type Part =
   | { fx: 'flash'; ms: number };
 
 export type MomentId =
+  | 'jump-off'
+  | 'hard-landing'
+  | 'stone-lift'
+  | 'stone-down'
+  | 'stone-push'
   | 'fish-catch'
   | 'eat'
   | 'tool-broke'
@@ -173,6 +178,16 @@ const ground = (n: number, style: BurstStyle = 'ground'): Part => ({ fx: 'ground
 
 /** Every moment's parts. The counts are bits of 1 to 3 world pixels: a moment is read at the game's zoom, not a close-up. */
 export const MOMENTS: Readonly<Record<MomentId, Moment>> = {
+  // the feet leave the ground: a little of it kicked back
+  'jump-off': { parts: [ground(4)], danger: false },
+  // a fall of two levels or more: more ground thrown out under the landing dust (the hurt's own flash and shake are jolt.ts's)
+  'hard-landing': { parts: [ground(8), burst('fx-dust', 4, 'ground')], danger: true },
+  // a stone leaves the ground it lay on
+  'stone-lift': { parts: [ground(3, 'fan')], danger: false },
+  // a large stone set down: a thud of ground out to both sides
+  'stone-down': { parts: [ground(7), burst('fx-dust', 3, 'ground')], danger: false },
+  // a pushed stone scrapes onto its new tile
+  'stone-push': { parts: [ground(5)], danger: false },
   // the fish comes out of the water: a ring and a few drops thrown up
   'fish-catch': { parts: [{ fx: 'ring' }, burst('fx-drop', 5, 'fan', 1)], danger: false },
   // food: a few motes rise off the body
@@ -218,6 +233,15 @@ export function momentsOf(events: readonly GameEvent[]): MomentSpawn[] {
   const tile = (t: readonly [number, number]): MomentAt => ({ on: 'tile', tile: [t[0], t[1]] });
   for (const e of events) {
     switch (e.e) {
+      case 'lift':
+        add({ id: 'stone-lift', at: tile(e.at) });
+        break;
+      case 'setdown':
+        add({ id: 'stone-down', at: tile(e.at) });
+        break;
+      case 'push':
+        add({ id: 'stone-push', at: tile(e.at) });
+        break;
       case 'eat':
         add({ id: 'eat', at: { on: 'player' } }, 'eat');
         break;
