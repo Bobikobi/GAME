@@ -4,9 +4,10 @@
  * the clock as the params set them.
  */
 import { readFileSync } from 'node:fs';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Bundle } from '@game/kernel';
 import { validateFile } from '@game/schema';
+import * as check from '../src/check';
 import { HOP_STEPS, ROAD_MARGIN, checkMapPlan, exitRoads, firstDusk, firstNight, straightRuns } from '../src/mapplan';
 import { loadBundle } from './helpers/world';
 
@@ -65,14 +66,35 @@ describe('G69: paths wind', () => {
     expect(runs.map((r) => r.length)).toEqual([3, 3, 2]);
   });
 
-  it('refuses a planned path with a straight run over 8 tiles, and one whose corners share no row', () => {
+  it('prints warnings and exits successfully for over-long planned and ground paths', async () => {
     const ground = bundle.map.ground.map((row, y) => (y === 3 ? `${row.slice(0, 2)}${':'.repeat(9)}${row.slice(11)}` : row));
     const legend = { ...bundle.map.legend, ':': { sprite: 'core/base-kit:tiles/path', solid: false, tag: 'path' as const } };
     const long = withMap({ ground, legend, plan: { paths: [{ id: 'core/long', width: 1, via: [[2, 3], [10, 3]] }] } });
-    const messages = errors(long).map((i) => i.message);
-    expect(messages.some((m) => m.includes('core/long: a straight run of 9 tiles'))).toBe(true);
-    expect(messages.some((m) => m.includes('a straight run of 9 path tiles from (2, 3) to (10, 3)'))).toBe(true);
-    const bent = withMap({ ground, legend, plan: { paths: [{ id: 'core/bent', width: 1, via: [[2, 3], [5, 5]] }] } });
+    const report = vi.spyOn(check, 'runRepoCheck').mockReturnValue({
+      files: 1,
+      issues: checkMapPlan(long, {}),
+      assembled: { bundle: long, issues: [], kits: {}, origin: {} },
+    });
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exit = vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`check exited with ${code}`);
+    });
+    const argv = process.argv;
+    try {
+      process.argv = [process.execPath, 'tools/src/cli.ts', 'check'];
+      await expect(import('../src/cli')).rejects.toThrow('check exited with 0');
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('! map.plan.paths.0: core/long: a straight run of 9 tiles from (2, 3) to (10, 3), over 8 (G69: paths wind)'));
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('! map.ground: a straight run of 9 path tiles from (2, 3) to (10, 3), over 8 (G69: paths wind)'));
+    } finally {
+      process.argv = argv;
+      exit.mockRestore();
+      log.mockRestore();
+      report.mockRestore();
+    }
+  });
+
+  it('refuses a planned path whose corners share no row or column', () => {
+    const bent = withMap({ plan: { paths: [{ id: 'core/bent', width: 1, via: [[2, 3], [5, 5]] }] } });
     expect(errors(bent).some((i) => i.message.includes('share no row and no column'))).toBe(true);
   });
 });

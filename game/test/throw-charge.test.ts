@@ -47,17 +47,17 @@ describe('the aim line', () => {
     const state = standing([20, 20]);
     const aim: Tile = [28, 20];
     for (const power of [stones().throw_min_power, FULL_POWER]) {
-      const flight = throwFlight(base, state, 'small', aim, power);
+      const flight = throwFlight(base, state, 'core/stone', aim, power);
       if ('error' in flight) throw new Error(flight.error);
-      expect(aimLine(base, state, 'small', aim, power)).toEqual(flight.air);
+      expect(aimLine(base, state, 'core/stone', aim, power)).toEqual(flight.air);
     }
   });
 
   test('the line grows with the power: a tap reaches less than a full charge', () => {
     const state = standing([20, 20]);
     const aim: Tile = [28, 20];
-    const tap = aimLine(base, state, 'small', aim, stones().throw_min_power).length;
-    const full = aimLine(base, state, 'small', aim, FULL_POWER).length;
+    const tap = aimLine(base, state, 'core/stone', aim, stones().throw_min_power).length;
+    const full = aimLine(base, state, 'core/stone', aim, FULL_POWER).length;
     expect(tap).toBeGreaterThan(0);
     expect(tap).toBeLessThan(full);
   });

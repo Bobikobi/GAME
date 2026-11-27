@@ -65,7 +65,12 @@ export function straightRuns(tiles: readonly Tile[]): { from: Tile; to: Tile; le
   return runs;
 }
 
-function checkPaths(b: Bundle, plan: Plan, err: (where: string, message: string) => void): void {
+function checkPaths(
+  b: Bundle,
+  plan: Plan,
+  err: (where: string, message: string) => void,
+  warn: (where: string, message: string) => void,
+): void {
   const m = b.map;
   const crossings = passableSlots(b);
   const onCrossing = ([x, y]: Tile) => crossings.some((c) => inRect(x, y, c.slot));
@@ -87,14 +92,14 @@ function checkPaths(b: Bundle, plan: Plan, err: (where: string, message: string)
     }
     for (const run of straightRuns(tiles)) {
       const max = run.tiles.some(onCrossing) ? BRIDGE_RUN_MAX : RUN_MAX;
-      if (run.length > max) err(where, `${p.id}: a straight run of ${run.length} tiles from ${at(run.from)} to ${at(run.to)}, over ${max} (G69: paths wind)`);
+      if (run.length > max) warn(where, `${p.id}: a straight run of ${run.length} tiles from ${at(run.from)} to ${at(run.to)}, over ${max} (G69: paths wind)`);
     }
   });
   // every path letter on the ground, not only the planned ones: no straight row or column of them over the limit
   const scan = (x0: number, y0: number, dx: number, dy: number) => {
     let run: Tile[] = [];
     const flush = () => {
-      if (run.length > RUN_MAX) err('map.ground', `a straight run of ${run.length} path tiles from ${at(run[0]!)} to ${at(run[run.length - 1]!)}, over ${RUN_MAX} (G69: paths wind)`);
+      if (run.length > RUN_MAX) warn('map.ground', `a straight run of ${run.length} path tiles from ${at(run[0]!)} to ${at(run[run.length - 1]!)}, over ${RUN_MAX} (G69: paths wind)`);
       run = [];
     };
     for (let x = x0, y = y0; x < m.width && y < m.height; x += dx, y += dy) {
@@ -317,7 +322,7 @@ export function checkMapPlan(b: Bundle, origin: Record<string, string>): Issue[]
     // a region quest named before it is written is the plan's to-do, not a fault: its gate stays shut ground until then
   });
 
-  checkPaths(b, plan, err);
+  checkPaths(b, plan, err, warn);
 
   const walkable = makeWalkable(b);
   const mended = { restored: passableSlots(b).map((s) => s.id), camp: [] as string[] };

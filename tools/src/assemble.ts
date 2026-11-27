@@ -201,12 +201,13 @@ export function flattenParams(p: ParamsBody): Params {
       fall_three_bp: p.jump.fall_three_bp.value,
       death_levels: p.jump.death_levels.value,
     },
+    liftables: Object.fromEntries(Object.entries(p.liftables).map(([id, entry]) => [id, {
+      ...entry,
+      weight: entry.weight.value,
+      throw_range: entry.throw_range.value,
+      roll: entry.roll.value,
+    }])),
     stones: {
-      large_weight: p.stones.large_weight.value,
-      small_range: p.stones.small_range.value,
-      large_range: p.stones.large_range.value,
-      small_roll: p.stones.small_roll.value,
-      large_roll: p.stones.large_roll.value,
       area_tiles: p.stones.area_tiles.value,
       area_cap: p.stones.area_cap.value,
       return_ms: p.stones.return_ms.value,
@@ -218,6 +219,7 @@ export function flattenParams(p: ParamsBody): Params {
       throw_hold_ms: p.stones.throw_hold_ms.value,
     },
     hunt: {
+      throw_item: p.hunt.throw_item,
       dress_step_ms: p.hunt.dress_step_ms.value,
       meat_spoil_d: p.hunt.meat_spoil_d.value,
       hide_spoil_d: p.hunt.hide_spoil_d.value,
