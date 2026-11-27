@@ -123,4 +123,20 @@ describe('the open water', () => {
     deepTile(3, 4, 0, b);
     expect(a).toEqual(b);
   });
+
+  test('a tile is the pixels deepAt gives, in every frame, at the world\'s corner and far off', () => {
+    const tile = new Uint8ClampedArray(TILE * TILE * 4);
+    for (const [tx, ty] of [[0, 0], [14, 22], [-3, -2], [101, 90]] as const) {
+      for (let frame = 0; frame < 4; frame++) {
+        deepTile(tx, ty, frame, tile);
+        for (let n = 0; n < 4096; n += 7) {
+          const x = n % TILE;
+          const y = Math.floor(n / TILE);
+          const c = deepAt(tx * TILE + x, ty * TILE + y, frame);
+          const i = n * 4;
+          expect([tile[i], tile[i + 1], tile[i + 2], tile[i + 3]], `tile ${tx},${ty} frame ${frame} pixel ${x},${y}`).toEqual([c >> 16, (c >> 8) & 255, c & 255, 255]);
+        }
+      }
+    }
+  });
 });

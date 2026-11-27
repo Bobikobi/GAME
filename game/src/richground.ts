@@ -45,6 +45,36 @@ export function valueNoise(x: number, y: number, seed: number, lattice = LATTICE
 }
 
 /**
+ * `valueNoise(x, y, seed, lattice)` over a rectangle of whole-number points (x0..x1, y0..y1 inclusive), with the lattice
+ * corners it needs hashed once and not at every point: the same numbers, by the same arithmetic, for any (x, y) inside.
+ * The caller says the rectangle; a point outside it is a mistake of the caller's and reads the noise the slow way.
+ */
+export function noiseRect(x0: number, y0: number, x1: number, y1: number, seed: number, lattice = LATTICE): (x: number, y: number) => number {
+  const ix0 = Math.floor(x0 / lattice);
+  const iy0 = Math.floor(y0 / lattice);
+  const w = Math.floor(x1 / lattice) - ix0 + 2;
+  const h = Math.floor(y1 / lattice) - iy0 + 2;
+  const corner = new Float64Array(w * h);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) corner[j * w + i] = hash((ix0 + i) * 31 + seed, (iy0 + j) * 17 + seed * 3) / 4294967296;
+  return (x, y) => {
+    const ix = Math.floor(x / lattice);
+    const iy = Math.floor(y / lattice);
+    const i = ix - ix0;
+    const j = iy - iy0;
+    if (i < 0 || j < 0 || i + 1 >= w || j + 1 >= h) return valueNoise(x, y, seed, lattice);
+    const sx = smoothstep((x - ix * lattice) / lattice);
+    const sy = smoothstep((y - iy * lattice) / lattice);
+    const a = corner[j * w + i]!;
+    const b = corner[j * w + i + 1]!;
+    const c = corner[(j + 1) * w + i]!;
+    const d = corner[(j + 1) * w + i + 1]!;
+    const top = a + (b - a) * sx;
+    const bottom = c + (d - c) * sx;
+    return top + (bottom - top) * sy;
+  };
+}
+
+/**
  * The tone of every tile of a field, row by row: the noise thresholds pick it, then
  * two rounds smooth the slivers away - a tile whose meadow neighbours all have other
  * tones takes the one most of them have. Tiles the predicate refuses stay plain.

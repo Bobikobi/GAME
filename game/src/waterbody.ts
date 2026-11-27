@@ -1,4 +1,4 @@
-import { valueNoise } from './richground';
+import { noiseRect, valueNoise } from './richground';
 import { WATER_LAYERS, type WaterLayerData } from './waterlayers';
 
 /**
@@ -54,6 +54,12 @@ const wrap = (v: number): number => ((Math.floor(v) % SIZE) + SIZE) % SIZE;
 /** A texel coordinate bounced back and forth over the layer (0..127, then 127..0), so a sample never meets an edge: the layers are not made to tile. */
 const bounce = (v: number): number => {
   const t = ((Math.floor(v) % (2 * SIZE)) + 2 * SIZE) % (2 * SIZE);
+  return t < SIZE ? t : 2 * SIZE - 1 - t;
+};
+
+/** `bounce` for a whole texel number: the same bounce, by a mask and not a remainder. */
+const bounceInt = (f: number): number => {
+  const t = f & (2 * SIZE - 1);
   return t < SIZE ? t : 2 * SIZE - 1 - t;
 };
 
@@ -140,15 +146,92 @@ const SPARK = 0.56;
 /** The most a glint takes of the water's colour toward the sparkle's: the light layer is a light touch on the body, not a second pattern. */
 const SPARK_MAX = 0.2;
 
-/** One tile of the open water, RGBA, `px` a side, for a frame: the tile's place in the world is what it draws. */
+/**
+ * One tile of the open water, RGBA, `px` a side, for a frame: the tile's place in the world is what it draws. The same
+ * colour `deepAt` gives each pixel, by the same arithmetic, but the slow noise's lattice is hashed once for the tile and
+ * nothing is allocated per pixel (a tile was 15 ms of the main thread; a walk past the river painted dozens of them).
+ */
 export function deepTile(tx: number, ty: number, frame: number, out: Uint8ClampedArray, px = 64): void {
+  const l = read();
+  const body = l.body.rgb;
+  const light = l.light.rgb;
+  const [dx, dy] = drift(frame);
+  const gx0 = tx * px;
+  const gy0 = ty * px;
+  const noiseX = noiseRect(gx0, gy0, gx0 + px - 1, gy0 + px - 1, 51, 90);
+  const noiseY = noiseRect(gx0, gy0, gx0 + px - 1, gy0 + px - 1, 57, 90);
+  const phase = (frame / FRAMES) * Math.PI * 2;
+  // the body's colour at a fractional texel, bilinear, bouncing at the edges: the first scale's in a*, the second's in s*
+  let ar = 0;
+  let ag = 0;
+  let ab = 0;
+  let sr = 0;
+  let sg = 0;
+  let sb = 0;
+  const sampleBody = (u: number, v: number, second: boolean): void => {
+    const x0 = Math.floor(u);
+    const y0 = Math.floor(v);
+    const fx = u - x0;
+    const fy = v - y0;
+    const xa = bounceInt(x0);
+    const xb = bounceInt(x0 + 1);
+    const ya = bounceInt(y0);
+    const yb = bounceInt(y0 + 1);
+    const i00 = (ya * SIZE + xa) * 3;
+    const i01 = (ya * SIZE + xb) * 3;
+    const i10 = (yb * SIZE + xa) * 3;
+    const i11 = (yb * SIZE + xb) * 3;
+    const r = body[i00]! * (1 - fx) + body[i01]! * fx;
+    const rb = body[i10]! * (1 - fx) + body[i11]! * fx;
+    const g = body[i00 + 1]! * (1 - fx) + body[i01 + 1]! * fx;
+    const gb = body[i10 + 1]! * (1 - fx) + body[i11 + 1]! * fx;
+    const b = body[i00 + 2]! * (1 - fx) + body[i01 + 2]! * fx;
+    const bb = body[i10 + 2]! * (1 - fx) + body[i11 + 2]! * fx;
+    if (second) {
+      sr = r * (1 - fy) + rb * fy;
+      sg = g * (1 - fy) + gb * fy;
+      sb = b * (1 - fy) + bb * fy;
+    } else {
+      ar = r * (1 - fy) + rb * fy;
+      ag = g * (1 - fy) + gb * fy;
+      ab = b * (1 - fy) + bb * fy;
+    }
+  };
+  const bright = (u: number, v: number): number => {
+    const i = (bounceInt(Math.floor(v)) * SIZE + bounceInt(Math.floor(u))) * 3;
+    return (light[i]! + light[i + 1]! + light[i + 2]!) / 765;
+  };
   for (let y = 0; y < px; y++) {
+    const gy = gy0 + y;
     for (let x = 0; x < px; x++) {
-      const c = deepAt(tx * px + x, ty * px + y, frame);
+      const gx = gx0 + x;
+      const wx = (noiseX(gx, gy) - 0.5) * 2 * WARP;
+      const wy = (noiseY(gx, gy) - 0.5) * 2 * WARP;
+      sampleBody(gx * SCALE_A + wx + dx, gy * SCALE_A + wy + dy, false);
+      sampleBody(gx * SCALE_B + 61 - wy * 0.7 - dy, gy * SCALE_B + 23 + wx * 0.7 + dx, true);
+      let r = BASE[0] * BASE_W + ar * WA + sr * WB + GRADE[0];
+      let g = BASE[1] * BASE_W + ag * WA + sg * WB + GRADE[1];
+      let b = BASE[2] * BASE_W + ab * WA + sb * WB + GRADE[2];
+      const lumNow = r * 0.3 + g * 0.5 + b * 0.2;
+      if (lumNow > KNEE) {
+        const cut = (lumNow - KNEE) * KNEE_HOLD;
+        r -= cut;
+        g -= cut;
+        b -= cut;
+      }
+      const lv = Math.max(bright(gx * 0.9 + 37 + wy * 0.8, gy * 0.9 + 71 + wx * 0.8), bright(gx * 0.55 + 90 - wx, gy * 0.55 + 12 + wy));
+      const pulse = 0.12 + 0.65 * Math.max(0, Math.sin(phase + gx * 0.045 + gy * 0.018)) ** 6;
+      const glint = Math.min(1, Math.max(0, (lv - 0.42) * 2.5)) * pulse;
+      if (glint > SPARK) {
+        const k = Math.min(SPARK_MAX, (glint - SPARK) * 2.2);
+        r = r * (1 - k) + SPARKLE[0] * k;
+        g = g * (1 - k) + SPARKLE[1] * k;
+        b = b * (1 - k) + SPARKLE[2] * k;
+      }
       const i = (y * px + x) * 4;
-      out[i] = c >> 16;
-      out[i + 1] = (c >> 8) & 255;
-      out[i + 2] = c & 255;
+      out[i] = Math.min(255, Math.max(0, Math.round(r)));
+      out[i + 1] = Math.min(255, Math.max(0, Math.round(g)));
+      out[i + 2] = Math.min(255, Math.max(0, Math.round(b)));
       out[i + 3] = 255;
     }
   }
