@@ -360,6 +360,11 @@ class TileZone {
   }
 }
 
+/** How long one task of the build runs before the page gets a turn, in ms: the steps are run back to back up to this. */
+const BUILD_SLICE_MS = 8;
+/** About how many steps `build` has (its `yield`s), for the bar only: a step more or less moves the bar a hair. */
+const BUILD_STEPS = 18;
+
 export class WorldScene extends Phaser.Scene {
   private b!: Bundle;
   private walkable!: ReturnType<typeof makeWalkable>;
@@ -595,10 +600,40 @@ export class WorldScene extends Phaser.Scene {
     super('world');
   }
 
+  /** the scene is built in slices, behind the title (`build`, `drive`): false until the last one has run */
+  private built = false;
+  private steps: Generator<void> | undefined;
+  private stepsRun = 0;
+
   create(): void {
+    // the camera shows nothing until the valley is whole: the title's backdrop stays plain until then, never a half-built world
+    this.cameras.main.setVisible(false);
+    this.steps = this.build();
+    this.drive();
+  }
+
+  /**
+   * Runs the build's steps, as many as fit in a few ms of one task, then lets the page breathe (the title answers, a frame draws)
+   * and goes on. A step is the code between two `yield`s of `build`.
+   */
+  private drive(): void {
+    const t0 = performance.now();
+    do {
+      if (this.steps?.next().done) {
+        this.steps = undefined;
+        return;
+      }
+      // the bar of "preparing the valley": the pictures are the first 60 percent (boot.ts), the build's steps the rest
+      app.ui.loading(0.6 + 0.4 * Math.min(1, ++this.stepsRun / BUILD_STEPS));
+    } while (performance.now() - t0 < BUILD_SLICE_MS);
+    setTimeout(() => this.drive(), 0);
+  }
+
+  private *build(): Generator<void> {
     this.b = app.bundle;
     this.lightTable = tableOf(this.b.params.light?.keys ?? []);
     this.walkable = makeWalkable(this.b);
+    yield;
     this.labels = document.createElement('div');
     this.labels.className = 'world-labels';
     app.ui.root.prepend(this.labels);
@@ -606,25 +641,41 @@ export class WorldScene extends Phaser.Scene {
     this.foeBars = new FoeBarLayer(this.labels, (id, point) => this.foeBarFeet(id, point));
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
+    yield;
     this.effects = new EffectLayer(this, DEPTH.fx, T);
+    yield;
     const read = this.b.params.light?.read;
     if (RICH.light) this.light = new LightLayer(this, this.lightTable, { floor: (read?.floor ?? READ.floor) / 100 }, { shade: DEPTH.shade, pools: DEPTH.shade + 0.2 });
+    yield;
     this.buildGround();
+    yield;
     this.buildProps();
+    yield;
     this.buildNodes();
+    yield;
     this.buildNpcs();
+    yield;
     this.buildRestores();
+    yield;
     this.buildCamp();
+    yield;
     this.buildFog();
+    yield;
     this.buildSigns();
+    yield;
     this.buildAtmosphere();
+    yield;
     if (RICH.light) this.buildDapple();
+    yield;
     const firstKey = this.playerFrame('down').key;
     this.player = kitSprite(this, 0, 0, firstKey, standingFrame(this.b.sprites[firstKey], 1)).setOrigin(0.5, footOrigin(firstKey)).setVisible(false);
     if (RICH.detail) this.buildCasters();
+    yield;
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
-    this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => {
+      if (this.built) this.cutPlayer();
+    });
     this.veil = this.add.container(0, 0, [this.mist, ...this.banks.map((b) => b.img), ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.fishing = new FishingView(this, { under: DEPTH.flat + 0.1, over: DEPTH.fx - 1 }, { ink: PALETTE.ink, paper: PALETTE.paper, red: PALETTE.red2, wood: PALETTE.wood });
@@ -664,7 +715,10 @@ export class WorldScene extends Phaser.Scene {
       for (const f of this.fires.values()) this.lickFlame(f);
     }
     this.addFilters(cam);
-    this.scale.on('resize', () => this.fit());
+    yield;
+    this.scale.on('resize', () => {
+      if (this.built) this.fit();
+    });
     this.input.on('wheel', (_p: unknown, _over: unknown, _dx: number, dy: number) => this.onWheel(dy));
     // the mouse charges the throw too (DECISIONS 2026-11-22): held aims at the pointer, released throws
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -692,6 +746,11 @@ export class WorldScene extends Phaser.Scene {
       this.foeBars.clear();
       this.labels.remove();
     });
+    yield;
+    // the first frame's work (the ground under the first view) is the last step, so what "ready" says is a valley that draws at once
+    this.built = true;
+    this.update(this.game.loop.time, 16);
+    cam.setVisible(true);
     app.world = this;
     app.ui.worldReady();
   }
@@ -2607,6 +2666,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ frame loop
 
   override update(time: number, delta: number): void {
+    if (!this.built) return;
     // a slot's fog sways only while it is in view: off screen it is neither moved nor drawn
     const view = this.cameras.main.worldView;
     this.fogs.forEach((fog, i) => {

@@ -304,6 +304,9 @@ export class Page {
     const loaded = this.once('Page.loadEventFired');
     await this.send('Page.navigate', { url });
     await loaded;
+    // the title is up before the valley is built (DECISIONS 2026-11-27); a script plays on a built world, as a player who waits for the bar does.
+    // A page with no `?debug` has no `__game` and is not waited for.
+    await this.waitFor('(() => { const g = window.__game; return !g || !!g.world; })()', 'the valley to be built', 120_000, false);
   }
 
   /** Runs an expression in the page and returns its JSON value (promises are awaited). */
