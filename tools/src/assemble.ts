@@ -23,7 +23,7 @@ import {
   layoutInstances,
   minChargeFor,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type ClipInfo, type CreatorProfile, SHOP_PRICE_MAX_MG, type ParamsBody, type Shop, type Template, type WhenDef } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type ClipInfo, type CreatureClipInfo, type CreatorProfile, SHOP_PRICE_MAX_MG, type ParamsBody, type Shop, type Template, type WhenDef } from '@game/schema';
 import { chunkProblems, levelsProblems } from './chunks';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems, startFinds } from './play';
@@ -37,7 +37,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; cols?: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; clip?: ClipInfo; source?: { spec: string; manifest: string } }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; cols?: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; clip?: ClipInfo; creature_clip?: CreatureClipInfo; still_of?: string; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -440,6 +440,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               ...(s.ramps ? { ramps: s.ramps } : {}),
               ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
               ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number], ...(s.clip.fit_permille === undefined ? {} : { fit_permille: s.clip.fit_permille }), ...(s.clip.hand === undefined ? {} : { hand: s.clip.hand.map((h) => [h[0], h[1]] as [number, number]) }) } } : {}),
+              ...(s.creature_clip ? { creature_clip: { creature: s.creature_clip.creature, view: s.creature_clip.view, verb: s.creature_clip.verb, frame_ms: s.creature_clip.frame_ms, anchor: [s.creature_clip.anchor[0], s.creature_clip.anchor[1]] as [number, number], ...(s.creature_clip.fit_permille === undefined ? {} : { fit_permille: s.creature_clip.fit_permille }), ...(s.creature_clip.head === undefined ? {} : { head: [s.creature_clip.head[0], s.creature_clip.head[1]] as [number, number] }) } } : {}),
+              ...(s.still_of === undefined ? {} : { still_of: s.still_of }),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -460,8 +462,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const sprites: Record<string, SpriteInfo> = {};
   for (const [kitId, kit] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
-      // `clip` rides on the entry for the client (game/src/clips.ts reads it); the kernel's SpriteInfo does not name it
-      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, ...(s.cols === undefined ? {} : { cols: s.cols }), density: s.density, ...(s.stride ? { stride: s.stride } : {}), ...(s.clip ? { clip: s.clip } : {}) };
+      // `clip`, `creature_clip` and `still_of` ride on the entry for the client (game/src/clips.ts reads them); the kernel's SpriteInfo does not name them
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, ...(s.cols === undefined ? {} : { cols: s.cols }), density: s.density, ...(s.stride ? { stride: s.stride } : {}), ...(s.clip ? { clip: s.clip } : {}), ...(s.creature_clip ? { creature_clip: s.creature_clip } : {}), ...(s.still_of === undefined ? {} : { still_of: s.still_of }) };
     }
   }
 
@@ -481,6 +483,29 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
       const other = clipAt.get(lookup);
       if (other) issues.push({ file, where, message: `${other} already plays ${lookup}: a clip is one sheet for one verb, race and view`, level: 'error' });
       else clipAt.set(lookup, `${kitId}:${name}`);
+    }
+  }
+
+  // a creature clip is found by creature + verb + view (game/src/clips.ts): the creature is a kind of the map, and two sheets for one lookup would leave the world to guess
+  const creatureClipAt = new Map<string, string>();
+  const kindIds = new Set(Object.keys(map.creatures?.kinds ?? {}));
+  for (const [kitId, kit] of Object.entries(kits)) {
+    for (const [name, s] of Object.entries(kit.sprites)) {
+      const file = kitFiles[kitId]!;
+      if (s.still_of !== undefined && !kindIds.has(s.still_of)) {
+        issues.push({ file, where: `kit.sprites.${name}.still_of`, message: `"${s.still_of}" is not a creature kind of the map (map.creatures.kinds)`, level: 'error' });
+      }
+      const c = s.creature_clip;
+      if (!c) continue;
+      const where = `kit.sprites.${name}.creature_clip`;
+      if (!kindIds.has(c.creature)) issues.push({ file, where: `${where}.creature`, message: `"${c.creature}" is not a creature kind of the map (map.creatures.kinds)`, level: 'error' });
+      if (s.clip) issues.push({ file, where, message: 'a sheet is a character clip or a creature clip, not both', level: 'error' });
+      if (c.head && (c.head[0] >= s.w || c.head[1] >= s.h)) issues.push({ file, where: `${where}.head`, message: `the head point ${c.head.join(',')} is outside the ${s.w} x ${s.h} frame`, level: 'error' });
+      if (c.anchor[0] >= s.w || c.anchor[1] >= s.h) issues.push({ file, where: `${where}.anchor`, message: `the ground point ${c.anchor.join(',')} is outside the ${s.w} x ${s.h} frame`, level: 'error' });
+      const lookup = `${c.verb} ${c.creature} ${c.view}`;
+      const other = creatureClipAt.get(lookup);
+      if (other) issues.push({ file, where, message: `${other} already plays ${lookup}: a creature clip is one sheet for one verb, creature and view`, level: 'error' });
+      else creatureClipAt.set(lookup, `${kitId}:${name}`);
     }
   }
 

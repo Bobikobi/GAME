@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../schema/json/kit.schema.json",
+  "format": 1,
+  "type": "kit",
+  "id": "core/creature-clip-fixture",
+  "title": "Creature clip fixture kit",
+  "creator": "core",
+  "description": "Tests only: one walk and one idle sheet of a creature kind of the map, and the still sprite that stands for it. Never content: no PNGs, never listed under content/.",
+  "kit": {
+    "sprites": {
+      "creatures/hare_still": {
+        "file": "creatures/hare_still.png",
+        "w": 16,
+        "h": 16,
+        "still_of": "core/hare"
+      },
+      "creatures/hare_walk_left": {
+        "file": "creatures/hare_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 110,
+          "anchor": [64, 91],
+          "fit_permille": 1000,
+          "head": [24, 58]
+        }
+      },
+      "creatures/hare_idle_front": {
+        "file": "creatures/hare_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 160,
+          "anchor": [64, 99]
+        }
+      }
+    }
+  }
+}
