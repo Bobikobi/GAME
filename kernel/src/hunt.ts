@@ -6,6 +6,7 @@ import { idiv } from './num';
 import { hourOf, type Carcass, type HuntBatch, type HuntStock, type PublicState, type Snare } from './state';
 import { walkableFor, type Tile } from './step';
 import { anchorId } from './wild/den';
+import { wildKindOf, wildReach } from './wild/valley';
 import { d2, lineClear } from './wild/senses';
 import { tagAt } from './world';
 
@@ -39,13 +40,23 @@ export function preyKey(spot: CreatureSpot): string {
   return anchorId(spot.kind, spot.x, spot.y);
 }
 
-/** Spot indices are authoritative; the client supplies neither the species nor the place it fell. */
-export function stonePrey(bundle: Bundle, state: PublicState, tick: number, index: number, at: Tile): CreatureSpot | undefined {
+/**
+ * Spot indices are authoritative; the client supplies neither the species nor where it stands beyond the kind's reach. An animal
+ * the wild step moved (`wildStep`) is named by its spot and the tile it stands on (`stands`), held to `wildReach` of its anchor:
+ * the world of stepped animals is the caller's until a server holds it. With no tile the animal stands at its spot.
+ */
+export function stonePrey(bundle: Bundle, state: PublicState, tick: number, index: number, at: Tile, stands?: Tile): CreatureSpot | undefined {
   if (!Number.isSafeInteger(index) || index < 0) return undefined;
   const spot = bundle.map.creatures?.spots[index];
   const kind = spot && smallPrey(bundle, spot.kind);
   if (!spot || !kind || (state.player.preyReturns?.[preyKey(spot)] ?? 0) > tick) return undefined;
-  const target: Tile = [spot.x, spot.y];
+  const target: Tile = stands ?? [spot.x, spot.y];
+  if (stands) {
+    if (!Array.isArray(stands) || stands.length !== 2 || !stands.every(Number.isSafeInteger)) return undefined;
+    const wild = wildKindOf(bundle, spot.kind);
+    const reach = wild ? wildReach(wild) : 0;
+    if (d2(stands, [spot.x, spot.y]) > reach * reach) return undefined;
+  }
   const thrown = bundle.params.liftables[bundle.params.hunt.throw_item];
   if (thrown?.class !== 'hand') return undefined;
   const reach = thrown.throw_range;
@@ -56,7 +67,7 @@ export function stonePrey(bundle: Bundle, state: PublicState, tick: number, inde
     if (!(from < to ? hour >= from && hour < to : hour >= from || hour < to)) return undefined;
   }
   const walk = walkableFor(bundle);
-  if (!walk(at[0], at[1], state.player) || !walk(spot.x, spot.y, state.player)) return undefined;
+  if (!walk(at[0], at[1], state.player) || !walk(target[0], target[1], state.player)) return undefined;
   if (!lineClear({ blocks: (x, y) => !walk(x, y, state.player) }, at, target)) return undefined;
   return spot;
 }
