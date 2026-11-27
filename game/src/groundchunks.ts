@@ -233,14 +233,18 @@ export class GroundChunks {
    * Bakes strips of the pages the view touches (they come first in the queue) for up to `budget` ms; true when every one
    * of them is whole. The same pixels as a whole-page bake, a few ms at a time (#843).
    */
-  bakeView(budget: number, pages = Infinity): boolean {
+  bakeView(budget: number, points?: { x: number; y: number }[]): boolean {
     const seen = this.seen;
     if (!seen) return true;
-    // the pages this priming bakes, the view's nearest ones first, are fixed on the first call: the rest of the view comes
-    // by idle strips, as the ring does
-    this.prime ??= this.todo.filter((c) => c.cx >= seen.x0 && c.cx <= seen.x1 && c.cy >= seen.y0 && c.cy <= seen.y1).slice(0, pages);
+    // the pages this priming bakes are fixed on the first call: the view's, or only those that hold the given world
+    // points (the title's backdrop and where a new game wakes); the rest of the view comes by idle strips, as the ring does
+    const side = CHUNK * this.unit;
+    this.prime ??= points
+      ? points.map((p) => this.live.get(`${Math.floor(p.x / side)},${Math.floor(p.y / side)}`)).filter((c, i, a): c is Chunk => !!c && !c.complete && a.indexOf(c) === i)
+      : this.todo.filter((c) => c.cx >= seen.x0 && c.cx <= seen.x1 && c.cy >= seen.y0 && c.cy <= seen.y1);
     const prime = this.prime;
-    const first = (): Chunk | undefined => prime.find((c) => !c.complete && this.live.get(`${c.cx},${c.cy}`) === c);
+    // a page is primed when its first frame is whole (the page shows that one until the others are baked, by idle strips)
+    const first = (): Chunk | undefined => prime.find((c) => !c.complete && c.done < c.strips.length && this.live.get(`${c.cx},${c.cy}`) === c);
     const t0 = this.now();
     // nothing is on screen yet: the GPU uploads wait for a slice of their own, so no slice holds a strip and an upload
     this.quiet = true;

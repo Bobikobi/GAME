@@ -154,9 +154,9 @@ describe('a page baked in strips', () => {
     while (!g.bakeView(100)) calls++;
     expect(calls).toBeGreaterThan(3);
     expect(g.wholeBakes).toBe(0);
-    // the pages the view touches are whole now: the page under the view has all its frames
+    // the pages the view touches have their first frame whole now; the other frames come by idle strips
     const keys = [...lazy.textures.keys()].filter((k) => k.startsWith('ground-c1x1-'));
-    expect(keys.length).toBe(4);
+    expect(keys.length).toBeGreaterThanOrEqual(1);
     g.resume();
     expect(idle.length).toBeGreaterThan(0);
     g.update(all);
@@ -169,7 +169,7 @@ describe('a page baked in strips', () => {
     for (const [key, bytes] of want) expect(Buffer.from(got.get(key)!).equals(Buffer.from(bytes)), key).toBe(true);
   }, 60_000);
 
-  test('bakeView with a page count bakes only that many of the view\'s pages, the nearest first; the rest wait for idle strips (#843)', () => {
+  test('bakeView with points bakes only the pages that hold them; the rest of the view waits for idle strips (#843)', () => {
     const w = 40;
     const h = 36;
     const idle: ((s: Slice) => void)[] = [];
@@ -179,7 +179,7 @@ describe('a page baked in strips', () => {
     const g = new GroundChunks(lazy.scene, w, h, DENSITY, UNIT, 4, 0, painter, () => true, q, STRIP_COLS, STRIP_ROWS, () => (t += 40));
     // a view over the corner of four pages
     g.update({ x: 15 * UNIT, y: 15 * UNIT, right: 17 * UNIT, bottom: 17 * UNIT }, '', true);
-    while (!g.bakeView(100, 1));
+    while (!g.bakeView(100, [{ x: 15.5 * UNIT, y: 15.5 * UNIT }]));
     const pages = new Set([...lazy.textures.keys()].filter((k) => k.startsWith('ground-c')).map((k) => k.replace(/-\d+$/, '')));
     expect(pages.size).toBe(1);
     g.resume();

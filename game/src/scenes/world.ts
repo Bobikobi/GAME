@@ -787,7 +787,10 @@ export class WorldScene extends Phaser.Scene {
     this.stream.update(this.player ? Math.floor(this.player.x / T) : 0, this.player ? Math.floor(this.player.y / T) : 0);
     const centre = this.stream.centre;
     chunks.update(cam.worldView, centre ? `${centre.cx},${centre.cy}` : '', true);
-    while (!chunks.bakeView(BUILD_SLICE_MS / 2, 1)) yield;
+    const spawn = this.b.map.spawn;
+    // the page under the title's backdrop and the page a new game wakes on: with the second held, the first frame after the
+    // wake needs no page baked whole (that was seven seconds at x4)
+    while (!chunks.bakeView(BUILD_SLICE_MS / 2, [at, { x: spawn.x * T, y: spawn.y * T }])) yield;
     this.priming = false;
     chunks.resume();
   }
