@@ -32,9 +32,20 @@ const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] as const;
 const POCKET = MIST.clear;
 const POCKET_GROWN = 7;
 
+/** The ids of the quests a bundle offers to one wake pocket alone, per pocket: read from the bundle once, not from every quest on every frame. */
+const POCKET_QUESTS = new WeakMap<Bundle, Map<string, string[]>>();
+function pocketQuests(b: Bundle, pocket: string): readonly string[] {
+  let byPocket = POCKET_QUESTS.get(b);
+  if (!byPocket) POCKET_QUESTS.set(b, (byPocket = new Map()));
+  let ids = byPocket.get(pocket);
+  if (!ids) byPocket.set(pocket, (ids = Object.entries(b.quests).filter(([, q]) => q.pocket !== undefined && q.pocket === pocket).map(([id]) => id)));
+  return ids;
+}
+
 /** Whether the character's own first task is done: a quest offered to their wake pocket alone, closed (NEXT 16 c). */
 export function firstTaskDone(b: Bundle, s: PublicState): boolean {
-  return Object.entries(b.quests).some(([id, q]) => q.pocket !== undefined && q.pocket === s.player.pocket && s.player.quests[id] === 'done');
+  for (const id of pocketQuests(b, s.player.pocket)) if (s.player.quests[id] === 'done') return true;
+  return false;
 }
 
 /**
@@ -110,26 +121,73 @@ function cellNoise(cx: number, cy: number): number {
   return (h >>> 0) / 0x100000000;
 }
 
+/** A pixel box of the mist's raster: `x0`,`y0` inclusive, `x1`,`y1` exclusive. */
+export interface MistBox {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
 /**
- * The mist of the whole map as RGBA bytes, one game pixel each (`tile` pixels a tile): alpha 255 where
- * a pixel is mist and 0 where it is clear, never in between.
+ * The pixels of the raster a change of the clear places can alter, as a box (undefined: none). A pixel's density is the least distance to a clear place's edge, thickened over
+ * `MIST.ramp` tiles; a place that is in one list and not in the other (a centre or a radius that moved) therefore reaches no further than its larger radius plus the ramp, and past
+ * that its term is 1 in both lists, as it is in every pixel the places that stayed decide alone. The box is that reach of every place that changed, a tile wider, cut to the map.
  */
-export function mistPixels(clears: readonly Clear[], width: number, height: number, tile: number): Uint8ClampedArray<ArrayBuffer> {
+export function mistChanged(before: readonly Clear[], after: readonly Clear[], width: number, height: number, tile: number): MistBox | undefined {
+  const same = (a: Clear, b: Clear) => a.x === b.x && a.y === b.y && a.r === b.r;
+  let box: MistBox | undefined;
+  const add = (c: Clear) => {
+    const reach = c.r + MIST.ramp + 1;
+    const b = {
+      x0: Math.max(0, Math.floor((c.x + 0.5 - reach) * tile)),
+      y0: Math.max(0, Math.floor((c.y + 0.5 - reach) * tile)),
+      x1: Math.min(width * tile, Math.ceil((c.x + 0.5 + reach) * tile)),
+      y1: Math.min(height * tile, Math.ceil((c.y + 0.5 + reach) * tile)),
+    };
+    box = box ? { x0: Math.min(box.x0, b.x0), y0: Math.min(box.y0, b.y0), x1: Math.max(box.x1, b.x1), y1: Math.max(box.y1, b.y1) } : b;
+  };
+  for (const c of after) if (!before.some((o) => same(o, c))) add(c);
+  for (const c of before) if (!after.some((o) => same(o, c))) add(c);
+  return box;
+}
+
+/**
+ * The mist of the pixels in `box` (the whole map when left out), written into `out`, a raster of the whole map's size: alpha 255 where a pixel is mist and 0 where it is clear, never in between,
+ * and the colour bytes of a clear pixel 0. A pixel is a function of the pixel and the places alone (the dither and the patches are laid on the world's own pixel grid), so the box written is the
+ * same bytes the whole raster holds there.
+ */
+export function mistFill(out: Uint8ClampedArray, clears: readonly Clear[], width: number, height: number, tile: number, box?: MistBox): void {
   const w = width * tile;
   const h = height * tile;
-  const out = new Uint8ClampedArray(new ArrayBuffer(w * h * 4));
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
+  const { x0, y0, x1, y1 } = box ?? { x0: 0, y0: 0, x1: w, y1: h };
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const i = 4 * (y * w + x);
       const d = mistDensity(clears, width, height, (x + 0.5) / tile, (y + 0.5) / tile);
-      if (d <= (BAYER[(y & 3) * 4 + (x & 3)]! + 0.5) / 16) continue;
+      if (d <= (BAYER[(y & 3) * 4 + (x & 3)]! + 0.5) / 16) {
+        out[i] = 0;
+        out[i + 1] = 0;
+        out[i + 2] = 0;
+        out[i + 3] = 0;
+        continue;
+      }
       const n = cellNoise(x >> 3, y >> 3);
       const rgb = n < 0.16 ? MIST_RGB.light : n > 0.84 ? MIST_RGB.shade : MIST_RGB.base;
-      const i = 4 * (y * w + x);
       out[i] = rgb[0];
       out[i + 1] = rgb[1];
       out[i + 2] = rgb[2];
       out[i + 3] = 255;
     }
   }
+}
+
+/**
+ * The mist of the whole map as RGBA bytes, one game pixel each (`tile` pixels a tile): alpha 255 where
+ * a pixel is mist and 0 where it is clear, never in between.
+ */
+export function mistPixels(clears: readonly Clear[], width: number, height: number, tile: number): Uint8ClampedArray<ArrayBuffer> {
+  const out = new Uint8ClampedArray(new ArrayBuffer(width * tile * height * tile * 4));
+  mistFill(out, clears, width, height, tile);
   return out;
 }

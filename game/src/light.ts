@@ -6,6 +6,7 @@
  * night readable. Pure, so a test can pin every number the valley shows and the 3D door can read the
  * same ones instead of writing its own.
  */
+import { FIGURE_ART_H } from './contact';
 import { BANK_NIGHT_LIFT } from './sky';
 
 /** A minute of the day, 0 to 1439. */
@@ -15,6 +16,159 @@ const MINUTES = 1440;
 
 /** The lantern's pool at night, in world px: clear inside, a short edge in whole-pixel steps, the dark outside. */
 export const LIGHT_POOL = { r: 34, edge: 2, dark: 0.7, tint: 0xf0dcc0 } as const;
+
+/**
+ * The lantern's pool on a painted land (13.11, round three: the pool is light, not paint).
+ * Round two added one flat warm colour over the painting, which read as a sticker; light does not add a colour, it shows the ground's own colours.
+ * The light on a flat patch of ground is `base` (the table's ambient plus the sun's flat share, per channel); a lamp adds its own warm `lamp` to it, so
+ * the ground inside the pool shows `albedo x (base + lamp x f)`, which is the night's picture times `1 + lamp x f / base`: a gain per channel, the same on every
+ * ground, never a colour of its own. The gain is drawn as a multiply-and-add over the scene (dst x (1 + k), see painted-pool.ts), `passes` times because one pass
+ * reaches only x2. `f` falls in `steps` whole-art-pixel steps from the core to nothing (never a smooth gradient), and two steps meet in an ordered dither (a 4 x 4
+ * Bayer cell) `band` art px wide, so no edge is a circle. The full radius is `reach` figure heights (P6: between 2.2 and 3); the figure stands whole in the core.
+ * One texel is one art pixel (`grain` to the world pixel), so the pattern is the texture's own and travels with the figure to the texel.
+ */
+export const PAINTED_POOL = {
+  grain: 4,
+  reach: 2.5,
+  /**
+   * step edges as shares of the full radius, and the share of the core's light each step keeps. Round four (13.11): seven steps of 0.14 to 0.18 of the core instead of six of
+   * up to 0.23, a dither band of 8 art px, and every boundary wanders: its radius is the nominal one plus `jitter` (a sum of three smooth waves of the angle, a phase of its
+   * own per boundary), so no step is a circle; the outermost nominal edge leaves room for the wanderings inside the full radius.
+   */
+  edges: [0.44, 0.523, 0.607, 0.69, 0.773, 0.857, 0.94],
+  levels: [1, 0.82, 0.67, 0.53, 0.39, 0.24, 0.09],
+  band: 8,
+  /** the wanderings of each boundary: amplitudes in art px of the 2nd, 3rd and 4th wave of the angle (their sum never passes the room the outer edge leaves) */
+  jitter: [3.5, 2.5, 1.5],
+  /** the lamp's own light added to the ground's, per channel (the flat ground's full light at noon is about 1) */
+  lamp: [0.72, 0.5, 0.19],
+  passes: 3,
+  /** the night's flat light the step table is shaped for (any hour's tint is scaled from it) */
+  nominalBase: [0.172, 0.195, 0.396],
+} as const;
+
+/** The pool's full radius in art pixels: `reach` figure heights. */
+export function poolRadiusArt(): number {
+  return Math.round(PAINTED_POOL.reach * FIGURE_ART_H);
+}
+
+const BAYER4 = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]] as const;
+
+/** The wandering of boundary `i` at the angle `th`, art px: a sum of three smooth waves, the phase of each fixed by the boundary and the wave (the same on every machine). */
+export function poolJitter(i: number, th: number): number {
+  let sum = 0;
+  for (let k = 0; k < PAINTED_POOL.jitter.length; k++) sum += PAINTED_POOL.jitter[k]! * Math.sin((k + 2) * th + (((i * 37 + k * 91 + 13) % 628) / 100));
+  return sum;
+}
+
+/**
+ * The step a texel (x, y) of a square centred on texel `c` holds (a texel is an art pixel): 0 outside, else 1 + the index into `levels` (the dither band included). Each boundary lies at its
+ * nominal radius plus its own wandering (poolJitter) at the texel's angle, and the dither band lies on the inside of it. `R` is the full radius of the pool, art px (a flickering light's stamp is
+ * a little larger or smaller than the table's).
+ */
+export function paintedPoolStep(x: number, y: number, c: number, R: number = poolRadiusArt()): number {
+  const dx = x + 0.5 - c;
+  const dy = y + 0.5 - c;
+  const d = Math.hypot(dx, dy);
+  const { edges, levels, band } = PAINTED_POOL;
+  if (d > R) return 0;
+  const th = Math.atan2(dy, dx);
+  for (let i = 0; i < edges.length; i++) {
+    const edge = edges[i]! * R + poolJitter(i, th);
+    if (d > edge) continue;
+    const next = i + 1 < levels.length;
+    const p = (d - (edge - band)) / band;
+    if (p <= 0) return i + 1;
+    return BAYER4[y & 3]![x & 3]! / 16 + 1 / 32 < p ? (next ? i + 2 : 0) : i + 1;
+  }
+  return 0;
+}
+
+/** The share of the core's light the pool holds at texel (x, y): the step's level (paintedPoolStep), 0 outside. */
+export function paintedPoolTexel(x: number, y: number, c: number, R: number = poolRadiusArt()): number {
+  const k = paintedPoolStep(x, y, c, R);
+  return k === 0 ? 0 : PAINTED_POOL.levels[k - 1]!;
+}
+
+/**
+ * The gain one pass gives per channel (0 to 1, the tint of each pass) for a flat ground of light `base` and a lamp at `strength` (0 to 1, the night's depth):
+ * the pool's core takes the ground from `base` to `base + lamp x strength`, so the whole stack of `passes` passes must make that ratio: (1 + t)^passes.
+ */
+export function poolGain(base: readonly number[], strength: number, lamp: readonly number[] = PAINTED_POOL.lamp): [number, number, number] {
+  const out: [number, number, number] = [0, 0, 0];
+  for (let c = 0; c < 3; c++) {
+    const b = Math.max(0.02, base[c]!);
+    const ratio = (b + lamp[c]! * strength) / b;
+    out[c] = Math.min(1, ratio ** (1 / PAINTED_POOL.passes) - 1);
+  }
+  return out;
+}
+
+/**
+ * The 0..1 value the pool's texture holds for a step of share `f` of the core's light, shaped so the stack's lift (the lift of the picture's light over the night's)
+ * keeps `f` of the core's lift on the green channel at the night's own light: ((1 + f x (F - 1))^(1/passes) - 1) / ((F)^(1/passes) - 1), F the core's ratio there.
+ */
+export function poolTexelValue(f: number, cap = true): number {
+  const g = poolGain(PAINTED_POOL.nominalBase, 1)[1];
+  const F = (1 + g) ** PAINTED_POOL.passes;
+  const t = ((1 + f * (F - 1)) ** (1 / PAINTED_POOL.passes) - 1) / g;
+  return cap ? Math.min(1, Math.max(0, t)) : Math.max(0, t);
+}
+
+/**
+ * The kinds of light a painted land carries (13.11, round four, order 3): ONE table, and every light on a painted land reads its row, the lantern she holds, a torch (held or standing on the
+ * ground), a lamp, and the dev test light. A row is the light's own `lamp` colour (what it adds to the ground's flat light, per channel: the lantern's warm, the torch's redder and the lamp's
+ * paler), its `reach` (a share of the table's full radius), its `strength` (a share of the night's depth) and its `flicker`: `strength` and `radius` the shares the flame moves them by, together,
+ * and `every` the milliseconds of the game clock one step of the flame lasts (0 = steady). There is no second code path per kind.
+ */
+export type PaintedLightKind = 'lantern' | 'torch' | 'lamp';
+export interface PaintedLightRow {
+  lamp: readonly [number, number, number];
+  reach: number;
+  strength: number;
+  flicker: { strength: number; radius: number; every: number };
+}
+export const PAINTED_LIGHTS: Readonly<Record<PaintedLightKind, PaintedLightRow>> = {
+  lantern: { lamp: PAINTED_POOL.lamp, reach: 1, strength: 1, flicker: { strength: 0, radius: 0, every: 0 } },
+  torch: { lamp: [0.95, 0.46, 0.1], reach: 1, strength: 1.1, flicker: { strength: 0.06, radius: 0.05, every: 120 } },
+  lamp: { lamp: [0.78, 0.58, 0.3], reach: 0.9, strength: 0.9, flicker: { strength: 0, radius: 0, every: 0 } },
+};
+
+/** The five levels a flame stands at, from -2 (low) to 2 (high); a steady light stands at 0. */
+export const FLAME_LEVELS = 2;
+
+const hash32 = (n: number): number => {
+  let h = Math.imul(n | 0, 0x9e3779b1) ^ 0x85ebca6b;
+  h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d);
+  h = Math.imul(h ^ (h >>> 12), 0x297a2d39);
+  return (h ^ (h >>> 15)) >>> 0;
+};
+
+/**
+ * The flame's level now, -2 to 2, a whole number, one value per step of the game clock: a slow wander (value noise, a random value on every fourth step, eased between them) and a quick one (a random
+ * value of its own on every step), cut to five levels, so the flame moves on most steps and never by more than two levels at a time. Deterministic: the clock `ms` and the light's `seed` decide,
+ * nothing is drawn at random per frame. A steady row stands at 0.
+ */
+export function flameLevel(row: PaintedLightRow, ms: number, seed: number = 0): number {
+  const every = row.flicker.every;
+  if (!every) return 0;
+  const step = Math.floor(ms / every);
+  const u = step / 4;
+  const i = Math.floor(u);
+  const f = u - i;
+  const a = hash32(i * 2 + seed * 7919) / 0xffffffff;
+  const b = hash32((i + 1) * 2 + seed * 7919) / 0xffffffff;
+  const e = f * f * (3 - 2 * f);
+  const slow = (a + (b - a) * e) * 2 - 1;
+  const quick = (hash32(step * 5 + seed * 104729 + 1) / 0xffffffff) * 2 - 1;
+  return Math.max(-FLAME_LEVELS, Math.min(FLAME_LEVELS, Math.round((0.5 * slow + 0.5 * quick) * 1.1 * FLAME_LEVELS)));
+}
+
+/** A light's radius (art px) and strength (a share of the lamp's colour at the night's full depth) at a flame level: the table's reach and strength, moved together by the flicker. */
+export function lightNow(row: PaintedLightRow, level: number): { radius: number; strength: number } {
+  const q = level / FLAME_LEVELS;
+  return { radius: Math.round(poolRadiusArt() * row.reach * (1 + row.flicker.radius * q)), strength: row.strength * (1 + row.flicker.strength * q) };
+}
 
 /** The square the pool's hole takes, edge included. */
 export const HOLE = 2 * (LIGHT_POOL.r + LIGHT_POOL.edge + 1);
@@ -70,14 +224,14 @@ export function washAt(table: readonly LightKey[], minute: Minute): { tint: numb
   if (table.length === 1) return { tint: first.tint, alpha: first.pct / 100 };
   const last = table[table.length - 1]!;
   // the table is a ring: a stretch may cross midnight, so the minutes before the first key are read as the
-  // hours after the last one, and the two ends are the same stretch as any pair in between
-  const ring = [...table, { ...first, at: first.at + MINUTES }];
+  // hours after the last one, and the two ends are the same stretch as any pair in between (the first key again, a day on, closes it)
   const m = minute < first.at ? minute + MINUTES : minute;
-  for (let i = 0; i < ring.length - 1; i += 1) {
-    const a = ring[i]!;
-    const b = ring[i + 1]!;
-    if (m < a.at || m > b.at) continue;
-    const span = b.at - a.at;
+  for (let i = 0; i < table.length; i += 1) {
+    const a = table[i]!;
+    const b = i + 1 < table.length ? table[i + 1]! : first;
+    const bAt = i + 1 < table.length ? b.at : first.at + MINUTES;
+    if (m < a.at || m > bAt) continue;
+    const span = bAt - a.at;
     const t = span === 0 ? 0 : (m - a.at) / span;
     // on a key the key's own colour; past it, the colour the stretch is heading to
     return { tint: m === a.at ? a.tint : b.tint, alpha: Math.round(a.pct + (b.pct - a.pct) * t) / 100 };

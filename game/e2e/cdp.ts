@@ -157,9 +157,9 @@ export class Browser {
       '--no-first-run',
       '--no-default-browser-check',
       '--mute-audio',
-      // WebGL without a GPU, so the real renderer is what gets tested
-      '--use-angle=swiftshader',
-      '--enable-unsafe-swiftshader',
+      // WebGL without a GPU, so the real renderer is what gets tested; E2E_GPU=1 asks for this laptop's real GPU instead (the only flags that
+      // give one in headless Chrome here; others break WebGL without an error): a rig that sets it must read the renderer's name and refuse a software one
+      ...(process.env.E2E_GPU === '1' ? ['--use-gl=angle', '--use-angle=vulkan'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']),
       'about:blank',
     ];
     if (process.env.CI || process.platform === 'linux') args.unshift('--no-sandbox', '--disable-setuid-sandbox');
@@ -198,8 +198,17 @@ export class Browser {
     });
     this.proc.kill('SIGTERM');
     await Promise.race([exited, sleep(5000)]);
-    if (this.proc.exitCode === null) this.proc.kill('SIGKILL');
-    rmSync(this.profile, { recursive: true, force: true });
+    if (this.proc.exitCode === null) {
+      this.proc.kill('SIGKILL');
+      await Promise.race([exited, sleep(5000)]);
+    }
+    // Chrome's helper processes can still be writing into the profile for a moment after the browser exits (seen under load: ENOTEMPTY on
+    // rmdir of Default). A leftover temporary profile is not a failure of what the browser did, so the removal never throws.
+    try {
+      rmSync(this.profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
+    } catch (err) {
+      process.stderr.write(`cdp: the temporary profile ${this.profile} was left behind (${(err as Error).message})\n`);
+    }
   }
 }
 
@@ -468,9 +477,11 @@ export class Page {
     await this.send('Page.startScreencast', { format: 'jpeg', quality: 80, everyNthFrame: 1 });
   }
 
-  async screenshot(path: string): Promise<void> {
+  /** Saves a PNG of the page to `path` and returns it as a data URL (so a rig can read the picture's pixels back). */
+  async screenshot(path: string): Promise<string> {
     const r = await this.send<{ data: string }>('Page.captureScreenshot', { format: 'png' });
     writeFileSync(path, Buffer.from(r.data, 'base64'));
+    return `data:image/png;base64,${r.data}`;
   }
 
   close(): void {
