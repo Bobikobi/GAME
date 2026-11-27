@@ -1,4 +1,4 @@
-import { hash, valueNoise } from './richground';
+import { hash, noiseRect } from './richground';
 import { bedAt, foamAt } from './waterbody';
 
 /**
@@ -98,17 +98,45 @@ export function needsBlend(tx: number, ty: number, at: PathAt, own: 0 | 1): bool
   return path && meadow;
 }
 
-/**
- * Writes the blended tile into `out` (RGBA, EDGE_PX square) from the path tile's and the grass tile's pixels.
- * `own` is the side the tile itself is on.
- */
-export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pathPx: Uint8ClampedArray, grassPx: Uint8ClampedArray, out: Uint8ClampedArray, look: EdgeLook = PATH_EDGE): void {
+type EdgePainter = (pathPx: Uint8ClampedArray, grassPx: Uint8ClampedArray, out: Uint8ClampedArray) => void;
+
+const PATH_PIXEL = 0;
+const GRASS_PIXEL = 1;
+const WET_PIXEL = 2;
+const SOLID_PIXEL = 0x1000000;
+const solid = ([r, g, b]: readonly [number, number, number]): number => SOLID_PIXEL | (r << 16) | (g << 8) | b;
+
+/** Prepares the edge at this world position once for all frames of its source tiles. */
+export function prepareEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, look: EdgeLook = PATH_EDGE): EdgePainter {
   // the stones of a water's rim: rounded, 12 to 16 px across (a few small ones between), in runs along the line with bare stretches between; each is judged
   // from its own centre, so one stone is the same in every tile it crosses
   const rim = look.rim;
+  // The slow noises are hashed once for the tile and a margin round it (a stone's search reaches out of the tile; beyond the margin the
+  // noise is read the slow way, the same numbers); the tiles round this one are read once, not at every point.
+  const left = tx * EDGE_PX;
+  const top = ty * EDGE_PX;
+  const MARGIN = 40;
+  const noiseA = noiseRect(left - MARGIN, top - MARGIN, left + EDGE_PX + MARGIN, top + EDGE_PX + MARGIN, 31, 14);
+  const noiseB = noiseRect(left - MARGIN, top - MARGIN, left + EDGE_PX + MARGIN, top + EDGE_PX + MARGIN, 57, 5);
+  const noiseRun = noiseRect(left - MARGIN, top - MARGIN, left + EDGE_PX + MARGIN, top + EDGE_PX + MARGIN, 91, STONE_RUN);
+  const REACH = 2;
+  const SIDE = 2 * REACH + 1;
+  const around = new Float64Array(SIDE * SIDE);
+  for (let j = 0; j < SIDE; j++) for (let i = 0; i < SIDE; i++) around[j * SIDE + i] = at(tx + i - REACH, ty + j - REACH) ?? own;
+  const sideOf = (x: number, y: number): number => {
+    const i = x - tx + REACH;
+    const j = y - ty + REACH;
+    return i >= 0 && j >= 0 && i < SIDE && j < SIDE ? around[j * SIDE + i]! : (at(x, y) ?? own);
+  };
   const tAt = (gx: number, gy: number): number => {
-    const f = pathField(tx, ty, (gx - tx * EDGE_PX + 0.5) / EDGE_PX, (gy - ty * EDGE_PX + 0.5) / EDGE_PX, at, own);
-    return f + ((valueNoise(gx, gy, 31, 14) - 0.5) * 0.3 + (valueNoise(gx, gy, 57, 5) - 0.5) * 0.14) * look.wander;
+    const fx = tx + (gx - tx * EDGE_PX + 0.5) / EDGE_PX - 0.5;
+    const fy = ty + (gy - ty * EDGE_PX + 0.5) / EDGE_PX - 0.5;
+    const ix = Math.floor(fx);
+    const iy = Math.floor(fy);
+    const ax = fx - ix;
+    const ay = fy - iy;
+    const f = sideOf(ix, iy) * (1 - ax) * (1 - ay) + sideOf(ix + 1, iy) * ax * (1 - ay) + sideOf(ix, iy + 1) * (1 - ax) * ay + sideOf(ix + 1, iy + 1) * ax * ay;
+    return f + ((noiseA(gx, gy) - 0.5) * 0.3 + (noiseB(gx, gy) - 0.5) * 0.14) * look.wander;
   };
   interface Stone {
     x: number;
@@ -152,7 +180,7 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
         if (Math.hypot(x - x0, y - y0) > STONE_CELL * 1.2) break;
       }
       // the stones come in runs along the shore with bare stretches between: a slow noise says where
-      if ((ok || Math.abs(target - tAt(Math.round(x), Math.round(y))) < 0.02) && valueNoise(x, y, 91, STONE_RUN) > 0.36) {
+      if ((ok || Math.abs(target - tAt(Math.round(x), Math.round(y))) < 0.02) && noiseRun(x, y) > 0.36) {
         out = { x, y, rx, ry: rx * (0.76 + ((hash(cx, cy + 65) % 100) / 100) * 0.22), rank: small ? hash(cx, cy + 66) % 1000 : 1000 + (hash(cx, cy + 66) % 1000) };
       }
     }
@@ -203,42 +231,68 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
     cells.set(key, out);
     return out;
   };
-  const stoneAt = (gx: number, gy: number): readonly [number, number, number] | undefined => {
-    const bx = Math.floor(gx / STONE_CELL);
-    const by = Math.floor(gy / STONE_CELL);
-    let shadow = false;
-    let outline = false;
+  // Every pixel in a cell sees the same candidates in the same order.
+  const candidates = new Map<number, Stone[]>();
+  const stonesNear = (bx: number, by: number): Stone[] => {
+    const key = bx * 100003 + by;
+    const hit = candidates.get(key);
+    if (hit) return hit;
+    const out: Stone[] = [];
     for (let cy = by - 2; cy <= by + 2; cy++) {
       for (let cx = bx - 2; cx <= bx + 2; cx++) {
         const c = cellOf(cx, cy);
-        if (!c) continue;
-        const u = (gx + 0.5 - c.x) / c.rx;
-        const v = (gy + 0.5 - c.y) / c.ry;
-        const d = u * u + v * v;
-        // the wet line: a dark pixel or two under a stone's lower edge
-        if (d > 1) {
-          // a pixel of ink all round, and the wet line under the lower edge
-          if (d < (1 + 1.1 / Math.min(c.rx, c.ry)) ** 2) outline = true;
-          else if (d < 1.5 && v > 0.25) shadow = true;
-          continue;
-        }
-        if (v > 0.5 && d > 0.58) return STONE_DARK;
-        if (u + v > 0.4) return STONE_SHADE;
-        if (u + v < -0.45 && hash(gx, gy + 71) % 100 < 80) return STONE_LIGHT;
-        return hash(gx, gy + 73) % 100 < 14 ? STONE_SHADE : STONE;
+        if (c) out.push(c);
       }
+    }
+    candidates.set(key, out);
+    return out;
+  };
+  const stoneAt = (gx: number, gy: number): readonly [number, number, number] | undefined => {
+    let shadow = false;
+    let outline = false;
+    for (const c of stonesNear(Math.floor(gx / STONE_CELL), Math.floor(gy / STONE_CELL))) {
+      const u = (gx + 0.5 - c.x) / c.rx;
+      const v = (gy + 0.5 - c.y) / c.ry;
+      const d = u * u + v * v;
+      // the wet line: a dark pixel or two under a stone's lower edge
+      if (d > 1) {
+        // a pixel of ink all round, and the wet line under the lower edge
+        if (d < (1 + 1.1 / Math.min(c.rx, c.ry)) ** 2) outline = true;
+        else if (d < 1.5 && v > 0.25) shadow = true;
+        continue;
+      }
+      if (v > 0.5 && d > 0.58) return STONE_DARK;
+      if (u + v > 0.4) return STONE_SHADE;
+      if (u + v < -0.45 && hash(gx, gy + 71) % 100 < 80) return STONE_LIGHT;
+      return hash(gx, gy + 73) % 100 < 14 ? STONE_SHADE : STONE;
     }
     return outline ? STONE_INK : shadow ? WET_LINE : undefined;
   };
+  // Pixel centres only sample this 3x3 field. A shore stone's search can go farther and still uses `at` above.
+  const fieldTiles = new Uint8Array(9);
+  for (let y = -1; y <= 1; y++) {
+    for (let x = -1; x <= 1; x++) fieldTiles[(y + 1) * 3 + x + 1] = at(tx + x, ty + y) ?? own;
+  }
+  const pixels = new Uint32Array(EDGE_PX * EDGE_PX);
+  const shallows: { offset: number; k: number; tint: number[] }[] = [];
+  let foamRun: ((x: number, y: number) => number) | undefined;
+  const edge = look.threshold;
   for (let py = 0; py < EDGE_PX; py++) {
+    const gy = ty * EDGE_PX + py;
+    const fy = (py + 0.5) / EDGE_PX - 0.5;
+    const iy = Math.floor(fy);
+    const ay = fy - iy;
     for (let px = 0; px < EDGE_PX; px++) {
       const gx = tx * EDGE_PX + px;
-      const gy = ty * EDGE_PX + py;
-      const field = pathField(tx, ty, (px + 0.5) / EDGE_PX, (py + 0.5) / EDGE_PX, at, own);
-      const wander = ((valueNoise(gx, gy, 31, 14) - 0.5) * 0.3 + (valueNoise(gx, gy, 57, 5) - 0.5) * 0.14) * look.wander;
+      const fx = (px + 0.5) / EDGE_PX - 0.5;
+      const ix = Math.floor(fx);
+      const ax = fx - ix;
+      const cell = (iy + 1) * 3 + ix + 1;
+      const field = fieldTiles[cell]! * (1 - ax) * (1 - ay) + fieldTiles[cell + 1]! * ax * (1 - ay)
+        + fieldTiles[cell + 3]! * (1 - ax) * ay + fieldTiles[cell + 4]! * ax * ay;
+      const wander = ((noiseA(gx, gy) - 0.5) * 0.3 + (noiseB(gx, gy) - 0.5) * 0.14) * look.wander;
       const t = field + wander;
-      const edge = look.threshold;
-      const i = (py * EDGE_PX + px) * 4;
+      const i = py * EDGE_PX + px;
       let grass = t < edge;
       // the worn band: grass with sparse flecks of the path's sand
       if (look.sparse && grass && t > 0.42 && hash(gx, gy + 17) % 100 < (32 * (t - 0.42)) / (edge - 0.42)) grass = false;
@@ -247,70 +301,82 @@ export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pa
       if (near < 0.03 && hash(gx, gy + 3) % 100 < 35) grass = !grass;
       // a tuft of grass crossing into the sand: a column that carries one, as far as its own length
       if (look.tufts && !grass && t < edge + 0.16 && hash(gx, 11) % 100 < 13 && t < edge + 0.16 * ((hash(gx, 13) % 100) / 100)) grass = true;
-      const src = grass ? grassPx : pathPx;
-      out[i] = src[i]!;
-      out[i + 1] = src[i + 1]!;
-      out[i + 2] = src[i + 2]!;
-      out[i + 3] = 255;
-      if (look.rim) {
-        const r = look.rim;
+      pixels[i] = grass ? GRASS_PIXEL : PATH_PIXEL;
+      if (look.worn && !grass && ((t < edge + 0.06 && hash(gx, gy + 5) % 100 < 45) || (t < edge + 0.14 && hash(gx, gy + 9) % 100 < 16))) {
+        pixels[i] = solid(WORN);
+        continue;
+      }
+      if (rim) {
+        const st = stoneAt(gx, gy);
+        if (st) {
+          pixels[i] = solid(st);
+          continue;
+        }
         if (grass) {
           // the water side: the shallows, where the bed shows through and the water lightens a step or two toward the line, in an
           // ordered dither; and, only near the line, flecks of the study's foam where its holes let it through, in runs
           const dpx = (edge - t) * EDGE_PX;
-          const shallowPx = r.shallow * EDGE_PX;
-          if (dpx < shallowPx) {
-            // the study's bed shows through toward the line, fading out with the distance: the water mixes toward the bed's own colour, held to a muted teal so it reads as shallow water and not as sand
-            const bed = bedAt(gx, gy);
-            const near = Math.max(0, dpx);
-            // an exponential fade that is cut to nothing where the shallows end, so the open water is never touched
-            const k = SHALLOW_MIX * Math.exp(-near / SHALLOW_REACH) * (1 - near / shallowPx);
-            for (let c = 0; c < 3; c++) {
-              const tint = bed[c]! * SHALLOW_BED + SHALLOW_WATER[c]! * (1 - SHALLOW_BED);
-              out[i + c] = Math.round(out[i + c]! * (1 - k) + tint * k);
-            }
-          }
-          if (dpx < r.foam * EDGE_PX) {
+          if (dpx < rim.foam * EDGE_PX) {
             const f = foamAt(gx, gy);
-            const run = valueNoise(gx, gy, 77, 38);
-            const reach = 1 - Math.max(0, dpx) / (r.foam * EDGE_PX);
+            foamRun ??= noiseRect(left, top, left + EDGE_PX - 1, top + EDGE_PX - 1, 77, 38);
+            const run = foamRun(gx, gy);
+            const reach = 1 - Math.max(0, dpx) / (rim.foam * EDGE_PX);
             if (run > 0.6 && f > 0.75 + (1 - reach) * 0.2) {
-              const white = f > 0.9 ? FOAM_ICE : FOAM_WHITE;
-              out[i] = white[0];
-              out[i + 1] = white[1];
-              out[i + 2] = white[2];
+              pixels[i] = solid(f > 0.9 ? FOAM_ICE : FOAM_WHITE);
+              continue;
             }
           }
-        } else if (t < edge + r.wet) {
+          const shallowPx = rim.shallow * EDGE_PX;
+          if (dpx < shallowPx) {
+            // the study's bed shows through toward the line, held to a muted teal
+            const near = Math.max(0, dpx);
+            const k = SHALLOW_MIX * Math.exp(-near / SHALLOW_REACH) * (1 - near / shallowPx);
+            const tint = bedAt(gx, gy).map((c, n) => c * SHALLOW_BED + SHALLOW_WATER[n]! * (1 - SHALLOW_BED));
+            shallows.push({ offset: i * 4, k, tint });
+          }
+        } else if (t < edge + rim.wet) {
           // the land side: a pale line right at the water, and behind it the land's own pixels wet dark where no stone lies, a step darker, two next to the line
           if (t < edge + RIM_PX / EDGE_PX) {
-            const pale = hash(gx, gy + 47) % 100 < 38 ? RIM_LIGHT : RIM_PALE;
-            out[i] = pale[0];
-            out[i + 1] = pale[1];
-            out[i + 2] = pale[2];
-          } else {
-            const near = t < edge + r.wet * 0.45;
-            for (let n = 0; n < (near ? 2 : 1); n++) {
-              const dark = DARKER.get((out[i]! << 16) | (out[i + 1]! << 8) | out[i + 2]!);
-              if (dark === undefined || hash(gx, gy + 41 + n) % 100 >= 90) break;
-              out[i] = dark >> 16;
-              out[i + 1] = (dark >> 8) & 255;
-              out[i + 2] = dark & 255;
-            }
+            pixels[i] = solid(hash(gx, gy + 47) % 100 < 38 ? RIM_LIGHT : RIM_PALE);
+          } else if (hash(gx, gy + 41) % 100 < 90) {
+            const twice = t < edge + rim.wet * 0.45 && hash(gx, gy + 42) % 100 < 90;
+            pixels[i] = WET_PIXEL + Number(twice);
           }
         }
-        const st = stoneAt(gx, gy);
-        if (st) {
-          out[i] = st[0];
-          out[i + 1] = st[1];
-          out[i + 2] = st[2];
-        }
-      }
-      if (look.worn && !grass && ((t < edge + 0.06 && hash(gx, gy + 5) % 100 < 45) || (t < edge + 0.14 && hash(gx, gy + 9) % 100 < 16))) {
-        out[i] = WORN[0];
-        out[i + 1] = WORN[1];
-        out[i + 2] = WORN[2];
       }
     }
   }
+  return (pathPx, grassPx, out) => {
+    for (let i = 0; i < pixels.length; i++) {
+      const p = pixels[i]!;
+      const j = i * 4;
+      if (p >= SOLID_PIXEL) {
+        out[j] = (p >> 16) & 255;
+        out[j + 1] = (p >> 8) & 255;
+        out[j + 2] = p & 255;
+      } else {
+        const src = p === GRASS_PIXEL ? grassPx : pathPx;
+        out[j] = src[j]!;
+        out[j + 1] = src[j + 1]!;
+        out[j + 2] = src[j + 2]!;
+        if (p >= WET_PIXEL) {
+          const rgb = (src[j]! << 16) | (src[j + 1]! << 8) | src[j + 2]!;
+          const dark = DARKER.get(rgb) ?? rgb;
+          const color = p === WET_PIXEL ? dark : (DARKER.get(dark) ?? dark);
+          out[j] = color >> 16;
+          out[j + 1] = (color >> 8) & 255;
+          out[j + 2] = color & 255;
+        }
+      }
+      out[j + 3] = 255;
+    }
+    for (const { offset, k, tint } of shallows) {
+      for (let c = 0; c < 3; c++) out[offset + c] = Math.round(out[offset + c]! * (1 - k) + tint[c]! * k);
+    }
+  };
+}
+
+/** Writes one blended tile (RGBA, EDGE_PX square). `own` is the tile's side of the edge. */
+export function blendEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, pathPx: Uint8ClampedArray, grassPx: Uint8ClampedArray, out: Uint8ClampedArray, look: EdgeLook = PATH_EDGE): void {
+  prepareEdgeTile(tx, ty, at, own, look)(pathPx, grassPx, out);
 }

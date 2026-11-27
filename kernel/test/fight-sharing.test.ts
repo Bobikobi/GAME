@@ -24,27 +24,30 @@ function developEvents(events: ReturnType<typeof fightTick>['events']): unknown[
 }
 
 // Compare against the unchanged fixture and hashes from #711 by restoring the recorded kernel and content ids
-// and omitting twelve exact recipe ids: two dried-herb variants and ten hide recipes.
+// and omitting the recipe ids introduced afterward.
 const RECORDED_KERNEL = '0.27.0';
 const RECORDED_CONTENT = '8316c46193598c5d';
 const RECIPES_ADDED_SINCE = new Set([
   'ceosisrael/dried-herbs+core/herb',
   'ceosisrael/dried-herbs+core/sunleaf',
+  'core/bellberry-broth',
   'core/hare-fur-hood',
   'core/hare-leather-shoes',
   'core/roe-leather-jerkin',
   'core/roe-leather-leggings',
   'core/sinew-thread',
+  'core/snare',
   'core/tan-hare-fur',
   'core/tan-hare-leather',
   'core/tan-roe-leather',
+  'ceosisrael/wayfarers-scarf',
 ]);
 function developWorld(world: FightWorld): FightWorld {
   const old = structuredClone(world);
   for (const player of Object.values(old.players)) {
     player.state.kernel = RECORDED_KERNEL;
     player.state.content = RECORDED_CONTENT;
-    // The combat arena starts with the gate open, so it knows the hide recipes added after the recording.
+    // The arena starts with every start-known recipe, including those behind the open combat gate.
     player.state.player.recipes = player.state.player.recipes.filter((id) => !RECIPES_ADDED_SINCE.has(id));
     // the day's tally (#806) did not exist when the hashes were recorded
     delete player.state.player.day;

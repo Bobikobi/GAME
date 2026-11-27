@@ -7,10 +7,13 @@ const ROOT = process.cwd();
 const DOCUMENTS = [
   'docs/creators/README.md',
   'docs/team/ONBOARDING.md',
+  'docs/team/WORKFLOW.md',
+  'docs/team/PARALLEL.md',
   'docs/STANDARDS.md',
   'CONTRIBUTING.md',
   'README.md',
   'ROADMAP.md',
+  'templates/extension/README.md',
 ] as const;
 const PNPM_COMMANDS = new Set(['install']);
 const REPOSITORY_ROOTS = new Set(['.claude', '.github', 'content', 'docs', 'game', 'kernel', 'schema', 'templates', 'tools']);

@@ -6,8 +6,10 @@
  */
 import type { Gait } from '@game/kernel';
 
+import { type Ask, type WalkMode, stickGait, walkMode } from './walkfeel';
+
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type Button = 'a' | 'b' | 'bag' | 'journal' | 'menu' | 'up' | 'down';
+export type Button = 'a' | 'b' | 'bag' | 'journal' | 'menu' | 'up' | 'down' | 'jump';
 
 export const DIRS: Record<Dir, readonly [number, number]> = {
   up: [0, -1],
@@ -52,6 +54,8 @@ const KEY_BUTTON: Record<string, Button> = {
   KeyI: 'bag',
   KeyJ: 'journal',
   KeyM: 'menu',
+  // the jump (DECISIONS 2026-11-22): one hop ahead, or across a gap of water
+  KeyC: 'jump',
 };
 
 /** The dialogue, menu or title screen that has the player's attention. */
@@ -75,14 +79,22 @@ export class Controls {
   /** the sneak button, a toggle */
   private sneaking = false;
   private handlers = new Set<(b: Button) => boolean | void>();
+  private upHandlers = new Set<(b: Button) => void>();
 
-  constructor() {
+  /** whether the stick's last frame ran: the run's hysteresis (walkfeel.ts `stickGait`) */
+  private running = false;
+  /** `old` keeps the walk as it was before #641 (the 400 ms hold); the standard follows the push (walkfeel.ts) */
+  readonly mode: WalkMode;
+
+  constructor(mode: WalkMode = walkMode(window.location?.search ?? '')) {
+    this.mode = mode;
     window.addEventListener('keydown', (e) => this.keyDown(e));
     window.addEventListener('keyup', (e) => this.keyUp(e));
     window.addEventListener('blur', () => {
       this.held = [];
       this.stick = null;
       this.pushedAt = null;
+      this.running = false;
       this.shift = false;
     });
   }
@@ -112,6 +124,30 @@ export class Controls {
     return length === 0 ? [0, 0] : [x / length, y / length];
   }
 
+  /**
+   * What the hands ask of this frame in the standard walk (walkfeel.ts): the unit direction, the gait, and the share of the
+   * gait's pace. The stick's length picks the gait (a gentle push walks, a firm one runs) and the share; held keys are a full
+   * walk, a run with Shift. `vector()` and `gait()` stay as they were, for `?walk=old` and for the rooms and the 3D door.
+   */
+  ask(): Ask {
+    const none: Ask = { dir: [0, 0], share: 0, gait: 'walk' };
+    if (this.paused) return none;
+    if (this.stick) {
+      const length = Math.hypot(this.stick[0], this.stick[1]);
+      if (length === 0) {
+        this.running = false;
+        return none;
+      }
+      const { gait, share } = stickGait(length, this.running, this.sneaking, this.shift);
+      this.running = gait === 'run';
+      return { dir: [this.stick[0] / length, this.stick[1] / length], share, gait };
+    }
+    this.running = false;
+    const [x, y] = this.vector();
+    if (x === 0 && y === 0) return none;
+    return { dir: [x, y], share: 1, gait: this.sneaking ? 'sneak' : this.shift ? 'run' : 'walk' };
+  }
+
   /** The phone's stick: a vector of length 0 to 1, or null when the finger lifts. */
   setStick(v: readonly [number, number] | null): void {
     if (this.paused) return;
@@ -134,6 +170,7 @@ export class Controls {
     this.held = [];
     this.stick = null;
     this.pushedAt = null;
+    this.running = false;
     this.shift = false;
   }
 
@@ -156,9 +193,19 @@ export class Controls {
     this.handlers.add(fn);
   }
 
+  /** A button's key or touch rose: the app routes it like a press, but only the world listens for it now. */
+  onButtonUp(fn: (b: Button) => void): void {
+    this.upHandlers.add(fn);
+  }
+
   press(button: Button): void {
     if (this.paused) return;
     for (const fn of this.handlers) if (fn(button) === true) return;
+  }
+
+  release(button: Button): void {
+    if (this.paused) return;
+    for (const fn of this.upHandlers) fn(button);
   }
 
   private typing(e: KeyboardEvent): boolean {
@@ -192,6 +239,11 @@ export class Controls {
   private keyUp(e: KeyboardEvent): void {
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.shift = false;
     const dir = KEY_DIR[e.code];
-    if (dir) this.held = this.held.filter((d) => d !== dir);
+    if (dir) {
+      this.held = this.held.filter((d) => d !== dir);
+      return;
+    }
+    const button = KEY_BUTTON[e.code];
+    if (button) this.release(button);
   }
 }

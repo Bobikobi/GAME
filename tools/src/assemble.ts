@@ -191,7 +191,35 @@ export function flattenParams(p: ParamsBody): Params {
       noise_walk: p.gait.noise_walk.value,
       noise_run: p.gait.noise_run.value,
     },
+    jump: {
+      first_minute_ms: p.jump.first_minute_ms.value,
+      up_levels: p.jump.up_levels.value,
+      breath_cost: p.jump.breath_cost.value,
+      breath_refill_per_s: p.jump.breath_refill_per_s.value,
+      air_ms: p.jump.air_ms.value,
+      fall_two_bp: p.jump.fall_two_bp.value,
+      fall_three_bp: p.jump.fall_three_bp.value,
+      death_levels: p.jump.death_levels.value,
+    },
+    liftables: Object.fromEntries(Object.entries(p.liftables).map(([id, entry]) => [id, {
+      ...entry,
+      weight: entry.weight.value,
+      throw_range: entry.throw_range.value,
+      roll: entry.roll.value,
+    }])),
+    stones: {
+      area_tiles: p.stones.area_tiles.value,
+      area_cap: p.stones.area_cap.value,
+      return_ms: p.stones.return_ms.value,
+      pile_max: p.stones.pile_max.value,
+      lift_ms: p.stones.lift_ms.value,
+      throw_ms: p.stones.throw_ms.value,
+      throw_min_power: p.stones.throw_min_power.value,
+      throw_charge_ms: p.stones.throw_charge_ms.value,
+      throw_hold_ms: p.stones.throw_hold_ms.value,
+    },
     hunt: {
+      throw_item: p.hunt.throw_item,
       dress_step_ms: p.hunt.dress_step_ms.value,
       meat_spoil_d: p.hunt.meat_spoil_d.value,
       hide_spoil_d: p.hunt.hide_spoil_d.value,
@@ -411,7 +439,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
               ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
-              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number], ...(s.clip.fit_permille === undefined ? {} : { fit_permille: s.clip.fit_permille }) } } : {}),
+              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number], ...(s.clip.fit_permille === undefined ? {} : { fit_permille: s.clip.fit_permille }), ...(s.clip.hand === undefined ? {} : { hand: s.clip.hand.map((h) => [h[0], h[1]] as [number, number]) }) } } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -445,6 +473,10 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
       const where = `kit.sprites.${name}.clip`;
       const file = kitFiles[kitId]!;
       if (!records.races[s.clip.race]) issues.push({ file, where: `${where}.race`, message: `"${s.clip.race}" is not a race`, level: 'error' });
+      // a hand is one point a frame from the first: more points than frames would name frames the clip does not have
+      if (s.clip.hand && s.clip.hand.length > s.frames) {
+        issues.push({ file, where: `${where}.hand`, message: `${s.clip.hand.length} hand points for ${s.frames} frames: a hand is at most one point a frame`, level: 'error' });
+      }
       const lookup = `${s.clip.verb} ${s.clip.race} ${s.clip.view}`;
       const other = clipAt.get(lookup);
       if (other) issues.push({ file, where, message: `${other} already plays ${lookup}: a clip is one sheet for one verb, race and view`, level: 'error' });
@@ -637,6 +669,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (!slot) return err(owner, 'place.slot', `no slot "${slotId}" on the map`);
     const allowed = SLOT_KINDS_FOR[type] ?? [];
     if (!allowed.includes(slot.kind)) err(owner, 'place.slot', `"${slotId}" is a ${slot.kind} slot; a ${type} needs one of: ${allowed.join(', ')}`);
+    if (slot.reserved !== undefined) err(owner, 'place.slot', `"${slotId}" is reserved: ${slot.reserved}`);
     (slotFill[slotId] ??= []).push(owner);
   };
 
@@ -843,7 +876,13 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, p] of Object.entries(b.pockets)) p.ground.forEach((k, i) => item(id, `pocket.ground.${i}.item`, k.item));
   for (const [slotId, owners] of Object.entries(slotFill)) {
     if (owners.length > 1) {
-      for (const owner of owners) err(owner, 'place.slot', `slot "${slotId}" is taken by more than one extension: ${owners.join(', ')}`);
+      const kind = b.map.slots.find((s) => s.id === slotId)?.kind;
+      const free = b.map.slots.filter((s) => s.kind === kind && slotFill[s.id] === undefined && s.reserved === undefined).map((s) => s.id);
+      const next =
+        free.length > 0
+          ? `; free ${kind} slots: ${free.join(', ')}`
+          : `; no ${kind} slot is free: open a "Request for the valley" issue to ask for one`;
+      for (const owner of owners) err(owner, 'place.slot', `slot "${slotId}" is taken by more than one extension: ${owners.join(', ')}${next}`);
     }
   }
   checkMap(b, origin, issues);

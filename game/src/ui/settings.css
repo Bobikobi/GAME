@@ -64,8 +64,10 @@
   margin-left: -1px;
 }
 
-/* Jersey 15 closes the 6 at 16 px until it reads as 8; keep this numeric choice unambiguous. */
-.text-size-options .set-opt {
+/* Jersey 15 closes the 6 at 16 px until it reads as 8; keep this numeric choice unambiguous.
+   The `.panel.settings` prefix out-weighs the `.panel.settings .btn.set-opt` rule above, whose
+   `font` shorthand would otherwise put the 6 back in Jersey 15 and the first option reads as 18. */
+.panel.settings .text-size-options .set-opt {
   font-family: 'Atkinson Hyperlegible Next', sans-serif;
 }
 

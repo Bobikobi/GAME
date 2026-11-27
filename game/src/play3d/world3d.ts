@@ -12,6 +12,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   type Action,
   type Bundle,
+  type FightOutcome,
   type Slot,
   campTile,
   findSlot,
@@ -33,6 +34,7 @@ import { app, type WorldView } from '../app';
 import { sound, type Heard } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE } from '../config';
+import { FightWordLayer, type FightWordPoint } from '../fight-word-layer';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
@@ -43,7 +45,7 @@ import { FrameProbe, liteUrl } from './lite';
 import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
 import type { GameSession } from '../session-surface';
 import { stoneView } from '../stone';
-import { heightOf, questTargets } from '../targets';
+import { heightOf, huntingAt, huntingNearby, questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { beatAt, blowsDue, nextUnit } from '../work';
@@ -228,6 +230,9 @@ export class World3D implements WorldView {
   private empty: Slot[] = [];
   private unbind: (() => void)[] = [];
   private labels!: HTMLElement;
+  private fightWords!: FightWordLayer;
+  private readonly fightWordProjection = new THREE.Vector3();
+  private readonly reduceFightMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   private busyFrom = 0;
   private busyMs = 0;
@@ -239,7 +244,7 @@ export class World3D implements WorldView {
   private readonly stillReports = new StandingReports();
   private fell = false;
   private wasNight: boolean | undefined;
-  private readonly hazards: { id: string; kind: string; art: THREE.Object3D; frames: number; wolf?: { idle: THREE.AnimationAction | null; body: THREE.Object3D; eyes: THREE.Object3D } }[] = [];
+  private readonly hazards: { id: string; kind: string; art: THREE.Object3D; frames: number; top: number; wolf?: { idle: THREE.AnimationAction | null; body: THREE.Object3D; eyes: THREE.Object3D } }[] = [];
   private prompt = '';
   private hinted = new Set<string>();
   /** slots the player stands in now, so a riddle's slot is tried once per entry */
@@ -378,6 +383,7 @@ export class World3D implements WorldView {
     this.labels = document.createElement('div');
     this.labels.className = 'world-labels';
     app.ui.root.prepend(this.labels);
+    this.fightWords = new FightWordLayer(this.labels, (outcome, point) => this.fightWordHead(outcome, point));
     this.empty = emptySlots(b);
 
     // props: what the map says is a sign or a note, and how tall it stands
@@ -400,7 +406,8 @@ export class World3D implements WorldView {
         const art = wolf?.holder ?? (await this.picture(p.sprite, p.hazard.kind !== 'predator', p.x + p.w / 2, p.y + p.h / 2 + (p.hazard.kind === 'predator' ? 0.4 : 0)));
         if (art) {
           this.scene.add(art);
-          this.hazards.push({ id: p.id ?? '', kind: p.hazard.kind, art, frames: info.frames, wolf: wolf ? { idle: wolf.idle, body: wolf.body, eyes: wolf.eyes } : undefined });
+          const top = wolf?.height ?? art.scale.y;
+          this.hazards.push({ id: p.id ?? '', kind: p.hazard.kind, art, frames: info.frames, top, wolf: wolf ? { idle: wolf.idle, body: wolf.body, eyes: wolf.eyes } : undefined });
         }
       }
     }
@@ -473,7 +480,7 @@ export class World3D implements WorldView {
   }
 
   /** A wolf of the bank: its own model when the sprite has one (art.ts), else the sprite. By day it sleeps; at night only its eyes show, red and steady (DECISIONS 2026-10-16). */
-  private async wolf(sprite: string, x: number, z: number): Promise<(Hero & { body: THREE.Object3D; eyes: THREE.Object3D }) | undefined> {
+  private async wolf(sprite: string, x: number, z: number): Promise<(Hero & { body: THREE.Object3D; eyes: THREE.Object3D; height: number }) | undefined> {
     const m = wolfModel(sprite);
     if (!m) return undefined;
     try {
@@ -484,7 +491,7 @@ export class World3D implements WorldView {
       h.holder.add(eyes);
       h.holder.position.set(x, groundY(x, z), z);
       h.holder.rotation.y = m.turn;
-      return { ...h, body, eyes };
+      return { ...h, body, eyes, height: m.height };
     } catch {
       return undefined;
     }
@@ -554,6 +561,7 @@ export class World3D implements WorldView {
 
   bind(session: GameSession): void {
     for (const off of this.unbind) off();
+    this.fightWords.clear();
     this.session = session;
     this.body.place(session.pos);
     this.auto = null;
@@ -569,6 +577,7 @@ export class World3D implements WorldView {
       session.on('change', () => void this.refresh()),
       // a fall takes the player to town: the walk and the work are over, the place they stand in is new
       session.on('events', (events) => {
+        this.fightWords.play(events, performance.now());
         if (!events.some((e) => e.e === 'fall')) return;
         this.fell = true;
         this.body.moving = false;
@@ -874,6 +883,10 @@ export class World3D implements WorldView {
     this.placeHero(s, dt);
     this.glow();
     this.follow(dt);
+    if (this.fightWords.active) {
+      this.camera.updateMatrixWorld();
+      this.fightWords.update(performance.now(), this.reduceFightMotion.matches);
+    }
   }
 
   /** Before a game starts the camera drifts over the valley. */
@@ -1251,7 +1264,8 @@ export class World3D implements WorldView {
       const t = this.targetAt(s, tx, ty);
       if (t) return t;
     }
-    return undefined;
+    const prey = huntingNearby(this.b, s.state, s.tick, s.pos);
+    if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: 0.4 };
   }
 
   private targetAt(s: GameSession, x: number, y: number): Target | undefined {
@@ -1263,6 +1277,8 @@ export class World3D implements WorldView {
     // a pile the player put down, under their feet (drawn in the 2D door; here the prompt finds it)
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: 0.4 };
+    const hunt = huntingAt(b, s.state, s.tick, s.pos, tile);
+    if (hunt) return { ...hunt, run: () => void app.ui.hunt(hunt.action), top: 0.4 };
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);
@@ -1373,6 +1389,28 @@ export class World3D implements WorldView {
   screenOf(x: number, y: number): { x: number; y: number } {
     const v = new THREE.Vector3(x + 0.5, groundY(x + 0.5, y + 0.5) + 0.6, y + 0.5).project(this.camera);
     return { x: ((v.x + 1) / 2) * window.innerWidth, y: ((1 - v.y) / 2) * window.innerHeight };
+  }
+
+  private fightWordHead({ struck, at }: FightOutcome, point: FightWordPoint): boolean {
+    let figure: THREE.Object3D | undefined;
+    let top = CHAR_HEIGHT;
+    if (struck.side === 'player') {
+      figure = this.hero?.holder;
+    } else if (struck.id) {
+      for (const hazard of this.hazards) {
+        if (hazard.id !== struck.id || hazard.kind !== 'predator') continue;
+        figure = hazard.art;
+        top = hazard.top;
+        break;
+      }
+    }
+    const x = figure?.position.x ?? at[0] + 0.5;
+    const z = figure?.position.z ?? at[1] + 0.5;
+    const y = (figure?.position.y ?? groundY(x, z)) + top;
+    const v = this.fightWordProjection.set(x, y, z).project(this.camera);
+    point.x = ((v.x + 1) / 2) * window.innerWidth;
+    point.y = ((1 - v.y) / 2) * window.innerHeight;
+    return v.z >= -1 && v.z <= 1;
   }
 
   /** Test and support hook (?debug): where the player is and what the world holds. */

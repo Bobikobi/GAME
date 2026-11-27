@@ -113,6 +113,20 @@ describe('the landscape controls in Wild Rift\'s size and density', () => {
     });
   }
 
+  for (const H of [320, 360, 390, 412, 480]) {
+    it(`puts the jump on the ability arc one gap past Sneak, clear of A, Sneak and the column, at H ${H}`, () => {
+      const at = controlsLayout(H);
+      expect(Math.abs(gap(at.sneak, at.jump) - GAP * at.jump.d)).toBeLessThanOrEqual(2);
+      expect(gap(at.a, at.jump)).toBeGreaterThanOrEqual(GAP * at.jump.d - 2);
+      expect(gap(at.bag, at.jump)).toBeGreaterThan(0);
+      expect(gap(at.b, at.jump)).toBeGreaterThan(0);
+      expect(at.jump.d).toBeGreaterThanOrEqual(48);
+      // on the screen, and under the HUD's band along the top
+      expect(at.jump.right - at.jump.d / 2).toBeGreaterThanOrEqual(2);
+      expect(at.jump.bottom + at.jump.d / 2).toBeLessThan(H / 2);
+    });
+  }
+
   it('grows with the screen', () => {
     const at = controlsLayout(480);
     expect(at.a.d).toBe(91);

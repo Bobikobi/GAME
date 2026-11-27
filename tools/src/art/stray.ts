@@ -52,7 +52,7 @@ export function registeredWorktrees(repo: string = REPO): string[] {
     .filter((p) => existsSync(p));
 }
 
-/** Every hash the drafts indexes of these worktrees hold: the raw, full and imported file of each draft. */
+/** Every hash the drafts indexes of these worktrees hold: the raw, full and imported file of each draft. A removed draft's hashes count too: its picture must not turn up as a stray file. */
 export function indexedHashes(worktrees: readonly string[]): Set<string> {
   const hashes = new Set<string>();
   for (const wt of worktrees) {

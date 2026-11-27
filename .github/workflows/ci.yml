@@ -98,10 +98,11 @@ jobs:
           [ -f check.txt ] || exit 0
           { echo '### pnpm check'; echo '```'; cat check.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Schemas, content, lint, types, tests and build
-        run: pnpm verify
+      # The content check already ran above. Run the other parts of local `pnpm verify`.
+      - name: Schemas, lint, types, tests and build
+        run: pnpm schemas --verify && pnpm verify:remaining
 
-      # the database tests are skipped by `pnpm verify` above (no DATABASE_URL), and run here against a
+      # the database tests are skipped by the test suite above (no DATABASE_URL), and run here against a
       # real postgres: the migrations apply twice without a second change, and the store's lock holds
       # (and sign-in: a link spent once under a race, a closed account leaving no row)
       - name: Database migrations against postgres 16

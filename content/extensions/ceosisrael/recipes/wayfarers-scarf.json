@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "ceosisrael/wayfarers-scarf",
+  "title": "Wayfarer's scarf",
+  "creator": "ceosisrael",
+  "items": [
+    {
+      "id": "ceosisrael/wayfarers-scarf",
+      "name": "Wayfarer's scarf",
+      "description": "A woven strip of reed cord that keeps the road's wind off your neck.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "garment",
+      "family": "scarf",
+      "tier": 1,
+      "sprite": "core/base-kit:items/bandage",
+      "weight": 1,
+      "wear": {
+        "slot": "top",
+        "look": true
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 4000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/reed-cord",
+        "qty": 2
+      },
+      {
+        "item": "core/reed",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "ceosisrael/wayfarers-scarf",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

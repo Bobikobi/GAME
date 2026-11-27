@@ -3,7 +3,11 @@
  * next place to go reads from the map itself (G28, onboarding research phase 2). Pure, so the
  * rule can be tested without a scene.
  */
-import { type Bundle, type Rect, campTile, findSlot, hourOf, isNight, npcTile, spotOpen, type PublicState } from '@game/kernel';
+import {
+  type Action, type Bundle, type PublicState, type Rect, type Tile,
+  awakeHuntTick, campTile, carcassGone, findSlot, hourOf, isNight, npcTile,
+  snareAt, spotOpen, stonePrey, valleyDay,
+} from '@game/kernel';
 
 import { activeQuests, questSteps, readyToHandIn } from './text';
 
@@ -23,6 +27,34 @@ export function heightOf(b: Bundle, ref: string | undefined, fallback: number): 
 
 /** At most this many, the nearest to the player first: a resource with many nodes must not fill the valley with sparks. */
 export const MAX_TARGETS = 6;
+
+interface HuntTarget {
+  label: string;
+  tile: Tile;
+  action: Action;
+}
+
+export function huntingAt(b: Bundle, s: PublicState, tick: number, at: Tile, tile: Tile): HuntTarget | undefined {
+  const carcass = s.player.carcasses?.find((c) => c.at[0] === tile[0] && c.at[1] === tile[1] && !carcassGone(b, c, awakeHuntTick(s, tick)));
+  if (carcass) return { label: 'Dress carcass', tile, action: { t: 'dress', carcass: carcass.id, at } };
+  const snare = snareAt(s, tile);
+  if (snare && snare.checkedDay !== valleyDay(b, tick)) {
+    return { label: 'Check snare', tile, action: { t: 'check_snare', tile, at } };
+  }
+}
+
+export function huntingNearby(b: Bundle, s: PublicState, tick: number, at: Tile): HuntTarget | undefined {
+  if ((s.player.bag[b.params.hunt.throw_item] ?? 0) === 0) return undefined;
+  let target: HuntTarget | undefined;
+  let nearest = Infinity;
+  for (const [index, spot] of (b.map.creatures?.spots ?? []).entries()) {
+    const distance = (at[0] - spot.x) ** 2 + (at[1] - spot.y) ** 2;
+    if (distance >= nearest || !stonePrey(b, s, tick, index, at)) continue;
+    nearest = distance;
+    target = { label: 'Throw stone', tile: [spot.x, spot.y], action: { t: 'take', prey: index, at } };
+  }
+  return target;
+}
 
 export function questTargets(b: Bundle, s: PublicState, tick: number): Target[] {
   const main = activeQuests(b, s)[0];

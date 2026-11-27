@@ -34,6 +34,7 @@ const ICONS = {
   bag: svg('<path d="M5 9h14l-1.2 11H6.2z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/>'),
   journal: svg('<path d="M6 4h11a1 1 0 0 1 1 1v15H7a1 1 0 0 1-1-1z"/><path d="M9 4v16"/><path d="M12 9h3"/>'),
   menu: svg('<path d="M5 7h14"/><path d="M5 12h14"/><path d="M5 17h14"/>'),
+  jump: svg('<path d="M4 18c2-9 14-9 16 0"/><path d="M16 14l4 4 4-3" transform="translate(-4 0)"/>'),
 };
 
 function svg(body: string): string {
@@ -45,6 +46,9 @@ export function mountTouch(root: HTMLElement): void {
   const a = h('button', { class: 'tbtn a', type: 'button', 'aria-label': 'A' }, 'A');
   const sneak = h('button', { class: 'tbtn sneak', type: 'button', 'aria-pressed': 'false' }, 'Sneak');
   const b = h('button', { class: 'tbtn b', type: 'button', 'aria-label': 'B' }, 'B');
+  // the jump (DECISIONS 2026-11-22): on the ability arc beside Sneak; one tap is one hop ahead, or across a gap
+  const jump = h('button', { class: 'tbtn jump', type: 'button', 'aria-label': 'Jump' });
+  jump.innerHTML = ICONS.jump;
   // the landscape arc above A: the HUD's own buttons, for the right thumb
   const bag = h('button', { class: 'tbtn nav bag', type: 'button', 'aria-label': 'Bag' });
   const journal = h('button', { class: 'tbtn nav journal', type: 'button', 'aria-label': 'Journal' });
@@ -56,7 +60,7 @@ export function mountTouch(root: HTMLElement): void {
   const knob = h('i', { class: 'stick-knob' });
   const stick = h('div', { class: 'stick', 'aria-hidden': 'true' }, knob);
   const zone = h('div', { class: 'stick-zone', 'aria-label': 'Walk: touch and slide' });
-  const el = h('div', { class: 'touch' }, zone, stick, pad, h('div', { class: 'tbtns' }, sneak, b, a, bag, journal, menu));
+  const el = h('div', { class: 'touch' }, zone, stick, pad, h('div', { class: 'tbtns' }, sneak, jump, b, a, bag, journal, menu));
   root.append(el);
 
   const show = () => {
@@ -80,7 +84,7 @@ export function mountTouch(root: HTMLElement): void {
   const rootData = document.documentElement.dataset;
   const side = (): StickSide => (rootData.stickSide === 'right' ? 'right' : 'left');
   const scale = (): number => BUTTON_SCALE[BUTTON_SIZES.find((v) => v === rootData.buttonSize) ?? 'medium'];
-  const placed: [HTMLElement, keyof ControlsLayout][] = [[a, 'a'], [b, 'b'], [sneak, 'sneak'], [bag, 'bag'], [journal, 'journal'], [menu, 'menu']];
+  const placed: [HTMLElement, keyof ControlsLayout][] = [[a, 'a'], [b, 'b'], [sneak, 'sneak'], [jump, 'jump'], [bag, 'bag'], [journal, 'journal'], [menu, 'menu']];
   // every size of the landscape controls is a share of the screen's height (controlsLayout)
   const layOut = () => {
     const at = controlsLayout(window.innerHeight, scale());
@@ -193,10 +197,33 @@ export function mountTouch(root: HTMLElement): void {
       window.setTimeout(() => btn.classList.remove('down'), 120);
     });
   tap(a, 'a');
-  tap(b, 'b');
+  tap(jump, 'jump');
   tap(bag, 'bag');
   tap(journal, 'journal');
   tap(menu, 'menu');
+
+  // B held and dragged charges the throw and aims it (DECISIONS 2026-11-22): a tap still throws at once
+  let bDown: { x: number; y: number } | null = null;
+  b.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    b.classList.add('down');
+    buzz(TAP);
+    bDown = { x: e.clientX, y: e.clientY };
+    b.setPointerCapture(e.pointerId);
+    app.controls.press('b');
+  });
+  b.addEventListener('pointermove', (e) => {
+    if (!bDown) return;
+    app.world?.throwDrag?.(e.clientX - bDown.x, e.clientY - bDown.y);
+  });
+  const bLift = () => {
+    if (!bDown) return;
+    bDown = null;
+    b.classList.remove('down');
+    app.controls.release('b');
+  };
+  b.addEventListener('pointerup', bLift);
+  b.addEventListener('pointercancel', bLift);
 
   // the arc's bag and journal come with the HUD's: hidden until the hook ladder opens them
   const hud = root.querySelector('.hud');
@@ -218,5 +245,5 @@ export function mountTouch(root: HTMLElement): void {
 
   // A acts on pointerdown, so the browser's click that follows the finger
   // lifting would land on the window A just opened (and close it)
-  for (const el of [pad, zone, a, b, sneak, bag, journal, menu]) el.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+  for (const el of [pad, zone, a, b, sneak, jump, bag, journal, menu]) el.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
 }

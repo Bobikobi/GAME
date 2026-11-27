@@ -71,8 +71,8 @@ describe('the source', () => {
     expect(() => loadSource(bad2)).toThrow(/hit_ties_open\.pairs\[44\]: is \[tier, a, b\]/);
   });
 
-  it('reads the content: 31 built recipes, the Handcraft top at 9, the 13 anchored values in the bundle', () => {
-    expect(built.recipes).toHaveLength(31);
+  it('reads the content: 33 built recipes, the Handcraft top at 9, the 13 anchored values in the bundle', () => {
+    expect(built.recipes).toHaveLength(33);
     expect(built.tops.get('handcraft')).toBe(9);
     const ctx = makeCtx(source, 'default', built);
     for (const name of anchored(source)) {
@@ -89,7 +89,7 @@ describe('the default variant', () => {
     expect(report.errors).toEqual([]);
     expect(report.notes.checksRun).toHaveLength(35);
     expect(report.notes.builtCompared).toBe(13);
-    expect(report.notes.builtRecipes).toBe(31);
+    expect(report.notes.builtRecipes).toBe(33);
     expect(report.notes.hitTies).toBe(44);
     expect(report.notes.launcherPairs).toBe(732);
     expect(report.notes.taughtDups).toHaveLength(9);
@@ -378,8 +378,8 @@ describe('a mutation fails its own check', () => {
     src.params.built.bare_base!.max = 20;
     expectError(src, /^WM-BUILT: bare_base: max 20 in the source, 16 in content$/);
     const src2 = raw();
-    src2.params.built.bare_base!.at = 'content/core/params.json:1141';
-    expectError(src2, /^WM-BUILT: bare_base: content\/core\/params\.json:1141 does not name it \(the line reads: .*\)$/);
+    src2.params.built.bare_base!.at = 'content/core/params.json:1142';
+    expectError(src2, /^WM-BUILT: bare_base: content\/core\/params\.json:1142 does not name it \(the line reads: .*\)$/);
   });
 
   it('WM-COUNT', () => {

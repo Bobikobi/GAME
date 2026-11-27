@@ -10,7 +10,8 @@
  * - The pictures are too big for this repo. They live in the private repo `Bobikobi/GAME-art-drafts`, one GitHub
  *   release per kernel run, three assets a draft named by its id: `<id>.png` (the raw picture, what the importer read),
  *   `<id>.full.png` (the kernel's picture before the grid, when there is one) and `<id>.imported.png` (what the importer
- *   made). `stored` in the index cites tag and asset; `files` holds the hashes. Nothing is ever deleted there.
+ *   made). `stored` in the index cites tag and asset; `files` holds the hashes. A file leaves the store only through `pnpm art:prune`
+ *   (docs/art/REUSE.md "Pruning"): a cold copy first, then one amendment `removed` on the draft's line.
  * - `.scratch/art-drafts/` is the local cache. `pnpm art:drafts fetch` fills it, `verify` re-hashes it against the index.
  *
  *   pnpm art:drafts push <run folder | picture folder> --label <source> [--provenance <text>] [--backfill] [--tag <tag>]
@@ -111,17 +112,23 @@ export interface Draft {
   review_by?: string;
   review_note?: string;
   looks_like?: string;
+  /** The prune rule's reason code when the files were removed from the store (`pnpm art:prune`); the index line stays. */
+  removed?: string;
+  /** When the removal was made, from the amendment's `at`. */
+  removed_at?: string;
   at: string | null;
   sources: DraftSource[];
 }
 
 /** The fields a later line may set; the others are the draft as it arrived. */
-export const AMENDABLE = ['stored', 'review', 'review_by', 'review_note', 'looks_like', 'model', 'round', 'ramps', 'pool', 'seed', 'recipe'] as const;
+export const AMENDABLE = ['stored', 'review', 'review_by', 'review_note', 'looks_like', 'model', 'round', 'ramps', 'pool', 'seed', 'recipe', 'removed'] as const;
 
 export interface Amendment extends Partial<Pick<Draft, (typeof AMENDABLE)[number]>> {
   id: string;
   amend: true;
   sources?: DraftSource[];
+  /** With `removed`: the day the files were taken out of the store. */
+  at?: string;
 }
 
 export type DraftLine = Draft | Amendment;
@@ -198,8 +205,12 @@ export function foldLine(map: Map<string, Draft>, line: DraftLine): void {
     const value = line[key];
     if (value !== undefined) (existing as unknown as Record<string, unknown>)[key] = structuredClone(value);
   }
+  if (line.removed !== undefined && line.at !== undefined) existing.removed_at = line.at;
   mergeSources(existing.sources, line.sources);
 }
+
+/** A draft whose files were pruned out of the store: the index keeps its line, the store has nothing to fetch. */
+export const isRemoved = (draft: Pick<Draft, 'removed'>): boolean => draft.removed !== undefined;
 
 export function foldIndex(lines: readonly DraftLine[]): Map<string, Draft> {
   const map = new Map<string, Draft>();
@@ -233,6 +244,11 @@ export class DraftIndex {
     foldLine(this.drafts, line);
   }
 
+  /** The drafts whose files are still in the store. A reader that lists, counts, fetches or draws drafts uses this; `drafts` also keeps the removed ones, so an id stays known. */
+  live(): Draft[] {
+    return [...this.drafts.values()].filter((d) => !isRemoved(d));
+  }
+
   /** A draft: new bytes append a line, known bytes only gain what they add (a source, a storage citation, a blank field). */
   add(record: Draft): AddResult {
     const existing = this.drafts.get(record.id);
@@ -253,6 +269,15 @@ export class DraftIndex {
     if (Object.keys(patch).length === 2) return 'same';
     this.write(patch);
     return 'merged';
+  }
+
+  /** The files of this draft were taken out of the store by `pnpm art:prune`: one amendment `{id, amend, removed: <rule code>, at}`. */
+  markRemoved(id: string, code: string, at: string): boolean {
+    const existing = this.drafts.get(id);
+    if (existing === undefined) throw new Error(`no draft ${id}`);
+    if (existing.removed !== undefined) return false;
+    this.write({ id, amend: true, removed: code, at });
+    return true;
   }
 
   /** A fact learned later. Nothing is written when it changes nothing. */
@@ -741,7 +766,7 @@ export function fetchDrafts(index: DraftIndex, ids: readonly string[] | null, op
   mkdirSync(cache, { recursive: true });
   const report: FetchReport = { fetched: 0, present: 0, missing: [] };
   const wanted = new Map<string, { id: string; kind: FileKind; asset: string; ext?: string }[]>();
-  for (const draft of ids === null ? index.drafts.values() : ids.flatMap((id) => index.drafts.get(id) ?? [])) {
+  for (const draft of (ids === null ? [...index.drafts.values()] : ids.flatMap((id) => index.drafts.get(id) ?? [])).filter((d) => !isRemoved(d))) {
     for (const kind of FILE_KINDS) {
       const ref = draft.files[kind];
       if (ref === null) continue;
@@ -786,7 +811,7 @@ export function verifyDrafts(index: DraftIndex, ids: readonly string[] | null, o
   const cache = opts.cache ?? CACHE_DIR;
   const fetched = opts.fetch === false ? { fetched: 0, present: 0, missing: [] as FetchReport['missing'] } : fetchDrafts(index, ids, { ...opts, cache });
   const report: VerifyReport = { checked: 0, ok: 0, mismatched: [], missing: [], unpushed: [], fetched: fetched.fetched };
-  const drafts = ids === null ? [...index.drafts.values()] : ids.flatMap((id) => index.drafts.get(id) ?? []);
+  const drafts = (ids === null ? [...index.drafts.values()] : ids.flatMap((id) => index.drafts.get(id) ?? [])).filter((d) => !isRemoved(d));
   for (const draft of drafts) {
     let kept = false;
     for (const kind of FILE_KINDS) {
@@ -942,7 +967,7 @@ function listPictures(dir: string, recursive: boolean): string[] {
 }
 
 function stats(index: DraftIndex): string {
-  const drafts = [...index.drafts.values()];
+  const drafts = index.live();
   const by = (f: (d: Draft) => string): string => {
     const counts = new Map<string, number>();
     for (const d of drafts) counts.set(f(d), (counts.get(f(d)) ?? 0) + 1);
@@ -1045,7 +1070,7 @@ export function runCli(argv: readonly string[]): number {
     }
     case 'view': {
       if (positional[0] !== 'wrong-draws') throw new Error('Usage: art:drafts view wrong-draws [--write]');
-      const text = wrongDrawsText(index.drafts.values());
+      const text = wrongDrawsText(index.live());
       if (flags.has('write')) writeFileSync(WRONG_DRAWS_LIBRARY, text);
       else process.stdout.write(text);
       return 0;

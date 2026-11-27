@@ -88,6 +88,8 @@ export interface ControlsLayout {
   a: Placed;
   b: Placed;
   sneak: Placed;
+  /** the jump (DECISIONS 2026-11-22), the next place on the ability arc past Sneak */
+  jump: Placed;
   bag: Placed;
   journal: Placed;
   menu: Placed;
@@ -113,6 +115,7 @@ export const MIN_TAP = 44;
  * - B and Sneak, the ability arc: 0.13 H (48 at the least), on one arc round A at A's radius, their own and a gap;
  *   B straight left, Sneak up-left at the angle that leaves one gap between B's edge and its own. The rest of the
  *   arc stays open for the hunt's buttons.
+ * - Jump, on the same arc one gap past Sneak (the next place round A, a little left of straight up).
  * - Bag, Journal and Menu, the column at the right edge: 0.11 H (44 at the least), centers 0.07 H from the edge,
  *   from just above Sneak's top upward, one gap apart.
  * - The stick: a ring of 0.26 H (96 at the least), the knob 0.4 of it.
@@ -134,6 +137,7 @@ export function controlsLayout(H: number, scale = 1): ControlsLayout {
     a: { right: aC, bottom: aC, d: aD },
     b: round({ right: aC + arc.arc, bottom: aC, d: sD }),
     sneak: round(sneak),
+    jump: round(arc.jump),
     bag: round({ right: cR, bottom: bagBottom, d: cD }),
     journal: round({ right: cR, bottom: bagBottom + step, d: cD }),
     menu: round({ right: cR, bottom: bagBottom + 2 * step, d: cD }),
@@ -155,5 +159,8 @@ function actionArc(H: number, scale: number) {
   const sneakDeg = 180 - (2 * Math.asin(((1 + GAP) * sD) / (2 * arc)) * 180) / Math.PI;
   const rad = (sneakDeg * Math.PI) / 180;
   const sneak = { right: aC - arc * Math.cos(rad), bottom: aC + arc * Math.sin(rad), d: sD };
-  return { aD, aC, sD, arc, sneakDeg, sneak };
+  // the next place on the arc: the same angle again past Sneak, so the three buttons keep one gap between neighbours
+  const jumpRad = ((2 * sneakDeg - 180) * Math.PI) / 180;
+  const jump = { right: aC - arc * Math.cos(jumpRad), bottom: aC + arc * Math.sin(jumpRad), d: sD };
+  return { aD, aC, sD, arc, sneakDeg, sneak, jump };
 }

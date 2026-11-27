@@ -181,6 +181,7 @@ export const HubSlot = Type.Object(
     w: Type.Integer({ minimum: 1, maximum: 64 }),
     h: Type.Integer({ minimum: 1, maximum: 64 }),
     filled_by: Type.Union([Id, Type.Null()], { description: 'The record in this slot, or null when it awaits a creator.' }),
+    reserved: Type.Optional(Type.String({ minLength: 1, maxLength: 120, description: 'A slot a decision holds for something named, empty on the map but not free for a creator: the DECISIONS heading that reserves it.' })),
   },
   { additionalProperties: false, description: 'One slot of the ruins map (spec L-2).' },
 );

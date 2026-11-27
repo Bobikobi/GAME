@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.32.0';
+export const KERNEL_VERSION = '0.37.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -115,9 +115,26 @@ export interface Carcass {
   grade: 1 | 2 | 3;
   /** the tick it fell */
   since: number;
+  /** the awake clock when it fell; older carcasses use since */
+  awakeSince?: number;
   /** parts of the dressing done so far (one action each; DRESS_PARTS by size); absent means none */
   dressed?: number;
 }
+
+export interface Snare {
+  at: [number, number];
+  kind?: string;
+  readyDay: number;
+  checkedDay?: number;
+}
+
+export interface HuntBatch {
+  qty: number;
+  /** expiry on the awake clock */
+  until: number;
+}
+
+export type HuntStock = Record<string, HuntBatch[]>;
 
 export interface FireState {
   /** tick at which this uninterrupted burn began */
@@ -227,6 +244,13 @@ export interface Player {
   carcasses?: Carcass[];
   /** how many animals have fallen in this game: the next carcass takes the number after */
   fallen?: number;
+  /** Game time skipped during sleep or absence, excluded from spoilage. */
+  huntPausedMs?: number;
+  /** When each creature spot can be taken again, by species and tile. */
+  preyReturns?: Record<string, number>;
+  snares?: Snare[];
+  /** Expiry batches alongside the existing bag and dropped stacks. */
+  huntStock?: { bag: HuntStock; ground: Record<string, HuntStock> };
   /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.12) */
   own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
@@ -241,6 +265,24 @@ export interface Player {
   movedAt: number;
   /** the valley's day so far and the day before it (G16, the day summary); absent until the first step of a day that has begun */
   day?: DayTally;
+  /** the breath the jump spends (kernel 0.33): what was left after the last jump and the tick it was left at; absent until the first jump, when the player holds the full cap (`breathLeft`) */
+  breath?: { left: number; at: number };
+  /** the loose stones this player has moved (kernel 0.35, DECISIONS.md 2026-11-22); absent until the first stone is lifted, and every field of an old state reads as none */
+  stones?: StoneState;
+}
+
+/**
+ * Loose objects moved by this player. Hand items lie in `player.ground`; objects that cannot go in a bag
+ * are recorded here by tile and entry id. Spots keep their identity by index.
+ */
+export interface StoneState {
+  /** spots this player emptied, by index in the map's list */
+  taken: Record<string, true>;
+  placed: Record<string, Record<string, number>>;
+  /** throws on loan, oldest first; an empty key means the object sank or fell with its carrier */
+  returns: { key: string; kind: string; at: number }[];
+  /** id of the arms entry occupying both hands */
+  carry?: string;
 }
 
 /**
@@ -384,6 +426,7 @@ export function migrateState(saved: State): State {
     delete named.satiety;
   }
   delete named.satietyAt;
+  if (s.player.stones) s.player.stones = migrateStoneState(s.player.stones);
   const format = s.format ?? 1;
   if (format < 2) toFormat2(s);
   // kernel 0.20: the 32-bit seed widens to a 128-bit key; its draws differ from before, as every draw does.
@@ -392,6 +435,31 @@ export function migrateState(saved: State): State {
   if (typeof seed === 'number') s.seed = widenSeed(seed);
   if (format < STATE_FORMAT) s.format = STATE_FORMAT;
   return s;
+}
+
+/** Map old size tokens from saves and recorded actions to stable content ids. */
+export function legacyStoneKind(size: unknown): string | undefined {
+  if (size === 'small') return 'core/stone';
+  if (size === 'large') return 'core/large-stone';
+}
+
+/** Kernel 0.36 and earlier used two sizes. The bag and dropped item piles already have stable item ids. */
+export function migrateStoneState(stones: StoneState): StoneState {
+  if (!('large' in stones)) return stones;
+  type LegacyStones = {
+    taken: StoneState['taken'];
+    large: Record<string, number>;
+    returns: { key: string; size: 'small' | 'large'; at: number }[];
+    carry?: 'large';
+  };
+  const old = stones as unknown as LegacyStones;
+  const arms = legacyStoneKind('large')!;
+  return {
+    taken: old.taken,
+    placed: Object.fromEntries(Object.entries(old.large).map(([key, count]) => [key, { [arms]: count }])),
+    returns: old.returns.map(({ key, size, at }) => ({ key, kind: legacyStoneKind(size)!, at })),
+    ...(old.carry === 'large' ? { carry: arms } : {}),
+  };
 }
 
 /** Format 1 to 2, in place: the races. */

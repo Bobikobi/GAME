@@ -5,7 +5,7 @@
  * The tier-1 hide chain (tan, the sinew thread, the four garments) is content now and is read from the bundle as it
  * stands: this file keeps no copy of it. What is still a proposal is tier 2, the boiled leather and the digger
  * leathers (CLOTHING appendix, "For the take verb"): `withHideChain` adds those rows to a copy of the bundle and takes
- * their values from the value solver (`computeValues`), as the build would, not from a table typed here. Nothing lays a carcass in play yet (kernel/src/hunt.ts:2-5), so the take is modelled as
+ * their values from the value solver (`computeValues`), as the build would, not from a table typed here. The thrown stone of #827 takes small game in the game and a snare can take a roe, but the route plays neither, so the take is modelled as
  * the hunt fields state it: the player stands by an animal's spot for its `take_s` and the carcass lies on the spot
  * (`placeCarcass`, as the tests lay one). Every other step is a real action through `step`, with the travel rule on:
  * gathering, building, crafting with its chance and its misses, dressing, wearing, walking tile by tile.

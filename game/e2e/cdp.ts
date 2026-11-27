@@ -304,6 +304,9 @@ export class Page {
     const loaded = this.once('Page.loadEventFired');
     await this.send('Page.navigate', { url });
     await loaded;
+    // the title is up before the valley is built (DECISIONS 2026-11-27); a script plays on a built world, as a player who waits for the bar does.
+    // A page with no `?debug` has no `__game` and is not waited for.
+    await this.waitFor('(() => { const g = window.__game; return !g || !!g.world; })()', 'the valley to be built', 120_000, false);
   }
 
   /** Runs an expression in the page and returns its JSON value (promises are awaited). */
@@ -417,6 +420,34 @@ export class Page {
       timeoutMs,
     );
     await this.tapAt(at.x, at.y);
+  }
+
+  /** Presses the first visible element matching `selector` and holds it for `holdMs` before releasing (a charged press). */
+  async holdTap(selector: string, holdMs: number, text = ''): Promise<void> {
+    const at = await this.waitFor<{ x: number; y: number }>(
+      `(async () => {
+        const el = ${byText(selector, text)};
+        if (!el) return null;
+        el.scrollIntoView({ block: 'nearest' });
+        const centre = () => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, shown: r.width > 0 && r.height > 0 }; };
+        const a = centre();
+        await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+        const b = centre();
+        return b.shown && Math.abs(b.x - a.x) < 1 && Math.abs(b.y - a.y) < 1 ? b : null;
+      })()`,
+      `${selector} "${text}"`,
+      15_000,
+    );
+    if (this.mobile) {
+      await this.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
+      await sleep(holdMs);
+      await this.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      return;
+    }
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: at.x, y: at.y });
+    await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: at.x, y: at.y, button: 'left', clickCount: 1 });
+    await sleep(holdMs);
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: at.x, y: at.y, button: 'left', clickCount: 1 });
   }
 
   /**

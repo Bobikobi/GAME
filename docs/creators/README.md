@@ -68,7 +68,7 @@ Rename `content/extensions/<your-handle>/npcs/wren.json` to your character's nam
 - the top-level `title` (up to 40 characters, the character's name and what they do) and `description` (what a reviewer reads first).
 - `npc.name` - the name above the dialogue box.
 - `npc.sprite` - how they look. It points at a frame of the core art: `core/base-kit:chars/woman_idle_down` is a standing figure, and the other `*_idle_down` frames in `content/kit/core/chars/` are the same kind. `elder` and `trader` belong to Maru and Pell: leave those two to them.
-- `npc.place.slot` - where they stand. It must be a slot of the kind `npc` that no one has filled. The template uses the currently free `core/trainers-stall` (in town, three tiles north of Pell's stall). If you move them, ask the `slots` tool of the MCP server (below) for the current list. One extension per slot, so if another townsperson is already waiting for review there, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). A shop is the core's: leave `shop` out.
+- `npc.place.slot` - where they stand. It must be a slot of the kind `npc` that no one has filled. The template uses the currently free `core/trainers-stall` (in town, three tiles north of Pell's stall). If you move them, ask the `slots` tool of the MCP server, or run `pnpm slots --free --kind npc`, for the current list. One extension per slot, so if another townsperson is already waiting for review there, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). A shop is the core's: leave `shop` out.
 - `npc.dialogue` - what they say: one list of boxes for each standing the player has with them, which grows as the player comes back.
   - `first`: the first time the player talks to them (at most three boxes).
   - `stranger`, `acquaintance`, `friend`: one box or two each, said as the player returns and the standing grows.
@@ -90,7 +90,7 @@ A townsperson has no price, stat or reward of their own. What they ask of the pl
 pnpm check
 ```
 
-Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout may already print warnings about core files; read any line from your folder. It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
+Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and the last line counts yours apart from the core's, for example `129 files checked: 0 errors, 27 warnings (0 in content/extensions)`: read any warning under your `content/extensions/<your-handle>/` folder, and leave the core's. It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
 
 ## 5. See it in the game (3 minutes)
 
@@ -111,6 +111,7 @@ Commit only your own folder, push your branch to your fork, and open a pull requ
 - `Story review:` one line saying that every claim about the past in your character's lines has a speaker, and who it is. If your AI tool has the repository's story-keeper skill (`.claude/skills/story-keeper`), ask it to read your file and paste its verdict. "No story text changed" is refused for a character.
 - `Quest review:` "no quest changed", until you add the quest below.
 - `Source:` "no new picture" while you use the core's figures.
+- `Player eye:` asked (a notice, not a failed check, for now) when you add a new prop or item picture: one line, `pass`, `fail - ...` or `unsure - ...`, from the repository's player-eye skill (`.claude/skills/player-eye`). It looks at your picture as a player would (does it read as what it is, does it fit beside the same kind of thing). Without the owner's API credit run `python3 tools/player-eye/review.py --print-prompt ...` and answer the four questions yourself or with your own AI tool; "no new picture" while you add none.
 - `Tree:` `none:` and why, for example "none: a townsperson with words, nothing a player can grow in changes".
 
 Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; `pnpm check` is the part that matters for content). The same check runs on the pull request automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
@@ -423,7 +424,7 @@ What the tools answer:
 
 - `schema`: the JSON schema of one record type, or the list of types.
 - `check`: the same check CI runs, on the whole checkout or on your files only.
-- `slots`: every slot of the map, filled or waiting for a creator.
+- `slots`: every slot of the map, filled or waiting for a creator. The same list from the command line: `pnpm slots`, with `--free` and `--kind <kind>` to narrow it.
 - `requests`: what players asked for, with their support and the open calls.
 - `template`: a starting file for one record type, with your handle and name filled in. It is returned, not written.
 - `value`: the value the game computes for your draft files, against the anchored values and the drift budget.

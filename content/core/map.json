@@ -4608,6 +4608,110 @@
         }
       ]
     },
+    "stones": {
+      "spots": [
+        {
+          "x": 3,
+          "y": 6,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 5,
+          "y": 9,
+          "kind": "core/stone"
+        },
+        {
+          "x": 3,
+          "y": 12,
+          "kind": "core/stone"
+        },
+        {
+          "x": 10,
+          "y": 14,
+          "kind": "core/stone"
+        },
+        {
+          "x": 20,
+          "y": 12,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 18,
+          "y": 13,
+          "kind": "core/stone"
+        },
+        {
+          "x": 24,
+          "y": 14,
+          "kind": "core/stone"
+        },
+        {
+          "x": 39,
+          "y": 12,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 38,
+          "y": 14,
+          "kind": "core/stone"
+        },
+        {
+          "x": 3,
+          "y": 19,
+          "kind": "core/stone"
+        },
+        {
+          "x": 5,
+          "y": 21,
+          "kind": "core/stone"
+        },
+        {
+          "x": 9,
+          "y": 23,
+          "kind": "core/stone"
+        },
+        {
+          "x": 4,
+          "y": 26,
+          "kind": "core/stone"
+        },
+        {
+          "x": 8,
+          "y": 28,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 27,
+          "y": 16,
+          "kind": "core/stone"
+        },
+        {
+          "x": 21,
+          "y": 17,
+          "kind": "core/stone"
+        },
+        {
+          "x": 27,
+          "y": 20,
+          "kind": "core/stone"
+        },
+        {
+          "x": 23,
+          "y": 22,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 34,
+          "y": 17,
+          "kind": "core/stone"
+        },
+        {
+          "x": 43,
+          "y": 18,
+          "kind": "core/stone"
+        }
+      ]
+    },
     "spawn": {
       "x": 6,
       "y": 17
@@ -4997,7 +5101,8 @@
         "w": 2,
         "h": 2,
         "tag": "town",
-        "label": "Empty corner"
+        "label": "Empty corner",
+        "reserved": "A player places a stall at the town's free corner (the owner's answer)"
       },
       {
         "id": "core/ruins-hall",
@@ -5037,7 +5142,8 @@
         "w": 3,
         "h": 2,
         "tag": "grove",
-        "label": "Clearing"
+        "label": "Clearing",
+        "reserved": "The grove clearing is the traveller's ember camp (decision 35 of 22.10)"
       },
       {
         "id": "core/lantern-foot",

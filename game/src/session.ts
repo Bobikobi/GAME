@@ -318,7 +318,8 @@ export class Session implements GameSession {
     }
     const session = new Session(bundle, state);
     session.adapted = adapted;
-    session.tick = Math.max(file.tick, state.tick, state.player.busyUntil);
+    // Any work still busy finishes on the running clock after the player returns.
+    session.tick = Math.max(file.tick, state.tick);
     session.facing = file.facing;
     if (Array.isArray(file.met)) {
       for (const npcId of file.met) if (typeof npcId === 'string') session.met.add(npcId);
@@ -422,7 +423,7 @@ export class Session implements GameSession {
 
   /** Called every frame with real elapsed ms. */
   advance(dt: number): void {
-    if (!this.started || this.paused) return;
+    if (!this.started || this.paused || globalThis.document?.hidden) return;
     this.tick += Math.max(0, Math.min(LONGEST_FRAME_MS, Math.round(dt)));
     if (this.deferred.length > 0 && !this.busy) {
       const events = this.deferred;

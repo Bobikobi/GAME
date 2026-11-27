@@ -9,6 +9,7 @@ import { performance } from 'node:perf_hooks';
 import { realCatalogue } from './catalogue';
 import { fmtMs, fmtTenths } from './curve';
 import { fixtureCatalogue } from './fixture';
+import { fmtRatio, huntBalance, onMap, readLadder } from './hunt-ladder';
 import { WIRED_ROWS, prove } from './prove';
 import { calmSnow, timeToZero, windows } from './tables';
 import { loadWorld } from './world';
@@ -21,6 +22,8 @@ const cat = fixture ? fixtureCatalogue(rules) : realCatalogue(bundle, rules);
 const t1 = performance.now();
 const proof = prove(rules, cat, fixture ? undefined : bundle);
 const t2 = performance.now();
+// the hunt balance (BESTIARY_LANDS 4): a row per region and kind, measured over the content's own map
+const hunt = huntBalance(onMap(readLadder(), bundle));
 const extra = fixture ? { windows: windows(rules, cat), timeToZero: timeToZero(rules), calmSnow: calmSnow(rules, cat) } : { timeToZero: timeToZero(rules) };
 const t3 = performance.now();
 const runtime = { loadMs: Math.round(t1 - t0), proveMs: Math.round(t2 - t1), tablesMs: Math.round(t3 - t2) };
@@ -28,11 +31,11 @@ const wired = new Set<string>(WIRED_ROWS);
 const red = proof.rows.filter((r) => r.status === 'fail' && wired.has(r.id.split(':')[0]!));
 
 if (json) {
-  console.log(JSON.stringify({ ...proof, ...extra, runtime, things: { pieces: cat.pieces.length, dishes: cat.dishes.length, walls: cat.walls.length, schools: cat.schools.length } }, null, 2));
+  console.log(JSON.stringify({ ...proof, ...extra, hunt, runtime, things: { pieces: cat.pieces.length, dishes: cat.dishes.length, walls: cat.walls.length, schools: cat.schools.length } }, null, 2));
 } else {
   console.log(`The balance prover over ${fixture ? 'the stand-in catalogue (fixture-rules.json, never content)' : 'content as it stands'}: ${cat.pieces.length} worn things, ${cat.dishes.length} foods, ${cat.walls.length} walls, ${cat.schools.length} schools.`);
   console.log('');
-  const mark = { pass: 'ok  ', fail: 'RED ', warn: 'warn', info: 'info' } as const;
+  const mark = { pass: 'ok  ', fail: 'RED ', warn: 'warn', info: 'info', none: 'none' } as const;
   for (const r of proof.rows) console.log(`${mark[r.status]}  ${r.id}${!fixture && wired.has(r.id.split(':')[0]!) ? ' (in pnpm check)' : ''}: ${r.detail}`);
   console.log('');
   console.log('Hours to master, by school:');
@@ -41,6 +44,16 @@ if (json) {
     console.log('');
     console.log('Combinations: the full space, and what the proof walked after dominance pruning:');
     for (const c of proof.counts) console.log(`  ${c.what}: ${c.full} in full, ${c.walked} walked`);
+  }
+  console.log('');
+  console.log('The hunt balance, one row per region and kind (BESTIARY_LANDS 4): standing, takes a day, players to empty it in one day.');
+  for (const r of hunt) {
+    if (r.none) {
+      console.log(`${mark.none}  ${r.id} (d${r.region}): no habitat in its band`);
+      continue;
+    }
+    const takes = r.standing === null ? '-' : fmtRatio(r.takes.num, r.takes.den);
+    console.log(`${r.red ? mark.fail : mark.pass}  ${r.id} (d${r.region}): standing ${r.standing ?? '-'}, takes a day ${takes}, empties at ${r.players ?? '-'} players`);
   }
   console.log('');
   console.log(`Runtime: load ${runtime.loadMs} ms, proofs ${runtime.proveMs} ms, tables ${runtime.tablesMs} ms. A game hour is ${fmtMs(rules.gameHourMs)}.`);

@@ -1,18 +1,13 @@
 /** Boot: the bundle, the controls, the page UI, then the Phaser game. */
-import * as Phaser from 'phaser';
 import type { Bundle } from '@game/kernel';
 import { app } from './app';
 import raw from './generated/bundle.json';
 import { sound } from './audio';
 import { RICH } from './config';
-import { showStats, startPerf, watchPerf } from './perf';
+import { startPerf } from './perf';
 import { applyDisplay } from './settings-apply';
 import { Controls } from './input';
-import { BootScene } from './scenes/boot';
-import { RoomScene } from './scenes/room';
-import { WorldScene } from './scenes/world';
 import { UI } from './ui/ui';
-import { bindDeviceCanvas, firstSize } from './view';
 import './style.css';
 
 function safeStorage(): Storage | null {
@@ -28,28 +23,15 @@ app.controls = new Controls();
 app.ui = new UI(document.getElementById('ui')!);
 app.sound = sound;
 app.controls.onButton((b) => app.ui.handle(b));
+app.controls.onButtonUp((b) => app.ui.handleUp(b));
 
 const query = location.search;
 const perf = startPerf(query, safeStorage());
 applyDisplay(document.documentElement, perf.settings);
-const first = firstSize();
-const game = new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: 'game',
-  pixelArt: true,
-  roundPixels: true,
-  backgroundColor: '#1b1a2e',
-  banner: false,
-  // the canvas takes the device's pixels (view.ts) instead of the window's CSS pixels
-  scale: { mode: Phaser.Scale.NONE, width: first.w, height: first.h },
-  scene: [BootScene, WorldScene, RoomScene],
-});
-
-app.perf = perf;
-app.game = game;
-watchPerf(game, perf);
-if (new URLSearchParams(query).get('stats') === '1') showStats(game, perf);
-bindDeviceCanvas(game, document.getElementById('game')!);
+// the title first: it draws from the bundle alone, so it goes up before the engine is fetched; the engine and the world follow
+// behind it (game.ts), and a start pressed before the world is ready waits on a "preparing the valley" bar (ui.ts `begin`)
+app.ui.openTitle();
+requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => void import('./game').then((m) => m.startGame(perf, query)), 0)));
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) app.session?.save();

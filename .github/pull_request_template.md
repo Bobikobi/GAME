@@ -6,11 +6,12 @@
 
 ## Tools that fire on this pull request
 
-<!-- The first three lines are owed only when this pull request changes a quest, text a player reads as story, or adds a picture under content/kit/; otherwise, as in most code pull requests, answer them "n/a - code change". -->
+<!-- The first four lines are asked only when this pull request changes a quest, text a player reads as story, adds a picture under content/kit/, or adds or changes an interaction clip (lift, carry, throw, push) or adds a new object (a prop or an item) (the Player eye line is a notice, not a failure, for now); otherwise, as in most code pull requests, answer them "n/a - code change". -->
 <!-- Tree: where the work sits in the skill tree (the schools and nodes in content/core/schools/), owed by every pull request in one of the three forms below; docs/team/ONBOARDING.md, "The pull request template", explains them. -->
 Quest review: <verdict of the quest-designer skill in one line, or "no quest changed">
 Story review: <verdict of the story-keeper skill in one line, or "no story text changed">
 Source: <where each picture added under content/kit/ came from (docs/art/PROP_FROM_REF.md), or "no new picture">
+Player eye: <verdict of the player-eye skill in one line (pass | fail - ... | unsure - ...), or "no new clip or object">
 Tree: <school>/<node ids> | extends the tree: <path of the proposal> | none: <why nothing a player can grow in changes>
 
 ## Author checklist

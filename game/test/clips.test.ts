@@ -35,8 +35,8 @@ beforeAll(() => {
 });
 
 describe('B2: a clip is found by verb, race and view', () => {
-  test('all 9 verbs x 3 views are 27 lookups, each returning that sheet and its own frame time', () => {
-    expect(CLIP_VERBS).toHaveLength(9);
+  test('all 13 verbs x 3 views are 39 lookups, each returning that sheet and its own frame time', () => {
+    expect(CLIP_VERBS).toHaveLength(13);
     expect(CLIP_VIEWS).toHaveLength(3);
     let looked = 0;
     const times = new Set<number>();
@@ -54,9 +54,9 @@ describe('B2: a clip is found by verb, race and view', () => {
         looked += 1;
       }
     }
-    expect(looked).toBe(27);
+    expect(looked).toBe(39);
     // every sheet is told apart by its own time: a lookup that ignored the verb or the view would show up as a repeat
-    expect(times.size).toBe(27);
+    expect(times.size).toBe(39);
   });
 
   test('the clip\'s display fit (permille) rides through the schema and the assembler to the bundle, and a clip with none has none', () => {
@@ -112,6 +112,16 @@ describe('the frame rule: one for every verb, the clip\'s own time', () => {
     expect(clipFrame(560, 8, 100)).toBe(5);
   });
 
+  test('a stretched clip (the lift) plays once across the action\'s time: its last frame is the last of it', () => {
+    const at = (ms: number) => clipFrame(ms, 9, 67, 600, true);
+    expect(at(0)).toBe(0);
+    expect(at(599)).toBe(8);
+    expect(at(600)).toBeUndefined();
+    expect(Array.from({ length: 600 }, (_, t) => at(t)!).every((f, i, a) => i === 0 || f >= a[i - 1]!)).toBe(true);
+    // a longer lift (the kernel's number moved) spreads the same nine frames over more time
+    expect(clipFrame(599, 9, 67, 1200, true)).toBe(4);
+  });
+
   test('an action with no length plays the clip once, then it is over', () => {
     expect(clipFrame(419, 4, 140)).toBe(2);
     expect(clipFrame(559, 4, 140)).toBe(3);
@@ -151,6 +161,24 @@ describe('the frame rule: one for every verb, the clip\'s own time', () => {
     player.start(found, 0);
     player.stop();
     expect(player.frameAt(10)).toBeUndefined();
+  });
+
+  test('its record, when a test turns it on, holds the start, each frame once as it changes, and the end; off, it holds nothing', () => {
+    const found = clipFor(sprites, 'dig', HUMAN, 'down')!;
+    const player = new ClipPlayer();
+    player.start(found, 0);
+    player.frameAt(0);
+    expect(player.trace).toBeUndefined();
+    player.trace = [];
+    player.start(found, 1000, 600, true);
+    // drawn twice inside frame 0, then a slow frame that jumps over the frames between (4 frames across 600 ms: 450 ms is the last), then the end
+    for (const at of [1000, 1010, 1450, 1600]) player.frameAt(at);
+    expect(player.trace).toEqual([
+      { e: 'start', key: found.key, at: 1000, frames: found.frames, frameMs: found.frame_ms, lasts: 600, stretch: true },
+      { e: 'frame', frame: 0, at: 1000 },
+      { e: 'frame', frame: found.frames - 1, at: 1450 },
+      { e: 'end', at: 1600 },
+    ]);
   });
 });
 
@@ -226,7 +254,28 @@ describe('the packed kit', () => {
     expect(Object.values(real).filter((s) => s.clip && RACES.includes(s.clip.race) && (VERBS as readonly string[]).includes(s.clip.verb))).toHaveLength(71);
   });
 
-  test('the boot loads no clip sheet; a race\'s clips are the 23 or 24 sheets of that race and nothing of another', () => {
+  test('the stones\' 27 clips (DECISIONS 2026-11-23): carry on 192 px frames, throw and push on 128 px, each about 0.7 to 0.9 s, the feet on one anchor row', () => {
+    for (const race of RACES) {
+      for (const verb of ['carry', 'throw', 'push'] as const) {
+        for (const dir of ['left', 'down', 'up'] as const) {
+          const hit = clipFor(real, verb, race, dir);
+          expect(hit, `${race} ${verb} ${dir}`).toBeDefined();
+          const sprite = real[hit!.key]!;
+          expect(sprite.frames, hit!.key).toBe(9);
+          const side = verb === 'carry' ? 192 : 128;
+          expect([sprite.w, sprite.h], hit!.key).toEqual([side, side]);
+          expect(sprite.frames * sprite.clip!.frame_ms, hit!.key).toBeGreaterThanOrEqual(700);
+          expect(sprite.frames * sprite.clip!.frame_ms, hit!.key).toBeLessThanOrEqual(900);
+          // a 192 frame is a 128 frame stood on the bottom middle of a bigger canvas: the figure's column is the middle, the feet 64 rows lower
+          expect(hit!.anchor[0], hit!.key).toBe(side / 2);
+          expect(hit!.anchor[1], hit!.key).toBeGreaterThan(side === 192 ? 128 : 64);
+          expect(hit!.anchor[1], hit!.key).toBeLessThan(side);
+        }
+      }
+    }
+  });
+
+  test('the boot loads no clip sheet; a race\'s clips are the 35 sheets of that race (23 or 24 and the stones\' carry, throw, push and lift) and nothing of another', () => {
     const boot = bootSprites(real);
     expect(boot.some(([, s]) => s.clip !== undefined)).toBe(false);
     expect(boot.length + Object.values(real).filter((s) => s.clip).length).toBe(Object.keys(real).length);
@@ -237,7 +286,7 @@ describe('the packed kit', () => {
       expect(own.length, race).toBeGreaterThanOrEqual(23);
       all += own.length;
     }
-    expect(all).toBe(71);
+    expect(all).toBe(107);
     expect(raceClips(real, 'core/dragon')).toEqual([]);
   });
 

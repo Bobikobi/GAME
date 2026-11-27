@@ -672,6 +672,12 @@
                 "type": "null"
               }
             ]
+          },
+          "reserved": {
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "A slot a decision holds for something named, empty on the map but not free for a creator: the DECISIONS heading that reserves it.",
+            "type": "string"
           }
         }
       }

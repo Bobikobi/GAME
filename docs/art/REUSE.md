@@ -146,7 +146,36 @@ catalogue.
   agents' sort of 30.10 is shown as an agent's, "לא מוין ידנית" lists what he has not decided, and "מיינת X מתוך N" counts his.
   Choices are appended to `reviews.jsonl` in the page's folder and win over any agent's state on a rebuild. `pnpm art:library:land`
   carries them into this index as amendment lines on a fresh branch and pull request (`--apply`, `--pr`); the manager lands it.
-  Archive only sets a state: nothing is deleted from the store or the thumbnails.
+  Archive only sets a state. Files leave the store only through `pnpm art:prune` (see "Pruning the drafts store"); the page skips a removed draft.
+
+## Pruning the drafts store
+
+The drafts store (`Bobikobi/GAME-art-drafts`) holds only material that is decided and usable (the owner, 22.11). Only `pnpm art:prune` removes
+files from it, and only by a written rule with a reason code. `tools/src/art/prune.ts` holds the rules, `pnpm test tools/test/art-prune.test.ts` a
+must-remove and a must-keep fixture for each.
+
+| Rule | Removes | Never when |
+|---|---|---|
+| R1 `owner-archive` | a draft the owner archived by hand (the page's `reviews.jsonl`, or an index archive stamped `owner`/`elad`) | his page says keep, or it is reviewed keep/rework/reuse-parts in the index |
+| R2 `pick-lost` | a draft whose every source is an option of a closed owner pick that lost (`tools/kit-gen/prune/pick-closes.json`) | a source is in the close's `keep` list (every bite, the R2b wolf, the R3 poses) |
+| R3 `old-era` | a draft made for the 16 px or 32 px game, dated on or before 2026-10-18 (the 64 px decision), or named as one | a file uses it; it is undated and the name does not say 16/32 px |
+| R4 `retired-subject` | a draft of a pool entry marked `retired` that no file of `content/` or `docs/design/` still names (a word-bounded grep) | any hit, however old |
+| R5 `duplicate` | a draft whose every file lives on in another draft that is not removed | the other draft is itself removed |
+| R6 `broken` | errors set, an empty file, or a file missing from the store | a reviewed or young draft |
+
+Never removed by any rule: reviewed keep, rework or reuse-parts; a draft a file of the repo uses (by id, by file hash, or by identical bytes); a wrong
+draw kept for another role (`looks_like`); the 3D door's drafts; a draft under 7 days old that no closed pick names. When unsure, keep.
+
+The steps, in order: `pnpm art:prune --dry` writes `.scratch/prune/report.md`, `remove.jsonl` and one contact sheet per rule; the manager reads them and
+approves a list by its sha256; `pnpm art:prune --apply --list FILE --go SHA256` checks every row still holds, makes a cold copy of every file under
+`~/Projects/GAME/.scratch/drafts-pruned-2211/` (each checked by sha256 against the index; one failure stops before any delete), deletes the assets
+from the releases (an empty release too) and appends `{"id","amend":true,"removed":"<code>","at"}` per draft. The cold copy is deleted 30 days later,
+on the manager's word.
+
+**When an owner pick closes**, add its entry to `tools/kit-gen/prune/pick-closes.json` in the same pull request that records the pick (the hub answer, the
+DECISIONS heading, the losing options as regular expressions on a source's label, run and file), then run `pnpm art:prune --dry --only R2`: the report
+names the losers and shows them on a sheet. The run that applies it waits for the manager's word like any other. The kit picks flow (`pnpm art:pick`)
+prints this step when it applies a pick. A weekly dry run is proposed in the pull request that brought this tool, and is not installed.
 
 ## Parallel sessions
 

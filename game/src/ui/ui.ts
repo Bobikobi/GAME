@@ -6,6 +6,7 @@
 import { offerSignup } from './signup';
 import {
   OWN_FIRE,
+  type Action,
   type DayLog,
   type GameEvent,
   characterLevel,
@@ -114,6 +115,11 @@ export class UI {
   private layers: Layer[] = [];
   private loadingEl: HTMLElement | undefined;
   private titleOpen = false;
+  private titleShown = false;
+  /** the world is built and can take a session */
+  private ready = false;
+  /** starts that came before the world was ready */
+  private afterReady: (() => void)[] = [];
   private hudTimer = 0;
   private hudParts: HudParts | undefined;
   private meterHitTimer: ReturnType<typeof setTimeout> | undefined;
@@ -214,10 +220,18 @@ export class UI {
       return true;
     }
     if (b === 'a') app.world?.interact();
+    else if (b === 'jump') app.world?.jump?.();
+    // B held charges a throw (DECISIONS 2026-11-22): released, the stone leaves at the power reached; with none in hand it says so
+    else if (b === 'b') app.world?.throwPress?.();
     else if (b === 'bag') this.panel(() => openBag(this));
     else if (b === 'journal') this.panel(() => openJournal(this));
     else if (b === 'menu') this.panel(() => openMenu(this));
     return true;
+  }
+
+  /** A button's key or touch rose: only the throw's charge reads it (B released throws at the power reached). */
+  handleUp(b: Button): void {
+    if (b === 'b') app.world?.throwRelease?.();
   }
 
   // ------------------------------------------------------------ boot
@@ -227,19 +241,41 @@ export class UI {
     if (bar) (bar as HTMLElement).style.width = `${Math.round(v * 100)}%`;
   }
 
-  worldReady(): void {
-    this.loadingEl?.remove();
-    this.loadingEl = undefined;
+  /**
+   * The title goes up. The pixel door opens it at once, before the engine is even fetched (main.ts), since it draws from the
+   * bundle alone; the 3D door opens it when its world is ready (`worldReady`). The loading bar waits behind it as a strip.
+   */
+  openTitle(): void {
+    if (this.titleShown) return;
+    this.titleShown = true;
     this.titleOpen = true;
     document.body.classList.add('at-title');
+    this.loadingEl?.classList.add('behind');
     void showTitle(this).then(() => {
       this.titleOpen = false;
       document.body.classList.remove('at-title');
     });
   }
 
-  /** A session is ready (new or loaded): show it. */
+  /** The world is built: the bar goes, the title opens if it is not open yet, and a start that waited goes in. */
+  worldReady(): void {
+    this.loadingEl?.remove();
+    this.loadingEl = undefined;
+    this.ready = true;
+    this.openTitle();
+    for (const go of this.afterReady.splice(0)) go();
+  }
+
+  /** A session is ready (new or loaded): show it, once the world is built (a start that comes first waits on "preparing the valley"). */
   begin(session: GameSession): void {
+    if (!this.ready) {
+      const bar = this.loadingEl;
+      bar?.classList.remove('behind');
+      const label = bar?.querySelector('.loading-title');
+      if (label) label.textContent = 'Preparing the valley';
+      this.afterReady.push(() => this.begin(session));
+      return;
+    }
     app.session = session;
     app.world?.bind(session);
     this.xpSeen = { ...session.state.player.xp };
@@ -715,6 +751,13 @@ export class UI {
     const s = app.session;
     if (!s) return;
     const r = await s.act({ t: 'pickup', item: itemId, at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
+  }
+
+  async hunt(action: Action): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act(action);
     if (!r.ok) this.toast(r.error, 'bad');
   }
 

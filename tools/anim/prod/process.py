@@ -27,7 +27,7 @@ def key_range(kept, race, motion):
 
 
 def preview(frames, path, ms, tile=None, zoom=3):
-    n = gates.SIZE * zoom
+    n = frames[0].shape[0] * zoom
     if tile:
         t = np.array(Image.open(tile).convert("RGBA"))
         bg = Image.fromarray(gates.scale(t, n // t.shape[0]))
@@ -50,20 +50,20 @@ def main(argv=None):
     ap.add_argument("src", nargs="+")
     ap.add_argument("--kept", required=True); ap.add_argument("--out", required=True)
     ap.add_argument("--race", required=True); ap.add_argument("--view", default="left"); ap.add_argument("--motion", required=True)
-    ap.add_argument("--route", default="p"); ap.add_argument("--variant", default="")
+    ap.add_argument("--size", type=int, default=gates.SIZE, choices=gates.SIZES, help="frame size: 128, or 192 for a clip with room above the head (the kept stance is stood on it bottom-centred)"); ap.add_argument("--keyrange", default="", help="LO,HI: the standing height the take is gated against when the figure carries something taller than the stance (a stone over the head); else --keys or the stance"); ap.add_argument("--route", default="p"); ap.add_argument("--variant", default="")
     ap.add_argument("--ms", type=int, default=120); ap.add_argument("--air", default=""); ap.add_argument("--bend", default=""); ap.add_argument("--effect", default="", help="frames that carry a drawn effect (a hit flash): left out of gate c, written to the manifest")
     ap.add_argument("--drop", default="", help="indexes (of the listed sources) to leave out"); ap.add_argument("--loop", action="store_true"); ap.add_argument("--loop-from", type=int, default=0, help="first frame of the looping part (guard: the hold)")
     ap.add_argument("--pingpong", type=int, default=-1, help="hold build: from this frame on, play forward then back (frames N..last, then last-1..N+1), so the hold loops; sets --loop-from"); ap.add_argument("--anchor-x", action="store_true", help="pin the feet band midpoint to frame 0 by whole pixels (kept key frames translate the whole figure)"); ap.add_argument("--no-resnap", action="store_true"); ap.add_argument("--keys", default="", help="kept motion folder (e.g. chop-left) whose height range replaces the stance height in gate c")
     ap.add_argument("--meta", default="{}", help="json: job ids, seeds, generations, effects, notes"); ap.add_argument("--tile", default="")
     a = ap.parse_args(argv)
-    ref = gates.Reference(a.kept, a.race, a.view)
+    ref = gates.Reference(a.kept, a.race, a.view, a.size)
     files = expand(a.src); drop = set(ints(a.drop))
     files = [f for i, f in enumerate(files) if i not in drop]
     frames = [gates.load(f) for f in files]
     if a.pingpong >= 0:
         frames = frames + frames[-2:a.pingpong:-1]
         a.loop, a.loop_from = True, a.pingpong
-    kr = key_range(a.kept, a.race, a.keys) if a.keys else None
+    kr = key_range(a.kept, a.race, a.keys) if a.keys else (tuple(ints(a.keyrange)) if a.keyrange else None)
     fr, m = gates.run(frames, ref, air=ints(a.air), bend=ints(a.bend), effect=ints(a.effect), loop=a.loop, loop_from=a.loop_from, no_resnap=a.no_resnap, anchor_x=a.anchor_x, key_range=kr)
     name = f"{a.motion}-{a.view}" + (f"-{a.variant}" if a.variant else "")
     d = Path(a.out) / a.race / name

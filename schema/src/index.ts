@@ -1459,6 +1459,11 @@ const Bounded = Type.Object(
   { additionalProperties: false },
 );
 
+const LiftableNumber = (max: number, description: string) => Type.Object(
+  { value: Int(0, max), min: Int(0, max), max: Int(0, max), step: Bounded.properties.step },
+  { additionalProperties: false, description },
+);
+
 /** Rule R12: every constant has bounds, a step and lives in one file. */
 const LightKey = Type.Object(
   {
@@ -1838,8 +1843,57 @@ export const ParamsBody = Type.Object(
           'The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.',
       },
     ),
+    jump: Type.Object(
+      {
+        first_minute_ms: { ...Bounded, description: 'Game milliseconds from the first wake (tick 0) in which a jump is refused: the legs are not ready (DECISIONS.md, 2026-11-22: the jump and the fall; the hop\'s rule of ANIMATION.md section 2).' },
+        up_levels: { ...Bounded, description: 'The most levels one jump climbs: 1 is a low rock or ledge. A face higher than this is climbed by a crossing (G68). A jump down has no limit.' },
+        breath_cost: { ...Bounded, description: 'Breath points one jump costs, the same points as a fight\'s breath (`combat.breath_base`, `breath_per_stamina`; a dodge costs `dodge_breath`). Outside a fight nothing else spends them.' },
+        breath_refill_per_s: { ...Bounded, description: 'Breath points won back each second outside a fight, up to the same cap a fight uses.' },
+        air_ms: { ...Bounded, description: 'Game milliseconds a jump keeps the player busy: the hop in the air and the landing. A walk report goes through; another work action or jump waits.' },
+        fall_two_bp: { ...Bounded, description: 'Basis points of the health cap a fall of two levels takes. One level takes nothing.' },
+        fall_three_bp: { ...Bounded, description: 'Basis points of the health cap a fall of three levels takes.' },
+        death_levels: { ...Bounded, description: 'A fall of this many levels or more is death (G33): the body lies where it landed.' },
+      },
+      {
+        additionalProperties: false,
+        description: 'The jump and the fall (DECISIONS.md, 2026-11-22): up one level, down any height, across a one-tile gap of water; a little breath each; the fall hurts by its height, up to death. All integers; the first night is measured with jumps (G71).',
+      },
+    ),
+    liftables: Type.Record(
+      Id,
+      Type.Object(
+        {
+          name: Name,
+          class: Type.Union([Type.Literal('hand'), Type.Literal('arms'), Type.Literal('push'), Type.Literal('fixed')]),
+          weight: LiftableNumber(90, "Weight in the bag's unit. A hand entry uses its id as an item id and matches that item's weight."),
+          throw_range: LiftableNumber(6, 'Tiles flown at full power. Zero for push and fixed entries.'),
+          roll: LiftableNumber(4, 'Tiles rolled after landing at full power. Zero for push and fixed entries.'),
+          sprite: SpriteRef,
+        },
+        { additionalProperties: false },
+      ),
+      { additionalProperties: false, description: 'Loose object kinds by stable id. Hand goes in the bag, arms occupies both hands, push moves along the ground and fixed stays in place.' },
+    ),
+    stones: Type.Object(
+      {
+        area_tiles: { ...Bounded, description: 'Side, in tiles, of the square an area is: the map is cut in a grid of these and each square holds at most `area_cap` loose stones.' },
+        area_cap: { ...Bounded, description: 'The most loose stones one area holds at once (those still lying at their spots, those set down and those thrown), so a world shared by many is not flooded. A throw or a set-down that would pass it is refused.' },
+        return_ms: { ...Bounded, description: 'Game milliseconds a thrown stone lies where it landed before it goes back to its own spot.' },
+        pile_max: { ...Bounded, description: 'The most stones set down on one tile. A pile is counted by number and never climbed.' },
+        lift_ms: { ...Bounded, description: 'Game milliseconds lifting a stone keeps the player busy.' },
+        throw_ms: { ...Bounded, description: 'Game milliseconds a throw keeps the player busy: the wind-up, the flight and the landing.' },
+        throw_min_power: { ...Bounded, description: 'The power a tap gives, in thousandths of the full throw: the least a throw flies. Always under full (1000), so a held press charges farther (DECISIONS.md, 2026-11-22, the charged throw).' },
+        throw_charge_ms: { ...Bounded, description: 'Game milliseconds a held press takes to charge from `throw_min_power` to full power.' },
+        throw_hold_ms: { ...Bounded, description: 'Game milliseconds a charge may be held past full before the throw leaves on its own at full power, so a charge cannot be held for ever.' },
+      },
+      {
+        additionalProperties: false,
+        description: 'Loose stones (DECISIONS.md, 2026-11-22): lifted at the map\'s stone spots, carried (a large one over the head, at the pace its weight sets), thrown to a landing that runs on, set down and piled. All integers; the charged throw rides the throw action\'s power.',
+      },
+    ),
     hunt: Type.Object(
       {
+        throw_item: { ...Id, description: 'Hand liftable used to take small game. Its throw range is also the hunting reach.' },
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
         meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
         hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },
@@ -1989,7 +2043,7 @@ export const RampBody = Type.Object(
 /** The views of a character clip: the right side is the left one flipped, as the walk's is (the front faces the viewer, the back faces away). */
 export const CLIP_VIEWS = ['left', 'front', 'back'] as const;
 /** The verbs a character clip plays: the fight's outcome kinds (kernel/src/events.ts, #726) and the work actions. Display only. */
-export const CLIP_VERBS = ['strike', 'guard', 'dodge', 'hit', 'fell', 'quarry', 'fish', 'pickup', 'dig'] as const;
+export const CLIP_VERBS = ['strike', 'guard', 'dodge', 'hit', 'fell', 'quarry', 'fish', 'pickup', 'dig', 'carry', 'throw', 'push', 'lift'] as const;
 
 /**
  * A named character clip (#742): one sheet that plays one verb for one race in one view. The sheet's `frames` is the clip's
@@ -2001,7 +2055,7 @@ export const ClipBody = Type.Object(
   {
     race: Type.String({ pattern: ID_PATTERN, maxLength: 80, description: 'The race id the clip is drawn for, for example "core/human".' }),
     view: Type.Union(CLIP_VIEWS.map((v) => Type.Literal(v)), { description: 'left, front or back; the right side is the left one flipped.' }),
-    verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup or dig.' }),
+    verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands) or lift (a large stone from the ground to over the head).' }),
     frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
     anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
     fit_permille: Type.Optional(
@@ -2010,6 +2064,14 @@ export const ClipBody = Type.Object(
         4000,
         'The factor the clip shows at on top of its density\'s base scale (1 / density), in thousandths (the bundle holds whole numbers only): a take drawn larger than the race\'s walk shows smaller, so its figure stands as tall as the walk\'s. Left out, 1000. The feet stay on the anchor whatever the fit.',
       ),
+    ),
+    hand: Type.Optional(
+      Type.Array(Type.Tuple([Int(0, 384), Int(0, 384)]), {
+        minItems: 1,
+        maxItems: 64,
+        description:
+          'Where the drawn hand is in each frame, one point a frame from the first, in pixels of the frame (the same grid as `anchor`): the hand that throws, or the middle between the two hands that push or hold a stone. What a thing the figure holds is laid at the point of the frame that shows, and glides in a straight line to the next frame\'s point, so it follows the hand from the first frame to the one that lets it go. Points run from the first frame on, as many as the clip needs the hand for (never more than its frames). Left out, the clip has no hand to hold anything by.',
+      }),
     ),
   },
   { additionalProperties: false },
@@ -2125,6 +2187,14 @@ const Slot = Type.Object(
       Type.Boolean({
         description:
           'A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.',
+      }),
+    ),
+    reserved: Type.Optional(
+      Type.String({
+        minLength: 1,
+        maxLength: 120,
+        description:
+          'A slot a decision holds for something named (a character, a stall, a camp), empty on the map but not free for a creator: the DECISIONS heading that reserves it.',
       }),
     ),
   },
@@ -2691,6 +2761,27 @@ export const MapBody = Type.Object(
         {
           additionalProperties: false,
           description: 'Ambient life for the client to draw behind ?rich= motion (no client draws it yet): kinds, and the spots where each sits until the player comes close. A spot may carry a rank, a shape, a count, affixes, a leader and a route (the generator\'s axes, DECISIONS 2026-11-08); left out, it is a regular spot of the kind\'s own group class. A kind with "hunt" is the kernel\'s too: it dresses its carcasses and the value table prices its goods, with its spots as the source\'s capacity (HUNTING sections 5-9). A kind with "behaviour" carries its character as content, the fields the wild reads (CREATURE_BEHAVIOUR sections 1 and 5.1); its spots are its anchors, a den\'s mouth for a kind that sleeps in a den (HUNT_FAMILIES section 3.1).',
+        },
+      ),
+    ),
+    stones: Type.Optional(
+      Type.Object(
+        {
+          spots: Type.Array(
+            Type.Object(
+              {
+                x: Int(0, 1023),
+                y: Int(0, 1023),
+                kind: { ...Id, description: 'An entry in params.liftables.' },
+              },
+              { additionalProperties: false },
+            ),
+            { maxItems: 200 },
+          ),
+        },
+        {
+          additionalProperties: false,
+          description: 'Loose stones lying in the world (DECISIONS.md, 2026-11-22): where each lies until a player lifts it. A thrown stone goes back to the first spot a player has emptied. Absent: none. Spots are never props: a stone never changes the walk map.',
         },
       ),
     ),

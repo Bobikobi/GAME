@@ -236,6 +236,24 @@ body {
   background: var(--yellow);
 }
 
+/* the title is up while the valley loads: the bar is a strip along the bottom, over the title and out of its way */
+.loading.behind {
+  inset: auto 0 14px;
+  place-content: center;
+  grid-auto-flow: row;
+  background: none;
+  font-size: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.loading.behind .loading-bar {
+  width: 160px;
+  height: 8px;
+  border-width: 2px;
+  margin: 0 auto;
+}
+
 .title-screen {
   position: fixed;
   inset: 0;
@@ -960,6 +978,7 @@ body {
 /* the landscape's own pieces wait in portrait */
 .stick-zone,
 .stick,
+.tbtn.jump,
 .tbtn.nav {
   display: none;
 }
@@ -1098,12 +1117,14 @@ body {
 
 /* a word and the line glyphs keep the body face */
 .touch-on.landscape .tbtn.sneak,
+.touch-on.landscape .tbtn.jump,
 .touch-on.landscape .tbtn.nav {
   font-family: var(--font-body);
   font-weight: 400;
 }
 
 /* the column at the right edge: a line glyph each, half the button across */
+.touch-on.landscape .tbtn.jump svg,
 .touch-on.landscape .tbtn.nav svg {
   width: 52%;
   height: 52%;
@@ -2323,8 +2344,48 @@ body {
   --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 2h2v1h1v1h2v-1h1v-1h2v2h-1v1h-1v1h-2v-1h-1v-1h-1v-1h-1v1h-1z'/%3E%3C/svg%3E");
 }
 
-.whisper {
+.whisper,
+.fight-word {
   font-size: 16px;
+}
+
+.fight-word {
+  line-height: 1;
+  color: var(--paper);
+  text-shadow: 1px 1px 0 var(--ink);
+  transform-origin: center bottom;
+}
+
+/* the small health bar under a fighting creature (#866): a dark track with a paper edge and the
+   health's green fill, the current health in the fight words' face beside it */
+.foe-bar {
+  width: 24px;
+  height: 5px;
+  background: var(--ink);
+  box-shadow: 0 0 0 1px var(--paper);
+}
+
+.foe-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--green2);
+}
+
+.foe-bar-num {
+  position: absolute;
+  left: 100%;
+  margin-left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--paper);
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+.whisper {
   color: #d9d4f0;
   text-shadow:
     0 0 6px rgba(154, 91, 176, 0.9),

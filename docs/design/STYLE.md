@@ -81,6 +81,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
 - **Measured at each wave:** on the opening's first frame and at the bridge, no wake tile, pickup or prop a task names is covered by another sprite's solid pixels over more than half its area, after the see-through rule.
 - **The numbers** are the art session's starting point, and the owner judges them by eye (18.10: "only by eye will I know"). He sees them once, on the first wave's full-frame still; his correction goes into this table, and from then on it is the compass.
 - **Bigger is open.** The table is a floor for each kind and the size of its common one. Above it a creator is free: a giant tree, a castle, a colossus (the owner, 18.10). Such a thing keeps the rules above (the map does not move, see-through, nothing a task names hidden). One sprite stays within the schema's 384 x 384, six tiles a side at 64; a larger thing is built from pieces, or the cap is raised in its own pull request.
+- **A held object keeps its size** (the owner, 26.11, public #874: "the lifted stone shrank and grew"). An object lying in the world, drawn into a figure's hands by a clip, and flying or set down again is one size, from the ground to the landing. A clip that draws it in the hands shows it, at the clip's own scale (`fit_permille` over density), within 10% of the world picture at the scale the game shows that picture at; a stone seen whole in at least one frame must be that size, and no frame may be bigger. The large stone is `items/stone` at 70 percent (`STONE_SCALE.large`, `game/src/stone-art.ts`): the size a figure's lift and carry clips can hold, still 1.4 times the small stone. Lifting is general (the owner, 26.11): a carried object joins the check as one row of `HELD_OBJECTS` in `tools/src/kit/held.ts` (its world sprite and its colour), never as new code. A clip that cannot be mended by scaling its drawn pixels (the hands or the body would be covered) is named in `HELD_WAIVERS` and waits for a redraw at the world size; the list only shrinks. `pnpm art:held` prints the table (clip, frame, share of the world size); `pnpm check` refuses a clip out of the band, naming the clip, the frame and the ratio. The classic game draws the object in the clip, the 3D door (`/play3d/`) draws no held object.
 
 ## 2. Pixels and colour
 
@@ -196,7 +197,7 @@ The owner, 18.10: "users will be able to change existing areas, even completely"
 
 ## 9. What the check enforces
 
-- **Today:** the palette, hard alpha, the sizes for each density (NEXT 15) and, for a ground tile, its own ramp plus at most two accent colours (all errors in `tools/src/check.ts`).
+- **Today:** the palette, hard alpha, the sizes for each density (NEXT 15) and, for a ground tile, its own ramp plus at most two accent colours (all errors in `tools/src/check.ts`); and a held object's size against its world picture (`tools/src/kit/held.ts`, an error, 1b).
 - **Proposed with the ground wave:**
   - a ground tile fills its square edge to edge.
 

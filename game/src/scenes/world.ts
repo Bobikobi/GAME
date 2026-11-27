@@ -14,6 +14,7 @@ import * as Phaser from 'phaser';
 import {
   type Action,
   type Bundle,
+  type FightOutcome,
   type GameEvent,
   attrAt,
   type Hazard,
@@ -44,13 +45,23 @@ import {
   spotOpen,
   frameRect,
   gaitStepMs,
+  type Gait,
   sheetGrid,
   treasureKind,
   windowOpen,
   type WorkKind,
+  type Tile as KernelTile,
+  carriedKind,
+  throwKind,
+  lyingAt,
+  settled,
 } from '@game/kernel';
 import { app } from '../app';
+import { aimLine, chargeAt, trembleAt } from '../throw-charge';
+import { RING_TOTAL_MS, ringPixels, ringsAt } from '../ring';
 import { Piles, pileAt } from './piles';
+import { StoneLayer } from './stones';
+import { ARMS_STONE_KIND, HAND_STONE_KIND } from '../stone-art';
 import { sound, type Heard, type Owner, type SongId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
@@ -63,12 +74,17 @@ import { Flame, Sway, installMotion } from '../motion';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
-import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
+import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudRows, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
+import { EffectLayer } from '../effect-layer';
+import { landingDust, spawnsOf } from '../effects';
+import { FightWordLayer, type FightWordPoint } from '../fight-word-layer';
+import { FoeBarLayer, type FoeBarPoint } from '../foe-bar-layer';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
-import { BANK_EDGE, EDGE_PX, PATH_EDGE, WATER_EDGE, WOOD_EDGE, blendEdgeTile, needsBlend, type EdgeLook, type PathAt } from '../pathedge';
+import { EDGE_PX } from '../pathedge';
+import { groundBlender, isOpenWater, type TileBlend } from '../groundblend';
 import { deepTile } from '../waterbody';
 import { mirroredAt, plantLook, TUFTS } from '../plantlook';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
@@ -85,7 +101,7 @@ import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '.
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
-import { questTargets } from '../targets';
+import { huntingAt, huntingNearby, questTargets } from '../targets';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
@@ -94,12 +110,13 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb } from '../clips';
+import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
-import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep, wornSetSheet } from '../walking';
+import { reportedGait, SpeedRamp } from '../walkfeel';
+import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
-import { ChunkStream, WORLD_CHUNK } from '../stream';
+import { ChunkStream, WORLD_CHUNK, idleSlice } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraZoom, pixelRatio, wheelStep, wheelZoom, worldToPage } from '../view';
 import { ROOM, doorsOf, type RoomScene } from './room';
@@ -114,6 +131,8 @@ const NEIGHBOURS: readonly [number, number][] = [
 ];
 /** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
 const WHEEL_GLIDE_MS = 160;
+/** How long after a throw begins the stone leaves the hand when the clip names no hand (the arm winds back first; a two-hand push lets go early), ms. With a hand it is the clip's last hand point (`clip.hand`). */
+const THROW_RELEASE_MS = { throw: 312, push: 156 } as const;
 const WHEEL_GAP_MS = 180;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
@@ -138,7 +157,6 @@ const SWAYS = new Set(['meadow', 'grove', 'water', 'riverbank']);
 /** Where the smoke leaves house_small: the chimney top, in pixels of the 48x48 sprite (read from the art). */
 const CHIMNEY = { x: 37, y: 6 };
 /** Edge strips are named by the side of the tile they sit on. */
-const DIRS_8: readonly (readonly [number, number])[] = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
 const SIDES: readonly [string, number, number][] = [['n', 0, -1], ['e', 1, 0], ['s', 0, 1], ['w', -1, 0]];
 
 export interface Target {
@@ -220,9 +238,14 @@ interface Fire {
   breath: FireFlicker | undefined;
   /** the fire's own draws, for its sparks */
   rng: () => number;
+  /** the pack's camp-fire loop (effects.ts), shown in place of the kit's burning look while the wood is full or steady, and whether it is up now */
+  pv?: Phaser.GameObjects.Sprite;
+  pvOn?: boolean;
 }
 
 /** The burning look of a fire prop, from the base kit, and the cold look of the fire the player kindles. */
+/** The pack's camp fire is 40 art px wide and the kit's lit hearth shows about 48: the fit that makes the two stand as wide (effects.ts). */
+const CAMPFIRE_FIT = 1.2;
 const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
 const FIRE_UNLIT_SPRITE = 'core/base-kit:props/campfire_unlit';
 /** A flame's frame time: the kit's three frames while the fire is full. */
@@ -341,6 +364,11 @@ class TileZone {
   }
 }
 
+/** How long one task of the build runs before the page gets a turn, in ms: the steps are run back to back up to this. */
+const BUILD_SLICE_MS = 8;
+/** About how many steps `build` has (its `yield`s), for the bar only: a step more or less moves the bar a hair. */
+const BUILD_STEPS = 18;
+
 export class WorldScene extends Phaser.Scene {
   private b!: Bundle;
   private walkable!: ReturnType<typeof makeWalkable>;
@@ -390,6 +418,11 @@ export class WorldScene extends Phaser.Scene {
   private leaves: Emitter | undefined;
   private bursts = new Map<string, Emitter>();
   private puffs = new Map<string, Emitter>();
+  /** the pack's effects (effects.ts): a spark on a hit, a starburst on a bite, dust on a landing, the camp fire's flame */
+  private effects!: EffectLayer;
+  private fightWords!: FightWordLayer;
+  /** the small health bar under each fighting creature, with its number (#866) */
+  private foeBars!: FoeBarLayer;
   /** the old picture's dark frame, drawn under the cut-out instead of as a filter over everything (WebGL) */
   private vignette: Phaser.GameObjects.Image | undefined;
   private frameLook = { strength: 0.3, radius: 0.8 };
@@ -417,6 +450,10 @@ export class WorldScene extends Phaser.Scene {
   private shaft: { band: Phaser.GameObjects.Rectangle; line: Phaser.Geom.Line; dust?: Emitter } | undefined;
   /** the sky's weight today: an index into CLOUD_BUCKETS, and 0 is a clear day with the patches hidden */
   private cloudDay = -1;
+  /** the bucket whose patch the clouds show now (-1: none yet): a patch is baked a few rows a frame, so it can come after the day asks */
+  private cloudShown = -1;
+  /** the patches still to bake, the first the next: the one the sky asks for goes first, the others fill the idle frames (#843) */
+  private cloudBake: { k: number; out: Uint8ClampedArray; y: number }[] = [];
   /** a sky picked by `?debug&cloud=0..3`, for a still or a test; unset in play */
   private cloudForce: number | null = null;
   /** a day's weather picked by `?debug&sky=clear|rain|fog`, for a still or a test; unset in play */
@@ -481,6 +518,8 @@ export class WorldScene extends Phaser.Scene {
   private pinned = new Set<Pinned>();
   /** the body walking freely between tiles (walking.ts); the session keeps the tile under its feet */
   readonly body = new Walker();
+  /** the standard walk's speed ramp (walkfeel.ts) */
+  private readonly ramp = new SpeedRamp();
   /** what the body is drawn facing: one of eight, leaning on the four-way facing the faced tile is read from */
   private look: Facing8 = 'down';
   /** The kernel's step time of the walk at the gait and load of the last frame (gaitStepMs), in ms a tile. */
@@ -497,6 +536,8 @@ export class WorldScene extends Phaser.Scene {
   private refreshIn = 0;
   /** what the player put down, drawn on its tiles */
   private piles?: Piles;
+  /** the loose stones, by count, and the flight of a thrown one (DECISIONS 2026-11-22, #831) */
+  private stones?: StoneLayer;
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
@@ -544,6 +585,18 @@ export class WorldScene extends Phaser.Scene {
   private lanternFor: number | undefined;
   /** while the fall plays: no walking, and the player's sprite belongs to the animation */
   private falling = false;
+  /**
+   * The jump in the air (DECISIONS 2026-11-22). STAND-IN until the drawn jump clip comes from the anim lane (ANIMATION.md
+   * section 2, "the jump row"): the figure holds its standing frame and rises on an arc while its feet, and so the cast
+   * shadow, travel the ground from the takeoff tile to the landing tile. `start` and `ms` are the scene clock's.
+   */
+  private hop: { from: [number, number]; to: [number, number]; start: number; ms: number; peak: number } | null = null;
+  /** a jump asked of the kernel and not answered yet (a server answers later): the hop's wait stands from now */
+  private hopAsked = false;
+  /** a fall that the hop in the air holds back until it lands: where the body fell, and where it wakes */
+  private fellAfterHop: { from: [number, number]; to: [number, number] } | null = null;
+  /** how high the drawing rides above the body, in art pixels: the hop's arc (the shadow keeps the ground) */
+  private lift = 0;
   /** the kit's clip under way on the player's figure (#742): while it plays it owns the frame shown, and the kernel knows nothing of it */
   private readonly figure = new ClipPlayer();
   /** the "!" over a predator that has just seen the player */
@@ -557,33 +610,84 @@ export class WorldScene extends Phaser.Scene {
     super('world');
   }
 
+  /** the scene is built in slices, behind the title (`build`, `drive`): false until the last one has run */
+  private built = false;
+  private steps: Generator<void> | undefined;
+  private stepsRun = 0;
+  private priming = false;
+
   create(): void {
+    // the camera shows nothing until the valley is whole: the title's backdrop stays plain until then, never a half-built world
+    this.cameras.main.setVisible(false);
+    this.steps = this.build();
+    this.drive();
+  }
+
+  /**
+   * Runs the build's steps, as many as fit in a few ms of one task, then lets the page breathe (the title answers, a frame draws)
+   * and goes on. A step is the code between two `yield`s of `build`.
+   */
+  private drive(): void {
+    const t0 = performance.now();
+    do {
+      if (this.steps?.next().done) {
+        this.steps = undefined;
+        return;
+      }
+      // the bar of "preparing the valley": the pictures are the first 60 percent (boot.ts), the build's steps the rest
+      // (the ground's own yields, one for every few ms of strips, are not steps: the bar waits at the last one)
+      if (!this.priming) app.ui.loading(0.6 + 0.4 * Math.min(1, ++this.stepsRun / BUILD_STEPS));
+    } while (performance.now() - t0 < BUILD_SLICE_MS);
+    setTimeout(() => this.drive(), 0);
+  }
+
+  private *build(): Generator<void> {
     this.b = app.bundle;
     this.lightTable = tableOf(this.b.params.light?.keys ?? []);
     this.walkable = makeWalkable(this.b);
+    yield;
     this.labels = document.createElement('div');
     this.labels.className = 'world-labels';
     app.ui.root.prepend(this.labels);
+    this.fightWords = new FightWordLayer(this.labels, (outcome, point) => this.fightWordHead(outcome, point));
+    this.foeBars = new FoeBarLayer(this.labels, (id, point) => this.foeBarFeet(id, point));
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
+    yield;
+    this.effects = new EffectLayer(this, DEPTH.fx, T);
+    yield;
     const read = this.b.params.light?.read;
     if (RICH.light) this.light = new LightLayer(this, this.lightTable, { floor: (read?.floor ?? READ.floor) / 100 }, { shade: DEPTH.shade, pools: DEPTH.shade + 0.2 });
+    yield;
     this.buildGround();
+    yield;
     this.buildProps();
+    yield;
     this.buildNodes();
+    yield;
     this.buildNpcs();
+    yield;
     this.buildRestores();
+    yield;
     this.buildCamp();
+    yield;
     this.buildFog();
+    yield;
     this.buildSigns();
+    yield;
     this.buildAtmosphere();
+    yield;
     if (RICH.light) this.buildDapple();
+    yield;
     const firstKey = this.playerFrame('down').key;
     this.player = kitSprite(this, 0, 0, firstKey, standingFrame(this.b.sprites[firstKey], 1)).setOrigin(0.5, footOrigin(firstKey)).setVisible(false);
     if (RICH.detail) this.buildCasters();
+    yield;
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
-    this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => {
+      if (this.built) this.cutPlayer();
+    });
     this.veil = this.add.container(0, 0, [this.mist, ...this.banks.map((b) => b.img), ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.fishing = new FishingView(this, { under: DEPTH.flat + 0.1, over: DEPTH.fx - 1 }, { ink: PALETTE.ink, paper: PALETTE.paper, red: PALETTE.red2, wood: PALETTE.wood });
@@ -608,6 +712,11 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(DEPTH.shade + 10)
       .setVisible(false);
     const cam = this.cameras.main;
+    cam.on(Phaser.Cameras.Scene2D.Events.POST_RENDER, () => {
+      const reduced = document.documentElement.dataset.motion === 'reduced';
+      if (this.fightWords.active) this.fightWords.update(performance.now(), reduced);
+      if (this.foeBars.active) this.foeBars.update(performance.now(), this.session?.state.player.fight?.foe, reduced);
+    });
     cam.setBounds(0, 0, this.b.map.width * T, this.b.map.height * T);
     cam.setRoundPixels(true);
     // the sway goes on before the camera's grade, so it reads the palette's own colours
@@ -618,16 +727,78 @@ export class WorldScene extends Phaser.Scene {
       for (const f of this.fires.values()) this.lickFlame(f);
     }
     this.addFilters(cam);
-    this.scale.on('resize', () => this.fit());
+    yield;
+    this.scale.on('resize', () => {
+      if (this.built) this.fit();
+    });
     this.input.on('wheel', (_p: unknown, _over: unknown, _dx: number, dy: number) => this.onWheel(dy));
+    // the mouse charges the throw too (DECISIONS 2026-11-22): held aims at the pointer, released throws
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!(pointer.event instanceof MouseEvent) || !pointer.leftButtonDown()) return;
+      const tile = this.pointerTile(pointer);
+      if (tile) this.throwMousePress(tile);
+    });
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!(pointer.event instanceof MouseEvent) || this.charge?.source !== 'mouse') return;
+      const tile = this.pointerTile(pointer);
+      if (tile) this.throwAimTo(tile);
+    });
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (!(pointer.event instanceof MouseEvent)) return;
+      this.releaseCharge('mouse');
+    });
     this.fit();
     this.time.addEvent({ delay: 480, loop: true, callback: () => this.flipWater() });
     sound.installUnlock();
     sound.music('valley', 1500);
     // the crackle holds its nodes only while heard: none outlives the world
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => sound.crackle(0));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      sound.crackle(0);
+      this.fightWords.clear();
+      this.foeBars.clear();
+      this.labels.remove();
+    });
+    yield;
+    // the first frame's work is the last step, so what "ready" says is a valley that draws at once: first the ground under the view
+    yield* this.primeGround();
+    this.built = true;
+    this.update(this.game.loop.time, 16);
+    cam.setVisible(true);
     app.world = this;
     app.ui.worldReady();
+  }
+
+  /**
+   * The ground under the first view, baked in strips by the build's own slices (groundchunks.ts `bakeView`): the same
+   * pages as one call per page, which froze the page for seconds behind the title. The view is the one the attract
+   * camera holds before a game starts.
+   */
+  private *primeGround(): Generator<void> {
+    const chunks = this.chunks;
+    const cam = this.cameras.main;
+    const at = this.attractAt();
+    cam.centerOn(at.x, at.y);
+    cam.preRender();
+    this.priming = true;
+    // the banks are cut to the view now, one a slice: each is a texture the GPU has to be given
+    for (const b of this.banks) {
+      this.cutBank(b, cam.worldView.width);
+      yield;
+    }
+    this.bankView = cam.worldView.width;
+    if (!chunks || !this.stream) {
+      this.priming = false;
+      return;
+    }
+    this.stream.update(this.player ? Math.floor(this.player.x / T) : 0, this.player ? Math.floor(this.player.y / T) : 0);
+    const centre = this.stream.centre;
+    chunks.update(cam.worldView, centre ? `${centre.cx},${centre.cy}` : '', true);
+    const spawn = this.b.map.spawn;
+    // the page under the title's backdrop and the page a new game wakes on: with the second held, the first frame after the
+    // wake needs no page baked whole (that was seven seconds at x4)
+    while (!chunks.bakeView(BUILD_SLICE_MS / 2, [at, { x: spawn.x * T, y: spawn.y * T }])) yield;
+    this.priming = false;
+    chunks.resume();
   }
 
   // ------------------------------------------------------------ building
@@ -883,33 +1054,15 @@ export class WorldScene extends Phaser.Scene {
       if (gd === 1) tex.drawFrame(ref, frame, x, y, false);
       else drawScaled(tex, ref, frame, x * gd, y * gd, gd / density);
     };
-    // the edges drawn per pixel (pathedge.ts): each pair of grounds that meet, `a` the side the field counts as 1, in the order looked for
-    // the sand is one ground whatever its tag (the river's bank, the ruin's floor)
-    const kindOf = (t: { sprite: string; tag: string } | undefined): string | undefined => (t === undefined ? undefined : baseName(t.sprite) === 'sand' ? 'sand' : t.tag);
-    const EDGES: readonly { a: string; b: string; look: EdgeLook; at: PathAt }[] = ([
-      ['path', 'meadow', PATH_EDGE],
-      ['sand', 'meadow', BANK_EDGE],
-      ['grove', 'meadow', WOOD_EDGE],
-      ['path', 'sand', BANK_EDGE],
-      ['path', 'grove', WOOD_EDGE],
-      ['sand', 'water', WATER_EDGE],
-      ['meadow', 'water', WATER_EDGE],
-      ['grove', 'water', WATER_EDGE],
-      ['path', 'water', WATER_EDGE],
-    ] as const).map(([a, b, look]) => ({
-      a,
-      b,
-      look,
-      at: (x: number, y: number) => {
-        const k = kindOf(at(x, y));
-        return k === a ? 1 : k === b ? 0 : undefined;
-      },
-    }));
     const grassTile = tiles.find((t) => t.tag === 'meadow' && baseName(t.sprite) === 'grass');
-    const grassSprites = grassTile ? [grassTile.sprite, ...(variants.get(grassTile.sprite) ?? [])] : [];
     const withVariants = (sprite: string): string[] => [sprite, ...(variants.get(sprite) ?? [])];
+    const blendGround = RICH.detail && gd === 4 ? groundBlender(
+      at, grassTile ? withVariants(grassTile.sprite) : [], withVariants,
+      (ref) => this.b.sprites[ref]?.frames ?? 1, (ref, frame) => this.pixelsOf(ref, frame),
+    ) : undefined;
     // paints the tiles of a rectangle of the map into a canvas whose corner is that rectangle's; true when any is animated
-    const paint = (tex: Phaser.Textures.CanvasTexture, frame: number, tx0: number, ty0: number, tw: number, th: number): boolean => {
+    const crowns = new Map<number, { ref: string; unit: NonNullable<ReturnType<typeof unitOf>>; density: number }>();
+    const paint = (blends: Map<number, TileBlend>, tex: Phaser.Textures.CanvasTexture, frame: number, tx0: number, ty0: number, tw: number, th: number): boolean => {
       let animated = false;
       for (let y = ty0; y < ty0 + th; y++) {
         const row = m.ground[y] ?? '';
@@ -929,28 +1082,14 @@ export class WorldScene extends Phaser.Scene {
           const tone = tones?.[y * m.width + x] ?? 0;
           const key = tone === 1 || tone === 2 ? (this.toned(sprite, tone) ?? sprite) : sprite;
           if (info.frames > 1) animated = true;
-          // a path meeting a meadow is drawn per pixel (pathedge.ts), not as tiles with strips over them
-          let blended = false;
-          // a tile that meets two kinds of ground (a sand tile between a path and a meadow) takes each blend in turn
-          let cur: Uint8ClampedArray | null = null;
-          if (RICH.detail && gd === 4) {
-            for (const edge of EDGES) {
-              const kind = kindOf(tile);
-              if (kind !== edge.a && kind !== edge.b) continue;
-              // the other side's sprite: the neighbour's kind of ground (a meadow's own is the plain grass)
-              const side = kind === edge.a ? edge.b : edge.a;
-              const near = DIRS_8.map(([dx, dy]) => at(x + dx, y + dy)).find((t) => kindOf(t) === side);
-              if (!near) continue;
-              const mine = kind === 'meadow' ? key : sprite;
-              const theirs = side === 'meadow' ? grassSprites : withVariants(near.sprite);
-              const next: Uint8ClampedArray | null = this.blendTile(x, y, kind === edge.a ? 1 : 0, cur ?? mine, edge, theirs, frame);
-              if (next) {
-                cur = next;
-                blended = true;
-              }
-            }
-            if (cur) tex.putData(new ImageData(cur as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
+          const pos = y * m.width + x;
+          if (frame === 0 && blendGround) {
+            const blend = blendGround(x, y, sprite, key);
+            if (blend) blends.set(pos, blend);
           }
+          const cur = blends.get(pos)?.(frame);
+          const blended = !!cur;
+          if (cur) tex.putData(new ImageData(cur as Uint8ClampedArray<ArrayBuffer>, EDGE_PX, EDGE_PX), (x - tx0) * T * 4, (y - ty0) * T * 4);
           // open water, and the water under a bridge's deck, is composed from the world's pixel (waterbody.ts): no tile of it repeats
           const water = RICH.detail && gd === 4 && !blended && (isOpenWater(sprite) || baseName(sprite).startsWith('bridge'));
           if (water) {
@@ -964,19 +1103,29 @@ export class WorldScene extends Phaser.Scene {
       }
       // one crown over each block of four forest tiles; the eyes still watch from the forest's edge
       for (const c of canopies) {
-        const ref = `${canopyKit}props/canopy_${c.i + 1}`;
-        const unit = unitOf(ref);
-        if (!unit || !this.has(ref)) continue;
+        // a piece of a page asks this for every crown of the map, so the crown's picture is looked up once, not per piece
+        let crown = crowns.get(c.i);
+        if (!crown) {
+          const ref = `${canopyKit}props/canopy_${c.i + 1}`;
+          const unit = unitOf(ref);
+          if (!unit || !this.has(ref)) continue;
+          crown = { ref, unit, density: densityOf(ref) };
+          crowns.set(c.i, crown);
+        }
+        const unit = crown.unit;
+        if (!unit) continue;
         if (c.x * T >= (tx0 + tw) * T || c.y * T >= (ty0 + th) * T || (c.x * T + unit.w) <= tx0 * T || (c.y * T + unit.h) <= ty0 * T) continue;
-        put(tex, ref, undefined, densityOf(ref), (c.x - tx0) * T, (c.y - ty0) * T);
+        put(tex, crown.ref, undefined, crown.density, (c.x - tx0) * T, (c.y - ty0) * T);
       }
       return animated;
     };
+    const makePainter = () => paint.bind(null, new Map<number, TileBlend>());
     if (gd === 1) {
+      const paintMap = makePainter();
       for (let frame = 0; frame < this.groundFrames; frame++) {
         const tex = this.textures.createCanvas(`ground-${frame}`, m.width * T, m.height * T);
         if (!tex) continue;
-        paint(tex, frame, 0, 0, m.width, m.height);
+        paintMap(tex, frame, 0, 0, m.width, m.height);
         tex.refresh();
       }
       this.ground = this.add.image(0, 0, 'ground-0').setOrigin(0).setDepth(DEPTH.ground);
@@ -984,7 +1133,7 @@ export class WorldScene extends Phaser.Scene {
       // built as the camera moves (update), so nothing is held for the map's far corners
       const stream = new ChunkStream<true>((cx, cy) => (cx >= 0 && cy >= 0 && cx * WORLD_CHUNK < m.width && cy * WORLD_CHUNK < m.height ? true : undefined));
       this.stream = stream;
-      this.chunks = new GroundChunks(this, m.width, m.height, gd, T, this.groundFrames, DEPTH.ground, paint, (tx, ty) => stream.holds(tx, ty));
+      this.chunks = new GroundChunks(this, m.width, m.height, gd, T, this.groundFrames, DEPTH.ground, makePainter, (tx, ty) => stream.holds(tx, ty));
     }
     if (RICH.motion) {
       this.meadowZone = new TileZone(meadow);
@@ -1004,6 +1153,23 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * After first light, never before it, the pixels of the ground sprites are read one sprite a slice: the first read of
+   * a sprite is a one-time image decode (190-270 ms), which would otherwise land in the slice of the first walk into a
+   * page that meets it (groundchunks.ts, #879).
+   */
+  private warmed = false;
+  private warmGround(): void {
+    this.warmed = true;
+    if (!RICH.detail) return;
+    const jobs = Object.entries(this.b.sprites).filter(([ref]) => /(^|:)tiles\//.test(ref)).flatMap(([ref, i]) => Array.from({ length: i.frames }, (_, f) => [ref, f] as const));
+    const next = (): void => {
+      const job = jobs.shift();
+      if (job) idleSlice(() => (this.pixelsOf(job[0], job[1]), next()));
+    };
+    next();
+  }
+
   /** The pixels of the first frame of a ground sprite (or of a toned copy of it), cached. */
   private pixelCache = new Map<string, Uint8ClampedArray | null>();
   private pixelsOf(ref: string, frame = 0): Uint8ClampedArray | null {
@@ -1019,7 +1185,7 @@ export class WorldScene extends Phaser.Scene {
       const c = document.createElement('canvas');
       c.width = EDGE_PX;
       c.height = EDGE_PX;
-      const ctx = c.getContext('2d');
+      const ctx = c.getContext('2d', { willReadFrequently: true });
       if (ctx) {
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(f.source.image as CanvasImageSource, cut.x, cut.y, EDGE_PX, EDGE_PX, 0, 0, EDGE_PX, EDGE_PX);
@@ -1027,32 +1193,6 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     this.pixelCache.set(cacheKey, out);
-    return out;
-  }
-
-  /**
-   * A ground tile that has another kind within a tile of it, as one blended tile (pathedge.ts): its pixels and the
-   * other kind's, cut along the smooth edge. Null when the tile needs none or a sprite is not a single 64 px frame,
-   * so the caller draws it plain.
-   */
-  private blendTile(x: number, y: number, own: 0 | 1, mine: Uint8ClampedArray | string, edge: { look: EdgeLook; at: PathAt }, others: readonly string[], frame = 0): Uint8ClampedArray | null {
-    if (!needsBlend(x, y, edge.at, own)) return null;
-    const h = hash(x, y);
-    const theirs = others.length === 0 ? undefined : others[(h >>> 3) % others.length];
-    // open water is composed from the world's pixel (waterbody.ts), not read from a tile, so it never repeats
-    const pix = (ref: string): Uint8ClampedArray | null => {
-      if (!isOpenWater(ref)) return this.pixelsOf(ref, frame);
-      const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
-      deepTile(x, y, frame, out, EDGE_PX);
-      return out;
-    };
-    const mineLocal = typeof mine === 'string' ? pix(mine) : mine;
-    const theirsLocal = theirs === undefined ? null : pix(theirs);
-    if (!mineLocal || !theirsLocal) return null;
-    const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
-    // the field counts the ground (a) as 1: its pixels are the "path" side of the blend, the other's the grass side
-    if (own === 1) blendEdgeTile(x, y, edge.at, own, mineLocal, theirsLocal, out, edge.look);
-    else blendEdgeTile(x, y, edge.at, own, theirsLocal, mineLocal, out, edge.look);
     return out;
   }
 
@@ -1345,6 +1485,28 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
+   * The pack's camp fire (effects.ts) over a fire's hearth: shown in place of the kit's burning look while the wood is full or
+   * steady, a little smaller when it settles, at the night's height over the shade; the kit's look comes back when it is not up.
+   * Without motion it stands on its first frame.
+   */
+  private campfireFlame(f: Fire, on: boolean, stage: FireStage, night: boolean, gone: boolean): void {
+    if (on) {
+      f.pv ??= this.effects.make('campfire', f.spr.x, f.spr.y, f.baseDepth);
+      if (!f.pv) return;
+      const fit = (stage === 'full' ? 1 : 0.9) * CAMPFIRE_FIT;
+      f.pv.setPosition(f.spr.x, f.spr.y - 1).setScale(this.effects.scale * fit).setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth).setVisible(true);
+      if (!RICH.motion) f.pv.setFrame(0);
+      f.spr.setVisible(false);
+      f.pvOn = true;
+    } else if (f.pvOn) {
+      f.pv?.setVisible(false);
+      // (the fire the player kindled and then lost has no look to give back)
+      if (!gone) f.spr.setVisible(true);
+      f.pvOn = false;
+    }
+  }
+
+  /**
    * The fire the player kindled (NEXT 21b): one sprite that follows the tile the kernel names, cold until it is
    * lit. It is not a map prop, so nothing builds it at bind time; refreshFires() calls this first.
    */
@@ -1389,7 +1551,10 @@ export class WorldScene extends Phaser.Scene {
       // by day the kit's own flame shows while the wood is full; at night the shade would hide it, so the drawn tongue
       // carries the flame over the dark at every stage
       const night = this.night > 0.15;
-      const drawn = stage === 'low' || stage === 'embers' || (night && full);
+      // the pack's camp-fire loop stands in for the kit's burning look while the wood is full or steady, by day and by night, so
+      // the drawn tongue is not laid over it too
+      const pvOn = full && this.effects.has('campfire');
+      const drawn = !pvOn && (stage === 'low' || stage === 'embers' || (night && full));
       const look = full ? f.lit : f.unlit;
       if (f.spr.texture.key !== look) {
         retex(f.spr, look, 0);
@@ -1407,6 +1572,7 @@ export class WorldScene extends Phaser.Scene {
       f.baseX = sx;
       f.baseY = sy;
       f.spr.setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth);
+      this.campfireFlame(f, pvOn, stage, night, id === OWN_FIRE && s.state.player.own === null);
       f.flame.setDepth(night ? DEPTH.shade + 1 : f.baseDepth + 0.01);
       f.sparks?.setDepth(night ? DEPTH.shade + 0.9 : f.baseDepth + 0.02);
       // with the light layer on, the fire's pool lights its ring; the old soft disc would light it twice
@@ -1467,6 +1633,13 @@ export class WorldScene extends Phaser.Scene {
       scale: drawn ? f.baseY : f.spr.scaleX,
       stage: f.stage,
     };
+  }
+
+  /** The pack's camp fire over a fire's hearth now, for a test: whether it is up, the frame it shows, and whether the kit's own look is hidden under it. */
+  campfireLook(id: string): { up: boolean; frame: number; kitHidden: boolean } | undefined {
+    const f = this.fires.get(id);
+    if (!f) return undefined;
+    return { up: !!f.pvOn && !!f.pv?.visible, frame: f.pv ? Number(f.pv.frame.name) : -1, kitHidden: !f.spr.visible };
   }
 
   /** Whether a rectangle of tiles is on the screen now. */
@@ -1934,31 +2107,26 @@ export class WorldScene extends Phaser.Scene {
           .setDepth(DEPTH.motes)
       : undefined;
     this.shaft = { band, line, dust };
-    // both textures are baked at the world's own density, so a texel lands on a screen pixel and no shape is
+    // the patches are baked at the world's own density, so a texel lands on a screen pixel and no shape is
     // drawn twice its size; a tile is then a quarter of its own pixels, which tileScale says
+    // one patch per weight of sky, so a clear day has none, a still day one, and a heavy day many. They are baked in bands
+    // of rows after the world is whole (bakeClouds), the day's own first: a clear day never draws its patch, so none is baked for it
     const side = CLOUD_TILE * AIR_DENSITY;
-    // one patch per weight of sky, so a clear day has none, a still day one, and a heavy day many
-    CLOUD_BUCKETS.forEach((cover, k) => {
-      const tex = this.textures.createCanvas(`fx-cloud-${k}`, side, side);
-      if (!tex) return;
-      const img = tex.getContext().createImageData(side, side);
-      img.data.set(cloudPixels(side, cover));
-      tex.getContext().putImageData(img, 0, 0);
-      tex.refresh();
-    });
+    const first = cloudBucket(cloudCover(0));
+    for (const k of [first, ...CLOUD_BUCKETS.keys()].filter((k, i, all) => k > 0 && all.indexOf(k) === i)) {
+      this.cloudBake.push({ k, out: new Uint8ClampedArray(side * side * 4), y: 0 });
+    }
     if (new URLSearchParams(location.search).has('debug')) {
       const asked = Number(new URLSearchParams(location.search).get('cloud'));
       if (Number.isInteger(asked) && asked >= 0 && asked < CLOUD_BUCKETS.length) this.cloudForce = asked;
       const sky = new URLSearchParams(location.search).get('sky');
       if (sky === 'clear' || sky === 'rain' || sky === 'fog') this.skyForce = sky;
     }
-    if (this.textures.exists('fx-cloud-0')) {
-      // three by three copies of one patch: a tile sprite drew its overlapping edge twice and doubled the shade
-      for (let j = 0; j < 3; j++) {
-        for (let i = 0; i < 3; i++) {
-          const img = this.add.image(0, 0, 'fx-cloud-0').setOrigin(0).setScale(1 / AIR_DENSITY).setDepth(DEPTH.flat - 0.3).setAlpha(0);
-          this.clouds.push(img);
-        }
+    // three by three copies of one patch: a tile sprite drew its overlapping edge twice and doubled the shade
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        const img = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setScale(1 / AIR_DENSITY).setDepth(DEPTH.flat - 0.3).setAlpha(0);
+        this.clouds.push(img);
       }
     }
     const banks = [
@@ -1970,7 +2138,34 @@ export class WorldScene extends Phaser.Scene {
       const img = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setScale(1 / AIR_DENSITY).setAlpha(0);
       this.banks.push({ img, key: b.key, tile: b.tile, seed: b.seed, drift: b.drift, at: BANK_AT[i] ?? 0.5, periods: 0, moved: 0 });
     });
-    this.cutBanks(this.cameras.main.worldView.width);
+  }
+
+  /** Puts the patch of bucket `k` at the front of the queue, if it is still to bake. */
+  private wantCloud(k: number): void {
+    const at = this.cloudBake.findIndex((j) => j.k === k);
+    if (at > 0) this.cloudBake.unshift(...this.cloudBake.splice(at, 1));
+  }
+
+  /** Bakes the next patch a band of rows at a time, for up to `budget` ms, and gives it to the texture manager when it is whole. */
+  private bakeClouds(budget: number): void {
+    const job = this.cloudBake[0];
+    if (!job) return;
+    const side = CLOUD_TILE * AIR_DENSITY;
+    const cover = CLOUD_BUCKETS[job.k] ?? 0;
+    const t0 = performance.now();
+    do {
+      const to = Math.min(side, job.y + 8);
+      cloudRows(job.out, side, cover, job.y, to);
+      job.y = to;
+    } while (job.y < side && performance.now() - t0 < budget);
+    if (job.y < side) return;
+    this.cloudBake.shift();
+    const tex = this.textures.createCanvas(`fx-cloud-${job.k}`, side, side);
+    if (!tex) return;
+    const img = tex.getContext().createImageData(side, side);
+    img.data.set(job.out);
+    tex.getContext().putImageData(img, 0, 0);
+    tex.refresh();
   }
 
   /**
@@ -1978,25 +2173,32 @@ export class WorldScene extends Phaser.Scene {
    * each end, so a wide screen never meets a vertical edge and the drift wraps without a seam.
    */
   private cutBanks(viewWidth: number): void {
-    const need = viewWidth + 2 * BANK_PERIOD;
-    for (const b of this.banks) {
-      const periods = Math.ceil(need / BANK_PERIOD) + 1;
-      if (periods === b.periods) continue;
-      b.periods = periods;
-      const px = periods * BANK_PERIOD * AIR_DENSITY;
-      const ph = b.tile * AIR_DENSITY;
-      const key = `${b.key}-${periods}`;
-      if (!this.textures.exists(key)) {
-        const tex = this.textures.createCanvas(key, px, ph);
-        if (!tex) continue;
-        const img = tex.getContext().createImageData(px, ph);
-        img.data.set(bankPixels(px, ph, b.seed, true, BANK_PERIOD * AIR_DENSITY));
-        tex.getContext().putImageData(img, 0, 0);
-        tex.refresh();
-      }
-      b.img.setTexture(key);
-    }
+    for (const b of this.banks) this.cutBank(b, viewWidth);
     this.bankView = viewWidth;
+  }
+
+  private cutBank(b: (typeof this.banks)[number], viewWidth: number): void {
+    const need = viewWidth + 2 * BANK_PERIOD;
+    const periods = Math.ceil(need / BANK_PERIOD) + 1;
+    if (periods === b.periods) return;
+    b.periods = periods;
+    const px = periods * BANK_PERIOD * AIR_DENSITY;
+    const ph = b.tile * AIR_DENSITY;
+    const key = `${b.key}-${periods}`;
+    if (!this.textures.exists(key)) {
+      const tex = this.textures.createCanvas(key, px, ph);
+      if (!tex) return;
+      // one period goes in as pixels and the canvas copies it along itself, doubling: the same pixels as the whole bank
+      // put at once, whose upload alone was a quarter of a second on a slow machine (#843)
+      const period = BANK_PERIOD * AIR_DENSITY;
+      const ctx = tex.getContext();
+      const img = ctx.createImageData(period, ph);
+      img.data.set(bankPixels(period, ph, b.seed, true, period));
+      ctx.putImageData(img, 0, 0);
+      for (let done = period; done < px; done *= 2) ctx.drawImage(tex.getCanvas() as CanvasImageSource, 0, 0, Math.min(done, px - done), ph, done, 0, Math.min(done, px - done), ph);
+      tex.refresh();
+    }
+    b.img.setTexture(key);
   }
 
   /**
@@ -2185,6 +2387,15 @@ export class WorldScene extends Phaser.Scene {
     this.falling = false;
     this.figure.stop();
     this.stoneHeld = false;
+    this.releases = [];
+    this.grip = undefined;
+    this.charge = undefined;
+    this.aimLineGfx?.setVisible(false);
+    this.stones?.destroy();
+    this.stones = undefined;
+    this.effects.clear();
+    this.fightWords.clear();
+    this.foeBars.clear();
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
@@ -2197,13 +2408,17 @@ export class WorldScene extends Phaser.Scene {
     this.telegraph = new Telegraph(this.b);
     this.bites = new Bites(this.b);
     this.unbind = [
-      session.on('busy', ({ ms }) => {
+      session.on('busy', ({ verb, ms }) => {
         this.busyFrom = session.tick;
-        this.busyMs = ms;
+        // a stone lifted, set down or thrown is its own motion, not work: no bar and no working frames over it
+        this.busyMs = verb === 'lift' || verb === 'setdown' || verb === 'throw' ? 0 : ms;
       }),
       session.on('events', (events) => {
         this.biteDrawn(events);
         this.fightClips(events);
+        this.fightEffects(events);
+        this.fightWords.play(events, performance.now());
+        this.foeBars.play(events, performance.now());
         this.celebrate(events);
         for (const event of events) if (event.e === 'cue') this.playCue(event);
       }),
@@ -2250,15 +2465,18 @@ export class WorldScene extends Phaser.Scene {
     const info = this.b.sprites[k];
     const st = info?.stride;
     // art px, down is positive: the bob is negative or zero
-    const dy = !st
-      ? (info as ClipSprite | undefined)?.clip
-        ? 0
-        : walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE)
-      : st.bob === false
-        ? 0
-        : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000);
+    const dy =
+      (!st
+        ? (info as ClipSprite | undefined)?.clip
+          ? 0
+          : walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE)
+        : st.bob === false
+          ? 0
+          : bob(RICH.motion, this.body.moving, this.body.walked, ((info.frames - 1) * st.travel_mpx) / 2000)) - this.lift;
     // a bite's flinch moves the drawn player only, never where the body stands
-    const [fx, fy] = this.flinch;
+    const [fx0, fy0] = this.flinch;
+    const fx = fx0;
+    const fy = fy0;
     this.player.setOrigin(0.5 - fx / (this.player.displayWidth || 1), footOrigin(k) - (dy * (T / ART_PX) + fy) / (this.player.displayHeight || 1));
   }
 
@@ -2317,6 +2535,7 @@ export class WorldScene extends Phaser.Scene {
   private faceFrame(frame?: number, pose?: number): void {
     const s = this.session;
     if (!s) return;
+    if (frame === undefined && pose === undefined && this.carryFigure(false)) return;
     const { key: k, flip } = this.playerFrame(s.facing, 'walk', this.lookOf(s));
     const info = this.b.sprites[k];
     const frames = info?.frames ?? 1;
@@ -2329,6 +2548,7 @@ export class WorldScene extends Phaser.Scene {
   private walkFrame(): void {
     const s = this.session;
     if (!s) return;
+    if (this.carryFigure(true)) return;
     const k = this.playerFrame(s.facing, 'walk', this.look).key;
     const info = this.b.sprites[k];
     if (info?.stride) return this.faceFrame(undefined, poseFrame(this.body.walked, info.stride.travel_mpx / 1000, info.frames, this.paceMs));
@@ -2357,7 +2577,7 @@ export class WorldScene extends Phaser.Scene {
    * one rule for how long). True when the kit has one; with none the figure keeps today's walk sheet or code-drawn motion, and
    * a clip still playing is dropped, so a verb with no art never shows the last one's.
    */
-  private playClip(verb: ClipVerb, lasts?: number): boolean {
+  private playClip(verb: ClipVerb, lasts?: number, stretch = false): boolean {
     const s = this.session;
     const race = s?.state.player.race;
     if (!s || !race || this.falling) return false;
@@ -2370,7 +2590,7 @@ export class WorldScene extends Phaser.Scene {
       this.figure.stop();
       return false;
     }
-    this.figure.start(found, this.time.now, lasts);
+    this.figure.start(found, this.time.now, lasts, stretch);
     this.drawClip(this.time.now);
     return true;
   }
@@ -2445,6 +2665,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshNodes();
     this.refreshFires(s);
     (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
+    (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig)).refresh(s.state, s.tick);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -2529,6 +2750,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ frame loop
 
   override update(time: number, delta: number): void {
+    if (!this.built) return;
     // a slot's fog sways only while it is in view: off screen it is neither moved nor drawn
     const view = this.cameras.main.worldView;
     this.fogs.forEach((fog, i) => {
@@ -2538,9 +2760,12 @@ export class WorldScene extends Phaser.Scene {
       if (seen) fog.x = home + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3);
     });
     this.animate(time, delta);
+    // the day's own patch is the one wanted: it gets the frame's spare ms, the others a few
+    if (this.cloudBake.length > 0) this.bakeClouds(this.session?.started && this.cloudBake[0]!.k === this.cloudDay ? 10 : 3);
     if (this.stream) this.stream.update(this.player ? Math.floor(this.player.x / T) : 0, this.player ? Math.floor(this.player.y / T) : 0);
     const at = this.stream?.centre;
     this.chunks?.update(this.cameras.main.worldView, at ? `${at.cx},${at.cy}` : '');
+    if (this.chunks && !this.warmed) this.warmGround();
     this.placePinned();
     const s = this.session;
     if (!s || !s.started) {
@@ -2562,11 +2787,17 @@ export class WorldScene extends Phaser.Scene {
       this.refreshIn = 250;
       this.refreshNodes();
       this.refreshFires(s);
+      // a thrown stone that has been out its time goes home with no step to say so
+      this.stones?.refresh(s.state, s.tick);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
     }
+    this.hopFrame(s);
     this.walk(s, real);
+    this.releaseStones(this.time.now);
+    this.stones?.frame(this.time.now);
+    this.chargeFrame(s);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
     this.placeShaft(minuteOfDay(this.b, s.tick));
@@ -2581,6 +2812,7 @@ export class WorldScene extends Phaser.Scene {
     this.drawFishing(s, time);
     this.drawBusy(s);
     this.drawClip(time);
+    this.gripFrame(this.time.now);
     this.updatePrompt(s);
     this.haunt(s, time);
   }
@@ -2592,6 +2824,8 @@ export class WorldScene extends Phaser.Scene {
    */
   private animate(time: number, delta: number): void {
     this.driftAir(time, delta);
+    this.effects.update(time);
+    for (const f of this.fires.values()) if (f.pv && f.pvOn && RICH.motion) this.effects.loop(f.pv, 'campfire', time, f.phase * 1000);
     for (const d of this.drifting) d.update(time);
     if (RICH.motion) this.maskSway.update(time, this.cameras.main.worldView);
     for (const c of this.cycles) {
@@ -2882,10 +3116,15 @@ export class WorldScene extends Phaser.Scene {
 
   private attract(delta: number): void {
     this.attractT += delta;
-    const cam = this.cameras.main;
+    const at = this.attractAt();
+    this.cameras.main.centerOn(at.x, at.y);
+  }
+
+  /** Where the camera looks before a game starts: a slow drift over the valley's heart. */
+  private attractAt(): { x: number; y: number } {
     const cx = 22 * T + Math.sin(this.attractT / 9000) * 10 * T;
     const cy = 15 * T + Math.cos(this.attractT / 13000) * 5 * T;
-    cam.centerOn(Math.round(cx), Math.round(cy));
+    return { x: Math.round(cx), y: Math.round(cy) };
   }
 
   private canControl(s: GameSession): boolean {
@@ -2898,20 +3137,45 @@ export class WorldScene extends Phaser.Scene {
    * its feet enter is the player's, told to the kernel in order. The facing follows the motion's leading axis.
    */
   private walk(s: GameSession, delta: number): void {
-    if (this.falling) return;
+    if (this.falling || this.hop || this.hopAsked) return;
     // the session may have put the player elsewhere: a load, a fall, the server's tile taken back
     const moved = this.body.follow(s.pos);
     const was = this.body.moving;
-    const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
-    const gait = app.controls.gait(performance.now());
+    // the way the body walks this frame in the standard walk: the last way pushed while it has speed (the frame or two a stop takes), nothing at rest
+    let drive: readonly [number, number] | undefined;
+    const control = this.canControl(s);
+    // both hands hold a stone: no running (the kernel refuses it), the load slows the walk itself
+    const carrying = carriedKind(this.b, s.state) !== undefined;
+    let input: [number, number];
+    let gait: Gait;
+    // the body's step time at the speed it walks at: the pace of the gait, or, in the standard walk, what the ramp has reached (walkfeel.ts)
+    let stepMs: number;
+    if (app.controls.mode === 'old') {
+      input = control ? app.controls.vector() : [0, 0];
+      const asked = app.controls.gait(performance.now());
+      gait = asked === 'run' && carrying ? 'walk' : asked;
+      this.paceMs = gaitStepMs(this.b, s.state, gait);
+      stepMs = this.paceMs;
+    } else {
+      const ask = control ? app.controls.ask() : { dir: [0, 0] as const, share: 0, gait: 'walk' as Gait };
+      const label: Gait = ask.gait === 'run' && carrying ? 'walk' : ask.gait;
+      // the ramp is counted in the walk's pace at this load; the thumb's share is of the pace of the gait it picked
+      const unit = (ART_PX * 1000) / gaitStepMs(this.b, s.state, 'walk');
+      if (!control || moved) this.ramp.reset();
+      const speed = this.ramp.step(ask.dir, ask.share * ((ART_PX * 1000) / gaitStepMs(this.b, s.state, label)), delta, unit);
+      gait = reportedGait(label, speed, unit);
+      this.paceMs = gaitStepMs(this.b, s.state, gait);
+      // the facing follows the thumb; a body still gliding to a stop walks on its last way without turning
+      input = [ask.dir[0], ask.dir[1]];
+      stepMs = speed > 0 ? (ART_PX * 1000) / speed : this.paceMs;
+      drive = speed > 0 ? this.ramp.dir : [0, 0];
+    }
     const facing = facingFor(input, s.facing);
     const look = facing8For(input, this.lookOf(s));
     const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
     this.look = agrees(look, facing) ? look : facing;
-    // the kernel's step time at this gait and load: the walk's poses follow it (work.ts poseEvery)
-    this.paceMs = gaitStepMs(this.b, s.state, gait);
-    for (const tile of this.body.frame(input, delta, this.paceMs, (x, y, from) => this.canWalk(s, x, y, from))) {
+    for (const tile of this.body.frame(drive ?? input, delta, stepMs, (x, y, from) => this.canWalk(s, x, y, from))) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, tile, gait);
@@ -2929,6 +3193,53 @@ export class WorldScene extends Phaser.Scene {
     this.drawBody();
     if (this.body.moving) this.walkFrame();
     else this.faceFrame();
+  }
+
+  /** The effects a batch of the kernel's events starts (effects.ts `spawnsOf`): a spark on a landed hit, a starburst on a bite or a critical blow. Motion only. */
+  private fightEffects(events: readonly GameEvent[]): void {
+    if (!RICH.motion || !this.session) return;
+    for (const spawn of spawnsOf(events, this.session.pos)) this.effects.playSpawn(spawn, this.time.now);
+  }
+
+  private fightWordHead({ struck, at }: FightOutcome, point: FightWordPoint): boolean {
+    let figure: Phaser.GameObjects.Sprite | undefined;
+    if (struck.side === 'player') {
+      figure = this.player;
+    } else {
+      for (const hazard of this.hazards) {
+        if (hazard.rule?.id !== struck.id) continue;
+        figure = hazard.spr;
+        break;
+      }
+    }
+    // A miss's tile is the swing's reach. Use the recipient's figure whenever it is drawn.
+    const x = figure?.visible ? figure.x : (at[0] + 0.5) * T;
+    const y = figure?.visible ? figure.y - figure.displayHeight * figure.originY : (at[1] - 0.5) * T;
+    const cam = this.cameras.main;
+    worldToPage(cam.worldView, cam.zoom, pixelRatio(), x, y, point);
+    return true;
+  }
+
+  /** The bar's anchor under a foe's feet: the sprite's origin stands on the feet line and follows it as it moves. */
+  private foeBarFeet(id: string, point: FoeBarPoint): boolean {
+    for (const hazard of this.hazards) {
+      if (hazard.rule?.id !== id) continue;
+      if (!hazard.spr.visible) return false;
+      const cam = this.cameras.main;
+      worldToPage(cam.worldView, cam.zoom, pixelRatio(), hazard.spr.x, hazard.spr.y, point);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Where a jump or a thrown stone comes down: the pack's dust on dry ground (path, bank, town, ruin), the old puff on the rest
+   * (leaves on a meadow), and the old puff on dry ground too when the sheet did not load.
+   */
+  private dustAt(x: number, y: number): void {
+    const tag = this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag;
+    if (landingDust(tag) && this.effects.has('landing-dust')) this.effects.playSpawn({ id: 'landing-dust', tile: [x, y] }, this.time.now, DEPTH.puff);
+    else this.puffAt(x, y);
   }
 
   /** A little dust at the feet as a step starts, in the colour of the ground left behind. */
@@ -3165,12 +3476,16 @@ export class WorldScene extends Phaser.Scene {
     const card = cardAt(this.b, s.pos[0], s.pos[1]);
     const look = skyLook(this.skyForce ?? s.sky(), card);
     const k = this.cloudForce ?? (look.overcast ? CLOUD_BUCKETS.length - 1 : cloudBucket(cloudCover(day)));
-    if (k !== this.cloudDay) {
-      this.cloudDay = k;
-      for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
+    this.cloudDay = k;
+    // the patch comes to the clouds once it is baked; until then they stay hidden rather than show another weight of sky
+    if (k > 0 && this.cloudShown !== k) {
+      if (this.textures.exists(`fx-cloud-${k}`)) {
+        this.cloudShown = k;
+        for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
+      } else this.wantCloud(k);
     }
     // the night kept readable (the owner, 30.10): the cloud shade is gone by 20:00, so it never stacks on the night
-    const clear = k === 0 ? 0 : cloudAt(this.night);
+    const clear = k === 0 || this.cloudShown !== k ? 0 : cloudAt(this.night);
     for (const c of this.clouds) c.setAlpha(look.overcast ? 0 : clear);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
     // and a bank cannot stack on it past the fog's cap at night (light.read)
@@ -3550,6 +3865,12 @@ export class WorldScene extends Phaser.Scene {
   private fallDown(from: readonly [number, number], to: readonly [number, number]): void {
     const s = this.session;
     if (!s) return;
+    // a jump off a cliff lands first: the fall begins where the body came down, once the hop in the air is over
+    if (this.hop || this.hopAsked) {
+      this.falling = true;
+      this.fellAfterHop = { from: [from[0], from[1]], to: [to[0], to[1]] };
+      return;
+    }
     this.falling = true;
     this.figure.stop();
     // work under way is not taken back: it is simply over (the session drops its undo)
@@ -3854,8 +4175,14 @@ export class WorldScene extends Phaser.Scene {
     for (const e of events) {
       // the jolt and the flash belong to danger (joltOf); a success moves no camera and flashes nothing
       const jolt = joltOf(e, RICH.motion);
-      if (jolt?.flash) this.cameras.main.flash(jolt.flash.ms, ...jolt.flash.rgb);
-      if (jolt?.shake) this.cameras.main.shake(jolt.shake.ms, jolt.shake.intensity);
+      // a landing that hurts shows its flash and shake when the feet come down, not at the takeoff
+      const landsIn = e.e === 'hurt' && e.by === 'fall' ? this.hopLeft() : 0;
+      const shock = () => {
+        if (jolt?.flash) this.cameras.main.flash(jolt.flash.ms, ...jolt.flash.rgb);
+        if (jolt?.shake) this.cameras.main.shake(jolt.shake.ms, jolt.shake.intensity);
+      };
+      if (landsIn > 0) this.time.delayedCall(landsIn, shock);
+      else shock();
       if (e.e === 'fall') this.fallDown(e.from, e.at);
       if (e.e === 'restore' || e.e === 'build') {
         const slot = e.e === 'restore' ? findSlot(this.b.map, this.b.restores[e.restore]?.place.slot ?? '') : undefined;
@@ -3898,6 +4225,342 @@ export class WorldScene extends Phaser.Scene {
     }
     this.marker.setVisible(!!t);
     if (t) this.marker.setPosition(t.tile[0] * T + T / 2, (t.tile[1] + 1) * T - t.top - 1);
+  }
+
+  /** Milliseconds until the hop in the air lands: the whole hop while a jump is asked and not answered, 0 on the ground. */
+  private hopLeft(): number {
+    if (this.hop) return Math.max(0, this.hop.start + this.hop.ms - this.time.now);
+    return this.hopAsked ? this.b.params.jump.air_ms : 0;
+  }
+
+  /**
+   * The jump key and the phone's jump button (DECISIONS 2026-11-22, the jump and the fall): one hop ahead the way the
+   * player faces, or two across a gap of water. The landing is `jumpTarget`'s, the kernel answers by its own rule (breath,
+   * the first minute, a face too high) and the refusal is told in its words. The hop's look is a code STAND-IN (`hop`).
+   */
+  jump(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    const to = jumpTarget(this.b, this.walkable, this.nodeAt, s);
+    if (!to) {
+      app.ui.toast('There is nothing to land on there.', 'info');
+      return;
+    }
+    const from: [number, number] = [s.pos[0], s.pos[1]];
+    this.hopAsked = true;
+    void Promise.resolve(s.act({ t: 'jump', at: to })).then((r) => {
+      this.hopAsked = false;
+      if (!r.ok) {
+        app.ui.toast(r.error, 'info');
+        return;
+      }
+      const lands = r.events.find((e) => e.e === 'jump');
+      if (lands?.e !== 'jump') return;
+      sound.sfx('step');
+      // the figure holds its standing frame in the air; a longer way over a gap rises a little higher
+      this.faceFrame();
+      this.hop = { from, to: [to[0], to[1]], start: this.time.now, ms: this.b.params.jump.air_ms, peak: lands.across ? 26 : 18 };
+    });
+  }
+
+  // ------------------------------------------------------------ loose stones (DECISIONS 2026-11-22, #831)
+
+  /** Whether both hands hold a large stone over the head and the lift is over (the kernel's `carry`; a lift's own time is the pickup clip's). */
+  private holdsLarge(): boolean {
+    return this.session?.state.player.stones?.carry === ARMS_STONE_KIND && !this.falling && !this.lifting;
+  }
+
+  /**
+   * The figure holding a large stone over its head: the kit's carry clip (DECISIONS 2026-11-23, the stones' art) for the race and the
+   * way it faces. Its frames are the walk's poses in order and, last, the standing pose, laid by the distance walked at the walk's own
+   * stride, so the feet keep the ground. True when it drew the figure; a race with no carry clip (or one whose sheet is not in yet)
+   * keeps the plain figure.
+   */
+  private carryFigure(moving: boolean): boolean {
+    const s = this.session;
+    if (!s || !this.holdsLarge()) return false;
+    const found = clipFor(this.b.sprites as ClipSprites, 'carry', s.state.player.race, s.facing);
+    if (!found || !this.textures.exists(found.key)) return false;
+    const poses = found.frames - 1;
+    let frame = poses;
+    const walk = this.b.sprites[this.playerFrame(s.facing, 'walk', this.lookOf(s)).key]?.stride;
+    const cycle = this.b.sprites[this.playerFrame(s.facing, 'walk', this.lookOf(s)).key]?.frames;
+    if (moving && walk && cycle && poses > 0) {
+      // one stride of the walk is one cycle of the carry, however many poses each has
+      frame = poseFrame(this.body.walked, (walk.travel_mpx * (cycle - 1)) / poses / 1000, found.frames, this.paceMs);
+    }
+    this.showPlayer(found.key, frame, found.flip);
+    return true;
+  }
+
+  /** The stone in the figure's hand from the press of B to the release: the clip that holds it and when that began (the scene clock). It is drawn at its world size all the way (#874). */
+  private grip?: { found: Found; start: number };
+
+  /** A throw being charged (DECISIONS 2026-11-22): when the press began (the scene clock), the aim tile, the stone's size, and which hand holds it. */
+  private charge?: { start: number; aim: KernelTile; kind: string; source: 'key' | 'mouse' };
+  /** The aim line on the ground, drawn while a throw is charged. */
+  private aimLineGfx?: Phaser.GameObjects.Graphics;
+
+  /** The world point of the clip's drawn hand `elapsed` ms into the clip, or nothing when the clip names no hand or the figure is not drawn in it. */
+  private handNow(found: Found, elapsed: number): { x: number; y: number } | undefined {
+    const point = handAt(found, elapsed);
+    const img = this.player;
+    if (!point || img.texture.key !== found.key) return undefined;
+    return handWorld(
+      { x: img.x, y: img.y, originX: img.originX, originY: img.originY, scaleX: img.scaleX, scaleY: img.scaleY, w: img.frame.realWidth, h: img.frame.realHeight, flip: img.flipX },
+      point,
+    );
+  }
+
+  /** The stone in the hand follows the hand of the frame the figure shows (called after the figure is drawn for the frame). */
+  private gripFrame(now: number): void {
+    const g = this.grip;
+    if (!g || !this.stones?.gripped) return;
+    const at = this.handNow(g.found, now - g.start);
+    if (at) this.stones.moveInHand(at.x, at.y, this.player.y);
+  }
+
+  /** Stones waiting for the release frame of the throw clip, to leave the hand at `at` (the scene clock, ms). */
+  private releases: { at: number; run: () => void }[] = [];
+
+  /** Lets go the stones whose release frame has come. */
+  private releaseStones(now: number): void {
+    if (this.releases.length === 0) return;
+    const due = this.releases.filter((r) => r.at <= now);
+    this.releases = this.releases.filter((r) => r.at > now);
+    for (const r of due) r.run();
+  }
+
+  /** Whether a lift is under way: the kernel's busy time after a `lift` of a large stone. */
+  private lifting = false;
+
+  /**
+   * A on a tile where stones lie (or the spot's own stone): lift one, a small one into the bag, a large one over the head.
+   * The kernel answers by its own rules (strength, load, hands) and the refusal is told in its words.
+   */
+  liftStone(kind: string): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    this.lifting = kind === ARMS_STONE_KIND;
+    void Promise.resolve(s.act({ t: 'lift', kind, at: s.pos })).then((r) => {
+      if (!r.ok) {
+        this.lifting = false;
+        app.ui.toast(r.error, 'bad');
+        return;
+      }
+      sound.sfx('pickup');
+      // the figure plays the lift clip across the lift's own time (the kernel's `lift_ms`, the one number); the carry clip takes over once it is out
+      if (kind === ARMS_STONE_KIND) this.playClip('lift', this.b.params.stones.lift_ms, true);
+      else this.playClip('pickup', this.b.params.stones.lift_ms);
+      this.time.delayedCall(this.b.params.stones.lift_ms, () => {
+        this.lifting = false;
+        if (!this.body.moving) this.faceFrame();
+      });
+    });
+  }
+
+  /** A while both hands hold the stone: set it down on the tile underfoot, on the pile there if there is one. */
+  setDownStone(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || !this.canControl(s)) return;
+    void Promise.resolve(s.act({ t: 'setdown', at: s.pos })).then((r) => {
+      if (!r.ok) app.ui.toast(r.error, 'bad');
+      else sound.sfx('step');
+    });
+  }
+
+  /**
+   * B held (the key or the phone's B button, DECISIONS 2026-11-22): the charged throw begins. A large stone over the head
+   * goes first, else a small one from the bag; the aim line grows with the power while the press is held. The aim starts the
+   * way the figure faces; a drag (phone) or the mouse (desktop) moves it. With no stone in hand it says so.
+   */
+  throwPress(): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    const kind = throwKind(this.b, s.state);
+    if (kind === undefined) {
+      app.ui.toast('You have no stone to throw.', 'info');
+      return;
+    }
+    const aim = throwAim(this.b, s, this.lookOf(s));
+    if (!aim) return;
+    this.charge = { start: this.time.now, aim, kind, source: 'key' };
+  }
+
+  /** The mouse button held (desktop): the same charge, aimed at the pointer's tile. */
+  private throwMousePress(tile: KernelTile): void {
+    const s = this.session;
+    if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
+    if (tile[0] === s.pos[0] && tile[1] === s.pos[1]) return;
+    const kind = throwKind(this.b, s.state);
+    if (kind === undefined) return;
+    this.charge = { start: this.time.now, aim: [tile[0], tile[1]], kind, source: 'mouse' };
+  }
+
+  /** A drag while the press is held (the phone's button or the mouse) moves the aim. */
+  private throwAimTo(tile: KernelTile): void {
+    if (!this.charge) return;
+    const s = this.session;
+    if (!s || (tile[0] === s.pos[0] && tile[1] === s.pos[1])) return;
+    this.charge.aim = [tile[0], tile[1]];
+  }
+
+  /** The map tile under a pointer, or undefined off the map. */
+  private pointerTile(pointer: Phaser.Input.Pointer): KernelTile | undefined {
+    const x = Math.floor(pointer.worldX / T);
+    const y = Math.floor(pointer.worldY / T);
+    if (x < 0 || y < 0 || x >= this.b.map.width || y >= this.b.map.height) return undefined;
+    return [x, y];
+  }
+
+  /** The phone's B button dragged by `dx, dy` pixels: aim the charged throw the way the thumb moved (eight ways). */
+  throwDrag(dx: number, dy: number): void {
+    if (!this.charge || Math.hypot(dx, dy) < 16) return;
+    const s = this.session;
+    if (!s) return;
+    const eighth = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
+    const aim: KernelTile = [s.pos[0] + Math.round(Math.cos(eighth)) * THROW_AIM_TILES, s.pos[1] + Math.round(Math.sin(eighth)) * THROW_AIM_TILES];
+    if (aim[0] < 0 || aim[1] < 0 || aim[0] >= this.b.map.width || aim[1] >= this.b.map.height) return;
+    this.throwAimTo(aim);
+  }
+
+  /** B released: the throw leaves at the power reached. */
+  throwRelease(): void {
+    this.releaseCharge('key');
+  }
+
+  /** The charge `source` ended: the throw leaves at the power reached (full when the hold limit sent it). */
+  private releaseCharge(source: 'key' | 'mouse'): void {
+    if (!this.charge || this.charge.source !== source) return;
+    const c = this.charge;
+    this.charge = undefined;
+    this.aimLineGfx?.setVisible(false);
+    this.throwNow(c.aim, c.kind, chargeAt(this.b, Math.floor(this.time.now - c.start)).power);
+  }
+
+  /** One frame of a held throw: draw the aim line at the power reached, and let a charge held past full go on its own. */
+  private chargeFrame(s: GameSession): void {
+    const c = this.charge;
+    if (!c) return;
+    if (!this.canControl(s)) {
+      this.charge = undefined;
+      this.aimLineGfx?.setVisible(false);
+      return;
+    }
+    const held = chargeAt(this.b, Math.floor(this.time.now - c.start));
+    if (held.over) {
+      this.releaseCharge(c.source);
+      return;
+    }
+    const g = (this.aimLineGfx ??= this.add.graphics().setDepth(DEPTH.flat + 0.2));
+    g.clear();
+    const line = aimLine(this.b, s.state, c.kind, c.aim, held.power);
+    if (line.length === 0) {
+      g.setVisible(false);
+      return;
+    }
+    g.setVisible(true);
+    for (let i = 0; i < line.length; i++) {
+      const [x, y] = line[i]!;
+      const tremble = i === line.length - 1 ? trembleAt(this.time.now, held.full) : 0;
+      const alpha = held.full && i === line.length - 1 ? 0.55 : 0.32;
+      g.fillStyle(0xf5f4ef, alpha);
+      g.fillRect(x * T + 3, y * T + 3 + tremble, T - 6, T - 6);
+    }
+  }
+
+  /**
+   * The throw itself (DECISIONS 2026-11-22, #831): the kernel flies it by `throwFlight` for `power` (a thousandth part).
+   * This plays the flight as an arc with bounces and a slide, the landing hidden until it lands.
+   */
+  private throwNow(aim: KernelTile, kind: string, power: number): void {
+    const s = this.session;
+    if (!s) return;
+    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim, kind, power })).then((r) => {
+      if (!r.ok) {
+        app.ui.toast(r.error, 'bad');
+        return;
+      }
+      const thrown = r.events.find((e) => e.e === 'stone_thrown');
+      if (thrown?.e !== 'stone_thrown') return;
+      const layer = (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig));
+      // the figure throws overhand (a small stone) or pushes with both hands (a large one); the stone leaves the hand at the clip's release
+      const size = thrown.kind === ARMS_STONE_KIND ? 'large' : 'small';
+      const verb = size === 'large' ? 'push' : 'throw';
+      const played = this.playClip(verb, undefined);
+      // the stone is in the hand from the first frame of the clip, and follows the drawn hand to the release (the clip's `hand` points)
+      const found = played ? clipFor(this.b.sprites as ClipSprites, verb, s.state.player.race, s.facing) : undefined;
+      // it leaves the hand at the clip's last hand point (the frame where the drawing opens the hand), else at the old fixed time
+      const release = !played ? 0 : found?.hand ? (found.hand.length - 1) * found.frame_ms : THROW_RELEASE_MS[verb];
+      this.grip = found?.hand ? { found, start: this.time.now } : undefined;
+      if (this.grip) layer.takeInHand(thrown.kind);
+      // the landing tile waits for the flight, which starts when the stone leaves the hand: held without an end until then
+      const held = thrown.at ? layer.hold(key(thrown.at[0], thrown.at[1]), thrown.kind, this.time.now, release > 0 ? Infinity : thrown.ms) : undefined;
+      const due = this.time.now + release;
+      const fly = (): void => {
+        // the clip's own record (a test reads it, e2e/stones.ts): the frame the clip is on at the instant the release was laid for, and how late the scene ran it
+        this.figure.trace?.push({ e: 'release', key: found?.key, frame: found && release > 0 ? clipFrame(release, found.frames, found.frame_ms) : undefined, due, at: this.time.now });
+        if (held) layer.holdUntil(held, this.time.now + thrown.ms);
+        // it leaves the drawn hand where the clip has it at the release, at the height of the hand above the feet
+        const g = this.grip;
+        const at = g ? this.handNow(g.found, release) : undefined;
+        this.grip = undefined;
+        layer.letGo();
+        const picture = { ...thrown, size } as const;
+        const leaving = at ? { ...picture, hand: { x: at.x / T, y: this.player.y / T, lift: (this.player.y - at.y) / T } } : picture;
+        layer.fly(leaving, this.time.now, (tile, sank) => {
+          sound.sfx('step');
+          if (sank) this.splashAt(tile);
+          else if (RICH.motion) this.dustAt(tile[0], tile[1]);
+        });
+      };
+      // by the scene's own clock, the one the clip is laid by: a timer's delta runs behind it when frames come slowly
+      if (release > 0) this.releases.push({ at: due, run: fly });
+      else fly();
+    });
+  }
+
+  /** Rings spreading and fading on the water where a stone went under (the timeline is ring.ts's). */
+  private splashAt(tile: Tile): void {
+    const g = this.add.graphics().setPosition((tile[0] + 0.5) * T, (tile[1] + 0.6) * T).setDepth(DEPTH.fx - 1);
+    const start = this.time.now;
+    const draw = () => {
+      g.clear();
+      for (const r of ringsAt(this.time.now - start)) {
+        g.fillStyle(0xf5f4ef, r.alpha);
+        for (const [x, y] of ringPixels(r)) g.fillRect(x, y, 1, 1);
+      }
+    };
+    draw();
+    const tick = () => (this.time.now - start >= RING_TOTAL_MS ? (this.events.off('update', tick), g.destroy()) : draw());
+    this.events.on('update', tick);
+  }
+
+  /** One frame of the hop's stand-in: the feet go from tile to tile, the drawing rides the arc, and on landing the body stands on the tile. */
+  private hopFrame(s: GameSession): void {
+    const hop = this.hop;
+    if (!hop) return;
+    const k = Math.min(1, (this.time.now - hop.start) / hop.ms);
+    this.body.x = (hop.from[0] + (hop.to[0] - hop.from[0]) * k) * ART_PX + ART_PX / 2;
+    this.body.y = (hop.from[1] + (hop.to[1] - hop.from[1]) * k) * ART_PX + ART_PX / 2;
+    this.body.moving = false;
+    this.lift = hop.peak * 4 * k * (1 - k);
+    this.drawBody();
+    if (k < 1) return;
+    this.hop = null;
+    this.lift = 0;
+    const fell = this.fellAfterHop;
+    this.fellAfterHop = null;
+    if (fell) {
+      this.fallDown(fell.from, fell.to);
+      return;
+    }
+    s.pos = [hop.to[0], hop.to[1]];
+    this.body.place(hop.to);
+    if (RICH.motion) this.dustAt(hop.to[0], hop.to[1]);
+    this.arrive(s);
+    this.drawBody();
+    this.faceFrame();
   }
 
   /** The A button: act on what the player faces, stands on, or stands next to. */
@@ -3949,6 +4612,8 @@ export class WorldScene extends Phaser.Scene {
 
   private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
+    // both hands hold a large stone: A sets it down (the kernel allows nothing else but walking and throwing, B)
+    if (carriedKind(this.b, s.state) !== undefined) return { label: 'Set the stone down', run: () => this.setDownStone(), tile: [x, y], top: T };
     const [fx, fy] = DIRS[s.facing];
     const order: [number, number][] = [facedTile(s), [x, y]];
     for (const [dx, dy] of NEIGHBOURS) {
@@ -3962,6 +4627,8 @@ export class WorldScene extends Phaser.Scene {
     // on the jetty a passage leaves from, once the opening has reached it, the boat is offered (SEA_CROSSING.md); its hours and fare are the kernel's to refuse
     const passage = passageAt(this.b, s.state, s.pos);
     if (passage) return { label: `Board: ${this.b.passages[passage]!.title}`, run: () => void app.ui.board(passage), tile: [s.pos[0], s.pos[1]], top: T };
+    const prey = huntingNearby(this.b, s.state, s.tick, s.pos);
+    if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: T / 2 };
     // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
     // It comes after every other target, so a fire never hides a thing the player already faces.
     return this.kindleTarget(s);
@@ -3979,15 +4646,44 @@ export class WorldScene extends Phaser.Scene {
     return { label: 'Build a fire', run: () => app.ui.kindle(tile), tile, top: T };
   }
 
+  /** Offer a lift underfoot or a push from a neighboring tile. */
+  private stoneTarget(s: GameSession, tile: KernelTile): Target | undefined {
+    const distance = Math.abs(tile[0] - s.pos[0]) + Math.abs(tile[1] - s.pos[1]);
+    if (distance > 1) return undefined;
+    const here = lyingAt(this.b, settled(this.b, s.state, s.tick), tile);
+    const kinds = Object.keys(here.placed).sort();
+    if (here.spot) kinds.push(here.spot);
+    const entries = this.b.params.liftables;
+    if (distance === 1) {
+      const kind = kinds.find((id) => entries[id]?.class === 'push');
+      if (!kind) return undefined;
+      const run = () => void Promise.resolve(s.act({ t: 'push', kind, at: s.pos, target: tile })).then((r) => {
+        if (!r.ok) app.ui.toast(r.error, 'bad');
+      });
+      return { label: `Push the ${entries[kind]!.name}`, run, tile, top: T };
+    }
+    const kind = kinds.find((id) => entries[id]?.class === 'hand') ?? kinds.find((id) => entries[id]?.class === 'arms');
+    if (!kind) return undefined;
+    const label = kind === HAND_STONE_KIND || kind === ARMS_STONE_KIND
+      ? here.count > 1 ? 'Take a stone from the pile' : kind === HAND_STONE_KIND ? 'Lift the stone' : 'Lift the large stone'
+      : `Lift the ${entries[kind]!.name}`;
+    return { label, run: () => this.liftStone(kind), tile, top: T };
+  }
+
   private targetAt(s: GameSession, x: number, y: number): Target | undefined {
     const b = this.b;
     const p = s.state.player;
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? T;
+    // Lift from underfoot or push an object on a neighboring tile.
+    const stone = this.stoneTarget(s, tile);
+    if (stone) return stone;
     // a pile the player put down, under their feet
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };
+    const hunt = huntingAt(b, s.state, s.tick, s.pos, tile);
+    if (hunt) return { ...hunt, run: () => void app.ui.hunt(hunt.action), top: T / 2 };
     const door = this.doors.get(k);
     if (door) {
       // the door is used from the step in front of it, facing in
@@ -4262,11 +4958,6 @@ function spriteName(ref: string): string {
 /** "core/base-kit:props/standing_stone" -> "standing_stone" */
 function baseName(ref: string): string {
   return ref.split('/').pop() ?? ref;
-}
-
-/** The open water's tile, or one of its variants (`water`, `water_1`..): the world composes all of them from the pixel, none is drawn as a sprite. */
-function isOpenWater(ref: string): boolean {
-  return /^water(_\d+)?$/.test(baseName(ref));
 }
 
 /** "core/base-kit:props/standing_stone" -> "core/base-kit:" */

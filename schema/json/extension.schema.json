@@ -17734,6 +17734,9 @@
             "place_stack",
             "load",
             "gait",
+            "jump",
+            "liftables",
+            "stones",
             "hunt",
             "wild",
             "combat",
@@ -20089,11 +20092,657 @@
                 }
               }
             },
+            "jump": {
+              "additionalProperties": false,
+              "description": "The jump and the fall (DECISIONS.md, 2026-11-22): up one level, down any height, across a one-tile gap of water; a little breath each; the fall hurts by its height, up to death. All integers; the first night is measured with jumps (G71).",
+              "type": "object",
+              "required": [
+                "first_minute_ms",
+                "up_levels",
+                "breath_cost",
+                "breath_refill_per_s",
+                "air_ms",
+                "fall_two_bp",
+                "fall_three_bp",
+                "death_levels"
+              ],
+              "properties": {
+                "first_minute_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds from the first wake (tick 0) in which a jump is refused: the legs are not ready (DECISIONS.md, 2026-11-22: the jump and the fall; the hop's rule of ANIMATION.md section 2)."
+                },
+                "up_levels": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The most levels one jump climbs: 1 is a low rock or ledge. A face higher than this is climbed by a crossing (G68). A jump down has no limit."
+                },
+                "breath_cost": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Breath points one jump costs, the same points as a fight's breath (`combat.breath_base`, `breath_per_stamina`; a dodge costs `dodge_breath`). Outside a fight nothing else spends them."
+                },
+                "breath_refill_per_s": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Breath points won back each second outside a fight, up to the same cap a fight uses."
+                },
+                "air_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a jump keeps the player busy: the hop in the air and the landing. A walk report goes through; another work action or jump waits."
+                },
+                "fall_two_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Basis points of the health cap a fall of two levels takes. One level takes nothing."
+                },
+                "fall_three_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Basis points of the health cap a fall of three levels takes."
+                },
+                "death_levels": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A fall of this many levels or more is death (G33): the body lies where it landed."
+                }
+              }
+            },
+            "liftables": {
+              "additionalProperties": false,
+              "description": "Loose object kinds by stable id. Hand goes in the bag, arms occupies both hands, push moves along the ground and fixed stays in place.",
+              "type": "object",
+              "patternProperties": {
+                "^[a-z0-9_-]+/[a-z0-9_-]+$": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "class",
+                    "weight",
+                    "throw_range",
+                    "roll",
+                    "sprite"
+                  ],
+                  "properties": {
+                    "name": {
+                      "minLength": 1,
+                      "maxLength": 40,
+                      "type": "string"
+                    },
+                    "class": {
+                      "anyOf": [
+                        {
+                          "const": "hand",
+                          "type": "string"
+                        },
+                        {
+                          "const": "arms",
+                          "type": "string"
+                        },
+                        {
+                          "const": "push",
+                          "type": "string"
+                        },
+                        {
+                          "const": "fixed",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "weight": {
+                      "additionalProperties": false,
+                      "description": "Weight in the bag's unit. A hand entry uses its id as an item id and matches that item's weight.",
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "minimum": 0,
+                          "maximum": 90,
+                          "type": "integer"
+                        },
+                        "min": {
+                          "minimum": 0,
+                          "maximum": 90,
+                          "type": "integer"
+                        },
+                        "max": {
+                          "minimum": 0,
+                          "maximum": 90,
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "throw_range": {
+                      "additionalProperties": false,
+                      "description": "Tiles flown at full power. Zero for push and fixed entries.",
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "minimum": 0,
+                          "maximum": 6,
+                          "type": "integer"
+                        },
+                        "min": {
+                          "minimum": 0,
+                          "maximum": 6,
+                          "type": "integer"
+                        },
+                        "max": {
+                          "minimum": 0,
+                          "maximum": 6,
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "roll": {
+                      "additionalProperties": false,
+                      "description": "Tiles rolled after landing at full power. Zero for push and fixed entries.",
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "minimum": 0,
+                          "maximum": 4,
+                          "type": "integer"
+                        },
+                        "min": {
+                          "minimum": 0,
+                          "maximum": 4,
+                          "type": "integer"
+                        },
+                        "max": {
+                          "minimum": 0,
+                          "maximum": 4,
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "sprite": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                      "maxLength": 120,
+                      "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "stones": {
+              "additionalProperties": false,
+              "description": "Loose stones (DECISIONS.md, 2026-11-22): lifted at the map's stone spots, carried (a large one over the head, at the pace its weight sets), thrown to a landing that runs on, set down and piled. All integers; the charged throw rides the throw action's power.",
+              "type": "object",
+              "required": [
+                "area_tiles",
+                "area_cap",
+                "return_ms",
+                "pile_max",
+                "lift_ms",
+                "throw_ms",
+                "throw_min_power",
+                "throw_charge_ms",
+                "throw_hold_ms"
+              ],
+              "properties": {
+                "area_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Side, in tiles, of the square an area is: the map is cut in a grid of these and each square holds at most `area_cap` loose stones."
+                },
+                "area_cap": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The most loose stones one area holds at once (those still lying at their spots, those set down and those thrown), so a world shared by many is not flooded. A throw or a set-down that would pass it is refused."
+                },
+                "return_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a thrown stone lies where it landed before it goes back to its own spot."
+                },
+                "pile_max": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The most stones set down on one tile. A pile is counted by number and never climbed."
+                },
+                "lift_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds lifting a stone keeps the player busy."
+                },
+                "throw_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a throw keeps the player busy: the wind-up, the flight and the landing."
+                },
+                "throw_min_power": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The power a tap gives, in thousandths of the full throw: the least a throw flies. Always under full (1000), so a held press charges farther (DECISIONS.md, 2026-11-22, the charged throw)."
+                },
+                "throw_charge_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a held press takes to charge from `throw_min_power` to full power."
+                },
+                "throw_hold_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a charge may be held past full before the throw leaves on its own at full power, so a charge cannot be held for ever."
+                }
+              }
+            },
             "hunt": {
               "additionalProperties": false,
               "description": "Dressing a taken animal (docs/design/HUNTING.md sections 5-6): the time a step takes, how long a carcass keeps, and how often an animal is finer than plain. Nothing here prices a hunt: the hunt verb takes the effort weight of its tier like every verb (R6).",
               "type": "object",
               "required": [
+                "throw_item",
                 "dress_step_ms",
                 "meat_spoil_d",
                 "hide_spoil_d",
@@ -20102,6 +20751,12 @@
                 "grade3_bp"
               ],
               "properties": {
+                "throw_item": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                  "maxLength": 80,
+                  "description": "Hand liftable used to take small game. Its throw range is also the hunting reach.",
+                  "type": "string"
+                },
                 "dress_step_ms": {
                   "additionalProperties": false,
                   "type": "object",
@@ -24118,7 +24773,7 @@
                           ]
                         },
                         "verb": {
-                          "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup or dig.",
+                          "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands) or lift (a large stone from the ground to over the head).",
                           "anyOf": [
                             {
                               "const": "strike",
@@ -24155,6 +24810,22 @@
                             {
                               "const": "dig",
                               "type": "string"
+                            },
+                            {
+                              "const": "carry",
+                              "type": "string"
+                            },
+                            {
+                              "const": "throw",
+                              "type": "string"
+                            },
+                            {
+                              "const": "push",
+                              "type": "string"
+                            },
+                            {
+                              "const": "lift",
+                              "type": "string"
                             }
                           ]
                         },
@@ -24188,6 +24859,30 @@
                           "maximum": 4000,
                           "description": "The factor the clip shows at on top of its density's base scale (1 / density), in thousandths (the bundle holds whole numbers only): a take drawn larger than the race's walk shows smaller, so its figure stands as tall as the walk's. Left out, 1000. The feet stay on the anchor whatever the fit.",
                           "type": "integer"
+                        },
+                        "hand": {
+                          "minItems": 1,
+                          "maxItems": 64,
+                          "description": "Where the drawn hand is in each frame, one point a frame from the first, in pixels of the frame (the same grid as `anchor`): the hand that throws, or the middle between the two hands that push or hold a stone. What a thing the figure holds is laid at the point of the frame that shows, and glides in a straight line to the next frame's point, so it follows the hand from the first frame to the one that lets it go. Points run from the first frame on, as many as the clip needs the hand for (never more than its frames). Left out, the clip has no hand to hold anything by.",
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": [
+                              {
+                                "minimum": 0,
+                                "maximum": 384,
+                                "type": "integer"
+                              },
+                              {
+                                "minimum": 0,
+                                "maximum": 384,
+                                "type": "integer"
+                              }
+                            ],
+                            "additionalItems": false,
+                            "minItems": 2,
+                            "maxItems": 2
+                          }
                         }
                       }
                     },
@@ -26167,6 +26862,47 @@
                 }
               }
             },
+            "stones": {
+              "additionalProperties": false,
+              "description": "Loose stones lying in the world (DECISIONS.md, 2026-11-22): where each lies until a player lifts it. A thrown stone goes back to the first spot a player has emptied. Absent: none. Spots are never props: a stone never changes the walk map.",
+              "type": "object",
+              "required": [
+                "spots"
+              ],
+              "properties": {
+                "spots": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "x",
+                      "y",
+                      "kind"
+                    ],
+                    "properties": {
+                      "x": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      "y": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      "kind": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "An entry in params.liftables.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "width": {
               "minimum": 8,
               "maximum": 1024,
@@ -27316,6 +28052,12 @@
                   "safe": {
                     "description": "A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.",
                     "type": "boolean"
+                  },
+                  "reserved": {
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "A slot a decision holds for something named (a character, a stall, a camp), empty on the map but not free for a creator: the DECISIONS heading that reserves it.",
+                    "type": "string"
                   }
                 }
               }
