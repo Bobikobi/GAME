@@ -1459,6 +1459,11 @@ const Bounded = Type.Object(
   { additionalProperties: false },
 );
 
+const LiftableNumber = (max: number, description: string) => Type.Object(
+  { value: Int(0, max), min: Int(0, max), max: Int(0, max), step: Bounded.properties.step },
+  { additionalProperties: false, description },
+);
+
 /** Rule R12: every constant has bounds, a step and lives in one file. */
 const LightKey = Type.Object(
   {
@@ -1854,13 +1859,23 @@ export const ParamsBody = Type.Object(
         description: 'The jump and the fall (DECISIONS.md, 2026-11-22): up one level, down any height, across a one-tile gap of water; a little breath each; the fall hurts by its height, up to death. All integers; the first night is measured with jumps (G71).',
       },
     ),
+    liftables: Type.Record(
+      Id,
+      Type.Object(
+        {
+          name: Name,
+          class: Type.Union([Type.Literal('hand'), Type.Literal('arms'), Type.Literal('push'), Type.Literal('fixed')]),
+          weight: LiftableNumber(90, "Weight in the bag's unit. A hand entry uses its id as an item id and matches that item's weight."),
+          throw_range: LiftableNumber(6, 'Tiles flown at full power. Zero for push and fixed entries.'),
+          roll: LiftableNumber(4, 'Tiles rolled after landing at full power. Zero for push and fixed entries.'),
+          sprite: SpriteRef,
+        },
+        { additionalProperties: false },
+      ),
+      { additionalProperties: false, description: 'Loose object kinds by stable id. Hand goes in the bag, arms occupies both hands, push moves along the ground and fixed stays in place.' },
+    ),
     stones: Type.Object(
       {
-        large_weight: { ...Bounded, description: 'What a large stone carried over the head weighs, in the bag\'s own weight unit: it counts in the load like any carried thing, so the might limit decides who can lift it (the limit\'s hard edge, `load.max_permille`) and the load bands set the pace (DECISIONS.md, 2026-11-22: loose stones). A small stone is the item `core/stone` and weighs what the item says.' },
-        small_range: { ...Bounded, description: 'Tiles a small stone flies from the thrower. The same reach as the thrown stone of small game (`STONE_RANGE`, #819); a test keeps the two equal.' },
-        large_range: { ...Bounded, description: 'Tiles a large stone flies: both hands over the head, thrown short.' },
-        small_roll: { ...Bounded, description: 'Tiles a small stone runs on along the ground after its first touch, while the ground is walkable and does not climb; the client draws the bounces and the slide between the two tiles.' },
-        large_roll: { ...Bounded, description: 'The same for a large stone: it digs in and runs less.' },
         area_tiles: { ...Bounded, description: 'Side, in tiles, of the square an area is: the map is cut in a grid of these and each square holds at most `area_cap` loose stones.' },
         area_cap: { ...Bounded, description: 'The most loose stones one area holds at once (those still lying at their spots, those set down and those thrown), so a world shared by many is not flooded. A throw or a set-down that would pass it is refused.' },
         return_ms: { ...Bounded, description: 'Game milliseconds a thrown stone lies where it landed before it goes back to its own spot.' },
@@ -1878,6 +1893,7 @@ export const ParamsBody = Type.Object(
     ),
     hunt: Type.Object(
       {
+        throw_item: { ...Id, description: 'Hand liftable used to take small game. Its throw range is also the hunting reach.' },
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
         meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
         hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },
@@ -2756,7 +2772,7 @@ export const MapBody = Type.Object(
               {
                 x: Int(0, 1023),
                 y: Int(0, 1023),
-                size: Type.Union([Type.Literal('small'), Type.Literal('large')], { description: 'A small stone goes in the hand and the bag; a large one is carried over the head.' }),
+                kind: { ...Id, description: 'An entry in params.liftables.' },
               },
               { additionalProperties: false },
             ),

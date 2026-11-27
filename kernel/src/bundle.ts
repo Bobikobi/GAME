@@ -12,6 +12,7 @@ import type {
   GameMap,
   ItemDef,
   NodeSizeName,
+  ParamsBody,
   Npc,
   Passage,
   Pocket,
@@ -101,6 +102,12 @@ export interface Telegraph {
   flinch_px: number;
   hit_ms: number;
 }
+
+type Liftable = Omit<ParamsBody['liftables'][string], 'weight' | 'throw_range' | 'roll'> & {
+  weight: number;
+  throw_range: number;
+  roll: number;
+};
 
 export interface Params {
   /** The hours the valley is washed in a colour and the sun's shear (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
@@ -200,13 +207,14 @@ export interface Params {
   gait: { run_div: number; sneak_mul: number; noise_still: number; noise_sneak: number; noise_walk: number; noise_run: number };
   /** the jump and the fall (DECISIONS.md, 2026-11-22) */
   jump: { first_minute_ms: number; up_levels: number; breath_cost: number; breath_refill_per_s: number; air_ms: number; fall_two_bp: number; fall_three_bp: number; death_levels: number };
-  /** loose stones (DECISIONS.md, 2026-11-22) */
-  stones: { large_weight: number; small_range: number; large_range: number; small_roll: number; large_roll: number; area_tiles: number; area_cap: number; return_ms: number; pile_max: number; lift_ms: number; throw_ms: number; throw_min_power: number; throw_charge_ms: number; throw_hold_ms: number };
+  liftables: Record<string, Liftable>;
+  /** Shared loose-object caps and timings (DECISIONS.md, 2026-11-22). */
+  stones: { area_tiles: number; area_cap: number; return_ms: number; pile_max: number; lift_ms: number; throw_ms: number; throw_min_power: number; throw_charge_ms: number; throw_hold_ms: number };
   /**
    * Dressing a taken animal (docs/design/HUNTING.md sections 5-6): what one step takes, how many game days a carcass
    * keeps its meat and then anything, and how often an animal appears fine or true (basis points).
    */
-  hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; tan_cure_d: number; grade2_bp: number; grade3_bp: number };
+  hunt: { throw_item: string; dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; tan_cure_d: number; grade2_bp: number; grade3_bp: number };
   /**
    * The wild (docs/design/HUNTING.md sections 1-4 and 8; CREATURE_BEHAVIOUR sections 1-2 and 5.1; HUNT_FAMILIES section 3.1):
    * the numbers every kind shares, its own character being the kind's `behaviour`. Durations are game ms.

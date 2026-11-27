@@ -102,7 +102,7 @@ async function main(): Promise<void> {
     await start(page);
 
     const params = await page.eval<{ range: number; roll: number; ms: number; lift: number }>(
-      `(() => { const p = window.__game.bundle.params.stones; return { range: p.small_range, roll: p.small_roll, ms: p.throw_ms, lift: p.lift_ms }; })()`,
+      `(() => { const p = window.__game.bundle.params, entry = p.liftables['core/stone']; return { range: entry.throw_range, roll: entry.roll, ms: p.stones.throw_ms, lift: p.stones.lift_ms }; })()`,
     );
     const touch: [number, number] = [THROWER[0] + params.range, THROWER[1]];
     const rest: [number, number] = [touch[0] + params.roll, touch[1]];
@@ -244,7 +244,7 @@ async function main(): Promise<void> {
     // (the frames the game set, each at its scene-clock time), so a slow frame on a loaded runner cannot move what is asserted
     const mark = await page.eval<number>(`window.__trace.length`);
     await page.tap('.tbtn.a');
-    await page.waitFor(`window.__game.session.state.player.stones?.carry === 'large'`, 'the large stone lifted', 5000);
+    await page.waitFor(`window.__game.session.state.player.stones?.carry === 'core/large-stone'`, 'the large stone lifted', 5000);
     await page.waitFor(`window.__trace.slice(${mark}).some((t) => t.e === 'end')`, 'the lift clip to play out', 5000);
     const since = (await page.eval<ClipTrace[]>(`window.__trace.slice(${mark})`));
     const begun = since.find((t): t is Extract<ClipTrace, { e: 'start' }> => t.e === 'start');

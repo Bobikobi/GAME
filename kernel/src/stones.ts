@@ -1,33 +1,34 @@
 /**
- * Loose stones (DECISIONS.md, 2026-11-22; kernel 0.35.0): small and large stones lying at the map's spots that a
- * player lifts, carries, throws to a landing that runs on, sets down and piles. Pure and integer-only, like the rest
- * of the kernel; `step.ts` holds the actions, this holds what they and the client both read, so the aim line, the
- * counts and the returns cannot disagree.
- *
- * The world is the player's own, as the dropped things and the taken prey are (`player.ground`, `preyReturns`): the
- * map's `stones.spots` say where a stone lies, and `player.stones` says which spots this player emptied, which large
- * stones lie away from a spot and which thrown stones are on their way home.
- *
- * Strength: the existing attribute `might`. A large stone weighs `stones.large_weight` in the load (`loadWeight`), so
- * who can lift one is the might limit's hard edge (`loadMax`: 30 + 10 a point, one and a half times over) and how
- * fast they walk with it is the load band: no second slowdown and no second strength rule.
- *
- * A stone never changes the walk map: a stone or a pile is not a prop, nothing here is read by `makeWalkable`.
+ * Loose objects at map spots or moved by a player (DECISIONS.md, 2026-11-22 and 26). These readers and
+ * integer flight rules are shared by actions and clients. The objects do not change the walk map.
  */
 import type { Bundle } from './bundle';
 import { idiv, mulDiv } from './num';
-import { groundKey, type PublicState, type StoneSize, type StoneState } from './state';
+import { groundKey, type PublicState, type StoneState } from './state';
 import { walkableFor, type Tile } from './step';
 import { levelAt, tagAt } from './world';
 
-/** The one small stone: the item the bag holds and the thrown stone of small game (#819; a test keeps it equal to `THROW_STONE`, which this file cannot import without a cycle). A large stone is no item. */
-export const STONE_ITEM = 'core/stone';
-
-export const STONE_SIZES: readonly StoneSize[] = ['small', 'large'];
-
-/** The spots the map lays stones at, in the map's order (a spot's index is its identity). */
-export function stoneSpots(bundle: Bundle): readonly { x: number; y: number; size: StoneSize }[] {
+/** Spots are kept in map order: a spot's index is its identity. */
+export function stoneSpots(bundle: Bundle): NonNullable<Bundle['map']['stones']>['spots'] {
   return bundle.map.stones?.spots ?? [];
+}
+
+export function stoneBook(player: PublicState['player']): StoneState {
+  return (player.stones ??= { taken: {}, placed: {}, returns: [] });
+}
+
+/** The entry occupying both hands. */
+export function carriedKind(bundle: Bundle, state: PublicState): string | undefined {
+  const kind = state.player.stones?.carry;
+  return kind !== undefined && bundle.params.liftables[kind]?.class === 'arms' ? kind : undefined;
+}
+
+/** A carried object has priority; with free hands, choose an available bag item in id order. */
+export function throwKind(bundle: Bundle, state: PublicState, requested?: string): string | undefined {
+  const carry = carriedKind(bundle, state);
+  if (carry !== undefined) return requested === undefined || requested === carry ? carry : undefined;
+  const canThrow = (kind: string) => bundle.params.liftables[kind]?.class === 'hand' && (state.player.bag[kind] ?? 0) > 0;
+  return requested === undefined ? Object.keys(state.player.bag).sort().find(canThrow) : canThrow(requested) ? requested : undefined;
 }
 
 /** The square of the map's grid a tile is in: the unit of the per-area cap. */
@@ -42,78 +43,92 @@ export function keyTile(key: string): Tile {
   return [x, y];
 }
 
-/** The index of the spot at a tile still holding its stone for this player, if any, with its size. */
-export function standingAt(bundle: Bundle, state: PublicState, tile: readonly [number, number]): { index: number; size: StoneSize } | undefined {
-  const taken = state.player.stones?.taken;
+/** The spot still holding its object for this player, if any. */
+export function standingAt(bundle: Bundle, state: PublicState, tile: readonly [number, number]): { index: number; kind: string } | undefined {
   const spots = stoneSpots(bundle);
-  for (let i = 0; i < spots.length; i++) {
-    const spot = spots[i]!;
-    if (spot.x === tile[0] && spot.y === tile[1] && !taken?.[String(i)]) return { index: i, size: spot.size };
-  }
-  return undefined;
+  const index = spots.findIndex((spot, i) => spot.x === tile[0] && spot.y === tile[1] && !state.player.stones?.taken[i]);
+  return index < 0 ? undefined : { index, kind: spots[index]!.kind };
 }
 
-/** What lies on a tile: the stones set down or thrown there, and the stone still lying at its own spot. */
+/** World objects set down or thrown, plus the object still at its spot. */
 export interface Lying {
-  small: number;
-  large: number;
-  spot?: StoneSize;
-  /** all of it: what a pile is counted by */
+  placed: Record<string, number>;
+  spot?: string;
   count: number;
 }
 
 export function lyingAt(bundle: Bundle, state: PublicState, tile: readonly [number, number]): Lying {
-  const key = groundKey(tile as [number, number]);
-  const small = state.player.ground?.[key]?.[STONE_ITEM] ?? 0;
-  const large = state.player.stones?.large[key] ?? 0;
-  const spot = standingAt(bundle, state, tile);
-  return { small, large, spot: spot?.size, count: small + large + (spot ? 1 : 0) };
+  const key = groundKey(tile);
+  const placed = { ...state.player.stones?.placed[key] };
+  for (const [id, count] of Object.entries(state.player.ground?.[key] ?? {})) {
+    if (bundle.params.liftables[id]?.class === 'hand') placed[id] = count;
+  }
+  const spot = standingAt(bundle, state, tile)?.kind;
+  const count = Object.values(placed).reduce((sum, qty) => sum + qty, spot === undefined ? 0 : 1);
+  return { placed, spot, count };
 }
 
-/** How many stones lie loose in an area: those at their spots, those set down and those thrown. */
 export function looseInArea(bundle: Bundle, state: PublicState, area: string): number {
   let n = 0;
-  const spots = stoneSpots(bundle);
-  for (let i = 0; i < spots.length; i++) {
-    const spot = spots[i]!;
-    if (!state.player.stones?.taken[String(i)] && areaKey(bundle, spot.x, spot.y) === area) n++;
+  for (const [i, spot] of stoneSpots(bundle).entries()) {
+    if (!state.player.stones?.taken[i] && areaKey(bundle, spot.x, spot.y) === area) n++;
   }
-  for (const [key, pile] of Object.entries(state.player.ground ?? {})) {
-    const qty = pile[STONE_ITEM] ?? 0;
-    if (qty > 0) {
-      const [x, y] = keyTile(key);
-      if (areaKey(bundle, x, y) === area) n += qty;
-    }
-  }
-  for (const [key, qty] of Object.entries(state.player.stones?.large ?? {})) {
+  const inArea = (key: string) => {
     const [x, y] = keyTile(key);
-    if (qty > 0 && areaKey(bundle, x, y) === area) n += qty;
+    return areaKey(bundle, x, y) === area;
+  };
+  for (const [key, pile] of Object.entries(state.player.ground ?? {})) {
+    if (!inArea(key)) continue;
+    for (const [id, qty] of Object.entries(pile)) if (bundle.params.liftables[id]?.class === 'hand') n += qty;
+  }
+  for (const [key, pile] of Object.entries(state.player.stones?.placed ?? {})) {
+    if (inArea(key)) for (const qty of Object.values(pile)) n += qty;
   }
   return n;
 }
 
+/** Put an object down in the same storage that lift and return read. */
+export function placeLoose(bundle: Bundle, player: PublicState['player'], key: string, kind: string): void {
+  const piles = bundle.params.liftables[kind]?.class === 'hand' ? (player.ground ??= {}) : stoneBook(player).placed;
+  const pile = (piles[key] ??= {});
+  pile[kind] = (pile[kind] ?? 0) + 1;
+}
+
+/** Remove one loose object if it is still here. */
+export function removeLoose(bundle: Bundle, player: PublicState['player'], key: string, kind: string): boolean {
+  const piles = bundle.params.liftables[kind]?.class === 'hand' ? player.ground : player.stones?.placed;
+  const pile = piles?.[key];
+  const count = pile?.[kind] ?? 0;
+  if (!piles || !pile || count < 1) return false;
+  if (count === 1) delete pile[kind];
+  else pile[kind] = count - 1;
+  if (Object.keys(pile).length === 0) delete piles[key];
+  return true;
+}
+
 /** Why `n` more stones may not lie on `tile`, or undefined when they may: the pile's height and the area's cap. Checked on adding only, so a state already over either still loads. */
-export function whyNoRoom(bundle: Bundle, state: PublicState, tile: readonly [number, number], n = 1): string | undefined {
+export function whyNoRoom(bundle: Bundle, state: PublicState, tile: readonly [number, number], n = 1, from?: Tile): string | undefined {
   const { pile_max, area_cap } = bundle.params.stones;
   if (lyingAt(bundle, state, tile).count + n > pile_max) return 'The stones are piled as high as they stay.';
-  if (looseInArea(bundle, state, areaKey(bundle, tile[0], tile[1])) + n > area_cap) return 'Enough stones lie around here already.';
+  const area = areaKey(bundle, tile[0], tile[1]);
+  if ((!from || areaKey(bundle, from[0], from[1]) !== area) && looseInArea(bundle, state, area) + n > area_cap) return 'Enough stones lie around here already.';
   return undefined;
 }
 
-/** The first spot this player emptied of that size: where a stone coming home goes. */
-function homeOf(bundle: Bundle, stones: StoneState, size: StoneSize): string | undefined {
+/** The first spot this player emptied of that kind: where a stone coming home goes. */
+function homeOf(bundle: Bundle, stones: StoneState, kind: string): string | undefined {
   const spots = stoneSpots(bundle);
   let best = -1;
   for (const k of Object.keys(stones.taken)) {
     const i = Number(k);
-    if (spots[i]?.size === size && (best < 0 || i < best)) best = i;
+    if (spots[i]?.kind === kind && (best < 0 || i < best)) best = i;
   }
   return best < 0 ? undefined : String(best);
 }
 
 /**
  * Send home every thrown stone whose time is up: it leaves the tile it lies on (when it is still there) and its spot
- * is full again. A stone with no emptied spot of its size to go to (one mined at a node, say) just leaves the world.
+ * is full again. A stone with no emptied spot of its kind to go to (one mined at a node, say) just leaves the world.
  * Mutates `player`; `step` runs it on its own copy at the start of every step, and `settled` runs it for the client.
  */
 export function settleStones(bundle: Bundle, player: PublicState['player'], tick: number): void {
@@ -125,34 +140,20 @@ export function settleStones(bundle: Bundle, player: PublicState['player'], tick
       kept.push(r);
       continue;
     }
-    if (r.key !== '') {
-      if (r.size === 'small') {
-        const pile = player.ground?.[r.key];
-        if (pile && (pile[STONE_ITEM] ?? 0) > 0) {
-          if (pile[STONE_ITEM] === 1) delete pile[STONE_ITEM];
-          else pile[STONE_ITEM] = (pile[STONE_ITEM] ?? 0) - 1;
-          if (Object.keys(pile).length === 0) delete player.ground![r.key];
-        } else continue;
-      } else {
-        const n = stones.large[r.key] ?? 0;
-        if (n < 1) continue;
-        if (n === 1) delete stones.large[r.key];
-        else stones.large[r.key] = n - 1;
-      }
-    }
-    const home = homeOf(bundle, stones, r.size);
+    if (r.key !== '' && !removeLoose(bundle, player, r.key, r.kind)) continue;
+    const home = homeOf(bundle, stones, r.kind);
     if (home !== undefined) delete stones.taken[home];
   }
   stones.returns = kept;
 }
 
 /** A thrown stone that is lifted again no longer goes home on its own: takes up to `n` of the oldest loans at that tile off the list. */
-export function unloan(player: PublicState['player'], key: string, size: StoneSize, n: number): void {
+export function unloan(player: PublicState['player'], key: string, kind: string, n: number): void {
   const stones = player.stones;
   if (!stones || n < 1) return;
   let left = n;
   stones.returns = stones.returns.filter((r) => {
-    if (left > 0 && r.key === key && r.size === size) {
+    if (left > 0 && r.key === key && r.kind === kind) {
       left--;
       return false;
     }
@@ -161,12 +162,12 @@ export function unloan(player: PublicState['player'], key: string, size: StoneSi
 }
 
 /** Put a stone on loan: it lies at `key` ('' where it sank) and goes home `stones.return_ms` after `tick`. */
-export function lendStone(bundle: Bundle, player: PublicState['player'], key: string, size: StoneSize, tick: number): void {
-  // a stone that sank, or fell with its body, with no emptied spot of its size to go home to (one mined at a node) just leaves the world:
+export function lendStone(bundle: Bundle, player: PublicState['player'], key: string, kind: string, tick: number): void {
+  // a stone that sank, or fell with its body, with no emptied spot of its kind to go home to (one mined at a node) just leaves the world:
   // nothing is written, so a player who never touched a spot keeps a state with no `stones` at all
-  if (key === '' && (!player.stones || homeOf(bundle, player.stones, size) === undefined)) return;
-  const stones = (player.stones ??= { taken: {}, large: {}, returns: [] });
-  stones.returns.push({ key, size, at: tick + bundle.params.stones.return_ms });
+  if (key === '' && (!player.stones || homeOf(bundle, player.stones, kind) === undefined)) return;
+  const stones = stoneBook(player);
+  stones.returns.push({ key, kind, at: tick + bundle.params.stones.return_ms });
   stones.returns.sort((a, b) => a.at - b.at);
 }
 
@@ -262,22 +263,20 @@ function stopsFlight(bundle: Bundle, state: PublicState, tile: Tile): boolean {
 }
 
 /**
- * Where a thrown stone goes, the one rule the throw action and the client's aim line share. The stone flies from the
- * thrower's tile along the line toward `aim` for the size's range (`stones.small_range` or `large_range`, times the
- * power over a thousand), stops short of anything in the way, touches down, and then runs on along the same line for
- * the size's roll (`small_roll`, `large_roll`) while the ground is open and does not climb. Water takes it: a stone
- * coming down on water sinks. The line, the range and the roll are content; nothing here is drawn.
+ * Where a thrown object goes. Its entry gives the range and roll at full power. The flight stops short of
+ * obstacles; after touching down it can roll on open ground that does not climb. Water takes it.
  */
-export function throwFlight(bundle: Bundle, state: PublicState, size: StoneSize, aim: Tile, power: number = FULL_POWER): Flight | { error: string } {
+export function throwFlight(bundle: Bundle, state: PublicState, kind: string, aim: Tile, power: number = FULL_POWER): Flight | { error: string } {
+  const entry = bundle.params.liftables[kind];
+  if (entry?.class !== 'hand' && entry?.class !== 'arms') return { error: 'That cannot be thrown.' };
   const p = state.player;
   const from: Tile = [p.at[0], p.at[1]];
   const dx = aim[0] - from[0];
   const dy = aim[1] - from[1];
   const m = Math.max(Math.abs(dx), Math.abs(dy));
   if (m === 0) return { error: 'Aim away from your own feet.' };
-  const c = bundle.params.stones;
-  const range = idiv((size === 'small' ? c.small_range : c.large_range) * power, FULL_POWER);
-  const roll = idiv((size === 'small' ? c.small_roll : c.large_roll) * power, FULL_POWER);
+  const range = idiv(entry.throw_range * power, FULL_POWER);
+  const roll = idiv(entry.roll * power, FULL_POWER);
   const n = Math.max(1, range + roll);
   const far: Tile = [from[0] + scaled(dx, n, m), from[1] + scaled(dy, n, m)];
   const line = lineTiles(from, far);

@@ -7,6 +7,9 @@
  */
 import type { Tile } from '@game/kernel';
 
+export const HAND_STONE_KIND = 'core/stone';
+export const ARMS_STONE_KIND = 'core/large-stone';
+
 export type StoneSize = 'small' | 'large';
 
 /** The scale of the item picture `items/stone` (nearly tile-wide), as a share of its own size: a large stone on the ground (70 percent: the owner's rule of 26.11 is that an object keeps its size from the ground into the hands and back, and 70 is the size a figure's lift and carry clips can hold, #874), and a small one before it had its own drawing (46 percent, kept as the unit a large stone among small ones is sized by). */

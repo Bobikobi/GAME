@@ -946,10 +946,12 @@ describe('the jump on the wire (DECISIONS 2026-11-22, the jump and the fall)', (
 
 describe('loose stones on the wire (DECISIONS 2026-11-22)', () => {
   test('the wire knows lift, setdown and throw, with their tiles and no more', () => {
-    expect(isAction({ t: 'lift', size: 'small', at: [3, 4] })).toBe(true);
-    expect(isAction({ t: 'lift', size: 'large', at: [3, 4], qty: 2 })).toBe(true);
+    expect(isAction({ t: 'lift', kind: 'core/stone', at: [3, 4] })).toBe(true);
+    expect(isAction({ t: 'lift', kind: 'core/large-stone', at: [3, 4], qty: 2 })).toBe(true);
     expect(isAction({ t: 'lift', size: 'huge', at: [3, 4] })).toBe(false);
     expect(isAction({ t: 'lift', at: [3, 4] })).toBe(false);
+    expect(isAction({ t: 'push', kind: 'core/log', at: [3, 4], target: [4, 4] })).toBe(true);
+    expect(isAction({ t: 'push', kind: 'core/log', at: [3, 4] })).toBe(false);
     expect(isAction({ t: 'setdown', at: [3, 4] })).toBe(true);
     expect(isAction({ t: 'setdown', at: [3, 4], size: 'large' })).toBe(false);
     expect(isAction({ t: 'throw', at: [3, 4], aim: [8, 4] })).toBe(true);
@@ -961,13 +963,13 @@ describe('loose stones on the wire (DECISIONS 2026-11-22)', () => {
   });
 
   test('a stone is lifted at its spot and thrown, and both are booked as sent', async () => {
-    const spot = bundle.map.stones!.spots.find((s) => s.size === 'small')!;
+    const spot = bundle.map.stones!.spots.find((s) => s.kind === 'core/stone')!;
     const at: Tile = [spot.x, spot.y];
     const s0 = started();
     const state: State = { ...s0, player: { ...s0.player, at, movedAt: 0 } };
     const { base, store, clock } = await api(state);
     clock.now += 70_000;
-    const lifted = await post(base, '/action', { version: 1, tick: 70_000, action: { t: 'lift', size: 'small', at } });
+    const lifted = await post(base, '/action', { version: 1, tick: 70_000, action: { t: 'lift', kind: 'core/stone', at } });
     expect(lifted.status, await lifted.clone().text()).toBe(200);
     expect(store.record.state.player.bag['core/stone']).toBe(1);
     expect(store.record.state.player.stones?.taken).toEqual({ [String(bundle.map.stones!.spots.indexOf(spot))]: true });

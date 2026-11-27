@@ -525,6 +525,7 @@
       }
     },
     "hunt": {
+      "throw_item": "core/stone",
       "dress_step_ms": {
         "value": 1500,
         "min": 500,
@@ -1368,37 +1369,25 @@
         "step": 1
       }
     },
+    "liftables": {
+      "core/stone": {
+        "name": "small stone",
+        "class": "hand",
+        "weight": { "value": 3, "min": 0, "max": 20, "step": 1 },
+        "throw_range": { "value": 3, "min": 2, "max": 6, "step": 1 },
+        "roll": { "value": 2, "min": 0, "max": 4, "step": 1 },
+        "sprite": "core/base-kit:items/stone_small"
+      },
+      "core/large-stone": {
+        "name": "large stone",
+        "class": "arms",
+        "weight": { "value": 50, "min": 30, "max": 90, "step": 5 },
+        "throw_range": { "value": 2, "min": 1, "max": 4, "step": 1 },
+        "roll": { "value": 1, "min": 0, "max": 2, "step": 1 },
+        "sprite": "core/base-kit:items/stone"
+      }
+    },
     "stones": {
-      "large_weight": {
-        "value": 50,
-        "min": 30,
-        "max": 90,
-        "step": 5
-      },
-      "small_range": {
-        "value": 3,
-        "min": 2,
-        "max": 6,
-        "step": 1
-      },
-      "large_range": {
-        "value": 2,
-        "min": 1,
-        "max": 4,
-        "step": 1
-      },
-      "small_roll": {
-        "value": 2,
-        "min": 0,
-        "max": 4,
-        "step": 1
-      },
-      "large_roll": {
-        "value": 1,
-        "min": 0,
-        "max": 2,
-        "step": 1
-      },
       "area_tiles": {
         "value": 16,
         "min": 8,
