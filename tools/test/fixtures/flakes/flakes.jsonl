@@ -1,0 +1,3 @@
+{"group": "opening-phone", "script": "opening", "result": "retry_pass", "error": "day-end timeout waiting for summary", "first_seconds": 100, "retry_seconds": 90, "commit": "abc", "time": "2026-11-27T10:00:00Z"}
+{"group": "opening-phone", "script": "opening", "result": "retry_pass", "error": "day-end timeout waiting for summary", "first_seconds": 101, "retry_seconds": 90, "commit": "abc", "time": "2026-11-27T10:00:01Z"}
+{"group": "opening-phone", "script": "opening", "result": "red", "error": "page crashed", "first_seconds": 102, "retry_seconds": 90, "commit": "abc", "time": "2026-11-27T10:00:02Z"}
