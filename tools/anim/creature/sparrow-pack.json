@@ -2,7 +2,11 @@
   "about": "The drawn sparrow (valley animals, 27.11): side, front and back views as eight frames of walk and idle each, from PixelLab's PixMiniMax on the stills of the same day (DECISIONS 2026-11-27 'The valley's small animals at the game's angle'). Frames are drafts of the store Bobikobi/GAME-art-drafts, named by id; packcreature.py reads them from .scratch/art-drafts (pnpm art:drafts fetch <ids>) and checks each against its id.",
   "creature": "core/sparrow",
   "name": "sparrow",
-  "fit_permille": 1000,
+  "fit_permille": {
+    "left": 404,
+    "front": 429,
+    "back": 455
+  },
   "which": {
     "left": "take and variant: idle side-idle-s301 B; walk side-walk-s301 A",
     "front": "take and variant: idle front-idle-s301 B; walk front-walk-s302-last B",

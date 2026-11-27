@@ -67,6 +67,13 @@ def load_frame(drafts, fid):
     return a
 
 
+def fit_of(man: dict, view: str) -> int:
+    """The manifest's `fit_permille`: one number for every view, or a map view -> number (the views of an animal drawn long or wide
+    take their own, so it keeps one size as it turns). Sheets of one view share it, walk and idle."""
+    fit = man["fit_permille"]
+    return int(fit[view] if isinstance(fit, dict) else fit)
+
+
 def derive_ramps(frames, core, count, name):
     """The `count` colours of the drawing that best serve its pixels beside the core palette, dealt to ramps of six."""
     seen = {}
@@ -208,7 +215,7 @@ def main():
             "file": f"{sheet}.png", "w": FRAME, "h": FRAME, "frames": len(snapped[key]), "density": DENSITY,
             "ramps": [r["id"] for r in ramps],
             "creature_clip": {"creature": man["creature"], "view": c["view"], "verb": c["verb"], "frame_ms": c["frame_ms"], "anchor": anchor,
-                              "fit_permille": man["fit_permille"], "head": head},
+                              "fit_permille": fit_of(man, c["view"]), "head": head},
         }
         if a.write:
             pc.save(pc.strip(snapped[key]), Path(a.kit) / f"{sheet}.png")

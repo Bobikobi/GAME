@@ -88,6 +88,7 @@ describe('density in the client', () => {
         'k:chars/old': { url: 'a', w: 16, h: 24, frames: 1, density: 1 },
         'k:chars/pell': { url: 'b', w: 64, h: 96, frames: 3, density: 4 },
         'k:chars/swing': { url: 'd', w: 128, h: 128, frames: 4, density: 4, clip: { race: 'core/human', view: 'left', verb: 'strike', frame_ms: 100, anchor: [64, 100], fit_permille: 700 } },
+        'k:creatures/hare_walk_front': { url: 'e', w: 128, h: 128, frames: 8, density: 4, creature_clip: { creature: 'core/hare', view: 'front', verb: 'walk', frame_ms: 90, anchor: [64, 105], fit_permille: 773 } },
         'k:tiles/grass': { url: 'c', w: 64, h: 64, frames: 1, density: 4 },
       },
     } as unknown as Bundle;
@@ -121,6 +122,9 @@ describe('density in the client', () => {
   test('a clip sheet shows at its fit on top of the density, the feet stay on the anchor, and a swap back to the walk restores its base', () => {
     expect(fitOf('k:chars/swing')).toBe(0.7);
     expect(fitOf('k:chars/pell')).toBe(1);
+    // a creature's sheet names its fit on `creature_clip`, one per sheet (the animals' views match by it)
+    expect(fitOf('k:creatures/hare_walk_front')).toBe(0.773);
+    expect(baseScale('k:creatures/hare_walk_front')).toBeCloseTo(0.773 / 4, 12);
     expect(baseScale('k:chars/swing')).toBeCloseTo(0.175, 12);
     expect(baseScale('k:chars/pell')).toBe(0.25);
     expect(drawnDensity('k:chars/swing')).toBeCloseTo(4 / 0.7, 12);

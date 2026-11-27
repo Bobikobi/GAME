@@ -2,55 +2,59 @@
   "about": "The drawn trout (valley animals, 27.11): side, front and back views as eight frames of walk and idle each, from PixelLab's PixMiniMax on the stills of the same day (DECISIONS 2026-11-27 'The valley's small animals at the game's angle'). Frames are drafts of the store Bobikobi/GAME-art-drafts, named by id; packcreature.py reads them from .scratch/art-drafts (pnpm art:drafts fetch <ids>) and checks each against its id.",
   "creature": "core/trout",
   "name": "trout",
-  "fit_permille": 1000,
+  "fit_permille": {
+    "left": 1000,
+    "front": 975,
+    "back": 961
+  },
   "which": {
     "left": "take and variant: idle side-idle-s301 B; walk side-walk-s301 B",
-    "front": "take and variant: idle front-idle-s304 B; walk front-walk-s301 A",
-    "back": "take and variant: idle back-idle-s303 B; walk back-walk-s302-last A"
+    "front": "take and variant (fix 27.11, redrawn still): idle front-idle-s301 B; walk front-walk-s301 A",
+    "back": "take and variant (fix 27.11, redrawn still): idle back-idle-s301 B; walk back-walk-s302-last A"
   },
   "ramps": [
     {
       "id": "trout-fur-1",
       "steps": [
-        "#040402",
-        "#3b3c24",
-        "#645e3b",
-        "#676547",
-        "#858763",
-        "#a6ae96"
+        "#27261c",
+        "#3d3e2a",
+        "#5e6048",
+        "#736947",
+        "#99a189",
+        "#a3a991"
       ]
     },
     {
       "id": "trout-fur-2",
       "steps": [
-        "#27261c",
-        "#4a4935",
-        "#5c583b",
-        "#5e6048",
-        "#6a673a",
-        "#807e50"
+        "#0e0f08",
+        "#585536",
+        "#686b4b",
+        "#82816a",
+        "#99a092",
+        "#ccc69c"
       ]
     },
     {
       "id": "trout-fur-3",
       "steps": [
-        "#080904",
-        "#5f5c30",
-        "#82816a",
-        "#a4a07c",
-        "#b6bdac",
-        "#cbc89f"
+        "#14150b",
+        "#615c39",
+        "#8f8f7a",
+        "#a99f71",
+        "#b8ae8b",
+        "#b5baab"
       ]
     },
     {
       "id": "trout-fur-4",
       "steps": [
-        "#12120c",
-        "#181910",
-        "#74734c",
-        "#7d7e5d",
-        "#9ea690",
-        "#abaa88"
+        "#040402",
+        "#484735",
+        "#626042",
+        "#727360",
+        "#858763",
+        "#969370"
       ]
     }
   ],
@@ -90,14 +94,14 @@
       "verb": "walk",
       "frame_ms": 90,
       "frames": [
-        "52db7cbe1e4fe899",
-        "be9cae3a61a5d9b2",
-        "45fae18de57256f7",
-        "1362acc7c3746849",
-        "d75e97d58223fc33",
-        "dbd562b2b0b005c7",
-        "7d956fac755c64d7",
-        "bccdc36e708bd0e5"
+        "232f60aa58fd9c69",
+        "dfef13d556638874",
+        "4623779b5e126b99",
+        "0e010723b84c2922",
+        "2edda4ad00b5d3c7",
+        "1a383bf15fea2b6c",
+        "9b76450aad946588",
+        "e0c6a5876012eec3"
       ]
     },
     {
@@ -105,14 +109,14 @@
       "verb": "idle",
       "frame_ms": 150,
       "frames": [
-        "fc865acb19c3846a",
-        "8d032feabfec3546",
-        "60c388c4efee3858",
-        "d7aee5827bb4a0a9",
-        "74fbbd6a239160cd",
-        "9bbb6d97f9b03212",
-        "37de593c244e671d",
-        "8fe90ddad5c1a468"
+        "ca5ae34596782031",
+        "07ac9fc3a6167574",
+        "923536e59a1c324d",
+        "d0e4645d14c7725f",
+        "3b8666a32e156536",
+        "e374d475f9b0f067",
+        "26d1a0152b026a95",
+        "e14caf4acb267700"
       ]
     },
     {
@@ -120,14 +124,14 @@
       "verb": "walk",
       "frame_ms": 90,
       "frames": [
-        "bf577ff598103a9a",
-        "363a8a63954ed100",
-        "4e4a8be53c2fa139",
-        "05f622e2265cc1ec",
-        "9073573c30b0d2e9",
-        "0e6e8102d0e15fb5",
-        "9347809cec00547c",
-        "de74b6a8366d4786"
+        "db01999614935525",
+        "f43135464fa2b955",
+        "e9eac7deb98b595a",
+        "a86371cef56a7654",
+        "d09fad6c54b2cb21",
+        "6072414dff3c5da5",
+        "677b4b1481f00eda",
+        "a5e41b52ae8686ec"
       ]
     },
     {
@@ -135,14 +139,14 @@
       "verb": "idle",
       "frame_ms": 150,
       "frames": [
-        "9b9c4367e3aed784",
-        "c7c82eab7298deee",
-        "163e32a46b16af35",
-        "89509ba22e11c198",
-        "d8c4d7b5a4473f9b",
-        "c5ca51fb9fd37a20",
-        "2989fe5ebd450c4b",
-        "be49e67037bb4812"
+        "d8187412fff1b167",
+        "64ac898c22f2b759",
+        "3b7b9dfbe7e95b19",
+        "114228b10e5187e7",
+        "6a82b186a9d2d1d7",
+        "62f8de469fbad619",
+        "f5cbd7c7091336b7",
+        "cd9f155ec44bb963"
       ]
     }
   ]
