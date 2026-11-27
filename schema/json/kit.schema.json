@@ -1166,6 +1166,111 @@
                     }
                   }
                 },
+                "creature_clip": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "creature",
+                    "view",
+                    "verb",
+                    "frame_ms",
+                    "anchor"
+                  ],
+                  "properties": {
+                    "creature": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "The id of the creature kind the clip is drawn for, a key of `map.creatures.kinds`, for example \"core/wolf\".",
+                      "type": "string"
+                    },
+                    "view": {
+                      "description": "left, front or back; the right side is the left one flipped.",
+                      "anyOf": [
+                        {
+                          "const": "left",
+                          "type": "string"
+                        },
+                        {
+                          "const": "front",
+                          "type": "string"
+                        },
+                        {
+                          "const": "back",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "verb": {
+                      "description": "What the clip plays: walk (a loop while the creature moves) or idle (a loop while it stands).",
+                      "anyOf": [
+                        {
+                          "const": "walk",
+                          "type": "string"
+                        },
+                        {
+                          "const": "idle",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "frame_ms": {
+                      "minimum": 1,
+                      "maximum": 5000,
+                      "description": "How long each frame shows, in whole milliseconds: the clip's own speed.",
+                      "type": "integer"
+                    },
+                    "anchor": {
+                      "description": "The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the creature's feet.",
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "fit_permille": {
+                      "minimum": 100,
+                      "maximum": 4000,
+                      "description": "The factor the clip shows at on top of its density's base scale (1 / density), in thousandths. Left out, 1000. One value for every view of a creature, so it does not change size as it turns. The feet stay on the anchor whatever the fit.",
+                      "type": "integer"
+                    },
+                    "head": {
+                      "description": "Where the face is, in pixels of the frame (the same grid as `anchor`): what the world lays on the head (the glint of the eyes, the mark that it has seen the player). Left out, the world uses the middle of the frame.",
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  }
+                },
+                "still_of": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                  "maxLength": 80,
+                  "description": "The id of the creature kind (a key of `map.creatures.kinds`) this still sprite stands for: while the creature's clips (`creature_clip`) are loaded the world draws them, and this picture is what shows when they are not.",
+                  "type": "string"
+                },
                 "scale": {
                   "minimum": 0.1,
                   "maximum": 40,
