@@ -993,6 +993,12 @@
         "h": 16,
         "frames": 2
       },
+      "tiles/bank_s": {
+        "file": "tiles/bank_s.png",
+        "w": 16,
+        "h": 16,
+        "frames": 2
+      },
       "tiles/bank_w": {
         "file": "tiles/bank_w.png",
         "w": 16,
@@ -1404,6 +1410,11 @@
       },
       "tiles/shore_e": {
         "file": "tiles/shore_e.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/shore_n": {
+        "file": "tiles/shore_n.png",
         "w": 16,
         "h": 16
       },

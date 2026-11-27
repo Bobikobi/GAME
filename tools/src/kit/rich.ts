@@ -36,8 +36,10 @@ export const SIXTEEN_PX_LEFT: readonly string[] = [
   'props/young_tree',
   'tiles/bank_e',
   'tiles/bank_n',
+  'tiles/bank_s',
   'tiles/bank_w',
   'tiles/shore_e',
+  'tiles/shore_n',
   'tiles/shore_s',
   'tiles/shore_w',
 ];

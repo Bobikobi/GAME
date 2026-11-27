@@ -43,7 +43,7 @@ One master spec per pool, `tools/kit-gen/pools/<pool>.json`, in the `GenEntry` s
 | trees | rows 7, 11: oak (3 variants), young tree, dead tree, canopy 1-3 | 192x320, 128x192, 192x256, 192x192 | GPU; oak with `anchor` from the family on `art/rich-opening-ground` |
 | props | rows 8-10, 12, 14, 15, 22-24, 28, 29: tall grass, flowers, gather nodes, the standing stone, the lit campfire, the town set (one entry per regional style, decision 8 of 22.10), mushrooms, fog, the ruin set and statues, the wolf prop | the 1b row of each; up to 384x384 | GPU; large or thin ones that the free recipes misread go to Codex after the third round |
 | items | the 19 rich items as picked; new items as they are designed (the eight borrowed outfit icons belong to the race wave) | 64x64 | GPU |
-| cast | rows 1, 20: the 4 frames in use (elder, trader); the 70 unused ones are `retired` (the 2026-11-27 entry of DECISIONS took 68 of them, with 2 edge tiles, out of the kit) | 64x96, 128x128 | the industrial route; tracked only |
+| cast | rows 1, 20: the 4 frames in use (elder, trader); the 70 unused ones are `retired` (the 2026-11-27 entry of DECISIONS took 66 of them out of the kit) | 64x96, 128x128 | the industrial route; tracked only |
 
 Every entry carries its `what`, `detail` (the sentence that draws it) and `ramps` (at most four shared ramps, from the place card of [PLACE_LOOK.md](PLACE_LOOK.md) where the entry belongs to a place). The pool is hand-edited; its **status is never written by hand**. `tools/src/art/status.ts` derives it from files:
 
