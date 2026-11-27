@@ -225,6 +225,11 @@ async function main(): Promise<void> {
       ['eat', `{ e: 'eat', item: 'core/berries', hp: 90 }`, ['burst']],
       ['tool-broke', `{ e: 'tool_broke', item: 'core/axe' }`, ['burst', 'burst']],
       ['level', `{ e: 'level', profession: 'core/woodcutting', level: 2 }`, ['light', 'burst', 'burst']],
+      ['safe', `{ e: 'safe', id: 'core/bank-wolf', bitten: false }`, ['light']],
+      ['hurt', `{ e: 'hurt', by: 'thorns', hp: 90 }`, ['flash']],
+      ['dodge', `{ e: 'fight_dodge', ...${JSON.stringify(out)}, kind: 'dodge' }`, ['ground']],
+      ['guard', `{ e: 'fight_guard', ...${JSON.stringify(out)}, kind: 'guard' }`, ['burst']],
+      ['foe-fall', `{ e: 'foe_fall', foe: 'w', at: ${JSON.stringify(FIELD)}, drops: [] }`, ['ground', 'burst']],
     ];
     for (const [id, event, want] of MOMENT_LINES) {
       const n = await page.eval<number>(`window.__game.world.effects.played.length`);

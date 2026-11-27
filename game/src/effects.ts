@@ -165,7 +165,13 @@ export type MomentId =
   | 'fish-catch'
   | 'eat'
   | 'tool-broke'
-  | 'level';
+  | 'level'
+  | 'safe'
+  | 'hurt'
+  | 'foe-hurt'
+  | 'dodge'
+  | 'guard'
+  | 'foe-fall';
 
 export interface Moment {
   parts: readonly Part[];
@@ -196,6 +202,18 @@ export const MOMENTS: Readonly<Record<MomentId, Moment>> = {
   'tool-broke': { parts: [burst('fx-chip', 6, 'fan', 9), burst('fx-spark', 2, 'fan', 9)], danger: false },
   // a level: a light on the one who rose, sparks and motes going up (the banner and the jingle are the screen's)
   level: { parts: [{ fx: 'light', scale: 2.5, up: 12 }, burst('fx-spark', 10, 'rise', 10), burst('fx-mote', 6, 'rise', 14)], danger: false },
+  // a hunt ends in a safe place: a small light, a breath out
+  safe: { parts: [{ fx: 'light', scale: 1.5, up: 10 }], danger: false },
+  // the player's body is struck (a bite, a hazard, a hard landing, a foe's blow): it shows white a moment
+  hurt: { parts: [{ fx: 'flash', ms: 90 }], danger: true },
+  // a foe's body is struck by the player
+  'foe-hurt': { parts: [{ fx: 'flash', ms: 80 }], danger: true },
+  // a blow dodged: the dodger's feet kick up the ground
+  dodge: { parts: [ground(4)], danger: true },
+  // a blow guarded: sparks off the guard
+  guard: { parts: [burst('fx-spark', 5, 'fan', 7)], danger: true },
+  // a foe falls: the ground it hits
+  'foe-fall': { parts: [ground(10), burst('fx-dust', 6, 'ground')], danger: true },
 };
 
 export const MOMENT_IDS = Object.keys(MOMENTS) as MomentId[];
@@ -250,6 +268,25 @@ export function momentsOf(events: readonly GameEvent[]): MomentSpawn[] {
         break;
       case 'level':
         add({ id: 'level', at: { on: 'player' } }, 'level');
+        break;
+      case 'safe':
+        add({ id: 'safe', at: { on: 'player' } }, 'safe');
+        break;
+      case 'hurt':
+        add({ id: 'hurt', at: { on: 'player' }, ...(e.by === 'fall' ? { landing: true } : {}) }, 'hurt');
+        break;
+      case 'hit':
+        if (e.struck.side === 'player') add({ id: 'hurt', at: { on: 'player' } }, 'hurt');
+        else add({ id: 'foe-hurt', at: { on: 'foe', id: e.struck.id, tile: [e.at[0], e.at[1]] } }, `foe:${e.struck.id}`);
+        break;
+      case 'fight_dodge':
+        add({ id: 'dodge', at: tile(e.at) });
+        break;
+      case 'fight_guard':
+        add({ id: 'guard', at: tile(e.at) });
+        break;
+      case 'foe_fall':
+        add({ id: 'foe-fall', at: tile(e.at) }, `fall:${e.foe}`);
         break;
     }
   }
