@@ -19,8 +19,6 @@
       "what":"sand ground tile, variant 2 with the ripples in other places","detail":"pale warm sand with soft wind ripples in darker dashes, a few small pebbles with lit tops, a rare glint" },
     { "name":"water","ref":"tiles/water","kit_id":"tiles/water","rank":4,"blocked_by":"#328 open 2","kind":"tile","width":64,"height":64,"ramps":["water"],
       "what":"deep water ground tile","detail":"blue water in two depths with short lighter dashes in wavy rows, no foam" },
-    { "name":"shore_n","ref":"tiles/shore_n","kit_id":"tiles/shore_n","rank":5,"blocked_by":"#328 open 3","kind":"sprite","width":64,"height":64,"ramps":["bark","wood"],
-      "what":"earth shore edge strip along the north side of a tile, transparent elsewhere" },
     { "name":"shore_e","ref":"tiles/shore_e","kit_id":"tiles/shore_e","rank":5,"blocked_by":"#328 open 3","kind":"sprite","width":64,"height":64,"ramps":["bark","wood"],
       "what":"earth shore edge strip along the east side of a tile, transparent elsewhere" },
     { "name":"shore_s","ref":"tiles/shore_s","kit_id":"tiles/shore_s","rank":5,"blocked_by":"#328 open 3","kind":"sprite","width":64,"height":64,"ramps":["bark","wood"],
@@ -31,8 +29,6 @@
       "what":"water bank edge strip along the north side of a tile, transparent elsewhere" },
     { "name":"bank_e","ref":"tiles/bank_e","kit_id":"tiles/bank_e","rank":5,"blocked_by":"#328 open 3","kind":"sprite","width":64,"height":64,"ramps":["water"],
       "what":"water bank edge strip along the east side of a tile, transparent elsewhere" },
-    { "name":"bank_s","ref":"tiles/bank_s","kit_id":"tiles/bank_s","rank":5,"blocked_by":"#328 open 3","kind":"sprite","width":64,"height":64,"ramps":["water"],
-      "what":"water bank edge strip along the south side of a tile, transparent elsewhere" },
     { "name":"bank_w","ref":"tiles/bank_w","kit_id":"tiles/bank_w","rank":5,"blocked_by":"#328 open 3","kind":"sprite","width":64,"height":64,"ramps":["water"],
       "what":"water bank edge strip along the west side of a tile, transparent elsewhere" },
     { "name":"fringe_n","ref":"tiles/fringe_n","kit_id":"tiles/fringe_n","rank":5,"blocked_by":"#328 open 3","kind":"sprite","width":64,"height":64,"ramps":["green","moss"],
@@ -104,6 +100,10 @@
     { "name":"shore_wet","ref":"tiles/sand","kit_id":"tiles/shore_wet","new":true,"kind":"tile","width":64,"height":64,"ramps":["bark", "stone", "water"],
       "what":"wet shore tile","detail":"dark wet sand and mud at the water line, small pebbles and shells, a glossy sheen, thin foam edge at one side, light from the upper left" },
     { "name":"shore_walk","ref":"tiles/path","kit_id":"tiles/shore_walk","new":true,"kind":"tile","width":64,"height":64,"ramps":["wood", "stone", "moss"],
-      "what":"shore walk path tile","detail":"a worn path of packed pale sand and small stones along a bay shore, faint footprints, sparse beach grass at the edges, light from the upper left" }
+      "what":"shore walk path tile","detail":"a worn path of packed pale sand and small stones along a bay shore, faint footprints, sparse beach grass at the edges, light from the upper left" },
+    { "name":"shore_n","ref":"tiles/shore_n","kit_id":"tiles/shore_n","retired":"68 sheets of the retired starter looks leave the kit and the 16 px list (public #911)","kind":"sprite","width":64,"height":64,"ramps":["bark","wood"],
+      "what":"earth shore edge strip along the north side of a tile, transparent elsewhere" },
+    { "name":"bank_s","ref":"tiles/bank_s","kit_id":"tiles/bank_s","retired":"68 sheets of the retired starter looks leave the kit and the 16 px list (public #911)","kind":"sprite","width":64,"height":64,"ramps":["water"],
+      "what":"water bank edge strip along the south side of a tile, transparent elsewhere" }
   ]
 }
