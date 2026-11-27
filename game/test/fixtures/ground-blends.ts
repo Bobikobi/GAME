@@ -46,13 +46,16 @@ export function openingGround() {
     sourceCache.set(key, out);
     return out;
   };
-  const edges = pairs.map(([a, b, look]) => ({
-    a, b, look,
-    at: ((x, y) => {
-      const kind = kindOf(at(x, y));
-      return kind === a ? 1 : kind === b ? 0 : undefined;
-    }) as PathAt,
-  }));
+  const edges = pairs.map(([a, b, look]) => {
+    // Legacy samples this field for each pixel. Resolve each ground symbol's side once per pair.
+    const sides = new Map(Object.entries(map.legend).map(([symbol, tile]) => {
+      const kind = kindOf(tile);
+      return [symbol, kind === a ? 1 : kind === b ? 0 : undefined] as const;
+    }));
+    const rows = map.ground.map((row) => row.split('').map((symbol) => sides.get(symbol)));
+    const sideAt: PathAt = (x, y) => rows[y]?.[x];
+    return { a, b, look, at: sideAt };
+  });
 
   // Use the opening's selected variants, sand, meadow tones and actual neighbours.
   const tiles = [];
@@ -86,11 +89,14 @@ export function openingGround() {
   // The pre-change world.ts blendTile and paint chain, running the original compositor for each frame.
   function legacy(tile: Tile, frame: number): Uint8ClampedArray | null {
     const { x, y, key } = tile;
+    let water: Uint8ClampedArray | undefined;
     const read = (ref: string) => {
       if (!/^water(_\d+)?$/.test(base(ref) ?? '')) return pixels(ref, frame);
-      const out = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
-      deepTile(x, y, frame, out, EDGE_PX);
-      return out;
+      if (!water) {
+        water = new Uint8ClampedArray(EDGE_PX * EDGE_PX * 4);
+        deepTile(x, y, frame, water, EDGE_PX);
+      }
+      return water;
     };
     let cur: Uint8ClampedArray | null = null;
     for (const edge of tile.touching) {
