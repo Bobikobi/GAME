@@ -2117,7 +2117,7 @@ export const KitBody = Type.Object(
     ),
     ramps: Type.Optional(
       Type.Array(RampBody, {
-        maxItems: 4,
+        maxItems: 24,
         description:
           'The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.',
       }),
