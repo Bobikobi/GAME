@@ -6,7 +6,7 @@
  */
 import type * as Phaser from 'phaser';
 import { app } from './app';
-import type { ClipSprite } from './clips';
+import type { ClipSprite, CreatureSprite } from './clips';
 
 type Art = Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
 
@@ -33,9 +33,10 @@ export function footOrigin(ref: string): number {
   return info && anchor ? anchor[1] / info.h : 1;
 }
 
-/** The factor a clip sheet shows at on top of its density (kit `clip.fit_permille`, #742): 1 for every other texture. */
+/** The factor a clip sheet shows at on top of its density (kit `clip.fit_permille`, #742; a creature's sheet names it on `creature_clip`, one value per sheet): 1 for every other texture. */
 export function fitOf(ref: string): number {
-  return ((app.bundle?.sprites[ref] as ClipSprite | undefined)?.clip?.fit_permille ?? 1000) / 1000;
+  const info = app.bundle?.sprites[ref] as (ClipSprite & CreatureSprite) | undefined;
+  return (info?.clip?.fit_permille ?? info?.creature_clip?.fit_permille ?? 1000) / 1000;
 }
 
 /** The scale an image of this texture shows at with no effect on it. */
