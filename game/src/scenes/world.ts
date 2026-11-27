@@ -50,7 +50,8 @@ import {
   windowOpen,
   type WorkKind,
   type Tile as KernelTile,
-  STONE_ITEM,
+  carriedKind,
+  throwKind,
   lyingAt,
   settled,
 } from '@game/kernel';
@@ -59,6 +60,7 @@ import { aimLine, chargeAt, trembleAt } from '../throw-charge';
 import { RING_TOTAL_MS, ringPixels, ringsAt } from '../ring';
 import { Piles, pileAt } from './piles';
 import { StoneLayer } from './stones';
+import { ARMS_STONE_KIND, HAND_STONE_KIND } from '../stone-art';
 import { sound, type Heard, type Owner, type SongId } from '../audio';
 import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
@@ -3138,7 +3140,7 @@ export class WorldScene extends Phaser.Scene {
     const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
     // both hands hold a stone: no running (the kernel refuses it), the load slows the walk itself
     const asked = app.controls.gait(performance.now());
-    const gait = asked === 'run' && s.state.player.stones?.carry === 'large' ? 'walk' : asked;
+    const gait = asked === 'run' && carriedKind(this.b, s.state) !== undefined ? 'walk' : asked;
     const facing = facingFor(input, s.facing);
     const look = facing8For(input, this.lookOf(s));
     const turned = facing !== s.facing || look !== this.look;
@@ -4238,7 +4240,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Whether both hands hold a large stone over the head and the lift is over (the kernel's `carry`; a lift's own time is the pickup clip's). */
   private holdsLarge(): boolean {
-    return this.session?.state.player.stones?.carry === 'large' && !this.falling && !this.lifting;
+    return this.session?.state.player.stones?.carry === ARMS_STONE_KIND && !this.falling && !this.lifting;
   }
 
   /**
@@ -4268,7 +4270,7 @@ export class WorldScene extends Phaser.Scene {
   private grip?: { found: Found; start: number };
 
   /** A throw being charged (DECISIONS 2026-11-22): when the press began (the scene clock), the aim tile, the stone's size, and which hand holds it. */
-  private charge?: { start: number; aim: KernelTile; size: 'small' | 'large'; source: 'key' | 'mouse' };
+  private charge?: { start: number; aim: KernelTile; kind: string; source: 'key' | 'mouse' };
   /** The aim line on the ground, drawn while a throw is charged. */
   private aimLineGfx?: Phaser.GameObjects.Graphics;
 
@@ -4309,11 +4311,11 @@ export class WorldScene extends Phaser.Scene {
    * A on a tile where stones lie (or the spot's own stone): lift one, a small one into the bag, a large one over the head.
    * The kernel answers by its own rules (strength, load, hands) and the refusal is told in its words.
    */
-  liftStone(size: 'small' | 'large'): void {
+  liftStone(kind: string): void {
     const s = this.session;
     if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
-    this.lifting = size === 'large';
-    void Promise.resolve(s.act({ t: 'lift', size, at: s.pos })).then((r) => {
+    this.lifting = kind === ARMS_STONE_KIND;
+    void Promise.resolve(s.act({ t: 'lift', kind, at: s.pos })).then((r) => {
       if (!r.ok) {
         this.lifting = false;
         app.ui.toast(r.error, 'bad');
@@ -4321,7 +4323,7 @@ export class WorldScene extends Phaser.Scene {
       }
       sound.sfx('pickup');
       // the figure plays the lift clip across the lift's own time (the kernel's `lift_ms`, the one number); the carry clip takes over once it is out
-      if (size === 'large') this.playClip('lift', this.b.params.stones.lift_ms, true);
+      if (kind === ARMS_STONE_KIND) this.playClip('lift', this.b.params.stones.lift_ms, true);
       else this.playClip('pickup', this.b.params.stones.lift_ms);
       this.time.delayedCall(this.b.params.stones.lift_ms, () => {
         this.lifting = false;
@@ -4348,14 +4350,14 @@ export class WorldScene extends Phaser.Scene {
   throwPress(): void {
     const s = this.session;
     if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
-    const large = s.state.player.stones?.carry === 'large';
-    if (!large && (s.state.player.bag[STONE_ITEM] ?? 0) < 1) {
+    const kind = throwKind(this.b, s.state);
+    if (kind === undefined) {
       app.ui.toast('You have no stone to throw.', 'info');
       return;
     }
     const aim = throwAim(this.b, s, this.lookOf(s));
     if (!aim) return;
-    this.charge = { start: this.time.now, aim, size: large ? 'large' : 'small', source: 'key' };
+    this.charge = { start: this.time.now, aim, kind, source: 'key' };
   }
 
   /** The mouse button held (desktop): the same charge, aimed at the pointer's tile. */
@@ -4363,9 +4365,9 @@ export class WorldScene extends Phaser.Scene {
     const s = this.session;
     if (!s || this.room || this.falling || this.hop || this.hopAsked || !this.canControl(s)) return;
     if (tile[0] === s.pos[0] && tile[1] === s.pos[1]) return;
-    const large = s.state.player.stones?.carry === 'large';
-    if (!large && (s.state.player.bag[STONE_ITEM] ?? 0) < 1) return;
-    this.charge = { start: this.time.now, aim: [tile[0], tile[1]], size: large ? 'large' : 'small', source: 'mouse' };
+    const kind = throwKind(this.b, s.state);
+    if (kind === undefined) return;
+    this.charge = { start: this.time.now, aim: [tile[0], tile[1]], kind, source: 'mouse' };
   }
 
   /** A drag while the press is held (the phone's button or the mouse) moves the aim. */
@@ -4406,7 +4408,7 @@ export class WorldScene extends Phaser.Scene {
     const c = this.charge;
     this.charge = undefined;
     this.aimLineGfx?.setVisible(false);
-    this.throwNow(c.aim, chargeAt(this.b, Math.floor(this.time.now - c.start)).power);
+    this.throwNow(c.aim, c.kind, chargeAt(this.b, Math.floor(this.time.now - c.start)).power);
   }
 
   /** One frame of a held throw: draw the aim line at the power reached, and let a charge held past full go on its own. */
@@ -4425,7 +4427,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const g = (this.aimLineGfx ??= this.add.graphics().setDepth(DEPTH.flat + 0.2));
     g.clear();
-    const line = aimLine(this.b, s.state, c.size, c.aim, held.power);
+    const line = aimLine(this.b, s.state, c.kind, c.aim, held.power);
     if (line.length === 0) {
       g.setVisible(false);
       return;
@@ -4444,10 +4446,10 @@ export class WorldScene extends Phaser.Scene {
    * The throw itself (DECISIONS 2026-11-22, #831): the kernel flies it by `throwFlight` for `power` (a thousandth part).
    * This plays the flight as an arc with bounces and a slide, the landing hidden until it lands.
    */
-  private throwNow(aim: KernelTile, power: number): void {
+  private throwNow(aim: KernelTile, kind: string, power: number): void {
     const s = this.session;
     if (!s) return;
-    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim, power })).then((r) => {
+    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim, kind, power })).then((r) => {
       if (!r.ok) {
         app.ui.toast(r.error, 'bad');
         return;
@@ -4456,16 +4458,17 @@ export class WorldScene extends Phaser.Scene {
       if (thrown?.e !== 'stone_thrown') return;
       const layer = (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig));
       // the figure throws overhand (a small stone) or pushes with both hands (a large one); the stone leaves the hand at the clip's release
-      const verb = thrown.size === 'large' ? 'push' : 'throw';
+      const size = thrown.kind === ARMS_STONE_KIND ? 'large' : 'small';
+      const verb = size === 'large' ? 'push' : 'throw';
       const played = this.playClip(verb, undefined);
       // the stone is in the hand from the first frame of the clip, and follows the drawn hand to the release (the clip's `hand` points)
       const found = played ? clipFor(this.b.sprites as ClipSprites, verb, s.state.player.race, s.facing) : undefined;
       // it leaves the hand at the clip's last hand point (the frame where the drawing opens the hand), else at the old fixed time
       const release = !played ? 0 : found?.hand ? (found.hand.length - 1) * found.frame_ms : THROW_RELEASE_MS[verb];
       this.grip = found?.hand ? { found, start: this.time.now } : undefined;
-      if (this.grip) layer.takeInHand(thrown.size);
+      if (this.grip) layer.takeInHand(thrown.kind);
       // the landing tile waits for the flight, which starts when the stone leaves the hand: held without an end until then
-      const held = thrown.at ? layer.hold(key(thrown.at[0], thrown.at[1]), thrown.size, this.time.now, release > 0 ? Infinity : thrown.ms) : undefined;
+      const held = thrown.at ? layer.hold(key(thrown.at[0], thrown.at[1]), thrown.kind, this.time.now, release > 0 ? Infinity : thrown.ms) : undefined;
       const due = this.time.now + release;
       const fly = (): void => {
         // the clip's own record (a test reads it, e2e/stones.ts): the frame the clip is on at the instant the release was laid for, and how late the scene ran it
@@ -4476,7 +4479,8 @@ export class WorldScene extends Phaser.Scene {
         const at = g ? this.handNow(g.found, release) : undefined;
         this.grip = undefined;
         layer.letGo();
-        const leaving = at ? { ...thrown, hand: { x: at.x / T, y: this.player.y / T, lift: (this.player.y - at.y) / T } } : thrown;
+        const picture = { ...thrown, size } as const;
+        const leaving = at ? { ...picture, hand: { x: at.x / T, y: this.player.y / T, lift: (this.player.y - at.y) / T } } : picture;
         layer.fly(leaving, this.time.now, (tile, sank) => {
           sound.sfx('step');
           if (sank) this.splashAt(tile);
@@ -4582,7 +4586,7 @@ export class WorldScene extends Phaser.Scene {
   private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
     // both hands hold a large stone: A sets it down (the kernel allows nothing else but walking and throwing, B)
-    if (s.state.player.stones?.carry === 'large') return { label: 'Set the stone down', run: () => this.setDownStone(), tile: [x, y], top: T };
+    if (carriedKind(this.b, s.state) !== undefined) return { label: 'Set the stone down', run: () => this.setDownStone(), tile: [x, y], top: T };
     const [fx, fy] = DIRS[s.facing];
     const order: [number, number][] = [facedTile(s), [x, y]];
     for (const [dx, dy] of NEIGHBOURS) {
@@ -4615,15 +4619,28 @@ export class WorldScene extends Phaser.Scene {
     return { label: 'Build a fire', run: () => app.ui.kindle(tile), tile, top: T };
   }
 
-  /** The A button over stones at the player's feet: a small one first (the bag takes it), else a large one (both hands). */
-  private stoneTarget(s: GameSession, tile: [number, number]): Target | undefined {
+  /** Offer a lift underfoot or a push from a neighboring tile. */
+  private stoneTarget(s: GameSession, tile: KernelTile): Target | undefined {
+    const distance = Math.abs(tile[0] - s.pos[0]) + Math.abs(tile[1] - s.pos[1]);
+    if (distance > 1) return undefined;
     const here = lyingAt(this.b, settled(this.b, s.state, s.tick), tile);
-    if (here.count === 0) return undefined;
-    const small = here.small > 0 || here.spot === 'small';
-    const size = small ? 'small' : 'large';
-    const pile = here.count > 1;
-    const label = pile ? 'Take a stone from the pile' : size === 'small' ? 'Lift the stone' : 'Lift the large stone';
-    return { label, run: () => this.liftStone(size), tile, top: T };
+    const kinds = Object.keys(here.placed).sort();
+    if (here.spot) kinds.push(here.spot);
+    const entries = this.b.params.liftables;
+    if (distance === 1) {
+      const kind = kinds.find((id) => entries[id]?.class === 'push');
+      if (!kind) return undefined;
+      const run = () => void Promise.resolve(s.act({ t: 'push', kind, at: s.pos, target: tile })).then((r) => {
+        if (!r.ok) app.ui.toast(r.error, 'bad');
+      });
+      return { label: `Push the ${entries[kind]!.name}`, run, tile, top: T };
+    }
+    const kind = kinds.find((id) => entries[id]?.class === 'hand') ?? kinds.find((id) => entries[id]?.class === 'arms');
+    if (!kind) return undefined;
+    const label = kind === HAND_STONE_KIND || kind === ARMS_STONE_KIND
+      ? here.count > 1 ? 'Take a stone from the pile' : kind === HAND_STONE_KIND ? 'Lift the stone' : 'Lift the large stone'
+      : `Lift the ${entries[kind]!.name}`;
+    return { label, run: () => this.liftStone(kind), tile, top: T };
   }
 
   private targetAt(s: GameSession, x: number, y: number): Target | undefined {
@@ -4632,8 +4649,8 @@ export class WorldScene extends Phaser.Scene {
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? T;
-    // stones lying under the feet, or the spot's own: lift one (a pile is taken apart a stone at a time)
-    const stone = x === s.pos[0] && y === s.pos[1] ? this.stoneTarget(s, tile) : undefined;
+    // Lift from underfoot or push an object on a neighboring tile.
+    const stone = this.stoneTarget(s, tile);
     if (stone) return stone;
     // a pile the player put down, under their feet
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;

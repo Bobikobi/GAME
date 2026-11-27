@@ -1,4 +1,4 @@
-import { hash, valueNoise } from './richground';
+import { hash, noiseRect } from './richground';
 import { bedAt, foamAt } from './waterbody';
 
 /**
@@ -111,9 +111,32 @@ export function prepareEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, 
   // the stones of a water's rim: rounded, 12 to 16 px across (a few small ones between), in runs along the line with bare stretches between; each is judged
   // from its own centre, so one stone is the same in every tile it crosses
   const rim = look.rim;
+  // The slow noises are hashed once for the tile and a margin round it (a stone's search reaches out of the tile; beyond the margin the
+  // noise is read the slow way, the same numbers); the tiles round this one are read once, not at every point.
+  const left = tx * EDGE_PX;
+  const top = ty * EDGE_PX;
+  const MARGIN = 40;
+  const noiseA = noiseRect(left - MARGIN, top - MARGIN, left + EDGE_PX + MARGIN, top + EDGE_PX + MARGIN, 31, 14);
+  const noiseB = noiseRect(left - MARGIN, top - MARGIN, left + EDGE_PX + MARGIN, top + EDGE_PX + MARGIN, 57, 5);
+  const noiseRun = noiseRect(left - MARGIN, top - MARGIN, left + EDGE_PX + MARGIN, top + EDGE_PX + MARGIN, 91, STONE_RUN);
+  const REACH = 2;
+  const SIDE = 2 * REACH + 1;
+  const around = new Float64Array(SIDE * SIDE);
+  for (let j = 0; j < SIDE; j++) for (let i = 0; i < SIDE; i++) around[j * SIDE + i] = at(tx + i - REACH, ty + j - REACH) ?? own;
+  const sideOf = (x: number, y: number): number => {
+    const i = x - tx + REACH;
+    const j = y - ty + REACH;
+    return i >= 0 && j >= 0 && i < SIDE && j < SIDE ? around[j * SIDE + i]! : (at(x, y) ?? own);
+  };
   const tAt = (gx: number, gy: number): number => {
-    const f = pathField(tx, ty, (gx - tx * EDGE_PX + 0.5) / EDGE_PX, (gy - ty * EDGE_PX + 0.5) / EDGE_PX, at, own);
-    return f + ((valueNoise(gx, gy, 31, 14) - 0.5) * 0.3 + (valueNoise(gx, gy, 57, 5) - 0.5) * 0.14) * look.wander;
+    const fx = tx + (gx - tx * EDGE_PX + 0.5) / EDGE_PX - 0.5;
+    const fy = ty + (gy - ty * EDGE_PX + 0.5) / EDGE_PX - 0.5;
+    const ix = Math.floor(fx);
+    const iy = Math.floor(fy);
+    const ax = fx - ix;
+    const ay = fy - iy;
+    const f = sideOf(ix, iy) * (1 - ax) * (1 - ay) + sideOf(ix + 1, iy) * ax * (1 - ay) + sideOf(ix, iy + 1) * (1 - ax) * ay + sideOf(ix + 1, iy + 1) * ax * ay;
+    return f + ((noiseA(gx, gy) - 0.5) * 0.3 + (noiseB(gx, gy) - 0.5) * 0.14) * look.wander;
   };
   interface Stone {
     x: number;
@@ -157,7 +180,7 @@ export function prepareEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, 
         if (Math.hypot(x - x0, y - y0) > STONE_CELL * 1.2) break;
       }
       // the stones come in runs along the shore with bare stretches between: a slow noise says where
-      if ((ok || Math.abs(target - tAt(Math.round(x), Math.round(y))) < 0.02) && valueNoise(x, y, 91, STONE_RUN) > 0.36) {
+      if ((ok || Math.abs(target - tAt(Math.round(x), Math.round(y))) < 0.02) && noiseRun(x, y) > 0.36) {
         out = { x, y, rx, ry: rx * (0.76 + ((hash(cx, cy + 65) % 100) / 100) * 0.22), rank: small ? hash(cx, cy + 66) % 1000 : 1000 + (hash(cx, cy + 66) % 1000) };
       }
     }
@@ -252,6 +275,7 @@ export function prepareEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, 
   }
   const pixels = new Uint32Array(EDGE_PX * EDGE_PX);
   const shallows: { offset: number; k: number; tint: number[] }[] = [];
+  let foamRun: ((x: number, y: number) => number) | undefined;
   const edge = look.threshold;
   for (let py = 0; py < EDGE_PX; py++) {
     const gy = ty * EDGE_PX + py;
@@ -266,7 +290,7 @@ export function prepareEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, 
       const cell = (iy + 1) * 3 + ix + 1;
       const field = fieldTiles[cell]! * (1 - ax) * (1 - ay) + fieldTiles[cell + 1]! * ax * (1 - ay)
         + fieldTiles[cell + 3]! * (1 - ax) * ay + fieldTiles[cell + 4]! * ax * ay;
-      const wander = ((valueNoise(gx, gy, 31, 14) - 0.5) * 0.3 + (valueNoise(gx, gy, 57, 5) - 0.5) * 0.14) * look.wander;
+      const wander = ((noiseA(gx, gy) - 0.5) * 0.3 + (noiseB(gx, gy) - 0.5) * 0.14) * look.wander;
       const t = field + wander;
       const i = py * EDGE_PX + px;
       let grass = t < edge;
@@ -294,7 +318,8 @@ export function prepareEdgeTile(tx: number, ty: number, at: PathAt, own: 0 | 1, 
           const dpx = (edge - t) * EDGE_PX;
           if (dpx < rim.foam * EDGE_PX) {
             const f = foamAt(gx, gy);
-            const run = valueNoise(gx, gy, 77, 38);
+            foamRun ??= noiseRect(left, top, left + EDGE_PX - 1, top + EDGE_PX - 1, 77, 38);
+            const run = foamRun(gx, gy);
             const reach = 1 - Math.max(0, dpx) / (rim.foam * EDGE_PX);
             if (run > 0.6 && f > 0.75 + (1 - reach) * 0.2) {
               pixels[i] = solid(f > 0.9 ? FOAM_ICE : FOAM_WHITE);

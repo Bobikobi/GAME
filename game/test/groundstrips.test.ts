@@ -104,8 +104,8 @@ describe('a page baked in strips', () => {
       expect(Buffer.from(got.get(key)!).equals(Buffer.from(bytes)), key).toBe(true);
       compared++;
     }
-    // 3 by 3 pages, the animated tile in every one: four frames each
-    expect(compared).toBe(9 * 4);
+    // 3 by 3 pages, the animated tile in every one: four frames each, a band of two tile rows to a canvas (8, 8 and 2 bands: the last row of pages is 4 tiles tall)
+    expect(compared).toBe(3 * (8 + 8 + 2) * 4);
   });
 
   test('a page the walk reaches before its strips are done shows what is baked, and the rest comes in the next slices', () => {
@@ -118,7 +118,7 @@ describe('a page baked in strips', () => {
     idle.shift()!({ timeRemaining: () => 0, didTimeout: true });
     const started = g.count;
     expect(g.waiting).toBeGreaterThan(0);
-    const page = [...textures].find(([k, v]) => k !== 'ground-strip' && v.data.some((b) => b !== 0) && k.endsWith('-0') && k !== 'ground-c0x0-0');
+    const page = [...textures].find(([k, v]) => k !== 'ground-strip' && v.data.some((b) => b !== 0) && k.endsWith('-0') && !k.startsWith('ground-c0x0'));
     expect(page).toBeDefined();
     const bytes = page![1].data;
     const opaque = bytes.reduce((n, _b, i) => n + (i % 4 === 3 && bytes[i] !== 0 ? 1 : 0), 0);
@@ -155,7 +155,7 @@ describe('a page baked in strips', () => {
     expect(calls).toBeGreaterThan(3);
     expect(g.wholeBakes).toBe(0);
     // the pages the view touches have their first frame whole now; the other frames come by idle strips
-    const keys = [...lazy.textures.keys()].filter((k) => k.startsWith('ground-c1x1-'));
+    const keys = [...lazy.textures.keys()].filter((k) => k.startsWith('ground-c1x1b'));
     expect(keys.length).toBeGreaterThanOrEqual(1);
     g.resume();
     expect(idle.length).toBeGreaterThan(0);
@@ -180,12 +180,12 @@ describe('a page baked in strips', () => {
     // a view over the corner of four pages
     g.update({ x: 15 * UNIT, y: 15 * UNIT, right: 17 * UNIT, bottom: 17 * UNIT }, '', true);
     while (!g.bakeView(100, [{ x: 15.5 * UNIT, y: 15.5 * UNIT }]));
-    const pages = new Set([...lazy.textures.keys()].filter((k) => k.startsWith('ground-c')).map((k) => k.replace(/-\d+$/, '')));
+    const pages = new Set([...lazy.textures.keys()].filter((k) => k.startsWith('ground-c')).map((k) => k.replace(/b\d+-\d+$/, '')));
     expect(pages.size).toBe(1);
     g.resume();
     drain(idle);
     expect(g.waiting).toBe(0);
-    expect(new Set([...lazy.textures.keys()].filter((k) => k.startsWith('ground-c')).map((k) => k.replace(/-\d+$/, ''))).size).toBeGreaterThan(3);
+    expect(new Set([...lazy.textures.keys()].filter((k) => k.startsWith('ground-c')).map((k) => k.replace(/b\d+-\d+$/, ''))).size).toBeGreaterThan(3);
   }, 60_000);
 
   test('the view landing on pages nothing of which is held is baked whole at once, a walk-in is not', () => {
@@ -195,7 +195,8 @@ describe('a page baked in strips', () => {
     const q = new IdleQueue((run) => void idle.push(run), () => 0);
     const g = new GroundChunks(scene, 96, 96, DENSITY, UNIT, 1, 0, () => (tex, frame, tx0, ty0, tw, th) => (painted.push(`${tx0}x${ty0}:${tw}x${th}`), painter()(tex, frame, tx0, ty0, tw, th)), () => true, q);
     g.update(view(0, 0));
-    expect(painted).toEqual(['0x0:16x16']);
+    // a page whole is its bands, each painted by itself
+    expect(painted).toEqual([0, 2, 4, 6, 8, 10, 12, 14].map((y) => `0x${y}:16x2`));
     painted.length = 0;
     // walking to the next page, a tile at a time: its strips are painted in the idle slices, one strip's rectangle at a time
     for (let step = 1; step <= 12; step++) g.update({ x: step * UNIT + 4, y: 4, right: step * UNIT + 180, bottom: 190 });
@@ -205,7 +206,8 @@ describe('a page baked in strips', () => {
     expect(painted[0]).toMatch(/^\d+x\d+:[1-8]x1$/);
     // a teleport to pages far from everything held
     g.update(view(5, 5));
-    expect(painted).toContain('80x80:16x16');
+    expect(painted).toContain('80x80:16x2');
+    expect(painted).toContain('80x94:16x2');
   });
 });
 

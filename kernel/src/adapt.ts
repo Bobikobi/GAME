@@ -9,7 +9,7 @@ import { preyKey, recordHuntBatches } from './hunt';
 import { appearSlots } from './reactions';
 import { relocationOf } from './relocate';
 import { placeName } from './world';
-import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, type HuntStock, type State } from './state';
+import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, migrateStoneState, type HuntStock, type State } from './state';
 import { startRecipes } from './step';
 
 /**
@@ -20,6 +20,15 @@ import { startRecipes } from './step';
 export function adaptState(bundle: Bundle, saved: State): State | undefined {
   const state = structuredClone(saved);
   const p = state.player;
+  if (p.stones) {
+    const book = (p.stones = migrateStoneState(p.stones));
+    if (book.carry && bundle.params.liftables[book.carry]?.class !== 'arms') delete book.carry;
+    book.returns = book.returns.filter(({ kind }) => !!bundle.params.liftables[kind]);
+    for (const [key, pile] of Object.entries(book.placed)) {
+      for (const kind of Object.keys(pile)) if (!bundle.params.liftables[kind]) delete pile[kind];
+      if (Object.keys(pile).length === 0) delete book.placed[key];
+    }
+  }
   if (p.race !== '' && !bundle.races[p.race]) return undefined;
   // a wake pocket that left the content: the mist and the first task fall back to the map's spawn
   if (p.pocket !== '' && !bundle.pockets[p.pocket]) p.pocket = '';
@@ -127,6 +136,20 @@ function moveTiles(bundle: Bundle, state: State): void {
     for (const spot of bundle.map.creatures?.spots ?? []) {
       const until = returns[preyKey({ ...spot, x: spot.x - moved.dx, y: spot.y - moved.dy })];
       if (until !== undefined) p.preyReturns[preyKey(spot)] = until;
+    }
+  }
+  if (p.stones) {
+    const placed: typeof p.stones.placed = {};
+    for (const [key, pile] of Object.entries(p.stones.placed)) {
+      const [x, y] = key.split(',').map(Number) as [number, number];
+      const target = (placed[groundKey(shift([x, y]))] ??= {});
+      for (const [kind, count] of Object.entries(pile)) target[kind] = (target[kind] ?? 0) + count;
+    }
+    p.stones.placed = placed;
+    for (const loan of p.stones.returns) {
+      if (loan.key === '') continue;
+      const [x, y] = loan.key.split(',').map(Number) as [number, number];
+      loan.key = groundKey(shift([x, y]));
     }
   }
   if (p.ground) {

@@ -15,12 +15,15 @@ export type LoadBand = (typeof LOAD_BANDS)[number];
 
 /** How heavy one unit of an item is. Content always names it; an unknown id weighs 1. */
 export function itemWeight(bundle: Bundle, itemId: string): number {
-  return bundle.items[itemId]?.weight ?? 1;
+  const entry = bundle.params.liftables[itemId];
+  return entry?.class === 'hand' ? entry.weight : (bundle.items[itemId]?.weight ?? 1);
 }
 
-/** What the whole bag weighs, worn things included: they are on the body, not off it. A large stone held over the head weighs too (`stones.large_weight`): the might limit and the pace bands then treat it like any carried thing. */
+/** What the whole bag weighs, including worn gear and an object carried in both hands. */
 export function loadWeight(bundle: Bundle, state: PublicState): number {
-  let n = state.player.stones?.carry === 'large' ? bundle.params.stones.large_weight : 0;
+  const kind = state.player.stones?.carry;
+  const carried = kind === undefined ? undefined : bundle.params.liftables[kind];
+  let n = carried?.class === 'arms' ? carried.weight : 0;
   for (const [id, qty] of Object.entries(state.player.bag)) n += qty * itemWeight(bundle, id);
   return n;
 }

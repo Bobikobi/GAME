@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import type { Bundle } from '@game/kernel';
-import { GREENS, canopyGroups, groundMask, hash, leanAt, movesAs, remapTone, swayOn, toneField, valueNoise } from '../src/richground';
+import { GREENS, canopyGroups, groundMask, hash, leanAt, movesAs, remapTone, swayOn, toneField, noiseRect, valueNoise } from '../src/richground';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
@@ -34,6 +34,14 @@ describe('value noise', () => {
       }
     }
     expect(valueNoise(5, 5, 7)).not.toBe(valueNoise(5, 5, 8));
+  });
+
+  test('a rectangle of it, hashed once, gives the same numbers, inside the rectangle and out', () => {
+    for (const [seed, lattice, x0, y0] of [[51, 90, 128, 192], [31, 14, -70, 9], [57, 5, 0, 0], [77, 38, 4000, -300]] as const) {
+      const at = noiseRect(x0, y0, x0 + 63, y0 + 63, seed, lattice);
+      for (let y = y0 - 9; y < y0 + 73; y += 3) for (let x = x0 - 9; x < x0 + 73; x += 2) expect(at(x, y)).toBe(valueNoise(x, y, seed, lattice));
+      expect(at(x0 + 10.5, y0 + 20.25)).toBe(valueNoise(x0 + 10.5, y0 + 20.25, seed, lattice));
+    }
   });
 });
 

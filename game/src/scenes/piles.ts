@@ -3,7 +3,7 @@
  * picture a tile, the first thing of the pile by id, so the same save draws the same ground.
  */
 import type * as Phaser from 'phaser';
-import { type Bundle, type PublicState, STONE_ITEM } from '@game/kernel';
+import { type Bundle, type PublicState } from '@game/kernel';
 import { kitImage } from '../kitart';
 import { T } from '../config';
 
@@ -27,7 +27,7 @@ export class Piles {
     const want = new Map<string, string>();
     for (const k of Object.keys(state.player.ground ?? {})) {
       // the stones lying here are the stone layer's (scenes/stones.ts): they show by count, in their sizes
-      const id = Object.keys(state.player.ground?.[k] ?? {}).filter((i) => i !== STONE_ITEM && (state.player.ground?.[k]?.[i] ?? 0) > 0).sort()[0];
+      const id = Object.keys(state.player.ground?.[k] ?? {}).filter((i) => this.b.params.liftables[i]?.class !== 'hand' && (state.player.ground?.[k]?.[i] ?? 0) > 0).sort()[0];
       if (id) want.set(k, this.b.items[id]?.sprite ?? this.fallback);
     }
     for (const [k, v] of this.shown) {

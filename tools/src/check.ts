@@ -829,12 +829,33 @@ function checkStones(b: Bundle, origin: Record<string, string>): Issue[] {
   const mapFile = origin[b.map.id] ?? 'content';
   const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
   const c = b.params.stones;
-  if (c.large_range > c.small_range) err(PARAMS_FILE, 'params.stones.large_range', 'a large stone is thrown shorter than a small one: large_range <= small_range');
-  if (c.large_roll > c.small_roll) err(PARAMS_FILE, 'params.stones.large_roll', 'a large stone runs on less than a small one: large_roll <= small_roll');
+  const entries = b.params.liftables;
+  for (const [id, entry] of Object.entries(entries)) {
+    const where = `params.liftables.${id}`;
+    if (!b.sprites[entry.sprite]) err(PARAMS_FILE, `${where}.sprite`, `no sprite "${entry.sprite}" in any kit`);
+    if (entry.class === 'hand' && b.items[id]?.weight !== entry.weight) {
+      err(PARAMS_FILE, `${where}.weight`, 'a hand entry must name an item with the same weight');
+    }
+    if (entry.class === 'hand' || entry.class === 'arms') {
+      if (entry.throw_range < 1) err(PARAMS_FILE, `${where}.throw_range`, 'a throwable entry needs a positive range');
+    } else if (entry.throw_range !== 0 || entry.roll !== 0) {
+      err(PARAMS_FILE, where, 'push and fixed entries must have zero throw range and roll');
+    }
+  }
+  if (entries[b.params.hunt.throw_item]?.class !== 'hand') err(PARAMS_FILE, 'params.hunt.throw_item', 'the hunt throw item must name a hand liftable');
   if (c.pile_max > c.area_cap) err(PARAMS_FILE, 'params.stones.pile_max', 'a pile never holds more than an area does: pile_max <= area_cap');
-  const hardEdge = (might: number) => idiv((b.params.load.base + b.params.per_point.might * might) * b.params.load.max_permille, 1000);
-  if (c.large_weight <= hardEdge(0)) err(PARAMS_FILE, 'params.stones.large_weight', `a large stone asks for strength: it weighs more than the hard edge of a figure with no might (${hardEdge(0)})`);
-  if (c.large_weight > hardEdge(1)) err(PARAMS_FILE, 'params.stones.large_weight', `a large stone can be lifted by a figure with one point of might: it weighs at most the hard edge there (${hardEdge(1)})`);
+  // The original stones keep their specific range, roll and starting-might balance.
+  const small = entries['core/stone'];
+  const large = entries['core/large-stone'];
+  if (small && large) {
+    const where = 'params.liftables.core/large-stone';
+    if (large.throw_range > small.throw_range) err(PARAMS_FILE, `${where}.throw_range`, 'a large stone is thrown no farther than a small one');
+    if (large.roll > small.roll) err(PARAMS_FILE, `${where}.roll`, 'a large stone runs on no farther than a small one');
+    const hardEdge = (might: number) => idiv((b.params.load.base + b.params.per_point.might * might) * b.params.load.max_permille, 1000);
+    if (large.weight <= hardEdge(0) || large.weight > hardEdge(1)) {
+      err(PARAMS_FILE, `${where}.weight`, `a large stone needs one point of might at a bare start: weight is over ${hardEdge(0)} and at most ${hardEdge(1)}`);
+    }
+  }
   const spots = b.map.stones?.spots ?? [];
   const walkable = makeWalkable(b);
   const seen = new Set<string>();
@@ -842,6 +863,7 @@ function checkStones(b: Bundle, origin: Record<string, string>): Issue[] {
   spots.forEach((spot, i) => {
     const where = `map.stones.spots[${i}]`;
     const key = `${spot.x},${spot.y}`;
+    if (!entries[spot.kind]) err(mapFile, `${where}.kind`, `no liftable entry "${spot.kind}" exists`);
     if (spot.x >= b.map.width || spot.y >= b.map.height) return err(mapFile, where, `(${key}) is outside the map`);
     if (!walkable(spot.x, spot.y, { restored: [], camp: [] }) || tagAt(b.map, spot.x, spot.y) === 'water') err(mapFile, where, `(${key}) is not ground a foot stands on: a stone lies where it can be lifted`);
     if (seen.has(key)) err(mapFile, where, `two stones lie at ${key}: one spot a tile`);
