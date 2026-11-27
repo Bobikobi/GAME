@@ -1,0 +1,153 @@
+{
+  "about": "The drawn roe (valley animals, 27.11): side, front and back views as eight frames of walk and idle each, from PixelLab's PixMiniMax on the stills of the same day (DECISIONS 2026-11-27 'The valley's small animals at the game's angle'). Frames are drafts of the store Bobikobi/GAME-art-drafts, named by id; packcreature.py reads them from .scratch/art-drafts (pnpm art:drafts fetch <ids>) and checks each against its id.",
+  "creature": "core/roe",
+  "name": "roe",
+  "fit_permille": {
+    "left": 1000,
+    "front": 1123,
+    "back": 1045
+  },
+  "which": {
+    "left": "take and variant: idle side-idle-s301 B; walk side-walk-s303 B",
+    "front": "take and variant (fix 27.11, redrawn still): idle front-idle-s301 B; walk front-walk-s302-last A",
+    "back": "take and variant (fix 27.11, redrawn still): idle back-idle-s302-last B; walk back-walk-s303 A"
+  },
+  "ramps": [
+    {
+      "id": "roe-fur-1",
+      "steps": [
+        "#1d1212",
+        "#2c1a17",
+        "#2a2120",
+        "#562e1f",
+        "#643624",
+        "#955c3b"
+      ]
+    },
+    {
+      "id": "roe-fur-2",
+      "steps": [
+        "#201921",
+        "#40261d",
+        "#592e1e",
+        "#763f26",
+        "#7b4529",
+        "#ce9a65"
+      ]
+    },
+    {
+      "id": "roe-fur-3",
+      "steps": [
+        "#19151c",
+        "#231e28",
+        "#522a1e",
+        "#5d3120",
+        "#ac6f42",
+        "#ac774f"
+      ]
+    },
+    {
+      "id": "roe-fur-4",
+      "steps": [
+        "#211615",
+        "#6b3a25",
+        "#7a4228",
+        "#b57544",
+        "#d7a873",
+        "#e3b47c"
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "view": "left",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "03ab95e5d7d0e393",
+        "41c7788cfcef7065",
+        "987fea1234ab70ec",
+        "0b6cdebf8524e23e",
+        "36645e0ed6f310b8",
+        "5d4e0d195c6f963d",
+        "1b7e711aa20ed137",
+        "05799bf576600c18"
+      ]
+    },
+    {
+      "view": "left",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "853fb950d2b0db37",
+        "8be6751f8cd63df4",
+        "93cc58e092343ae6",
+        "38c8bb57d86a1d26",
+        "cd2fcf99066a885a",
+        "b87ba5d7025e5ce9",
+        "8fff32c02abb0ec5",
+        "31bb373823b7062b"
+      ]
+    },
+    {
+      "view": "front",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "1344d411e60cb8b1",
+        "146dae8978bd7379",
+        "4e2dfa0da5378759",
+        "97d387a42320dde5",
+        "613b4c266277d264",
+        "17fa126a759b4ec0",
+        "ba0ceab645d83f88",
+        "d29fdab2ec3c718f"
+      ]
+    },
+    {
+      "view": "front",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "a43ea80dcade6044",
+        "82571a894a787373",
+        "7c8d0f25f66b06bf",
+        "f0fe09a4b15575ca",
+        "5a5b91058b09e449",
+        "8a994b91f0d6ae94",
+        "3f3ed0ef659487c6",
+        "b9cea90fa29aac22"
+      ]
+    },
+    {
+      "view": "back",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "b5dcd9a7cd3ba59b",
+        "ba4d9c70c580c12d",
+        "ddc15e49b3be0fe2",
+        "07e4676d7e5947f4",
+        "657e90c4816977fe",
+        "37d70d06b5b95b3f",
+        "9ac79c434772306f",
+        "3572d4b68b5e008f"
+      ]
+    },
+    {
+      "view": "back",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "d53650649081005e",
+        "5ed51b1f3f4c0699",
+        "f301321baa243c0c",
+        "90566051f76a3cd0",
+        "71e34bfe064e78c1",
+        "819b771bafc831ea",
+        "bb98ed9432913a69",
+        "4e8bf4c6a26bbb60"
+      ]
+    }
+  ]
+}
