@@ -93,6 +93,19 @@ describe('artOf', () => {
     expect(artOf(KITS, 'core/base-kit:chars/elf_strike_front', reads)).toMatchObject({ state: 'drawn clip', frames: 9 });
     expect(artOf(KITS, 'core/base-kit:chars/elf_down', reads)).toMatchObject({ state: 'drawn clip', frames: 16 });
   });
+  it('reads a creature still as the drawn creature when every sheet of it is on disk, and as 16 px when one is not', () => {
+    const wolf = (file: string) => sprite({ file, frames: 8, creature_clip: { creature: 'core/wolf', view: 'left', verb: 'walk', frame_ms: 90, anchor: [1, 1], fit_permille: 1000 } });
+    const kits = {
+      'core/base-kit': {
+        dir: '/kit',
+        rel: 'content/kit/core',
+        sprites: { 'props/hazard_wolf': sprite({ density: 1, w: 16, h: 16, still_of: 'core/wolf' }), 'creatures/wolf_walk_left': wolf('w1.png'), 'creatures/wolf_idle_left': wolf('w2.png') },
+      },
+    } as unknown as Assembled['kits'];
+    expect(artOf(kits, 'core/base-kit:props/hazard_wolf', reads)).toMatchObject({ state: 'drawn clip', frames: 8 });
+    expect(artOf(kits, 'core/base-kit:props/hazard_wolf', reads).note).toContain('core/base-kit:props/hazard_wolf');
+    expect(artOf(kits, 'core/base-kit:props/hazard_wolf', { fileExists: (f) => !String(f).endsWith('w2.png') }).state).toBe('16px');
+  });
   it('says missing for a reference that does not resolve, and for a PNG that is not on disk', () => {
     expect(artOf(KITS, 'core/base-kit:props/ghost', reads).state).toBe('missing');
     expect(artOf(KITS, 'nokit:props/tree', reads).state).toBe('missing');
