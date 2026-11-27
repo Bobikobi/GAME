@@ -110,6 +110,13 @@ const START = `(() => {
     last = now; requestAnimationFrame(f);
   };
   requestAnimationFrame(f);
+  // the strip job and the page upload are timed where they stand, so a slow frame can be matched to them (and a noisy machine cannot hide them)
+  S.bake = [];
+  const chunks = window.__game.world.chunks;
+  if (chunks) for (const name of ['bakeUnit', 'upload']) {
+    const orig = chunks[name].bind(chunks);
+    chunks[name] = (...args) => { const t = performance.now(); const r = orig(...args); S.bake.push([name, Math.round(t - S.t0), +(performance.now() - t).toFixed(1)]); return r; };
+  }
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) S.long.push([Math.round(e.startTime - S.t0), Math.round(e.duration)]); }).observe({ entryTypes: ['longtask'] }); } catch (e) {}
   return 1;
 })()`;
@@ -167,7 +174,7 @@ async function main(): Promise<void> {
       }
       k += 1;
     }
-    const r = await page.eval<{ t: number[]; at: number[]; tile: [number, number][]; long: [number, number][] }>(`(() => { window.__stutterStop = 1; const S = window.__stutter; return { t: S.t, at: S.at, tile: S.tile, long: S.long }; })()`);
+    const r = await page.eval<{ t: number[]; at: number[]; tile: [number, number][]; long: [number, number][]; bake: [string, number, number][] }>(`(() => { window.__stutterStop = 1; const S = window.__stutter; return { t: S.t, at: S.at, tile: S.tile, long: S.long, bake: S.bake }; })()`);
     if (profile) {
       const pr = (await page.send('Profiler.stop')) as { profile: unknown };
       writeFileSync(join(OUT, `west-stutter-cpu${cpu}.cpuprofile`), JSON.stringify(pr.profile));
@@ -180,6 +187,9 @@ async function main(): Promise<void> {
       .sort((a, b) => b[0] - a[0])
       .slice(0, 12)
       .map(([v, i]) => ({ ms: Math.round(v), at_s: +(r.at[i + 1]! / 1000).toFixed(1), tile: r.tile[i + 1]! }));
+    const strips = r.bake.filter((b) => b[0] === 'bakeUnit').map((b) => b[2]);
+    const uploads = r.bake.filter((b) => b[0] === 'upload').map((b) => b[2]);
+    const sum = (a: number[]) => Math.round(a.reduce((x, y) => x + y, 0));
     const out = {
       cpu,
       secs: +((r.at[r.at.length - 1] ?? 0) / 1000).toFixed(1),
@@ -190,12 +200,14 @@ async function main(): Promise<void> {
       over20: t.filter((v) => v > 20).length,
       max: +(sorted[sorted.length - 1] ?? 0).toFixed(1),
       longtasks: r.long.length,
+      strips: { n: strips.length, sum_ms: sum(strips), over20: strips.filter((v) => v > 20).length, over50: strips.filter((v) => v > 50).length, max: Math.max(0, ...strips) },
+      uploads: { n: uploads.length, sum_ms: sum(uploads), over20: uploads.filter((v) => v > 20).length, max: Math.max(0, ...uploads) },
       stuck,
       worst,
       errors: page.errors.filter((e) => !/favicon/.test(e)).slice(0, 3),
     };
     const name = process.env.WALK_NAME ?? `cpu${cpu}`;
-    writeFileSync(join(OUT, `west-stutter-${name}.json`), JSON.stringify({ ...out, frames: r.t.map((v) => +v.toFixed(1)), at: r.at.map((v) => Math.round(v)), tile: r.tile, long: r.long }));
+    writeFileSync(join(OUT, `west-stutter-${name}.json`), JSON.stringify({ ...out, frames: r.t.map((v) => +v.toFixed(1)), at: r.at.map((v) => Math.round(v)), tile: r.tile, long: r.long, bake: r.bake }));
     console.log(JSON.stringify(out));
   } finally {
     await browser.close();

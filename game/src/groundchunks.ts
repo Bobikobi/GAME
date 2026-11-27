@@ -12,6 +12,9 @@
  * strips as it has time for (stream.ts), so crossing into a new page never blocks a frame (NEXT 19 d). The strips of
  * the pages the view touches come first, then the ring ahead of the figure's heading, then the rest. A page the view
  * reaches before its strips are done shows what is baked so far, the way a page not yet baked shows nothing.
+ * A page is not one canvas but bands of BAND_ROWS tile rows, each its own canvas and its own image: making a page-wide
+ * canvas and giving it to the GPU is one 15 ms task (54 ms on a slow CPU) and every upload of one is 5 ms (24 ms), where a
+ * band is a few ms at the worst, and only the bands that changed are uploaded (#885).
  * `allow` limits the pages to the world chunks the stream holds.
  */
 import type * as Phaser from 'phaser';
@@ -19,6 +22,8 @@ import { IdleQueue } from './stream';
 
 /** Tiles on a chunk's side. */
 export const CHUNK = 16;
+/** Tile rows in one band of a page: 1024 x 128 texture pixels, the size a canvas is cheap to make and to upload at (measured, 0.3 and 0.1 ms; the page-wide 1024 x 1024 is 15 and 5 ms). */
+export const BAND_ROWS = 2;
 /** A strip's size in tiles: half a row of a page, so one strip is a few tens of ms on a slow machine. */
 export const STRIP_COLS = 8;
 export const STRIP_ROWS = 1;
@@ -91,12 +96,16 @@ interface Chunk {
   ty0: number;
   tw: number;
   th: number;
-  img?: Phaser.GameObjects.Image;
-  /** the frames the image shows: the first alone until every frame is whole */
-  keys: string[];
+  /** one image for each band that has a texture */
+  imgs: (Phaser.GameObjects.Image | undefined)[];
+  /** the page has begun: a band of it is held */
+  started: boolean;
+  /** the frames the images show: the first alone until every frame is whole */
+  shown: number;
   /** every texture made for the page, whole or not */
   all: string[];
-  texs: Phaser.Textures.CanvasTexture[];
+  /** the textures by frame, then band */
+  texs: (Phaser.Textures.CanvasTexture | undefined)[][];
   paint?: ChunkPainter;
   strips: Strip[];
   /** strip-frame units baked, and how many there are: the first frame's strips, then (if any tile is animated) the other frames' */
@@ -104,9 +113,11 @@ interface Chunk {
   total: number;
   /** tiles of the strip in hand already painted */
   at: number;
+  /** the strips of each band still to bake, by frame then band */
+  left: number[][];
   complete: boolean;
-  /** the first frame has strips the GPU has not been given yet, and when it was last given any */
-  dirty: boolean;
+  /** the bands of the first frame with strips the GPU has not been given yet, and when it was last given any */
+  dirty: Set<number>;
   uploaded: number;
   /** the view touches the page */
   visible: boolean;
@@ -114,6 +125,10 @@ interface Chunk {
 
 /** The queue key of the strip job: one job at a time, in the order of `todo`. */
 const STRIPS = 'strips';
+
+/** The bands of a page `th` tiles tall, and the tile rows of one of them. */
+const bandsOf = (th: number): number => Math.ceil(th / BAND_ROWS);
+const bandRows = (th: number, band: number): number => Math.min(BAND_ROWS, th - band * BAND_ROWS);
 
 export class GroundChunks {
   private readonly live = new Map<string, Chunk>();
@@ -150,7 +165,7 @@ export class GroundChunks {
   /** How many pages are held now (started: a page waiting for its first strip is not). */
   get count(): number {
     let n = 0;
-    for (const chunk of this.live.values()) if (chunk.img) n++;
+    for (const chunk of this.live.values()) if (chunk.started) n++;
     return n;
   }
 
@@ -199,7 +214,7 @@ export class GroundChunks {
       this.live.delete(id);
     }
     const side = CHUNK * this.unit;
-    const held = [...this.live.values()].some((c) => inView(c) && c.img);
+    const held = [...this.live.values()].some((c) => inView(c) && c.started);
     for (const id of want) {
       if (this.live.has(id)) continue;
       const [cx, cy] = id.split(',').map(Number) as [number, number];
@@ -207,11 +222,11 @@ export class GroundChunks {
       this.live.set(id, chunk);
     }
     // nothing of the view's own pages is held: it has to be seen whole this frame
-    if (!held) for (const chunk of this.live.values()) if (inView(chunk) && !chunk.img) this.bakeWhole(chunk);
+    if (!held) for (const chunk of this.live.values()) if (inView(chunk) && !chunk.started) this.bakeWhole(chunk);
     for (const chunk of this.live.values()) {
       const v = inView(chunk);
       // a page that has only now come into view is given what is baked of it before the next frame draws it
-      if (v && !chunk.visible && chunk.dirty) this.upload(chunk);
+      if (v && !chunk.visible && chunk.dirty.size > 0) this.upload(chunk);
       chunk.visible = v;
     }
     this.todo = pageOrder([...this.live.values()].filter((c) => !c.complete), seen, { x: centre.x / side, y: centre.y / side }, this.heading);
@@ -243,53 +258,75 @@ export class GroundChunks {
     const tw = Math.min(CHUNK, this.tilesW - tx0);
     const th = Math.min(CHUNK, this.tilesH - ty0);
     const strips = stripsOf(tw, th, near, this.stripCols, this.stripRows);
-    return { cx, cy, tx0, ty0, tw, th, keys: [], all: [], texs: [], strips, done: 0, total: strips.length, at: 0, complete: false, dirty: false, uploaded: 0, visible: false };
+    const perBand = new Array<number>(bandsOf(th)).fill(0);
+    for (const s of strips) perBand[Math.floor(s.y / BAND_ROWS)]!++;
+    const left = Array.from({ length: this.frames }, () => perBand.slice());
+    return { cx, cy, tx0, ty0, tw, th, imgs: [], started: false, shown: 1, all: [], texs: [], strips, done: 0, total: strips.length, at: 0, left, complete: false, dirty: new Set(), uploaded: 0, visible: false };
   }
 
   private free(chunk: Chunk): void {
     for (const key of chunk.all) this.scene.textures.remove(key);
-    chunk.img?.destroy();
+    for (const img of chunk.imgs) img?.destroy();
     this.todo = this.todo.filter((c) => c !== chunk);
   }
 
-  private show(chunk: Chunk): void {
-    if (chunk.img && chunk.keys.length > 0) chunk.img.setTexture(chunk.keys[Math.min(this.frame, chunk.keys.length - 1)]!);
+  private keyOf(chunk: Chunk, frame: number, band: number): string {
+    return `ground-c${chunk.cx}x${chunk.cy}b${band}-${frame}`;
   }
 
-  private texture(chunk: Chunk, frame: number): Phaser.Textures.CanvasTexture {
-    const key = `ground-c${chunk.cx}x${chunk.cy}-${frame}`;
-    const tex = this.scene.textures.createCanvas(key, chunk.tw * this.unit * this.density, chunk.th * this.unit * this.density);
+  /** The frame an image shows: the water's, or the first while the others are not whole. */
+  private shownFrame(chunk: Chunk): number {
+    return Math.min(this.frame, chunk.shown - 1);
+  }
+
+  private show(chunk: Chunk): void {
+    const frame = this.shownFrame(chunk);
+    chunk.imgs.forEach((img, band) => img?.setTexture(this.keyOf(chunk, frame, band)));
+  }
+
+  private texture(chunk: Chunk, frame: number, band: number): Phaser.Textures.CanvasTexture {
+    const key = this.keyOf(chunk, frame, band);
+    const rows = bandRows(chunk.th, band);
+    const tex = this.scene.textures.createCanvas(key, chunk.tw * this.unit * this.density, rows * this.unit * this.density);
     if (!tex) throw new Error(`no canvas for ${key}`);
     chunk.all.push(key);
-    chunk.texs.push(tex);
+    (chunk.texs[frame] ??= [])[band] = tex;
+    // the first frame's band is shown as soon as it exists
+    if (frame === 0) chunk.imgs[band] = this.image(chunk, band);
     return tex;
   }
 
   /** The whole page in one go, every frame: what the view needs on the frame it lands on a page. */
   private bakeWhole(chunk: Chunk): void {
     const paint = this.makePainter();
-    const animated = (frame: number): boolean => {
-      const tex = this.texture(chunk, frame);
-      const a = paint(tex, frame, chunk.tx0, chunk.ty0, chunk.tw, chunk.th);
-      tex.refresh();
-      return a;
+    const bands = bandsOf(chunk.th);
+    const frame = (f: number): boolean => {
+      let animated = false;
+      for (let band = 0; band < bands; band++) {
+        const tex = this.texture(chunk, f, band);
+        if (paint(tex, f, chunk.tx0, chunk.ty0 + band * BAND_ROWS, chunk.tw, bandRows(chunk.th, band))) animated = true;
+        tex.refresh();
+      }
+      return animated;
     };
-    if (animated(0)) for (let f = 1; f < this.frames; f++) animated(f);
-    chunk.keys = chunk.all.slice();
-    chunk.img = this.image(chunk);
+    chunk.started = true;
+    if (frame(0)) for (let f = 1; f < this.frames; f++) frame(f);
+    chunk.shown = chunk.texs.length;
+    if (this.shownFrame(chunk) > 0) this.show(chunk);
     chunk.complete = true;
     chunk.done = chunk.total = 1;
   }
 
+  /** Gives the GPU the bands of the first frame that have strips it lacks. */
   private upload(chunk: Chunk): void {
-    chunk.texs[0]!.refresh();
-    chunk.dirty = false;
+    for (const band of chunk.dirty) chunk.texs[0]![band]!.refresh();
+    chunk.dirty.clear();
     chunk.uploaded = this.now();
   }
 
-  private image(chunk: Chunk): Phaser.GameObjects.Image {
+  private image(chunk: Chunk, band: number): Phaser.GameObjects.Image {
     return this.scene.add
-      .image(chunk.tx0 * this.unit, chunk.ty0 * this.unit, chunk.keys[Math.min(this.frame, chunk.keys.length - 1)]!)
+      .image(chunk.tx0 * this.unit, (chunk.ty0 + band * BAND_ROWS) * this.unit, this.keyOf(chunk, this.shownFrame(chunk), band))
       .setOrigin(0)
       .setScale(1 / this.density)
       .setDepth(this.depth);
@@ -314,35 +351,35 @@ export class GroundChunks {
     const n = chunk.strips.length;
     const frame = Math.floor(chunk.done / n);
     const strip = chunk.strips[chunk.done % n]!;
+    const band = Math.floor(strip.y / BAND_ROWS);
     if (!chunk.paint) {
       chunk.paint = this.makePainter();
-      this.texture(chunk, 0);
-      chunk.keys = [chunk.all[0]!];
-      chunk.img = this.image(chunk);
+      chunk.started = true;
     }
-    // a frame's canvas is made as its first strip is baked, one at a time, so no slice makes three
-    if (!chunk.texs[frame]) this.texture(chunk, frame);
+    // a band's canvas is made as its first strip is baked, one at a time, so no slice makes more than one
+    const tex = chunk.texs[frame]?.[band] ?? this.texture(chunk, frame, band);
     const w = Math.min(this.pieceCols, strip.w - chunk.at);
     const rx = strip.x + chunk.at;
     const scratch = this.stripTexture();
     scratch.getContext().clearRect(0, 0, scratch.width, scratch.height);
     const animated = chunk.paint(scratch, frame, chunk.tx0 + rx, chunk.ty0 + strip.y, w, strip.h);
     const px = this.unit * this.density;
-    const tex = chunk.texs[frame]!;
-    tex.getContext().drawImage(scratch.getCanvas() as CanvasImageSource, 0, 0, w * px, strip.h * px, rx * px, strip.y * px, w * px, strip.h * px);
+    tex.getContext().drawImage(scratch.getCanvas() as CanvasImageSource, 0, 0, w * px, strip.h * px, rx * px, (strip.y - band * BAND_ROWS) * px, w * px, strip.h * px);
     if (frame === 0 && animated) chunk.total = n * this.frames;
     chunk.at += w;
     if (chunk.at >= strip.w) {
       chunk.at = 0;
       chunk.done++;
-      // the first frame shows as it is baked, as often as the GPU can be given it; the others show only whole
-      if (frame === 0) chunk.dirty = true;
-      else if (chunk.done % n === 0) tex.refresh();
+      // a band whose strips are all in is given to the GPU at once; the first frame's other bands as often as it can be given them
+      if (--chunk.left[frame]![band]! === 0) {
+        tex.refresh();
+        if (frame === 0) chunk.dirty.delete(band);
+      } else if (frame === 0) chunk.dirty.add(band);
     }
-    if (chunk.dirty && (chunk.done >= n || (chunk.visible && this.now() - chunk.uploaded >= UPLOAD_MS))) this.upload(chunk);
+    if (chunk.dirty.size > 0 && chunk.visible && this.now() - chunk.uploaded >= UPLOAD_MS) this.upload(chunk);
     if (chunk.done >= chunk.total) {
       chunk.complete = true;
-      chunk.keys = chunk.all.slice();
+      chunk.shown = chunk.texs.length;
       this.todo = this.todo.filter((c) => c !== chunk);
       this.show(chunk);
     }

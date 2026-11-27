@@ -75,5 +75,7 @@ export function fakeScene() {
   };
   /** the pages' textures, the strip scratch left out */
   const live = { get size() { return [...textures.keys()].filter((k) => k !== 'ground-strip').length; }, [Symbol.iterator]: () => [...textures.keys()].filter((k) => k !== 'ground-strip')[Symbol.iterator]() };
-  return { scene: scene as unknown as Phaser.Scene, textures, live, images, shown };
+  /** the pages that hold a texture ('0x0' for the page at 0, 0): a page is several, a canvas to a band and frame */
+  const pages = { get size() { return new Set([...live].map((k) => /^ground-c(\d+x\d+)b/.exec(k)?.[1])).size; }, [Symbol.iterator]: () => new Set([...live].map((k) => /^ground-c(\d+x\d+)b/.exec(k)![1]!))[Symbol.iterator]() };
+  return { scene: scene as unknown as Phaser.Scene, textures, live, pages, images, shown };
 }
