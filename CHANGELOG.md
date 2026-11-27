@@ -2,6 +2,34 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.14 - 2026-11-27
+
+What players notice
+- The title comes up first. The game's engine and the valley now load behind it, so the title answers in about 1 second where it took about 22 seconds, measured on a slow test setup (Fast 4G, a processor four times slower). If New game is pressed before the valley is ready, a "Preparing the valley" bar shows and play starts when it is. Three long freezes in the build behind the title are cut, so the first playable moment comes about 3.8 seconds sooner on the same setup.
+- Walking is smoother: ground pages are painted in small strips, so walking into a new page no longer stalls a frame (reads of 140 to 824 ms in a walk, 14 or more of them before, none after, on the test machine). Preparing each ground tile's edges once also cut the time to the title from about 48 to about 17.5 seconds on the same slow test setup, before the title work above.
+- Stones in the valley can be lifted, carried, thrown and set down. A small stone goes in the bag and is thrown far; a large one is held over the head, slows the walk, cannot be run with and is thrown short; a figure without enough might is refused ("That stone is too heavy for you."). A thrown stone lands where its throw fits, sinks in water and returns to its own spot after a while; stones can be piled on a tile. Pictures and drawn clips replace the stand-ins: a drawn small stone, carry, throw and push clips for the human, the elf and the skeleton, nine drawn lift clips played across the lift time, and a splash that is a ring.
+- A held press charges the throw: the longer the press, the farther the stone goes, with an aim line on the ground (on a phone, hold B and drag to aim). A quick tap now throws at half the range where it used to throw at full.
+- A stone you hold keeps its size: the stone on the ground is drawn at 70 percent of its former size and the human lift and carry clips follow it, so it no longer shrinks and grows as it is lifted.
+- You can jump (key C, a Jump button on a sideways phone): one tile ahead, up one level, down from any height, or across water one tile wide. A fall of 1 level costs nothing, 2 a fifth of the health, 3 half, 4 or more is death. It is refused in the first minute after waking, in a fight and without breath.
+- Small game can be taken before any fight: throw a river stone at small prey within three tiles, or set a snare (two reed cords and a branch, at the work stone) on meadow ground and check it once a valley day. Raw meat and hide now spoil on a clock that moves with you, in the bag and on the ground.
+- Two new things to make: bellberry broth, a tier 1 meal at the camp fire from two bellberries and a wild herb, and the Wayfarer's scarf, a worn reed look for the road with no effects, made at the workshop.
+- Wild herbs wait one and a half times as long to grow back while the weather is fog.
+- A dig no longer turns up the scrap of a recipe you already know or carry; the other finds come a little more often for a player who knows one.
+- Effects: a spark on a landed hit, a starburst on a critical blow or a bite, a puff of dust where a jump or a thrown stone lands, and a flame for the camp fire. Fight words (damage, CRIT, BLOCK, MISS, DODGE) and a small health bar with its number under the foe are built too, but fights are still switched off (`combat.enabled` is 0), so no player sees them yet.
+- Settings: the Text size choice "16" now reads 16, not 18.
+
+What creators notice
+- `pnpm slots` lists the map's slots from the command line (`--free`, `--kind <kind>`), and a map slot may carry `reserved` with its reason: `core/town-corner` and `core/grove-clearing` now show as taken. A slot clash names the free slots of the same kind, or says that none is free and a "Request for the valley" issue is the way to ask. The check's last line counts a creator's warnings apart from the core's, and the scale check words its under-floor message for every kind.
+- `pnpm check`: a held object's size in every clip frame is held against the world sprite (no frame over 110 percent, the largest at least 90 percent); G69 (a straight path over its limit) is a warning, not a failure; the clothing pins are re-checked after early hunting and none moved. `pnpm balance` prints a hunt row per region and kind (the standing count, the takes a day, the players that empty it in a day).
+- Content shape: lifting is general. `params.liftables` holds one entry per kind with a weight class (`hand`, `arms`, `push`, `fixed`), a weight, a throw range, a roll and a sprite, and a new liftable object needs only an entry. A clip may carry a `hand` point per frame for the thing a figure holds, and the clip verbs gain carry, throw, push and lift.
+- Art and tools: the drafts store prune (`pnpm art:prune`, six written rules, a cold copy first); the player eye (a gamer's review of what a player sees and does, with a warn-only `Player eye:` line on a pull request); the effects pack (PVFX Foundry, CC0). The wolf's angle, front and back views, the bridge-mend trial and the SpriteCast trial are indexed in the drafts store.
+- Decisions and design pages recorded: early hunting before the fight, loose stones, the jump and the fall, the charged throw, the owner's rulings on the systems and matrix questions, the first valley's rulings, the wolf bite as a leap, SpriteCast as a guide, the developers' area look, lifting by weight class, a held object keeping its size, and the cheap part of the boot work.
+- CI runs the content check once per run instead of twice. The e2e tests no longer fail on a slow frame (the stones e2e reads the figure's clip record and the flight's own curve) or on a late stew crossing the day end.
+
+What changed underneath
+- kernel 0.1.14 (simulation 0.37.0): the jump and breath (0.34.0), early hunting with snares and spoil batches (0.33.0), loose stones (0.35.0), the charged throw (0.36.0) and lifting by weight class (0.37.0). The save format is unchanged: every new player field is optional and an old state reads it as absent, and a 0.36 or earlier stone state migrates on load, so a v0.1.13 save loads as it is.
+- Client: the title opens before the engine (`game/src/game.ts` loads Phaser and the scenes after the title's first paint) and the world builds in 8 ms slices; ground pages bake in strips (`groundchunks.ts`); fog banks are cut from one period and clouds baked lazily.
+
 ## v0.1.13 - 2026-11-22
 
 What players notice
