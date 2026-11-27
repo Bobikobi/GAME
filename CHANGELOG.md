@@ -24,6 +24,7 @@ What creators notice
 - Content shape: lifting is general. `params.liftables` holds one entry per kind with a weight class (`hand`, `arms`, `push`, `fixed`), a weight, a throw range, a roll and a sprite, and a new liftable object needs only an entry. A clip may carry a `hand` point per frame for the thing a figure holds, and the clip verbs gain carry, throw, push and lift.
 - Art and tools: the drafts store prune (`pnpm art:prune`, six written rules, a cold copy first); the player eye (a gamer's review of what a player sees and does, with a warn-only `Player eye:` line on a pull request); the effects pack (PVFX Foundry, CC0). The wolf's angle, front and back views, the bridge-mend trial and the SpriteCast trial are indexed in the drafts store.
 - Decisions and design pages recorded: early hunting before the fight, loose stones, the jump and the fall, the charged throw, the owner's rulings on the systems and matrix questions, the first valley's rulings, the wolf bite as a leap, SpriteCast as a guide, the developers' area look, lifting by weight class, a held object keeping its size, and the cheap part of the boot work.
+- GAME_RULES speaks as G15 does and its closed history moves to DECISIONS; the art-reuse rule in the contributor guide is said once.
 - CI runs the content check once per run instead of twice. The e2e tests no longer fail on a slow frame (the stones e2e reads the figure's clip record and the flight's own curve) or on a late stew crossing the day end.
 
 What changed underneath
