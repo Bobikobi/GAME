@@ -129,3 +129,195 @@ export const LAY: Readonly<Record<EffectId, readonly [number, number]>> = {
   'landing-dust': [0.5, 0.65],
   campfire: [0.5, 1],
 };
+
+// ------------------------------------------------------------ moments: the code-drawn effects (VALLEY_EFFECTS.md)
+
+/** The scene's own pixel textures a burst may throw (world.ts `makeFx`): no picture beyond them. */
+export type BurstTexture = 'fx-dust' | 'fx-spark' | 'fx-chip' | 'fx-leaf' | 'fx-dirt' | 'fx-drop' | 'fx-mote' | 'fx-smoke' | 'fx-puff' | 'fx-grit';
+
+/**
+ * How a burst's bits fly: `fan` up and out and falling back (the work's chips), `ground` low and sideways along the ground (a stone
+ * set down, a body landing), `rise` slowly up and fading (a light's motes, smoke), `step` a little at the feet as a step starts.
+ */
+export type BurstStyle = 'fan' | 'ground' | 'rise' | 'step';
+
+/**
+ * One part of a moment, laid on the moment's spot:
+ * - `burst`: `n` bits of a texture, `up` world units above the spot;
+ * - `ground`: `n` bits of the ground's own kind under the spot (dust on a path, leaves on a meadow, grit in a ruin, nothing on water);
+ * - `ring`: the rings of `ring.ts` spreading on water;
+ * - `light`: the soft light a success has (jolt.ts `SUCCESS_LIGHT`), `scale` times the glow's size, `up` world units above the spot;
+ * - `flash`: the figure on the spot shows white for `ms` (a hit's flash on the body struck: danger only, DECISIONS 2026-10-18).
+ */
+export type Part =
+  | { fx: 'burst'; texture: BurstTexture; n: number; style: BurstStyle; up: number }
+  | { fx: 'ground'; n: number; style: BurstStyle }
+  | { fx: 'ring' }
+  | { fx: 'light'; scale: number; up: number }
+  | { fx: 'flash'; ms: number };
+
+export type MomentId =
+  | 'jump-off'
+  | 'hard-landing'
+  | 'stone-lift'
+  | 'stone-down'
+  | 'stone-push'
+  | 'fish-catch'
+  | 'eat'
+  | 'tool-broke'
+  | 'level'
+  | 'quest-done'
+  | 'fire-out'
+  | 'safe'
+  | 'hurt'
+  | 'foe-hurt'
+  | 'dodge'
+  | 'guard'
+  | 'foe-fall';
+
+export interface Moment {
+  parts: readonly Part[];
+  /** a moment of danger may flash a body; a success never does (and no moment moves the camera: that is jolt.ts's alone) */
+  danger: boolean;
+}
+
+const burst = (texture: BurstTexture, n: number, style: BurstStyle, up = 0): Part => ({ fx: 'burst', texture, n, style, up });
+const ground = (n: number, style: BurstStyle = 'ground'): Part => ({ fx: 'ground', n, style });
+
+/** Every moment's parts. The counts are bits of 1 to 3 world pixels: a moment is read at the game's zoom, not a close-up. */
+export const MOMENTS: Readonly<Record<MomentId, Moment>> = {
+  // the feet leave the ground: a little of it kicked back
+  'jump-off': { parts: [ground(4)], danger: false },
+  // a fall of two levels or more: more ground thrown out under the landing dust (the hurt's own flash and shake are jolt.ts's)
+  'hard-landing': { parts: [ground(8), burst('fx-dust', 4, 'ground')], danger: true },
+  // a stone leaves the ground it lay on
+  'stone-lift': { parts: [ground(3, 'fan')], danger: false },
+  // a large stone set down: a thud of ground out to both sides
+  'stone-down': { parts: [ground(7), burst('fx-dust', 3, 'ground')], danger: false },
+  // a pushed stone scrapes onto its new tile
+  'stone-push': { parts: [ground(5)], danger: false },
+  // the fish comes out of the water: a ring and a few drops thrown up
+  'fish-catch': { parts: [{ fx: 'ring' }, burst('fx-drop', 5, 'fan', 1)], danger: false },
+  // food: a few motes rise off the body
+  eat: { parts: [burst('fx-mote', 5, 'rise', 8)], danger: false },
+  // a tool breaks in the hand: splinters and a spark
+  'tool-broke': { parts: [burst('fx-chip', 6, 'fan', 9), burst('fx-spark', 2, 'fan', 9)], danger: false },
+  // a level: a light on the one who rose, sparks and motes going up (the banner and the jingle are the screen's)
+  level: { parts: [{ fx: 'light', scale: 2.5, up: 12 }, burst('fx-spark', 10, 'rise', 10), burst('fx-mote', 6, 'rise', 14)], danger: false },
+  // a quest done: a softer light and sparks
+  'quest-done': { parts: [{ fx: 'light', scale: 2, up: 12 }, burst('fx-spark', 8, 'rise', 10)], danger: false },
+  // a fire goes out: a little smoke from the hearth
+  'fire-out': { parts: [burst('fx-smoke', 7, 'rise', 4)], danger: false },
+  // a hunt ends in a safe place: a small light, a breath out
+  safe: { parts: [{ fx: 'light', scale: 1.5, up: 10 }], danger: false },
+  // the player's body is struck (a bite, a hazard, a hard landing, a foe's blow): it shows white a moment
+  hurt: { parts: [{ fx: 'flash', ms: 90 }], danger: true },
+  // a foe's body is struck by the player
+  'foe-hurt': { parts: [{ fx: 'flash', ms: 80 }], danger: true },
+  // a blow dodged: the dodger's feet kick up the ground
+  dodge: { parts: [ground(4)], danger: true },
+  // a blow guarded: sparks off the guard
+  guard: { parts: [burst('fx-spark', 5, 'fan', 7)], danger: true },
+  // a foe falls: the ground it hits
+  'foe-fall': { parts: [ground(10), burst('fx-dust', 6, 'ground')], danger: true },
+};
+
+export const MOMENT_IDS = Object.keys(MOMENTS) as MomentId[];
+
+/** Where a moment is laid: on the player, on a tile, on a fire (its hearth), or on a foe's figure (its tile when it is not drawn). */
+export type MomentAt =
+  | { on: 'player' }
+  | { on: 'tile'; tile: readonly [number, number] }
+  | { on: 'fire'; id: string }
+  | { on: 'foe'; id: string; tile: readonly [number, number] };
+
+export interface MomentSpawn {
+  id: MomentId;
+  at: MomentAt;
+  /** the hurt of a landing: the scene lays it when the feet come down, as jolt.ts's flash and shake are */
+  landing?: boolean;
+}
+
+/**
+ * The moments a batch of the kernel's events starts. A stone lifted, set down or pushed (`lift`, `setdown`, `push`); food eaten; a
+ * tool broken; a level; a quest done; a fire out; a hunt ended in a safe place; a hurt of the player's body (`hurt`, or a foe's
+ * `hit`), once a batch; a foe's body hit by the player; a blow dodged or guarded; a foe fallen. The jump's takeoff and landing and
+ * the fish's catch are the scene's (they happen later than they are told, as the landing dust does).
+ */
+export function momentsOf(events: readonly GameEvent[]): MomentSpawn[] {
+  const out: MomentSpawn[] = [];
+  const once = new Set<string>();
+  const add = (s: MomentSpawn, key?: string): void => {
+    if (key !== undefined) {
+      if (once.has(key)) return;
+      once.add(key);
+    }
+    out.push(s);
+  };
+  const tile = (t: readonly [number, number]): MomentAt => ({ on: 'tile', tile: [t[0], t[1]] });
+  for (const e of events) {
+    switch (e.e) {
+      case 'lift':
+        add({ id: 'stone-lift', at: tile(e.at) });
+        break;
+      case 'setdown':
+        add({ id: 'stone-down', at: tile(e.at) });
+        break;
+      case 'push':
+        add({ id: 'stone-push', at: tile(e.at) });
+        break;
+      case 'eat':
+        add({ id: 'eat', at: { on: 'player' } }, 'eat');
+        break;
+      case 'tool_broke':
+        add({ id: 'tool-broke', at: { on: 'player' } }, 'tool');
+        break;
+      case 'level':
+        add({ id: 'level', at: { on: 'player' } }, 'level');
+        break;
+      case 'quest':
+        if (e.state === 'done') add({ id: 'quest-done', at: { on: 'player' } }, 'quest');
+        break;
+      case 'fire_out':
+        add({ id: 'fire-out', at: { on: 'fire', id: e.id } }, `fire:${e.id}`);
+        break;
+      case 'safe':
+        add({ id: 'safe', at: { on: 'player' } }, 'safe');
+        break;
+      case 'hurt':
+        add({ id: 'hurt', at: { on: 'player' }, ...(e.by === 'fall' ? { landing: true } : {}) }, 'hurt');
+        break;
+      case 'hit':
+        if (e.struck.side === 'player') add({ id: 'hurt', at: { on: 'player' } }, 'hurt');
+        else add({ id: 'foe-hurt', at: { on: 'foe', id: e.struck.id, tile: [e.at[0], e.at[1]] } }, `foe:${e.struck.id}`);
+        break;
+      case 'fight_dodge':
+        add({ id: 'dodge', at: tile(e.at) });
+        break;
+      case 'fight_guard':
+        add({ id: 'guard', at: tile(e.at) });
+        break;
+      case 'foe_fall':
+        add({ id: 'foe-fall', at: tile(e.at) }, `fall:${e.foe}`);
+        break;
+    }
+  }
+  return out;
+}
+
+/** The ground's own bits a `ground` part throws, by the ground's tag: dust on dry ground, leaves on grass, grit in a ruin, nothing on water. */
+export function groundBits(tag: string | undefined): BurstTexture | undefined {
+  if (tag === 'path' || tag === 'riverbank' || tag === 'town') return 'fx-puff';
+  if (tag === 'meadow' || tag === 'grove') return 'fx-leaf';
+  if (tag === 'ruin') return 'fx-grit';
+  return undefined;
+}
+
+/** A burst's flight by its style, in the shape Phaser's emitter takes (the `fan` is the work's chips as world.ts threw them before). */
+export const BURST_FLIGHT: Readonly<Record<BurstStyle, { lifespan: [number, number]; speed: [number, number]; angle: [number, number]; gravityY: number; scaleEnd: number }>> = {
+  fan: { lifespan: [300, 600], speed: [14, 42], angle: [200, 340], gravityY: 70, scaleEnd: 0.6 },
+  ground: { lifespan: [220, 420], speed: [10, 26], angle: [185, 355], gravityY: 40, scaleEnd: 0.6 },
+  rise: { lifespan: [600, 1000], speed: [6, 16], angle: [250, 290], gravityY: -8, scaleEnd: 0.8 },
+  // the walk's own puff, as world.ts `puffAt` threw it before
+  step: { lifespan: [240, 400], speed: [5, 12], angle: [230, 310], gravityY: 0, scaleEnd: 1 },
+};

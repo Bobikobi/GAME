@@ -87,6 +87,14 @@ describe('the shipped kits', () => {
     expect(Math.abs(clip.chars - walk.chars)).toBeLessThan(0.1);
   });
 
+  test('a creature sheet is measured at its own fit_permille, as the game shows it', () => {
+    const kit = JSON.parse(readFileSync(join(CONTENT_DIR, 'kit', 'core', 'kit.json'), 'utf8')) as { kit: { sprites: Record<string, { creature_clip?: { fit_permille?: number } }> } };
+    const fit = kit.kit.sprites['creatures/hare_walk_front']!.creature_clip!.fit_permille!;
+    const row = rows.find((r) => r.name === 'creatures/hare_walk_front')!;
+    expect(fit).toBeLessThan(1000);
+    expect(row.chars).toBeCloseTo(Math.round(((row.px * fit) / 1000 / row.density / (adultPx / 4)) * 100) / 100, 2);
+  });
+
   test('ground tiles and inventory icons are not measured', () => {
     expect(rows.some((r) => r.name.startsWith('tiles/') || r.name.startsWith('items/'))).toBe(false);
   });
