@@ -63,11 +63,24 @@ describe('the schema refuses a creature clip that cannot be played, naming the f
   });
 });
 
+/**
+ * The fixture plays `core/hare`, which the shipped kit now draws too: the shipped hare's sheets are taken out of the files before the
+ * fixture is added, so the fixture is the only hare and two sheets for one lookup mean the fixture's own.
+ */
+function withoutHareSheets(files: ReturnType<typeof loadAll>['files']) {
+  return files.map((f) => {
+    if (f.rel !== 'kit/core/kit.json') return f;
+    const data = structuredClone(f.data) as unknown as { kit: { sprites: Record<string, unknown> } };
+    for (const name of Object.keys(data.kit.sprites)) if (name.startsWith('creatures/hare_')) delete data.kit.sprites[name];
+    return { ...f, data: data as unknown as typeof f.data };
+  });
+}
+
 describe('the assembler carries creature clips and refuses what cannot be found', () => {
   const run = (edit?: (data: ReturnType<typeof fixture>) => void) => {
     const data = fixture();
     edit?.(data);
-    return assemble([...loadAll().files, { rel: 'kit/core/creature-clip-fixture.json', abs: FIXTURE, data }], readBoard());
+    return assemble([...withoutHareSheets(loadAll().files), { rel: 'kit/core/creature-clip-fixture.json', abs: FIXTURE, data }], readBoard());
   };
   const errors = (a: ReturnType<typeof run>) => a.issues.filter((i) => i.level === 'error');
 

@@ -54,7 +54,7 @@ describe('the wolf finds its sheet by its heading', () => {
   });
 
   test('a creature with no sheet finds none, so its still stays', () => {
-    expect(creatureClipFor(sprites, 'core/hare', 'walk', 'left')).toBeUndefined();
+    expect(creatureClipFor(sprites, 'core/nonesuch', 'walk', 'left')).toBeUndefined();
     expect(creatureOf(sprites, 'core/base-kit:props/rubble')).toBeUndefined();
   });
 

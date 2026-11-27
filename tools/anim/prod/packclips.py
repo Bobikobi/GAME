@@ -97,6 +97,24 @@ def fill_specks(a):
                     seen[ny, nx] = True
                     stack.append((ny, nx))
     todo = clear & ~seen
+    # only the small pockets: a gap between two legs and the belly can be 200 px of real see-through and stays open
+    seen_t = np.zeros((h, w), bool)
+    for y0, x0 in zip(*np.nonzero(todo)):
+        if seen_t[y0, x0]:
+            continue
+        comp, stack = [(y0, x0)], [(y0, x0)]
+        seen_t[y0, x0] = True
+        while stack:
+            y, x = stack.pop()
+            for ny in range(max(0, y - 1), min(h, y + 2)):
+                for nx in range(max(0, x - 1), min(w, x + 2)):
+                    if todo[ny, nx] and not seen_t[ny, nx]:
+                        seen_t[ny, nx] = True
+                        comp.append((ny, nx))
+                        stack.append((ny, nx))
+        if len(comp) > SPECK_MAX:
+            for y, x in comp:
+                todo[y, x] = False
     out = a.copy()
     left = set(zip(*np.nonzero(todo)))
     while left:

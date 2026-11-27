@@ -1,0 +1,153 @@
+{
+  "about": "The drawn sparrow (valley animals, 27.11): side, front and back views as eight frames of walk and idle each, from PixelLab's PixMiniMax on the stills of the same day (DECISIONS 2026-11-27 'The valley's small animals at the game's angle'). Frames are drafts of the store Bobikobi/GAME-art-drafts, named by id; packcreature.py reads them from .scratch/art-drafts (pnpm art:drafts fetch <ids>) and checks each against its id.",
+  "creature": "core/sparrow",
+  "name": "sparrow",
+  "fit_permille": {
+    "left": 404,
+    "front": 429,
+    "back": 455
+  },
+  "which": {
+    "left": "take and variant: idle side-idle-s301 B; walk side-walk-s301 A",
+    "front": "take and variant: idle front-idle-s301 B; walk front-walk-s302-last B",
+    "back": "take and variant: idle back-idle-s301 B; walk back-walk-s301 B"
+  },
+  "ramps": [
+    {
+      "id": "sparrow-fur-1",
+      "steps": [
+        "#050302",
+        "#362623",
+        "#5c3c28",
+        "#6e4f38",
+        "#7d5b3d",
+        "#816c56"
+      ]
+    },
+    {
+      "id": "sparrow-fur-2",
+      "steps": [
+        "#2a1f1e",
+        "#302d31",
+        "#463126",
+        "#644632",
+        "#826142",
+        "#87684a"
+      ]
+    },
+    {
+      "id": "sparrow-fur-3",
+      "steps": [
+        "#2f272a",
+        "#4d3224",
+        "#573b38",
+        "#cf988c",
+        "#d0c3a2",
+        "#dacfac"
+      ]
+    },
+    {
+      "id": "sparrow-fur-4",
+      "steps": [
+        "#29282f",
+        "#7e5e42",
+        "#65696a",
+        "#9a886b",
+        "#a29276",
+        "#ab9b7e"
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "view": "left",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "8da9d9de4802bb45",
+        "39033ad2af094058",
+        "c616ea560366d20e",
+        "d6d11284d1953d49",
+        "61425b6c338a26f8",
+        "fa1594fd429b386e",
+        "40ff192457c16083",
+        "6e252eae9970bf6d"
+      ]
+    },
+    {
+      "view": "left",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "ce2743992993d664",
+        "5f43ffa4d93c2d49",
+        "9f4c889a997d9b7c",
+        "54129fba87a5545d",
+        "07f30593b19a1a6b",
+        "16093efaa7f37f56",
+        "0d586a15cf837ded",
+        "0f51cce986aa938e"
+      ]
+    },
+    {
+      "view": "front",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "01b4981878c70bfc",
+        "697d6235c72367b3",
+        "fd421527c4e34dd7",
+        "140a1f2afc3648b3",
+        "279290b4e877afed",
+        "4fb35cbd94f1103f",
+        "0e8c63385585b735",
+        "0330e763daa8ee10"
+      ]
+    },
+    {
+      "view": "front",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "cb2163b433b9f67c",
+        "67a8fc8eef02f700",
+        "430d52cecedffbd4",
+        "8572cd51cca53dd4",
+        "4e6701362c958155",
+        "078dd100f0b2c299",
+        "26165def4d4eb211",
+        "ed3a74500f1744e5"
+      ]
+    },
+    {
+      "view": "back",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "e78b57bd42b8bfe5",
+        "0b5dc72c8022d75b",
+        "f00227a3129a3819",
+        "395d7e5101bc1697",
+        "8ea0cdcf9c7ce531",
+        "6497c9b6addd1f6b",
+        "d8a47951b9deb959",
+        "90088f635001da7c"
+      ]
+    },
+    {
+      "view": "back",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "c5321ce4b9b39ed7",
+        "b8500c45038f4b20",
+        "b1ff76614e5a6d0b",
+        "79bfba00c8b0c119",
+        "a6e61010722686df",
+        "26379942dc3a3f7b",
+        "9ae81f321d53dee3",
+        "22d8ea19631c1e31"
+      ]
+    }
+  ]
+}
