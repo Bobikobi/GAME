@@ -1396,7 +1396,9 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       await me.walkPastDusk({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       const unpaid = await page.eval<number>('__e2e.player().gold');
       await me.a();
-      await me.talkThrough('The coin under the lantern');
+      // on a late stew the player has waited through the dawn, so Maru's day-2 remark is already due and opens this talk:
+      // it is heard here, once, and the check at step 13 counts it
+      const coinOpening = await me.talkThrough('The coin under the lantern');
       const coin = await me.talkThrough();
       await me.idle('handing in the coin');
       if ((await me.quest('core/a-coin-for-maru')) !== 'done') throw new Error('a-coin-for-maru is not done');
@@ -1489,7 +1491,8 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const second = await me.talkThrough();
       await me.talkThrough('Goodbye');
       await me.idle('Maru on day 2');
-      if (!second.some((l) => l.includes('The bell rang again in the night'))) throw new Error(`Maru has no day-2 line: ${second.join(' / ')}`);
+      const day2Heard = lateStew ? [...coinOpening, ...coin, ...second] : second;
+      if (!day2Heard.some((l) => l.includes('The bell rang again in the night'))) throw new Error(`Maru has no day-2 line: ${day2Heard.join(' / ')}`);
       // Pell's shop says what each tool opens (content, read from the bundle)
       const tools = await page.eval<string[]>(`(__game.bundle.npcs['core/trader'].topics ?? []).filter((t) => t.ask === 'What each tool opens').flatMap((t) => t.lines)`);
       for (const tool of ['Basket', 'Trowel', 'Axe', 'Staff']) if (!tools.some((l) => l.startsWith(tool))) throw new Error(`Pell's tool line has no ${tool}`);
