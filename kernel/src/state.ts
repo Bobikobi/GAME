@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.36.0';
+export const KERNEL_VERSION = '0.37.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -271,23 +271,18 @@ export interface Player {
   stones?: StoneState;
 }
 
-/** A thing the world holds for the player: where a loose stone lies, and what returns. */
-export type StoneSize = 'small' | 'large';
-
 /**
- * Loose stones (kernel 0.35). The map's spots (`map.stones.spots`) say where a stone lies until lifted; this says what
- * the player has done to them. Small stones set down or thrown lie in `player.ground` (`core/stone`, a pile counted by
- * number); large ones lie here, since no bag holds them.
+ * Loose objects moved by this player. Hand items lie in `player.ground`; objects that cannot go in a bag
+ * are recorded here by tile and entry id. Spots keep their identity by index.
  */
 export interface StoneState {
-  /** spots whose stone this player lifted, by spot index in the map's list: that spot is empty until a thrown stone returns to it */
+  /** spots this player emptied, by index in the map's list */
   taken: Record<string, true>;
-  /** large stones lying away from a spot, by tile (`groundKey`) */
-  large: Record<string, number>;
-  /** thrown stones on loan, oldest first: the stone lies at `key` ('' where it sank in water) and goes home at tick `at` */
-  returns: { key: string; size: StoneSize; at: number }[];
-  /** both hands hold a large stone over the head: it weighs in the load (`stones.large_weight`) and blocks every other work */
-  carry?: 'large';
+  placed: Record<string, Record<string, number>>;
+  /** throws on loan, oldest first; an empty key means the object sank or fell with its carrier */
+  returns: { key: string; kind: string; at: number }[];
+  /** id of the arms entry occupying both hands */
+  carry?: string;
 }
 
 /**
@@ -431,6 +426,7 @@ export function migrateState(saved: State): State {
     delete named.satiety;
   }
   delete named.satietyAt;
+  if (s.player.stones) s.player.stones = migrateStoneState(s.player.stones);
   const format = s.format ?? 1;
   if (format < 2) toFormat2(s);
   // kernel 0.20: the 32-bit seed widens to a 128-bit key; its draws differ from before, as every draw does.
@@ -439,6 +435,31 @@ export function migrateState(saved: State): State {
   if (typeof seed === 'number') s.seed = widenSeed(seed);
   if (format < STATE_FORMAT) s.format = STATE_FORMAT;
   return s;
+}
+
+/** Map old size tokens from saves and recorded actions to stable content ids. */
+export function legacyStoneKind(size: unknown): string | undefined {
+  if (size === 'small') return 'core/stone';
+  if (size === 'large') return 'core/large-stone';
+}
+
+/** Kernel 0.36 and earlier used two sizes. The bag and dropped item piles already have stable item ids. */
+export function migrateStoneState(stones: StoneState): StoneState {
+  if (!('large' in stones)) return stones;
+  type LegacyStones = {
+    taken: StoneState['taken'];
+    large: Record<string, number>;
+    returns: { key: string; size: 'small' | 'large'; at: number }[];
+    carry?: 'large';
+  };
+  const old = stones as unknown as LegacyStones;
+  const arms = legacyStoneKind('large')!;
+  return {
+    taken: old.taken,
+    placed: Object.fromEntries(Object.entries(old.large).map(([key, count]) => [key, { [arms]: count }])),
+    returns: old.returns.map(({ key, size, at }) => ({ key, kind: legacyStoneKind(size)!, at })),
+    ...(old.carry === 'large' ? { carry: arms } : {}),
+  };
 }
 
 /** Format 1 to 2, in place: the races. */

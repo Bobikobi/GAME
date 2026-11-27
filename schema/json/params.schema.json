@@ -862,6 +862,7 @@
         "load",
         "gait",
         "jump",
+        "liftables",
         "stones",
         "hunt",
         "wild",
@@ -3451,16 +3452,162 @@
             }
           }
         },
+        "liftables": {
+          "additionalProperties": false,
+          "description": "Loose object kinds by stable id. Hand goes in the bag, arms occupies both hands, push moves along the ground and fixed stays in place.",
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9_-]+/[a-z0-9_-]+$": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "name",
+                "class",
+                "weight",
+                "throw_range",
+                "roll",
+                "sprite"
+              ],
+              "properties": {
+                "name": {
+                  "minLength": 1,
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                "class": {
+                  "anyOf": [
+                    {
+                      "const": "hand",
+                      "type": "string"
+                    },
+                    {
+                      "const": "arms",
+                      "type": "string"
+                    },
+                    {
+                      "const": "push",
+                      "type": "string"
+                    },
+                    {
+                      "const": "fixed",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "weight": {
+                  "additionalProperties": false,
+                  "description": "Weight in the bag's unit. A hand entry uses its id as an item id and matches that item's weight.",
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "minimum": 0,
+                      "maximum": 90,
+                      "type": "integer"
+                    },
+                    "min": {
+                      "minimum": 0,
+                      "maximum": 90,
+                      "type": "integer"
+                    },
+                    "max": {
+                      "minimum": 0,
+                      "maximum": 90,
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "throw_range": {
+                  "additionalProperties": false,
+                  "description": "Tiles flown at full power. Zero for push and fixed entries.",
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "minimum": 0,
+                      "maximum": 6,
+                      "type": "integer"
+                    },
+                    "min": {
+                      "minimum": 0,
+                      "maximum": 6,
+                      "type": "integer"
+                    },
+                    "max": {
+                      "minimum": 0,
+                      "maximum": 6,
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "roll": {
+                  "additionalProperties": false,
+                  "description": "Tiles rolled after landing at full power. Zero for push and fixed entries.",
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "minimum": 0,
+                      "maximum": 4,
+                      "type": "integer"
+                    },
+                    "min": {
+                      "minimum": 0,
+                      "maximum": 4,
+                      "type": "integer"
+                    },
+                    "max": {
+                      "minimum": 0,
+                      "maximum": 4,
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "sprite": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                  "maxLength": 120,
+                  "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
         "stones": {
           "additionalProperties": false,
           "description": "Loose stones (DECISIONS.md, 2026-11-22): lifted at the map's stone spots, carried (a large one over the head, at the pace its weight sets), thrown to a landing that runs on, set down and piled. All integers; the charged throw rides the throw action's power.",
           "type": "object",
           "required": [
-            "large_weight",
-            "small_range",
-            "large_range",
-            "small_roll",
-            "large_roll",
             "area_tiles",
             "area_cap",
             "return_ms",
@@ -3472,141 +3619,6 @@
             "throw_hold_ms"
           ],
           "properties": {
-            "large_weight": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "value",
-                "min",
-                "max",
-                "step"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer"
-                },
-                "min": {
-                  "type": "integer"
-                },
-                "max": {
-                  "type": "integer"
-                },
-                "step": {
-                  "minimum": 0,
-                  "description": "Largest change one decision may make.",
-                  "type": "integer"
-                }
-              },
-              "description": "What a large stone carried over the head weighs, in the bag's own weight unit: it counts in the load like any carried thing, so the might limit decides who can lift it (the limit's hard edge, `load.max_permille`) and the load bands set the pace (DECISIONS.md, 2026-11-22: loose stones). A small stone is the item `core/stone` and weighs what the item says."
-            },
-            "small_range": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "value",
-                "min",
-                "max",
-                "step"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer"
-                },
-                "min": {
-                  "type": "integer"
-                },
-                "max": {
-                  "type": "integer"
-                },
-                "step": {
-                  "minimum": 0,
-                  "description": "Largest change one decision may make.",
-                  "type": "integer"
-                }
-              },
-              "description": "Tiles a small stone flies from the thrower. The same reach as the thrown stone of small game (`STONE_RANGE`, #819); a test keeps the two equal."
-            },
-            "large_range": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "value",
-                "min",
-                "max",
-                "step"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer"
-                },
-                "min": {
-                  "type": "integer"
-                },
-                "max": {
-                  "type": "integer"
-                },
-                "step": {
-                  "minimum": 0,
-                  "description": "Largest change one decision may make.",
-                  "type": "integer"
-                }
-              },
-              "description": "Tiles a large stone flies: both hands over the head, thrown short."
-            },
-            "small_roll": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "value",
-                "min",
-                "max",
-                "step"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer"
-                },
-                "min": {
-                  "type": "integer"
-                },
-                "max": {
-                  "type": "integer"
-                },
-                "step": {
-                  "minimum": 0,
-                  "description": "Largest change one decision may make.",
-                  "type": "integer"
-                }
-              },
-              "description": "Tiles a small stone runs on along the ground after its first touch, while the ground is walkable and does not climb; the client draws the bounces and the slide between the two tiles."
-            },
-            "large_roll": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "value",
-                "min",
-                "max",
-                "step"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer"
-                },
-                "min": {
-                  "type": "integer"
-                },
-                "max": {
-                  "type": "integer"
-                },
-                "step": {
-                  "minimum": 0,
-                  "description": "Largest change one decision may make.",
-                  "type": "integer"
-                }
-              },
-              "description": "The same for a large stone: it digs in and runs less."
-            },
             "area_tiles": {
               "additionalProperties": false,
               "type": "object",
@@ -3857,6 +3869,7 @@
           "description": "Dressing a taken animal (docs/design/HUNTING.md sections 5-6): the time a step takes, how long a carcass keeps, and how often an animal is finer than plain. Nothing here prices a hunt: the hunt verb takes the effort weight of its tier like every verb (R6).",
           "type": "object",
           "required": [
+            "throw_item",
             "dress_step_ms",
             "meat_spoil_d",
             "hide_spoil_d",
@@ -3865,6 +3878,12 @@
             "grade3_bp"
           ],
           "properties": {
+            "throw_item": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "Hand liftable used to take small game. Its throw range is also the hunting reach.",
+              "type": "string"
+            },
             "dress_step_ms": {
               "additionalProperties": false,
               "type": "object",

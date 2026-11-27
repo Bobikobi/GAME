@@ -1957,7 +1957,7 @@
                 "required": [
                   "x",
                   "y",
-                  "size"
+                  "kind"
                 ],
                 "properties": {
                   "x": {
@@ -1970,18 +1970,11 @@
                     "maximum": 1023,
                     "type": "integer"
                   },
-                  "size": {
-                    "description": "A small stone goes in the hand and the bag; a large one is carried over the head.",
-                    "anyOf": [
-                      {
-                        "const": "small",
-                        "type": "string"
-                      },
-                      {
-                        "const": "large",
-                        "type": "string"
-                      }
-                    ]
+                  "kind": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "An entry in params.liftables.",
+                    "type": "string"
                   }
                 }
               }

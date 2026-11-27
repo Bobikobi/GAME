@@ -5,7 +5,7 @@
  */
 import {
   type Action, type Bundle, type PublicState, type Rect, type Tile,
-  THROW_STONE, awakeHuntTick, campTile, carcassGone, findSlot, hourOf, isNight, npcTile,
+  awakeHuntTick, campTile, carcassGone, findSlot, hourOf, isNight, npcTile,
   snareAt, spotOpen, stonePrey, valleyDay,
 } from '@game/kernel';
 
@@ -44,7 +44,7 @@ export function huntingAt(b: Bundle, s: PublicState, tick: number, at: Tile, til
 }
 
 export function huntingNearby(b: Bundle, s: PublicState, tick: number, at: Tile): HuntTarget | undefined {
-  if ((s.player.bag[THROW_STONE] ?? 0) === 0) return undefined;
+  if ((s.player.bag[b.params.hunt.throw_item] ?? 0) === 0) return undefined;
   let target: HuntTarget | undefined;
   let nearest = Infinity;
   for (const [index, spot] of (b.map.creatures?.spots ?? []).entries()) {

@@ -4613,102 +4613,102 @@
         {
           "x": 3,
           "y": 6,
-          "size": "large"
+          "kind": "core/large-stone"
         },
         {
           "x": 5,
           "y": 9,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 3,
           "y": 12,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 10,
           "y": 14,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 20,
           "y": 12,
-          "size": "large"
+          "kind": "core/large-stone"
         },
         {
           "x": 18,
           "y": 13,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 24,
           "y": 14,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 39,
           "y": 12,
-          "size": "large"
+          "kind": "core/large-stone"
         },
         {
           "x": 38,
           "y": 14,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 3,
           "y": 19,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 5,
           "y": 21,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 9,
           "y": 23,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 4,
           "y": 26,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 8,
           "y": 28,
-          "size": "large"
+          "kind": "core/large-stone"
         },
         {
           "x": 27,
           "y": 16,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 21,
           "y": 17,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 27,
           "y": 20,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 23,
           "y": 22,
-          "size": "large"
+          "kind": "core/large-stone"
         },
         {
           "x": 34,
           "y": 17,
-          "size": "small"
+          "kind": "core/stone"
         },
         {
           "x": 43,
           "y": 18,
-          "size": "small"
+          "kind": "core/stone"
         }
       ]
     },

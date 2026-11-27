@@ -26,14 +26,13 @@ export type AnimalGrade = (typeof ANIMAL_GRADES)[number];
 export type HuntKind = NonNullable<Bundle['map']['creatures']>['kinds'][string];
 export type HuntFields = NonNullable<HuntKind['hunt']>;
 type CreatureSpot = NonNullable<Bundle['map']['creatures']>['spots'][number];
-export const THROW_STONE = 'core/stone';
 export const SNARE_ITEM = 'core/snare';
-/** The reach a stone had before it became a content number (#819): the roam fallback of a snare, and what `stones.small_range` shipped as. */
+/** The original stone reach (#819), still the roam fallback of a snare. */
 export const STONE_RANGE = 3;
 
 function smallPrey(bundle: Bundle, id: string): HuntKind | undefined {
   const kind = bundle.map.creatures?.kinds[id];
-  if (kind?.hunt?.size === 'small' && kind.hunt.danger === 0 && !kind.protected) return kind;
+  if (kind?.hunt?.size === "small" && kind.hunt.danger === 0 && !kind.protected) return kind;
 }
 
 export function preyKey(spot: CreatureSpot): string {
@@ -47,8 +46,9 @@ export function stonePrey(bundle: Bundle, state: PublicState, tick: number, inde
   const kind = spot && smallPrey(bundle, spot.kind);
   if (!spot || !kind || (state.player.preyReturns?.[preyKey(spot)] ?? 0) > tick) return undefined;
   const target: Tile = [spot.x, spot.y];
-  // the reach of a small stone is one number for the hunt and the free throw (`stones.small_range`, 3 as #819 shipped it)
-  const reach = bundle.params.stones.small_range;
+  const thrown = bundle.params.liftables[bundle.params.hunt.throw_item];
+  if (thrown?.class !== 'hand') return undefined;
+  const reach = thrown.throw_range;
   if (d2(at, target) > reach * reach) return undefined;
   if (kind.hours) {
     const hour = hourOf(bundle, tick);
