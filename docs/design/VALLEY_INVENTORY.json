@@ -1,10 +1,10 @@
 {
   "generated_by": "pnpm valley:inventory",
-  "summary": "841 rows (782 with art, 59 n/a): 99 16px, 479 rich, 128 drawn clip, 10 code-drawn, 66 missing",
+  "summary": "841 rows (782 with art, 59 n/a): 96 16px, 479 rich, 131 drawn clip, 10 code-drawn, 66 missing",
   "counts": {
-    "16px": 99,
+    "16px": 96,
     "rich": 479,
-    "drawn clip": 128,
+    "drawn clip": 131,
     "code-drawn": 10,
     "missing": 66,
     "n/a": 59
@@ -131,9 +131,9 @@
       "n/a": 1
     },
     "prop": {
-      "16px": 62,
+      "16px": 59,
       "rich": 238,
-      "drawn clip": 0,
+      "drawn clip": 3,
       "code-drawn": 0,
       "missing": 0,
       "n/a": 0
@@ -4783,9 +4783,9 @@
       "id": "core/bank-wolf",
       "kind": "prop",
       "where": "8,24",
-      "state": "16px",
-      "frames": 2,
-      "note": "hazard predator; core/base-kit:props/hazard_wolf",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "hazard predator; core/base-kit:props/hazard_wolf; drawn from 6 sheets of core/wolf, this still is the fallback",
       "source": "content/core/map.json",
       "sheet": "content/kit/core/props/hazard_wolf.png"
     },
@@ -4803,9 +4803,9 @@
       "id": "core/camp-wolf",
       "kind": "prop",
       "where": "28,18",
-      "state": "16px",
-      "frames": 2,
-      "note": "hazard predator; core/base-kit:props/hazard_wolf",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "hazard predator; core/base-kit:props/hazard_wolf; drawn from 6 sheets of core/wolf, this still is the fallback",
       "source": "content/core/map.json",
       "sheet": "content/kit/core/props/hazard_wolf.png"
     },
@@ -4923,9 +4923,9 @@
       "id": "core/ruins-wolf",
       "kind": "prop",
       "where": "36,25",
-      "state": "16px",
-      "frames": 2,
-      "note": "hazard predator; core/base-kit:props/hazard_wolf",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "hazard predator; core/base-kit:props/hazard_wolf; drawn from 6 sheets of core/wolf, this still is the fallback",
       "source": "content/core/map.json",
       "sheet": "content/kit/core/props/hazard_wolf.png"
     },
