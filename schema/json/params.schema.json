@@ -3870,6 +3870,7 @@
           "type": "object",
           "required": [
             "throw_item",
+            "hit_tiles",
             "dress_step_ms",
             "meat_spoil_d",
             "hide_spoil_d",
@@ -3881,8 +3882,35 @@
             "throw_item": {
               "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
               "maxLength": 80,
-              "description": "Hand liftable used to take small game. Its throw range is also the hunting reach.",
+              "description": "Hand liftable thrown at small game; the charged throw (#870) takes it.",
               "type": "string"
+            },
+            "hit_tiles": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "How many tiles from the animal the thrown stone may touch or come to rest and still take it (#923): 0 is the tile it stands on, 1 the ring around. Wider is easier; a node of the proposed Hunting school widens it (PROGRESSION 4)."
             },
             "dress_step_ms": {
               "additionalProperties": false,

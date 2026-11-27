@@ -4,6 +4,7 @@ import {
   type Action,
   type State,
   type StepOptions,
+  FULL_POWER,
   campTile,
   lastDawn,
   newState,
@@ -47,17 +48,28 @@ function trial() {
     if (!r.ok) throw new Error(r.error);
     return r.state;
   };
-  return { b, s, at, run, ok, day: b.params.day_length_ms };
+  // the tile the figure throws from: two tiles off the hare on open meadow, nothing between (a thrown stone takes it, #923)
+  const from = ([[-2, 0], [2, 0], [0, -2], [0, 2]] as const)
+    .map(([dx, dy]) => [x + dx, y + dy] as [number, number])
+    .find(([fx, fy]) => walkable(fx, fy, s.player) && [[Math.sign(x - fx) + fx, Math.sign(y - fy) + fy]].every(([mx, my]) => walkable(mx!, my!, s.player)))!;
+  /** a throw from `from` at the hare of spot `prey`, at `power` (a thousandth of full) */
+  const shot = (prey = 0, power = FULL_POWER): Extract<Action, { t: 'throw' }> => ({ t: 'throw', at: from, aim: at, kind: STONE, power, prey });
+  return { b, s, at, from, shot, run, ok, day: b.params.day_length_ms };
 }
 
 describe('early hunting', () => {
   test('takes a real small prey with one stone before combat and cannot take it twice', () => {
-    const { b, s, at, run, ok } = trial();
-    const take: Action = { t: 'take', prey: 0, at };
+    const { b, s, at, from, shot, run, ok } = trial();
+    s.player.at = from;
+    const take = shot();
     expect(b.params.combat.enabled).toBe(0);
     expect(run(s, take).ok).toBe(false);
     s.player.bag[STONE] = 2;
-    for (const prey of [1, 2, 3, 4, 99]) expect(run(s, { ...take, prey }).ok).toBe(false);
+    // the roe, the wolf, the sparrow and a spot that is not there are no small game for a stone
+    for (const prey of [1, 2, 3, 99]) expect(run(s, { ...take, prey }).ok).toBe(false);
+    // another hare four tiles on is not struck by a stone flying at this one: the stone lands and nothing is taken
+    const wide = ok(structuredClone(s), shot(4));
+    expect(wide.player.carcasses ?? []).toHaveLength(0);
     expect(s.player.bag[STONE]).toBe(2);
     const taken = ok(s, take);
     expect(taken.player.bag[STONE]).toBe(1);
@@ -65,6 +77,7 @@ describe('early hunting', () => {
     expect(run(taken, take, b.params.day_length_ms).ok).toBe(true);
     const carcass = taken.player.carcasses![0]!;
     expect(carcass).toMatchObject({ kind: 'core/hare', at });
+    taken.player.at = at;
     const dressed = ok(taken, { t: 'dress', carcass: carcass.id, at });
     expect(dressed.player.bag).toMatchObject({ [MEAT]: 1, [HIDE]: 1 });
   });
@@ -109,9 +122,11 @@ describe('early hunting', () => {
   });
 
   test('only awake time before dressing makes a carcass lose its meat or hide', () => {
-    const { b, s, at, day, run, ok } = trial();
+    const { b, s, at, from, shot, day, run, ok } = trial();
     s.player.bag[STONE] = 1;
-    const taken = ok(s, { t: 'take', prey: 0, at });
+    s.player.at = from;
+    const taken = ok(s, shot());
+    taken.player.at = at;
     const dress: Action = { t: 'dress', carcass: taken.player.carcasses![0]!.id, at };
     const skip = 2 * day;
     const rested = ok(taken, { t: 'move', at }, skip, { inactiveMs: skip });
@@ -138,9 +153,11 @@ describe('early hunting', () => {
   });
 
   test('spoilage counts awake time, preserves ages through ground transfers and expires meat before hide', () => {
-    const { b, s, at, day, ok } = trial();
+    const { b, s, at, from, shot, day, ok } = trial();
     s.player.bag[STONE] = 1;
-    const taken = ok(s, { t: 'take', prey: 0, at });
+    s.player.at = from;
+    const taken = ok(s, shot());
+    taken.player.at = at;
     const skip = (b.params.hunt.hide_spoil_d + 2) * day;
     const slept = ok(taken, { t: 'move', at }, skip, { inactiveMs: skip });
     const dressed = ok(slept, { t: 'dress', carcass: taken.player.carcasses![0]!.id, at });

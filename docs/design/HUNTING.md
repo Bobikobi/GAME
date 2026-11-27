@@ -72,7 +72,7 @@ Each tool's inputs come from the tier before it, so the hunt climbs (memo E7). N
 
 | Tier | Tool | Takes | Range | How |
 |---|---|---|---|---|
-| T0 | A stone, thrown | Small prey, stunned | 3 | Picked up; the first hunt needs no craft |
+| T0 | A stone, thrown | Small prey, stunned | 1 to 6 by the charge: the stone takes the animal when it comes down within `hunt.hit_tiles` (1) of where it stands (#923) | Picked up from the ground; the first hunt needs no craft, only a held press that suits the distance |
 | T1 | A snare | Small prey on a trail sign | Its tile | Fibre cord first, sinew cord later; passive, checked once a game day; a crow can take what it holds |
 | T2 | A sling | Small prey and ground fowl | 6 | Stone and cord |
 | T3 | A spear | Medium prey, unaware | Thrust 1, throw 4 | Wood and flint |
