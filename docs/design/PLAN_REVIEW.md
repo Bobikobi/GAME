@@ -40,7 +40,7 @@ and it was missing from the games the experience is measured against.
 ### The first outing
 - **We give:** a dusk countdown, then a night of a wolf that walks a round, sees and smells, a pit, a trap and deep
   water; the one answer to a predator is to run (G34). A fall wakes the player in town, takes the outing's gains and
-  undoes its discoveries (OPEN_WORLD G52).
+  undoes its discoveries (G33, and the outing record in `kernel/src/state.ts`).
 - **Others give:** a short run back with no loss (World of Warcraft), a checkpoint (Path of Exile 2), the items
   waiting on a grave (RuneScape).
 - **Gap:** ours is the heaviest penalty of them, on the very first outing, with no way to win anything back.
@@ -48,12 +48,12 @@ and it was missing from the games the experience is measured against.
   valley.
 
 ### The first hour
-- **We give:** six trades, levels by the time worked, points that buy nodes at a safe place, 15 quests of 11 types.
+- **We give:** six trades, levels by the time worked, points that buy nodes at a safe place, 15 quests of 10 kinds.
   A profession's curve ends today at about two and a half hours (PROGRESSION 3.1).
 - **Others give:** after an hour a player of Path of Exile 2 knows what they are building; RuneScape shows 23
   skills to 99 from the first minute, so the long road is in sight.
 - **Gap:** after an hour the end of the road is in sight. The 16 to 22 schools of about 52 hours each
-  (PROGRESSION 3.2, 4.3) are on paper with no plan row, and no trade changes how a player moves or meets danger.
+  (PROGRESSION 3.2, 4.2) are on paper with no plan row, and no trade changes how a player moves or meets danger.
 - **Ruling 3:** the valley shows the whole tree, the built branches lit and the ones not built locked, and the size
   of progression gets a plan row. The tree's picture is drawn first as an art still; effects and animation are added
   on it if the owner likes it (his words).
@@ -103,26 +103,27 @@ at their stages.
 
 ## 4. The comparison pages since they were written
 
-Of their 57 findings, 24 are closed by a decision (decided, not all built), 12 are in the plan, 9 are open and 11
-cannot be settled from the documents.
+A model read the six pages against the plan and the headings of the decisions since 30.10 and counted 57 findings:
+24 closed by a decision (decided, not all built), 12 in the plan, 9 open and 11 that cannot be settled from the
+documents. The count is that reading's, not a tally made by hand.
 
-One finding is repeated by three pages: the hunt's take and the snare (GAP_RDR2 4, GAP_RS_GEAR 7, GAP_MATERIALS 1:
-119 of 158 materials wait behind it). The rules exist in `kernel/src/hunt.ts` (early prey, dressing a carcass,
-snares); a player meets them when the animals stand on screen (#916). Ruling 1 uses it.
+One finding is repeated by three pages (GAP_RDR2, GAP_RS_GEAR and GAP_MATERIALS, where it is gap 1): the hunt's
+take and the snare, with 119 of 158 materials waiting behind it. The rules exist in `kernel/src/hunt.ts` (early
+prey, dressing a carcass, snares); a player meets them when the animals stand on screen (#916). Ruling 1 uses it.
 
 Still open, the ones a player would feel: a rare creature in each region (EXPERIENCE_AUDIT N1); a second expedition
-(N2, now ruling 4); food, dish effects and a healing ladder (GAP_MATERIALS 6); a market between players
-(GAP_WOW_RS 7, GAP_RS_GEAR 10); a quick bar for food and crafting beside the bag (GAP_DIMRAETH_DRAKANTOS 7);
-22 materials with no source and made parts that nothing uses (GAP_MATERIALS 3, 5); salvage and pets
-(GAP_DIMRAETH_DRAKANTOS 8, 9).
+(N2, now ruling 4); food, healing and effects with a model and almost no content (GAP_MATERIALS gap 6); a market
+between players (GAP_WOW_RS, GAP_RS_GEAR); a quick bar for food and crafting beside the bag, salvage and pets
+(GAP_DIMRAETH_DRAKANTOS); 22 materials with no source and made parts that nothing uses (GAP_MATERIALS gaps 3
+and 5).
 
-## 5. Contradictions met on the way
+## 5. Where two pages disagree
 
-Found by a model's reading of the pages; each needs the check of whoever owns the page before it is changed.
-- G83 (two small bars over the head, no number) against the decision of 25.11 "A small health bar under the foe,
-  with its number (#866)".
-- OPEN_WORLD's grid of up to 1024 x 1024 tiles in 64-tile chunks has no stated link to the world board of 38 x 60
-  squares.
-- OPEN_WORLD D3 option 3 (each region its own story) against STORY section 1 ("the valley is the hero").
-- OPEN_WORLD's note of 17.10 "the world has no end" against G50's cap.
-- G15 (no timing in work, 20.11) against the timing window still in the live game's gathering (tracked in #713).
+Three places met on the way, each checked against both texts. Each needs the eye of whoever owns the page before a
+rule's text changes; this page changes none.
+- G83 says a foe's bars sit over its head and "no number is printed on a bar"; the decision of 25.11 "A small
+  health bar under the foe, with its number (#866)" draws the bar under the feet with the health printed beside it.
+- OPEN_WORLD opens with the owner's direction of 17.10 "the world has no end", and its G50 caps the world at one
+  grid of 1024 x 1024 tiles; neither states its link to the world board of 38 x 60 squares.
+- OPEN_WORLD's D3 (option 3, 16.10) says each region carries its own small story and that STORY's frame is
+  rewritten to match; STORY still reads "The valley is the hero".
