@@ -82,6 +82,8 @@ export interface Creature {
   grade: 1 | 2 | 3;
   /** the behaviour draw counter (rule R4) */
   draws: number;
+  /** the tiles it entered in its last think step, in order: what a view walks it along, and the fresh prints later (HUNT_FAMILIES 3a) */
+  trail?: [number, number][];
 }
 
 /** A sound in the world other than the player's own: another kind's alarm, a strike. */
