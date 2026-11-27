@@ -6445,6 +6445,876 @@
         ],
         "scale": 0.9
       },
+      "creatures/roe_walk_left": {
+        "file": "creatures/roe_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            104
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            50
+          ]
+        },
+        "scale": 0.88
+      },
+      "creatures/roe_idle_left": {
+        "file": "creatures/roe_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            104
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            50
+          ]
+        },
+        "scale": 0.88
+      },
+      "creatures/roe_walk_front": {
+        "file": "creatures/roe_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            90,
+            104
+          ],
+          "fit_permille": 1000,
+          "head": [
+            90,
+            50
+          ]
+        },
+        "scale": 0.93
+      },
+      "creatures/roe_idle_front": {
+        "file": "creatures/roe_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            90,
+            104
+          ],
+          "fit_permille": 1000,
+          "head": [
+            90,
+            50
+          ]
+        },
+        "scale": 0.92
+      },
+      "creatures/roe_walk_back": {
+        "file": "creatures/roe_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            90,
+            107
+          ],
+          "fit_permille": 1000,
+          "head": [
+            90,
+            33
+          ]
+        },
+        "scale": 1.16
+      },
+      "creatures/roe_idle_back": {
+        "file": "creatures/roe_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            90,
+            107
+          ],
+          "fit_permille": 1000,
+          "head": [
+            90,
+            33
+          ]
+        },
+        "scale": 1.18
+      },
+      "creatures/trout_walk_left": {
+        "file": "creatures/trout_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            63,
+            101
+          ],
+          "fit_permille": 1000,
+          "head": [
+            63,
+            97
+          ]
+        },
+        "scale": 0.18
+      },
+      "creatures/trout_idle_left": {
+        "file": "creatures/trout_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            63,
+            101
+          ],
+          "fit_permille": 1000,
+          "head": [
+            63,
+            97
+          ]
+        },
+        "scale": 0.18
+      },
+      "creatures/trout_walk_front": {
+        "file": "creatures/trout_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            110
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            90
+          ]
+        },
+        "scale": 0.41
+      },
+      "creatures/trout_idle_front": {
+        "file": "creatures/trout_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            110
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            90
+          ]
+        },
+        "scale": 0.41
+      },
+      "creatures/trout_walk_back": {
+        "file": "creatures/trout_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            60,
+            105
+          ],
+          "fit_permille": 1000,
+          "head": [
+            60,
+            89
+          ]
+        },
+        "scale": 0.34
+      },
+      "creatures/trout_idle_back": {
+        "file": "creatures/trout_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            60,
+            105
+          ],
+          "fit_permille": 1000,
+          "head": [
+            60,
+            89
+          ]
+        },
+        "scale": 0.34
+      },
+      "creatures/sparrow_walk_left": {
+        "file": "creatures/sparrow_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            63,
+            107
+          ],
+          "fit_permille": 1000,
+          "head": [
+            63,
+            95
+          ]
+        },
+        "scale": 0.33
+      },
+      "creatures/sparrow_idle_left": {
+        "file": "creatures/sparrow_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            63,
+            107
+          ],
+          "fit_permille": 1000,
+          "head": [
+            63,
+            95
+          ]
+        },
+        "scale": 0.29
+      },
+      "creatures/sparrow_walk_front": {
+        "file": "creatures/sparrow_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            62,
+            106
+          ],
+          "fit_permille": 1000,
+          "head": [
+            62,
+            94
+          ]
+        },
+        "scale": 0.3
+      },
+      "creatures/sparrow_idle_front": {
+        "file": "creatures/sparrow_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            62,
+            106
+          ],
+          "fit_permille": 1000,
+          "head": [
+            62,
+            94
+          ]
+        },
+        "scale": 0.29
+      },
+      "creatures/sparrow_walk_back": {
+        "file": "creatures/sparrow_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            62,
+            108
+          ],
+          "fit_permille": 1000,
+          "head": [
+            62,
+            91
+          ]
+        },
+        "scale": 0.36
+      },
+      "creatures/sparrow_idle_back": {
+        "file": "creatures/sparrow_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            62,
+            108
+          ],
+          "fit_permille": 1000,
+          "head": [
+            62,
+            91
+          ]
+        },
+        "scale": 0.36
+      },
+      "creatures/crow_walk_left": {
+        "file": "creatures/crow_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            66,
+            110
+          ],
+          "fit_permille": 1000,
+          "head": [
+            66,
+            97
+          ]
+        },
+        "scale": 0.36
+      },
+      "creatures/crow_idle_left": {
+        "file": "creatures/crow_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            66,
+            110
+          ],
+          "fit_permille": 1000,
+          "head": [
+            66,
+            97
+          ]
+        },
+        "scale": 0.3
+      },
+      "creatures/crow_walk_front": {
+        "file": "creatures/crow_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            91
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            77
+          ]
+        },
+        "scale": 0.33
+      },
+      "creatures/crow_idle_front": {
+        "file": "creatures/crow_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            91
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            77
+          ]
+        },
+        "scale": 0.33
+      },
+      "creatures/crow_walk_back": {
+        "file": "creatures/crow_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            106
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            84
+          ]
+        },
+        "scale": 0.4
+      },
+      "creatures/crow_idle_back": {
+        "file": "creatures/crow_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            106
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            84
+          ]
+        },
+        "scale": 0.42
+      },
+      "creatures/hare_walk_left": {
+        "file": "creatures/hare_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            68,
+            103
+          ],
+          "fit_permille": 1000,
+          "head": [
+            68,
+            85
+          ]
+        },
+        "scale": 0.37
+      },
+      "creatures/hare_idle_left": {
+        "file": "creatures/hare_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            68,
+            103
+          ],
+          "fit_permille": 1000,
+          "head": [
+            68,
+            85
+          ]
+        },
+        "scale": 0.38
+      },
+      "creatures/hare_walk_front": {
+        "file": "creatures/hare_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            105
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            91
+          ]
+        },
+        "scale": 0.34
+      },
+      "creatures/hare_idle_front": {
+        "file": "creatures/hare_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            105
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            91
+          ]
+        },
+        "scale": 0.32
+      },
+      "creatures/hare_walk_back": {
+        "file": "creatures/hare_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            106
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            84
+          ]
+        },
+        "scale": 0.45
+      },
+      "creatures/hare_idle_back": {
+        "file": "creatures/hare_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            106
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            84
+          ]
+        },
+        "scale": 0.42
+      },
       "creatures/wolf_walk_left": {
         "file": "creatures/wolf_walk_left.png",
         "w": 128,
@@ -6987,6 +7857,226 @@
           "#6b6662",
           "#8c827e",
           "#9b8f8c"
+        ]
+      },
+      {
+        "id": "hare-fur-1",
+        "steps": [
+          "#0c0e13",
+          "#171722",
+          "#372c2f",
+          "#8b5e45",
+          "#9b6954",
+          "#a17152"
+        ]
+      },
+      {
+        "id": "hare-fur-2",
+        "steps": [
+          "#4d3430",
+          "#484244",
+          "#956548",
+          "#c7966c",
+          "#ecbab5",
+          "#f4d8cc"
+        ]
+      },
+      {
+        "id": "hare-fur-3",
+        "steps": [
+          "#0d101c",
+          "#14151f",
+          "#805646",
+          "#b68262",
+          "#c6936f",
+          "#d7a678"
+        ]
+      },
+      {
+        "id": "hare-fur-4",
+        "steps": [
+          "#121219",
+          "#ab7659",
+          "#bb8d6a",
+          "#d9ab80",
+          "#d5bc9c",
+          "#ddd0b6"
+        ]
+      },
+      {
+        "id": "crow-fur-1",
+        "steps": [
+          "#070709",
+          "#0d101c",
+          "#212532",
+          "#282d3d",
+          "#484244",
+          "#464952"
+        ]
+      },
+      {
+        "id": "crow-fur-2",
+        "steps": [
+          "#0c0e13",
+          "#171722",
+          "#1c1d28",
+          "#242531",
+          "#2b2e38",
+          "#343741"
+        ]
+      },
+      {
+        "id": "crow-fur-3",
+        "steps": [
+          "#090a0e",
+          "#121219",
+          "#21222e",
+          "#3a4454",
+          "#637283",
+          "#8b776c"
+        ]
+      },
+      {
+        "id": "crow-fur-4",
+        "steps": [
+          "#090b12",
+          "#2e3646",
+          "#3c3f48",
+          "#41454e",
+          "#485564",
+          "#565863"
+        ]
+      },
+      {
+        "id": "sparrow-fur-1",
+        "steps": [
+          "#050302",
+          "#362623",
+          "#5c3c28",
+          "#6e4f38",
+          "#7d5b3d",
+          "#816c56"
+        ]
+      },
+      {
+        "id": "sparrow-fur-2",
+        "steps": [
+          "#2a1f1e",
+          "#302d31",
+          "#463126",
+          "#644632",
+          "#826142",
+          "#87684a"
+        ]
+      },
+      {
+        "id": "sparrow-fur-3",
+        "steps": [
+          "#2f272a",
+          "#4d3224",
+          "#573b38",
+          "#cf988c",
+          "#d0c3a2",
+          "#dacfac"
+        ]
+      },
+      {
+        "id": "sparrow-fur-4",
+        "steps": [
+          "#29282f",
+          "#7e5e42",
+          "#65696a",
+          "#9a886b",
+          "#a29276",
+          "#ab9b7e"
+        ]
+      },
+      {
+        "id": "trout-fur-1",
+        "steps": [
+          "#040402",
+          "#3b3c24",
+          "#645e3b",
+          "#676547",
+          "#858763",
+          "#a6ae96"
+        ]
+      },
+      {
+        "id": "trout-fur-2",
+        "steps": [
+          "#27261c",
+          "#4a4935",
+          "#5c583b",
+          "#5e6048",
+          "#6a673a",
+          "#807e50"
+        ]
+      },
+      {
+        "id": "trout-fur-3",
+        "steps": [
+          "#080904",
+          "#5f5c30",
+          "#82816a",
+          "#a4a07c",
+          "#b6bdac",
+          "#cbc89f"
+        ]
+      },
+      {
+        "id": "trout-fur-4",
+        "steps": [
+          "#12120c",
+          "#181910",
+          "#74734c",
+          "#7d7e5d",
+          "#9ea690",
+          "#abaa88"
+        ]
+      },
+      {
+        "id": "roe-fur-1",
+        "steps": [
+          "#19151c",
+          "#231e28",
+          "#40261d",
+          "#5f3222",
+          "#693a25",
+          "#7a4228"
+        ]
+      },
+      {
+        "id": "roe-fur-2",
+        "steps": [
+          "#201921",
+          "#38201e",
+          "#4a251c",
+          "#522a1e",
+          "#643624",
+          "#6f3d26"
+        ]
+      },
+      {
+        "id": "roe-fur-3",
+        "steps": [
+          "#1a1626",
+          "#281b1f",
+          "#51251e",
+          "#7b4529",
+          "#935d3a",
+          "#e3b47c"
+        ]
+      },
+      {
+        "id": "roe-fur-4",
+        "steps": [
+          "#1e1926",
+          "#75432a",
+          "#804b2e",
+          "#8b5231",
+          "#a0643c",
+          "#b57544"
         ]
       }
     ]

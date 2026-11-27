@@ -1,0 +1,149 @@
+{
+  "about": "The drawn trout (valley animals, 27.11): side, front and back views as eight frames of walk and idle each, from PixelLab's PixMiniMax on the stills of the same day (DECISIONS 2026-11-27 'The valley's small animals at the game's angle'). Frames are drafts of the store Bobikobi/GAME-art-drafts, named by id; packcreature.py reads them from .scratch/art-drafts (pnpm art:drafts fetch <ids>) and checks each against its id.",
+  "creature": "core/trout",
+  "name": "trout",
+  "fit_permille": 1000,
+  "which": {
+    "left": "take and variant: idle side-idle-s301 B; walk side-walk-s301 B",
+    "front": "take and variant: idle front-idle-s304 B; walk front-walk-s301 A",
+    "back": "take and variant: idle back-idle-s303 B; walk back-walk-s302-last A"
+  },
+  "ramps": [
+    {
+      "id": "trout-fur-1",
+      "steps": [
+        "#040402",
+        "#3b3c24",
+        "#645e3b",
+        "#676547",
+        "#858763",
+        "#a6ae96"
+      ]
+    },
+    {
+      "id": "trout-fur-2",
+      "steps": [
+        "#27261c",
+        "#4a4935",
+        "#5c583b",
+        "#5e6048",
+        "#6a673a",
+        "#807e50"
+      ]
+    },
+    {
+      "id": "trout-fur-3",
+      "steps": [
+        "#080904",
+        "#5f5c30",
+        "#82816a",
+        "#a4a07c",
+        "#b6bdac",
+        "#cbc89f"
+      ]
+    },
+    {
+      "id": "trout-fur-4",
+      "steps": [
+        "#12120c",
+        "#181910",
+        "#74734c",
+        "#7d7e5d",
+        "#9ea690",
+        "#abaa88"
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "view": "left",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "103775b57b3d8d06",
+        "daccf84558895f25",
+        "46e66afcc126feba",
+        "40f71122ffbd8e23",
+        "d8bd004691ac4907",
+        "99492bfa34efbb9a",
+        "8426e2e4dd68aab0",
+        "fe1ab9a4fe8ceea2"
+      ]
+    },
+    {
+      "view": "left",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "e7a2eef4f7da750e",
+        "abca13d5c7d60cf2",
+        "6f2aa1e0c60b67de",
+        "605a42fbf4582306",
+        "bd95c64c7b2ed5d9",
+        "7ffd8d0eb2ad3a72",
+        "1f9d770d9ba59127",
+        "272f9b27654f4489"
+      ]
+    },
+    {
+      "view": "front",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "52db7cbe1e4fe899",
+        "be9cae3a61a5d9b2",
+        "45fae18de57256f7",
+        "1362acc7c3746849",
+        "d75e97d58223fc33",
+        "dbd562b2b0b005c7",
+        "7d956fac755c64d7",
+        "bccdc36e708bd0e5"
+      ]
+    },
+    {
+      "view": "front",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "fc865acb19c3846a",
+        "8d032feabfec3546",
+        "60c388c4efee3858",
+        "d7aee5827bb4a0a9",
+        "74fbbd6a239160cd",
+        "9bbb6d97f9b03212",
+        "37de593c244e671d",
+        "8fe90ddad5c1a468"
+      ]
+    },
+    {
+      "view": "back",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "bf577ff598103a9a",
+        "363a8a63954ed100",
+        "4e4a8be53c2fa139",
+        "05f622e2265cc1ec",
+        "9073573c30b0d2e9",
+        "0e6e8102d0e15fb5",
+        "9347809cec00547c",
+        "de74b6a8366d4786"
+      ]
+    },
+    {
+      "view": "back",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "9b9c4367e3aed784",
+        "c7c82eab7298deee",
+        "163e32a46b16af35",
+        "89509ba22e11c198",
+        "d8c4d7b5a4473f9b",
+        "c5ca51fb9fd37a20",
+        "2989fe5ebd450c4b",
+        "be49e67037bb4812"
+      ]
+    }
+  ]
+}
