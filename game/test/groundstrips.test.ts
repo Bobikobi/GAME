@@ -134,6 +134,41 @@ describe('a page baked in strips', () => {
     expect(shown.at(-1)).toMatch(/-3$/);
   });
 
+  test('a lazy first view is baked in strips by bakeView, pixel for pixel the whole bake, with no page baked whole (#843)', () => {
+    const w = 40;
+    const h = 36;
+    const all = { x: 0, y: 0, right: w * UNIT, bottom: h * UNIT };
+    const whole = fakeScene();
+    new GroundChunks(whole.scene, w, h, DENSITY, UNIT, 4, 0, painter).update(all);
+    const idle: ((s: Slice) => void)[] = [];
+    const q = new IdleQueue((run) => void idle.push(run), () => 0);
+    const lazy = fakeScene();
+    // every piece is slow, so the view's pages need many calls of a small budget
+    let t = 0;
+    const g = new GroundChunks(lazy.scene, w, h, DENSITY, UNIT, 4, 0, painter, () => true, q, STRIP_COLS, STRIP_ROWS, () => (t += 40));
+    g.update(view(1, 1), '', true);
+    // nothing whole, no idle job yet
+    expect(g.wholeBakes).toBe(0);
+    expect(idle).toHaveLength(0);
+    let calls = 0;
+    while (!g.bakeView(100)) calls++;
+    expect(calls).toBeGreaterThan(3);
+    expect(g.wholeBakes).toBe(0);
+    // the pages the view touches are whole now: the page under the view has all its frames
+    const keys = [...lazy.textures.keys()].filter((k) => k.startsWith('ground-c1x1-'));
+    expect(keys.length).toBe(4);
+    g.resume();
+    expect(idle.length).toBeGreaterThan(0);
+    g.update(all);
+    drain(idle);
+    expect(g.waiting).toBe(0);
+    const pix = (m: Map<string, FakeCanvas>) => new Map([...m].filter(([k]) => k !== 'ground-strip').map(([k, v]) => [k, v.data]));
+    const want = pix(whole.textures);
+    const got = pix(lazy.textures);
+    expect([...got.keys()].sort()).toEqual([...want.keys()].sort());
+    for (const [key, bytes] of want) expect(Buffer.from(got.get(key)!).equals(Buffer.from(bytes)), key).toBe(true);
+  }, 60_000);
+
   test('the view landing on pages nothing of which is held is baked whole at once, a walk-in is not', () => {
     const { scene } = fakeScene();
     const painted: string[] = [];
