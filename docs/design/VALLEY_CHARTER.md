@@ -94,7 +94,7 @@ signs a look. The rows below are written so that a builder can say, for any buil
 
 These are tool gaps, stated so the charter does not pretend a row is measurable when it is not. None is built in this pull request.
 
-1. **A frame-time walk on a phone (G8, B2 to B6).** No tool runs a scripted walk and writes frame times. `pnpm e2e:load` proves the bag's weight, not a frame, and `pnpm map:playtest` is the balance playtest. `tools/stills/frame-time.mts` takes a still frame at the old portrait phone size. `game/scripts/boot-time.ts` measures the boot only. The probe used for section 4 is a throwaway and is not committed.
+1. **A frame-time walk on a phone (G8, B2 to B6).** One tool now writes frame times of a walk: `game/e2e/west-stutter.ts` (merged in #889, 27.11): phone-sized browser, CPU slowed, the figure walked round the west of the valley, every frame interval kept with the feet's tile, p95, count over 50 ms, count over 20 ms, worst frames and long tasks. It measures and never fails, it covers the west route only (not a ground chunk border plus a land edge on the route R1 to R8), and it was merged after the numbers of section 4, so it is not run here. `pnpm e2e:load` proves the bag's weight, not a frame, and `pnpm map:playtest` is the balance playtest. `tools/stills/frame-time.mts` takes a still frame at the old portrait phone size. `game/scripts/boot-time.ts` measures the boot only. The probe used for section 4 is a throwaway and is not committed.
 2. **A real GPU or phone for the frame rows (B1 to B6).** The only browser the harness launches draws WebGL in software (SwiftShader), which inflates every frame time.
 3. **Per-layer counters (B6, B14 to B16).** The game counts no lights, particles or full-screen layers in view.
 4. **A valley inventory (G2, G6).** There is no table that says, per thing the player meets, its state and its reference; the 16 px list counts names, not what the valley places.
@@ -212,7 +212,7 @@ What the two columns say together: on develop the boot is fast and the texture s
 page spends its first 38 s on the CPU before the title appears, and in both 40 s walks it hit a multi-second frozen frame (4.4 s and
 3.3 s, different wake pockets) that develop did not (worst 0.25 and 0.30 s). The cause of production's freeze was not diagnosed here.
 Frame numbers between the builds are otherwise within the spread of two runs of one build. Pull request #889 ("West walk: strip jobs 8.7 s
-to 3.9 s", issue #885), merged into develop after the commit measured here, works on the ground's strip jobs during the walk; this page
+to 3.9 s", issue #885), merged into develop at `0d501d45` after the commit measured here, works on the ground's strip jobs during the walk and adds the walk tool `game/e2e/west-stutter.ts` (tool gap 1). This page
 does not duplicate it, and its effect is not in these numbers.
 
 ## 5. What is out
