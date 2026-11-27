@@ -1,12 +1,12 @@
 {
   "generated_by": "pnpm valley:inventory",
-  "summary": "841 rows (782 with art, 59 n/a): 99 16px, 479 rich, 122 drawn clip, 10 code-drawn, 72 missing",
+  "summary": "841 rows (782 with art, 59 n/a): 99 16px, 479 rich, 128 drawn clip, 10 code-drawn, 66 missing",
   "counts": {
     "16px": 99,
     "rich": 479,
-    "drawn clip": 122,
+    "drawn clip": 128,
     "code-drawn": 10,
-    "missing": 72,
+    "missing": 66,
     "n/a": 59
   },
   "by_kind": {
@@ -45,9 +45,9 @@
     "creature clip": {
       "16px": 0,
       "rich": 0,
-      "drawn clip": 0,
+      "drawn clip": 6,
       "code-drawn": 0,
-      "missing": 36,
+      "missing": 30,
       "n/a": 0
     },
     "dig spot": {
@@ -1583,61 +1583,61 @@
       "id": "core/wolf:idle:back",
       "kind": "creature clip",
       "where": "-",
-      "state": "missing",
-      "frames": null,
-      "note": "no clip: the creature keeps its still sprite",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "core/base-kit:creatures/wolf_idle_back",
       "source": "content/core/map.json",
-      "sheet": null
+      "sheet": "content/kit/core/creatures/wolf_idle_back.png"
     },
     {
       "id": "core/wolf:idle:front",
       "kind": "creature clip",
       "where": "-",
-      "state": "missing",
-      "frames": null,
-      "note": "no clip: the creature keeps its still sprite",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "core/base-kit:creatures/wolf_idle_front",
       "source": "content/core/map.json",
-      "sheet": null
+      "sheet": "content/kit/core/creatures/wolf_idle_front.png"
     },
     {
       "id": "core/wolf:idle:left",
       "kind": "creature clip",
       "where": "-",
-      "state": "missing",
-      "frames": null,
-      "note": "no clip: the creature keeps its still sprite",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "core/base-kit:creatures/wolf_idle_left",
       "source": "content/core/map.json",
-      "sheet": null
+      "sheet": "content/kit/core/creatures/wolf_idle_left.png"
     },
     {
       "id": "core/wolf:walk:back",
       "kind": "creature clip",
       "where": "-",
-      "state": "missing",
-      "frames": null,
-      "note": "no clip: the creature keeps its still sprite",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "core/base-kit:creatures/wolf_walk_back",
       "source": "content/core/map.json",
-      "sheet": null
+      "sheet": "content/kit/core/creatures/wolf_walk_back.png"
     },
     {
       "id": "core/wolf:walk:front",
       "kind": "creature clip",
       "where": "-",
-      "state": "missing",
-      "frames": null,
-      "note": "no clip: the creature keeps its still sprite",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "core/base-kit:creatures/wolf_walk_front",
       "source": "content/core/map.json",
-      "sheet": null
+      "sheet": "content/kit/core/creatures/wolf_walk_front.png"
     },
     {
       "id": "core/wolf:walk:left",
       "kind": "creature clip",
       "where": "-",
-      "state": "missing",
-      "frames": null,
-      "note": "no clip: the creature keeps its still sprite",
+      "state": "drawn clip",
+      "frames": 8,
+      "note": "core/base-kit:creatures/wolf_walk_left",
       "source": "content/core/map.json",
-      "sheet": null
+      "sheet": "content/kit/core/creatures/wolf_walk_left.png"
     },
     {
       "id": "core/bank-axe#0",
