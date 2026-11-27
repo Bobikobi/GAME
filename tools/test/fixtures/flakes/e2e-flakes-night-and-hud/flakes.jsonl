@@ -1,0 +1,3 @@
+{"group": "night-and-hud", "script": "hud", "result": "retry_pass", "error": "expected bag button", "first_seconds": 50, "retry_seconds": 40, "commit": "abc", "time": "2026-11-27T10:01:00Z"}
+{"group": "night-and-hud", "script": "sea", "result": "retry_pass", "error": "expected wave | pipe", "first_seconds": 50, "retry_seconds": 40, "commit": "abc", "time": "2026-11-27T10:01:01Z"}
+{half a line
