@@ -2077,6 +2077,35 @@ export const ClipBody = Type.Object(
   { additionalProperties: false },
 );
 
+/** The verbs a creature clip plays: a creature is seen moving or standing. Display only; a bite, a flight and the like join the list when their sheets are drawn. */
+export const CREATURE_CLIP_VERBS = ['walk', 'idle'] as const;
+
+/**
+ * A creature's drawn clip (#847): one sheet that plays one verb of one creature in one view. A character clip is keyed by race
+ * (`ClipBody`); a creature is not a race, so its clips are keyed by the id of a kind in `map.creatures.kinds` and carry their
+ * own block. The sheet's `frames` is the clip's frame count and `frame_ms` its own speed. The world finds it by creature +
+ * verb + view (the right side is the left one flipped); with none it keeps the creature's still sprite (`still_of`). A clip is
+ * display only: the kernel decides where a creature is, when it moves and what it does.
+ */
+export const CreatureClipBody = Type.Object(
+  {
+    creature: Type.String({ pattern: ID_PATTERN, maxLength: 80, description: 'The id of the creature kind the clip is drawn for, a key of `map.creatures.kinds`, for example "core/wolf".' }),
+    view: Type.Union(CLIP_VIEWS.map((v) => Type.Literal(v)), { description: 'left, front or back; the right side is the left one flipped.' }),
+    verb: Type.Union(CREATURE_CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: walk (a loop while the creature moves) or idle (a loop while it stands).' }),
+    frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
+    anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the creature\'s feet.' }),
+    fit_permille: Type.Optional(
+      Int(100, 4000, 'The factor the clip shows at on top of its density\'s base scale (1 / density), in thousandths. Left out, 1000. One value for every view of a creature, so it does not change size as it turns. The feet stay on the anchor whatever the fit.'),
+    ),
+    head: Type.Optional(
+      Type.Tuple([Int(0, 384), Int(0, 384)], {
+        description: 'Where the face is, in pixels of the frame (the same grid as `anchor`): what the world lays on the head (the glint of the eyes, the mark that it has seen the player). Left out, the world uses the middle of the frame.',
+      }),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 export const KitBody = Type.Object(
   {
     palette: Type.Optional(
@@ -2144,6 +2173,15 @@ export const KitBody = Type.Object(
             ),
           ),
           clip: Type.Optional(ClipBody),
+          creature_clip: Type.Optional(CreatureClipBody),
+          still_of: Type.Optional(
+            Type.String({
+              pattern: ID_PATTERN,
+              maxLength: 80,
+              description:
+                'The id of the creature kind (a key of `map.creatures.kinds`) this still sprite stands for: while the creature\'s clips (`creature_clip`) are loaded the world draws them, and this picture is what shows when they are not.',
+            }),
+          ),
           scale: Type.Optional(
             Type.Number({
               minimum: 0.1,
@@ -3106,6 +3144,7 @@ export const ExtensionFile = Type.Union([
 ]);
 
 export type ClipInfo = Static<typeof ClipBody>;
+export type CreatureClipInfo = Static<typeof CreatureClipBody>;
 export type ItemDef = Static<typeof ItemDef>;
 export type ClassDef = Static<typeof ClassDef>;
 export type WearSetDef = Static<typeof WearSet>;
