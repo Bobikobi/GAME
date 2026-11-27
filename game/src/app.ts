@@ -8,6 +8,7 @@ import { RemoteSession, WireRefusal, fetchWire } from './remote';
 import type { SignInfo } from './scenes/world';
 import type { GameSession } from './session-surface';
 import type { UI } from './ui/ui';
+import type { PaintedMount } from './painted';
 
 /** What the page UI asks of whichever world is on screen: the Phaser scene of /play/ or the three.js world of /play3d/. */
 export interface WorldView {
@@ -47,6 +48,8 @@ export interface App {
   game?: Pick<Phaser.Game, 'loop'>;
   world?: WorldView;
   session?: GameSession;
+  /** a trial mount of a painted ground, only behind `?debug&painted=` (painted.ts) */
+  painted?: PaintedMount;
 }
 
 export const app = {} as App;

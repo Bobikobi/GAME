@@ -73,8 +73,17 @@ export class LightLayer {
   private readonly lights: Light[] = [];
   private w = 0;
   private h = 0;
-  /** what the two textures hold now: a frame that would draw the same leaves them as they are */
-  private drawn = '';
+  /** the minute `wash` was read at */
+  private washMinute = Number.NaN;
+  /** the lights that give light in this frame, reused from frame to frame */
+  private readonly lit: { l: Light; gate: number; flick: number }[] = [];
+  /**
+   * What the two textures hold now: a frame that would draw the same leaves them as they are. The view and the lights (x, y, gate, flicker; `keyLen` numbers of `key.lights` are the lights')
+   * are both textures' inputs, the hour's colour and the ring the shade's alone. `keyNow` is the frame's own scratch for the lights, swapped in when they changed.
+   */
+  private readonly key = { ox: Number.NaN, oy: 0, w: 0, h: 0, tint: 0, alpha: 0, rx: 0, ry: 0, lights: new Float64Array(0) };
+  private keyNow = new Float64Array(0);
+  private keyLen = -1;
   /** the shade's colour and alpha now, for a still and a test */
   wash = { tint: 0, alpha: 0 };
 
@@ -103,7 +112,11 @@ export class LightLayer {
    * with motion on (a flame's pool breathes), `time` the scene's clock for the flicker.
    */
   update(minute: number, view: Phaser.Geom.Rectangle, player: { x: number; y: number } | undefined, time: number, flicker: boolean): void {
-    this.wash = washAt(this.table, minute);
+    // the wash is a function of the minute alone: read again only when the minute moves
+    if (minute !== this.washMinute) {
+      this.wash = washAt(this.table, minute);
+      this.washMinute = minute;
+    }
     const ox = Math.floor(view.x / SNAP) * SNAP;
     const oy = Math.floor(view.y / SNAP) * SNAP;
     const w = (Math.ceil(view.width / SNAP) + 1) * SNAP * ART;
@@ -114,7 +127,10 @@ export class LightLayer {
       this.shade.resize(w, h);
       this.pools.resize(w, h);
     }
-    const lit: { l: Light; gate: number; flick: number }[] = [];
+    // read on a beat of FLICKER_MS, not every frame, so a still view redraws its layers a few times a second at most
+    const beat = Math.floor(time / FLICKER_MS) * FLICKER_MS;
+    const lit = this.lit;
+    let n = 0;
     for (const l of this.lights) {
       // in fiftieths, so the hour's slow rise redraws the layers a few times an hour, not every minute
       const breath = flicker ? l.breath : undefined;
@@ -127,23 +143,54 @@ export class LightLayer {
       if (l.x + reach < view.x || l.x - reach > view.right || l.y + reach < view.y || l.y - reach > view.bottom + 32) continue;
       // a flame's pool breathes a little (LIGHTING C: the shape a flicker gives the light); a lamp's glass holds it still
       const amp = l.kind === 'fire' ? 0.04 : 0;
-      // read on a beat of FLICKER_MS, not every frame, so a still view redraws its layers a few times a second at most
-      const beat = Math.floor(time / FLICKER_MS) * FLICKER_MS;
       const flick = breath ? Math.round(100 * breath.radius) / 100 : flicker && amp > 0 ? Math.round(100 * (1 + amp * Math.sin(beat / 173 + l.phase) * Math.sin(beat / 419 + l.phase * 1.7))) / 100 : 1;
-      lit.push({ l, gate, flick });
+      const e = (lit[n] ??= { l, gate, flick });
+      e.l = l;
+      e.gate = gate;
+      e.flick = flick;
+      n += 1;
     }
-    const at = (x: number, y: number) => ({ x: Math.round((x - ox) * ART), y: Math.round((y - oy) * ART) });
+    lit.length = n;
     // the shade: the hour's colour over the view, the pools cut out of it
     const shading = this.wash.alpha > 0;
     this.shade.setVisible(shading).setPosition(ox, oy);
-    this.pools.setVisible(lit.length > 0).setPosition(ox, oy);
+    this.pools.setVisible(n > 0).setPosition(ox, oy);
     // the ring is drawn only while the hour's shade is darker than the floor allows (the night): only then does it move the layer
     const keep = this.ringAlpha(this.wash.alpha, this.wash.tint);
-    const ring = player && shading && keep < this.wash.alpha ? at(player.x, player.y) : undefined;
-    const key = `${ox},${oy},${w},${h}|${this.wash.tint}:${this.wash.alpha}|${ring ? `${ring.x},${ring.y}` : ''}|${lit.map(({ l, gate, flick }) => `${l.x},${l.y},${gate.toFixed(3)},${flick}`).join(';')}`;
+    const ring = player && shading && keep < this.wash.alpha ? player : undefined;
+    const rx = ring ? Math.round((ring.x - ox) * ART) : -1;
+    const ry = ring ? Math.round((ring.y - oy) * ART) : -1;
+    // each texture redraws on its own inputs: the view and the lights are both's, the hour's colour and the ring are the shade's alone, so a walk through the night moves the ring and leaves the pools as they are
+    const lights = this.key.lights;
+    let same = n * 4 === this.keyLen;
+    const next = (this.keyNow.length >= n * 4 ? this.keyNow : (this.keyNow = new Float64Array(n * 4 + 16)));
+    for (let i = 0; i < n; i += 1) {
+      const e = lit[i]!;
+      const o = i * 4;
+      next[o] = e.l.x;
+      next[o + 1] = e.l.y;
+      next[o + 2] = e.gate;
+      next[o + 3] = e.flick;
+      if (same && (lights[o] !== e.l.x || lights[o + 1] !== e.l.y || lights[o + 2] !== e.gate || lights[o + 3] !== e.flick)) same = false;
+    }
+    const k = this.key;
+    const view4 = k.ox === ox && k.oy === oy && k.w === w && k.h === h;
+    const poolsSame = view4 && same;
+    const shadeSame = poolsSame && k.tint === this.wash.tint && k.alpha === this.wash.alpha && k.rx === rx && k.ry === ry;
     // nothing moved since the last draw: the textures already hold this frame
-    if (key === this.drawn) return;
-    this.drawn = key;
+    if (shadeSame) return;
+    k.ox = ox;
+    k.oy = oy;
+    k.w = w;
+    k.h = h;
+    k.tint = this.wash.tint;
+    k.alpha = this.wash.alpha;
+    k.rx = rx;
+    k.ry = ry;
+    this.keyLen = n * 4;
+    k.lights = next;
+    this.keyNow = lights;
+    const at = (x: number, y: number) => ({ x: Math.round((x - ox) * ART), y: Math.round((y - oy) * ART) });
     if (shading) {
       this.shade.clear();
       // opaque, at the multiply's own factor (1 - a + a x colour a channel): the layer then multiplies the valley by it
@@ -151,7 +198,7 @@ export class LightLayer {
       this.shade.fill(shadeFactor(this.wash.tint, this.wash.alpha), 1);
       // the ring around the player keeps the ground at the floor: the readable shade there, never darker; drawn first,
       // so a pool inside the ring still cuts it
-      if (ring) this.shade.stamp('light-ring', undefined, ring.x, ring.y, { tint: shadeFactor(this.wash.tint, keep) });
+      if (ring) this.shade.stamp('light-ring', undefined, rx, ry, { tint: shadeFactor(this.wash.tint, keep) });
       for (const { l, gate, flick } of lit) {
         const p = at(l.x, l.y);
         this.shade.stamp(`light-cut-${l.kind}`, undefined, p.x, p.y, { alpha: gate, scale: flick, blendMode: Phaser.BlendModes.ERASE });
@@ -159,7 +206,7 @@ export class LightLayer {
       this.shade.render();
     }
     // the pools: every light's outermost step first, the innermost last, so the brightest step that reaches a pixel wins
-    if (lit.length === 0) return;
+    if (n === 0 || poolsSame) return;
     this.pools.clear();
     for (let i = POOL_STEPS.length - 1; i >= 0; i -= 1) {
       const step = POOL_STEPS[i]!;
@@ -199,7 +246,7 @@ export class LightLayer {
 
   /** Hides both layers, for the plain valley or a scene that is leaving. */
   hide(): void {
-    this.drawn = '';
+    this.key.ox = Number.NaN;
     this.shade.setVisible(false);
     this.pools.setVisible(false);
   }

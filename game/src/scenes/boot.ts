@@ -11,11 +11,15 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    performance.mark('boot:loader');
     // the pictures are the first 60 percent of the bar; the world's build fills the rest (world.ts `drive`)
     this.load.on('progress', (v: number) => app.ui.loading(0.6 * v));
     this.load.on('loaderror', (file: { key: string }) => console.warn(`could not load sprite ${file.key}`));
+    const early = app.painted?.early;
     // the clips' sheets wait: the world loads the ones of the player's race (clips.ts `raceClips`)
     for (const [ref, info] of bootSprites(app.bundle.sprites as ClipSprites)) {
+      // a painted land's pictures are already on their way (early-fetch.ts): they are added in create
+      if (early?.has(ref)) continue;
       if (info.frames > 1) this.load.spritesheet(ref, info.url, { frameWidth: info.w, frameHeight: info.h });
       else this.load.image(ref, info.url);
     }
@@ -26,6 +30,36 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.scene.start('world');
+    performance.mark('boot:loaded');
+    const early = app.painted?.early;
+    // a normal page has no painted land: the world starts at once
+    if (!early) {
+      this.scene.start('world');
+      return;
+    }
+    // the painted land's pictures are textures before the world starts, one a frame (no frame carries two big uploads); a streamed land's units (keys `painted:<layer>@ux,uy`)
+    // are not waited for: the world starts and its stream takes them as they land
+    const steps: (() => Promise<void>)[] = [];
+    for (const key of early.keys().filter((k) => !k.includes('@'))) {
+      steps.push(async () => {
+        const img = await early.get(key)!;
+        if (!this.textures.exists(key)) this.textures.addImage(key, img);
+      });
+    }
+    const next = (i: number): void => {
+      if (i >= steps.length) {
+        performance.mark('boot:textures');
+        this.scene.start('world');
+        return;
+      }
+      steps[i]!().then(
+        () => this.time.delayedCall(0, () => next(i + 1)),
+        (e: unknown) => {
+          console.warn(`could not load sprites: ${String(e)}`);
+          next(i + 1);
+        },
+      );
+    };
+    next(0);
   }
 }
