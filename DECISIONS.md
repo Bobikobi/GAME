@@ -4918,3 +4918,12 @@ A server-side check of suspicious pace is a separate layer; no game stops bots b
 - **3D door:** draws no stone, lift or carry (`grep` of `game/play3d`), so nothing to carry across.
 
 **Retry when:** the owner finds 70 percent still a quarry block (change `STONE_SCALE.large`, re-run `pnpm art:held`), or a clip is redrawn (take it off `HELD_WAIVERS`). **Model:** Claude Sonnet 5.5 (fix lane, object-scale). **Link:** #874.
+
+## 2026-11-27 ✅ The title goes up before the engine, and the world builds behind it in slices (boot-bytes lane)
+
+**What:** the brief said 9.5 MB loads before the title; measured at dee62503 (Fast 4G, cache off, cpu x4) it was 551 requests and 2.10 MB sent compressed (3.83 MB raw): the 9.5 MB was the whole dist, and the clip sheets already wait for the race (2026-11-22). The time was CPU: Phaser start and 268 texture decodes about 3 s, `WorldScene.create` 4.6 s in one call, then the first frames' ground bake 5.3 s, all before the 2-rAF title mark. The manager's ruling: show the title as soon as what it draws is loaded, build the world behind it.
+- **Chosen:** (A) `main.ts` opens the title straight after the bundle is parsed and loads `game.ts` (Phaser, the scenes) by a dynamic import after the title's first paint, so the engine is not fetched or run before the title; (B) `WorldScene.create` is a generator (`build`) run by `drive` in tasks of at most 8 ms, the camera stays hidden and `update` returns until the last step, whose work is the first frame's (the ground under the first view); `UI.begin` waits on "Preparing the valley" if a start comes before `worldReady`.
+- **Not done (C, the manager's call):** cutting the three big calls (`buildAir`/`cutBanks`, the ground bake, `LightLayer`) inside. `bankPixels` and `cloudPixels` are pure functions of constants (the same pixels on two boots, hashed) and `cutBanks` repeats one 256 px period 7 to 11 times, so a code fix beats an offline bake there; the ground pages are pure too but one page is 0.3 to 0.7 MB as a PNG (the land is 16 pages, 4 water frames), which costs more bytes than the CPU it saves.
+- **Look:** the valley behind the title is plain ink until the world is whole, then it shows; nothing half-built is ever drawn.
+
+**Retry when:** the world build is cut inside (C) and the title can answer in every slice; or the engine chunk's fetch should start before the title paints (it is serialised after it now, about one round trip). **Model:** Claude Sonnet 5.5 (boot-bytes lane). **Link:** the boot-bytes pull request, public #843.

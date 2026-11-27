@@ -5,8 +5,8 @@ export default defineConfig({
   base: './',
   build: {
     target: 'es2022',
-    // Phaser alone is about 1.2 MB minified; it is one cacheable file
-    chunkSizeWarningLimit: 1600,
+    // Phaser alone is about 1.2 MB minified; it and the scenes are one cacheable file (game.ts), fetched after the title
+    chunkSizeWarningLimit: 1700,
   },
   server: { host: true },
 });

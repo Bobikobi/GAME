@@ -236,6 +236,24 @@ body {
   background: var(--yellow);
 }
 
+/* the title is up while the valley loads: the bar is a strip along the bottom, over the title and out of its way */
+.loading.behind {
+  inset: auto 0 14px;
+  place-content: center;
+  grid-auto-flow: row;
+  background: none;
+  font-size: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.loading.behind .loading-bar {
+  width: 160px;
+  height: 8px;
+  border-width: 2px;
+  margin: 0 auto;
+}
+
 .title-screen {
   position: fixed;
   inset: 0;

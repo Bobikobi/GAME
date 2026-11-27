@@ -11,7 +11,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.on('progress', (v: number) => app.ui.loading(v));
+    // the pictures are the first 60 percent of the bar; the world's build fills the rest (world.ts `drive`)
+    this.load.on('progress', (v: number) => app.ui.loading(0.6 * v));
     this.load.on('loaderror', (file: { key: string }) => console.warn(`could not load sprite ${file.key}`));
     // the clips' sheets wait: the world loads the ones of the player's race (clips.ts `raceClips`)
     for (const [ref, info] of bootSprites(app.bundle.sprites as ClipSprites)) {
