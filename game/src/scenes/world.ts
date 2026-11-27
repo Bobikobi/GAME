@@ -110,7 +110,7 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
+import { ClipPlayer, VERB_OF_AUTO, WalkWatch, clipFor, clipFrame, creatureClipFor, creatureOf, creaturePoint, creatureSheets, creatureX, handAt, handWorld, raceClips, verbOfOutcome, viewOfHeading, type ClipSprite, type ClipSprites, type ClipVerb, type CreatureSprites, type Found, type FoundCreature } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { reportedGait, SpeedRamp } from '../walkfeel';
@@ -569,7 +569,13 @@ export class WorldScene extends Phaser.Scene {
     eyes?: Phaser.GameObjects.Image;
     halo?: Phaser.GameObjects.Image;
     flare?: Phaser.GameObjects.Image;
+    /** the drawn wolf's eye as a red point over the dark of night (#847): the sheet's own eye is a pixel or two, and the shade takes it */
+    gaze?: Phaser.GameObjects.Image;
     run?: Run;
+    /** the drawn creature this hazard shows when its sheets loaded (#847): its id, where its feet stand when it stands, and what it plays now */
+    creature?: string;
+    home?: { x: number; y: number };
+    art?: { watch: WalkWatch; dir: Dir; verb: 'walk' | 'idle'; start: number; key?: string; found?: FoundCreature; foot?: { x: number; y: number } };
     /** what stays of a predator by day: its den mouth and the prints along its round */
     marks?: Phaser.GameObjects.Image[];
   }[] = [];
@@ -887,8 +893,14 @@ export class WorldScene extends Phaser.Scene {
       px(red, 0, 0, size, size);
       px(red, size + gap, 0, size, size);
     });
-    for (const [tex, rings] of [['fx-wolf-halo', WOLF_EYES.halo], ['fx-wolf-flare', WOLF_EYES.flare]] as const) {
-      const glow = glowPixels(rings);
+    // the drawn wolf (#847) has its own eye in the sheet: the same rings round one point, the pair's are the fallback still's
+    make('fx-wolf-eye1', size, size, () => px(red, 0, 0, size, size));
+    make('fx-wolf-eye2', 3, size, () => {
+      px(red, 0, 0, 1, size);
+      px(red, 2, 0, 1, size);
+    });
+    for (const [tex, rings, eyes] of [['fx-wolf-halo', WOLF_EYES.halo, 2], ['fx-wolf-flare', WOLF_EYES.flare, 2], ['fx-wolf-halo1', WOLF_EYES.halo, 1], ['fx-wolf-flare1', WOLF_EYES.flare, 1]] as const) {
+      const glow = glowPixels(rings, eyes);
       make(tex, glow.w, glow.h, () => {
         for (const p of glow.px) g.fillStyle(red, p.a).fillRect(p.x, p.y, 1, 1);
       });
@@ -1284,9 +1296,12 @@ export class WorldScene extends Phaser.Scene {
         // a walking wolf shows only its eyes at night: the pair over its glow, and the flare as it sees the player
         const glow = (tex: string, depth: number) =>
           this.add.image(cx, bottom - unit.h / 2, tex).setOrigin(0.5).setDepth(depth).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
-        const eyes = rule?.round ? this.add.image(cx, bottom - unit.h / 2, 'fx-wolf-eyes').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
-        const halo = rule?.round ? glow('fx-wolf-halo', DEPTH.glow - 0.5) : undefined;
-        const flare = rule?.round ? glow('fx-wolf-flare', DEPTH.glow - 0.25) : undefined;
+        // a wolf with all its drawn sheets is drawn from them (#847) and keeps one glow point on its own eye; with any sheet missing it stays the 16 px still and its pair
+        const creature = p.hazard.kind === 'predator' ? this.drawnCreature(p.sprite) : undefined;
+        const eyes = rule?.round && !creature ? this.add.image(cx, bottom - unit.h / 2, 'fx-wolf-eyes').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
+        const gaze = rule?.round && creature ? this.add.image(cx, bottom - unit.h / 2, 'fx-wolf-eye1').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
+        const halo = rule?.round ? glow(creature ? 'fx-wolf-halo1' : 'fx-wolf-halo', DEPTH.glow - 0.5) : undefined;
+        const flare = rule?.round ? glow(creature ? 'fx-wolf-flare1' : 'fx-wolf-flare', DEPTH.glow - 0.25) : undefined;
         // its den and its tracks stay by day (denMarks): flat on the ground under everything that walks
         const marks: Phaser.GameObjects.Image[] = [];
         if (rule && p.hazard.kind === 'predator') {
@@ -1302,7 +1317,10 @@ export class WorldScene extends Phaser.Scene {
         }
         // a pit and a trap lie in the ground; only the wolf stands and casts
         if (p.hazard.kind !== 'predator') this.noCast.add(spr);
-        this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare, marks });
+        this.hazards.push({
+          spr, kind: p.hazard.kind, rule, eyes, gaze, halo, flare, marks,
+          ...(creature ? { creature, home: { x: cx, y: bottom }, art: { watch: new WalkWatch(), dir: 'left' as Dir, verb: 'idle' as const, start: 0 } } : {}),
+        });
         continue;
       }
       if (p.fire === true && p.id !== undefined) {
@@ -3722,8 +3740,9 @@ export class WorldScene extends Phaser.Scene {
     for (const h of this.hazards) {
       const { spr, kind, rule, eyes, halo } = h;
       if (kind === 'predator') {
+        // the still's two frames are asleep and awake; a drawn wolf's frames are its clip's, set as it is placed (`dressWolf`)
         const frame = night && spr.texture.frameTotal > 2 ? 1 : 0;
-        if (Number(spr.frame.name) !== frame) spr.setFrame(frame);
+        if (!h.art && Number(spr.frame.name) !== frame) spr.setFrame(frame);
         const awake = rule !== undefined && windowOpen(this.b, rule, s.tick);
         spr.setVisible(this.wolfShown(h, s));
         eyes?.setVisible(awake);
@@ -3750,13 +3769,18 @@ export class WorldScene extends Phaser.Scene {
   private placePredators(s: GameSession): void {
     const chase = s.state.player.chase;
     const since = chase ? s.tick - chase.since : -1;
-    let alarmed: Phaser.GameObjects.Sprite | undefined;
+    let alarmed: (typeof this.hazards)[number] | undefined;
     let flinch: [number, number] = [0, 0];
+    const now = this.time.now;
     for (const h of this.hazards) {
       const { spr, rule, eyes, halo, flare } = h;
       const hunting = chase !== null && chase.hazard === rule?.id;
-      if (hunting && bangAt(since)) alarmed = spr;
-      if (!rule?.round) continue;
+      if (hunting && bangAt(since)) alarmed = h;
+      if (!rule?.round) {
+        // a wolf that keeps its den stands where it was put, in its idle (it faces the way its still did: left)
+        if (h.art && h.home) this.dressWolf(h, now, [rule?.rect.x ?? 0, rule?.rect.y ?? 0], [0, 0], h.home.x, h.home.y);
+        continue;
+      }
       const awake = windowOpen(this.b, rule, s.tick);
       const drawn = wolfDrawn(this.b, rule, s.state, s.tick, h.run, this.huntWalk(s));
       h.run = drawn.run;
@@ -3769,7 +3793,27 @@ export class WorldScene extends Phaser.Scene {
       if (pose) flinch = [ux * pose.flinch, uy * pose.flinch];
       const lx = pose ? ux * pose.lunge : 0;
       const ly = pose ? uy * pose.lunge : 0;
-      spr.setPosition(Math.round((x + 0.5) * T + lx), Math.round(bottom + ly)).setDepth(Math.round(bottom)).setVisible(this.wolfShown(h, s));
+      const px = Math.round((x + 0.5) * T + lx);
+      const py = Math.round(bottom + ly);
+      if (h.art) {
+        // the drawn wolf (#847): the sheet of its heading, walk while it moves and idle while it stands; the glow sits on its own eye
+        const found = this.dressWolf(h, now, drawn.at, drawn.heading, px, py);
+        spr.setDepth(py).setVisible(this.wolfShown(h, s));
+        const head = found?.head && found.view !== 'back' && h.art.foot ? creaturePoint(h.art.foot.x, h.art.foot.y, found, found.head, baseOf(spr)) : undefined;
+        if (!head || !found) {
+          h.gaze?.setVisible(false);
+          halo?.setVisible(false);
+          flare?.setVisible(false);
+          continue;
+        }
+        // one red point on the side wolf's eye, two close ones between the front wolf's; none from behind
+        h.gaze?.setTexture(found.view === 'front' ? 'fx-wolf-eye2' : 'fx-wolf-eye1').setPosition(Math.round(head.x), Math.round(head.y)).setVisible(awake);
+        halo?.setPosition(Math.round(head.x), Math.round(head.y)).setAngle(0).setVisible(awake);
+        const flared = awake && hunting ? flareAt(since) : 0;
+        flare?.setPosition(Math.round(head.x), Math.round(head.y)).setAngle(0).setAlpha(flared).setVisible(flared > 0);
+        continue;
+      }
+      spr.setPosition(px, py).setDepth(py).setVisible(this.wolfShown(h, s));
       if (!eyes) continue;
       const faceY = spr.y - spr.displayHeight * 0.55;
       // steady at full strength while awake (the owner's pick): no pulse, no blink
@@ -3779,11 +3823,60 @@ export class WorldScene extends Phaser.Scene {
       flare?.setPosition(eyes.x, eyes.y).setAngle(eyes.angle).setAlpha(flared).setVisible(flared > 0);
     }
     this.bang.setVisible(alarmed !== undefined);
-    if (alarmed) this.bang.setPosition(Math.round(alarmed.x), Math.round(alarmed.y - alarmed.displayHeight - 2));
+    if (alarmed) {
+      const found = alarmed.art?.found;
+      const head = found?.head && alarmed.art?.foot ? creaturePoint(alarmed.art.foot.x, alarmed.art.foot.y, found, found.head, baseOf(alarmed.spr)) : undefined;
+      // over the drawn head, not over the frame's empty top
+      if (head) this.bang.setPosition(Math.round(head.x), Math.round(head.y - 5));
+      else this.bang.setPosition(Math.round(alarmed.spr.x), Math.round(alarmed.spr.y - alarmed.spr.displayHeight - 2));
+    }
     if (flinch[0] !== this.flinch[0] || flinch[1] !== this.flinch[1]) {
       this.flinch = flinch;
       if (!this.falling) this.standOnFeet();
     }
+  }
+
+  /**
+   * Puts the drawn wolf's image where its feet stand (`x`, `y`, world units): the sheet of the way it faces (a right-facing wolf is the
+   * left sheet flipped), the walk while its drawn place moves and the idle while it stands, the frame of the clock, and the origin and
+   * the shift that put the sheet's foot point on the feet and the middle of the frame under the shadow layer's reading. Display only.
+   */
+  private dressWolf(h: (typeof this.hazards)[number], now: number, at: readonly [number, number], heading: readonly [number, number], x: number, y: number): FoundCreature | undefined {
+    const art = h.art;
+    if (!art || !h.creature) return undefined;
+    const verb = art.watch.walking(now, at) ? 'walk' : 'idle';
+    const face = viewOfHeading(heading, art.dir);
+    if (face) art.dir = face.dir;
+    const found = creatureClipFor(this.b.sprites as CreatureSprites, h.creature, verb, art.dir);
+    if (!found) return undefined;
+    if (verb !== art.verb) {
+      art.verb = verb;
+      art.start = now;
+    }
+    if (art.key !== found.key) {
+      retex(h.spr, found.key, 0);
+      h.spr.setOrigin(0.5, found.anchor[1] / found.h);
+      art.key = found.key;
+    }
+    h.spr.setFrame(clipFrame(now - art.start, found.frames, found.frame_ms, Infinity) ?? 0).setFlipX(found.flip);
+    // a quarter of a world unit is one art pixel: the image is placed on that grid
+    const at4 = (v: number) => Math.round(v * 4) / 4;
+    h.spr.setPosition(at4(creatureX(x, found, baseOf(h.spr))), y);
+    art.found = found;
+    art.foot = { x, y };
+    return found;
+  }
+
+  /**
+   * The creature a fallback still stands for, when every sheet the kit has for it loaded: all or none, so a wolf is never the drawn
+   * one in one view and the 16 px still in another. With a sheet missing the still stays, as it was before the sheets (#847).
+   */
+  private drawnCreature(still: string): string | undefined {
+    const sprites = this.b.sprites as CreatureSprites;
+    const creature = creatureOf(sprites, still);
+    if (!creature) return undefined;
+    const keys = creatureSheets(sprites, creature);
+    return keys.length > 0 && keys.every((k) => this.textures.exists(k)) ? creature : undefined;
   }
 
   /** The unit step from a spot drawn at (x, y) in tiles toward the drawn player, or straight down when they meet. */
