@@ -27,9 +27,9 @@ export const BAND_ROWS = 2;
 /** A strip's size in tiles: half a row of a page, so one strip is a few tens of ms on a slow machine. */
 export const STRIP_COLS = 8;
 export const STRIP_ROWS = 1;
-/** A piece of a strip that took longer than this halves the width of the next; one under FAST_MS doubles it (ms). */
-const SLOW_MS = 25;
-const FAST_MS = 8;
+/** A piece of a strip that took longer than SLOW_MS narrows the next to what would have fitted; one under FAST_MS widens it by a tile (ms). */
+const SLOW_MS = 12;
+const FAST_MS = 5;
 /** The longest a page already in view waits for the GPU to be given what is baked of it, ms. */
 const UPLOAD_MS = 100;
 
@@ -384,8 +384,8 @@ export class GroundChunks {
       this.show(chunk);
     }
     const took = this.now() - t0;
-    if (took > SLOW_MS) this.pieceCols = Math.max(1, this.pieceCols >> 1);
-    else if (took < FAST_MS) this.pieceCols = Math.min(this.stripCols, this.pieceCols * 2);
+    if (took > SLOW_MS) this.pieceCols = Math.max(1, Math.floor((this.pieceCols * SLOW_MS) / took));
+    else if (took < FAST_MS) this.pieceCols = Math.min(this.stripCols, this.pieceCols + 1);
   }
 
   private stripTexture(): Phaser.Textures.CanvasTexture {

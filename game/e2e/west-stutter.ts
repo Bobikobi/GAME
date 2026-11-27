@@ -30,8 +30,8 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
 };
 
-/** The lap: round the river's west bank, the meadow's path and back, by turning points (a route between two is found by the engine's own rule). */
-const LAP: [number, number][] = [[11, 14], [11, 30], [22, 30], [22, 16], [11, 16]];
+/** The lap: down the west bank beside the river, across the meadow and back up, by turning points (a route between two is found by the engine's own rule; the river keeps the east side out of reach). */
+const LAP: [number, number][] = [[11, 8], [11, 26], [5, 26], [5, 8]];
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -124,11 +124,16 @@ const START = `(() => {
 /** Walks to `tile` over the engine's own route, stop by stop; false when the route is not found or a stop times out. */
 async function go(page: Page, walk: FreeWalk, tile: [number, number]): Promise<boolean> {
   const stops = await page.eval<[number, number][] | null>(ROUTE(tile));
-  if (!stops) return false;
+  if (!stops) {
+    const at = await page.eval<string>(`(() => { const b = window.__game.world.body; return Math.floor(b.x / 64) + ',' + Math.floor(b.y / 64); })()`);
+    console.error(`no route from ${at} to ${tile.join(',')}`);
+    return false;
+  }
   for (const stop of stops) {
     try {
       await walk.holdTo(stop, `stop ${stop.join(',')}`, 15_000);
-    } catch {
+    } catch (e) {
+      console.error(`stop ${stop.join(',')} on the way to ${tile.join(',')}: ${String(e).slice(0, 90)}`);
       return false;
     }
   }
