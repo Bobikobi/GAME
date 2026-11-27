@@ -25,6 +25,8 @@ export const STRIP_ROWS = 1;
 /** A piece of a strip that took longer than this halves the width of the next; one under FAST_MS doubles it (ms). */
 const SLOW_MS = 25;
 const FAST_MS = 8;
+/** Behind the title (`bakeView`) a piece is never wider than this many tiles: a slice there must stay under a frame's worth on a slow machine. */
+const QUIET_COLS = 1;
 /** The longest a page already in view waits for the GPU to be given what is baked of it, ms. */
 const UPLOAD_MS = 100;
 
@@ -125,6 +127,11 @@ export class GroundChunks {
   /** where the view's centre was when the heading was last taken, and the way it has been going since (world units) */
   private from: { x: number; y: number } | undefined;
   private heading = { x: 0, y: 0 };
+  /** the pages the view touches, as of the last `update` */
+  private seen: ChunkRange | undefined;
+  /** how many times a page was baked whole in one call (a first light the view could not wait for), and the longest of them in ms */
+  wholeBakes = 0;
+  wholeLongest = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -173,9 +180,10 @@ export class GroundChunks {
   /**
    * Queues the pages the view touches and the ring around them, bakes at once only what the view touches when none
    * of it is held yet (first light, a teleport), and drops the rest. `epoch` changes when the stream's window does,
-   * so a page that was not held yet is asked again. Cheap while the camera stays in a page.
+   * so a page that was not held yet is asked again. Cheap while the camera stays in a page. A `lazy` update bakes nothing
+   * whole and starts no idle job: the caller bakes the view's pages with `bakeView` and then calls `resume` (the world's build, #843).
    */
-  update(view: { x: number; y: number; right: number; bottom: number }, epoch = ''): void {
+  update(view: { x: number; y: number; right: number; bottom: number }, epoch = '', lazy = false): void {
     const centre = { x: (view.x + view.right) / 2, y: (view.y + view.bottom) / 2 };
     // the heading is the way the view's centre has gone since it last moved a tile
     if (!this.from) this.from = centre;
@@ -188,6 +196,7 @@ export class GroundChunks {
     if (span === this.span) return;
     this.span = span;
     const seen = chunkRange(view, this.unit, this.tilesW, this.tilesH, 0);
+    this.seen = seen;
     const inView = (c: Chunk) => c.cx >= seen.x0 && c.cx <= seen.x1 && c.cy >= seen.y0 && c.cy <= seen.y1;
     const want = new Set<string>();
     for (let cy = r.y0; cy <= r.y1; cy++) {
@@ -207,7 +216,7 @@ export class GroundChunks {
       this.live.set(id, chunk);
     }
     // nothing of the view's own pages is held: it has to be seen whole this frame
-    if (!held) for (const chunk of this.live.values()) if (inView(chunk) && !chunk.img) this.bakeWhole(chunk);
+    if (!held && !lazy) for (const chunk of this.live.values()) if (inView(chunk) && !chunk.img) this.bakeWhole(chunk);
     for (const chunk of this.live.values()) {
       const v = inView(chunk);
       // a page that has only now come into view is given what is baked of it before the next frame draws it
@@ -215,8 +224,53 @@ export class GroundChunks {
       chunk.visible = v;
     }
     this.todo = pageOrder([...this.live.values()].filter((c) => !c.complete), seen, { x: centre.x / side, y: centre.y / side }, this.heading);
+    if (this.todo.length > 0) {
+      if (!lazy) this.pump();
+    } else this.queue.cancel(STRIPS);
+  }
+
+  /**
+   * Bakes strips of the pages the view touches (they come first in the queue) for up to `budget` ms; true when every one
+   * of them is whole. The same pixels as a whole-page bake, a few ms at a time (#843).
+   */
+  bakeView(budget: number, points?: { x: number; y: number }[]): boolean {
+    const seen = this.seen;
+    if (!seen) return true;
+    // the pages this priming bakes are fixed on the first call: the view's, or only those that hold the given world
+    // points (the title's backdrop and where a new game wakes); the rest of the view comes by idle strips, as the ring does
+    const side = CHUNK * this.unit;
+    this.prime ??= points
+      ? points.map((p) => this.live.get(`${Math.floor(p.x / side)},${Math.floor(p.y / side)}`)).filter((c, i, a): c is Chunk => !!c && !c.complete && a.indexOf(c) === i)
+      : this.todo.filter((c) => c.cx >= seen.x0 && c.cx <= seen.x1 && c.cy >= seen.y0 && c.cy <= seen.y1);
+    const prime = this.prime;
+    // a page is primed when its first frame is whole (the page shows that one until the others are baked, by idle strips)
+    const first = (): Chunk | undefined => prime.find((c) => !c.complete && c.done < c.strips.length && this.live.get(`${c.cx},${c.cy}`) === c);
+    const t0 = this.now();
+    // nothing is on screen yet: the GPU uploads wait for a slice of their own, so no slice holds a strip and an upload
+    this.quiet = true;
+    try {
+      for (;;) {
+        const up = this.uploads.shift();
+        if (up) up();
+        else {
+          const c = first();
+          if (!c) break;
+          // a page's canvas and painter are set up in a slice of their own, too
+          if (!c.paint) this.begin(c);
+          else this.bakeUnit(c);
+        }
+        if (this.now() - t0 >= budget) break;
+      }
+    } finally {
+      this.quiet = false;
+    }
+    return !first() && this.uploads.length === 0;
+  }
+
+  /** Starts the idle job for the strips still waiting: what `update` does unless it was `lazy`. */
+  resume(): void {
+    this.prime = undefined;
     if (this.todo.length > 0) this.pump();
-    else this.queue.cancel(STRIPS);
   }
 
   /** Shows a frame of the water's cycle on every chunk that has one. */
@@ -267,6 +321,8 @@ export class GroundChunks {
 
   /** The whole page in one go, every frame: what the view needs on the frame it lands on a page. */
   private bakeWhole(chunk: Chunk): void {
+    const t0 = this.now();
+    this.wholeBakes++;
     const paint = this.makePainter();
     const animated = (frame: number): boolean => {
       const tex = this.texture(chunk, frame);
@@ -279,7 +335,14 @@ export class GroundChunks {
     chunk.img = this.image(chunk);
     chunk.complete = true;
     chunk.done = chunk.total = 1;
+    this.wholeLongest = Math.max(this.wholeLongest, this.now() - t0);
   }
+
+  /** The pages `bakeView` is baking: set by its first call, dropped by `resume`. */
+  private prime: Chunk[] | undefined;
+  /** `bakeView` is running: uploads to the GPU are queued, one to a slice, since nothing shows yet. */
+  private quiet = false;
+  private uploads: (() => void)[] = [];
 
   private upload(chunk: Chunk): void {
     chunk.texs[0]!.refresh();
@@ -309,24 +372,27 @@ export class GroundChunks {
    * A piece of one strip of one frame of a page: as many tiles as the last piece's cost allows. The strips of the first
    * frame come first; the other frames follow once a tile is known to be animated.
    */
+  private begin(chunk: Chunk): void {
+    if (chunk.paint) return;
+    chunk.paint = this.makePainter();
+    this.texture(chunk, 0);
+    chunk.keys = [chunk.all[0]!];
+    chunk.img = this.image(chunk);
+  }
+
   private bakeUnit(chunk: Chunk): void {
     const t0 = this.now();
     const n = chunk.strips.length;
     const frame = Math.floor(chunk.done / n);
     const strip = chunk.strips[chunk.done % n]!;
-    if (!chunk.paint) {
-      chunk.paint = this.makePainter();
-      this.texture(chunk, 0);
-      chunk.keys = [chunk.all[0]!];
-      chunk.img = this.image(chunk);
-    }
+    this.begin(chunk);
     // a frame's canvas is made as its first strip is baked, one at a time, so no slice makes three
     if (!chunk.texs[frame]) this.texture(chunk, frame);
-    const w = Math.min(this.pieceCols, strip.w - chunk.at);
+    const w = Math.min(this.quiet ? Math.min(this.pieceCols, QUIET_COLS) : this.pieceCols, strip.w - chunk.at);
     const rx = strip.x + chunk.at;
     const scratch = this.stripTexture();
     scratch.getContext().clearRect(0, 0, scratch.width, scratch.height);
-    const animated = chunk.paint(scratch, frame, chunk.tx0 + rx, chunk.ty0 + strip.y, w, strip.h);
+    const animated = chunk.paint!(scratch, frame, chunk.tx0 + rx, chunk.ty0 + strip.y, w, strip.h);
     const px = this.unit * this.density;
     const tex = chunk.texs[frame]!;
     tex.getContext().drawImage(scratch.getCanvas() as CanvasImageSource, 0, 0, w * px, strip.h * px, rx * px, strip.y * px, w * px, strip.h * px);
@@ -337,9 +403,17 @@ export class GroundChunks {
       chunk.done++;
       // the first frame shows as it is baked, as often as the GPU can be given it; the others show only whole
       if (frame === 0) chunk.dirty = true;
-      else if (chunk.done % n === 0) tex.refresh();
+      else if (chunk.done % n === 0) {
+        if (this.quiet) this.uploads.push(() => tex.refresh());
+        else tex.refresh();
+      }
     }
-    if (chunk.dirty && (chunk.done >= n || (chunk.visible && this.now() - chunk.uploaded >= UPLOAD_MS))) this.upload(chunk);
+    if (chunk.dirty && (chunk.done >= n || (!this.quiet && chunk.visible && this.now() - chunk.uploaded >= UPLOAD_MS))) {
+      if (this.quiet) {
+        chunk.dirty = false;
+        this.uploads.push(() => this.upload(chunk));
+      } else this.upload(chunk);
+    }
     if (chunk.done >= chunk.total) {
       chunk.complete = true;
       chunk.keys = chunk.all.slice();
@@ -348,7 +422,7 @@ export class GroundChunks {
     }
     const took = this.now() - t0;
     if (took > SLOW_MS) this.pieceCols = Math.max(1, this.pieceCols >> 1);
-    else if (took < FAST_MS) this.pieceCols = Math.min(this.stripCols, this.pieceCols * 2);
+    else if (took < FAST_MS) this.pieceCols = Math.min(this.quiet ? QUIET_COLS : this.stripCols, this.pieceCols * 2);
   }
 
   private stripTexture(): Phaser.Textures.CanvasTexture {

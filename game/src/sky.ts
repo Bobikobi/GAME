@@ -62,9 +62,15 @@ export function cloudBucket(cover: number): number {
 /** One patch of cloud shade at a given cover, 0 (clear sky) to 1 (a heavy sky). */
 export function cloudPixels(size = CLOUD_TILE * AIR_DENSITY, cover = 0.6): Uint8ClampedArray<ArrayBuffer> {
   const out = new Uint8ClampedArray(new ArrayBuffer(size * size * 4));
+  cloudRows(out, size, cover, 0, size);
+  return out;
+}
+
+/** The rows `y0` up to `y1` of `cloudPixels`, written into `out`: a patch can be cut in bands, each its own few ms (#843). */
+export function cloudRows(out: Uint8ClampedArray, size: number, cover: number, y0: number, y1: number): void {
   // more cover, a lower bar for the field: a thin sky keeps only the tops of the clouds
   const bar = 0.86 - 0.5 * Math.min(1, Math.max(0, cover));
-  for (let y = 0; y < size; y++) {
+  for (let y = y0; y < y1; y++) {
     for (let x = 0; x < size; x++) {
       const f = cloudField(x, y, size);
       // a shade has an edge, not a fog: one step in, and a rim of two hundredths of the field to soften it
@@ -77,7 +83,6 @@ export function cloudPixels(size = CLOUD_TILE * AIR_DENSITY, cover = 0.6): Uint8
       out[i + 3] = Math.round(CLOUD_ALPHA * edge);
     }
   }
-  return out;
 }
 
 /** Where the cloud patch stands after `tick` game ms: world units of drift on one slow wind. */

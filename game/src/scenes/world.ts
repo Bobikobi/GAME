@@ -71,7 +71,7 @@ import { Flame, Sway, installMotion } from '../motion';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
-import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
+import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudRows, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { EffectLayer } from '../effect-layer';
@@ -446,6 +446,10 @@ export class WorldScene extends Phaser.Scene {
   private shaft: { band: Phaser.GameObjects.Rectangle; line: Phaser.Geom.Line; dust?: Emitter } | undefined;
   /** the sky's weight today: an index into CLOUD_BUCKETS, and 0 is a clear day with the patches hidden */
   private cloudDay = -1;
+  /** the bucket whose patch the clouds show now (-1: none yet): a patch is baked a few rows a frame, so it can come after the day asks */
+  private cloudShown = -1;
+  /** the patches still to bake, the first the next: the one the sky asks for goes first, the others fill the idle frames (#843) */
+  private cloudBake: { k: number; out: Uint8ClampedArray; y: number }[] = [];
   /** a sky picked by `?debug&cloud=0..3`, for a still or a test; unset in play */
   private cloudForce: number | null = null;
   /** a day's weather picked by `?debug&sky=clear|rain|fog`, for a still or a test; unset in play */
@@ -604,6 +608,7 @@ export class WorldScene extends Phaser.Scene {
   private built = false;
   private steps: Generator<void> | undefined;
   private stepsRun = 0;
+  private priming = false;
 
   create(): void {
     // the camera shows nothing until the valley is whole: the title's backdrop stays plain until then, never a half-built world
@@ -624,7 +629,8 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       // the bar of "preparing the valley": the pictures are the first 60 percent (boot.ts), the build's steps the rest
-      app.ui.loading(0.6 + 0.4 * Math.min(1, ++this.stepsRun / BUILD_STEPS));
+      // (the ground's own yields, one for every few ms of strips, are not steps: the bar waits at the last one)
+      if (!this.priming) app.ui.loading(0.6 + 0.4 * Math.min(1, ++this.stepsRun / BUILD_STEPS));
     } while (performance.now() - t0 < BUILD_SLICE_MS);
     setTimeout(() => this.drive(), 0);
   }
@@ -747,12 +753,46 @@ export class WorldScene extends Phaser.Scene {
       this.labels.remove();
     });
     yield;
-    // the first frame's work (the ground under the first view) is the last step, so what "ready" says is a valley that draws at once
+    // the first frame's work is the last step, so what "ready" says is a valley that draws at once: first the ground under the view
+    yield* this.primeGround();
     this.built = true;
     this.update(this.game.loop.time, 16);
     cam.setVisible(true);
     app.world = this;
     app.ui.worldReady();
+  }
+
+  /**
+   * The ground under the first view, baked in strips by the build's own slices (groundchunks.ts `bakeView`): the same
+   * pages as one call per page, which froze the page for seconds behind the title. The view is the one the attract
+   * camera holds before a game starts.
+   */
+  private *primeGround(): Generator<void> {
+    const chunks = this.chunks;
+    const cam = this.cameras.main;
+    const at = this.attractAt();
+    cam.centerOn(at.x, at.y);
+    cam.preRender();
+    this.priming = true;
+    // the banks are cut to the view now, one a slice: each is a texture the GPU has to be given
+    for (const b of this.banks) {
+      this.cutBank(b, cam.worldView.width);
+      yield;
+    }
+    this.bankView = cam.worldView.width;
+    if (!chunks || !this.stream) {
+      this.priming = false;
+      return;
+    }
+    this.stream.update(this.player ? Math.floor(this.player.x / T) : 0, this.player ? Math.floor(this.player.y / T) : 0);
+    const centre = this.stream.centre;
+    chunks.update(cam.worldView, centre ? `${centre.cx},${centre.cy}` : '', true);
+    const spawn = this.b.map.spawn;
+    // the page under the title's backdrop and the page a new game wakes on: with the second held, the first frame after the
+    // wake needs no page baked whole (that was seven seconds at x4)
+    while (!chunks.bakeView(BUILD_SLICE_MS / 2, [at, { x: spawn.x * T, y: spawn.y * T }])) yield;
+    this.priming = false;
+    chunks.resume();
   }
 
   // ------------------------------------------------------------ building
@@ -1015,6 +1055,7 @@ export class WorldScene extends Phaser.Scene {
       (ref) => this.b.sprites[ref]?.frames ?? 1, (ref, frame) => this.pixelsOf(ref, frame),
     ) : undefined;
     // paints the tiles of a rectangle of the map into a canvas whose corner is that rectangle's; true when any is animated
+    const crowns = new Map<number, { ref: string; unit: NonNullable<ReturnType<typeof unitOf>>; density: number }>();
     const paint = (blends: Map<number, TileBlend>, tex: Phaser.Textures.CanvasTexture, frame: number, tx0: number, ty0: number, tw: number, th: number): boolean => {
       let animated = false;
       for (let y = ty0; y < ty0 + th; y++) {
@@ -1056,11 +1097,19 @@ export class WorldScene extends Phaser.Scene {
       }
       // one crown over each block of four forest tiles; the eyes still watch from the forest's edge
       for (const c of canopies) {
-        const ref = `${canopyKit}props/canopy_${c.i + 1}`;
-        const unit = unitOf(ref);
-        if (!unit || !this.has(ref)) continue;
+        // a piece of a page asks this for every crown of the map, so the crown's picture is looked up once, not per piece
+        let crown = crowns.get(c.i);
+        if (!crown) {
+          const ref = `${canopyKit}props/canopy_${c.i + 1}`;
+          const unit = unitOf(ref);
+          if (!unit || !this.has(ref)) continue;
+          crown = { ref, unit, density: densityOf(ref) };
+          crowns.set(c.i, crown);
+        }
+        const unit = crown.unit;
+        if (!unit) continue;
         if (c.x * T >= (tx0 + tw) * T || c.y * T >= (ty0 + th) * T || (c.x * T + unit.w) <= tx0 * T || (c.y * T + unit.h) <= ty0 * T) continue;
-        put(tex, ref, undefined, densityOf(ref), (c.x - tx0) * T, (c.y - ty0) * T);
+        put(tex, crown.ref, undefined, crown.density, (c.x - tx0) * T, (c.y - ty0) * T);
       }
       return animated;
     };
@@ -2052,31 +2101,26 @@ export class WorldScene extends Phaser.Scene {
           .setDepth(DEPTH.motes)
       : undefined;
     this.shaft = { band, line, dust };
-    // both textures are baked at the world's own density, so a texel lands on a screen pixel and no shape is
+    // the patches are baked at the world's own density, so a texel lands on a screen pixel and no shape is
     // drawn twice its size; a tile is then a quarter of its own pixels, which tileScale says
+    // one patch per weight of sky, so a clear day has none, a still day one, and a heavy day many. They are baked in bands
+    // of rows after the world is whole (bakeClouds), the day's own first: a clear day never draws its patch, so none is baked for it
     const side = CLOUD_TILE * AIR_DENSITY;
-    // one patch per weight of sky, so a clear day has none, a still day one, and a heavy day many
-    CLOUD_BUCKETS.forEach((cover, k) => {
-      const tex = this.textures.createCanvas(`fx-cloud-${k}`, side, side);
-      if (!tex) return;
-      const img = tex.getContext().createImageData(side, side);
-      img.data.set(cloudPixels(side, cover));
-      tex.getContext().putImageData(img, 0, 0);
-      tex.refresh();
-    });
+    const first = cloudBucket(cloudCover(0));
+    for (const k of [first, ...CLOUD_BUCKETS.keys()].filter((k, i, all) => k > 0 && all.indexOf(k) === i)) {
+      this.cloudBake.push({ k, out: new Uint8ClampedArray(side * side * 4), y: 0 });
+    }
     if (new URLSearchParams(location.search).has('debug')) {
       const asked = Number(new URLSearchParams(location.search).get('cloud'));
       if (Number.isInteger(asked) && asked >= 0 && asked < CLOUD_BUCKETS.length) this.cloudForce = asked;
       const sky = new URLSearchParams(location.search).get('sky');
       if (sky === 'clear' || sky === 'rain' || sky === 'fog') this.skyForce = sky;
     }
-    if (this.textures.exists('fx-cloud-0')) {
-      // three by three copies of one patch: a tile sprite drew its overlapping edge twice and doubled the shade
-      for (let j = 0; j < 3; j++) {
-        for (let i = 0; i < 3; i++) {
-          const img = this.add.image(0, 0, 'fx-cloud-0').setOrigin(0).setScale(1 / AIR_DENSITY).setDepth(DEPTH.flat - 0.3).setAlpha(0);
-          this.clouds.push(img);
-        }
+    // three by three copies of one patch: a tile sprite drew its overlapping edge twice and doubled the shade
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        const img = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setScale(1 / AIR_DENSITY).setDepth(DEPTH.flat - 0.3).setAlpha(0);
+        this.clouds.push(img);
       }
     }
     const banks = [
@@ -2088,7 +2132,34 @@ export class WorldScene extends Phaser.Scene {
       const img = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setScale(1 / AIR_DENSITY).setAlpha(0);
       this.banks.push({ img, key: b.key, tile: b.tile, seed: b.seed, drift: b.drift, at: BANK_AT[i] ?? 0.5, periods: 0, moved: 0 });
     });
-    this.cutBanks(this.cameras.main.worldView.width);
+  }
+
+  /** Puts the patch of bucket `k` at the front of the queue, if it is still to bake. */
+  private wantCloud(k: number): void {
+    const at = this.cloudBake.findIndex((j) => j.k === k);
+    if (at > 0) this.cloudBake.unshift(...this.cloudBake.splice(at, 1));
+  }
+
+  /** Bakes the next patch a band of rows at a time, for up to `budget` ms, and gives it to the texture manager when it is whole. */
+  private bakeClouds(budget: number): void {
+    const job = this.cloudBake[0];
+    if (!job) return;
+    const side = CLOUD_TILE * AIR_DENSITY;
+    const cover = CLOUD_BUCKETS[job.k] ?? 0;
+    const t0 = performance.now();
+    do {
+      const to = Math.min(side, job.y + 8);
+      cloudRows(job.out, side, cover, job.y, to);
+      job.y = to;
+    } while (job.y < side && performance.now() - t0 < budget);
+    if (job.y < side) return;
+    this.cloudBake.shift();
+    const tex = this.textures.createCanvas(`fx-cloud-${job.k}`, side, side);
+    if (!tex) return;
+    const img = tex.getContext().createImageData(side, side);
+    img.data.set(job.out);
+    tex.getContext().putImageData(img, 0, 0);
+    tex.refresh();
   }
 
   /**
@@ -2096,25 +2167,32 @@ export class WorldScene extends Phaser.Scene {
    * each end, so a wide screen never meets a vertical edge and the drift wraps without a seam.
    */
   private cutBanks(viewWidth: number): void {
-    const need = viewWidth + 2 * BANK_PERIOD;
-    for (const b of this.banks) {
-      const periods = Math.ceil(need / BANK_PERIOD) + 1;
-      if (periods === b.periods) continue;
-      b.periods = periods;
-      const px = periods * BANK_PERIOD * AIR_DENSITY;
-      const ph = b.tile * AIR_DENSITY;
-      const key = `${b.key}-${periods}`;
-      if (!this.textures.exists(key)) {
-        const tex = this.textures.createCanvas(key, px, ph);
-        if (!tex) continue;
-        const img = tex.getContext().createImageData(px, ph);
-        img.data.set(bankPixels(px, ph, b.seed, true, BANK_PERIOD * AIR_DENSITY));
-        tex.getContext().putImageData(img, 0, 0);
-        tex.refresh();
-      }
-      b.img.setTexture(key);
-    }
+    for (const b of this.banks) this.cutBank(b, viewWidth);
     this.bankView = viewWidth;
+  }
+
+  private cutBank(b: (typeof this.banks)[number], viewWidth: number): void {
+    const need = viewWidth + 2 * BANK_PERIOD;
+    const periods = Math.ceil(need / BANK_PERIOD) + 1;
+    if (periods === b.periods) return;
+    b.periods = periods;
+    const px = periods * BANK_PERIOD * AIR_DENSITY;
+    const ph = b.tile * AIR_DENSITY;
+    const key = `${b.key}-${periods}`;
+    if (!this.textures.exists(key)) {
+      const tex = this.textures.createCanvas(key, px, ph);
+      if (!tex) return;
+      // one period goes in as pixels and the canvas copies it along itself, doubling: the same pixels as the whole bank
+      // put at once, whose upload alone was a quarter of a second on a slow machine (#843)
+      const period = BANK_PERIOD * AIR_DENSITY;
+      const ctx = tex.getContext();
+      const img = ctx.createImageData(period, ph);
+      img.data.set(bankPixels(period, ph, b.seed, true, period));
+      ctx.putImageData(img, 0, 0);
+      for (let done = period; done < px; done *= 2) ctx.drawImage(tex.getCanvas() as CanvasImageSource, 0, 0, Math.min(done, px - done), ph, done, 0, Math.min(done, px - done), ph);
+      tex.refresh();
+    }
+    b.img.setTexture(key);
   }
 
   /**
@@ -2676,6 +2754,8 @@ export class WorldScene extends Phaser.Scene {
       if (seen) fog.x = home + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3);
     });
     this.animate(time, delta);
+    // the day's own patch is the one wanted: it gets the frame's spare ms, the others a few
+    if (this.cloudBake.length > 0) this.bakeClouds(this.session?.started && this.cloudBake[0]!.k === this.cloudDay ? 10 : 3);
     if (this.stream) this.stream.update(this.player ? Math.floor(this.player.x / T) : 0, this.player ? Math.floor(this.player.y / T) : 0);
     const at = this.stream?.centre;
     this.chunks?.update(this.cameras.main.worldView, at ? `${at.cx},${at.cy}` : '');
@@ -3030,10 +3110,15 @@ export class WorldScene extends Phaser.Scene {
 
   private attract(delta: number): void {
     this.attractT += delta;
-    const cam = this.cameras.main;
+    const at = this.attractAt();
+    this.cameras.main.centerOn(at.x, at.y);
+  }
+
+  /** Where the camera looks before a game starts: a slow drift over the valley's heart. */
+  private attractAt(): { x: number; y: number } {
     const cx = 22 * T + Math.sin(this.attractT / 9000) * 10 * T;
     const cy = 15 * T + Math.cos(this.attractT / 13000) * 5 * T;
-    cam.centerOn(Math.round(cx), Math.round(cy));
+    return { x: Math.round(cx), y: Math.round(cy) };
   }
 
   private canControl(s: GameSession): boolean {
@@ -3362,12 +3447,16 @@ export class WorldScene extends Phaser.Scene {
     const card = cardAt(this.b, s.pos[0], s.pos[1]);
     const look = skyLook(this.skyForce ?? s.sky(), card);
     const k = this.cloudForce ?? (look.overcast ? CLOUD_BUCKETS.length - 1 : cloudBucket(cloudCover(day)));
-    if (k !== this.cloudDay) {
-      this.cloudDay = k;
-      for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
+    this.cloudDay = k;
+    // the patch comes to the clouds once it is baked; until then they stay hidden rather than show another weight of sky
+    if (k > 0 && this.cloudShown !== k) {
+      if (this.textures.exists(`fx-cloud-${k}`)) {
+        this.cloudShown = k;
+        for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
+      } else this.wantCloud(k);
     }
     // the night kept readable (the owner, 30.10): the cloud shade is gone by 20:00, so it never stacks on the night
-    const clear = k === 0 ? 0 : cloudAt(this.night);
+    const clear = k === 0 || this.cloudShown !== k ? 0 : cloudAt(this.night);
     for (const c of this.clouds) c.setAlpha(look.overcast ? 0 : clear);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
     // and a bank cannot stack on it past the fog's cap at night (light.read)
