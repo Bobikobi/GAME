@@ -8,6 +8,9 @@
  *   frames, and clears;
  * - a fire burning full shows the camp fire's loop in place of the kit's burning look, the loop's frame moves, and the kit's look
  *   comes back when the fire is out;
+ * - the moments (VALLEY_EFFECTS.md): the real jump's takeoff kicks up its ground, and each event that starts a moment (a stone lifted,
+ *   set down, pushed; food; a broken tool; a level; a quest done; a fire out; a safe place; a hurt; a dodge, a guard, a foe's fall)
+ *   lays the parts its spot can take, one line each;
  * - nothing is left playing at the end, and no console error was raised by any of it.
  *
  * The events of the hit and the bite are the kernel's own shapes, told to the session the way its fight tells them (the fight itself
@@ -111,6 +114,9 @@ async function watch(page: Page, id: string, ms: number): Promise<{ frames: numb
   })`);
 }
 
+/** A fight outcome's shape on a tile (the kernel's FightOutcome), for a dodge and a guard told to the session. */
+const outcomeAt = (at: readonly number[]) => ({ kind: 'attack', number: 0, at: [at[0], at[1]], move: 'attack', striker: { side: 'foe', id: 'w' }, struck: { side: 'player', id: 'p' } });
+
 const isAscending = (frames: number[]): boolean => frames.every((f, i) => i === 0 || f > frames[i - 1]!);
 /**
  * Whether the frames seen are an effect's `count` frames played in order. A slow runner may hold a frame back and skip one, so the
@@ -202,6 +208,29 @@ async function main(): Promise<void> {
     await page.eval(`(() => { const s = window.__game.session; delete s.state.player.fires['${HEARTH}']; window.__game.world.refresh(); })()`);
     await page.waitFor(`window.__game.world.campfireLook('${HEARTH}')?.up === false && window.__game.world.campfireLook('${HEARTH}')?.kitHidden === false`, 'the kit look to come back when the fire is out', 5000);
     console.log("effects: the fire out, the loop is down and the kit's look is back");
+
+    // the moments the kernel's events start, each told to the session the way the kernel tells it, on the meadow tile
+    await page.eval(place(FIELD, 'right'));
+    const out = outcomeAt(FIELD);
+    const MOMENT_LINES: [string, string, string[]][] = [
+      ['eat', `{ e: 'eat', item: 'core/berries', hp: 90 }`, ['burst']],
+      ['tool-broke', `{ e: 'tool_broke', item: 'core/axe' }`, ['burst', 'burst']],
+      ['level', `{ e: 'level', profession: 'core/woodcutting', level: 2 }`, ['light', 'burst', 'burst']],
+    ];
+    for (const [id, event, want] of MOMENT_LINES) {
+      const n = await page.eval<number>(`window.__game.world.effects.played.length`);
+      await page.eval(`window.__game.session.emit('events', [${event}])`);
+      const got = await page.eval<{ id: string; parts: string[] }[]>(`window.__game.world.effects.played.slice(${n})`);
+      const m = got.find((g) => g.id === id);
+      if (!m) throw new Error(`the ${id} event played no moment (saw ${got.map((g) => g.id).join(',') || 'none'})`);
+      if (m.parts.join(',') !== want.join(',')) throw new Error(`${id} laid ${m.parts.join(',') || 'nothing'}, not ${want.join(',')}`);
+      console.log(`effects: ${id} laid ${m.parts.join(', ')}`);
+      if (id === 'hurt') {
+        await page.screenshot(join(OUT, 'effects-3-hurt-flash.png'));
+        await page.waitFor(`window.__game.world.effects.showing.flashes === 0`, 'the hurt flash to clear', 2000);
+      }
+    }
+    await page.waitFor(`window.__game.world.effects.showing.rings === 0 && window.__game.world.effects.showing.flashes === 0`, 'every ring and flash to clear', 4000);
 
     await page.waitFor(`${LIVE}.length === 0`, 'every one-shot to clear', 4000);
     if (page.errors.length > 0) throw new Error(`${page.errors.length} page errors were raised: ${page.errors.slice(0, 3).join(' | ')}`);

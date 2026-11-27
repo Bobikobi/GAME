@@ -58,7 +58,6 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { aimLine, chargeAt, trembleAt } from '../throw-charge';
-import { RING_TOTAL_MS, ringPixels, ringsAt } from '../ring';
 import { Piles, pileAt } from './piles';
 import { StoneLayer } from './stones';
 import { ARMS_STONE_KIND, HAND_STONE_KIND } from '../stone-art';
@@ -81,7 +80,7 @@ import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, 
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { EffectLayer } from '../effect-layer';
-import { landingDust, spawnsOf } from '../effects';
+import { groundBits, landingDust, momentsOf, spawnsOf, type BurstTexture, type MomentAt, type MomentId, type MomentSpawn } from '../effects';
 import { FightWordLayer, type FightWordPoint } from '../fight-word-layer';
 import { FoeBarLayer, type FoeBarPoint } from '../foe-bar-layer';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
@@ -99,7 +98,7 @@ import type { GameSession } from '../session-surface';
 import type { WeatherName } from '@game/schema';
 import { LANDING, LANDINGS, MARK_LIFE, RAIN_FALL, RAIN_LIFE, RAIN_MAX, RAIN_SLANT, type Landing, bankFog, dropsAlive, landingsPerSecond, markPixels, skyLook, streakPixels, washRgb } from '../rain';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
-import { SUCCESS_LIGHT, joltOf } from '../jolt';
+import { joltOf } from '../jolt';
 import { CHIMNEY_SMOKE, DRIFT_TEXTURE, Drifters, driftOn } from '../drift';
 import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '../flicker';
 import { soundscape } from '../soundscape';
@@ -422,8 +421,6 @@ export class WorldScene extends Phaser.Scene {
   private flies!: Emitter;
   private butterflies: Emitter | undefined;
   private leaves: Emitter | undefined;
-  private bursts = new Map<string, Emitter>();
-  private puffs = new Map<string, Emitter>();
   /** the pack's effects (effects.ts): a spark on a hit, a starburst on a bite, dust on a landing, the camp fire's flame */
   private effects!: EffectLayer;
   private fightWords!: FightWordLayer;
@@ -671,7 +668,7 @@ export class WorldScene extends Phaser.Scene {
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
     yield;
-    this.effects = new EffectLayer(this, DEPTH.fx, T);
+    this.effects = new EffectLayer(this, { fx: DEPTH.fx, water: DEPTH.fx - 1 }, T);
     yield;
     const read = this.b.params.light?.read;
     if (RICH.light) this.light = new LightLayer(this, this.lightTable, { floor: (read?.floor ?? READ.floor) / 100 }, { shade: DEPTH.shade, pools: DEPTH.shade + 0.2 });
@@ -2464,6 +2461,7 @@ export class WorldScene extends Phaser.Scene {
         this.biteDrawn(events);
         this.fightClips(events);
         this.fightEffects(events);
+        this.momentEffects(events);
         this.fightWords.play(events, performance.now());
         this.foeBars.play(events, performance.now());
         this.celebrate(events);
@@ -3263,6 +3261,37 @@ export class WorldScene extends Phaser.Scene {
     for (const spawn of spawnsOf(events, this.session.pos)) this.effects.playSpawn(spawn, this.time.now);
   }
 
+  /** The code-drawn moments a batch of the kernel's events starts (effects.ts `momentsOf`); the hurt of a landing waits for the feet. */
+  private momentEffects(events: readonly GameEvent[]): void {
+    if (!this.session) return;
+    for (const m of momentsOf(events)) {
+      const landsIn = m.landing ? this.hopLeft() : 0;
+      if (landsIn > 0) this.time.delayedCall(landsIn, () => this.playMoment(m));
+      else this.playMoment(m);
+    }
+  }
+
+  /** Lays one moment where it belongs: on the player's body, on a tile's ground, on a hearth, or on a foe's figure. */
+  playMoment(m: MomentSpawn | { id: MomentId; at: MomentAt }): void {
+    const s = this.session;
+    if (!s) return;
+    const at = m.at;
+    const groundAt = (x: number, y: number): BurstTexture | undefined => groundBits(this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag);
+    // a tile's spot is its feet line, where a body standing in it stands (`drawBody`): the ground's bits rise beside the feet, not off the thighs
+    const onTile = (t: readonly [number, number]) => ({ x: (t[0] + 0.5) * T, y: (t[1] + 1) * T, ground: groundAt(t[0], t[1]) });
+    let spot: { x: number; y: number; ground?: BurstTexture; body?: Phaser.GameObjects.Sprite } | undefined;
+    if (at.on === 'player') spot = { x: this.player.x, y: this.player.y, ground: groundAt(s.pos[0], s.pos[1]), body: this.player };
+    else if (at.on === 'tile') spot = onTile(at.tile);
+    else if (at.on === 'fire') {
+      const f = this.fires.get(at.id);
+      if (f) spot = { x: f.spr.x, y: f.spr.y };
+    } else {
+      const h = this.hazards.find((hz) => hz.rule?.id === at.id);
+      spot = h?.spr.visible ? { ...onTile(at.tile), x: h.spr.x, y: h.spr.y, body: h.spr } : onTile(at.tile);
+    }
+    if (spot) this.effects.moment(m.id, spot, this.time.now, RICH.motion);
+  }
+
   private fightWordHead({ struck, at }: FightOutcome, point: FightWordPoint): boolean {
     let figure: Phaser.GameObjects.Sprite | undefined;
     if (struck.side === 'player') {
@@ -3306,24 +3335,9 @@ export class WorldScene extends Phaser.Scene {
 
   /** A little dust at the feet as a step starts, in the colour of the ground left behind. */
   private puffAt(x: number, y: number): void {
-    const tag = this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag;
-    const texture =
-      tag === 'path' || tag === 'riverbank' || tag === 'town' ? 'fx-puff' : tag === 'meadow' || tag === 'grove' ? 'fx-leaf' : tag === 'ruin' ? 'fx-grit' : undefined;
+    const texture = groundBits(this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag);
     if (!texture) return;
-    let emitter = this.puffs.get(texture);
-    if (!emitter) {
-      emitter = this.add
-        .particles(0, 0, texture, {
-          lifespan: { min: 240, max: 400 },
-          speed: { min: 5, max: 12 },
-          angle: { min: 230, max: 310 },
-          alpha: { start: 1, end: 0 },
-          emitting: false,
-        })
-        .setDepth(DEPTH.puff);
-      this.puffs.set(texture, emitter);
-    }
-    emitter.explode(texture === 'fx-leaf' ? 1 : 2 + Math.floor(Math.random() * 2), this.player.x, this.player.y - 1);
+    this.effects.burst(texture, this.player.x, this.player.y - 1, texture === 'fx-leaf' ? 1 : 2 + Math.floor(Math.random() * 2), 'step', DEPTH.puff);
   }
 
   /** The kernel's rule, a rock face's, and a plant or stone that is ready stands in the way (walking.ts); `from` is the tile left, the player's own when none is given. */
@@ -3740,23 +3754,9 @@ export class WorldScene extends Phaser.Scene {
     s.facing = dir;
   }
 
-  private burst(texture: string, x: number, y: number, n: number): void {
-    let emitter = this.bursts.get(texture);
-    if (!emitter) {
-      emitter = this.add
-        .particles(0, 0, texture, {
-          lifespan: { min: 300, max: 600 },
-          speed: { min: 14, max: 42 },
-          angle: { min: 200, max: 340 },
-          gravityY: texture === 'fx-spark' ? 0 : 70,
-          alpha: { start: 1, end: 0 },
-          scale: { start: 1, end: 0.6 },
-          emitting: false,
-        })
-        .setDepth(DEPTH.fx);
-      this.bursts.set(texture, emitter);
-    }
-    emitter.explode(n, x, y);
+  /** The work's bits, thrown up and out from a spot: one of the layer's bursts (effect-layer.ts). */
+  private burst(texture: BurstTexture, x: number, y: number, n: number): void {
+    this.effects.burst(texture, x, y, n);
   }
 
   private drawBusy(s: GameSession): void {
@@ -4185,7 +4185,12 @@ export class WorldScene extends Phaser.Scene {
     const dir = app.controls.direction();
     const leaving = s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing));
     // a unit that ended with the thing out needs no answer; the fish comes up either way
-    if (w.kind === 'fish' && !leaving && this.ready(s, w.node)) sound.sfx('plop', { gain: 0.8 });
+    if (w.kind === 'fish' && !leaving && this.ready(s, w.node)) {
+      sound.sfx('plop', { gain: 0.8 });
+      // the fish comes out of the water where the line went in: a ring and a few drops
+      const spot = placedAt(this.b, w.node);
+      if (spot) this.playMoment({ id: 'fish-catch', at: { on: 'tile', tile: [spot.x, spot.y] } });
+    }
     w.pending = true;
     const next = await nextUnit({ ready: () => this.ready(s, w.node), act: (a) => s.act(a) }, w.action, leaving);
     w.pending = false;
@@ -4331,18 +4336,9 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** A soft light on the thing just made: it rises, holds and fades within `SUCCESS_LIGHT_MS`, then is gone. */
+  /** A soft light on the thing just made: it rises, holds and fades within `SUCCESS_LIGHT_MS`, then is gone (the layer's `light`). */
   private successLight(x: number, y: number): void {
-    const img = this.add.image(x, y, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.fx).setAlpha(0).setScale(2);
-    this.tweens.chain({
-      targets: img,
-      tweens: [
-        { alpha: SUCCESS_LIGHT.alpha, duration: SUCCESS_LIGHT.rise },
-        { alpha: SUCCESS_LIGHT.alpha, duration: SUCCESS_LIGHT.hold },
-        { alpha: 0, duration: SUCCESS_LIGHT.fade },
-      ],
-      onComplete: () => img.destroy(),
-    });
+    this.effects.light(x, y, 2);
   }
 
   /** A little lift of every new item over the player's head, and a cloud when something is built. */
@@ -4697,20 +4693,9 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** Rings spreading and fading on the water where a stone went under (the timeline is ring.ts's). */
+  /** Rings spreading and fading on the water where a stone went under (the timeline is ring.ts's, drawn by the layer). */
   private splashAt(tile: Tile): void {
-    const g = this.add.graphics().setPosition((tile[0] + 0.5) * T, (tile[1] + 0.6) * T).setDepth(DEPTH.fx - 1);
-    const start = this.time.now;
-    const draw = () => {
-      g.clear();
-      for (const r of ringsAt(this.time.now - start)) {
-        g.fillStyle(0xf5f4ef, r.alpha);
-        for (const [x, y] of ringPixels(r)) g.fillRect(x, y, 1, 1);
-      }
-    };
-    draw();
-    const tick = () => (this.time.now - start >= RING_TOTAL_MS ? (this.events.off('update', tick), g.destroy()) : draw());
-    this.events.on('update', tick);
+    this.effects.ring((tile[0] + 0.5) * T, (tile[1] + 0.6) * T, this.time.now);
   }
 
   /** One frame of the hop's stand-in: the feet go from tile to tile, the drawing rides the arc, and on landing the body stands on the tile. */
