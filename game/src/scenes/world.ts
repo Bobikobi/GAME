@@ -71,7 +71,7 @@ import { Flame, Sway, installMotion } from '../motion';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
-import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
+import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixelsTiled, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { EffectLayer } from '../effect-layer';
@@ -2108,7 +2108,7 @@ export class WorldScene extends Phaser.Scene {
         const tex = this.textures.createCanvas(key, px, ph);
         if (!tex) continue;
         const img = tex.getContext().createImageData(px, ph);
-        img.data.set(bankPixels(px, ph, b.seed, true, BANK_PERIOD * AIR_DENSITY));
+        img.data.set(bankPixelsTiled(px, ph, b.seed, true, BANK_PERIOD * AIR_DENSITY));
         tex.getContext().putImageData(img, 0, 0);
         tex.refresh();
       }
