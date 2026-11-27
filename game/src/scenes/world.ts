@@ -105,6 +105,7 @@ import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
 import { huntingAt, huntingNearby, questTargets } from '../targets';
+import { WildLife } from './wildlife';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
@@ -527,6 +528,10 @@ export class WorldScene extends Phaser.Scene {
   private look: Facing8 = 'down';
   /** The kernel's step time of the walk at the gait and load of the last frame (gaitStepMs), in ms a tile. */
   private paceMs: number | undefined;
+  /** the gait the player moves at this frame, still when the body stands: what the animals hear (HUNTING 4) */
+  private gaitNow: Gait | 'still' = 'still';
+  /** the valley's animals, stepped by the kernel and drawn from their sheets (public #916) */
+  private wild: WildLife | undefined;
   private busyFrom = 0;
   private busyMs = 0;
   /** the line, float and fish shapes of fishing, drawn in code */
@@ -700,6 +705,8 @@ export class WorldScene extends Phaser.Scene {
     performance.mark('boot:painted-built');
     if (RICH.detail) this.buildCasters();
     app.painted?.afterCasters();
+    // the animals' images are made as each one is first shown, and each casts as a walking thing
+    this.wild = new WildLife(this, this.b, (spr) => void this.cast?.add(spr, 'standing', 'moving'));
     yield;
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
@@ -2442,6 +2449,7 @@ export class WorldScene extends Phaser.Scene {
     this.foeBars.clear();
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
+    this.wild?.reset();
     this.wolfGround = undefined;
     this.song = undefined;
     this.lanternFor = undefined;
@@ -2829,6 +2837,7 @@ export class WorldScene extends Phaser.Scene {
     this.placeMote(s, clears, time);
     this.placeSmoke(s, clears, time);
     this.placePredators(s);
+    this.wild?.update(s.state, { face: DIRS[s.facing], gait: this.gaitNow, asleep: false }, s.tick, this.time.now);
     this.refreshIn -= real;
     if (this.refreshIn <= 0) {
       this.refreshIn = 250;
@@ -3249,6 +3258,7 @@ export class WorldScene extends Phaser.Scene {
       this.enter(door);
       return;
     }
+    this.gaitNow = this.body.moving ? gait : 'still';
     if (!this.body.moving && !was && !turned && !moved) return;
     this.drawBody();
     if (this.body.moving) this.walkFrame();
@@ -4793,7 +4803,7 @@ export class WorldScene extends Phaser.Scene {
     // on the jetty a passage leaves from, once the opening has reached it, the boat is offered (SEA_CROSSING.md); its hours and fare are the kernel's to refuse
     const passage = passageAt(this.b, s.state, s.pos);
     if (passage) return { label: `Board: ${this.b.passages[passage]!.title}`, run: () => void app.ui.board(passage), tile: [s.pos[0], s.pos[1]], top: T };
-    const prey = huntingNearby(this.b, s.state, s.tick, s.pos);
+    const prey = huntingNearby(this.b, s.state, s.tick, s.pos, this.wild?.shown());
     if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: T / 2 };
     // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
     // It comes after every other target, so a fire never hides a thing the player already faces.

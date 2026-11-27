@@ -43,15 +43,28 @@ export function huntingAt(b: Bundle, s: PublicState, tick: number, at: Tile, til
   }
 }
 
-export function huntingNearby(b: Bundle, s: PublicState, tick: number, at: Tile): HuntTarget | undefined {
+/** An animal the world shows: its spot and the tile it stands on now (scenes/wildlife.ts `shown`). */
+export interface StandingAnimal {
+  spot: number;
+  tile: Tile;
+}
+
+/**
+ * The nearest small game a stone reaches. With the stepped animals (`animals`, public #916) it points at an animal where it stands
+ * now and the take names that tile; without them (the 3D door) at the spots, as before.
+ */
+export function huntingNearby(b: Bundle, s: PublicState, tick: number, at: Tile, animals?: readonly StandingAnimal[]): HuntTarget | undefined {
   if ((s.player.bag[b.params.hunt.throw_item] ?? 0) === 0) return undefined;
   let target: HuntTarget | undefined;
   let nearest = Infinity;
-  for (const [index, spot] of (b.map.creatures?.spots ?? []).entries()) {
-    const distance = (at[0] - spot.x) ** 2 + (at[1] - spot.y) ** 2;
-    if (distance >= nearest || !stonePrey(b, s, tick, index, at)) continue;
+  const standing: readonly StandingAnimal[] = animals ?? (b.map.creatures?.spots ?? []).map((spot, i) => ({ spot: i, tile: [spot.x, spot.y] }));
+  for (const { spot: index, tile } of standing) {
+    const distance = (at[0] - tile[0]) ** 2 + (at[1] - tile[1]) ** 2;
+    if (distance >= nearest || !stonePrey(b, s, tick, index, at, animals ? tile : undefined)) continue;
     nearest = distance;
-    target = { label: 'Throw stone', tile: [spot.x, spot.y], action: { t: 'throw', at, aim: [spot.x, spot.y], kind: b.params.hunt.throw_item, power: FULL_POWER, prey: index } };
+    const stands: Tile = [tile[0], tile[1]];
+    const throwAt = { t: 'throw' as const, at, aim: stands, kind: b.params.hunt.throw_item, power: FULL_POWER, prey: index };
+    target = { label: 'Throw stone', tile: stands, action: animals ? { ...throwAt, stands } : throwAt };
   }
   return target;
 }
