@@ -225,6 +225,7 @@ async function main(): Promise<void> {
       ['eat', `{ e: 'eat', item: 'core/berries', hp: 90 }`, ['burst']],
       ['tool-broke', `{ e: 'tool_broke', item: 'core/axe' }`, ['burst', 'burst']],
       ['level', `{ e: 'level', profession: 'core/woodcutting', level: 2 }`, ['light', 'burst', 'burst']],
+      ['quest-done', `{ e: 'quest', quest: 'core/first-fire', state: 'done' }`, ['light', 'burst']],
       ['safe', `{ e: 'safe', id: 'core/bank-wolf', bitten: false }`, ['light']],
       ['hurt', `{ e: 'hurt', by: 'thorns', hp: 90 }`, ['flash']],
       ['dodge', `{ e: 'fight_dodge', ...${JSON.stringify(out)}, kind: 'dodge' }`, ['ground']],
@@ -243,6 +244,14 @@ async function main(): Promise<void> {
         await page.screenshot(join(OUT, 'effects-3-hurt-flash.png'));
         await page.waitFor(`window.__game.world.effects.showing.flashes === 0`, 'the hurt flash to clear', 2000);
       }
+    }
+    // a fire out smokes on its own hearth (the hearth lit and out again, as the kernel tells it)
+    {
+      const n = await page.eval<number>(`window.__game.world.effects.played.length`);
+      await page.eval(`window.__game.session.emit('events', [{ e: 'fire_out', id: '${HEARTH}' }])`);
+      const m = await page.eval<{ id: string; parts: string[] } | undefined>(`window.__game.world.effects.played.slice(${n}).find((g) => g.id === 'fire-out')`);
+      if (!m || m.parts.join(',') !== 'burst') throw new Error(`the fire out laid ${m?.parts.join(',') ?? 'no moment'}, not its smoke`);
+      console.log(`effects: fire-out laid ${m.parts.join(', ')} on ${HEARTH}`);
     }
     await page.waitFor(`window.__game.world.effects.showing.rings === 0 && window.__game.world.effects.showing.flashes === 0`, 'every ring and flash to clear', 4000);
 

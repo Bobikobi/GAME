@@ -166,6 +166,8 @@ export type MomentId =
   | 'eat'
   | 'tool-broke'
   | 'level'
+  | 'quest-done'
+  | 'fire-out'
   | 'safe'
   | 'hurt'
   | 'foe-hurt'
@@ -202,6 +204,10 @@ export const MOMENTS: Readonly<Record<MomentId, Moment>> = {
   'tool-broke': { parts: [burst('fx-chip', 6, 'fan', 9), burst('fx-spark', 2, 'fan', 9)], danger: false },
   // a level: a light on the one who rose, sparks and motes going up (the banner and the jingle are the screen's)
   level: { parts: [{ fx: 'light', scale: 2.5, up: 12 }, burst('fx-spark', 10, 'rise', 10), burst('fx-mote', 6, 'rise', 14)], danger: false },
+  // a quest done: a softer light and sparks
+  'quest-done': { parts: [{ fx: 'light', scale: 2, up: 12 }, burst('fx-spark', 8, 'rise', 10)], danger: false },
+  // a fire goes out: a little smoke from the hearth
+  'fire-out': { parts: [burst('fx-smoke', 7, 'rise', 4)], danger: false },
   // a hunt ends in a safe place: a small light, a breath out
   safe: { parts: [{ fx: 'light', scale: 1.5, up: 10 }], danger: false },
   // the player's body is struck (a bite, a hazard, a hard landing, a foe's blow): it shows white a moment
@@ -268,6 +274,12 @@ export function momentsOf(events: readonly GameEvent[]): MomentSpawn[] {
         break;
       case 'level':
         add({ id: 'level', at: { on: 'player' } }, 'level');
+        break;
+      case 'quest':
+        if (e.state === 'done') add({ id: 'quest-done', at: { on: 'player' } }, 'quest');
+        break;
+      case 'fire_out':
+        add({ id: 'fire-out', at: { on: 'fire', id: e.id } }, `fire:${e.id}`);
         break;
       case 'safe':
         add({ id: 'safe', at: { on: 'player' } }, 'safe');
