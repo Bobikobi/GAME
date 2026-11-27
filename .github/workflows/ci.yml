@@ -197,6 +197,25 @@ jobs:
         run: pnpm exec tsx tools/src/site/build-3d.ts
       - name: Play ${{ matrix.group }}
         run: pnpm e2e:group "${{ matrix.group }}" e2e-shots --retry
+      # a script that failed and then passed on its retry leaves the job green; this lists it (game/e2e/run.ts writes
+      # the ledger, tools/src/flakes.ts prints it) so a flake is counted before it turns red. It never changes the job's
+      # result: continue-on-error, and the script prints nothing rather than fail on a missing or torn ledger.
+      - name: List the scripts that passed only on retry
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -s e2e-shots/flakes.jsonl ]; then
+            node tools/src/flakes.ts --table e2e-shots/flakes.jsonl >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+      - name: Keep the flake ledger
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-flakes-${{ matrix.group }}
+          path: e2e-shots/flakes.jsonl
+          if-no-files-found: ignore
+          retention-days: 90
       - name: Keep the screenshots of a failed first attempt
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
