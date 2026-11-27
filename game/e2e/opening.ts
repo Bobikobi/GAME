@@ -22,7 +22,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
-import { PHONE } from './viewports';
+import { DESKTOP, PHONE } from './viewports';
 import { FreeWalk, OPPOSITE, VEC, type Dir } from './walk';
 import { LUCKY_BOWL, type WakePocket, seedQuery } from './wakes';
 
@@ -64,7 +64,7 @@ function serve(): Promise<{ server: Server; url: string }> {
 }
 
 /** Helpers that live in the page, next to the game they read. */
-const IN_PAGE = `
+export const IN_PAGE = `
 window.__e2eLog = [];
 for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchend', 'click']) {
   window.addEventListener(type, (e) => {
@@ -1542,8 +1542,8 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
 
 const RUNS: Run[] = [
   { name: 'phone', viewport: PHONE, race: 'Elf', pocket: 'core/west-bank' },
-  { name: 'desktop', viewport: { width: 1280, height: 800, mobile: false }, race: 'Human', pocket: 'core/north-meadow' },
-  { name: 'slid-bank', viewport: { width: 1280, height: 800, mobile: false }, race: 'Skeleton', pocket: 'core/slid-bank', toBridge: true },
+  { name: 'desktop', viewport: DESKTOP, race: 'Human', pocket: 'core/north-meadow' },
+  { name: 'slid-bank', viewport: DESKTOP, race: 'Skeleton', pocket: 'core/slid-bank', toBridge: true },
   // E2E_ONLY=phone-lucky: the phone run on the lucky-bowl seed, to the stew
   { name: 'phone-lucky', viewport: PHONE, race: 'Elf', pocket: LUCKY_BOWL.pocket, lucky: true },
 ];
@@ -1571,7 +1571,10 @@ async function main(): Promise<void> {
   console.log(`screenshots in ${OUT}`);
 }
 
-main().catch((err: unknown) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+// valley-walk.ts imports IN_PAGE for the planner and sets E2E_NO_MAIN first; every other caller plays the opening, as it always did
+if (!process.env.E2E_NO_MAIN) {
+  main().catch((err: unknown) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+}

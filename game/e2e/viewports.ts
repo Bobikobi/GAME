@@ -3,6 +3,9 @@ import type { Viewport } from './cdp';
 /** The one phone play viewport: the phone lies on its side (owner, 14.11; #720). */
 export const PHONE: Viewport = { width: 844, height: 390, mobile: true };
 
+/** The desktop play viewport the openings and the frame walks use. */
+export const DESKTOP: Viewport = { width: 1280, height: 800, mobile: false };
+
 /** Portrait exists only to prove that the game asks for landscape play. */
 export const PORTRAIT_PHONE: Viewport = { width: PHONE.height, height: PHONE.width, mobile: true };
 
