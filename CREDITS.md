@@ -54,8 +54,10 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Fish rise at dusk (reaction) - `content/core/reactions/fish-at-dusk.json`
 - Mushrooms by a grove log in the rain (reaction) - `content/core/reactions/mushrooms-after-rain.json`
 - Reeds grow back sooner in the rain (reaction) - `content/core/reactions/reeds-in-rain.json`
+- Wild herbs wait longer in the fog (reaction) - `content/core/reactions/wild-herbs-in-fog.json`
 - Windfall under a full bush (reaction) - `content/core/reactions/windfall-berries.json`
 - Bandage (recipe) - `content/core/recipes/bandage.json`
+- Bellberry broth (recipe) - `content/core/recipes/bellberry-broth.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Fine basket (recipe) - `content/core/recipes/fine-basket.json`
 - Fishing rod (recipe) - `content/core/recipes/fishing-rod.json`
@@ -77,6 +79,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Roe-leather leggings (recipe) - `content/core/recipes/roe-leather-leggings.json`
 - Satchel (recipe) - `content/core/recipes/satchel.json`
 - Sinew thread (recipe) - `content/core/recipes/sinew-thread.json`
+- Snare (recipe) - `content/core/recipes/snare.json`
 - Split a log (recipe) - `content/core/recipes/split-log.json`
 - Stone blade (recipe) - `content/core/recipes/stone-blade.json`
 - Stone flakes (recipe) - `content/core/recipes/stone-flakes.json`
@@ -132,6 +135,7 @@ AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex imag
 - Sunleaf is slow to open in the fog (reaction) - `content/extensions/ceosisrael/reactions/sunleaf-in-fog.json`
 - Sunleaf mushrooms (recipe) - `content/extensions/ceosisrael/recipes/sunleaf-mushrooms.json`
 - Traveller's cap (recipe) - `content/extensions/ceosisrael/recipes/travellers-cap.json`
+- Wayfarer's scarf (recipe) - `content/extensions/ceosisrael/recipes/wayfarers-scarf.json`
 - Glade fig bushes (resource) - `content/extensions/ceosisrael/resources/glade-figs.json`
 - Dried herbs (template) - `content/extensions/ceosisrael/templates/dried-herbs.json`
 - CeosIsrael's kit art (kit) - `content/kit/ceosisrael/kit.json`
