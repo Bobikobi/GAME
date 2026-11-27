@@ -1,0 +1,31 @@
+{
+ "name": "valley-last-16px-bush",
+ "out": ".scratch/pixellab/valley-last-16px/plants",
+ "label": "pixellab-valley-last-16px-bush",
+ "provenance": "PixelLab Pro grids on the paid account (trial1), group B of lane valley-last-16px (public #917): our own 16 px sprites x4 as shape references, the kit's rich sapling, stump and bush_berry as level and camera references, and crops of the picked painted still (docs/design/frames/2026-11-22-valley-look-B-picked.png) as colour and finish references. DECISIONS 2026-11-02 PixelLab draws the world's pieces.",
+ "jobs": [
+  {
+   "id": "bush_empty",
+   "recipe": "grid",
+   "account": 1,
+   "inputs": {
+    "description": "a small round green shrub, dense overlapping clumps of dark muted olive leaves with lighter olive tips on the upper left, short twigs at its foot. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, painterly pixel art with many shades, no thick black outline, the whole object alone on a transparent background.",
+    "size": {
+     "width": 64,
+     "height": 64
+    },
+    "reference_images": [
+     {
+      "image": "../../../.scratch/valley-last-16px/refs/bush_empty-x4.png",
+      "usage_description": "The object to redraw: the same bare round bush, same proportions and silhouette, drawn far richer with fine pixels. Do not copy its coarse pixels."
+     },
+     {
+      "image": "../../../.scratch/valley-last-16px/refs/painted-bush.png",
+      "usage_description": "The colour and the finish to match: a bush of the valley's painting, dark muted olive moss-green leaves (not bright lime), fine pixels. Only the colours and finish; do not copy it."
+     }
+    ]
+   },
+   "note": "retry after a policy refusal: shorter description, no berry reference"
+  }
+ ]
+}

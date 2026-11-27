@@ -106,7 +106,7 @@ export type Action =
   | { t: 'search'; spot: string; at: Tile }
   /** move one row of a searched searchable (`row`, a place in its list) or all its rows into the bag */
   | { t: 'take'; spot: string; row?: number; at: Tile }
-  | { t: 'take'; prey: number; at: Tile }
+  | { t: 'take'; prey: number; at: Tile; stands?: Tile }
   | { t: 'set_snare' | 'check_snare'; tile: Tile; at: Tile }
   | { t: 'craft'; recipe: string; at: Tile }
   | { t: 'eat'; item: string }
@@ -550,7 +550,7 @@ function act(ctx: Ctx, a: Action): void {
     case 'search':
       return search(ctx, a.spot, a.at);
     case 'take':
-      return 'prey' in a ? throwStone(ctx, a.prey) : takeRows(ctx, a.spot, a.row, a.at);
+      return 'prey' in a ? throwStone(ctx, a.prey, a.stands) : takeRows(ctx, a.spot, a.row, a.at);
     case 'set_snare':
       return setSnare(ctx, a.tile);
     case 'check_snare':
@@ -2096,17 +2096,17 @@ function wearTool(ctx: Ctx, itemId: string): void {
   }
 }
 
-function throwStone(ctx: Ctx, index: number): void {
+function throwStone(ctx: Ctx, index: number, stands: Tile | undefined): void {
   const { b, s, tick } = ctx;
   const p = s.player;
   const item = b.params.hunt.throw_item;
   if ((p.bag[item] ?? 0) < 1) refuse('You need a stone.');
-  const prey = stonePrey(b, s, tick, index, p.at);
+  const prey = stonePrey(b, s, tick, index, p.at, stands);
   if (!prey) refuse('No small game in reach.');
   removeItem(ctx, item, 1, true);
   const refill = huntOf(b, prey.kind)?.spawn?.refill_d ?? 1;
   (p.preyReturns ??= {})[preyKey(prey)] = tick + refill * b.params.day_length_ms;
-  placeCarcass(b, s, prey.kind, [prey.x, prey.y], 1, tick);
+  placeCarcass(b, s, prey.kind, stands ? [stands[0], stands[1]] : [prey.x, prey.y], 1, tick);
   ctx.events.push({ e: 'take_prey' });
 }
 

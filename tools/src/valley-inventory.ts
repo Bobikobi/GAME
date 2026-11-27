@@ -103,6 +103,13 @@ export function artOf(kits: Kits, ref: string | undefined, reads: Reads = {}): A
   if (!exists(join(kit.dir, s.file))) return { state: 'missing', frames: s.frames > 1 ? s.frames : null, note: `${ref}: the PNG is not on disk`, sheet };
   const frames = s.frames > 1 ? s.frames : null;
   if (s.clip || s.creature_clip || s.stride) return { state: 'drawn clip', frames: s.frames, note: ref, sheet };
+  // a creature's fallback still (kit `still_of`): the world draws the creature from its sheets when they all load (DECISIONS 2026-11-27), so the still shows only when one is missing
+  if (s.still_of) {
+    const sheets = Object.values(kits).flatMap((k) => Object.values(k.sprites).filter((o) => o.creature_clip?.creature === s.still_of).map((o) => ({ k, o })));
+    if (sheets.length > 0 && sheets.every(({ k, o }) => exists(join(k.dir, o.file)))) {
+      return { state: 'drawn clip', frames: Math.max(...sheets.map(({ o }) => o.frames)), note: `${ref}; drawn from ${sheets.length} sheets of ${s.still_of}, this still is the fallback`, sheet };
+    }
+  }
   // the core kit's redraw list is the one place 16 px is allowed; a 16 px sprite elsewhere is `16px` too (the check refuses it)
   if ((s.density ?? 1) === 1) return { state: '16px', frames, note: ref, sheet };
   return { state: 'rich', frames, note: ref, sheet };

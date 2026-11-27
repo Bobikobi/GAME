@@ -59,6 +59,7 @@ function faceToward(c: Creature, to: Tile): void {
 function moveTo(c: Creature, t: Tile): void {
   c.face = [t[0] - c.at[0], t[1] - c.at[1]];
   c.at = [t[0], t[1]];
+  (c.trail ??= []).push([t[0], t[1]]);
 }
 
 function enter(c: Creature, s: WildState, view: WildView): void {
@@ -142,14 +143,17 @@ function goTier(kind: WildKind, c: Creature, src: Tile, view: WildView, out: Thi
   faceToward(c, src);
 }
 
-/** Goes to its rest for the night: a burrower under, any other kind asleep at its anchor. */
+/**
+ * Goes to its rest: a burrower into its den, and any kind out of its hours off the map at its anchor, a form in the grass, a
+ * perch, the river's bed (DECISIONS 2026-10-30: the night empties the day's animals, it is not a visible sleep).
+ */
 function rest(kind: WildKind, c: Creature, view: WildView): void {
   enter(c, 'SLEEP', view);
   delete c.target;
   delete c.src;
   c.count = 0;
   c.left = 0;
-  if (kind.flight === 'burrow') c.under = true;
+  if (kind.flight === 'burrow' || !awake(kind, view.hour)) c.under = true;
 }
 
 function homeward(kind: WildKind, c: Creature, view: WildView): void {
@@ -297,6 +301,7 @@ function thinkUnder(kind: WildKind, c: Creature, view: WildView, out: ThinkOut):
 /** One think step of one animal. Changes `c` only. */
 export function think(kind: WildKind, c: Creature, view: WildView): ThinkOut {
   const out: ThinkOut = { events: [] };
+  delete c.trail;
   if (c.under) {
     thinkUnder(kind, c, view, out);
     return out;
@@ -472,6 +477,7 @@ function hunt(kind: WildKind, c: Creature, view: WildView, n: Notice | undefined
  */
 export function settle(kind: WildKind, c: Creature, view: WildView): void {
   c.count = 0;
+  delete c.trail;
   delete c.target;
   delete c.src;
   if (!awake(kind, view.hour)) {
