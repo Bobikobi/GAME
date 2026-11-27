@@ -80,11 +80,17 @@ describe('the speed ramps', () => {
   test('it rises to the walk pace in RAMP_UP_MS and to the run pace in twice that', () => {
     const r = new SpeedRamp();
     let t = 0;
-    while (r.speed < WALK) r.step([1, 0], WALK, 1, WALK), (t += 1);
+    while (r.speed < WALK) {
+      r.step([1, 0], WALK, 1, WALK);
+      t += 1;
+    }
     expect(t).toBeCloseTo(RAMP_UP_MS, -1);
     const run = new SpeedRamp();
     t = 0;
-    while (run.speed < RUN) run.step([1, 0], RUN, 1, WALK), (t += 1);
+    while (run.speed < RUN) {
+      run.step([1, 0], RUN, 1, WALK);
+      t += 1;
+    }
     expect(t).toBeCloseTo(2 * RAMP_UP_MS, -1);
   });
 
