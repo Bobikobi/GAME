@@ -51,7 +51,7 @@ describe('the throw aims where the figure faces', () => {
     const looks: Facing8[] = ['up', 'down', 'left', 'right', 'up_left', 'up_right', 'down_left', 'down_right'];
     for (const look of looks) {
       const to = aim([20, 20], 'down', look)!;
-      const f = throwFlight(base, state, 'small', to);
+      const f = throwFlight(base, state, 'core/stone', to);
       expect('error' in f ? f.error : '').toBe('');
     }
   });
@@ -197,7 +197,7 @@ describe('a thrown stone is never flat', () => {
 
   test('a throw as the kernel flies it plays through: from its tiles to the rest it names', () => {
     const state = standing([20, 20]);
-    const f = throwFlight(base, state, 'small', [28, 20]);
+    const f = throwFlight(base, state, 'core/stone', [28, 20]);
     if ('error' in f) throw new Error(f.error);
     const m = stoneMotion({ size: 'small', from: f.from, touch: f.touch, at: f.rest ?? null, ms: base.params.stones.throw_ms });
     expect(m.at(0).x).toBeCloseTo(20.5);

@@ -2,7 +2,7 @@
  * The charged throw's client side (DECISIONS.md, 2026-11-22): the power a held press reaches, the aim line's tiles and
  * the tremble past full. Pure numbers, every one read from the kernel, so the line and the throw cannot disagree.
  */
-import { type Bundle, type PublicState, type StoneSize, type Tile, FULL_POWER, chargePower, throwFlight, throwHoldLimit } from '@game/kernel';
+import { type Bundle, type PublicState, type Tile, FULL_POWER, chargePower, throwFlight, throwHoldLimit } from '@game/kernel';
 
 /** What a hold of `heldMs` whole game milliseconds has charged to. */
 export interface Charge {
@@ -24,8 +24,8 @@ export function chargeAt(bundle: Bundle, heldMs: number): Charge {
  * The tiles the aim line covers: the kernel's own flight at `power`, the very tiles a throw at that power passes over
  * (`throwFlight`, the function the throw action runs). Never a second formula, so the line and the throw cannot disagree.
  */
-export function aimLine(bundle: Bundle, state: PublicState, size: StoneSize, aim: Tile, power: number): Tile[] {
-  const flight = throwFlight(bundle, state, size, aim, power);
+export function aimLine(bundle: Bundle, state: PublicState, kind: string, aim: Tile, power: number): Tile[] {
+  const flight = throwFlight(bundle, state, kind, aim, power);
   return 'error' in flight ? [] : flight.air;
 }
 

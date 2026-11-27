@@ -6,10 +6,10 @@
  * resting tile until its flight ends, so the landing is seen and not announced.
  */
 import type * as Phaser from 'phaser';
-import { type Bundle, type PublicState, type Tile, STONE_ITEM, lyingAt, settled, stoneSpots } from '@game/kernel';
+import { type Bundle, type PublicState, type Tile, lyingAt, settled, stoneSpots } from '@game/kernel';
 import { T } from '../config';
 import { baseOf, kitImage } from '../kitart';
-import { SMALL_STONE_SCALE, STONE_CENTRE, STONE_SCALE, type StonePicture, type StoneSize, type Throw, pileLayout, stoneMotion } from '../stone-art';
+import { ARMS_STONE_KIND, HAND_STONE_KIND, SMALL_STONE_SCALE, STONE_CENTRE, STONE_SCALE, type Throw, pileLayout, stoneMotion } from '../stone-art';
 
 /** The ink of every shadow in the world (the cast layer's own). */
 const INK = 0x1b1a2e;
@@ -21,7 +21,7 @@ interface Shown {
 
 export interface Held {
   key: string;
-  size: StoneSize;
+  kind: string;
   until: number;
 }
 
@@ -39,18 +39,13 @@ export class StoneLayer {
   private readonly shown = new Map<string, Shown>();
   private readonly held: Held[] = [];
   private readonly flying: Flying[] = [];
-  /** the pictures by kind: the item's (a large stone), the small stone's own drawing and the rubble heap */
-  private readonly refs: Readonly<Record<StonePicture, string>>;
   private last?: { state: PublicState; tick: number };
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly b: Bundle,
     private readonly depth: number,
-  ) {
-    const large = b.items[STONE_ITEM]?.sprite ?? 'core/base-kit:items/stone';
-    this.refs = { large, small: 'core/base-kit:items/stone_small', heap: 'core/base-kit:props/rock_stones' };
-  }
+  ) {}
 
   /** The tiles with a stone on them: the spots that still have theirs, and every tile where stones were set down or fell. */
   private tiles(state: PublicState): Set<string> {
@@ -59,8 +54,8 @@ export class StoneLayer {
     stoneSpots(this.b).forEach((s, i) => {
       if (!taken[i]) keys.add(`${s.x},${s.y}`);
     });
-    for (const [k, pile] of Object.entries(state.player.ground ?? {})) if ((pile[STONE_ITEM] ?? 0) > 0) keys.add(k);
-    for (const [k, n] of Object.entries(state.player.stones?.large ?? {})) if (n > 0) keys.add(k);
+    for (const [k, pile] of Object.entries(state.player.ground ?? {})) if (Object.keys(pile).some((kind) => this.b.params.liftables[kind]?.class === 'hand')) keys.add(k);
+    for (const k of Object.keys(state.player.stones?.placed ?? {})) keys.add(k);
     return keys;
   }
 
@@ -68,46 +63,43 @@ export class StoneLayer {
   refresh(state: PublicState, tick: number): void {
     this.last = { state, tick };
     const view = settled(this.b, state, tick);
-    const want = new Map<string, { small: number; large: number }>();
+    const want = new Map<string, string[]>();
     for (const k of this.tiles(view)) {
       const [x, y] = k.split(',').map(Number) as [number, number];
-      const here = lyingAt(this.b, view, [x, y]);
-      let small = here.small + (here.spot === 'small' ? 1 : 0);
-      let large = here.large + (here.spot === 'large' ? 1 : 0);
-      for (const h of this.held) {
-        if (h.key !== k) continue;
-        if (h.size === 'small') small = Math.max(0, small - 1);
-        else large = Math.max(0, large - 1);
-      }
-      if (small + large > 0) want.set(k, { small, large });
+      const { placed, spot } = lyingAt(this.b, view, [x, y]);
+      if (spot) placed[spot] = (placed[spot] ?? 0) + 1;
+      for (const h of this.held) if (h.key === k) placed[h.kind] = Math.max(0, (placed[h.kind] ?? 0) - 1);
+      const kinds = Object.keys(placed).sort((a, b) => Number(a === HAND_STONE_KIND) - Number(b === HAND_STONE_KIND) || (a < b ? -1 : a > b ? 1 : 0));
+      const pile = kinds.flatMap((kind) => Array<string>(Math.min(placed[kind]!, 5)).fill(kind));
+      if (pile.length > 0) want.set(k, pile);
     }
     for (const [k, v] of this.shown) {
-      if (want.has(k) && v.sig === this.sig(want.get(k)!)) continue;
+      if (v.sig === want.get(k)?.join(',')) continue;
       for (const img of v.images) img.destroy();
       this.shown.delete(k);
     }
-    for (const [k, n] of want) {
+    for (const [k, kinds] of want) {
       if (this.shown.has(k)) continue;
       const [x, y] = k.split(',').map(Number) as [number, number];
-      const images = pileLayout(n.small + n.large, n.large).map((slot) => {
-        const img = kitImage(this.scene, (x + 0.5 + slot.dx) * T, (y + 1 - slot.dy) * T - 2, this.refs[slot.picture]).setOrigin(0.5, 1).setDepth(this.depth);
-        img.setScale(baseOf(img) * slot.scale);
+      const others = kinds.filter((kind) => kind !== HAND_STONE_KIND).length;
+      const images = pileLayout(kinds.length, others).map((slot, i) => {
+        const kind = kinds[i % kinds.length]!;
+        const ref = slot.picture === 'heap' ? 'core/base-kit:props/rock_stones' : this.b.params.liftables[kind]!.sprite;
+        const img = kitImage(this.scene, (x + 0.5 + slot.dx) * T, (y + 1 - slot.dy) * T - 2, ref).setOrigin(0.5, 1).setDepth(this.depth);
+        const scale = slot.size === 'large' && kind !== ARMS_STONE_KIND ? slot.scale / STONE_SCALE.large : slot.scale;
+        img.setScale(baseOf(img) * scale);
         return img;
       });
-      this.shown.set(k, { sig: this.sig(n), images });
+      this.shown.set(k, { sig: kinds.join(','), images });
     }
   }
 
-  private sig(n: { small: number; large: number }): string {
-    return `${n.small}/${n.large}`;
-  }
-
   /**
-   * Holds one stone of `size` back from the tile `key` for `ms`: the tile shows the pile without it until the stone it lands
+   * Holds one stone of `kind` back from the tile `key` for `ms`: the tile shows the pile without it until the stone it lands
    * is seen to land (the flight below), then the tile is drawn again as it is.
    */
-  hold(key: string, size: StoneSize, now: number, ms: number): Held {
-    const h: Held = { key, size, until: now + ms };
+  hold(key: string, kind: string, now: number, ms: number): Held {
+    const h: Held = { key, kind, until: now + ms };
     this.held.push(h);
     if (this.last) this.refresh(this.last.state, this.last.tick);
     return h;
@@ -131,13 +123,20 @@ export class StoneLayer {
    * Puts a stone in the figure's hand: drawn at `share` of its flying size, moved with `moveInHand` every frame until `letGo`
    * (the flight begins where it was let go). One at a time; a second takes the first's place.
    */
-  takeInHand(size: StoneSize, share = 1): void {
+  takeInHand(kind: string, share = 1): void {
     this.letGo();
-    const image = kitImage(this.scene, 0, 0, this.refs[size]).setOrigin(...STONE_CENTRE[size]);
-    const scale = baseOf(image) * (size === 'large' ? STONE_SCALE.large : SMALL_STONE_SCALE) * share;
+    const image = this.throwImage(kind);
+    const scale = baseOf(image) * (kind === ARMS_STONE_KIND ? STONE_SCALE.large : SMALL_STONE_SCALE) * share;
     image.setScale(scale);
     image.setVisible(false);
     this.inHand = { image, scale };
+  }
+
+  private throwImage(kind: string): Phaser.GameObjects.Image {
+    const image = kitImage(this.scene, 0, 0, this.b.params.liftables[kind]!.sprite);
+    if (kind === ARMS_STONE_KIND) return image.setOrigin(...STONE_CENTRE.large);
+    if (kind === HAND_STONE_KIND) return image.setOrigin(...STONE_CENTRE.small);
+    return image.setOrigin(0.5);
   }
 
   /** Lays the stone in the hand at a world point (pixels), in front of the figure whose feet are on `footY`. */
@@ -159,9 +158,9 @@ export class StoneLayer {
   }
 
   /** Starts the flight of a thrown stone from the hand; `onTouch` is told once, where it first comes down (a puff, a splash). */
-  fly(throwEv: Throw, now: number, onTouch: (tile: Tile, sank: boolean) => void): void {
+  fly(throwEv: Throw & { kind: string }, now: number, onTouch: (tile: Tile, sank: boolean) => void): void {
     const motion = stoneMotion(throwEv);
-    const image = kitImage(this.scene, 0, 0, this.refs[throwEv.size]).setOrigin(...STONE_CENTRE[throwEv.size]);
+    const image = this.throwImage(throwEv.kind);
     image.setData('scale', baseOf(image) * (throwEv.size === 'large' ? STONE_SCALE.large : SMALL_STONE_SCALE));
     const shadow = this.scene.add.ellipse(0, 0, 8, 4, INK, 0.35);
     this.flying.push({ image, shadow, throwEv, motion, start: now, touched: false, onTouch });
