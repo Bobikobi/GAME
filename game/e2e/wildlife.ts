@@ -3,8 +3,8 @@
  * animal moves away when the figure walks at it. On a phone on its side, 844 by 390 CSS px:
  *
  * - after the wake, the animals near the player are stepped and shown, at most the kernel's `wild.awake_max`;
- * - the figure is set down 13 tiles south of the roe by the river (spot 15, 10,11, a clear column of meadow between) and walks
- *   north at it with the arrow key: the roe takes flight (its state FLEE in the kernel's world), and once it has run it stands
+ * - the figure waits 13 tiles south of the roe by the river (spot 15, 10,11), then is set down 5 tiles west of it on the bank and
+ *   walks east at it with the arrow key: the roe takes flight (its state FLEE in the kernel's world), and once it has run it stands
  *   farther from the figure than when it took flight;
  * - when the roe's sheets are in the kit (the drawn animals, #914) its image is shown and moves with it; with none, nothing is drawn
  *   and that bar says so (a kind with no sheet draws nothing).
@@ -31,9 +31,11 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
 };
 
-/** The roe by the river (map spot 15) and the clear column of meadow south of it. */
+/** The roe by the river (map spot 15, at 10,11); the figure waits 13 tiles south, out of its sight (8), then is set down 5 tiles
+ * west on the bank, where nothing stands between them (the herbs at 10,20 and the river stones at 10,16 block the column south). */
 const ROE_SPOT = 15;
 const FROM: [number, number] = [10, 24];
+const WEST: [number, number] = [5, 11];
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -119,10 +121,15 @@ async function main(): Promise<void> {
     console.log(`wildlife: ${counts.stepped} animals stepped (cap ${counts.cap}), ${counts.shown} shown; the roe ${calm.state} at ${calm.at.join(',')}, the figure at ${calm.player.join(',')}`);
     await page.screenshot(join(OUT, 'wildlife-calm.png'));
 
-    // the figure walks north at it until the roe takes flight or the figure stands three tiles from it
-    await page.key('ArrowUp', 'keyDown');
-    await page.waitFor(`(() => { const r = ${READ}; return r.state === 'FLEE' || Math.hypot(r.at[0] - r.player[0], r.at[1] - r.player[1]) <= 3; })()`, 'the figure to come up to the roe', 15_000);
-    await page.key('ArrowUp', 'keyUp');
+    // set down west of it and walked east at it until the roe takes flight or the figure stands three tiles from it
+    await page.eval(place(WEST, 'right'));
+    await page.key('ArrowRight', 'keyDown');
+    await page
+      .waitFor(`(() => { const r = ${READ}; return r.state === 'FLEE' || Math.hypot(r.at[0] - r.player[0], r.at[1] - r.player[1]) <= 3; })()`, 'the figure to come up to the roe', 15_000)
+      .catch(async (err: unknown) => {
+        throw new Error(`${err instanceof Error ? err.message : String(err)}: ${JSON.stringify(await page.eval<Read>(READ))}`);
+      });
+    await page.key('ArrowRight', 'keyUp');
     await page.waitFor(`${roe}.c.state === 'FLEE'`, 'the roe to take flight', 15_000);
     const fled = await page.eval<Read>(READ);
     await page.screenshot(join(OUT, 'wildlife-flight.png'));
