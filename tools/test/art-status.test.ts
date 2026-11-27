@@ -38,8 +38,9 @@ describe('the pool files', () => {
         expect(seen.get(entry.kit_id), `${entry.kit_id} is in ${seen.get(entry.kit_id)} and ${pool}`).toBeUndefined();
         seen.set(entry.kit_id, pool);
         if (entry.new === true) expect(kitIds.has(entry.kit_id), `${entry.kit_id} is new but the kit holds it`).toBe(false);
-        else expect(kitIds.has(entry.kit_id), `${entry.kit_id} is not in the kit`).toBe(true);
-        expect(kitIds.has(entry.ref), `${entry.name}.ref ${entry.ref} is not in the kit`).toBe(true);
+        else if (entry.retired === undefined) expect(kitIds.has(entry.kit_id), `${entry.kit_id} is not in the kit`).toBe(true);
+        // a retired entry may have left the kit with its sheet (DECISIONS 2026-11-27, public #911)
+        if (entry.retired === undefined) expect(kitIds.has(entry.ref), `${entry.name}.ref ${entry.ref} is not in the kit`).toBe(true);
       }
     }
   });
