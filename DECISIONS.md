@@ -5016,3 +5016,9 @@ The stick held for 400 ms (`RUN_HOLD_MS`) and then snapped from a walk to a run 
 **Why (proven / hypothesis):** what we give is proven by reading the plan, five design pages and the code named above; what other games give at each moment is the reviewing model's knowledge and is labelled so on the page.
 **Rule text:** G33's "with the combat frame's first step" changes when ruling 2 is built, in that pull request.
 **Retry when:** the first outside testers' notes contradict a ruling. **Model:** Claude Fable 5.2 (the manager's review). **Link:** `docs/design/PLAN_REVIEW.md`.
+
+## 2026-11-27 ✅ The ground-blend byte test is sped up in its fixture, and its sample stays whole
+**What:** `game/test/groundblend.test.ts` took 28 to 33 s against a 30 s timeout and turned unrelated pull requests red on a loaded machine (#924, #925). 96% of the time was the fixture's copy of the old compositor, whose field sampler resolved a ground symbol's side again for every pixel. The fixture now resolves each pair's side once per ground symbol and paints a tile's water pixels once per frame. The test file is untouched: the every-third sample of all nine pairs, 338 tiles, four frames, byte for byte.
+**Evidence:** three runs alone 5.5, 5.5 and 6.1 s; one run with a busy loop pinned to each of the 12 CPUs 22.7 s; a one-byte change to the blender's output fails at tile (12,0), frame 0.
+**Tried and refused:** cutting the sample to 102 tiles (six per side of a pair) ran 15 to 18 s under the same load. Refused by the manager: it compares a third of the variant and neighbour cases for 5 s. Raising the timeout was never an option.
+**Retry when:** the test nears 20 s alone again: then split it per pair before any tile is dropped. **Model:** gpt-6.2-sol (Codex, the profile and the fix), Claude Fable 5.2 (the ruling). **Link:** branch `fix/groundblend-test`.
