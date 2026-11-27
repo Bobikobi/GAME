@@ -2095,7 +2095,7 @@ export const CreatureClipBody = Type.Object(
     frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
     anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the creature\'s feet.' }),
     fit_permille: Type.Optional(
-      Int(100, 4000, 'The factor the clip shows at on top of its density\'s base scale (1 / density), in thousandths. Left out, 1000. One value for every view of a creature, so it does not change size as it turns. The feet stay on the anchor whatever the fit.'),
+      Int(100, 4000, 'The factor the clip shows at on top of its density\'s base scale (1 / density), in thousandths. Left out, 1000. One value per sheet: the walk and the idle of a view share it, and the views of a creature are matched by it so it does not change size as it turns (a view drawn longer or wider than another takes a lower value). The feet stay on the anchor whatever the fit.'),
     ),
     head: Type.Optional(
       Type.Tuple([Int(0, 384), Int(0, 384)], {
