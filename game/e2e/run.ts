@@ -25,7 +25,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Every script, in the order `pnpm e2e` plays them. A new script goes here and into one group below. */
-const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea', 'clips', 'jump', 'stones', 'effects'];
+const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea', 'clips', 'jump', 'stones', 'effects', 'wildlife'];
 
 interface Entry {
   name: string;
@@ -53,8 +53,8 @@ const GROUPS: Record<string, Group> = {
   'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree', 'landscape', 'controls', 'sea', 'clips'].map(plain), minutes: 19 },
   // the only scripts that serve game/dist-3d: play3d, and load for its bag button
   '3d-and-load': { entries: ['play3d', 'load', 'camera'].map(plain), minutes: 14, build3d: true },
-  // the jump and the fall on a phone on its side: one short script of its own
-  'jump-phone': { entries: ['jump'].map(plain), minutes: 8 },
+  // the jump and the fall on a phone on its side, and the valley's animals that move away from the figure (#916): two short scripts
+  'jump-phone': { entries: ['jump', 'wildlife'].map(plain), minutes: 11 },
   // the loose stones on a phone on its side: lift, throw, bounce, pile, carry
   'stones-phone': { entries: ['stones'].map(plain), minutes: 8 },
   // the first effects on a phone on its side: a spark, a starburst, dust on a landing, the camp fire's loop
