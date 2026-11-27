@@ -12,7 +12,8 @@ type Art = Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
 
 /** Art pixels per tile side of a kit sprite (1 or 4); 1 for anything the bundle does not name, such as the fx textures. */
 export function densityOf(ref: string): number {
-  return app.bundle?.sprites[ref]?.density ?? 1;
+  // a leaning sprite's sheared copy (swaymask.ts) is drawn at the density of the picture it was made from
+  return app.bundle?.sprites[ref.replace(/~mask$/, '')]?.density ?? 1;
 }
 
 /** A kit sprite's size in world units (a frame's w x h at its density), or undefined for one the bundle lacks. */
@@ -52,11 +53,20 @@ export function baseOf(o: Phaser.GameObjects.GameObject): number {
   return (o.getData('base') as number | undefined) ?? 1;
 }
 
-/** Gives an image or sprite its base scale from its texture. */
+/** Kit pieces that are lights themselves (the camp fire, the lamp post): on a painted land's base they keep their own brightness at night, as under the standard's night shade. */
+export const SELF_LIT = /(campfire_lit|lantern_post)/;
+
+/** Whether a kit piece takes the hour's light through the lights pipeline: only on the painted base (painted.ts `lightKit`), only a piece of the bundle, never a light itself. */
+export function takesHour(ref: string): boolean {
+  return !!app.painted?.baseMode && !!app.bundle?.sprites[ref] && !SELF_LIT.test(ref);
+}
+
+/** Gives an image or sprite its base scale from its texture; on the painted base, a piece made after the mount lit its first ones takes the hour's light at once. */
 export function adopt<T extends Art>(o: T): T {
   const b = baseScale(o.texture.key);
   o.setData('base', b);
   o.setScale(b);
+  if (o.scene?.lights?.active && takesHour(o.texture.key)) o.setLighting(true);
   return o;
 }
 

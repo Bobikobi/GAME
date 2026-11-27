@@ -10,6 +10,7 @@
  */
 import type * as Phaser from 'phaser';
 import { gustAt } from './richground';
+import type { Wind } from './wind';
 
 /**
  * The kit sprites that sway by the mask rather than by colour. Empty until a tree of another palette is in the kit:
@@ -112,6 +113,10 @@ interface Leaner {
 /** The sprites that lean now, and the clock that sets their frame. */
 export class MaskSway {
   private readonly all: Leaner[] = [];
+  /** the leaning sprites: the scene casts each from its first frame, so a gust does not repaint the shadow layer */
+  get sprites(): readonly Phaser.GameObjects.Sprite[] {
+    return this.all.map((l) => l.spr);
+  }
   /** art px per world unit: 4 on the game's grid (64 per 16-unit tile), as the sway shader's `artPx` is a quarter of the zoom */
   private static readonly ART = 4;
 
@@ -134,13 +139,13 @@ export class MaskSway {
   }
 
   /** Sets each leaner's frame from the gust at its top, in the same art-pixel grid and clock as the grass (`gustAt`). */
-  update(timeMs: number, view: Phaser.Geom.Rectangle): void {
+  update(timeMs: number, view: Phaser.Geom.Rectangle, wind?: Wind): void {
     const t = timeMs / 1000;
     for (const l of this.all) {
       const s = l.spr;
       const seen = s.x + s.displayWidth > view.x && s.x - s.displayWidth < view.right && s.y > view.y && s.y - s.displayHeight < view.bottom;
       if (!seen) continue;
-      const lean = gustAt(Math.floor(s.x * MaskSway.ART), Math.floor((s.y - s.displayHeight) * MaskSway.ART), t);
+      const lean = gustAt(Math.floor(s.x * MaskSway.ART), Math.floor((s.y - s.displayHeight) * MaskSway.ART), t, wind);
       // a sprite the scene mirrors (`flipX`) takes the left-sheared frames, so its lean still goes with the wind, and its
       // origin moves to the picture's centre in them (the pad is on their left)
       const frame = s.flipX ? lean + MAX_LEAN + 1 : lean;
