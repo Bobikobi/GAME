@@ -162,6 +162,14 @@ def main():
         ref192 = gates.Reference(k, "t", "left", 192)
         _, m192 = gates.run([gates.embed_stance(figure(), 192), gates.embed_stance(figure(arm=8), 192), gates.embed_stance(figure(), 192)], ref192)
         check("gates read a 192 px clip against the stance stood on it: the ground row is 64 lower, the stance height is the same", ref192.ground == GROUND + 64 and ref192.stand_h == STAND and m192["gate_a"] == m192["gate_c"] == "PASS")
+    import packclips
+    ring = np.zeros((40, 40, 4), np.uint8)
+    ring[...] = (120, 80, 60, 255)
+    ring[10:13, 10:13, 3] = 0      # a 9 px pocket: a speck
+    ring[20:32, 15:30, 3] = 0      # a 180 px pocket: the gap between a deer's legs and its belly
+    filled = packclips.fill_specks(ring)
+    check("a see-through pocket of at most 24 px is filled and a bigger one (a gap between legs) stays open",
+          filled[11, 11, 3] == 255 and filled[25, 20, 3] == 0 and int((filled[..., 3] == 0).sum()) == 180)
     print("selftest:", "FAILED %d" % check.bad if check.bad else "all passed")
     return 1 if check.bad else 0
 
