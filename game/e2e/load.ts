@@ -134,7 +134,8 @@ const WALK_FRAME_MS = 25;
  * Holds an arrow key along an open straight line of at least 7 tiles and times the tiles in game time: the milliseconds a
  * tile, from the second tile to the sixth, to within a frame over four tiles. The line starts where the player stands, or,
  * when no such line runs from there (the painted valley's wakes stand among trees and banks), on the nearest tile the player
- * can walk to that has one: the player is set down there, since the test times the pace and not the way to it.
+ * can walk to that has one, or failing that the nearest walkable tile anywhere on the map that has one: the player is set
+ * down there, since the test times the pace and not the way to it.
  * The game's loop sleeps from before the key goes down until the key is up again, so the body moves only in the frames
  * stepped here: with the loop awake, a slow runner's own clock walked the body three or four tiles between the key and
  * the first stepped frame, and the line ran out (CI run 46121996363: 4 tiles, then 3, against the standing stone at its end).
@@ -167,6 +168,16 @@ async function walkMs(page: Page): Promise<number> {
         const n = (x + dx) + ',' + (y + dy);
         if (!seen.has(n) && w.canWalk(s, x + dx, y + dy)) { seen.add(n); queue.push([x + dx, y + dy]); }
       }
+    }
+    // a pocket with no such line (the painted north meadow's longest is 5): the nearest walkable tile anywhere on the map
+    // that has one, since the player is set down at the line's start anyway
+    const m = window.__game.session.bundle?.map ?? window.__game.world.b?.map;
+    const far = [];
+    for (let y = 0; m && y < m.height; y++) for (let x = 0; x < m.width; x++) if (!seen.has(x + ',' + y) && w.canWalk(s, x, y)) far.push([x, y]);
+    far.sort((a, b) => Math.abs(a[0] - s.pos[0]) + Math.abs(a[1] - s.pos[1]) - (Math.abs(b[0] - s.pos[0]) + Math.abs(b[1] - s.pos[1])));
+    for (const [x, y] of far) {
+      const line = lineFrom(x, y);
+      if (line.run >= 7) return { ...line, from: [x, y] };
     }
     return best;
   })()`);
