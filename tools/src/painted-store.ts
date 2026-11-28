@@ -7,7 +7,8 @@
  * (`PAINTED_BASE`, game/src/painted.ts). A file whose bytes do not match its line fails the run: nothing half-checked reaches a page.
  *
  * The store is a local folder or an http(s) address that serves `<store>/<sha256>`: `PAINTED_STORE` names it, or the manifest's own `store`.
- * With neither, the run says so and places nothing (a page without the pictures plays the classic valley), unless `PAINTED_REQUIRED=1`.
+ * With neither, the run says so and places nothing (a page without the pictures cannot mount the valley, which every page mounts: game/src/trial.ts),
+ * unless `PAINTED_REQUIRED=1`, which fails the run.
  */
 import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';

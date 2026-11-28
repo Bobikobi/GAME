@@ -8,7 +8,7 @@ import { startPerf } from './perf';
 import { applyDisplay } from './settings-apply';
 import { Controls } from './input';
 import { kitAtlasOf } from './kit-atlas';
-import { paintedWanted } from './trial';
+import { paintedQuery } from './trial';
 import { UI } from './ui/ui';
 import './style.css';
 
@@ -32,15 +32,14 @@ app.controls.onButtonUp((b) => app.ui.handleUp(b));
 const query = location.search;
 
 /**
- * The painted ground (painted.ts), dark: a normal page never reaches it. It mounts only behind `?preview` or `?debug&painted=<id>`, from a dynamic import, so a player's page neither
- * downloads the painted code nor fetches a picture of it. The mount comes before the engine starts (the scenes read `app.painted` and the bundle it adapts), behind the title.
+ * The painted valley (painted.ts), the game's first place: every page mounts it (trial.ts). It comes from a dynamic import, so the painted code is its own file
+ * fetched behind the title, and the mount comes before the engine starts (the scenes read `app.painted` and the bundle it adapts).
  */
 async function mountTrial(): Promise<void> {
-  if (!paintedWanted(query)) return;
   // the private preview (`?preview`): the valley as it starts, a way out of its east lane, and the painted block beyond it; the light at the device's hour
   const preview = new URLSearchParams(query).has('preview');
   const { mountPainted, PREVIEW_QUERY } = await import('./painted');
-  const mount = await mountPainted(app.bundle, preview ? `${query}&${PREVIEW_QUERY.slice(1)}` : query);
+  const mount = await mountPainted(app.bundle, preview ? `${query}&${PREVIEW_QUERY.slice(1)}` : paintedQuery(query));
   app.painted = mount;
   app.bundle = mount.bundle;
   performance.mark('boot:read');

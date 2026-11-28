@@ -186,8 +186,18 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # what the scripts serve: the bundle and game/dist
+      # the painted valley's pictures (game/painted/*.json, tools/src/painted-store.ts): each by its checksum from this cache,
+      # else from the store the repo variable PAINTED_STORE names; the bundle verifies every byte and fails without them
+      - name: Cache the painted pictures
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: tools/.cache/painted
+          key: painted-${{ hashFiles('game/painted/*.json') }}
+      # what the scripts serve: the bundle (with the painted pictures) and game/dist
       - name: Build the game
+        env:
+          PAINTED_STORE: ${{ vars.PAINTED_STORE }}
+          PAINTED_REQUIRED: '1'
         run: |
           pnpm bundle
           pnpm --filter game build

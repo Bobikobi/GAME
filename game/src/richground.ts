@@ -213,7 +213,7 @@ export const MOVES = { meadow: [0x84c450, 0xc8e88a], water: [0x7cc4ec, 0xc4ecf8]
 
 /**
  * The classic door's own gust, as it always was: how close a screen colour must be to a moving one (a share of a channel, so a colour the camera's grade nudged still counts), how fast the
- * gust runs, and how wide its bands are a pixel. A page without a painted ground sways by this, unchanged (the painted door ships dark: nothing a player sees moves until it is switched on).
+ * gust runs, and how wide its bands are a pixel. Every page now mounts the painted valley (trial.ts), whose own wind replaces this; it is kept for a land drawn without a painted ground.
  */
 export const GUST = { tolerance: 0.035, speed: 1.3, scale: 0.035 } as const;
 

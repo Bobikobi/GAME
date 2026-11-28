@@ -1,11 +1,11 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { paintedWanted } from '../src/trial';
+import { PAINTED_DEFAULT, paintedQuery } from '../src/trial';
 
 /**
- * The painted ground ships dark: a player's page never mounts it, never downloads its code and never fetches one of its pictures. Three facts hold that, each pinned here:
- * only two queries ask for it, nothing reaches the mount but main.ts behind that question, and the modules that fetch the pictures are not among the ones a normal page loads.
+ * Every page mounts one valley, the painted one (public #919): the default query names it on its own map with the phone camera, nothing but main.ts
+ * mounts it, the painted code stays its own file fetched behind the title, and the pixel valley's map is no longer the game's content.
  */
 const SRC = resolve(__dirname, '../src');
 
@@ -40,28 +40,38 @@ function closure(roots: string[]): Set<string> {
   return seen;
 }
 
-describe('the painted ground ships dark', () => {
-  test('only ?preview and ?debug&painted= ask for it: no query, ?debug alone, ?painted= without debug and an unrelated query mount nothing', () => {
-    for (const q of ['', '?', '?debug', '?painted=valley', '?rich=all', '?stats=1&seed=7', '?previews']) expect(paintedWanted(q), q).toBe(false);
-    for (const q of ['?preview', '?debug&painted=valley', '?seed=7&preview&hold=clock', '?painted=valley&debug']) expect(paintedWanted(q), q).toBe(true);
+describe('the painted valley is the first place', () => {
+  test('a page with no query, or with only its own options, mounts the painted valley on its own map; its own options come first and win', () => {
+    expect(PAINTED_DEFAULT).toBe('?painted=valley-blk2x3&base=1&zoom=auto');
+    for (const q of ['', '?']) expect(paintedQuery(q), q).toBe(PAINTED_DEFAULT);
+    const q = new URLSearchParams(paintedQuery('?debug&seed=7&zoom=3'));
+    expect([q.get('painted'), q.get('base'), q.get('zoom'), q.get('seed')]).toEqual(['valley-blk2x3', '1', '3', '7']);
   });
 
-  test('no query means app.painted stays undefined: it is assigned in main.ts alone, behind paintedWanted, from a dynamic import', () => {
+  test('a page that names its own land keeps its query whole: no base or zoom it did not ask for', () => {
+    expect(paintedQuery('?debug&painted=other')).toBe('?debug&painted=other');
+  });
+
+  test('app.painted is assigned in main.ts alone, with no question before the mount, from a dynamic import', () => {
     const assigns = sourcesOf(SRC).filter((f) => /\bapp\.painted\s*=[^=]/.test(readFileSync(f, 'utf8')));
     expect(assigns.map((f) => f.slice(SRC.length + 1))).toEqual(['main.ts']);
     const main = readFileSync(join(SRC, 'main.ts'), 'utf8');
-    expect(main).toMatch(/if \(!paintedWanted\(query\)\) return;\s*[^]*?await import\('\.\/painted'\)/);
+    const mount = main.slice(main.indexOf('async function mountTrial'), main.indexOf('app.painted = mount'));
+    expect(mount, 'nothing in mountTrial returns before the painted mount').not.toMatch(/\breturn\b/);
+    expect(mount).toMatch(/await import\('\.\/painted'\)/);
     // the painted module is imported dynamically in main.ts and nowhere else
     const dynamic = sourcesOf(SRC).filter((f) => /import\(\s*'(\.\.?\/)+painted'\s*\)/.test(readFileSync(f, 'utf8')));
     expect(dynamic.map((f) => f.slice(SRC.length + 1))).toEqual(['main.ts']);
   });
 
-  test('a normal page never fetches a painted picture: the modules that fetch them are not in what main.ts and game.ts load', () => {
+  test('the painted code is its own file, fetched behind the title: the modules that fetch the pictures are not in what main.ts and game.ts load statically', () => {
     const loaded = closure([join(SRC, 'main.ts'), join(SRC, 'game.ts')]);
     const names = new Set([...loaded].map((f) => f.slice(SRC.length + 1)));
     for (const fetcher of ['painted.ts', 'painted-stream.ts', 'early-fetch.ts']) expect(names.has(fetcher), `${fetcher} is statically reachable from the page's entry`).toBe(false);
-    // and the picture folder is named by those fetchers alone
-    const naming = sourcesOf(SRC).filter((f) => /['`"]painted\//.test(readFileSync(f, 'utf8')) || /\/painted\/\$\{/.test(readFileSync(f, 'utf8')));
-    for (const f of naming) expect(names.has(f.slice(SRC.length + 1)), `${f} names painted/ and a normal page loads it`).toBe(false);
+  });
+
+  test("the game's map is the painted valley's: one ring of walls round the scene's 39 x 28 cells, as the default's base=1 needs (painted-presence.ts baseOf)", () => {
+    const map = (JSON.parse(readFileSync(resolve(__dirname, '../../content/core/map.json'), 'utf8')) as { map: { width: number; ground: string[] } }).map;
+    expect([map.width, map.ground.length]).toEqual([39 + 2, 28 + 2]);
   });
 });
