@@ -145,10 +145,21 @@ def rule_shirt(cell, h, s, v, cx, sp):
     return fm & ((STRICT_GREEN(h, s, v)) | (inner & (brown | dark)))
 
 
-RULES = {'trousers': rule_trousers, 'gloves': rule_gloves, 'shirt': rule_shirt}
+def rule_boots(cell, h, s, v, cx, sp):
+    """Leather and fur below the shins (round 2): every figure pixel that is not skin; the region (feet rows) keeps the shorts out."""
+    return figure_mask(cell) & ~bars.is_skin(cell) & (v <= 0.85)
+
+
+def rule_cap(cell, h, s, v, cx, sp):
+    """The leather cap (round 2): figure pixels that are not skin, above the brow (the region); the face below the brow is never
+    head-wear (DECISIONS 2026-11-20)."""
+    return figure_mask(cell) & ~bars.is_skin(cell) & (v <= 0.80)
+
+
+RULES = {'trousers': rule_trousers, 'gloves': rule_gloves, 'shirt': rule_shirt, 'boots': rule_boots, 'cap': rule_cap}
 # region of the body each piece may sit in, as shares of the figure's height from its top row (stand frame rows 22..117):
-REGIONS = {'trousers': (0.46, 1.02), 'gloves': (0.38, 0.62), 'shirt': (0.25, 0.60)}
-MIN_COMPONENT = {'trousers': 20, 'gloves': 12, 'shirt': 40}
+REGIONS = {'trousers': (0.46, 1.02), 'gloves': (0.38, 0.62), 'shirt': (0.25, 0.60), 'boots': (0.76, 1.03), 'cap': (-0.06, bars.BROW_FRAC)}
+MIN_COMPONENT = {'trousers': 20, 'gloves': 12, 'shirt': 40, 'boots': 12, 'cap': 30}
 
 
 def components(mask):
