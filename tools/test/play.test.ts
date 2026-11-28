@@ -24,7 +24,10 @@ describe('the core content', () => {
     expect(checkPlay(result.assembled.bundle!, result.assembled.origin)).toEqual([]);
     // the richness, hand and colour lines are advisory counts (tools/src/richness.ts, tools/src/colors.ts), not defects of the content
     // the scale lines of the sprites in known-short.json are the audit's open list: that list only shrinks, a short sprite not on it fails here
-    expect(result.issues.filter((i) => !isAdvisory(i))).toEqual([]);
+    // the tangle's closure is the one line the owner said yes to (shut until a painted tangle, public #944); any other
+    // shut quest, or a quest after one, still fails here
+    const tangleShut = (i: { where: string; message: string }) => i.where === 'quest.shut_until' && i.message.startsWith('core/the-tangle is shut until a painted tangle (public #944)');
+    expect(result.issues.filter((i) => !isAdvisory(i) && !tangleShut(i))).toEqual([]);
   });
 
   it('names a type on every quest, at least four of the palette, and never the same twice in a row', () => {

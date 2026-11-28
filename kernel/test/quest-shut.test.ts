@@ -14,7 +14,9 @@ const HEART = 'core/tangle-heart';
 let base: Bundle;
 
 beforeAll(() => {
+  // the engine's baseline is a valley with no quest shut: the tangle ships shut on the painted valley (public #944)
   base = loadPixelBundle();
+  for (const q of Object.values(base.quests)) delete q.shut_until;
 });
 
 /** The bundle with these quests shut until a named thing exists. */

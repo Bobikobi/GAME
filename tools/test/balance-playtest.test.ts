@@ -6,7 +6,7 @@
  * the table says what the runs say.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { type Bundle, near } from '@game/kernel';
+import { type Bundle, near, questShut } from '@game/kernel';
 import { Player } from '../../server/test/sim/player.js';
 import { STARTS } from '../../server/test/sim/session.js';
 import { levelOf } from '../src/balance/curve';
@@ -75,7 +75,9 @@ describe('the session, from every start', () => {
   it('reaches the places the content scripts, in time order, each with the reckoning\'s expectation for its pocket', () => {
     for (const run of runs) {
       const slots = run.visits.map((v) => v.slot);
-      for (const slot of ['core/old-bridge', 'core/town-square', 'core/arch-mouth', 'core/tangle-heart']) {
+      // the tangle's heart only while the tangle is open: it ships shut on the painted valley (public #944)
+      const maze = !questShut(bundle.quests['core/the-tangle']!);
+      for (const slot of ['core/old-bridge', 'core/town-square', 'core/arch-mouth', ...(maze ? ['core/tangle-heart'] : [])]) {
         expect(slots, run.starter).toContain(slot);
       }
       expect(new Set(slots).size).toBe(slots.length);

@@ -14,6 +14,7 @@ import {
   canonical,
   newState,
   publicState,
+  questShut,
   replay,
   serialize,
 } from '@game/kernel';
@@ -35,7 +36,7 @@ const SEEDS: Record<string, number> = {
   'core/explorer': 2028,
 };
 
-/** The quests the opening and the outing finish, whatever the draws gave. */
+/** The quests the opening and the outing finish, whatever the draws gave (the tangle too, once it is open: public #944). */
 const DONE = [
   'core/fix-the-bridge',
   'core/first-fire',
@@ -44,7 +45,6 @@ const DONE = [
   'core/herbs-for-pell',
   'core/a-coin-for-maru',
   'core/the-night-arch',
-  'core/the-tangle',
 ];
 
 beforeAll(async () => {
@@ -96,7 +96,8 @@ describe('the simulated player over the wire (NEXT 18 g)', () => {
         .filter(([, state]) => state === 'done')
         .map(([quest]) => quest)
         .sort();
-      expect(finished).toEqual(expect.arrayContaining([...DONE, start.own].sort()));
+      const tangle = questShut(bundle.quests['core/the-tangle']!) ? [] : ['core/the-tangle'];
+      expect(finished).toEqual(expect.arrayContaining([...DONE, ...tangle, start.own].sort()));
       expect(summary.digs).toBeGreaterThanOrEqual(3);
       expect(summary.paidMg).toBeGreaterThan(0);
       expect(summary.goldAfterSale).toBe(summary.goldBeforeSale + summary.paidMg);

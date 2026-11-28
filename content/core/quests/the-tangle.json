@@ -12,6 +12,7 @@
     "requires": [
       "core/the-night-arch"
     ],
+    "shut_until": "a painted tangle (public #944)",
     "steps": [
       {
         "kind": "visit",

@@ -16,7 +16,10 @@ describe('the core content', () => {
     const result = runCheck();
     // the richness, hand and colour lines are advisory counts (tools/src/richness.ts, tools/src/colors.ts), not defects of the content
     // the scale lines of the sprites in known-short.json are the audit's open list: that list only shrinks, a short sprite not on it fails here
-    expect(result.issues.filter((i) => !isAdvisory(i))).toEqual([]);
+    // the tangle's closure is the one line the owner said yes to (shut until a painted tangle, public #944); any other
+    // shut quest, or a quest after one, still fails here
+    const tangleShut = (i: { where: string; message: string }) => i.where === 'quest.shut_until' && i.message.startsWith('core/the-tangle is shut until a painted tangle (public #944)');
+    expect(result.issues.filter((i) => !isAdvisory(i) && !tangleShut(i))).toEqual([]);
     const b = result.assembled.bundle!;
     expect(b.resources['core/oak-trees']!.tool).toBe('axe');
     expect(Object.keys(b.pockets).sort()).toEqual(['core/north-meadow', 'core/slid-bank', 'core/west-bank']);

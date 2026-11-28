@@ -39,7 +39,9 @@ describe('a shut quest in the content check', () => {
 });
 
 describe('what comes after a shut quest', () => {
+  // the baseline is a valley with no quest shut: the tangle ships shut on the painted valley (public #944)
   const base = loadPixelBundle();
+  for (const q of Object.values(base.quests)) delete q.shut_until;
 
   it('says nothing when no quest is shut', () => {
     expect(checkShut(base, {})).toEqual([]);

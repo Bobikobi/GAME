@@ -18,6 +18,7 @@ import {
   type Tile,
   campTile,
   npcTile,
+  questShut,
 } from '@game/kernel';
 
 import { firstOpenTick } from '../../../tools/test/helpers/world.js';
@@ -166,6 +167,8 @@ export async function playOpening(bundle: Bundle, player: Player, start: Start):
 /**
  * The first outing: past the arch by day, the gate stones of the ruins dug (and the deep, once the gate
  * has taught the trowel's way), the tangle's heart found, and the walk home to hand it in to the elder.
+ * While the tangle is shut by its content (`shut_until`: not drawn on the painted valley yet, public #944), nobody
+ * offers it, so the outing digs the ruins and comes home without it.
  *
  * This is the first expedition `develop` has content for: `bundle.expeditions` is empty, since the night
  * ruins of NEXT 14b are not built. The outing is its own step so the real one joins here.
@@ -187,7 +190,9 @@ export async function playFirstOuting(bundle: Bundle, player: Player): Promise<{
     await player.actNear(trader, (tile) => ({ t: 'sell', npc: 'core/trader', item: spare, qty: 1, at: tile }));
   }
 
-  await player.actNear(elder, (tile) => ({ t: 'accept', quest: 'core/the-tangle', at: tile }));
+  const tangle = bundle.quests['core/the-tangle'];
+  const maze = tangle !== undefined && !questShut(tangle);
+  if (maze) await player.actNear(elder, (tile) => ({ t: 'accept', quest: 'core/the-tangle', at: tile }));
 
   // the gate stones behind the threshold, a day dig now that the arch is open
   let digs = 0;
@@ -204,8 +209,10 @@ export async function playFirstOuting(bundle: Bundle, player: Player): Promise<{
     break;
   }
 
-  await player.visit('core/tangle-heart');
-  await player.actNear(elder, (tile) => ({ t: 'turnin', quest: 'core/the-tangle', at: tile }));
+  if (maze) {
+    await player.visit('core/tangle-heart');
+    await player.actNear(elder, (tile) => ({ t: 'turnin', quest: 'core/the-tangle', at: tile }));
+  }
   // TODO(NEXT 18 g): when 14b's night ruins land, this outing is the expedition the item names.
   return { digs };
 }

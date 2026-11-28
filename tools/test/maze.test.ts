@@ -5,10 +5,16 @@
  * from the waking spot once the bridge is mended, the shortest route is long,
  * wrong turns end in dead ends, and the quest is a maze that comes after the
  * opening and never right after another maze (G17).
+ *
+ * The tangle is drawn on the pixel valley only. The painted valley landed before its tangle is drawn, so on the shipped
+ * map the quest is shut by its content (`shut_until`, the owner's yes of 28.11, public #919) until a painted tangle
+ * exists (public #944). The maze's shape is pinned on the frozen pixel valley meanwhile, where it is drawn, and the
+ * closure is pinned on the shipped content; when the painted tangle lands, the shape tests move back to it.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { type Bundle, type QuestDef, findSlot, inRect, makeWalkable } from '@game/kernel';
 import { runCheck } from '../src/check';
+import { loadPixelBundle } from './helpers/world';
 import { OPENING_QUESTS, checkPlay, isMazeVisit } from '../src/play';
 
 const HEART = 'core/tangle-heart';
@@ -48,15 +54,25 @@ function distances(from: readonly [number, number]): Map<number, number> {
 }
 
 beforeAll(() => {
-  const found = runCheck().assembled.bundle;
-  if (!found) throw new Error('Content did not assemble into a bundle.');
-  bundle = found;
+  bundle = loadPixelBundle();
   const walkable = makeWalkable(bundle);
   const view = { restored: Object.values(bundle.restores).filter((r) => r.passable).map((r) => r.id), camp: [] as string[] };
   walk = (x, y) => walkable(x, y, view);
 });
 
-describe('the tangle', () => {
+describe('the tangle on the shipped valley', () => {
+  it('is shut by its content until a painted tangle is drawn (public #944), and the check names it', () => {
+    const report = runCheck();
+    const shipped = report.assembled.bundle!;
+    expect(shipped.quests[QUEST]?.shut_until).toContain('#944');
+    const said = report.issues.filter((i) => i.where === 'quest.shut_until' && i.message.startsWith(QUEST));
+    expect(said.map((i) => i.level)).toEqual(['warning']);
+    // nothing comes after it, so no new character loses a quest by the closure
+    expect(report.issues.filter((i) => i.where === 'quest.requires' && i.message.includes(`shut quest ${QUEST}`))).toEqual([]);
+  });
+});
+
+describe('the tangle as drawn on the pixel valley (kept for the painted tangle, public #944)', () => {
   it('has its heart in an area the client sends a visit for', () => {
     const heart = findSlot(bundle.map, HEART);
     expect(heart?.kind).toBe('area');
