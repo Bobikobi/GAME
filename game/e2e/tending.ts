@@ -32,8 +32,12 @@ const LOG = 'core/log';
 /** The painted valley's east meadow: BUILD stands 14 tiles out of the town square, its fire's ring watched by no wolf; STAND is east of it. */
 const BUILD = [32, 9];
 const STAND = [33, 9];
-/** Inside the bank wolf's watch (the wolf at 11,23 on the painted valley). */
-const WOLF_STAND = [12, 18];
+/**
+ * Facing a tile inside the bank wolf's watch (16,18 on the painted valley, the first such tile the kernel flow finds that holds a
+ * fire: open, wild, in no slot, no node on it, game/test/tending-flow.test.ts), on the open tile west of it with no node underfoot
+ * (on a node, the node's own prompt takes A).
+ */
+const WOLF_STAND = [15, 18];
 /** Out of the fire's light, east along the same row. */
 const OUTSIDE = [35, 9];
 const WARNING = 'is burning low';

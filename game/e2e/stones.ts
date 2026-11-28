@@ -33,8 +33,11 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
 };
 
-/** Two small spots and a large one of the painted valley (map.stones), the first with six tiles of open meadow to its right for the throw. */
-const THROWER: [number, number] = [29, 16];
+/**
+ * Two small spots and a large one of the painted valley (map.stones), the first with six tiles of open ground to its right for the
+ * throw and no hare in reach on that side (a hare there takes the aim, #923: from 29,16 the hare at 31,12 did).
+ */
+const THROWER: [number, number] = [27, 22];
 const OTHER: [number, number] = [21, 17];
 const LARGE: [number, number] = [20, 15];
 /** A bare tile of the meadow for the pile, clear of slots, nodes and spots. */

@@ -131,22 +131,48 @@ async function chipReads(page: Page, word: string, count?: RegExp): Promise<Chip
 const WALK_FRAME_MS = 25;
 
 /**
- * Holds an arrow key along the longest open straight line from where the player stands and times the
- * tiles in game time: the milliseconds a tile, from the second tile to the sixth, to within a frame over four tiles.
+ * Holds an arrow key along an open straight line of at least 7 tiles and times the tiles in game time: the milliseconds a
+ * tile, from the second tile to the sixth, to within a frame over four tiles. The line starts where the player stands, or,
+ * when no such line runs from there (the painted valley's wakes stand among trees and banks), on the nearest tile the player
+ * can walk to that has one: the player is set down there, since the test times the pace and not the way to it.
  */
 async function walkMs(page: Page): Promise<number> {
-  const dir = await page.eval<{ key: string; run: number }>(`(() => {
+  const dir = await page.eval<{ key: string; run: number; from: [number, number] }>(`(() => {
     const s = window.__game.session, w = window.__game.world;
     const dirs = [['ArrowRight', 1, 0], ['ArrowLeft', -1, 0], ['ArrowDown', 0, 1], ['ArrowUp', 0, -1]];
-    let best = { key: '', run: 0 };
-    for (const [key, dx, dy] of dirs) {
-      let run = 0;
-      while (run < 12 && w.canWalk(s, s.pos[0] + dx * (run + 1), s.pos[1] + dy * (run + 1))) run++;
-      if (run > best.run) best = { key, run };
+    const lineFrom = (x, y) => {
+      let best = { key: '', run: 0 };
+      for (const [key, dx, dy] of dirs) {
+        let run = 0;
+        while (run < 12 && w.canWalk(s, x + dx * (run + 1), y + dy * (run + 1))) run++;
+        if (run > best.run) best = { key, run };
+      }
+      return best;
+    };
+    // breadth first from where the player stands, so the nearest such tile is taken
+    const seen = new Set([s.pos.join(',')]);
+    const queue = [[s.pos[0], s.pos[1]]];
+    let best = { key: '', run: 0, from: [s.pos[0], s.pos[1]] };
+    for (let k = 0; k < queue.length && k < 4000; k++) {
+      const [x, y] = queue[k];
+      const line = lineFrom(x, y);
+      if (line.run > best.run) best = { ...line, from: [x, y] };
+      if (line.run >= 7) return { ...line, from: [x, y] };
+      for (const [, dx, dy] of dirs) {
+        const n = (x + dx) + ',' + (y + dy);
+        if (!seen.has(n) && w.canWalk(s, x + dx, y + dy)) { seen.add(n); queue.push([x + dx, y + dy]); }
+      }
     }
     return best;
   })()`);
-  if (dir.run < 7) throw new Error(`no straight walk of 7 tiles from where the player stands (best ${dir.run})`);
+  if (dir.run < 7) throw new Error(`no straight walk of 7 tiles anywhere the player can walk to (best ${dir.run} from ${dir.from.join(',')})`);
+  await page.eval(`(() => {
+    const s = window.__game.session, at = ${JSON.stringify(dir.from)};
+    if (s.pos[0] === at[0] && s.pos[1] === at[1]) return;
+    s.pos = [at[0], at[1]];
+    s.state.player.at = [at[0], at[1]];
+    window.__game.world.bind(s);
+  })()`);
   await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking && !window.__game.world.move', 'the player to be free to walk');
   await page.key(dir.key, 'keyDown');
   let times: number[];

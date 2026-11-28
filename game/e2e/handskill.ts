@@ -2,8 +2,8 @@
  * Proves the moment of hand skill in a real browser (public #923): a hare is struck by a charged throw, and a stone that comes down
  * beside it takes nothing. On a phone on its side, 844 by 390 CSS px:
  *
- * - from each of the three wake pockets (north meadow, west bank, slid bank) the figure stands where it woke (the slid bank's hare is
- *   6.1 tiles off, so one step toward it), a hare that nothing has startled stands within reach, and B is held a little past the
+ * - from each of the three wake pockets (north meadow, west bank, slid bank) the figure stands where it woke (the north meadow's wake
+ *   stands among trees, so one step up, as the kernel's own test of the moment finds), a hare that nothing has startled stands within reach, and B is held a little past the
  *   charge time: the stone takes the hare (a carcass lies where it stood, one stone left the bag, the hit's moment played);
  * - on the west bank again, a tap on B throws the stone short: it lies on the ground where it came to rest, takes nothing, the miss's
  *   moment plays, the hare hears it come down and goes to ground; the figure lifts the stone again (it is in the bag once more) and
@@ -95,6 +95,13 @@ interface HareRead {
 }
 const readHare = (spot: number) => `(() => { const a = ${hare(spot)}; return { at: [...a.c.at], state: a.c.state, under: !!a.c.under, stepped: a.stepped }; })()`;
 
+/**
+ * The step on from the wake tile where a full charge from the wake itself does not take the nearest hare: on the painted valley the
+ * north meadow's line to its hare (4,1) runs through trees, and one step up (5,2) it is clear and 1.4 tiles off. The kernel's test of
+ * the moment (kernel/test/hand-skill.test.ts) finds the same tile from the wake and its four neighbours.
+ */
+const STEP_ON: Partial<Record<WakePocket, [number, number]>> = { 'core/north-meadow': [0, -1] };
+
 /** Facing along the longer axis toward a tile, as the figure would turn to it. */
 const facingTo = (from: readonly number[], to: readonly number[]): string => {
   const dx = to[0]! - from[0]!;
@@ -126,8 +133,10 @@ async function woken(page: Page, base: string, pocket: WakePocket): Promise<void
  * The figure at its wake tile (or one step toward the hare when that is out of the throw's reach), facing the hare, the world stepped
  * afresh so the hare stands at its anchor and has not noticed anything. Returns the hare's spot and the tile the figure stands on.
  */
-async function setUp(page: Page): Promise<{ spot: number; from: [number, number]; reach: number }> {
-  const wake = await page.eval<[number, number]>(`[...window.__game.session.pos]`);
+async function setUp(page: Page, pocket: WakePocket): Promise<{ spot: number; from: [number, number]; reach: number }> {
+  const woke = await page.eval<[number, number]>(`[...window.__game.session.pos]`);
+  const on = STEP_ON[pocket] ?? [0, 0];
+  const wake: [number, number] = [woke[0] + on[0], woke[1] + on[1]];
   const spot = await page.eval<number>(hareNear(wake));
   const target = await page.eval<[number, number]>(`(() => { const s = window.__game.bundle.map.creatures.spots[${spot}]; return [s.x, s.y]; })()`);
   const reach = await page.eval<number>(`(() => { const l = window.__game.bundle.params.liftables[window.__game.bundle.params.hunt.throw_item]; return l.throw_range + l.roll + window.__game.bundle.params.hunt.hit_tiles; })()`);
@@ -152,7 +161,7 @@ async function main(): Promise<void> {
       await woken(page, base, pocket);
       const held = await page.eval<number>(`window.__game.bundle.params.stones.throw_charge_ms`);
       const stones = await page.eval<number>(bag);
-      const { spot, from, reach } = await setUp(page);
+      const { spot, from, reach } = await setUp(page, pocket);
       const at = await page.eval<HareRead>(readHare(spot));
       const dist = Math.hypot(at.at[0] - from[0], at.at[1] - from[1]);
       if (dist > reach) throw new Error(`${pocket}: the hare stands ${dist.toFixed(1)} tiles from ${from.join(',')}, past the reach ${reach}`);
@@ -174,7 +183,7 @@ async function main(): Promise<void> {
 
     // the miss, on the west bank: a tap throws short, the stone lies, the hare hears it and goes to ground, the stone is lifted again
     await woken(page, base, 'core/west-bank');
-    const { spot, from } = await setUp(page);
+    const { spot, from } = await setUp(page, 'core/west-bank');
     const stones = await page.eval<number>(bag);
     const mark = await page.eval<number>(`window.__game.world.effects.played.length`);
     await page.holdTap('.tbtn.b', 40);

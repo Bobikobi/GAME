@@ -3,7 +3,7 @@
  * animal moves away when the figure walks at it. On a phone on its side, 844 by 390 CSS px:
  *
  * - after the wake, the animals near the player are stepped and shown, at most the kernel's `wild.awake_max`;
- * - the figure waits 10 tiles east of the roe on the sun bank (spot 16, 2,9), then is set down 5 tiles east of it on the bank and
+ * - the figure waits 8.5 tiles north-east of the roe on the sun bank (spot 16, 2,9), then is set down 5 tiles east of it on the bank and
  *   walks west at it with the arrow key: the roe takes flight (its state FLEE in the kernel's world), and once it has run it stands
  *   farther from the figure than when it took flight;
  * - when the roe's sheets are in the kit (the drawn animals, #914) its image is shown and moves with it; with none, nothing is drawn
@@ -33,11 +33,12 @@ const TYPES: Record<string, string> = {
 
 /**
  * The roe on the sun bank (map spot 16, at 2,9 on the painted valley); the figure wakes in the north meadow (6.7 tiles off, past its alert
- * range of 5), waits 10 tiles east across the river, out of its sight (8), then is set down 5 tiles east of it on the bank, where open
- * ground runs between them, and walks west at it.
+ * range of 5), waits 8.5 tiles off across the river, out of its sight (8) but near enough that the roe is among the `wild.awake_max`
+ * nearest animals (19th from there; from 12,10 it is 26th and is never stepped), then is set down 5 tiles east of it on the bank, where
+ * open ground runs between them, and walks west at it.
  */
 const ROE_SPOT = 16;
-const FROM: [number, number] = [12, 10];
+const FROM: [number, number] = [10, 6];
 const EAST: [number, number] = [7, 9];
 
 function serve(): Promise<{ server: Server; url: string }> {

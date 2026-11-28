@@ -208,9 +208,15 @@ async function main(): Promise<void> {
       await page.waitFor(`true`, 'a frame');
     }
     await page.waitFor(`!document.querySelector('.dialog')`, 'the wake line to close', 10_000);
-    await page.key('ArrowDown', 'keyDown');
+    // the first open way from where the player woke (on the painted valley the town's south side is a wall)
+    const away = await page.eval<string>(`(() => {
+      const s = window.__game.session, w = window.__game.world, [x, y] = ${JSON.stringify(woke)};
+      const ways = [['ArrowDown', 0, 1], ['ArrowRight', 1, 0], ['ArrowLeft', -1, 0], ['ArrowUp', 0, -1]];
+      return (ways.find(([, dx, dy]) => w.canWalk(s, x + dx, y + dy, [x, y])) ?? ways[0])[0];
+    })()`);
+    await page.key(away, 'keyDown');
     await page.waitFor(`(() => { const p = ${where}; return p[0] !== ${woke[0]} || p[1] !== ${woke[1]}; })()`, 'the player to walk again after waking', 10_000);
-    await page.key('ArrowDown', 'keyUp');
+    await page.key(away, 'keyUp');
     console.log(`jump: a drop of four levels was death: the fall-down played, the player woke at ${woke.join(',')} and walked again`);
 
     if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);

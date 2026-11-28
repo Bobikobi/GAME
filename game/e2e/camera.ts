@@ -83,6 +83,18 @@ async function main(): Promise<void> {
         await desk.tap('.card.race', 'Elf');
         await desk.tap('.title-screen button', 'Wake up');
         await desk.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+        // the camera stops at the map's edge, and the painted valley's wakes stand a few tiles from its west edge: the player is set
+        // down on the walkable tile nearest the middle of the map, where the view fits round it at every zoom
+        await desk.eval(`(() => {
+          const g = __game, s = g.session, m = g.bundle.map, cx = Math.floor(m.width / 2), cy = Math.floor(m.height / 2);
+          let at = null;
+          for (let r = 0; r < Math.max(m.width, m.height) && !at; r++) {
+            for (let y = cy - r; y <= cy + r && !at; y++) for (let x = cx - r; x <= cx + r && !at; x++) if (g.world.canWalk(s, x, y)) at = [x, y];
+          }
+          s.pos = [at[0], at[1]];
+          s.state.player.at = [at[0], at[1]];
+          g.world.bind(s);
+        })()`);
         await new Promise((r) => setTimeout(r, 1500)); // the opening's camera settles on the player
         const read = () =>
           desk.eval<{ zoom: number; dx: number; dy: number }>(

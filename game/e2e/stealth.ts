@@ -91,9 +91,13 @@ window.__stealth = (() => {
       const cap = (params.hp_cap + params.per_point.stamina * s.state.player.attrs.stamina) * 1000;
       s.state.player.hp = 10 * cap;
       s.met.add('core/trader');
-      s.pos = [34, 11];
-      s.state.player.at = [34, 11];
-      s.facing = 'right';
+      // beside Pell's stall, read from the map's slot: a task is taken from its giver's side (the kernel's accept)
+      const stall = g().bundle.map.slots.find((sl) => sl.id === 'core/trader-stall');
+      const ways = [[0, 1, 'up'], [-1, 0, 'right'], [1, 0, 'left'], [0, -1, 'down']];
+      const [dx, dy, face] = ways.find(([dx, dy]) => g().world.canWalk(s, stall.x + dx, stall.y + dy)) ?? ways[0];
+      s.pos = [stall.x + dx, stall.y + dy];
+      s.state.player.at = [stall.x + dx, stall.y + dy];
+      s.facing = face;
       g().world.bind(s);
       return { cap, bite: Math.floor((cap * params.hazard.predator.bite_pct) / 100) };
     },

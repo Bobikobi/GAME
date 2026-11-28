@@ -296,13 +296,24 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await me.snap('walked3d');
 
     // 4. gather: walk to a node, the prompt names it, A starts the work, it runs by itself, the bag grows
-    // the nearest few, tried in turn: the nearest by distance can lie across water with no way round
+    // the nearest few the player can walk up to, tried in turn: the nearest by distance can lie across water with no way round
+    // (on the painted valley the north meadow is closed by the ford's stones until they are taken)
     const targets = await page.eval<{ id: string; x: number; y: number; source: string; item: string }[]>(`(() => {
-      const g = window.__game, s = g.session, b = g.bundle;
+      const g = window.__game, s = g.session, b = g.bundle, w = g.world;
       const near = (i) => Math.abs(i.x - s.pos[0]) + Math.abs(i.y - s.pos[1]);
+      const reach = new Set([s.pos[0] + ',' + s.pos[1]]);
+      const queue = [[s.pos[0], s.pos[1]]];
+      for (let k = 0; k < queue.length; k++) {
+        const [x, y] = queue[k];
+        for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+          const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
+          if (!reach.has(nk) && w.canWalk(s, nx, ny, [x, y])) { reach.add(nk); queue.push([nx, ny]); }
+        }
+      }
+      const beside = (i) => [[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => reach.has((i.x + dx) + ',' + (i.y + dy)));
       const nodes = Object.entries(b.instances)
         // a node open to anyone at any hour: no tool, no quest it waits on (the keystone), no hours (the moon reeds)
-        .filter(([id, i]) => { const r = b.resources[i.source]; return i.kind === 'resource' && !r.tool && r.work === undefined && !r.opens_after && !r.hours && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick; })
+        .filter(([id, i]) => { const r = b.resources[i.source]; return i.kind === 'resource' && !r.tool && r.work === undefined && !r.opens_after && !r.hours && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick && beside(i); })
         .sort((x, y) => near(x[1]) - near(y[1]));
       return nodes.slice(0, 6).map((n) => ({ id: n[0], x: n[1].x, y: n[1].y, source: n[1].source, item: b.resources[n[1].source].output }));
     })()`);

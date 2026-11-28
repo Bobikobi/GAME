@@ -29,8 +29,13 @@ const TYPES: Record<string, string> = {
 };
 
 const BAY = 'core/bay-crossing';
-/** The ferry exit of the map plan (`core/ferry`, 3,27 on the painted valley). */
+/** The ferry exit of the map plan (`core/ferry`, 3,27 on the painted valley): the boat puts in here. */
 const JETTY = [3, 27];
+/**
+ * Where the player boards: beside the jetty (a passage is offered on or beside it), on 2,28, since on the jetty itself the reed bank's
+ * nodes on two diagonals (2,26 and 4,26) take the A button before the boat does.
+ */
+const BOARD = [2, 28];
 const GATE = 'core/a-coin-for-maru';
 
 function serve(): Promise<{ server: Server; url: string }> {
@@ -71,8 +76,8 @@ async function start(page: Page, url: string): Promise<void> {
   // tick 0 is noon, inside the boat's hours; the walk to the jetty is the map's, this script is about the boat
   await page.eval(`(() => {
     const g = window.__game, s = g.session;
-    s.pos = [${JETTY[0]}, ${JETTY[1]}];
-    s.state.player.at = [${JETTY[0]}, ${JETTY[1]}];
+    s.pos = [${BOARD[0]}, ${BOARD[1]}];
+    s.state.player.at = [${BOARD[0]}, ${BOARD[1]}];
     g.world.bind(s);
   })()`);
 }
@@ -101,6 +106,14 @@ const draw = (page: Page, id: string) =>
   })()`);
 
 async function board(page: Page): Promise<void> {
+  // from where the boat put in (the jetty), back to the boarding tile beside it
+  await page.eval(`(() => {
+    const g = window.__game, s = g.session;
+    if (s.pos[0] === ${BOARD[0]} && s.pos[1] === ${BOARD[1]}) return;
+    s.pos = [${BOARD[0]}, ${BOARD[1]}];
+    s.state.player.at = [${BOARD[0]}, ${BOARD[1]}];
+    g.world.bind(s);
+  })()`);
   await page.waitFor(`(document.querySelector('.prompt')?.textContent ?? '').includes('Board: Across the bay')`, 'the jetty to offer the boat', 15_000);
   await page.tap('.tbtn.a');
   await page.waitFor(`!!window.__game.session.state.player.aboard`, 'the boat to leave', 5000);
@@ -124,7 +137,7 @@ async function run(page: Page, url: string): Promise<void> {
   // ---- before Maru's coin the jetty offers nothing, and the kernel refuses a boarding sent anyway
   await sleep(500);
   if ((await page.eval<string>(`document.querySelector('.prompt')?.textContent ?? ''`)).includes('Board')) throw new Error('the boat is offered before Maru\'s coin');
-  const refused = await page.eval<{ ok: boolean; error?: string }>(`window.__game.session.act({ t: 'board', passage: ${JSON.stringify(BAY)}, at: [${JETTY[0]}, ${JETTY[1]}] })`);
+  const refused = await page.eval<{ ok: boolean; error?: string }>(`window.__game.session.act({ t: 'board', passage: ${JSON.stringify(BAY)}, at: [${BOARD[0]}, ${BOARD[1]}] })`);
   if (refused.ok || refused.error !== 'Not yet.') throw new Error(`a boarding before Maru's coin was not refused: ${JSON.stringify(refused)}`);
   await openBoat(page);
 
