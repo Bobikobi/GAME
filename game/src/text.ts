@@ -451,6 +451,11 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
   switch (e.e) {
     case 'gain':
       return { text: `+${e.qty} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
+    case 'unpack':
+      return {
+        text: e.items.length === 0 ? 'Nothing in your pack was fit to keep.' : `You take your pack: ${e.items.map((i) => `+${i.qty} ${itemName(b, i.item)}`).join(', ')}`,
+        tone: e.items.length === 0 ? 'info' : 'good',
+      };
     case 'bag_full':
       return { text: `Bag full - ${e.qty} ${itemName(b, e.item)} left behind`, tone: 'bad' };
     case 'drop':

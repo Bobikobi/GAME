@@ -148,8 +148,11 @@ lore of her own and no joke about the miller.
 ## 6. Not done here
 
 - The art: the stills of section 3, then the sprites, each on its own branch.
-- The client's strings: the death card and the fall's box change with the
-  combat and fall frame, not before.
+- The client's strings: the fall's box says the section 4 words since the pack
+  reached the client (public #922): "You died.", "You wake in the <town>.",
+  "Your pack lies where you died." (a fall that gathered nothing says nothing is
+  lost instead). The body lying in the grass and the screen darkening over two
+  seconds stay for the art and the combat frame.
 - The filter between players: unchanged, and its own question at the stage
   where words reach another player (DECISIONS.md, 9.10).
 - The spec's line "graphic violence and offensive content are not accepted"

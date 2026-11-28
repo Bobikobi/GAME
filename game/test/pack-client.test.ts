@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type State, newState, packsAt, step } from '@game/kernel';
 import { fallLines } from '../src/ui/ui';
+import { describe as describeEvent } from '../src/text';
 import { PACK_SPRITE } from '../src/scenes/packs';
 import { packAt } from '../src/targets';
 import { loadBundle } from '../../tools/test/helpers/world';
@@ -77,5 +78,15 @@ describe('the picture of the pack', () => {
   test('is a kit picture the bundle has, the basket the finds are carried in', () => {
     expect(b.sprites[PACK_SPRITE]).toBeDefined();
     expect(Object.values(b.items).some((it) => it.sprite === PACK_SPRITE)).toBe(true);
+  });
+});
+
+describe('the toast of taking the pack', () => {
+  test('lists what came back, and says so when nothing was fit to keep', () => {
+    const s = started();
+    const full = describeEvent(b, s, { e: 'unpack', pack: 1, items: [{ item: 'core/berry', qty: 2 }] });
+    expect(full?.text).toMatch(/^You take your pack: \+2 /);
+    expect(full?.tone).toBe('good');
+    expect(describeEvent(b, s, { e: 'unpack', pack: 1, items: [] })?.tone).toBe('info');
   });
 });
