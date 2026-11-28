@@ -221,7 +221,8 @@ describe('the valley animals', () => {
     expect(stonePrey(b, s, 0, i, s.player.at, near)).toBeDefined();
     expect(stonePrey(b, s, 0, i, s.player.at, [sp.x + reach + 1, sp.y])).toBeUndefined();
     expect(stonePrey(b, s, 0, i, s.player.at, [0.5, 1] as never)).toBeUndefined();
-    const take: Action = { t: 'take', prey: i, at: s.player.at, stands: near };
+    // a short throw from the tile beside it comes down on the tile it stands on
+    const take: Action = { t: 'throw', at: s.player.at, aim: near, kind: b.params.hunt.throw_item, power: b.params.stones.throw_min_power, prey: i, stands: near };
     const r = step(b, s, take, 0);
     if (!r.ok) throw new Error(r.error);
     expect(r.state.player.carcasses![0]).toMatchObject({ kind: 'core/hare', at: near });
