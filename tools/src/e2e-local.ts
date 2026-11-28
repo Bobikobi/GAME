@@ -42,9 +42,19 @@ function run(cmd: string, args: readonly string[], cwd: string, env: NodeJS.Proc
   return spawnSync(cmd, args, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
 }
 
+/** A step that failed: `step` names it for the public status, the message (with the command's output) stays on this machine's console. */
+class StepError extends Error {
+  constructor(
+    readonly step: string,
+    detail: string,
+  ) {
+    super(`${step} failed: ${detail}`);
+  }
+}
+
 function must(cmd: string, args: readonly string[], cwd: string, what: string, env?: NodeJS.ProcessEnv): string {
   const r = run(cmd, args, cwd, env);
-  if (r.status !== 0) throw new Error(`${what} failed (${cmd} ${args.join(' ')}): ${(r.stderr || r.stdout).trim().slice(-800)}`);
+  if (r.status !== 0) throw new StepError(what, `(${cmd} ${args.join(' ')}): ${(r.stderr || r.stdout).trim().slice(-800)}`);
   return r.stdout.trim();
 }
 
@@ -114,7 +124,8 @@ function main(): void {
     console.error(`e2e:local: ${message}`);
     if (posting) {
       try {
-        post(target.sha, 'failure', `the run broke before the groups ended: ${message}`.slice(0, 140));
+        // the status is public: it names the step only, never the command's output (paths, the store's address)
+        post(target.sha, 'failure', `the run broke at: ${e instanceof StepError ? e.step : 'an unexpected error'}`.slice(0, 140));
       } catch {
         // the status could not be posted either: the console line above is the record
       }
