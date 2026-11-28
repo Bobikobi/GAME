@@ -1,7 +1,7 @@
 # The valley charter and budget table
 
-**DRAFT for the owner's signature.** Written 27.11.2026 by the valley-charter lane (public tracker #895). It is a proposal to
-sign or change, not a rule: nothing here binds a builder until the owner signs a row and the manager records it in
+**SIGNED 28.11.2026** by the manager under the owner's delegation (section 6). Written 27.11.2026 by the valley-charter lane
+(public tracker #895). It binds builders from that date; the owner can reopen any row by naming it, and the change is recorded in
 [DECISIONS.md](../../DECISIONS.md). No look direction is decided here, no rule of [GAME_RULES.md](GAME_RULES.md) is changed, and no
 number below is the owner's unless the row says GIVEN.
 
@@ -227,13 +227,44 @@ does not duplicate it, and its effect is not in these numbers.
 - **A new tool.** This page names the gaps (section 2) and builds none; a tool arrives as its own pull request.
 - **A look direction.** The base look is the owner's 22.11 pick; nothing here chooses a style, a palette or a still.
 
+## 6. The open rows, ruled
+
+On 28.11.2026 the owner gave the signature to the manager (chat, translated: "I don't understand it well enough to answer;
+I trust you, and if something bothers me I will say so and you will answer how to approach it"). The manager ruled each OPEN
+row below by what large studios do for a vertical slice, and says where we differ. The owner can reopen any row by naming
+it; until he does, these rulings are the bar.
+
+- **G7 audio: in the exit.** A vertical slice ships with its sound. The source is the in-page synthesiser that exists today;
+  sampled audio is not part of the valley. Bar: no cue peaks above -3 dBFS, every loop closes without a click (SOUND.md 1.1
+  procedure). The owner's pick between the 30.10 listens stays his, at the end, by ear. B17 follows: 0 bytes of audio files.
+- **B4 "zero stutter":** zero means no frame over 50 ms in the 40 s walk (B3), and at most 20 frames over 20 ms in it (about
+  1 percent of a 60 FPS walk), on the named phone. Studios count hitches against a frame-time ceiling the same way; a literal
+  zero on a phone browser is not measurable as a pass.
+- **The preset (section 3):** the floor is measured on the preset Auto picks for the named phone, and the look is judged on
+  that same preset, so the game judged is the game a player gets. The high preset is a bonus for stronger devices, never the
+  look's only home. Where a valley moving thing is off on the phone's preset, it is listed in that row's pull request.
+- **B1 phone:** the proposed mid Android phone stays the target. Until one is in the house, the proxy is desktop Chrome with
+  the CPU at x4, and a run on any real mid Android phone (the owner's or a borrowed one, through remote debugging) counts
+  over the proxy. Buying one is the owner's money and is asked separately.
+- **R8 the outing:** one outing past the town's safe ground, about 5 to 8 minutes, to the hunting ground and back; it pays the
+  hunt's yield (meat, hide, bone); a fall there leaves the pack where the body fell (G33, public #922). The quest-designer
+  writes the pitch; the owner sees it as a pick card like any quest.
+- **G4 atmosphere:** the manager writes the list of atmosphere moments from the references; it is shown to the owner once, as a
+  pick card with "none of these", and is the bar after that.
+- **G9 "enjoy":** read by behaviour, not by words: the tester asks to play on, or plays past the ten minutes unasked. Words
+  after the session are information.
+- **G12 reference crops:** a manifest in the repo (moment, source, licence or "private reference, not redistributed", crop
+  name); the crops themselves stay out of git.
+- **Look rows (G2, G3, G4, G11, G12) stay the owner's eye.** The manager's signature covers the bars and the procedure, never a
+  look: those rows pass only on the owner's word on the live game.
+
 ## Signature
 
 Each row is signed by the owner or changed by him. The manager records it in DECISIONS.md when he does.
 
 | Part | Rows | Signed (owner, date) |
 |---|---|---|
-| The route | R1 to R8 | |
-| The gates | G1 to G12 | |
-| The budget | B1 to B18 | |
-| The baseline | section 4 | |
+| The route | R1 to R8 | The manager under the owner's delegation, 28.11.2026 |
+| The gates | G1 to G12 | The manager under the owner's delegation, 28.11.2026; look rows pass on the owner's word only |
+| The budget | B1 to B18 | The manager under the owner's delegation, 28.11.2026 |
+| The baseline | section 4 | The manager, 28.11.2026 (a record of 27.11, re-measured when the phone run exists) |
