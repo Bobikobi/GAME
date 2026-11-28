@@ -29,7 +29,8 @@ const TYPES: Record<string, string> = {
 };
 
 const BAY = 'core/bay-crossing';
-const JETTY = [8, 35];
+/** The ferry exit of the map plan (`core/ferry`, 3,27 on the painted valley). */
+const JETTY = [3, 27];
 const GATE = 'core/a-coin-for-maru';
 
 function serve(): Promise<{ server: Server; url: string }> {

@@ -3,9 +3,9 @@
  *
  * - the Jump button stands on the right of the screen, round, 48 px or more, clear of every other button and of the HUD;
  * - in the first minute after waking a tap on it is refused in the kernel's words and the player stays where they stood;
- * - after it, a tap jumps up one ledge of the valley (the town's face at x=21|22): the player stands on the higher tile and the
+ * - after it, a tap jumps up one ledge (the painted valley is all one level, so the higher tile is raised in the page): the player stands on it and the
  *   drawing rode an arc above the ground (the code STAND-IN hop: the figure lifts, its feet and shadow keep the ground);
- * - a drop of two levels (the valley has none, so one digit of the height layer is raised in the page) lands, costs a fifth
+ * - a drop of two levels (one digit of the height layer raised in the page) lands, costs a fifth
  *   of the health cap and says so in the hurt cue's words;
  * - a drop of four levels is death by G33: the fall-down plays, the player wakes in town and walks again.
  *
@@ -31,14 +31,24 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
 };
 
-/** The town's face on row 4: level 0 at x=21, level 1 at x=22 (no crossing on that row). */
-const LOW: [number, number] = [21, 4];
-const HIGH: [number, number] = [22, 4];
-/** Row 5 beside it, raised in the page to level 2, so a jump left from it drops two levels onto (21, 5). */
-const TALL: [number, number] = [22, 5];
-const BELOW: [number, number] = [21, 5];
-/** Row 6, raised in the page to level 4, so a jump left from it drops four levels onto (21, 6): death. */
-const DEEP: [number, number] = [22, 6];
+/**
+ * Open meadow east of the town, clear of slots, props, stones and animal spots, with three open tiles west of LOW for the walk to it. The painted
+ * valley is all level 0: HIGH is raised in the page to level 1, so a jump right from LOW climbs one ledge.
+ */
+const LOW: [number, number] = [35, 9];
+const HIGH: [number, number] = [36, 9];
+/** The row below, raised in the page to level 2, so a jump left from it drops two levels onto (35, 10). */
+const TALL: [number, number] = [36, 10];
+const BELOW: [number, number] = [35, 10];
+/** The row below that, raised in the page to level 4, so a jump left from it drops four levels onto (35, 11): death. */
+const DEEP: [number, number] = [36, 11];
+
+/** One digit of the height layer set in the page (the bundle's map, which the kernel reads). */
+const raise = (at: readonly number[], level: number): string => `(() => {
+  const rows = window.__game.bundle.map.levels;
+  const y = ${at[1]}, x = ${at[0]};
+  rows[y] = rows[y].slice(0, x) + '${level}' + rows[y].slice(x + 1);
+})()`;
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -139,6 +149,7 @@ async function main(): Promise<void> {
     console.log(`jump: the button is ${Math.round(jump.w)} px at ${Math.round(jump.x)},${Math.round(jump.y)}, clear of ${seen.buttons.length - 1} buttons and ${seen.hud.length} HUD parts`);
 
     // past the minute: up one ledge, and the drawing rides an arc
+    await page.eval(raise(HIGH, 1));
     await page.waitFor(`window.__game.session.tick >= 60000`, 'the first minute to pass', 60_000);
     // two tiles short of the ledge, then walked to it with the arrow key: the walk's own report of the position is what the jump leaves from
     await page.eval(place([LOW[0] - 2, LOW[1]], 'down'));
@@ -163,12 +174,8 @@ async function main(): Promise<void> {
     await page.screenshot(join(OUT, 'jump-up.png'));
     console.log(`jump: up one ledge from ${LOW.join(',')} to ${HIGH.join(',')}, the arc peaked at ${peak} art px and the figure came down`);
 
-    // a drop of two levels (the valley has none, so one digit of the height layer is raised in the page)
-    await page.eval(`(() => {
-      const rows = window.__game.bundle.map.levels;
-      const y = ${TALL[1]}, x = ${TALL[0]};
-      rows[y] = rows[y].slice(0, x) + '2' + rows[y].slice(x + 1);
-    })()`);
+    // a drop of two levels (one digit of the height layer raised in the page)
+    await page.eval(raise(TALL, 2));
     await page.eval(place(TALL, 'left'));
     const hp0 = await page.eval<number>(`window.__game.session.state.player.hp`);
     // the breath must hold a second jump: it refills (5 a second) from the first
@@ -184,11 +191,7 @@ async function main(): Promise<void> {
     console.log(`jump: a drop of two levels cost ${(hp0 - hp1) / 1000} health (${hp0 / 1000} to ${hp1 / 1000}) and showed the hurt cue`);
 
     // a drop of four levels is death (G33): the hop lands, the fall-down plays, the figure wakes in town and can walk again
-    await page.eval(`(() => {
-      const rows = window.__game.bundle.map.levels;
-      const y = ${DEEP[1]}, x = ${DEEP[0]};
-      rows[y] = rows[y].slice(0, x) + '4' + rows[y].slice(x + 1);
-    })()`);
+    await page.eval(raise(DEEP, 4));
     await page.waitFor(`window.__game.session.tick >= window.__game.session.state.player.busyUntil`, 'the landing to end', 5000);
     await page.eval(place(DEEP, 'left'));
     // the breath for a third hop: it refills a little each second

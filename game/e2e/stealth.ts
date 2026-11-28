@@ -266,22 +266,15 @@ async function run(page: Page, url: string): Promise<void> {
   await page.waitFor(`__game.session.state.player.quests['core/the-south-bank'] === 'active'`, 'Pell to give the south-bank quest');
   await page.waitFor('!__game.ui.blocking', 'Pell dialogue to close');
 
-  // Begin the night from the built camp at the head of the bank road. Once the
-  // wolf turns west along the far edge, take the covered bank road (x 12) down
-  // to the waiting tile. The shortest walk goes down the meadow beside it, the
-  // wolf's own column, and passed or not by the pace of the steps.
-  await page.eval('__stealth.moveTo(18, 22); __stealth.setHour(21)');
-  await me.walkTo(12, 19, 'the head of the bank road');
-  await page.waitFor(`(() => {
-    const p = __stealth.predator();
-    return !!p && p.at[1] === 31 && p.heading[0] === -1;
-  })()`, 'the wolf to turn west along the far edge', 20_000);
-  for (let y = 20; y <= 33; y++) {
-    await me.step('down');
-    if (y >= 24 && y < 33 && !(await page.eval<boolean>(`__stealth.cover(12, ${y})`))) throw new Error(`the bank road is not cover at 12,${y}`);
-  }
-  if (!(await page.eval<boolean>('__stealth.cover(12, 33)'))) throw new Error('the waiting tile is not cover');
-  if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the wolf began a chase on the covered approach');
+  // From the built camp to the reeds before dark: the bank wolf sleeps on its den by day, and the painted bank has no covered
+  // road, so the approach is made while it sleeps (as the kernel flow, game/test/stealth-flow.test.ts). The deep reeds (10,27)
+  // touch no tile of its ring (11,23 to 14,25): only their cover keeps the player out of its eyes. Then the night falls.
+  await page.eval('__stealth.moveTo(13, 13); __stealth.setHour(19)');
+  await me.walkTo(10, 27, 'the deep reeds');
+  if (!(await page.eval<boolean>('__stealth.cover(10, 27)'))) throw new Error('the deep reeds at 10,27 are not cover');
+  await page.eval('__stealth.setHour(21)');
+  await page.waitFor(`(() => { const p = __stealth.predator(); return !!p && !!p.heading && (p.heading[0] !== 0 || p.heading[1] !== 0); })()`, 'the wolf on its round', 20_000);
+  if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the wolf began a chase on the approach');
 
   // The threat telegraph's near beat, muted (NEXT.md 12 c): near the wolf the prowl is asked for, and nothing leaves
   // the speakers; from here on every visual cue is checked with the sound off.
@@ -289,18 +282,24 @@ async function run(page: Page, url: string): Promise<void> {
   const prowl = await page.waitFor<number>('(() => { const st = __game.sound.state(); return st.beds.prowl > 0 ? st.beds.prowl : 0; })()', 'the prowl near the wolf', 5000);
   await sleep(300);
   const level = await page.eval<number>('__game.sound.level()');
-  console.log(`telegraph: prowl asked at ${prowl.toFixed(3)} beside the bank road, muted output ${level}`);
+  console.log(`telegraph: prowl asked at ${prowl.toFixed(3)} beside the moon bank, muted output ${level}`);
   if (level !== 0) throw new Error(`muted, the output is ${level}, not 0`);
 
-  // Wait for the wolf on the west edge, looking north: its eyes face away
-  // from the one-tile crossing to the moonreed.
+  // Up one more into the reeds' cover once the wolf has passed the bank's corner going north (11,24: the tile 10,26 is beside it
+  // only a moment before), then wait for it at the ring's north-west corner looking east: its back is to the one open tile
+  // beside the moonreed (10,25) for five of its ten steps, the time the reeds take.
   await page.waitFor<Predator>(`(() => {
     const p = __stealth.predator();
-    return p && p.at[0] === 8 && p.at[1] === 30 && p.heading[0] === 0 && p.heading[1] === -1 ? p : null;
+    return p && p.at[0] === 11 && p.at[1] === 24 && p.heading[1] === -1 ? p : null;
+  })()`, 'the wolf to pass the bank corner going north', 20_000);
+  await me.step('up');
+  await page.waitFor<Predator>(`(() => {
+    const p = __stealth.predator();
+    return p && p.at[0] === 11 && p.at[1] === 23 && p.heading[0] === 1 ? p : null;
   })()`, 'the wolf eyes to face away', 20_000);
   await me.snap('eyes-away');
 
-  await me.step('left');
+  await me.step('up');
   const node = await page.eval<{ id: string; x: number; y: number }>('__stealth.node()');
   const at = (await me.state()).pos;
   if (Math.max(Math.abs(node.x - at[0]), Math.abs(node.y - at[1])) !== 1) throw new Error(`moonreed ${node.x},${node.y} is not beside the crossing at ${at.join(',')}`);
@@ -313,12 +312,12 @@ async function run(page: Page, url: string): Promise<void> {
 
   // Return to cover. As soon as the same open tile enters the real sight
   // predicate, step into it and let the ordinary move report start the chase.
-  await me.step('right');
+  await me.step('down');
   await page.waitFor<Predator>(`(() => {
-    const p = __stealth.predator([11, 32]);
+    const p = __stealth.predator([10, 25]);
     return p && p.seesPlayer ? p : null;
   })()`, 'the open tile to enter the wolf cone', 20_000).catch(async (error: unknown) => {
-    const debug = await page.eval(`(() => { const s = __game.session; return { tick: s.tick, paused: s.paused, state: __stealth.state(), wolf: __stealth.predator(), target: __stealth.predator([11, 32]), chase: s.state.player.chase }; })()`);
+    const debug = await page.eval(`(() => { const s = __game.session; return { tick: s.tick, paused: s.paused, state: __stealth.state(), wolf: __stealth.predator(), target: __stealth.predator([10, 25]), chase: s.state.player.chase }; })()`);
     throw new Error(`${error instanceof Error ? error.message : error}: ${JSON.stringify(debug)}`);
   });
   const before = await page.eval<Health>('__stealth.health()');
@@ -334,7 +333,6 @@ async function run(page: Page, url: string): Promise<void> {
     const watch = () => { if (__game.world.bang.visible) window.__bang = true; requestAnimationFrame(watch); };
     watch();
   })()`);
-  await me.step('left');
   await me.step('up');
   await page.waitFor('!!__game.session.state.player.chase', 'the wolf chase to start', 3000);
   await page.waitFor('window.__bang', 'muted, the "!" over the wolf at the chase', 3000);
@@ -342,7 +340,7 @@ async function run(page: Page, url: string): Promise<void> {
   const chasedAt = Date.now();
   await me.snap('chase');
 
-  await me.walkTo(18, 22, 'the safe camp');
+  await me.walkTo(13, 13, 'the safe camp');
   const wallMs = Date.now() - chasedAt;
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the chase did not end in the camp');
   const home = await page.eval<Health>('__stealth.health()');

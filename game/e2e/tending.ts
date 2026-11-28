@@ -29,10 +29,13 @@ const TYPES: Record<string, string> = {
 const QUEST = 'core/the-long-night';
 const HEARTH = 'core/elder-hearth';
 const LOG = 'core/log';
-const BUILD = [27, 16];
-const STAND = [28, 16];
-const WOLF_STAND = [2, 19];
-const OUTSIDE = [30, 16];
+/** The painted valley's east meadow: BUILD stands 14 tiles out of the town square, its fire's ring watched by no wolf; STAND is east of it. */
+const BUILD = [32, 9];
+const STAND = [33, 9];
+/** Inside the bank wolf's watch (the wolf at 11,23 on the painted valley). */
+const WOLF_STAND = [12, 18];
+/** Out of the fire's light, east along the same row. */
+const OUTSIDE = [35, 9];
 const WARNING = 'is burning low';
 
 function serve(): Promise<{ server: Server; url: string }> {

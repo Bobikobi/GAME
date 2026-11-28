@@ -4,7 +4,7 @@
  *
  * - a landed hit of the player plays the spark on the foe's tile, steps through its eight frames in order, and clears;
  * - a bite (the chase's `hurt` from a predator) plays the starburst on the player, steps through its eleven frames, and clears;
- * - a real jump up the town's ledge raises the landing dust where it lands (when the ground there is dry), steps through its twelve
+ * - a real jump up a ledge (raised in the page on the south ruins' floor) raises the landing dust where it lands (when the ground there is dry), steps through its twelve
  *   frames, and clears;
  * - a fire burning full shows the camp fire's loop in place of the kit's burning look, the loop's frame moves, and the kit's look
  *   comes back when the fire is out;
@@ -37,13 +37,17 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
 };
 
-/** The town's face on row 4: level 0 at x=21, level 1 at x=22 (the jump script's ledge). */
-const LOW: [number, number] = [21, 4];
-const HIGH: [number, number] = [22, 4];
-/** The valley's own hearth, lit in the page by a burn long enough to stand full. */
+/**
+ * A ledge on dry ground (the dust is dry ground's): the south ruins' floor, with three open tiles west of LOW for the walk to it. The painted
+ * valley is all level 0, so HIGH is raised in the page to level 1.
+ */
+const LOW: [number, number] = [20, 25];
+const HIGH: [number, number] = [21, 25];
+/** The valley's own hearth, lit in the page by a burn long enough to stand full, and a tile beside it where the camera sees it. */
 const HEARTH = 'core/elder-hearth';
-/** A tile of open meadow for the hit and the bite. */
-const FIELD: [number, number] = [24, 14];
+const BY_HEARTH: [number, number] = [11, 3];
+/** A tile of open meadow for the hit and the bite, with open meadow east of it for the foe. */
+const FIELD: [number, number] = [33, 12];
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -169,6 +173,7 @@ async function main(): Promise<void> {
     // a real jump up the ledge: the dust where it lands, on dry ground
     // the first minute is the game clock's own: it is put past the minute rather than waited for
     await page.eval(`(() => { const s = window.__game.session; if (s.tick < 60000) s.tick = 60000; })()`);
+    await page.eval(`(() => { const rows = window.__game.bundle.map.levels; rows[${HIGH[1]}] = rows[${HIGH[1]}].slice(0, ${HIGH[0]}) + '1' + rows[${HIGH[1]}].slice(${HIGH[0] + 1}); })()`);
     await page.eval(place([LOW[0] - 2, LOW[1]], 'down'));
     await page.key('ArrowRight', 'keyDown');
     await page.waitFor(`window.__game.session.pos[0] === ${LOW[0]}`, 'the walk to the foot of the ledge', 10_000);
@@ -194,11 +199,11 @@ async function main(): Promise<void> {
     if (!off) throw new Error('the jump played no takeoff');
     if (lowBits !== off.parts.includes('ground')) throw new Error(`the takeoff laid ${off.parts.join(',') || 'nothing'} on ground that ${lowBits ? 'has' : 'has no'} bits`);
     console.log(`effects: the jump's takeoff from ${LOW.join(',')} laid ${off.parts.join(',') || 'nothing (no bits there)'}`);
-    // the dust again at the town's dry ground, laid by the scene's own landing call, for the frame count whatever the ledge's ground is
+    // the dust again on dry ground (the ledge's, and the north ruins' floor), laid by the scene's own landing call, for the frame count whatever the ledge's ground is
     await page.eval(`window.__game.world.dustAt(${HIGH[0]}, ${HIGH[1]}); window.__game.world.dustAt(23, 6);`);
 
     // the camp fire: lit in the page for a long burn, it stands in place of the kit's look; out, the kit's look returns
-    await page.eval(place([HIGH[0], HIGH[1] + 2], 'down'));
+    await page.eval(place(BY_HEARTH, 'right'));
     await page.eval(`(() => { const s = window.__game.session; s.state.player.fires = { ...(s.state.player.fires ?? {}), '${HEARTH}': { lit: s.tick, until: s.tick + 400_000_000 } }; window.__game.world.refresh(); })()`);
     await page.waitFor(`window.__game.world.campfireLook('${HEARTH}')?.up === true`, 'the camp fire loop to show over the lit hearth', 5000);
     const seenFrames = await page.eval<number[]>(`new Promise((ok) => {

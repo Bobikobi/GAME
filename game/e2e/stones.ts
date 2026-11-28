@@ -33,12 +33,12 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
 };
 
-/** Two small spots and a large one of the valley, on open meadow with a clear row to the right of the first. */
-const THROWER: [number, number] = [24, 14];
+/** Two small spots and a large one of the painted valley (map.stones), the first with six tiles of open meadow to its right for the throw. */
+const THROWER: [number, number] = [29, 16];
 const OTHER: [number, number] = [21, 17];
-const LARGE: [number, number] = [20, 12];
-/** A bare tile of the meadow for the pile. */
-const PILE: [number, number] = [23, 16];
+const LARGE: [number, number] = [20, 15];
+/** A bare tile of the meadow for the pile, clear of slots, nodes and spots. */
+const PILE: [number, number] = [34, 10];
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
