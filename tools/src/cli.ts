@@ -32,7 +32,8 @@ function check(): ReturnType<typeof runCheck> {
     console.log(formatIssues(result));
     // one info line, never a failure: how many things a player meets in the valley are in each art state (docs/design/VALLEY_INVENTORY.md)
     try {
-      if (result.assembled.bundle) console.log(checkLine(buildInventory(result.assembled)));
+      // as `pnpm valley:inventory` counts it: under the painted base every page mounts
+      if (result.assembled.bundle) console.log(checkLine(buildInventory(result.assembled, { paintedBase: true })));
     } catch (err) {
       console.log(`valley inventory: not counted (${err instanceof Error ? err.message : String(err)})`);
     }
