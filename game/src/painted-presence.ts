@@ -1,6 +1,6 @@
 // What a query asks of the painted mount's presence options; no engine import, so a test can read it (painted.ts re-exports both).
 
-/** The query of the private preview: the block that tools/art/block.py built (preview.py puts its scene folder at painted/preview-block), the way out of the valley, the device's hour, the phone camera `zoom=auto` (the engine's own default stays the fixed 3 until the owner rules), (the page's own query comes first and wins: URLSearchParams.get reads the first). */
+/** The query of the private preview: the block the private block builder made (the private preview puts its scene folder at painted/preview-block), the way out of the valley, the device's hour, the phone camera `zoom=auto` (the engine's own default stays the fixed 3 until the owner rules), (the page's own query comes first and wins: URLSearchParams.get reads the first). */
 export const PREVIEW_QUERY = '?painted=preview-block&link=1&clock=device&seethrough=1&zoom=auto';
 
 /** The presence options a query asks for. The engine's own default for see-through is off (the owner rules); the preview's query turns it on (his like of 12.11), and a `seethrough=0` in the page's own query comes first and turns it off again. */

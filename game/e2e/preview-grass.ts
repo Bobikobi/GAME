@@ -5,7 +5,7 @@
  *
  * Signs in, walks out into the block, hides the figure and the page's overlays, sets the hour and looks at the scene point. Then, in OUT_DIR: map.png (hold=grassmap: the pass's mask, white on black),
  * nomeadow.png (hold=nomeadow: the pass taken off, the old picture), rest.png and rest2.png (the pass with wind and grass held: amp 0), and w00..wNN.png, a frame every ~0.5 s with the gust running.
- * tools/art/scene/grassbars.py reads them. Prints INFO (how many ground units hold the pass) and one JSON line {bar:'grassrig'}.
+ * The private meadow bars read them. Prints INFO (how many ground units hold the pass) and one JSON line {bar:'grassrig'}.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -107,7 +107,7 @@ async function main(): Promise<number> {
     await shot('rest2.png', `${HOLD},wind,covers,grass`);
     // moving: the meadow's pass runs; the leaning pieces and the ground cover are held (wind, covers), so only the meadow can change; a frame every 500 ms
     await page.eval(`(window.__painted.setHold('${HOLD},wind,covers${process.env.GR_PASSOFF === '1' ? ',nomeadow' : ''}'), 1)`);
-    // where the screen lies in the scene, and the game's clock at each moving frame: tools/art/scene/grassbars.py replays the shader's shift from them (the meadow must lean with the table's wind)
+    // where the screen lies in the scene, and the game's clock at each moving frame: the private meadow bars replay the shader's shift from them (the meadow must lean with the table's wind)
     const geo = await page.eval<unknown>(`(() => { const c = window.__game.world.cameras.main; const p = window.__painted; const a = c.getWorldPoint(0, 0); const b = c.getWorldPoint(1920, 1080); return { x0: p.x0, y0: p.y0, a: [a.x, a.y], b: [b.x, b.y], zoom: c.zoom, units: [...p.grassUnits.entries()].map(([k, g]) => ({ key: k, x: g.im.x, y: g.im.y, w: g.im.displayWidth, h: g.im.displayHeight, at: g.ctl ? g.ctl.at : null, size: g.ctl ? g.ctl.size : null })) }; })()`);
     const times: number[] = [];
     const n = Math.round(secs * 2);

@@ -10,7 +10,13 @@ import {
   widenSeed,
 } from '@game/kernel';
 
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { assemble } from '../../src/assemble.js';
+import { readBoard } from '../../src/board.js';
 import { runCheck } from '../../src/check.js';
+import { loadAll } from '../../src/load.js';
 
 export type Tile = [number, number];
 
@@ -21,6 +27,45 @@ export function loadBundle(): Bundle {
   const bundle = runCheck().assembled.bundle;
   if (!bundle) throw new Error('Content did not assemble into a bundle.');
   return bundle;
+}
+
+const PIXEL_VALLEY = new URL('../fixtures/pixel-valley/', import.meta.url);
+
+function pixelWakes(): Record<string, { x: number; y: number }> {
+  return JSON.parse(readFileSync(new URL('wakes.json', PIXEL_VALLEY), 'utf8')) as Record<string, { x: number; y: number }>;
+}
+
+/**
+ * The first valley as it is drawn in pixels (the map and the three wake tiles of develop at ff32d25b, 28.11), frozen in
+ * tools/test/fixtures/pixel-valley. A test of an ENGINE rule that borrows the valley as a world (a hazard's round, a
+ * fire's reach, a cliff's steps, a den's ring, a walk to a named tile) stands on this one, so it keeps proving the rule
+ * when the shipped map is redrawn (the painted valley, public #919). A test of the shipped content (the opening, the
+ * mist on the wake pockets, the maze, the balance pages' minutes) uses `loadBundle` and the content as it stands.
+ */
+export function loadPixelBundle(): Bundle {
+  const { files } = loadAll();
+  const map = JSON.parse(readFileSync(new URL('map.json', PIXEL_VALLEY), 'utf8')) as unknown;
+  const wakes = pixelWakes();
+  for (const f of files) {
+    const data = f.data as unknown as { type: string; id?: string; pocket?: { wake: { x: number; y: number } } };
+    if (f.rel === 'core/map.json') f.data = map as typeof f.data;
+    else if (data.type === 'pocket' && data.id && wakes[data.id] && data.pocket) data.pocket.wake = wakes[data.id]!;
+  }
+  // the board as `runCheck` reads it, so the frozen bundle differs from the shipped one by the map and the wake tiles alone
+  const bundle = assemble(files, readBoard()).bundle;
+  if (!bundle) throw new Error('The pixel valley did not assemble into a bundle.');
+  return bundle;
+}
+
+/** The same freeze on a copy of the content (a temp root a test builds with `cpSync`): the pixel map and wake tiles are written over the copy's. */
+export function pinPixelValley(root: string): void {
+  writeFileSync(join(root, 'core', 'map.json'), readFileSync(new URL('map.json', PIXEL_VALLEY), 'utf8'));
+  for (const [id, wake] of Object.entries(pixelWakes())) {
+    const file = join(root, 'core', 'pockets', `${id.split('/')[1]}.json`);
+    const data = JSON.parse(readFileSync(file, 'utf8')) as { pocket: { wake: { x: number; y: number } } };
+    data.pocket.wake = wake;
+    writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
+  }
 }
 
 export function mulberry32(seed: number): () => number {
