@@ -54,6 +54,7 @@ import { checkRaces } from './races';
 import { checkFamilies } from './families';
 import { checkSchools } from './schools';
 import { checkHands } from './hands';
+import { checkShut } from './shut';
 import { checkRichness } from './richness';
 import { checkSearch } from './search';
 import { checkSea } from './sea';
@@ -115,6 +116,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkSea(b, assembled.origin));
     issues.push(...checkMapPlan(b, assembled.origin));
     issues.push(...checkHands(b, assembled.origin));
+    issues.push(...checkShut(b, assembled.origin));
     issues.push(...checkBalance(b, paramsFile?.type === 'params' ? paramsFile.params : undefined));
   }
   return { issues: dedupe(issues), files: files.length, assembled };

@@ -21,6 +21,7 @@ import {
   hpCap,
   skillPoints,
   talkLines,
+  questShut,
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
@@ -688,7 +689,7 @@ export class UI {
       const state = s.state.player.quests[id];
       if (state === 'active') {
         options.push({ label: q.title, value: `quest:${id}` });
-      } else if (!state && (q.requires ?? []).every((r) => s.state.player.quests[r] === 'done')) {
+      } else if (!state && !questShut(q) && (q.requires ?? []).every((r) => s.state.player.quests[r] === 'done')) {
         options.push({ label: q.title, value: `quest:${id}` });
       }
     }
