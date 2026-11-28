@@ -38,7 +38,8 @@ const TYPES: Record<string, string> = {
  * way away from the figure is north, into the open sun bank, ten tiles of run.
  * The west bank is one pocket until the bridge is mended: the sun bank's roe (2,9) was cornered by every approach the bank allows (from
  * the east or the north-east it ran into the bank's north-west nook, a low point of the kernel's flee map, and stayed in flight while
- * the figure stood near: GPU runs of 28.11).
+ * the figure stood near: GPU runs of 28.11). Until #946, the kernel's fix that ends a cornered flight; then the sun bank's roe may
+ * serve again.
  */
 const ROE_SPOT = 23;
 const FROM: [number, number] = [12, 17];

@@ -93,7 +93,7 @@ window.__stealth = (() => {
       s.met.add('core/trader');
       // Foraging 2 reached and its point placed, so the moonreed's 2.5 s of gathering brings no level-up window: the window holds the
       // player on the open tile while the wolf's round runs on, and on the painted bank the round leaves no time for it (GPU run of
-      // 28.11, told to the manager as a finding of the game)
+      // 28.11). Until #945: the window becomes a notice that takes no input, and this setup goes
       const p = s.state.player;
       p.xp['core/foraging'] = Math.max(p.xp['core/foraging'] ?? 0, g().bundle.professions['core/foraging'].xp_levels[0] * 1000);
       let level = 1;
