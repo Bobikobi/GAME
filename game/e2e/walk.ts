@@ -7,7 +7,6 @@
  * The input is started from here and let go in the page: a frame can be a quarter of a second on a machine
  * rendering in software, and a release sent over the wire lands a frame late, which walks the body a tile further.
  */
-import { BODY_BOX, type Disc } from '../src/walking';
 import { type Page, WALK_WARP, sleep, timed } from './cdp';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
@@ -116,36 +115,6 @@ function inSpan(v: number, k: number | undefined): boolean {
   return k !== undefined && v >= k * ART_PX && v < (k + 1) * ART_PX;
 }
 
-/**
- * The push that takes the body round a trunk's disc standing in its straight way (a painted land's trees refuse the body's box at
- * art-pixel precision, walking.ts pushOutOfDiscs): moving along one axis with the disc ahead and within the box's reach across, the
- * feet step sideways, inside the target tile's span where they can, to where the box clears the disc. Undefined when no disc is in
- * the way, or the walk is a diagonal.
- */
-export function roundTrunk(feet: readonly [number, number], push: readonly [number, number], tile: readonly number[], discs: readonly Disc[]): [number, number] | undefined {
-  const [px, py] = push;
-  if ((px === 0) === (py === 0)) return undefined;
-  const along = px !== 0 ? 0 : 1;
-  const across = 1 - along;
-  const dir = along === 0 ? px : py;
-  const half = [BODY_BOX.w / 2, BODY_BOX.h / 2];
-  for (const d of discs) {
-    const dc = [d.x, d.y];
-    const ahead = (dc[along]! - feet[along]!) * dir;
-    if (ahead < 0 || ahead > half[along]! + d.r + 2) continue;
-    if (Math.abs(dc[across]! - feet[across]!) >= half[across]! + d.r) continue;
-    const clear = half[across]! + d.r + 1;
-    const lo = tile[across]! * ART_PX;
-    const sides = [dc[across]! + clear, dc[across]! - clear];
-    const inside = sides.filter((v) => v >= lo && v < lo + ART_PX);
-    const pool = inside.length ? inside : sides;
-    const to = pool.reduce((a, b) => (Math.abs(b - feet[across]!) < Math.abs(a - feet[across]!) ? b : a));
-    const step = Math.sign(to - feet[across]!);
-    return across === 0 ? [step, 0] : [0, step];
-  }
-  return undefined;
-}
-
 /** What the page says about the walk just now. */
 interface Sample {
   feet: [number, number];
@@ -231,8 +200,6 @@ export class FreeWalk {
     // where the feet last moved, and since when they stand still short of the tile
     let last: [number, number] | undefined;
     let stillSince = Date.now();
-    // a painted land's trunk discs, read the first time the feet stand still (none on the pixel valley)
-    let discs: Disc[] | undefined;
     try {
       for (;;) {
         const now = await this.page.eval<Sample>('window.__walk.now()');
@@ -266,13 +233,8 @@ export class FreeWalk {
         let ax = inSpan(fx, tile[0]) ? 0 : Math.sign(tx - fx);
         let ay = inSpan(fy, tile[1]) ? 0 : Math.sign(ty - fy);
         if (stuck) {
-          discs ??= await this.page.eval<Disc[]>('(window.__game.painted?.trunkDiscs ?? []).map((d) => ({ x: d.x, y: d.y, r: d.r }))');
-          const round = roundTrunk([fx, fy], [ax, ay], tile, discs);
-          if (round) [ax, ay] = round;
-          else {
-            if (ax === 0 && Math.abs(tx - fx) > NUDGE) ax = Math.sign(tx - fx);
-            if (ay === 0 && Math.abs(ty - fy) > NUDGE) ay = Math.sign(ty - fy);
-          }
+          if (ax === 0 && Math.abs(tx - fx) > NUDGE) ax = Math.sign(tx - fx);
+          if (ay === 0 && Math.abs(ty - fy) > NUDGE) ay = Math.sign(ty - fy);
         }
         if (ax !== 0 || ay !== 0) await this.steer(ax, ay);
         if (Date.now() > end) {
