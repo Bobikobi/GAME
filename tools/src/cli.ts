@@ -4,7 +4,7 @@
  *   check    validate every content file (schema, references, economy, sprites), NEXT.md's Status lines and the shrink-only lists
  *   values   re-anchor content/values.lock.json (core maintainers only) and print gold per hour of making
  *   lock     re-anchor content/world.lock.json, the opening's legs and pays (G59; only with the owner's yes)
- *   bundle   build game/src/generated/bundle.json and copy the kits for the client
+ *   bundle   build game/src/generated/bundle.json, copy the kits for the client and place the painted pictures (painted-store.ts)
  *   credits  write CREDITS.md from the content (--verify: fail when it is stale)
  *   board    write content/board.json, creator points and commits, from the git history
  */
@@ -19,6 +19,7 @@ import { LOCK_FILE, REPO_ROOT } from './load';
 import { writeLock } from './lock';
 import { writeAtlas } from './kit/atlas';
 import { formatMaking, makingReport } from './making';
+import { PAINTED_CACHE, PAINTED_MANIFESTS, PAINTED_OUT, fetchAll } from './painted-store';
 import { buildInventory, checkLine } from './valley-inventory';
 
 const [command, ...args] = process.argv.slice(2);
@@ -97,6 +98,13 @@ switch (command) {
     const atlas = writeAtlas(b.sprites, join(REPO_ROOT, 'game', 'public'));
     console.log(`bundle ${b.tag}: ${Object.keys(b.items).length} items, ${Object.keys(b.instances).length} placed nodes, ${Object.keys(b.sprites).length} sprites`);
     console.log(`kit atlas: ${atlas.files} files in ${atlas.sheets} sheets${atlas.left ? `, ${atlas.left} too big for a sheet (loaded loose)` : ''}`);
+    // the painted lands' pictures beside the page, each verified against its manifest (tools/src/painted-store.ts); a byte that does not match stops the bundle
+    try {
+      for (const line of await fetchAll({ manifestDir: PAINTED_MANIFESTS, cache: PAINTED_CACHE, out: PAINTED_OUT, store: process.env.PAINTED_STORE, required: process.env.PAINTED_REQUIRED === '1' })) console.log(line);
+    } catch (e) {
+      console.error(`\nNot bundling the painted pictures: ${e instanceof Error ? e.message : String(e)}`);
+      process.exit(1);
+    }
     break;
   }
   case 'board': {
