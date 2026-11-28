@@ -1,0 +1,65 @@
+{
+  "name": "valley-last-16px-head",
+  "out": ".scratch/pixellab/valley-last-16px/head2",
+  "label": "pixellab-valley-last-16px-head",
+  "provenance": "PixelLab on the paid account (trial1), redraw of the statue head after the owner's word on the hub card valley-last-16px-ruins (27.11.2026 23:49): all four heads read as a head, not as a statue. Lane valley-last-16px, public #917. Cap 12 generations: one Pro grid (10) and two fills (1 each).",
+  "jobs": [
+    {
+      "id": "head2",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a carved grey granite statue head, an ancient stone monument of a man, simplified chiselled features with flat planes, blank stone eyes with no pupils, a heavy straight brow, a chipped nose, hair carved as stone curls, the neck broken off flat and resting on a square weathered stone plinth with chipped corners and a crack, pale grey stone only, no skin colour, no beard of hair, green moss only in the cracks, on the top of the head and on the plinth, clearly a stone monument and not a living person. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, short soft shadow side, painterly pixel art with many shades, no thick black outline, weathered ancient ruin in a river valley, the whole object alone on a transparent background.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/broken_statue.png",
+            "usage_description": "The material and the finish: carved grey stone on a square plinth with moss in the cracks, the way a statue reads in this game. The new piece is a statue's HEAD on its own plinth, not a full figure and not this figure. Do not copy this statue."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/standing_stone.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly stone with moss, no thick black outline. Do not copy this stone."
+          }
+        ]
+      },
+      "note": "statue head redraw, candidates 1-4 of the new card: grey stone, plinth, broken neck."
+    },
+    {
+      "id": "head-fall",
+      "recipe": "fill",
+      "account": 1,
+      "inputs": {
+        "description": "a broken ancient stone statue head fallen from its body and lying on the ground, weathered grey granite, simplified carved features worn almost smooth, blank eyes, a flat jagged break at the neck, chips and cracks, green moss in the cracks and on top, a broken piece of plinth beside it, clearly a stone monument, no skin colour, no hair, no beard",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "no_background": true,
+        "shading": "detailed shading",
+        "detail": "highly detailed",
+        "negative": "living person, skin, flesh, realistic face, beard, human eyes, pupils, photo"
+      },
+      "note": "fill: the head lying fallen with a jagged neck break."
+    },
+    {
+      "id": "head-bust",
+      "recipe": "fill",
+      "account": 1,
+      "inputs": {
+        "description": "an ancient carved grey stone bust, a statue head and shoulders worn by weather on a tall square stone plinth, blank eyes, flat chiselled planes for brow and nose, stone curls for hair, cracked and chipped, moss on the plinth and shoulders, clearly a stone monument, no skin colour",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "no_background": true,
+        "shading": "detailed shading",
+        "detail": "highly detailed",
+        "negative": "living person, skin, flesh, realistic face, beard, human eyes, pupils, photo"
+      },
+      "note": "fill: a bust on a tall plinth."
+    }
+  ]
+}
