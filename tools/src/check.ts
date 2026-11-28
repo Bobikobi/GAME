@@ -1207,7 +1207,7 @@ export function checkKits(a: Assembled): Issue[] {
       for (const p of clipBaseProblems(kit.sprites)) {
         issues.push(p.where === 'sprite'
           ? { file: kitFile, where: `kit.sprites.${p.name}.clip`, message: p.message, level: 'error' }
-          : { file: 'tools/kit-gen/bases.json', where: p.name, message: p.message, level: 'error' });
+          : { file: 'tools/kit-gen/bases/bases.json', where: p.name, message: p.message, level: 'error' });
       }
       for (const name of staleLeft(kit.sprites)) {
         issues.push({ file: 'tools/src/kit/rich.ts', where: 'SIXTEEN_PX_LEFT', message: `names "${name}", which the core kit does not hold: take it off the list`, level: 'error' });

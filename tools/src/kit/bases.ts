@@ -1,7 +1,7 @@
 /**
  * One base body for each race (DECISIONS.md, 2026-11-28): B, the newer figure the clothes go on, is the picture every
  * clip, key and reference of a race is drawn from. The 30.10 walk sheets (`chars/<race>_{down,left,up}`) are retired as
- * a base. The data is `tools/kit-gen/bases.json`; this file reads it and holds the three guards:
+ * a base. The data is `tools/kit-gen/bases/bases.json`; this file reads it and holds the three guards:
  *
  *  - `kit:gen` refuses a reference taken from a retired sheet or from a clip drawn from one (`refProblem`);
  *  - `tools/anim/prod/packmoves.py` refuses a manifest line with no base or a retired one, and records the base
@@ -33,7 +33,7 @@ export interface BasesData {
 }
 
 export function loadBases(root = ROOT): BasesData {
-  return JSON.parse(readFileSync(resolve(root, 'tools/kit-gen/bases.json'), 'utf8')) as BasesData;
+  return JSON.parse(readFileSync(resolve(root, 'tools/kit-gen/bases/bases.json'), 'utf8')) as BasesData;
 }
 
 /** The race a character sheet belongs to (`chars/elf_hit_left` is "elf"), or undefined for anything else. */
@@ -87,7 +87,7 @@ export function clipBaseProblems(sprites: Readonly<Record<string, { clip?: { rac
     const base = data.clips[name];
     if (base === undefined) {
       if (data.waiting.includes(name) || data.legacy_verbs.includes(s.clip.verb)) continue;
-      out.push({ name, where: 'sprite', message: `plays the new verb "${s.clip.verb}" and has no recorded base: packmoves.py writes it under "clips" in tools/kit-gen/bases.json` });
+      out.push({ name, where: 'sprite', message: `plays the new verb "${s.clip.verb}" and has no recorded base: packmoves.py writes it under "clips" in tools/kit-gen/bases/bases.json` });
       continue;
     }
     if (data.waiting.includes(name)) out.push({ name, where: 'list', message: `is on the waiting list and also has a recorded base (${base}): take it off "waiting"` });

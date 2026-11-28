@@ -4,7 +4,7 @@
   packmoves.py --set SET --manifest moves.json --kit content/kit/core --palette tools/src/kit/palette.ts [--like hit] [--write] [--write-kit]
 
 `packclips.py` rewrites every clip row of the kit from one table; this adds or replaces only the rows it is given, so the clips already
-shipped stay as they are. The manifest is a list of `{"race", "verb", "view", "take", "ms", "from", "base"}`: `base` is the kit sprite the take was drawn from (the race's base, `chars/human_hit_left`; refused when it is a retired walk sheet, tools/kit-gen/bases.json) and is recorded there for `pnpm check`; `from` is the take folder under SET
+shipped stay as they are. The manifest is a list of `{"race", "verb", "view", "take", "ms", "from", "base"}`: `base` is the kit sprite the take was drawn from (the race's base, `chars/human_hit_left`; refused when it is a retired walk sheet, tools/kit-gen/bases/bases.json) and is recorded there for `pnpm check`; `from` is the take folder under SET
 (`<race>/<from>/f00.png.. + clip.json`, the production route's `process.py` output with its `verdict.py` read: it must say PASS), `take` is 1
 for the first drawing of a clip and 2, 3 for a near-identical one kept as a variant (the game plays one of a clip's takes at random).
 
@@ -24,13 +24,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import packclips as pc  # noqa: E402
 
 
-BASES = Path(__file__).resolve().parents[3] / "tools" / "kit-gen" / "bases.json"
+BASES = Path(__file__).resolve().parents[3] / "tools" / "kit-gen" / "bases" / "bases.json"
 
 
 def base_problem(bases, race, base):
     """Why `base` (a kit sprite id) may not be what a clip of `race` was drawn from, or None. The same rules as tools/src/kit/bases.ts."""
     if not base:
-        return "has no \"base\": name the base picture the take was drawn from (DECISIONS 2026-11-28, tools/kit-gen/bases.json)"
+        return "has no \"base\": name the base picture the take was drawn from (DECISIONS 2026-11-28, tools/kit-gen/bases/bases.json)"
     if not base.startswith(f"chars/{race}_"):
         return f"{base} is not a picture of the {race}"
     seen = set()
