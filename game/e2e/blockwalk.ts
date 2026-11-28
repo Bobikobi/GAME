@@ -1,12 +1,12 @@
 /**
- * The engine stations of the block command (tools/art/block.py, stages `frames` and `engine`; private tracker #10, order 23). Run by that command, not by `pnpm e2e`: it needs a scene folder the command has just made.
+ * The engine stations of the private block builder (its stages `frames` and `engine`; private tracker #10, order 23). Run by that builder, not by `pnpm e2e`: it needs a scene folder the builder has just made.
  *
  *   tsx game/e2e/blockwalk.ts frames SCENE_DIR DIST_DIR OUT_DIR CONFIG.json
  *        CONFIG {frames: [{tag, minute}]}: the engine's own frame of the WHOLE scene at one device pixel per art pixel (viewport = the scene's size, camera zoom 4, the figure hidden) at each
- *        minute, written to OUT_DIR/full-<tag>.png (what seamscan.py reads).
+ *        minute, written to OUT_DIR/full-<tag>.png (what the builder's seam scan reads).
  *   tsx game/e2e/blockwalk.ts walk SCENE_DIR DIST_DIR OUT_DIR CONFIG.json
  *        CONFIG {hours: [{tag, minute}], crossings: [{seam, route: [[cx, cy], ...], first, back}]}: a figure is put on the first cell of each route and walks it a tile at a time on the held arrow keys (the
- *        trunk's FreeWalk), at every hour. The route is a run of open cells that crosses one seam of the block (block.py's walk stage found it on the exported cells). A step is good when the feet
+ *        trunk's FreeWalk), at every hour. The route is a run of open cells that crosses one seam of the block (the builder's walk stage found it on the exported cells). A step is good when the feet
  *        stand on the cell asked for; a walk that stops short is a stuck cell. Stills at the phone's landscape size (844 x 390, the game's own zoom) with the figure on the seam, and the frames of
  *        one clip (the first crossing of each seam at 13:00) in OUT_DIR/clip/NNNN.png.
  *

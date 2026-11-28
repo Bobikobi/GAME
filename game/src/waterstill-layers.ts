@@ -14,7 +14,7 @@ export const TONE_KEY = 'painted:water-tone';
 
 type Hour = Parameters<typeof stillLightOf>[0];
 
-/** A streamed land's still water baked by the exporter (tools/src/art/scene-bake.ts): its field, base and ramp as textures already made, and the field's grid. */
+/** A streamed land's still water baked by the exporter: its field, base and ramp as textures already made, and the field's grid. */
 export interface StillBaked {
   grid: { w: number; h: number };
   seam: number;

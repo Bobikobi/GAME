@@ -5,7 +5,7 @@ import type { IncomingMessage, Server } from 'node:http';
 import { createGameApi, createPlayerRecord, isAction, listen, replayAccount, type Books, type PlayerRecord, type PlayerStore } from '../src';
 import { newerKernel } from '../src/api';
 import { applyStatePatch, publicState } from '../src/patch';
-import { bfsNear, bfsToTile, loadBundle } from '../../tools/test/helpers/world.js';
+import { bfsNear, bfsToTile, loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 const PLAYER = 'player-1';
 let bundle: Bundle;
@@ -24,7 +24,7 @@ test('the wire accepts each hunting action and keeps search takes distinct', () 
 });
 
 beforeAll(() => {
-  bundle = loadBundle();
+  bundle = loadPixelBundle();
 });
 
 class MemoryStore implements PlayerStore {

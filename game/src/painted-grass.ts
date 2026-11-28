@@ -1,7 +1,7 @@
 /**
  * The meadow of the painted plate moves (private #44 step A, the owner's word of 9.11: "all grass, always like this").
  *
- * One filter pass on each ground unit, in plate pixels, so the painting is kept (nothing is cut out of it): where the unit's meadow mask (tools/art/scene/grass.py) is set, a pixel takes
+ * One filter pass on each ground unit, in plate pixels, so the painting is kept (nothing is cut out of it): where the unit's meadow mask (baked by the private exporter) is set, a pixel takes
  * the colour of the pixel `shift` to its left, and only when that one is meadow too. A pixel the mask does not name never changes and never lends its colour. With `uAmp` 0 every pixel is
  * the one the plate holds (the rest frame, `hold=grass`). `hold=nomeadow` takes the pass off (the old picture's own path); `hold=grassmap` draws the mask itself, white on black, for the measures.
  *

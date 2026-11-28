@@ -2,15 +2,15 @@
  * Danger read from the world (G64, issue 578): every area of the valley carries d, d follows the walk
  * from town, and each border where d rises has a cue near it and near every road that crosses it.
  */
+import { loadPixelBundle } from './helpers/world';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Bundle } from '@game/kernel';
-import { runCheck } from '../src/check';
 import { CUE_SPRITES, checkDanger, stepsFromTown } from '../src/danger';
 
 let base: Bundle;
 
 beforeAll(() => {
-  const found = runCheck().assembled.bundle;
+  const found = loadPixelBundle();
   if (!found) throw new Error('Content did not assemble into a bundle.');
   base = found;
 });

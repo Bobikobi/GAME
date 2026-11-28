@@ -1,11 +1,11 @@
 {
   "generated_by": "pnpm valley:inventory",
-  "summary": "931 rows (872 with art, 59 n/a): 14 16px, 561 rich, 197 drawn clip, 100 code-drawn, 0 missing",
+  "summary": "931 rows (872 with art, 59 n/a): 14 16px, 561 rich, 215 drawn clip, 82 code-drawn, 0 missing",
   "counts": {
     "16px": 14,
     "rich": 561,
-    "drawn clip": 197,
-    "code-drawn": 100,
+    "drawn clip": 215,
+    "code-drawn": 82,
     "missing": 0,
     "n/a": 59
   },
@@ -69,8 +69,8 @@
     "figure clip": {
       "16px": 0,
       "rich": 0,
-      "drawn clip": 122,
-      "code-drawn": 100,
+      "drawn clip": 140,
+      "code-drawn": 82,
       "missing": 0,
       "n/a": 0
     },
@@ -2677,31 +2677,31 @@
       "id": "core/human:die:back",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 13,
+      "note": "core/base-kit:chars/human_die_back",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_die_back.png"
     },
     {
       "id": "core/human:die:front",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 13,
+      "note": "core/base-kit:chars/human_die_front",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_die_front.png"
     },
     {
       "id": "core/human:die:left",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 13,
+      "note": "core/base-kit:chars/human_die_left",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_die_left.png"
     },
     {
       "id": "core/human:dig:back",
@@ -2947,31 +2947,31 @@
       "id": "core/human:hit_heavy:back",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 17,
+      "note": "core/base-kit:chars/human_hit_heavy_back",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_hit_heavy_back.png"
     },
     {
       "id": "core/human:hit_heavy:front",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 17,
+      "note": "core/base-kit:chars/human_hit_heavy_front",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_hit_heavy_front.png"
     },
     {
       "id": "core/human:hit_heavy:left",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 17,
+      "note": "core/base-kit:chars/human_hit_heavy_left",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_hit_heavy_left.png"
     },
     {
       "id": "core/human:idle:back",
@@ -3007,91 +3007,91 @@
       "id": "core/human:jump:back",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 13,
+      "note": "core/base-kit:chars/human_jump_back",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_jump_back.png"
     },
     {
       "id": "core/human:jump:front",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 13,
+      "note": "core/base-kit:chars/human_jump_front",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_jump_front.png"
     },
     {
       "id": "core/human:jump:left",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 12,
+      "note": "core/base-kit:chars/human_jump_left",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_jump_left.png"
     },
     {
       "id": "core/human:land:back",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 10,
+      "note": "core/base-kit:chars/human_land_back",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_land_back.png"
     },
     {
       "id": "core/human:land:front",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 10,
+      "note": "core/base-kit:chars/human_land_front",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_land_front.png"
     },
     {
       "id": "core/human:land:left",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 10,
+      "note": "core/base-kit:chars/human_land_left",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_land_left.png"
     },
     {
       "id": "core/human:land_hard:back",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 17,
+      "note": "core/base-kit:chars/human_land_hard_back",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_land_hard_back.png"
     },
     {
       "id": "core/human:land_hard:front",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 14,
+      "note": "core/base-kit:chars/human_land_hard_front",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_land_hard_front.png"
     },
     {
       "id": "core/human:land_hard:left",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 14,
+      "note": "core/base-kit:chars/human_land_hard_left",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_land_hard_left.png"
     },
     {
       "id": "core/human:lift:back",
@@ -3217,31 +3217,31 @@
       "id": "core/human:run:back",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 7,
+      "note": "core/base-kit:chars/human_run_back",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_run_back.png"
     },
     {
       "id": "core/human:run:front",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 9,
+      "note": "core/base-kit:chars/human_run_front",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_run_front.png"
     },
     {
       "id": "core/human:run:left",
       "kind": "figure clip",
       "where": "-",
-      "state": "code-drawn",
-      "frames": null,
-      "note": "no sheet: the figure keeps its walk sheet or code-drawn motion",
+      "state": "drawn clip",
+      "frames": 9,
+      "note": "core/base-kit:chars/human_run_left",
       "source": "content/core/races/human.json",
-      "sheet": null
+      "sheet": "content/kit/core/chars/human_run_left.png"
     },
     {
       "id": "core/human:sneak:back",
