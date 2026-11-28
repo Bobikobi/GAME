@@ -1081,7 +1081,9 @@ export class PaintedMount {
       sprites[`${FIGURE.idle}_${v}`] = { url: `${base}/figures/slim_idle_${v}.png`, w: 128, h: 128, frames: IDLE_POSES, density: 4, stride: { travel_mpx: 1000, anchor: FIGURE_ANCHOR, bob: false } };
     }
     for (const [name, s] of Object.entries(lynx)) sprites[`painted:lynx-${name}`] = { url: `${base}/figures/${s.file}`, w: ANIMAL_SIZE, h: ANIMAL_SIZE, frames: s.frames, density: 4 };
-    const races = Object.fromEntries(Object.entries(raw.races).map(([id, r]) => [id, { ...r, sprite: `${FIGURE.walk}_down`, sprite_alt: `${FIGURE.walk}_down` }]));
+    // every race wears the current figure; a race keeps its second look only when it has one (the skeleton is one figure: the title
+    // offers it no look to pick, as on the pixel valley)
+    const races = Object.fromEntries(Object.entries(raw.races).map(([id, r]) => [id, { ...r, sprite: `${FIGURE.walk}_down`, ...(r.sprite_alt ? { sprite_alt: `${FIGURE.walk}_down` } : {}) }]));
     // one sun for the picture and the shadows: the standard's two hours as the shadow's shear, its wash taken off (the light is the sun's now)
     const shear = (h: Pick<PaintedHour, 'sq' | 'sl'>) => ({ right: Math.round(h.sq * h.sl * 1.9 * 100), down: Math.round(-h.sq * 100) });
     const light = raw.params.light;
