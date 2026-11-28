@@ -113,7 +113,7 @@ export interface Family {
 }
 
 export interface Ladder {
-  params: { dress_step_ms: number; pay_per_s_mg: number; rarity_rank_cuts: [number, number, number]; profession_levels: number };
+  params: { dress_step_ms: number; pay_per_s_mg: number; rarity_rank_cuts: [number, number, number]; profession_levels: number; standing_floor: number };
   families: Family[];
   materials: Record<string, Material>;
   tools: LadderTool[];
@@ -137,6 +137,8 @@ export interface HuntParams {
   open_tiers: number;
   pay_per_s_mg: number;
   rarity_rank_cuts: [number, number, number];
+  /** the least a kind stands at where its habitat exists in the land (the hunt floor, DECISIONS 2026-11-22) */
+  standing_floor: number;
   noise: Record<'still' | 'sneak' | 'walk' | 'run', number>;
   /** the content's own params, as the solver and `payFor` read them */
   solver: Params;
@@ -159,6 +161,7 @@ export function huntParams(params: Params, ladder: Ladder): HuntParams {
     open_tiers: params.open_tiers,
     pay_per_s_mg: ladder.params.pay_per_s_mg,
     rarity_rank_cuts: ladder.params.rarity_rank_cuts,
+    standing_floor: ladder.params.standing_floor,
     noise: { still: params.gait.noise_still, sneak: params.gait.noise_sneak, walk: params.gait.noise_walk, run: params.gait.noise_run },
     solver: params,
   };
@@ -320,7 +323,7 @@ function readKind(v: unknown, path: string): KindRow {
 export function loadLadder(raw: unknown): Ladder {
   const root = obj(raw, '(root)');
   known(root, ['about', 'params', 'families', 'materials', 'tools', 'kinds'], '(root)');
-  known(root.params, ['dress_step_ms', 'pay_per_s_mg', 'rarity_rank_cuts', 'profession_levels'], 'params');
+  known(root.params, ['dress_step_ms', 'pay_per_s_mg', 'rarity_rank_cuts', 'profession_levels', 'standing_floor'], 'params');
   const p = obj(root.params, 'params');
   const value = (k: string) => obj(p[k], `params.${k}`).value;
   const cuts = arr(value('rarity_rank_cuts'), 'params.rarity_rank_cuts.value').map((c, i) => int(c, `params.rarity_rank_cuts.value.${i}`, 1, 100));
@@ -330,6 +333,7 @@ export function loadLadder(raw: unknown): Ladder {
     pay_per_s_mg: int(value('pay_per_s_mg'), 'params.pay_per_s_mg.value', 1, 1_000_000),
     rarity_rank_cuts: cuts as [number, number, number],
     profession_levels: int(value('profession_levels'), 'params.profession_levels.value', 2, 99),
+    standing_floor: int(value('standing_floor'), 'params.standing_floor.value', 1, 100),
   };
   const families = arr(root.families, 'families').map((f, i) => {
     const at = `families.${i}`;
@@ -453,16 +457,19 @@ export function valuePerSecond(k: KindRow, p: HuntParams): number {
   return idiv(catchValue(k, p) * 1000, loopMs(k, p));
 }
 
-/** BESTIARY_LANDS 4: floor(cap * habitat / 1000), one at least where there is any habitat; null with no tile count. */
-export function standing(k: KindRow): number | null {
+/**
+ * BESTIARY_LANDS 4: floor(cap * habitat / 1000), at least `floor` (the hunt floor, params.standing_floor; 1 when none is given)
+ * where the kind has any habitat in the land, and 0 where it has none; null with no tile count.
+ */
+export function standing(k: KindRow, floor = 1): number | null {
   if (k.habitat_tiles === null) return null;
   if (k.habitat_tiles === 0) return 0;
-  return Math.max(1, mulDiv(k.cap_per_1000, k.habitat_tiles, 1000));
+  return Math.max(floor, mulDiv(k.cap_per_1000, k.habitat_tiles, 1000));
 }
 
 /** Takes a day: the standing count over the refill; per 1000 habitat tiles when the kind has no tile count. */
-export function dailyYield(k: KindRow): { num: number; den: number; per1000: boolean } {
-  const s = standing(k);
+export function dailyYield(k: KindRow, floor = 1): { num: number; den: number; per1000: boolean } {
+  const s = standing(k, floor);
   return s === null ? { num: k.cap_per_1000, den: k.refill_d, per1000: true } : { num: s, den: k.refill_d, per1000: false };
 }
 
@@ -623,8 +630,8 @@ export function difficultyMatrix(kinds: KindRow[], tools: LadderTool[], p: HuntP
       afterFight: after ? { tool: after.tool.id, tier: after.tool.tier, shift: after.gradeShift } : null,
       cap_per_1000: k.cap_per_1000,
       refill_d: k.refill_d,
-      standing: standing(k),
-      daily: dailyYield(k),
+      standing: standing(k, p.standing_floor),
+      daily: dailyYield(k, p.standing_floor),
       rarity_rank: rarityRank(k, p.rarity_rank_cuts),
       group: k.group,
     };

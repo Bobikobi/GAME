@@ -13,6 +13,10 @@
       "value": [10, 5, 2],
       "source": "proposed here: cap_per_1000 / refill_d at or above 10 is rank 0, 5 rank 1, 2 rank 2, else rank 3"
     },
+    "standing_floor": {
+      "value": 3,
+      "source": "the manager, 22.11, after the painted valley's smaller area: a kind whose habitat exists in the land stands at least 3, so one hunt does not empty it (DECISIONS 2026-11-22 the hunt floor)"
+    },
     "profession_levels": {
       "value": 20,
       "source": "GROWTH 3.6 and G87 (the owner, 19.10): the professions keep twenty levels; the xp proposal writes one threshold for each level from 2 to 20"

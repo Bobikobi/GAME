@@ -160,16 +160,23 @@ describe('the value of a catch', () => {
 });
 
 describe('difficulty and rarity', () => {
-  it('standing is at least 1 with any habitat, 0 with none, unknown without a tile count', () => {
+  it('standing is at least the hunt floor with any habitat, 0 with none, unknown without a tile count', () => {
     const hare = kind('hare');
+    expect(p.standing_floor).toBe(3);
+    // a land with a small habitat: the cap formula gives 0 or 1, the floor lifts it to 3
+    expect(standing({ ...hare, habitat_tiles: 1 }, p.standing_floor)).toBe(3);
+    expect(standing({ ...hare, habitat_tiles: 200 }, p.standing_floor)).toBe(3);
+    // a land with a big habitat: the cap formula as before
+    expect(standing({ ...hare, habitat_tiles: 1000 }, p.standing_floor)).toBe(12);
+    // no habitat in the land: none
+    expect(standing({ ...hare, habitat_tiles: 0 }, p.standing_floor)).toBe(0);
+    expect(standing(kind('white-hart'), p.standing_floor)).toBeNull();
+    // without a floor the old rule holds: one at least
     expect(standing({ ...hare, habitat_tiles: 1 })).toBe(1);
-    expect(standing({ ...hare, habitat_tiles: 0 })).toBe(0);
-    expect(standing(kind('white-hart'))).toBeNull();
-    expect(standing(kind('carrion-crow'))).toBe(11);
   });
 
   it('the daily yield is standing over the refill, per 1000 tiles without a count', () => {
-    expect(dailyYield(kind('wolf'))).toEqual({ num: 4, den: 3, per1000: false });
+    expect(dailyYield(kind('wolf'), p.standing_floor)).toEqual({ num: 3, den: 3, per1000: false });
     expect(fmtRatio(5, 3)).toBe('1.67');
     expect(dailyYield(kind('white-hart'))).toEqual({ num: 12, den: 2, per1000: true });
   });
@@ -245,12 +252,12 @@ describe('the pinned matrices', () => {
   it('matrix 3: difficulty and rarity', () => {
     const rows = difficultyMatrix(ladder.kinds.slice(0, 5), ladder.tools, p);
     const pinned = [
-      ['hare', [4, 5, 7, 10], 'stone', 0, 'stone', 11, [11, 1], 0, [100, 0, 0, 0]],
-      ['carrion-crow', [2, 3, 5, 8], 'snare', 0, 'snare', 11, [11, 1], 0, [10, 50, 40, 0]],
+      ['hare', [4, 5, 7, 10], 'stone', 0, 'stone', 7, [7, 1], 0, [100, 0, 0, 0]],
+      ['carrion-crow', [2, 3, 5, 8], 'snare', 0, 'snare', 3, [3, 1], 0, [10, 50, 40, 0]],
       // the stone takes small prey only (HUNTING 5): the lowest is the snare (-1), the spear the first at 0
-      ['roe-deer', [4, 5, 7, 10], 'snare', -1, 'spear', 11, [11, 1], 0, [0, 40, 60, 0]],
+      ['roe-deer', [4, 5, 7, 10], 'snare', -1, 'spear', 7, [7, 1], 0, [0, 40, 60, 0]],
       // BEHAVIOUR 5.1.6 weights the wolf's pair: 30/60/10/0
-      ['wolf', [4, 5, 7, 10], null, null, null, 4, [4, 3], 3, [30, 60, 10, 0]],
+      ['wolf', [4, 5, 7, 10], null, null, null, 3, [3, 3], 3, [30, 60, 10, 0]],
       // LANDS names only the bow for the hart's stalk, and the bow takes medium: the broad arrow (3a) takes it at 0
       ['white-hart', [4, 5, 7, 10], 'snare', -1, 'broad-arrow', null, [12, 2], 1, [0, 40, 60, 0]],
     ] as const;
