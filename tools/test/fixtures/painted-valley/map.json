@@ -1,0 +1,2935 @@
+{
+  "$schema": "../../schema/json/map.schema.json",
+  "format": 1,
+  "type": "map",
+  "id": "core/world",
+  "title": "The valley",
+  "creator": "core",
+  "description": "The valley: a river and its bay, a town on its shelf, a grove, the ruins and the hills; every road out opens by its own quest.",
+  "map": {
+    "width": 41,
+    "height": 30,
+    "legend": {
+      ".": {
+        "sprite": "core/base-kit:tiles/grass",
+        "solid": false,
+        "tag": "meadow"
+      },
+      ",": {
+        "sprite": "core/base-kit:tiles/grass_flowers",
+        "solid": false,
+        "tag": "meadow"
+      },
+      "\"": {
+        "sprite": "core/base-kit:tiles/grove",
+        "solid": false,
+        "tag": "grove"
+      },
+      "T": {
+        "sprite": "core/base-kit:tiles/forest",
+        "solid": true,
+        "tag": "grove"
+      },
+      "~": {
+        "sprite": "core/base-kit:tiles/water",
+        "solid": true,
+        "tag": "water"
+      },
+      "_": {
+        "sprite": "core/base-kit:tiles/sand",
+        "solid": false,
+        "tag": "riverbank"
+      },
+      ":": {
+        "sprite": "core/base-kit:tiles/path",
+        "solid": false,
+        "tag": "path"
+      },
+      "=": {
+        "sprite": "core/base-kit:tiles/cobble",
+        "solid": false,
+        "tag": "town"
+      },
+      "#": {
+        "sprite": "core/base-kit:tiles/ruin_floor",
+        "solid": false,
+        "tag": "ruin"
+      },
+      "%": {
+        "sprite": "core/base-kit:tiles/rubble",
+        "solid": true,
+        "tag": "ruin"
+      },
+      "^": {
+        "sprite": "core/base-kit:tiles/grass",
+        "solid": true,
+        "tag": "meadow"
+      },
+      "A": {
+        "sprite": "core/base-kit:tiles/rubble",
+        "solid": true,
+        "tag": "ruin"
+      },
+      "j": {
+        "sprite": "core/base-kit:tiles/bridge",
+        "solid": false,
+        "tag": "riverbank"
+      },
+      "a": {
+        "sprite": "core/base-kit:tiles/rubble",
+        "solid": false,
+        "tag": "ruin"
+      },
+      "b": {
+        "sprite": "core/base-kit:tiles/sand",
+        "solid": false,
+        "tag": "ruin"
+      }
+    },
+    "ground": [
+      "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "^\"\"\"\"\"_..~~====^^===^======............^^",
+      "^\"TTT\"_^.~~===^^^==^=^^^^==............^^",
+      "^\"TTT\"^..~~===^^^=^========............^^",
+      "^TTTTT^.~~~=^^^^^=^^^=====^^...^.......^^",
+      "^TTTT\"_.~~._..^^^.^.^^^^^^^.........^..^^",
+      "^^^^.._.~~._..:::.^.##########.........^^",
+      "^^^..._.~~._:::.::..###%%#####.........^^",
+      "^^...._.~~._.....:..###%%%%%%#.........^^",
+      "^^...._.~~.^.^...:::##%%%%####.........^^",
+      "^\"\"\"\"\"_~~~.^.^.....:%%%%%#####^........^^",
+      "^TTT\"\"....~~^.....:::::%%#####.........^^",
+      "^\"\"\"\"\"...~~_^...^.:.%####%%%%#.........^^",
+      "^\"\"\"\"\"...~~~.....^:.#%%%#%%%%%........^^^",
+      "^\"\"\"\"\"...~~_......:.##%#%%%%%#.........^^",
+      "^\"____~~~~~~\"\"T\":::\"\"\"\"\"\"\"\"\"\"\"\"........^^",
+      "^....~~~~~~^T\"\"\":\"\"\"\"\"\"\"\"\"\"\"\"\"\"......^.^^",
+      "^^.~~~~~~~~~\"\"\"::\"\"\"\"\"\"\"\"\"\"\"\"\"\"....^^.^^^",
+      "^..~~~~~~~~~T\"\":\"T\"\"\"\"\"\"\"\"T\"\"\"T....^^^^^^",
+      "^..~..~~~~~_\"\"\":\"\"T\"\"\"\"\"\"\"\"\"\"\"\"...^^^^.^^",
+      "^....~~~~~__\"\"\"\"\"\"\"\"\"\"T\"\"\"T\"\"\"T...^^^^^^^",
+      "^.~~~~~~~~~_\"\"%#####.......^.^^.^...^^^^^",
+      "^^^~~~~~~~~_\"\"######...................^^",
+      "^^.~~~~~~~~###################.....^^^.^^",
+      "^..~~~~~~~_###################.....^^.^^^",
+      "^____~~~~~_################%##......^^^^^",
+      "^____~~~~~_##%################^..^....^^^",
+      "^_^________#%%##############%%.^......^^^",
+      "^__________##############%%%##^........^^",
+      "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+    ],
+    "levels": [
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000",
+      "00000000000000000000000000000000000000000"
+    ],
+    "plan": {
+      "regions": [
+        {
+          "id": "core/north-wood",
+          "purpose": "passage",
+          "cells": [
+            [
+              0,
+              0,
+              41,
+              1
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "forest",
+            "frame",
+            "world:elf"
+          ],
+          "opens_by": "core/the-north-wood"
+        },
+        {
+          "id": "core/sun-bank-north",
+          "purpose": "stop",
+          "cells": [
+            [
+              1,
+              6,
+              6,
+              5
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow",
+            "riverbank"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 30,
+            "core/base-kit:props/flowers": 20,
+            "core/base-kit:props/pebbles": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/wake-bank",
+          "purpose": "stop",
+          "cells": [
+            [
+              1,
+              11,
+              6,
+              4
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow",
+            "riverbank"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 50,
+            "core/base-kit:props/flowers": 30,
+            "core/base-kit:props/flowers_white": 20,
+            "core/base-kit:props/pebbles": 20
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/south-bank",
+          "purpose": "stop",
+          "cells": [
+            [
+              1,
+              25,
+              10,
+              4
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow",
+            "riverbank"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 30,
+            "core/base-kit:props/flowers": 20,
+            "core/base-kit:props/mushrooms_small": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/river",
+          "purpose": "passage",
+          "cells": [
+            [
+              8,
+              1,
+              4,
+              25
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "water"
+          ]
+        },
+        {
+          "id": "core/bay",
+          "purpose": "passage",
+          "cells": [
+            [
+              1,
+              15,
+              9,
+              10
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "water",
+            "riverbank",
+            "frame"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 60
+          },
+          "opens_by": "core/the-landing"
+        },
+        {
+          "id": "core/west-gate",
+          "purpose": "passage",
+          "cells": [
+            [
+              11,
+              6,
+              9,
+              6
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 30,
+            "core/base-kit:props/flowers_white": 20,
+            "core/base-kit:props/pebbles": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/camp-meadow",
+          "purpose": "stop",
+          "cells": [
+            [
+              11,
+              12,
+              9,
+              5
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 50,
+            "core/base-kit:props/flowers": 30,
+            "core/base-kit:props/flowers_white": 20
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/town-shelf",
+          "purpose": "stop",
+          "cells": [
+            [
+              11,
+              1,
+              16,
+              5
+            ]
+          ],
+          "height": 1,
+          "tags": [
+            "town"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 20,
+            "core/base-kit:props/flowers": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/town-foot",
+          "purpose": "passage",
+          "cells": [
+            [
+              27,
+              1,
+              12,
+              9
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 40,
+            "core/base-kit:props/flowers_blue": 20,
+            "core/base-kit:props/rock_mossy": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/gate-yard",
+          "purpose": "stop",
+          "cells": [
+            [
+              20,
+              6,
+              5,
+              4
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 20,
+            "core/base-kit:props/rock_mossy": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/ruins-night",
+          "purpose": "stop",
+          "cells": [
+            [
+              20,
+              10,
+              10,
+              5
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin",
+            "walled"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 30,
+            "core/base-kit:props/mushrooms_small": 30
+          },
+          "opens_by": "core/the-night-arch"
+        },
+        {
+          "id": "core/garden-court",
+          "purpose": "stop",
+          "cells": [
+            [
+              26,
+              8,
+              4,
+              3
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_mossy": 20,
+            "core/base-kit:props/pebbles": 20
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/ruins-terrace",
+          "purpose": "stop",
+          "cells": [
+            [
+              29,
+              11,
+              6,
+              6
+            ]
+          ],
+          "height": 1,
+          "tags": [
+            "ruin"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_mossy": 40,
+            "core/base-kit:props/pebbles": 40
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/east-lane",
+          "purpose": "passage",
+          "cells": [
+            [
+              34,
+              1,
+              5,
+              9
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow",
+            "hollow"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_mossy": 60,
+            "core/base-kit:props/mushrooms_small": 60
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/ruins-south",
+          "purpose": "passage",
+          "cells": [
+            [
+              20,
+              15,
+              10,
+              2
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin",
+            "meadow"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 20,
+            "core/base-kit:props/grass_tall": 20
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/grove",
+          "purpose": "stop",
+          "cells": [
+            [
+              11,
+              17,
+              10,
+              8
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "grove"
+          ],
+          "cover": {
+            "core/base-kit:props/mushrooms_small": 80,
+            "core/base-kit:props/fallen_branches": 60,
+            "core/base-kit:props/flowers_white": 40,
+            "core/base-kit:props/glow_mushrooms": 40,
+            "core/base-kit:props/log_mossy": 30
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/tangle",
+          "purpose": "stop",
+          "cells": [
+            [
+              21,
+              17,
+              10,
+              4
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "grove"
+          ],
+          "cover": {
+            "core/base-kit:props/mushrooms_small": 60,
+            "core/base-kit:props/rock_mossy": 50,
+            "core/base-kit:props/glow_mushrooms": 40
+          },
+          "opens_by": "core/the-tangle"
+        },
+        {
+          "id": "core/descent-cut",
+          "purpose": "passage",
+          "cells": [
+            [
+              20,
+              28,
+              4,
+              2
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin",
+            "forest",
+            "world:undead"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 40,
+            "core/base-kit:props/fallen_branches": 40
+          },
+          "opens_by": "core/the-descent"
+        },
+        {
+          "id": "core/undead-descent",
+          "purpose": "passage",
+          "cells": [
+            [
+              11,
+              21,
+              19,
+              8
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin",
+            "ash",
+            "world:undead"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 80,
+            "core/base-kit:props/glow_mushrooms": 60,
+            "core/base-kit:props/mushrooms_small": 40,
+            "core/base-kit:props/fallen_branches": 20
+          },
+          "opens_by": "core/the-descent"
+        },
+        {
+          "id": "core/shore-way",
+          "purpose": "passage",
+          "cells": [
+            [
+              4,
+              28,
+              3,
+              2
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "forest",
+            "riverbank",
+            "world:human"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 40,
+            "core/base-kit:props/pebbles": 20
+          },
+          "opens_by": "core/the-shore-way"
+        },
+        {
+          "id": "core/east-hills",
+          "purpose": "passage",
+          "cells": [
+            [
+              35,
+              11,
+              5,
+              18
+            ]
+          ],
+          "height": 1,
+          "tags": [
+            "heath",
+            "frame",
+            "scenery"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_mossy": 30,
+            "core/base-kit:props/grass_tall": 20
+          }
+        },
+        {
+          "id": "core/woods",
+          "purpose": "passage",
+          "cells": [
+            [
+              1,
+              1,
+              5,
+              5
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "forest",
+            "frame"
+          ]
+        }
+      ],
+      "paths": [
+        {
+          "id": "core/bridge-road",
+          "width": 1,
+          "via": [
+            [
+              12,
+              7
+            ],
+            [
+              14,
+              7
+            ],
+            [
+              14,
+              6
+            ],
+            [
+              16,
+              6
+            ],
+            [
+              16,
+              7
+            ],
+            [
+              17,
+              7
+            ],
+            [
+              17,
+              9
+            ],
+            [
+              19,
+              9
+            ],
+            [
+              19,
+              11
+            ],
+            [
+              18,
+              11
+            ],
+            [
+              18,
+              15
+            ],
+            [
+              16,
+              15
+            ],
+            [
+              16,
+              17
+            ],
+            [
+              15,
+              17
+            ],
+            [
+              15,
+              19
+            ]
+          ]
+        },
+        {
+          "id": "core/old-road",
+          "width": 1,
+          "via": [
+            [
+              19,
+              11
+            ],
+            [
+              22,
+              11
+            ]
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "id": "core/maru-round-east",
+          "who": "Maru",
+          "hours": [
+            5,
+            10
+          ],
+          "via": [
+            [
+              18,
+              2
+            ],
+            [
+              21,
+              4
+            ],
+            [
+              25,
+              4
+            ],
+            [
+              29,
+              5
+            ],
+            [
+              31,
+              9
+            ],
+            [
+              33,
+              13
+            ],
+            [
+              31,
+              17
+            ]
+          ]
+        },
+        {
+          "id": "core/maru-round-west",
+          "who": "Maru",
+          "hours": [
+            10,
+            15
+          ],
+          "via": [
+            [
+              22,
+              11
+            ],
+            [
+              17,
+              12
+            ],
+            [
+              15,
+              15
+            ],
+            [
+              17,
+              19
+            ],
+            [
+              15,
+              14
+            ],
+            [
+              12,
+              7
+            ],
+            [
+              7,
+              7
+            ],
+            [
+              6,
+              7
+            ]
+          ]
+        },
+        {
+          "id": "core/innkeeper-post",
+          "who": "the innkeeper",
+          "hours": [
+            0,
+            24
+          ],
+          "via": [
+            [
+              21,
+              4
+            ]
+          ]
+        },
+        {
+          "id": "core/traveller-camp",
+          "who": "the traveller",
+          "hours": [
+            20,
+            5
+          ],
+          "via": [
+            [
+              14,
+              20
+            ]
+          ]
+        },
+        {
+          "id": "core/pell-ferry",
+          "who": "Pell",
+          "hours": [
+            6,
+            19
+          ],
+          "via": [
+            [
+              19,
+              5
+            ],
+            [
+              15,
+              9
+            ],
+            [
+              12,
+              7
+            ],
+            [
+              6,
+              7
+            ],
+            [
+              2,
+              23
+            ],
+            [
+              3,
+              26
+            ]
+          ]
+        },
+        {
+          "id": "core/watchman-round",
+          "who": "the watchman",
+          "hours": [
+            20,
+            5
+          ],
+          "via": [
+            [
+              16,
+              7
+            ],
+            [
+              18,
+              9
+            ],
+            [
+              17,
+              6
+            ],
+            [
+              19,
+              3
+            ]
+          ]
+        },
+        {
+          "id": "core/drunk-post",
+          "who": "the drunk",
+          "hours": [
+            20,
+            5
+          ],
+          "via": [
+            [
+              23,
+              3
+            ]
+          ]
+        },
+        {
+          "id": "core/smuggler-way",
+          "who": "the smuggler",
+          "hours": [
+            20,
+            5
+          ],
+          "via": [
+            [
+              3,
+              26
+            ],
+            [
+              4,
+              13
+            ],
+            [
+              6,
+              8
+            ],
+            [
+              12,
+              7
+            ],
+            [
+              22,
+              11
+            ]
+          ]
+        }
+      ],
+      "rests": [
+        {
+          "x": 6,
+          "y": 11
+        },
+        {
+          "x": 15,
+          "y": 24
+        },
+        {
+          "x": 21,
+          "y": 21
+        },
+        {
+          "x": 28,
+          "y": 1
+        },
+        {
+          "x": 31,
+          "y": 6
+        },
+        {
+          "x": 32,
+          "y": 11
+        },
+        {
+          "x": 36,
+          "y": 7
+        }
+      ],
+      "wakes": [
+        {
+          "pocket": "core/north-meadow",
+          "quest": "core/glint-by-the-bridge"
+        },
+        {
+          "pocket": "core/slid-bank",
+          "quest": "core/buried-axe"
+        },
+        {
+          "pocket": "core/west-bank",
+          "quest": "core/first-pickings"
+        }
+      ],
+      "exits": [
+        {
+          "id": "core/north-exit",
+          "slot": "core/north-gate",
+          "to": "core/north-wood",
+          "min_road_steps": 2113
+        },
+        {
+          "id": "core/descent-exit",
+          "slot": "core/descent-gate",
+          "to": "core/descent-cut",
+          "min_road_steps": 2079
+        },
+        {
+          "id": "core/shore-exit",
+          "slot": "core/shore-gate",
+          "to": "core/shore-way",
+          "min_road_steps": 2088
+        },
+        {
+          "id": "core/ferry",
+          "at": [
+            3,
+            27
+          ],
+          "to": "core/bay",
+          "min_road_steps": 2102
+        }
+      ]
+    },
+    "props": [
+      {
+        "sprite": "core/base-kit:props/sign",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/old-bridge",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/elder-house",
+        "x": 14,
+        "y": 1
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/town-edge",
+        "x": 23,
+        "y": 4
+      },
+      {
+        "id": "core/marked-stone",
+        "sprite": "core/base-kit:props/standing_stone",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "note": "Bridge, fire, bell, cut in a row. Under the bell, a lantern facing the hills.",
+        "x": 5,
+        "y": 10
+      },
+      {
+        "id": "core/town-lantern",
+        "sprite": "core/base-kit:props/lantern_post",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "note": "An iron lantern post, turned to the town. Paving stones at its feet.",
+        "x": 22,
+        "y": 4
+      },
+      {
+        "id": "core/elder-hearth",
+        "sprite": "core/base-kit:props/campfire_unlit",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "fire": true,
+        "x": 13,
+        "y": 3
+      },
+      {
+        "id": "core/arch-stone",
+        "sprite": "core/base-kit:props/standing_stone",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "note": "Cut deep: \"By day the rubble, by night the way.\"",
+        "x": 22,
+        "y": 6
+      },
+      {
+        "id": "core/doorstep-pit",
+        "sprite": "core/base-kit:props/hazard_pit",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "hazard": {
+          "kind": "pit",
+          "window": [
+            "night"
+          ]
+        },
+        "x": 23,
+        "y": 11
+      },
+      {
+        "id": "core/ruins-wolf",
+        "sprite": "core/base-kit:props/hazard_wolf",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "hazard": {
+          "kind": "predator",
+          "window": [
+            "night"
+          ]
+        },
+        "x": 21,
+        "y": 12
+      },
+      {
+        "id": "core/bank-wolf",
+        "sprite": "core/base-kit:props/hazard_wolf",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "hazard": {
+          "kind": "predator",
+          "window": [
+            "night"
+          ],
+          "round": [
+            [
+              11,
+              23
+            ],
+            [
+              12,
+              23
+            ],
+            [
+              13,
+              23
+            ],
+            [
+              14,
+              23
+            ],
+            [
+              14,
+              24
+            ],
+            [
+              14,
+              25
+            ],
+            [
+              13,
+              25
+            ],
+            [
+              12,
+              25
+            ],
+            [
+              11,
+              25
+            ],
+            [
+              11,
+              24
+            ]
+          ]
+        },
+        "x": 11,
+        "y": 23
+      },
+      {
+        "id": "core/camp-wolf",
+        "sprite": "core/base-kit:props/hazard_wolf",
+        "x": 31,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "hazard": {
+          "kind": "predator",
+          "window": [
+            "night"
+          ]
+        }
+      },
+      {
+        "id": "core/hill-lantern",
+        "sprite": "core/base-kit:props/lantern_post",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "note": "A stone lantern, its fire bowl facing the hills, where the mist comes from. Soft earth below.",
+        "x": 29,
+        "y": 14
+      },
+      {
+        "sprite": "core/base-kit:props/broken_statue",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "id": "core/founder",
+        "x": 19,
+        "y": 6
+      },
+      {
+        "sprite": "core/base-kit:props/broken_statue",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "id": "core/stag",
+        "x": 17,
+        "y": 15
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
+        "w": 2,
+        "h": 1,
+        "solid": true,
+        "id": "core/knight",
+        "x": 19,
+        "y": 12
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "id": "core/arch-bowl-west",
+        "x": 20,
+        "y": 11
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "id": "core/arch-bowl-east",
+        "x": 22,
+        "y": 11
+      },
+      {
+        "sprite": "core/base-kit:props/campfire_unlit",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "id": "core/ember-camp",
+        "x": 18,
+        "y": 15
+      },
+      {
+        "sprite": "core/base-kit:props/standing_stone",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "id": "core/cutting-stone",
+        "x": 27,
+        "y": 20
+      },
+      {
+        "id": "core/hollow-log",
+        "sprite": "core/base-kit:props/log_mossy",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "x": 36,
+        "y": 6
+      },
+      {
+        "id": "core/branch-heap",
+        "sprite": "core/base-kit:props/fallen_branches",
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "x": 35,
+        "y": 14
+      },
+      {
+        "id": "core/hollow-tree",
+        "sprite": "core/base-kit:props/dead_tree",
+        "w": 2,
+        "h": 1,
+        "solid": true,
+        "x": 34,
+        "y": 2
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "cover": true,
+        "x": 10,
+        "y": 26
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "cover": true,
+        "x": 10,
+        "y": 27
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "cover": true,
+        "x": 11,
+        "y": 26
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "cover": true,
+        "x": 11,
+        "y": 27
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "cover": true,
+        "x": 9,
+        "y": 27
+      },
+      {
+        "sprite": "core/base-kit:props/grass_tall",
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "cover": true,
+        "x": 14,
+        "y": 26
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 14,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 27,
+        "y": 2,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 12,
+        "y": 5,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 25,
+        "y": 10,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 23,
+        "y": 17,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 28,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      }
+    ],
+    "creatures": {
+      "kinds": {
+        "core/sparrow": {
+          "look": "bird",
+          "perch": "ground",
+          "alert_tiles": 3,
+          "return_s": 40,
+          "hours": [
+            5,
+            20
+          ],
+          "behaviour": {
+            "sight": 5,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 30,
+              "graze": 40,
+              "wander": 30
+            },
+            "roam": 6,
+            "flight": "fly",
+            "sleeps": "ground",
+            "alarm": 5,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "ignores",
+            "water": "crosses",
+            "weather": "roosts",
+            "town": "town_kind",
+            "habitat": [
+              "meadow",
+              "town"
+            ],
+            "group": {
+              "class": "flock",
+              "bands": [
+                0,
+                0,
+                20,
+                80
+              ],
+              "season": {
+                "winter": [
+                  0,
+                  0,
+                  10,
+                  90
+                ]
+              }
+            },
+            "family": "perching-birds"
+          }
+        },
+        "core/crow": {
+          "look": "bird",
+          "perch": "tree",
+          "alert_tiles": 3,
+          "return_s": 60,
+          "hours": [
+            5,
+            20
+          ],
+          "behaviour": {
+            "sight": 7,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 40,
+              "graze": 20,
+              "wander": 40
+            },
+            "roam": 10,
+            "flight": "fly",
+            "sleeps": "tree",
+            "alarm": 5,
+            "looks_back": true,
+            "drinks": false,
+            "carrion": true,
+            "fire": "ignores",
+            "water": "crosses",
+            "weather": "roosts",
+            "town": "town_kind",
+            "habitat": [
+              "grove",
+              "town"
+            ],
+            "group": {
+              "class": "flock",
+              "bands": [
+                10,
+                50,
+                40,
+                0
+              ],
+              "season": {
+                "winter": [
+                  0,
+                  20,
+                  40,
+                  40
+                ]
+              }
+            },
+            "family": "perching-birds"
+          }
+        },
+        "core/trout": {
+          "look": "fish",
+          "perch": "water",
+          "alert_tiles": 2,
+          "return_s": 20,
+          "hours": [
+            5,
+            22
+          ],
+          "behaviour": {
+            "sight": 2,
+            "ear": 0,
+            "smell": 0,
+            "weights": {
+              "idle": 50,
+              "graze": 30,
+              "wander": 20
+            },
+            "roam": 6,
+            "flight": "swim",
+            "sleeps": "water",
+            "alarm": 0,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "ignores",
+            "water": "lives_in",
+            "weather": "none",
+            "town": "town_kind",
+            "habitat": [
+              "water"
+            ],
+            "group": {
+              "class": "herd",
+              "bands": [
+                20,
+                40,
+                40,
+                0
+              ]
+            },
+            "family": "fish"
+          }
+        },
+        "core/hare": {
+          "look": "rabbit",
+          "perch": "ground",
+          "alert_tiles": 4,
+          "return_s": 45,
+          "hours": [
+            5,
+            20
+          ],
+          "behaviour": {
+            "sight": 6,
+            "ear": 2,
+            "smell": 0,
+            "weights": {
+              "idle": 30,
+              "graze": 50,
+              "wander": 20
+            },
+            "roam": 8,
+            "flight": "burrow",
+            "sleeps": "den",
+            "alarm": 0,
+            "looks_back": false,
+            "drinks": false,
+            "carrion": false,
+            "fire": "keeps_away",
+            "water": "wall",
+            "weather": "cover",
+            "town": "avoids",
+            "habitat": [
+              "meadow"
+            ],
+            "group": {
+              "class": "solitary",
+              "bands": [
+                100,
+                0,
+                0,
+                0
+              ],
+              "season": {
+                "spring": [
+                  70,
+                  30,
+                  0,
+                  0
+                ]
+              }
+            },
+            "family": "burrowers",
+            "flush": true
+          },
+          "hunt": {
+            "size": "small",
+            "tier": 1,
+            "danger": 0,
+            "take_s": 40,
+            "drops": [
+              {
+                "item": "core/hare-meat",
+                "qty": 1,
+                "share_pct": 50
+              },
+              {
+                "item": "core/hare-hide",
+                "qty": 1,
+                "share_pct": 40
+              },
+              {
+                "item": "core/hare-bone",
+                "qty": 1,
+                "share_pct": 10
+              }
+            ],
+            "ways": [
+              "stalk",
+              "snare"
+            ],
+            "spawn": {
+              "cap_per_1000": 12,
+              "refill_d": 1
+            }
+          }
+        },
+        "core/roe": {
+          "look": "deer",
+          "perch": "ground",
+          "alert_tiles": 5,
+          "return_s": 90,
+          "hours": [
+            5,
+            22
+          ],
+          "behaviour": {
+            "sight": 8,
+            "ear": 2,
+            "smell": 6,
+            "weights": {
+              "idle": 20,
+              "graze": 50,
+              "wander": 30
+            },
+            "roam": 12,
+            "flight": "ground",
+            "sleeps": "ground",
+            "alarm": 4,
+            "looks_back": true,
+            "drinks": true,
+            "carrion": false,
+            "fire": "keeps_away",
+            "water": "wall",
+            "weather": "cover",
+            "town": "avoids",
+            "habitat": [
+              "meadow"
+            ],
+            "group": {
+              "class": "herd",
+              "bands": [
+                0,
+                40,
+                60,
+                0
+              ],
+              "season": {
+                "winter": [
+                  0,
+                  10,
+                  50,
+                  40
+                ]
+              }
+            },
+            "family": "deer"
+          },
+          "hunt": {
+            "size": "medium",
+            "tier": 1,
+            "danger": 0,
+            "take_s": 90,
+            "drops": [
+              {
+                "item": "core/roe-meat",
+                "qty": 3,
+                "share_pct": 45
+              },
+              {
+                "item": "core/roe-hide",
+                "qty": 1,
+                "share_pct": 30
+              },
+              {
+                "item": "core/roe-bone",
+                "qty": 1,
+                "share_pct": 10
+              },
+              {
+                "item": "core/roe-sinew",
+                "qty": 2,
+                "share_pct": 15
+              }
+            ],
+            "ways": [
+              "snare",
+              "stalk"
+            ],
+            "spawn": {
+              "cap_per_1000": 12,
+              "refill_d": 1
+            }
+          }
+        },
+        "core/wolf": {
+          "look": "canid",
+          "perch": "ground",
+          "alert_tiles": 8,
+          "return_s": 120,
+          "hours": [
+            20,
+            5
+          ],
+          "behaviour": {
+            "sight": 8,
+            "ear": 2,
+            "smell": 9,
+            "weights": {
+              "idle": 10,
+              "graze": 20,
+              "wander": 70
+            },
+            "roam": 14,
+            "flight": "ground",
+            "sleeps": "den",
+            "alarm": 12,
+            "looks_back": true,
+            "drinks": true,
+            "carrion": true,
+            "fire": "holds_edge",
+            "water": "wall",
+            "weather": "none",
+            "town": "avoids",
+            "habitat": [
+              "grove",
+              "meadow"
+            ],
+            "group": {
+              "class": "pack",
+              "bands": [
+                30,
+                60,
+                10,
+                0
+              ],
+              "season": {
+                "winter": [
+                  10,
+                  60,
+                  30,
+                  0
+                ]
+              }
+            },
+            "family": "canids"
+          },
+          "hunt": {
+            "size": "medium",
+            "tier": 3,
+            "danger": 2,
+            "take_s": 150,
+            "drops": [
+              {
+                "item": "core/wolf-hide",
+                "qty": 1,
+                "share_pct": 50
+              },
+              {
+                "item": "core/wolf-fang",
+                "qty": 1,
+                "share_pct": 30
+              },
+              {
+                "item": "core/wolf-meat",
+                "qty": 1,
+                "share_pct": 20
+              }
+            ],
+            "ways": [
+              "fight",
+              "lure"
+            ],
+            "spawn": {
+              "cap_per_1000": 5,
+              "refill_d": 3
+            }
+          },
+          "fight": {
+            "tier": 1,
+            "hp": 16,
+            "breath": 80,
+            "pace_ms": 190,
+            "moves": [
+              {
+                "id": "bite",
+                "windup_ms": 500,
+                "reach": 1,
+                "breath": 15,
+                "recover_ms": 800,
+                "cooldown_ms": 1000
+              },
+              {
+                "id": "lunge",
+                "windup_ms": 700,
+                "reach": 2,
+                "harm_div": 4,
+                "breath": 20,
+                "recover_ms": 1000,
+                "cooldown_ms": 4000
+              }
+            ],
+            "patterns": [
+              [
+                "bite",
+                "bite",
+                "lunge"
+              ],
+              [
+                "lunge",
+                "bite"
+              ]
+            ],
+            "weak": {
+              "after": "lunge"
+            }
+          }
+        }
+      },
+      "spots": [
+        {
+          "kind": "core/sparrow",
+          "x": 7,
+          "y": 4
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 15,
+          "y": 9
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 16,
+          "y": 7
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 25,
+          "y": 4
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 19,
+          "y": 8
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 6,
+          "y": 12
+        },
+        {
+          "kind": "core/crow",
+          "x": 14,
+          "y": 15
+        },
+        {
+          "kind": "core/crow",
+          "x": 3,
+          "y": 11
+        },
+        {
+          "kind": "core/trout",
+          "x": 9,
+          "y": 4
+        },
+        {
+          "kind": "core/trout",
+          "x": 9,
+          "y": 6
+        },
+        {
+          "kind": "core/trout",
+          "x": 10,
+          "y": 12
+        },
+        {
+          "kind": "core/trout",
+          "x": 9,
+          "y": 10
+        },
+        {
+          "kind": "core/trout",
+          "x": 10,
+          "y": 13
+        },
+        {
+          "kind": "core/hare",
+          "x": 4,
+          "y": 6
+        },
+        {
+          "kind": "core/hare",
+          "x": 31,
+          "y": 10
+        },
+        {
+          "kind": "core/roe",
+          "x": 4,
+          "y": 7
+        },
+        {
+          "kind": "core/roe",
+          "x": 2,
+          "y": 9
+        },
+        {
+          "kind": "core/hare",
+          "x": 4,
+          "y": 16
+        },
+        {
+          "kind": "core/hare",
+          "x": 2,
+          "y": 9
+        },
+        {
+          "kind": "core/hare",
+          "x": 4,
+          "y": 7
+        },
+        {
+          "kind": "core/hare",
+          "x": 31,
+          "y": 9
+        },
+        {
+          "kind": "core/hare",
+          "x": 4,
+          "y": 9
+        },
+        {
+          "kind": "core/hare",
+          "x": 31,
+          "y": 3
+        },
+        {
+          "kind": "core/roe",
+          "x": 4,
+          "y": 16
+        },
+        {
+          "kind": "core/roe",
+          "x": 4,
+          "y": 6
+        },
+        {
+          "kind": "core/roe",
+          "x": 4,
+          "y": 9
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 30,
+          "y": 9
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 18,
+          "y": 8
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 8,
+          "y": 13
+        },
+        {
+          "kind": "core/crow",
+          "x": 22,
+          "y": 20
+        },
+        {
+          "kind": "core/crow",
+          "x": 18,
+          "y": 19
+        },
+        {
+          "kind": "core/crow",
+          "x": 26,
+          "y": 20
+        },
+        {
+          "kind": "core/trout",
+          "x": 9,
+          "y": 8
+        },
+        {
+          "kind": "core/trout",
+          "x": 10,
+          "y": 2
+        },
+        {
+          "kind": "core/hare",
+          "x": 31,
+          "y": 12
+        },
+        {
+          "kind": "core/hare",
+          "x": 20,
+          "y": 21
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 30,
+          "y": 14
+        },
+        {
+          "kind": "core/crow",
+          "x": 26,
+          "y": 18
+        },
+        {
+          "kind": "core/crow",
+          "x": 17,
+          "y": 18
+        },
+        {
+          "kind": "core/crow",
+          "x": 12,
+          "y": 18
+        },
+        {
+          "kind": "core/crow",
+          "x": 30,
+          "y": 18
+        }
+      ]
+    },
+    "stones": {
+      "spots": [
+        {
+          "x": 3,
+          "y": 8,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 5,
+          "y": 8,
+          "kind": "core/stone"
+        },
+        {
+          "x": 1,
+          "y": 12,
+          "kind": "core/stone"
+        },
+        {
+          "x": 11,
+          "y": 14,
+          "kind": "core/stone"
+        },
+        {
+          "x": 20,
+          "y": 15,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 17,
+          "y": 11,
+          "kind": "core/stone"
+        },
+        {
+          "x": 23,
+          "y": 15,
+          "kind": "core/stone"
+        },
+        {
+          "x": 38,
+          "y": 12,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 38,
+          "y": 14,
+          "kind": "core/stone"
+        },
+        {
+          "x": 2,
+          "y": 19,
+          "kind": "core/stone"
+        },
+        {
+          "x": 4,
+          "y": 20,
+          "kind": "core/stone"
+        },
+        {
+          "x": 11,
+          "y": 21,
+          "kind": "core/stone"
+        },
+        {
+          "x": 4,
+          "y": 28,
+          "kind": "core/stone"
+        },
+        {
+          "x": 7,
+          "y": 28,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 29,
+          "y": 16,
+          "kind": "core/stone"
+        },
+        {
+          "x": 21,
+          "y": 17,
+          "kind": "core/stone"
+        },
+        {
+          "x": 27,
+          "y": 22,
+          "kind": "core/stone"
+        },
+        {
+          "x": 23,
+          "y": 22,
+          "kind": "core/large-stone"
+        },
+        {
+          "x": 34,
+          "y": 17,
+          "kind": "core/stone"
+        },
+        {
+          "x": 38,
+          "y": 19,
+          "kind": "core/stone"
+        }
+      ]
+    },
+    "spawn": {
+      "x": 6,
+      "y": 7
+    },
+    "card": "valley-floor",
+    "cards": [
+      {
+        "id": "valley-floor",
+        "title": "Valley floor",
+        "climate": "temperate",
+        "weather": {
+          "rain": 2000,
+          "fog": 1000
+        },
+        "look": {
+          "rain": 1000,
+          "fog": 1000
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "east-highland",
+        "title": "East terraces + highland",
+        "climate": "cold",
+        "weather": {
+          "rain": 1500,
+          "fog": 2000
+        },
+        "look": {
+          "rain": 800,
+          "fog": 1300
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "elf-wood",
+        "title": "North: elf wood",
+        "climate": "temperate",
+        "weather": {
+          "rain": 2000,
+          "fog": 1500
+        },
+        "look": {
+          "rain": 700,
+          "fog": 1100
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "bay-coast",
+        "title": "The bay + south coast",
+        "climate": "wet",
+        "weather": {
+          "rain": 3500,
+          "fog": 2500
+        },
+        "look": {
+          "rain": 1200,
+          "fog": 1400
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "far-bank",
+        "title": "Far bank (map edge)",
+        "climate": "wet",
+        "weather": {
+          "rain": 3000,
+          "fog": 2000
+        },
+        "look": {
+          "rain": 1000,
+          "fog": 1000
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      },
+      {
+        "id": "undead-south",
+        "title": "Undead south",
+        "climate": "dry",
+        "weather": {
+          "rain": 500,
+          "fog": 2500
+        },
+        "look": {
+          "rain": 600,
+          "fog": 1300
+        },
+        "ambience": {
+          "day": "day",
+          "night": "night"
+        }
+      }
+    ],
+    "slots": [
+      {
+        "id": "core/river-stones",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 6,
+        "y": 1,
+        "w": 2,
+        "h": 4
+      },
+      {
+        "id": "core/river-fishing",
+        "kind": "resource",
+        "tag": "water",
+        "x": 8,
+        "y": 1,
+        "w": 3,
+        "h": 4
+      },
+      {
+        "id": "core/old-bridge",
+        "kind": "restore",
+        "label": "Old bridge",
+        "x": 8,
+        "y": 6,
+        "w": 2,
+        "h": 2
+      },
+      {
+        "id": "core/keystone",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 7,
+        "y": 9,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/arch-mouth",
+        "kind": "area",
+        "tag": "ruin",
+        "danger": 1,
+        "x": 23,
+        "y": 6,
+        "w": 2,
+        "h": 1
+      },
+      {
+        "id": "core/arch-way",
+        "kind": "restore",
+        "tag": "ruin",
+        "x": 23,
+        "y": 7,
+        "w": 2,
+        "h": 5
+      },
+      {
+        "id": "core/night-threshold",
+        "kind": "area",
+        "tag": "ruin",
+        "label": "Threshold of the night ruins",
+        "safe": true,
+        "danger": 0,
+        "x": 23,
+        "y": 10,
+        "w": 2,
+        "h": 1
+      },
+      {
+        "id": "core/camp",
+        "kind": "camp",
+        "label": "Your camp",
+        "x": 12,
+        "y": 12,
+        "w": 5,
+        "h": 4
+      },
+      {
+        "id": "core/berry-bushes",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 12,
+        "y": 7,
+        "w": 5,
+        "h": 3
+      },
+      {
+        "id": "core/camp-oaks",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 17,
+        "y": 12,
+        "w": 3,
+        "h": 4
+      },
+      {
+        "id": "core/wild-herbs",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 12,
+        "y": 17,
+        "w": 4,
+        "h": 3
+      },
+      {
+        "id": "core/forest-mushrooms",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 16,
+        "y": 21,
+        "w": 4,
+        "h": 3
+      },
+      {
+        "id": "core/lone-mushrooms-1",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 29,
+        "y": 8,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-mushrooms-2",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 23,
+        "y": 16,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-mushrooms-3",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 12,
+        "y": 22,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-mushrooms-4",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 14,
+        "y": 19,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-mushrooms-5",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 22,
+        "y": 19,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-mushrooms-6",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 28,
+        "y": 18,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-mushrooms-7",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 17,
+        "y": 23,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-mushrooms-8",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 30,
+        "y": 23,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-mushrooms-9",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 13,
+        "y": 24,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/town-square",
+        "kind": "area",
+        "tag": "town",
+        "label": "Town square",
+        "danger": 0,
+        "x": 17,
+        "y": 1,
+        "w": 2,
+        "h": 2
+      },
+      {
+        "id": "core/elder-house",
+        "kind": "npc",
+        "tag": "town",
+        "x": 12,
+        "y": 1,
+        "w": 3,
+        "h": 3
+      },
+      {
+        "id": "core/trader-stall",
+        "kind": "npc",
+        "tag": "town",
+        "x": 20,
+        "y": 2,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/ruins-gate",
+        "kind": "ruin",
+        "tag": "ruin",
+        "x": 20,
+        "y": 10,
+        "w": 5,
+        "h": 5
+      },
+      {
+        "id": "core/ruins-deep",
+        "kind": "ruin",
+        "tag": "ruin",
+        "x": 26,
+        "y": 11,
+        "w": 4,
+        "h": 3
+      },
+      {
+        "id": "core/tangle-heart",
+        "kind": "area",
+        "tag": "grove",
+        "label": "Heart of the tangle",
+        "danger": 1,
+        "x": 25,
+        "y": 18,
+        "w": 3,
+        "h": 2
+      },
+      {
+        "id": "core/tangle",
+        "kind": "area",
+        "tag": "grove",
+        "danger": 1,
+        "x": 21,
+        "y": 18,
+        "w": 10,
+        "h": 3
+      },
+      {
+        "id": "core/town-edge",
+        "kind": "building",
+        "tag": "town",
+        "label": "Ruined house",
+        "x": 23,
+        "y": 1,
+        "w": 3,
+        "h": 3
+      },
+      {
+        "id": "core/town-corner",
+        "kind": "npc",
+        "tag": "ruin",
+        "label": "Empty corner",
+        "reserved": "A player places a stall at the town's free corner (the owner's answer)",
+        "x": 19,
+        "y": 5,
+        "w": 2,
+        "h": 2
+      },
+      {
+        "id": "core/ruins-hall",
+        "kind": "ruin",
+        "tag": "grove",
+        "label": "Collapsed hall",
+        "x": 24,
+        "y": 15,
+        "w": 5,
+        "h": 3
+      },
+      {
+        "id": "core/ruins-garden",
+        "kind": "resource",
+        "tag": "ruin",
+        "label": "Overgrown garden",
+        "x": 26,
+        "y": 9,
+        "w": 3,
+        "h": 2
+      },
+      {
+        "id": "core/west-glade",
+        "kind": "resource",
+        "tag": "grove",
+        "label": "Quiet glade",
+        "x": 2,
+        "y": 12,
+        "w": 4,
+        "h": 3
+      },
+      {
+        "id": "core/grove-clearing",
+        "kind": "npc",
+        "tag": "ruin",
+        "label": "Clearing",
+        "reserved": "The grove clearing is the traveller's ember camp (decision 35 of 22.10)",
+        "x": 13,
+        "y": 20,
+        "w": 3,
+        "h": 2
+      },
+      {
+        "id": "core/lantern-foot",
+        "kind": "ruin",
+        "tag": "grove",
+        "x": 29,
+        "y": 15,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/bank-herbs",
+        "kind": "resource",
+        "tag": "riverbank",
+        "x": 6,
+        "y": 8,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/slid-bank",
+        "kind": "ruin",
+        "tag": "meadow",
+        "x": 6,
+        "y": 14,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/bridge-glint",
+        "kind": "ruin",
+        "tag": "riverbank",
+        "x": 6,
+        "y": 6,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/meadow-staff",
+        "kind": "ruin",
+        "tag": "meadow",
+        "x": 3,
+        "y": 7,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/bank-basket",
+        "kind": "ruin",
+        "tag": "meadow",
+        "x": 5,
+        "y": 7,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/bank-axe",
+        "kind": "ruin",
+        "tag": "meadow",
+        "x": 4,
+        "y": 8,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/slid-trowel",
+        "kind": "ruin",
+        "tag": "grove",
+        "x": 4,
+        "y": 14,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/sun-bank",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 2,
+        "y": 9,
+        "w": 3,
+        "h": 3
+      },
+      {
+        "id": "core/reed-bank",
+        "kind": "resource",
+        "tag": "riverbank",
+        "label": "Reed bank",
+        "x": 2,
+        "y": 25,
+        "w": 4,
+        "h": 3
+      },
+      {
+        "id": "core/moon-bank",
+        "kind": "resource",
+        "tag": "ruin",
+        "label": "Moon bank",
+        "x": 10,
+        "y": 24,
+        "w": 2,
+        "h": 2
+      },
+      {
+        "id": "core/lone-oak-1",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 2,
+        "y": 10,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-2",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 1,
+        "y": 13,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-3",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 5,
+        "y": 11,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-4",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 14,
+        "y": 10,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-5",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 27,
+        "y": 6,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-6",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 20,
+        "y": 7,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-7",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 29,
+        "y": 6,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-8",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 18,
+        "y": 7,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-9",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 29,
+        "y": 4,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-10",
+        "kind": "resource",
+        "tag": "riverbank",
+        "x": 11,
+        "y": 19,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-11",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 20,
+        "y": 22,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-12",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 15,
+        "y": 23,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-13",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 19,
+        "y": 18,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-14",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 21,
+        "y": 24,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-oak-15",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 28,
+        "y": 20,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/fallen-logs",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 14,
+        "y": 16,
+        "w": 2,
+        "h": 2
+      },
+      {
+        "id": "core/lone-log-1",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 17,
+        "y": 16,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-log-2",
+        "kind": "resource",
+        "tag": "grove",
+        "x": 19,
+        "y": 19,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-log-3",
+        "kind": "resource",
+        "tag": "ruin",
+        "x": 21,
+        "y": 8,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/lone-log-4",
+        "kind": "resource",
+        "tag": "meadow",
+        "x": 18,
+        "y": 10,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/north-gate",
+        "kind": "area",
+        "label": "North gate",
+        "danger": 1,
+        "x": 7,
+        "y": 0,
+        "w": 1,
+        "h": 2
+      },
+      {
+        "id": "core/descent-gate",
+        "kind": "area",
+        "label": "Descent gate",
+        "danger": 1,
+        "x": 22,
+        "y": 28,
+        "w": 1,
+        "h": 2
+      },
+      {
+        "id": "core/shore-gate",
+        "kind": "area",
+        "label": "Shore gate",
+        "danger": 1,
+        "x": 5,
+        "y": 28,
+        "w": 1,
+        "h": 2
+      },
+      {
+        "id": "core/hall-stair",
+        "kind": "area",
+        "tag": "ruin",
+        "label": "Collapsed stair",
+        "danger": 1,
+        "x": 22,
+        "y": 12,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "id": "core/workshop-stall",
+        "kind": "building",
+        "tag": "town",
+        "label": "Workshop stall",
+        "x": 17,
+        "y": 3,
+        "w": 3,
+        "h": 1
+      },
+      {
+        "id": "core/trainers-stall",
+        "kind": "npc",
+        "tag": "town",
+        "label": "Trainers' stall",
+        "x": 21,
+        "y": 3,
+        "w": 2,
+        "h": 1
+      }
+    ]
+  }
+}

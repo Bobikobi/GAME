@@ -1,0 +1,14 @@
+{
+  "core/north-meadow": {
+    "x": 5,
+    "y": 2
+  },
+  "core/slid-bank": {
+    "x": 5,
+    "y": 13
+  },
+  "core/west-bank": {
+    "x": 6,
+    "y": 7
+  }
+}
