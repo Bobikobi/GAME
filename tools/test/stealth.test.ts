@@ -1,7 +1,7 @@
 /** G47 content checks for a predator's watched road and the stealth target placed inside it. */
+import { loadPixelBundle } from './helpers/world';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Bundle } from '@game/kernel';
-import { runCheck } from '../src/check';
 import { checkHazards } from '../src/hazards';
 
 type Prop = Bundle['map']['props'][number];
@@ -18,7 +18,7 @@ const CLOSED = [
 let base: Bundle;
 
 beforeAll(() => {
-  const found = runCheck().assembled.bundle;
+  const found = loadPixelBundle();
   if (!found) throw new Error('Content did not assemble into a bundle.');
   base = found;
 });

@@ -9,12 +9,12 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type State, type StepResult, newState, npcTile, rewardItem, spotOpen, step, wakePocket, widenSeed } from '@game/kernel';
 
-import { type Tile, bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
+import { type Tile, bfsNear, loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 let b: Bundle;
 
 beforeAll(() => {
-  b = loadBundle();
+  b = loadPixelBundle();
 });
 
 /** The first seed that wakes in this pocket. */

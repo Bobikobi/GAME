@@ -6,11 +6,11 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type State, type Tile, FULL_POWER, newState, step, throwFlight } from '@game/kernel';
 import { aimLine, chargeAt, trembleAt } from '../src/throw-charge';
-import { loadBundle } from '../../tools/test/helpers/world';
+import { loadPixelBundle } from '../../tools/test/helpers/world';
 
 let base: Bundle;
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 const stones = () => base.params.stones;
 

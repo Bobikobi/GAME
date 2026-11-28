@@ -10,6 +10,7 @@ import { appearSlots } from '@game/kernel';
 import type { MapFile, ParamsFile } from '@game/schema';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type CheckResult, runCheck } from '../src/check';
+import { pinPixelValley } from './helpers/world';
 import { CONTENT_DIR } from '../src/load';
 import { nearestFlusherToBolt } from '../src/wild';
 
@@ -26,6 +27,7 @@ function world(edits: Edit[] = [], files: Record<string, object> = {}): CheckRes
   roots.push(root);
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+  pinPixelValley(root);
   for (const [rel, data] of Object.entries(files)) {
     const abs = join(root, 'extensions', 'tester', rel);
     mkdirSync(dirname(abs), { recursive: true });
