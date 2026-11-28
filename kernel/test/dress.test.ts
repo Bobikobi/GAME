@@ -11,6 +11,7 @@ import {
   DRESS_PARTS,
   type State,
   type StepResult,
+  carcassStage,
   computeValues,
   dressPartMs,
   gradeItem,
@@ -181,6 +182,18 @@ describe('dressing a taken animal', () => {
       ok: false,
       error: 'Nothing is left of it.',
     });
+  });
+
+  test('a carcass is fresh, bare once the meat is gone, and gone with the hide: the stage the screen draws by', () => {
+    const day = b.params.day_length_ms;
+    const { meat_spoil_d, hide_spoil_d } = b.params.hunt;
+    const s = started();
+    const c = laid(s, 1, 0);
+    expect(carcassStage(b, c, 0)).toBe('fresh');
+    expect(carcassStage(b, c, meat_spoil_d * day - 1)).toBe('fresh');
+    expect(carcassStage(b, c, meat_spoil_d * day)).toBe('bare');
+    expect(carcassStage(b, c, hide_spoil_d * day - 1)).toBe('bare');
+    expect(carcassStage(b, c, hide_spoil_d * day)).toBe('gone');
   });
 
   test('pins a hide cure to one game day', () => {
