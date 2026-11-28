@@ -165,6 +165,8 @@ export function clipFrame(elapsed: number, frames: number, frameMs: number, last
  */
 export const RUN_CYCLE_OVER_WALK = 1.7;
 export const RUN_CYCLE_FALLBACK_PX = 320;
+/** The sneak clip is the same kind of loop (6 poses of a low creep): a cycle shorter than the walk's, read off the picture by eye. */
+export const SNEAK_CYCLE_OVER_WALK = 0.7;
 export function runFrame(walked: number, cycle: number, frames: number): number {
   if (!(cycle > 0) || !(frames > 0)) return 0;
   return Math.floor(Math.max(0, walked) / (cycle / frames)) % frames;
