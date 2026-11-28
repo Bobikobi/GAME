@@ -87,6 +87,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkEquipment(b));
     issues.push(...checkHunt(b, assembled.origin));
     issues.push(...checkStones(b, assembled.origin));
+    issues.push(...checkFrame(b, assembled.origin));
     const chunks = files
       .filter((f) => (f.data as { type: string }).type === 'chunk')
       .map((f) => ({ chunk: (f.data as unknown as ChunkFile).chunk, file: toRepoPath(f.abs) }));
@@ -882,6 +883,28 @@ function checkStones(b: Bundle, origin: Record<string, string>): Issue[] {
  * of the five goods classes at or below its tier, with shares that sum to 100, under the spawn cap of its danger; a
  * protected kind is never dressed; a grade is a plain good's twin; and no good of the hunt is sold.
  */
+/**
+ * A map of a later frame says how a save of the frame before is carried (kernel/src/adapt.ts): by one shift (`moved`) or slot by
+ * slot (`remap`), never both, and a remap names each old slot once, by an id that is still a slot today (a slot that left the
+ * map carries nothing, so naming it is a mistake to catch here, not a tile lost quietly on the phone).
+ */
+export function checkFrame(b: Bundle, origin: Record<string, string>): Issue[] {
+  const issues: Issue[] = [];
+  const file = origin[b.map.id] ?? 'content';
+  const err = (where: string, message: string) => issues.push({ file, where, message, level: 'error' });
+  const { frame, moved, remap } = b.map;
+  if (moved && remap) err('map.remap', 'a map carries saves by `moved` or by `remap`, not both');
+  if ((moved || remap) && (frame ?? 1) <= 1) err(remap ? 'map.remap' : 'map.moved', 'only a map of frame 2 or more carries saves: raise `frame` with it');
+  const today = new Set(b.map.slots.map((s) => s.id));
+  const seen = new Set<string>();
+  (remap?.slots ?? []).forEach((s, i) => {
+    if (seen.has(s.id)) err(`map.remap.slots.${i}.id`, `"${s.id}" is listed twice`);
+    seen.add(s.id);
+    if (!today.has(s.id)) err(`map.remap.slots.${i}.id`, `"${s.id}" is no slot of today's map, so nothing saved in it can be carried`);
+  });
+  return issues;
+}
+
 function checkHunt(b: Bundle, origin: Record<string, string>): Issue[] {
   const issues: Issue[] = [];
   const mapFile = origin[b.map.id] ?? 'content';
