@@ -55,6 +55,11 @@ const THROW_DIR: Readonly<Record<Facing8, readonly [number, number]>> = {
 /** How far the aim tile of a throw is set from the feet: past any throw's reach, so the kernel's range and the ground decide where it lands. */
 export const THROW_AIM_TILES = 8;
 
+/** The way a figure drawn facing `look` throws: a step along an axis or a diagonal. */
+export function throwDir(look: Facing8): readonly [number, number] {
+  return THROW_DIR[look];
+}
+
 /**
  * The tile a throw is aimed at (DECISIONS 2026-11-22, loose stones, #831): out from the feet the way the figure is drawn facing,
  * along an axis or a diagonal, as far as the map reaches (at most `THROW_AIM_TILES`). The kernel clips the flight to the size's range;
