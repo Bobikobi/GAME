@@ -5495,6 +5495,438 @@
         },
         "scale": 0.98
       },
+      "chars/human_jump_left": {
+        "file": "chars/human_jump_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 12,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "jump",
+          "frame_ms": 33,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.95
+      },
+      "chars/human_jump_front": {
+        "file": "chars/human_jump_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "jump",
+          "frame_ms": 33,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.92
+      },
+      "chars/human_jump_back": {
+        "file": "chars/human_jump_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "jump",
+          "frame_ms": 33,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.99
+      },
+      "chars/human_land_left": {
+        "file": "chars/human_land_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 10,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "land",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.97
+      },
+      "chars/human_land_front": {
+        "file": "chars/human_land_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 10,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "land",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.92
+      },
+      "chars/human_land_back": {
+        "file": "chars/human_land_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 10,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "land",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.97
+      },
+      "chars/human_land_hard_left": {
+        "file": "chars/human_land_hard_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 14,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "land_hard",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.97
+      },
+      "chars/human_land_hard_front": {
+        "file": "chars/human_land_hard_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 14,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "land_hard",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.94
+      },
+      "chars/human_land_hard_back": {
+        "file": "chars/human_land_hard_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "land_hard",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1
+      },
+      "chars/human_die_left": {
+        "file": "chars/human_die_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "die",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.95
+      },
+      "chars/human_die_front": {
+        "file": "chars/human_die_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "die",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.92
+      },
+      "chars/human_die_back": {
+        "file": "chars/human_die_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "die",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.99
+      },
+      "chars/human_run_left": {
+        "file": "chars/human_run_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "run",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1
+      },
+      "chars/human_run_front": {
+        "file": "chars/human_run_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 9,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "run",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.97
+      },
+      "chars/human_run_back": {
+        "file": "chars/human_run_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 7,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "run",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.07
+      },
+      "chars/human_hit_heavy_left": {
+        "file": "chars/human_hit_heavy_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "hit_heavy",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.98
+      },
+      "chars/human_hit_heavy_front": {
+        "file": "chars/human_hit_heavy_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "hit_heavy",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.98
+      },
+      "chars/human_hit_heavy_back": {
+        "file": "chars/human_hit_heavy_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "hit_heavy",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.99
+      },
       "tiles/planks": {
         "file": "tiles/planks.png",
         "w": 64,

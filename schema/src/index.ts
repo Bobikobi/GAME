@@ -2851,7 +2851,7 @@ export const MapBody = Type.Object(
       Type.Integer({
         minimum: 1,
         maximum: 99,
-        description: 'The frame of the map\'s tiles: 1 until a change moves the authored ground inside a larger map (docs/design/EXPERIENCE_AUDIT.md, gap M5). A save made in an earlier frame is shifted by `moved` when it is adapted. Left out: 1.',
+        description: 'The frame of the map\'s tiles: 1 until a change moves the authored ground inside a larger map (docs/design/EXPERIENCE_AUDIT.md, gap M5). A save made in an earlier frame is shifted by `moved`, or carried slot by slot by `remap`, when it is adapted. Left out: 1.',
       }),
     ),
     moved: Type.Optional(
@@ -2863,6 +2863,34 @@ export const MapBody = Type.Object(
         {
           additionalProperties: false,
           description: 'How far the previous frame\'s tiles moved to reach this frame\'s, in tiles: a saved tile (x, y) of the frame before is (x + dx, y + dy) now. Owed when `frame` is above 1, and holds the whole step from the frame just before it.',
+        },
+      ),
+    ),
+    remap: Type.Optional(
+      Type.Object(
+        {
+          slots: Type.Array(
+            Type.Object(
+              {
+                id: Id,
+                x: Int(0, 1023),
+                y: Int(0, 1023),
+                w: Int(1, 1024),
+                h: Int(1, 1024),
+              },
+              { additionalProperties: false },
+            ),
+            {
+              minItems: 1,
+              description:
+                'Where the previous frame\'s slots lay, by id. A slot of today with the same id is where its ground went: a saved tile inside one of these lands on the same share of that slot today (the smallest slot holding it wins, ties by order here), and a tile in none moves with the nearest of them.',
+            },
+          ),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'A map redrawn rather than moved (a new frame whose ground is not the old one shifted): a save of the frame just before is carried slot by slot. Takes the place of `moved` when `frame` is above 1; a map carries one or the other.',
         },
       ),
     ),

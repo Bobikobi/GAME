@@ -114,7 +114,7 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, WalkWatch, clipFor, clipFrame, creatureClipFor, creatureOf, creaturePoint, creatureSheets, creatureX, handAt, handWorld, raceClips, verbOfOutcome, viewOfHeading, type ClipSprite, type ClipSprites, type ClipVerb, type CreatureSprites, type Found, type FoundCreature } from '../clips';
+import { ClipPlayer, RUN_CYCLE_FALLBACK_PX, RUN_CYCLE_OVER_WALK, VERB_OF_AUTO, WalkWatch, clipFor, clipFrame, creatureClipFor, creatureOf, creaturePoint, creatureSheets, creatureX, handAt, handWorld, raceClips, runFrame, verbOfOutcome, viewOfHeading, type ClipSprite, type ClipSprites, type ClipVerb, type CreatureSprites, type Found, type FoundCreature } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { reportedGait, SpeedRamp } from '../walkfeel';
@@ -136,6 +136,8 @@ const NEIGHBOURS: readonly [number, number][] = [
 /** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
 const WHEEL_GLIDE_MS = 160;
 /** How long after a throw begins the stone leaves the hand when the clip names no hand (the arm winds back first; a two-hand push lets go early), ms. With a hand it is the clip's last hand point (`clip.hand`). */
+/** How long the figure lies on the ground after its death clip, before the screen fades (the clip's last frame held). */
+const DIE_HOLD_MS = 700;
 const THROW_RELEASE_MS = { throw: 312, push: 156 } as const;
 const WHEEL_GAP_MS = 180;
 /** Signatures show over signs this close to the player, in tiles. */
@@ -2605,9 +2607,37 @@ export class WorldScene extends Phaser.Scene {
     if (this.carryFigure(true)) return;
     const k = this.playerFrame(s.facing, 'walk', this.look).key;
     const info = this.b.sprites[k];
+    if (this.gaitNow === 'run' && this.runClipFrame(s, info)) return;
     if (info?.stride) return this.faceFrame(undefined, poseFrame(this.body.walked, info.stride.travel_mpx / 1000, info.frames, this.paceMs));
     const walked = this.body.walked / ART_PX;
     this.faceFrame(strideFrame(walked % 1, Math.floor(walked), info?.frames ?? 1));
+  }
+
+  /**
+   * A run drawn as its own clip (the figure's moves, public #929): the frame is the one for the distance walked, over a cycle as long as the
+   * walk's own times `RUN_CYCLE_OVER_WALK` (clips.ts). False, and the walk sheet shows as before, when the kit has no run clip for the race and
+   * the way it faces, its sheet is not here yet, or the figure is not the one the clips are drawn on (`figureIsClipFigure`).
+   */
+  private runClipFrame(s: GameSession, walk: (typeof this.b.sprites)[string] | undefined): boolean {
+    const race = s.state.player.race;
+    const found = clipFor(this.b.sprites as ClipSprites, 'run', race, s.facing);
+    if (!found || !this.textures.exists(found.key) || !this.figureIsClipFigure(s)) return false;
+    const cycle = walk?.stride ? (walk.stride.travel_mpx / 1000) * (walk.frames - 1) * RUN_CYCLE_OVER_WALK : RUN_CYCLE_FALLBACK_PX;
+    this.showPlayer(found.key, runFrame(this.body.walked, cycle, found.frames), found.flip);
+    return true;
+  }
+
+  /**
+   * Whether the figure on the screen is the one the race's clips are drawn on, so that a clip that lasts (a run, a death) does not change
+   * who the player is looking at: false for the other look of a race (`sprite_alt`, drawn on its own sheets) and while a complete clothing
+   * set is drawn whole (its walk sheet is not the race's own).
+   */
+  private figureIsClipFigure(s: GameSession): boolean {
+    const p = s.state.player;
+    const race = this.b.races[p.race];
+    if (p.look === 1 && race?.sprite_alt) return false;
+    const bare = race?.sprite || Object.values(this.b.races)[0]?.sprite || '';
+    return wornSetSheet(this.b, s.state, bare, (k) => k in this.b.sprites, window.location.search) === bare;
   }
 
   /**
@@ -4066,6 +4096,20 @@ export class WorldScene extends Phaser.Scene {
     // the fall ends any work: nothing may put the standing frame back while the body sinks
     this.busyMs = 0;
     this.placePlayer(from[0], from[1]);
+    // the figure's own death clip, when the kit has one: it falls and lies, then the same fade to town; the sinking below is the fallback
+    const dying = clipFor(this.b.sprites as ClipSprites, 'die', s.state.player.race, s.facing, Math.random());
+    if (dying && this.textures.exists(dying.key) && this.figureIsClipFigure(s)) {
+      const shown = (at: number) => this.showPlayer(dying.key, Math.min(dying.frames - 1, Math.floor(at * dying.frames)), dying.flip);
+      shown(0);
+      this.tweens.addCounter({
+        from: 0,
+        to: 1,
+        duration: dying.frames * dying.frame_ms,
+        onUpdate: (tw) => shown(tw.getValue() ?? 0),
+        onComplete: () => this.time.delayedCall(DIE_HOLD_MS, () => this.wakeInTown(s, to)),
+      });
+      return;
+    }
     const { key: k, flip } = this.playerFrame('down');
     const frames = this.b.sprites[k]?.frames ?? 1;
     this.showPlayer(k, this.b.sprites[k]?.stride ? frames - 1 : frames >= 3 ? 1 : 0, flip);
@@ -4096,18 +4140,23 @@ export class WorldScene extends Phaser.Scene {
       },
       onComplete: () => {
         for (const eye of eyes) eye.destroy();
-        this.cameras.main.fadeOut(300, 27, 26, 46);
-        this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-          this.player.setCrop();
-          this.cutout?.setCrop();
-          s.facing = 'down';
-          this.placePlayer(to[0], to[1]);
-          this.faceFrame();
-          this.inside.clear();
-          this.falling = false;
-          this.cameras.main.fadeIn(700, 27, 26, 46);
-        });
+        this.wakeInTown(s, to);
       },
+    });
+  }
+
+  /** The end of a fall, whichever way the body went down: the screen fades out, the player stands in town, and the screen fades in. */
+  private wakeInTown(s: GameSession, to: readonly [number, number]): void {
+    this.cameras.main.fadeOut(300, 27, 26, 46);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.player.setCrop();
+      this.cutout?.setCrop();
+      s.facing = 'down';
+      this.placePlayer(to[0], to[1]);
+      this.faceFrame();
+      this.inside.clear();
+      this.falling = false;
+      this.cameras.main.fadeIn(700, 27, 26, 46);
     });
   }
 
@@ -4441,8 +4490,8 @@ export class WorldScene extends Phaser.Scene {
       const lands = r.events.find((e) => e.e === 'jump');
       if (lands?.e !== 'jump') return;
       sound.sfx('step');
-      // the figure holds its standing frame in the air; a longer way over a gap rises a little higher
-      this.faceFrame();
+      // the figure's own jump clip, stretched over the time in the air; without one it holds its standing frame. A longer way over a gap rises a little higher
+      if (!this.playClip('jump', this.b.params.jump.air_ms, true)) this.faceFrame();
       this.hop = { from, to: [to[0], to[1]], start: this.time.now, ms: this.b.params.jump.air_ms, peak: lands.across ? 26 : 18, harm: lands.harm };
       // the feet leave the ground: a little of it kicked back where they stood
       this.playMoment({ id: 'jump-off', at: { on: 'tile', tile: from } });
@@ -4754,6 +4803,8 @@ export class WorldScene extends Phaser.Scene {
     this.arrive(s);
     this.drawBody();
     this.faceFrame();
+    // the landing's own clip, once (a hard one for a landing that hurt); a walk or a new action ends it
+    if (!(hop.harm > 0 && this.playClip('land_hard'))) this.playClip('land');
   }
 
   /** The A button: act on what the player faces, stands on, or stands next to. */
