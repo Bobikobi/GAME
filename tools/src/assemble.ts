@@ -220,6 +220,7 @@ export function flattenParams(p: ParamsBody): Params {
     },
     hunt: {
       throw_item: p.hunt.throw_item,
+      hit_tiles: p.hunt.hit_tiles.value,
       dress_step_ms: p.hunt.dress_step_ms.value,
       meat_spoil_d: p.hunt.meat_spoil_d.value,
       hide_spoil_d: p.hunt.hide_spoil_d.value,

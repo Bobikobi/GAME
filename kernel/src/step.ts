@@ -30,7 +30,7 @@ import { GAITS, type Gait, foodFillPermille, gaitStepMs, itemWeight, loadMax, lo
 import {
   DRESS_PARTS, SNARE_ITEM, awakeHuntTick, carcassGoods, dressPartMs,
   huntGoods, huntGoodsExpiry, huntOf, placeCarcass, preyKey, recordHuntBatches, snareAt, snareGround, snareKind, snarePrey,
-  stonePrey, takeHuntBatches,
+  flightHits, stonePrey, takeHuntBatches,
 } from './hunt';
 import { breathLeft, fallHarm, jumpRule } from './jump';
 import { FULL_POWER, carriedKind, lendStone, lyingAt, placeLoose, removeLoose, settleStones, standingAt, stoneBook, throwFlight, throwKind, unloan, whyNoRoom } from './stones';
@@ -106,7 +106,6 @@ export type Action =
   | { t: 'search'; spot: string; at: Tile }
   /** move one row of a searched searchable (`row`, a place in its list) or all its rows into the bag */
   | { t: 'take'; spot: string; row?: number; at: Tile }
-  | { t: 'take'; prey: number; at: Tile; stands?: Tile }
   | { t: 'set_snare' | 'check_snare'; tile: Tile; at: Tile }
   | { t: 'craft'; recipe: string; at: Tile }
   | { t: 'eat'; item: string }
@@ -138,8 +137,13 @@ export type Action =
   | { t: 'setdown'; at: Tile }
   /** Push an adjacent object one tile straight away from the player's tile `at`. */
   | { t: 'push'; kind: string; at: Tile; target: Tile }
-  /** Throw the carried object or a hand item from the bag. Power is a thousandth of full range and roll. */
-  | { t: 'throw'; at: Tile; aim: Tile; kind?: string; power?: number }
+  /**
+   * Throw the carried object or a hand item from the bag. Power is a thousandth of full range and roll. `prey` names the
+   * spot of the small game the throw is aimed at (and `stands` the tile it stands on, when the caller's wild step moved it):
+   * the stone takes it when the flight comes down within `hunt.hit_tiles` of where it stands (#923), else it is an ordinary
+   * throw and the animal is left alone.
+   */
+  | { t: 'throw'; at: Tile; aim: Tile; kind?: string; power?: number; prey?: number; stands?: Tile }
   /** dress one part of a taken animal lying at `at` (docs/design/HUNTING.md section 6): a small animal is one part, a medium two, a large four; with the last part its goods at its grade come into the bag, and what does not fit lies on the player's tile */
   | { t: 'dress'; carcass: number; at: Tile }
   /** board a passage's boat at its jetty (docs/design/SEA_CROSSING.md): in its hours, paying its fare; the crossing's one event is drawn here */
@@ -550,7 +554,7 @@ function act(ctx: Ctx, a: Action): void {
     case 'search':
       return search(ctx, a.spot, a.at);
     case 'take':
-      return 'prey' in a ? throwStone(ctx, a.prey, a.stands) : takeRows(ctx, a.spot, a.row, a.at);
+      return takeRows(ctx, a.spot, a.row, a.at);
     case 'set_snare':
       return setSnare(ctx, a.tile);
     case 'check_snare':
@@ -607,7 +611,7 @@ function act(ctx: Ctx, a: Action): void {
     case 'push':
       return pushLoose(ctx, a.kind, a.target);
     case 'throw':
-      return throwLoose(ctx, a.aim, a.kind, a.power);
+      return throwLoose(ctx, a.aim, a.kind, a.power, a.prey, a.stands);
     case 'dress':
       return dress(ctx, a.carcass, a.at);
     case 'board':
@@ -2096,20 +2100,6 @@ function wearTool(ctx: Ctx, itemId: string): void {
   }
 }
 
-function throwStone(ctx: Ctx, index: number, stands: Tile | undefined): void {
-  const { b, s, tick } = ctx;
-  const p = s.player;
-  const item = b.params.hunt.throw_item;
-  if ((p.bag[item] ?? 0) < 1) refuse('You need a stone.');
-  const prey = stonePrey(b, s, tick, index, p.at, stands);
-  if (!prey) refuse('No small game in reach.');
-  removeItem(ctx, item, 1, true);
-  const refill = huntOf(b, prey.kind)?.spawn?.refill_d ?? 1;
-  (p.preyReturns ??= {})[preyKey(prey)] = tick + refill * b.params.day_length_ms;
-  placeCarcass(b, s, prey.kind, stands ? [stands[0], stands[1]] : [prey.x, prey.y], 1, tick);
-  ctx.events.push({ e: 'take_prey' });
-}
-
 function setSnare(ctx: Ctx, tile: Tile): void {
   const { b, s, tick } = ctx;
   checkHuntTile(ctx, tile);
@@ -2277,7 +2267,7 @@ function pushLoose(ctx: Ctx, kind: string, target: Tile): void {
 }
 
 /** Throw by the same flight the aim line reads, then put the object on loan until its return. */
-function throwLoose(ctx: Ctx, aim: Tile, requested?: string, power: number = FULL_POWER): void {
+function throwLoose(ctx: Ctx, aim: Tile, requested?: string, power: number = FULL_POWER, prey?: number, stands?: Tile): void {
   const { b, s, tick } = ctx;
   const p = s.player;
   if (!Array.isArray(aim) || aim.length !== 2 || !Number.isSafeInteger(aim[0]) || !Number.isSafeInteger(aim[1])) refuse('Aim at a tile.');
@@ -2287,6 +2277,20 @@ function throwLoose(ctx: Ctx, aim: Tile, requested?: string, power: number = FUL
   if (kind === undefined) refuse('You have no stone to throw.');
   const flight = throwFlight(b, s, kind, aim, power);
   if ('error' in flight) refuse(flight.error);
+  const game = prey === undefined ? undefined : stonePrey(b, s, tick, prey, p.at, stands);
+  if (prey !== undefined && !game) refuse('No small game in reach.');
+  if (game && b.params.liftables[kind]?.class !== 'hand') refuse('That is too heavy to take small game.');
+  // a stone that strikes the animal is spent on it; one that does not lands where the flight ends, and the animal is left alone
+  if (game && flightHits(b, flight, stands ?? [game.x, game.y])) {
+    removeItem(ctx, kind, 1, true);
+    const refill = huntOf(b, game.kind)?.spawn?.refill_d ?? 1;
+    (p.preyReturns ??= {})[preyKey(game)] = tick + refill * b.params.day_length_ms;
+    placeCarcass(b, s, game.kind, stands ? [stands[0], stands[1]] : [game.x, game.y], 1, tick);
+    ctx.events.push({ e: 'stone_thrown', kind, from: flight.from, touch: flight.touch, at: null, ms: b.params.stones.throw_ms });
+    ctx.events.push({ e: 'take_prey' });
+    busy(ctx, 'throw', b.params.stones.throw_ms);
+    return;
+  }
   if (flight.rest) {
     const why = whyNoRoom(b, s, flight.rest);
     if (why) refuse(why);

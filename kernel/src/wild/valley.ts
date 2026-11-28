@@ -230,6 +230,15 @@ function chooseStepped(bundle: Bundle, world: WildWorld, state: PublicState, now
   }
 }
 
+/**
+ * A stone coming down on the ground (#923): the crack of it is as loud as the noise that skips an animal straight to flight
+ * (`WILD.loud`, the same sound a hit makes), heard by every animal within that radius and its ear at their next think. It lasts
+ * one think step. `now` is the game ms of the throw.
+ */
+export function wildNoise(world: WildWorld, at: Tile, now: number): void {
+  world.noises.push({ at: [at[0], at[1]], r: WILD.loud, until: now + THINK_MS, by: 0 });
+}
+
 /** The animal standing for a spot, or none. */
 export function wildAnimal(world: WildWorld, spot: number): WildAnimal | undefined {
   return world.animals.find((a) => a.spot === spot);

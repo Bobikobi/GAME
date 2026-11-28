@@ -1893,7 +1893,8 @@ export const ParamsBody = Type.Object(
     ),
     hunt: Type.Object(
       {
-        throw_item: { ...Id, description: 'Hand liftable used to take small game. Its throw range is also the hunting reach.' },
+        throw_item: { ...Id, description: 'Hand liftable thrown at small game; the charged throw (#870) takes it.' },
+        hit_tiles: { ...Bounded, description: 'How many tiles from the animal the thrown stone may touch or come to rest and still take it (#923): 0 is the tile it stands on, 1 the ring around. Wider is easier; a node of the proposed Hunting school widens it (PROGRESSION 4).' },
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
         meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
         hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },

@@ -6,7 +6,7 @@
 import {
   type Action, type Bundle, type PublicState, type Rect, type Tile,
   awakeHuntTick, campTile, carcassGone, findSlot, hourOf, isNight, npcTile,
-  snareAt, spotOpen, stonePrey, valleyDay,
+  FULL_POWER, snareAt, spotOpen, stonePrey, valleyDay,
 } from '@game/kernel';
 
 import { activeQuests, questSteps, readyToHandIn } from './text';
@@ -63,7 +63,8 @@ export function huntingNearby(b: Bundle, s: PublicState, tick: number, at: Tile,
     if (distance >= nearest || !stonePrey(b, s, tick, index, at, animals ? tile : undefined)) continue;
     nearest = distance;
     const stands: Tile = [tile[0], tile[1]];
-    target = { label: 'Throw stone', tile: stands, action: animals ? { t: 'take', prey: index, at, stands } : { t: 'take', prey: index, at } };
+    const throwAt = { t: 'throw' as const, at, aim: stands, kind: b.params.hunt.throw_item, power: FULL_POWER, prey: index };
+    target = { label: 'Throw stone', tile: stands, action: animals ? { ...throwAt, stands } : throwAt };
   }
   return target;
 }

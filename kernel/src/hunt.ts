@@ -4,6 +4,7 @@
 import type { Bundle, Params } from './bundle';
 import { idiv } from './num';
 import { hourOf, type Carcass, type HuntBatch, type HuntStock, type PublicState, type Snare } from './state';
+import type { Flight } from './stones';
 import { walkableFor, type Tile } from './step';
 import { anchorId } from './wild/den';
 import { wildKindOf, wildReach } from './wild/valley';
@@ -30,6 +31,25 @@ type CreatureSpot = NonNullable<Bundle['map']['creatures']>['spots'][number];
 export const SNARE_ITEM = 'core/snare';
 /** The original stone reach (#819), still the roam fallback of a snare. */
 export const STONE_RANGE = 3;
+
+/**
+ * How far a stone thrown at full power can strike small game (#923): its range, its roll and the width of a hit. A tap or a
+ * short charge strikes nearer; the charge the distance wants is the player's to feel (`flightHits`).
+ */
+export function huntReach(bundle: Bundle): number {
+  const thrown = bundle.params.liftables[bundle.params.hunt.throw_item];
+  return thrown ? thrown.throw_range + thrown.roll + bundle.params.hunt.hit_tiles : 0;
+}
+
+/**
+ * Whether a flown stone strikes the animal standing at `target`: the tile where it first touches the ground, or the tile it
+ * comes to rest on, lies within `hunt.hit_tiles` of it (the king's-move distance). A stone that sank strikes nothing.
+ */
+export function flightHits(bundle: Bundle, flight: Flight, target: Tile): boolean {
+  if (flight.sank) return false;
+  const width = bundle.params.hunt.hit_tiles;
+  return [flight.touch, flight.rest].some((t) => t !== undefined && Math.max(Math.abs(t[0] - target[0]), Math.abs(t[1] - target[1])) <= width);
+}
 
 function smallPrey(bundle: Bundle, id: string): HuntKind | undefined {
   const kind = bundle.map.creatures?.kinds[id];
@@ -59,7 +79,7 @@ export function stonePrey(bundle: Bundle, state: PublicState, tick: number, inde
   }
   const thrown = bundle.params.liftables[bundle.params.hunt.throw_item];
   if (thrown?.class !== 'hand') return undefined;
-  const reach = thrown.throw_range;
+  const reach = huntReach(bundle);
   if (d2(at, target) > reach * reach) return undefined;
   if (kind.hours) {
     const hour = hourOf(bundle, tick);
