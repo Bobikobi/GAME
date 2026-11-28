@@ -268,6 +268,7 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
       .filter((id) => b.instances[id]!.source === source)
       .sort();
   const spots = (kind: string) => (b.map.creatures?.spots ?? []).filter((s) => s.kind === kind);
+  /** the spots taken so far, by kind and tile: two kinds may share a tile (the painted map lays a hare and a roe on 4,9) */
   const used = new Set<string>();
 
   /** Leave behind what the route does not need when the bag runs short of places. */
@@ -341,11 +342,11 @@ export async function playRoute(base: Bundle, seed: number, teach: Teach = 'star
   const hunt = async (kind: string) => {
     const fields = b.map.creatures!.kinds[kind]!.hunt!;
     const free = spots(kind)
-      .filter((s) => !used.has(`${s.x},${s.y}`))
+      .filter((s) => !used.has(`${kind}@${s.x},${s.y}`))
       .map((s) => ({ s, d: Math.abs(s.x - player.at[0]) + Math.abs(s.y - player.at[1]) }))
       .sort((x, y) => x.d - y.d)[0];
     if (!free) throw new Error(`No ${kind} left to take today.`);
-    used.add(`${free.s.x},${free.s.y}`);
+    used.add(`${kind}@${free.s.x},${free.s.y}`);
     await room(4);
     await walk(tile([free.s.x, free.s.y]));
     // an animal is about in its own hours only (the kind's \`hours\`): a hunt at night waits for the morning

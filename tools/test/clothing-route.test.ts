@@ -35,13 +35,13 @@ describe('the clothing route', () => {
     expect(run.failed).toBeUndefined();
     const [piece, kit, set] = run.milestones.map((m) => m.at / MIN);
     expect(run.milestones.map((m) => m.what)).toHaveLength(3);
-    // CLOTHING_BALANCE 3, pinned to the tenth of a minute: 4.4, 8.7 and 24.3 minutes passed from the morning after the opening
+    // CLOTHING_BALANCE 3, pinned to the tenth of a minute: 4.5, 8.7 and 24.4 minutes passed from the morning after the opening on the painted valley (the pixel valley's walks were 4.4, 8.7 and 24.3; the page's re-measure of 28.11 gives both)
     // (the set passes a night: the route sets out only by day, the bank wolf walks the road after dark)
     const tenth = (ms: number) => Math.round(ms / MIN * 10) / 10;
-    expect([piece, kit, set].map((m) => tenth(m! * MIN))).toEqual([4.4, 8.7, 24.3]);
-    // and the same three as active play: passed minus the waits on nodes and the night, 3.6, 7.4 and 13.1
+    expect([piece, kit, set].map((m) => tenth(m! * MIN))).toEqual([4.5, 8.7, 24.4]);
+    // and the same three as active play: passed minus the waits on nodes and the night, 3.6, 7.5 and 13.1
     const active = run.milestones.map((m) => tenth(m.at - m.split.wait - m.split.night));
-    expect(active).toEqual([3.6, 7.4, 13.1]);
+    expect(active).toEqual([3.6, 7.5, 13.1]);
     expect(formatRoute([run])).toContain('first set worn');
   }, 60_000);
 
