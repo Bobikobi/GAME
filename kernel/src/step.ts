@@ -41,6 +41,7 @@ import {
   type Attribute,
   type FireState,
   type HuntBatch,
+  type Pack,
   type HuntStock,
   LEGACY_STARTERS,
   legacyNodeId,
@@ -132,6 +133,8 @@ export type Action =
   | { t: 'drop'; item: string; qty: number; at: Tile }
   /** pick a dropped thing up again from the tile the player stands on; `qty` takes part of a pile (left out: all of it) */
   | { t: 'pickup'; item: string; at: Tile; qty?: number }
+  /** take the pack a fall left (G33, G81): `pack` is its number (`player.packs[].id`), `at` where the player stands, on its tile or next to it */
+  | { t: 'takepack'; pack: number; at: Tile }
   /** Lift this kind from underfoot. A hand entry goes in the bag; an arms entry occupies both hands. */
   | { t: 'lift'; kind: string; at: Tile; qty?: number }
   /** Set the object occupying both hands down underfoot. */
@@ -217,6 +220,10 @@ export type GameEvent =
   | { e: 'jump'; from: Tile; at: Tile; drop: number; across: boolean; harm: number }
   /** health reached zero (G33): the player fell at `from`, lost `lost` (what the outing brought), and woke at `at` */
   | { e: 'fall'; from: Tile; at: Tile; lost: { item: string; qty: number }[] }
+  /** a fall left a pack where the body fell (G33; kernel 0.43): its number, its tile, and the tick it is gone from. Not told when the outing brought nothing */
+  | { e: 'pack'; pack: number; at: Tile; until: number }
+  /** the player took (some of) a pack: what went into the bag */
+  | { e: 'unpack'; pack: number; items: { item: string; qty: number }[] }
   /** a predator noticed the player and a hunt began: once, at the step that starts it; `id` is the predator prop */
   | { e: 'seen'; id: string }
   /** a hunt ended because the player reached a safe place (G30), not at dawn, in a fall or at a walk-out (G49); `bitten` when it bit at least once */
@@ -454,6 +461,7 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number,
   ctx.s.searched ??= {};
   try {
     spoilHuntStock(ctx);
+    sweepPacks(ctx);
     settleStones(bundle, ctx.s.player, tick);
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
@@ -602,6 +610,8 @@ function act(ctx: Ctx, a: Action): void {
       return drop(ctx, a.item, a.qty);
     case 'pickup':
       return pickUp(ctx, a.item, a.qty);
+    case 'takepack':
+      return takePack(ctx, a.pack, a.at);
     case 'lift': {
       const kind = a.kind ?? ('size' in a ? legacyStoneKind(a.size) : undefined);
       if (kind === undefined) refuse('That cannot be lifted.');
@@ -1968,40 +1978,50 @@ function fallIfDown(ctx: Ctx): boolean {
 }
 
 /**
- * A fall is clear, and it costs the outing (G33): what the outing brought is
- * gone from the bag, and the riddles it solved and the places it first saw are
- * undone, so a quest it advanced starts again from where it stood before. Gold,
- * levels, the camp, what was made and mended, and what was spent are untouched.
- * The player wakes whole in the town they were last in, and nothing marks where.
+ * A fall is clear, and it costs the outing (G33): what the outing brought leaves
+ * the bag and lies where the body fell as a pack for a game day (G81; kernel 0.43), and
+ * the riddles it solved and the places it first saw are undone, so a quest it
+ * advanced starts again from where it stood before. Gold, levels, the camp, what
+ * was made and mended, and what was spent are untouched. The player wakes whole in
+ * the town they were last in. Every fall lays a pack of its own; an earlier one still lies.
  */
 function fall(ctx: Ctx): void {
   const { b, s } = ctx;
   const p = s.player;
   const from: Tile = [p.at[0], p.at[1]];
   const lost: { item: string; qty: number }[] = [];
+  const batches: HuntStock = {};
   const outing = p.outing;
   if (outing) {
     for (const item of Object.keys(outing.gained).sort()) {
       const qty = Math.min(outing.gained[item] ?? 0, p.bag[item] ?? 0);
       if (qty < 1) continue;
-      removeItem(ctx, item, qty, true);
+      recordHuntBatches(batches, item, removeItem(ctx, item, qty, true));
       lost.push({ item, qty });
     }
     p.solved = p.solved.filter((key) => !outing.solved.includes(key));
     p.visited = p.visited.filter((slot) => !outing.visited.includes(slot));
   }
-  // What the body held and what the outing gave can return to its spot.
+  // What the body held in both arms returns to its spot; what the outing put in the bag lies in the pack.
   const carry = carriedKind(b, s);
   if (carry !== undefined) {
     delete p.stones!.carry;
     lendStone(b, p, '', carry, ctx.tick);
   }
-  for (const { item, qty } of lost) {
-    if (b.params.liftables[item]?.class !== 'hand') continue;
-    for (let i = 0; i < qty; i++) lendStone(b, p, '', item, ctx.tick);
-  }
   const at = reappearTile(b, s, walkableFor(b));
   p.falls += 1;
+  let laid: Pack | undefined;
+  if (lost.length > 0) {
+    const pack: Pack = {
+      id: p.falls,
+      at: [from[0], from[1]],
+      items: Object.fromEntries(lost.map(({ item, qty }) => [item, qty])),
+      until: ctx.tick + b.params.day_length_ms,
+    };
+    if (Object.keys(batches).length > 0) pack.batches = batches;
+    (p.packs ??= []).push(pack);
+    laid = pack;
+  }
   p.at = at;
   p.movedAt = ctx.tick;
   p.busyUntil = ctx.tick;
@@ -2011,6 +2031,69 @@ function fall(ctx: Ctx): void {
   p.outing = null;
   ctx.fell = true;
   ctx.events.push({ e: 'fall', from, at, lost });
+  if (laid) ctx.events.push({ e: 'pack', pack: laid.id, at: laid.at, until: laid.until });
+}
+
+/**
+ * Take the pack a fall left (G33, G81): from its tile or the next one, as much as the places and the weight of the bag take;
+ * the rest stays, with its day. What is taken is a find of the walk the player is on, so a fall on the way home lays it in a
+ * pack again. The spoilage clocks of its hunt goods ran on while it lay: what spoiled is gone.
+ */
+function takePack(ctx: Ctx, id: number, at: Tile): void {
+  const { b, s, tick } = ctx;
+  const p = s.player;
+  const pack = (p.packs ?? []).find((k) => k.id === id && k.until > tick);
+  if (!pack) refuse('There is nothing like that here.');
+  checkAt(ctx, at, { x: pack.at[0], y: pack.at[1], w: 1, h: 1 });
+  const taken: { item: string; qty: number }[] = [];
+  const now = awakeHuntTick(s);
+  let heavy = false;
+  for (const item of Object.keys(pack.items).sort()) {
+    let n = pack.items[item]!;
+    const clocks = pack.batches?.[item];
+    if (clocks) {
+      const spoiled = Math.min(expiredQty(clocks, now), n);
+      if (spoiled > 0) {
+        removeHuntBatches(pack.batches!, item, spoiled);
+        n -= spoiled;
+      }
+    }
+    const room = Math.min(placeRoom(b, s, item), weightRoom(b, s, item));
+    if (n > 0 && room < 1) heavy = heavy || placeRoom(b, s, item) >= 1;
+    const kept = n > 0 ? addItem(ctx, item, n, true, false) : 0;
+    if (kept > 0) {
+      const outing = p.outing;
+      if (outing) outing.gained[item] = (outing.gained[item] ?? 0) + kept;
+      if (clocks) recordHuntBatches((p.huntStock ??= { bag: {}, ground: {} }).bag, item, removeHuntBatches(pack.batches!, item, kept));
+      taken.push({ item, qty: kept });
+    }
+    if (n - kept > 0) pack.items[item] = n - kept;
+    else delete pack.items[item];
+  }
+  if (pack.batches && Object.keys(pack.batches).length === 0) delete pack.batches;
+  if (taken.length === 0 && Object.keys(pack.items).length > 0) refuse(heavy ? TOO_HEAVY : 'Your bag is full.');
+  if (Object.keys(pack.items).length === 0) p.packs = p.packs!.filter((k) => k !== pack);
+  if (p.packs?.length === 0) delete p.packs;
+  ctx.events.push({ e: 'unpack', pack: id, items: taken });
+}
+
+/**
+ * The packs whose game day is over are gone (G81). A stone in one goes home to the spot it came from, as a thrown stone does
+ * (a stone with no emptied spot of its kind just leaves the world), counted from the tick the pack ended.
+ */
+function sweepPacks(ctx: Ctx): void {
+  const { b, s, tick } = ctx;
+  const p = s.player;
+  if (!p.packs) return;
+  for (const pack of p.packs) {
+    if (pack.until > tick) continue;
+    for (const [item, qty] of Object.entries(pack.items)) {
+      if (b.params.liftables[item]?.class !== 'hand') continue;
+      for (let i = 0; i < qty; i++) lendStone(b, p, '', item, pack.until);
+    }
+  }
+  p.packs = p.packs.filter((pack) => pack.until > tick);
+  if (p.packs.length === 0) delete p.packs;
 }
 
 // ------------------------------------------------------------------ helpers

@@ -960,6 +960,9 @@ describe('loose stones on the wire (DECISIONS 2026-11-22)', () => {
     expect(isAction({ t: 'throw', at: [3, 4], aim: [8.5, 4] })).toBe(false);
     expect(isAction({ t: 'pickup', item: 'core/stone', at: [3, 4], qty: 2 })).toBe(true);
     expect(isAction({ t: 'pickup', item: 'core/stone', at: [3, 4], qty: 1.5 })).toBe(false);
+    expect(isAction({ t: 'takepack', pack: 2, at: [3, 4] })).toBe(true);
+    expect(isAction({ t: 'takepack', pack: 2.5, at: [3, 4] })).toBe(false);
+    expect(isAction({ t: 'takepack', at: [3, 4] })).toBe(false);
   });
 
   test('a stone is lifted at its spot and thrown, and both are booked as sent', async () => {

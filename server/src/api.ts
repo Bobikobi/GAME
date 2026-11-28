@@ -250,6 +250,8 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t', 'item', 'qty', 'at']) && typeof value.item === 'string' && Number.isSafeInteger(value.qty) && isTile(value.at);
     case 'pickup':
       return hasOnlyKeys(value, ['t', 'item', 'at', 'qty']) && typeof value.item === 'string' && isTile(value.at) && (value.qty === undefined || Number.isSafeInteger(value.qty));
+    case 'takepack':
+      return hasOnlyKeys(value, ['t', 'pack', 'at']) && Number.isSafeInteger(value.pack) && isTile(value.at);
     case 'lift':
       return hasOnlyKeys(value, ['t', 'kind', 'at', 'qty']) && typeof value.kind === 'string' && isTile(value.at) && (value.qty === undefined || Number.isSafeInteger(value.qty));
     case 'setdown':

@@ -44,8 +44,8 @@ and it was missing from the games the experience is measured against.
 - **Others give:** a short run back with no loss (World of Warcraft), a checkpoint (Path of Exile 2), the items
   waiting on a grave (RuneScape).
 - **Gap:** ours is the heaviest penalty of them, on the very first outing, with no way to win anything back.
-- **Ruling 2:** the pack left on the ground (G33, planned for the combat frame's first step) comes forward into the
-  valley.
+- **Ruling 2:** the pack left on the ground (G33, once planned for the combat frame's first step) comes forward into the
+  valley. The kernel part is built (kernel 0.43.0, `player.packs`, the `takepack` action); the card and the drawing follow.
 
 ### The first hour
 - **We give:** six trades, levels by the time worked, points that buy nodes at a safe place, 15 quests of 10 kinds.
@@ -92,7 +92,7 @@ and it was missing from the games the experience is measured against.
 | Ruling | Stage | State on 27.11 |
 |---|---|---|
 | 1. A moment of hand skill in the opening | the valley | waits for the animals on screen (#916) |
-| 2. The pack left on the ground | the valley | queued |
+| 2. The pack left on the ground | the valley | kernel built (0.43.0); the card and the drawing are the next pull request |
 | 3. The whole tree in sight; its picture first | the valley | the picture is #920; the sizing row is new |
 | 4. The expedition as the repeatable unit | first after the valley | recorded, not started |
 | 5. A play card for the first region outside | before the next block is joined | recorded, not started |

@@ -384,10 +384,15 @@ The demo has no combat (G35); its danger is the hour, and what the player eats.
   stood at when the outing began, a place found on it counts only once
   brought home, and nothing but the pack marks where the death was. The bag
   from before the outing, the camp, the gold, the levels and the quests
-  already done are untouched. The card and the pack land with the combat
-  frame's first step ([COMBAT.md](COMBAT.md) section 6); until then the
-  demo's fall stays as built (the owner, 19.10: DECISIONS.md 2026-10-23 "The
-  line is PEGI 16 and ESRB T" and "Open ends of the world plan", answer 2).
+  already done are untouched. The pack came forward into the valley, ahead of
+  the combat frame (the owner's yes of 27.11 to ruling 2 of the plan review:
+  DECISIONS.md 2026-11-28 "A fall leaves its outing's finds as a pack"): the
+  kernel lays it at every fall, one pack of its own for each, and a second
+  fall before the first pack is taken leaves a second beside it, each gone a
+  game day after its own fall. What is taken from a pack is a find of the walk
+  the player is on, so a fall on the way home lays it down again. The fight,
+  and another player taking a pack, still come with the combat frame
+  ([COMBAT.md](COMBAT.md) section 6), as do the zone and its hunters' board.
   The cost is the lesson:
   a bad fruit eaten on the way means the basket is gone and the walk is made
   again.
