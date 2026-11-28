@@ -24,6 +24,13 @@ describe('the bars and the head-wear layer', () => {
     expect(r.stderr + r.stdout).toMatch(/OK/);
     expect(r.status).toBe(0);
   });
+
+  // the lookup trial (public #952): body maps and carried pieces on synthetic figures
+  test.skipIf(!havePython)('the lookup tools\' unit tests pass', () => {
+    const r = spawnSync('python3', ['-W', 'ignore', '-m', 'unittest', 'discover', '-s', join(dir, 'lookup'), '-p', 'test_*.py'], { encoding: 'utf8', cwd: root });
+    expect(r.stderr + r.stdout).toMatch(/OK/);
+    expect(r.status).toBe(0);
+  });
 });
 
 describe('the manifest of sets', () => {
