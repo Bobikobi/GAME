@@ -18,6 +18,7 @@ import {
   type Bundle,
   type GameEvent,
   fireBurns,
+  findSlot,
   hazardsOf,
   isTownTile,
   makeWalkable,
@@ -36,14 +37,66 @@ const HEARTH = 'core/elder-hearth';
 const QUEST = 'core/the-long-night';
 const LOG = 'core/log';
 const WOLF = 'core/bank-wolf';
-/** The fire of the player's own, six tiles south of the town square, and the path beside it. */
-const BUILD: [number, number] = [27, 16];
-const STAND: [number, number] = [28, 16];
-/** A tile in the bank wolf's round watch, and a tile beside it to stand on. */
-const WOLF_FIRE: [number, number] = [3, 19];
-const WOLF_STAND: [number, number] = [2, 19];
-/** Outside the fire's safe ring: a chase can begin here and end at the ring. */
-const OUTSIDE: [number, number] = [30, 16];
+type At = [number, number];
+/**
+ * The tiles the flow stands on, found on the shipped map, not written down: the map is content and moves (the painted
+ * valley re-laid every tile, public #919). Found once in beforeAll by `flowTiles`.
+ * BUILD: the fire of the player's own, on wild ground past the town; STAND: the tile east of it; OUTSIDE: east again, just
+ * past the fire's safe ring, where a chase can begin and end at the ring; CHASED: the tile east of OUTSIDE, offered as a
+ * fire during the chase. TOWN_STAND / TOWN_BUILD: two cobbles side by side in the town. WOLF_STAND / WOLF_FIRE: a tile in
+ * the bank wolf's round watch and the tile west of it to stand on.
+ */
+let BUILD: At, STAND: At, OUTSIDE: At, CHASED: At, TOWN_STAND: At, TOWN_BUILD: At, WOLF_FIRE: At, WOLF_STAND: At;
+
+function flowTiles(b: Bundle): void {
+  const walk = makeWalkable(b);
+  const view = { restored: ['core/old-bridge'], camp: [] };
+  const open = (x: number, y: number) => walk(x, y, view);
+  const watched = new Set(hazardsOf(b).flatMap((h) => watchOf(b, h).map(([x, y]) => `${x},${y}`)));
+  // the ground the kernel lets a fire stand on (kernel/src/step.ts kindle): open, wild, in no slot, with no node or fire prop on it
+  const holds = (x: number, y: number) =>
+    open(x, y) &&
+    !isTownTile(b, [x, y]) &&
+    !b.map.slots.some((r) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) &&
+    !Object.values(b.instances).some((i) => i.x === x && i.y === y) &&
+    !b.map.props.some((p) => p.fire === true && x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h);
+  const reach = b.params.fire.safe_tiles;
+  const unwatchedRing = (x: number, y: number) => {
+    for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) if (watched.has(`${x + dx},${y + dy}`)) return false;
+    return true;
+  };
+  const sq = findSlot(b.map, 'core/town-square');
+  if (!sq) throw new Error('no town square on the map');
+  const cx = sq.x + Math.floor(sq.w / 2);
+  const cy = sq.y + Math.floor(sq.h / 2);
+  const near = (a: At) => Math.abs(a[0] - cx) + Math.abs(a[1] - cy);
+  // the town: the two cobbles side by side nearest the square's middle; the wild: the fire nearest the square whose
+  // ring no round watches, with the walk east of it open to one tile past the ring (STAND, OUTSIDE, CHASED)
+  let town: At | undefined;
+  let fire: At | undefined;
+  for (let y = 0; y < b.map.height; y++) {
+    for (let x = 0; x < b.map.width; x++) {
+      if (open(x, y) && open(x + 1, y) && isTownTile(b, [x, y]) && isTownTile(b, [x + 1, y]) && (!town || near([x, y]) < near(town))) town = [x, y];
+      if (!holds(x, y) || !unwatchedRing(x, y)) continue;
+      let row = true;
+      for (let i = 1; i <= reach + 2 && row; i++) row = open(x + i, y) && !isTownTile(b, [x + i, y]) && !watched.has(`${x + i},${y}`);
+      if (row && (!fire || near([x, y]) < near(fire))) fire = [x, y];
+    }
+  }
+  if (!town || !fire) throw new Error(`the map has no ${town ? 'wild row' : 'two cobbles side by side'} for the flow`);
+  TOWN_STAND = town;
+  TOWN_BUILD = [town[0] + 1, town[1]];
+  BUILD = fire;
+  STAND = [fire[0] + 1, fire[1]];
+  OUTSIDE = [fire[0] + reach + 1, fire[1]];
+  CHASED = [fire[0] + reach + 2, fire[1]];
+  const wolf = hazardsOf(b).find((h) => h.id === WOLF);
+  if (!wolf) throw new Error('no bank wolf on the map');
+  const inWatch = watchOf(b, wolf).find(([x, y]) => holds(x, y) && open(x - 1, y));
+  if (!inWatch) throw new Error("no ground in the bank wolf's watch that holds a fire, with a tile beside it");
+  WOLF_FIRE = [inWatch[0], inWatch[1]];
+  WOLF_STAND = [inWatch[0] - 1, inWatch[1]];
+}
 const DUSK = 400_000;
 const DAWN = 850_000;
 
@@ -312,6 +365,7 @@ let bundle: Bundle;
 
 beforeAll(() => {
   bundle = loadBundle();
+  flowTiles(bundle);
 });
 
 beforeEach(() => {
@@ -334,9 +388,9 @@ describe("a fire anywhere outside the town, played without a browser (game/e2e/t
     // the Build a fire button shows only with the two logs in the bag and outside the town
     me.place(STAND);
     me.check(me.buildShown(), 'no Build a fire with sixteen logs out of the town');
-    me.place([27, 8]);
+    me.place(TOWN_STAND);
     me.check(isTownTile(bundle, me.s.pos) && !me.buildShown(), 'Build a fire shows inside the town');
-    me.check(me.build([28, 8]).toast === 'The town has its own fires.', 'a build offered by hand inside the town was not refused by the kernel');
+    me.check(me.build(TOWN_BUILD).toast === 'The town has its own fires.', 'a build offered by hand inside the town was not refused by the kernel');
 
     // the hearth by Maru's door burns the whole first night: the task is not met by it
     me.keepHearthToDawn();
@@ -355,7 +409,7 @@ describe("a fire anywhere outside the town, played without a browser (game/e2e/t
     me.check(me.logs() === before, 'a build inside a round\'s watch took a log');
     me.snap('wolf-watch-refused');
 
-    // out past the last house, six tiles from the town, a fire of one's own is built
+    // out past the last house, on wild ground, a fire of one's own is built
     me.place(STAND);
     me.s.facing = 'left';
     me.setHour(19);
@@ -383,7 +437,7 @@ describe("a fire anywhere outside the town, played without a browser (game/e2e/t
     me.place(OUTSIDE);
     s.state.player.chase = { hazard: WOLF, since: s.tick, bites: 0 };
     const chasedBefore = me.logs();
-    const chased = me.build([31, 16]);
+    const chased = me.build(CHASED);
     me.check(!chased.ok && chased.toast === 'Not with the wolf at your heels.', `a build during a chase was not refused: ${chased.toast}`);
     me.check(me.logs() === chasedBefore, 'a build during a chase took a log');
     me.snap('chase-refused');
