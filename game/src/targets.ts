@@ -5,7 +5,7 @@
  */
 import {
   type Action, type Bundle, type PublicState, type Rect, type Tile,
-  awakeHuntTick, campTile, carcassGone, findSlot, hourOf, isNight, npcTile,
+  awakeHuntTick, campTile, carcassGone, findSlot, hourOf, isNight, npcTile, packsAt,
   FULL_POWER, seatOf, snareAt, spotOpen, stonePrey, valleyDay,
 } from '@game/kernel';
 
@@ -41,6 +41,15 @@ export function huntingAt(b: Bundle, s: PublicState, tick: number, at: Tile, til
   if (snare && snare.checkedDay !== valleyDay(b, tick)) {
     return { label: 'Check snare', tile, action: { t: 'check_snare', tile, at } };
   }
+}
+
+/**
+ * The pack a fall left on this tile (G33, G81; kernel 0.43): "Take your pack", while its game day lasts. The kernel decides the
+ * reach (the tile or the next) and what the bag takes; the target only names the pack.
+ */
+export function packAt(s: PublicState, tick: number, at: Tile, tile: Tile): HuntTarget | undefined {
+  const pack = packsAt(s, tick).find((k) => k.at[0] === tile[0] && k.at[1] === tile[1]);
+  if (pack) return { label: 'Take your pack', tile, action: { t: 'takepack', pack: pack.id, at } };
 }
 
 /** An animal the world shows: its spot and the tile it stands on now (scenes/wildlife.ts `shown`). */

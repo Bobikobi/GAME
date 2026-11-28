@@ -25,7 +25,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Every script, in the order `pnpm e2e` plays them. A new script goes here and into one group below. */
-const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea', 'clips', 'jump', 'stones', 'effects', 'wildlife', 'handskill'];
+const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea', 'clips', 'jump', 'stones', 'effects', 'wildlife', 'pack', 'handskill'];
 
 interface Entry {
   name: string;
@@ -53,8 +53,8 @@ const GROUPS: Record<string, Group> = {
   'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree', 'landscape', 'controls', 'sea', 'clips'].map(plain), minutes: 19 },
   // the only scripts that serve game/dist-3d: play3d, and load for its bag button
   '3d-and-load': { entries: ['play3d', 'load', 'camera'].map(plain), minutes: 14, build3d: true },
-  // the jump and the fall on a phone on its side, and the valley's animals that move away from the figure (#916): two short scripts
-  'jump-phone': { entries: ['jump', 'wildlife'].map(plain), minutes: 11 },
+  // the jump and the fall on a phone on its side, the valley's animals that move away from the figure (#916), and the pack a fall leaves (#922): three short scripts
+  'jump-phone': { entries: ['jump', 'wildlife', 'pack'].map(plain), minutes: 14 },
   // the loose stones on a phone on its side: lift, throw, bounce, pile, carry
   'stones-phone': { entries: ['stones', 'handskill'].map(plain), minutes: 20 },
   // the first effects on a phone on its side: a spark, a starburst, dust on a landing, the camp fire's loop
@@ -67,7 +67,7 @@ const GROUPS: Record<string, Group> = {
  * How much faster the game's clock runs while a script only waits on it (cdp.ts, WARP): the openings wait on digs,
  * fellings, cookings and dusk. E2E_WARP=1 in the shell turns it off, to debug a run at the game's own pace.
  */
-const WARP: Record<string, number> = { opening: 4, sea: 4, jump: 4 };
+const WARP: Record<string, number> = { opening: 4, sea: 4, jump: 4, pack: 4 };
 
 /** Throws when a script is in no group or a plain script is in two: CI would skip it or play it twice. */
 function checkGroups(): void {

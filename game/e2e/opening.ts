@@ -1472,7 +1472,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       await page.waitFor('!__game.world.falling', 'the wake in town', 5000);
       const calls = await page.eval<string>(`document.querySelector('.toasts')?.textContent ?? ''`);
       if (calls.includes('Run for a safe place')) throw new Error(`a call to run still shows after the fall: "${calls}"`);
-      if (!fell.some((l) => l.includes('Everything went dark'))) throw new Error(`no fall box: ${fell.join(' / ')}`);
+      if (!fell.some((l) => l.includes('You died.'))) throw new Error(`no fall box: ${fell.join(' / ')}`);
       if (!fell.some((l) => l.includes('nothing is lost'))) throw new Error(`the fall box names a loss after a safe threshold: ${fell.join(' / ')}`);
       const woke = (await me.state()).pos;
       const cobble = await page.eval<boolean>(`__game.bundle.map.ground[${woke[1]}][${woke[0]}] === '='`);

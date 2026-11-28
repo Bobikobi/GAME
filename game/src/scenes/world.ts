@@ -104,8 +104,9 @@ import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '.
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
-import { huntingAt, questTargets } from '../targets';
+import { huntingAt, packAt, questTargets } from '../targets';
 import { CarcassLayer } from './carcasses';
+import { PackLayer } from './packs';
 import { WildLife } from './wildlife';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
@@ -536,6 +537,8 @@ export class WorldScene extends Phaser.Scene {
   /** the valley's animals, stepped by the kernel and drawn from their sheets (public #916) */
   private wild: WildLife | undefined;
   private carcasses: CarcassLayer | undefined;
+  /** the packs a fall left, drawn on their tiles (scenes/packs.ts) */
+  private packs: PackLayer | undefined;
   private busyFrom = 0;
   private busyMs = 0;
   /** the line, float and fish shapes of fishing, drawn in code */
@@ -2452,6 +2455,8 @@ export class WorldScene extends Phaser.Scene {
     this.stones = undefined;
     this.carcasses?.destroy();
     this.carcasses = undefined;
+    this.packs?.destroy();
+    this.packs = undefined;
     this.effects.clear();
     this.fightWords.clear();
     this.foeBars.clear();
@@ -2759,6 +2764,7 @@ export class WorldScene extends Phaser.Scene {
     (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
     (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig)).refresh(s.state, s.tick);
     (this.carcasses ??= new CarcassLayer(this, this.b)).refresh(s.state, s.tick);
+    (this.packs ??= new PackLayer(this, this.b)).refresh(s.state, s.tick);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -2886,6 +2892,8 @@ export class WorldScene extends Phaser.Scene {
       this.stones?.refresh(s.state, s.tick);
       // a carcass the spoiling has made smaller goes with no step to say so
       this.carcasses?.refresh(s.state, s.tick);
+      // a pack whose game day is over goes the same way
+      this.packs?.refresh(s.state, s.tick);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
@@ -4944,6 +4952,9 @@ export class WorldScene extends Phaser.Scene {
     // a pile the player put down, under their feet
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };
+    // the pack a fall left, from its tile or the next
+    const pack = packAt(s.state, s.tick, s.pos, tile);
+    if (pack) return { ...pack, run: () => void app.ui.hunt(pack.action), top: T / 2 };
     const hunt = huntingAt(b, s.state, s.tick, s.pos, tile);
     if (hunt) return { ...hunt, run: () => void app.ui.hunt(hunt.action), top: T / 2 };
     const door = this.doors.get(k);

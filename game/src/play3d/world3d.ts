@@ -45,7 +45,7 @@ import { FrameProbe, liteUrl } from './lite';
 import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
 import type { GameSession } from '../session-surface';
 import { stoneView } from '../stone';
-import { heightOf, huntingAt, huntingNearby, questTargets } from '../targets';
+import { heightOf, huntingAt, huntingNearby, packAt, questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { beatAt, blowsDue, nextUnit } from '../work';
@@ -1277,6 +1277,9 @@ export class World3D implements WorldView {
     // a pile the player put down, under their feet (drawn in the 2D door; here the prompt finds it)
     const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
     if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: 0.4 };
+    // the pack a fall left (G33): the prompt finds it here; the 2D door draws it (scenes/packs.ts), as it draws what was put down
+    const pack = packAt(s.state, s.tick, s.pos, tile);
+    if (pack) return { ...pack, run: () => void app.ui.hunt(pack.action), top: 0.4 };
     const hunt = huntingAt(b, s.state, s.tick, s.pos, tile);
     if (hunt) return { ...hunt, run: () => void app.ui.hunt(hunt.action), top: 0.4 };
     const npc = this.npcAt.get(k);

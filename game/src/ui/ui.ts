@@ -917,16 +917,17 @@ function rewardText(questId: string): string {
   return parts.join(', ') || 'their thanks';
 }
 
-/** The box after a fall (G33): the dark, where the player woke, and what the outing's basket held. */
+/**
+ * The box after a fall (G33; the words are TONE.md section 4, the owner's of 19.10): "You died.", where the player woke, and what the
+ * outing left. What it gathered lies where the body fell as a pack (G81), so the box says that and not what is in it, and never where it is.
+ */
 export function fallLines(b: typeof app.bundle, town: string, lost: readonly { item: string; qty: number }[]): string[] {
   const label = findSlot(b.map, town)?.label;
-  const lines = ['Everything went dark.', `You wake ${label ? `in the ${label.toLowerCase()}` : 'where you started'}, whole again.`];
-  lines.push(
-    lost.length > 0
-      ? `What you gathered out there is gone: ${lost.map((l) => `${l.qty} ${itemName(b, l.item)}`).join(', ')}.`
-      : 'You had gathered nothing out there, so nothing is lost.',
-  );
-  return lines;
+  return [
+    'You died.',
+    `You wake ${label ? `in the ${label.toLowerCase()}` : 'where you started'}.`,
+    lost.length > 0 ? 'Your pack lies where you died.' : 'You had gathered nothing out there, so nothing is lost.',
+  ];
 }
 
 function setText(node: Text | HTMLElement, text: string): void {
