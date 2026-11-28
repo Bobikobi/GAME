@@ -3,13 +3,13 @@ import { OWN_FIRE, canonical, lastDusk, publicState, type Action, type Bundle, t
 
 import { Session } from '../src/session';
 import { RemoteSession, fetchWire, type ActResult, type ChangeReply, type StateReply, type Wire, WireGap, WireRefusal } from '../src/remote';
-import { bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
+import { bfsNear, loadPixelBundle } from '../../tools/test/helpers/world.js';
 import { FakeServer } from './fake-server';
 
 let bundle: Bundle;
 
 beforeAll(() => {
-  bundle = loadBundle();
+  bundle = loadPixelBundle();
 });
 
 /**

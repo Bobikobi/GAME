@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { type Bundle, type GameEvent, type Hazard, type State, type Tile, hazardsOf, makeWalkable, newState, nightFalls, sees, step } from '@game/kernel';
 import { type Run, type Spot, SEEN, bangAt, huntGround, walkSteps, wolfDrawn } from '../src/predator';
 import { Bites, HOWL_LINE, Telegraph, type Threat, VOICES, catchPace, farGain, nearGain, nextBiteAt, swing, telegraphOf } from '../src/telegraph';
-import { loadBundle } from '../../tools/test/helpers/world';
+import { loadPixelBundle } from '../../tools/test/helpers/world';
 
 const BANK_WOLF = 'core/bank-wolf';
 const PLAYER: Tile = [11, 30];
@@ -21,7 +21,7 @@ let wolf: Hazard;
 let t0: number;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
   const found = hazardsOf(base).find((h) => h.id === BANK_WOLF);
   if (!found?.round) throw new Error(`${BANK_WOLF} with a round is missing from the map`);
   wolf = found;

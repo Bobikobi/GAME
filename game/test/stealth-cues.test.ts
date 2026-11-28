@@ -55,7 +55,7 @@ import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
 import { CORE_PALETTE } from '../../tools/src/kit/palette';
 import { REPO_ROOT } from '../../tools/src/load';
-import { loadBundle } from '../../tools/test/helpers/world';
+import { loadPixelBundle } from '../../tools/test/helpers/world';
 
 vi.mock('../src/ui/dialog', () => ({ say: vi.fn() }));
 
@@ -77,7 +77,7 @@ const FRAME = 16;
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 afterEach(() => {
