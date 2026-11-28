@@ -56,17 +56,18 @@ const indexes = new WeakMap<object, ReadonlyMap<string, readonly string[]>>();
 function indexOf(sprites: ClipSprites): ReadonlyMap<string, readonly string[]> {
   let index = indexes.get(sprites);
   if (!index) {
-    const found = new Map<string, { key: string; take: number }[]>();
+    // one key per take: two sheets of the same take (a kit listing a clip twice, a test adding its own) keep the later one, as the lookup always did
+    const found = new Map<string, Map<number, string>>();
     for (const [key, info] of Object.entries(sprites)) {
       const c = info.clip;
       if (!c) continue;
       const at = lookup(c.verb, c.race, c.view);
-      const list = found.get(at) ?? [];
-      list.push({ key, take: c.take ?? 1 });
-      found.set(at, list);
+      const takes = found.get(at) ?? new Map<number, string>();
+      takes.set(c.take ?? 1, key);
+      found.set(at, takes);
     }
     const built = new Map<string, readonly string[]>();
-    for (const [at, list] of found) built.set(at, list.sort((a, b) => a.take - b.take || (a.key < b.key ? -1 : 1)).map((e) => e.key));
+    for (const [at, takes] of found) built.set(at, [...takes].sort((a, b) => a[0] - b[0]).map(([, key]) => key));
     indexes.set(sprites, (index = built));
   }
   return index;

@@ -119,6 +119,11 @@ describe('takes: a clip drawn more than once is played at random among its takes
     }
   });
 
+  test('two sheets of the same take keep the later one, never a coin toss between them', () => {
+    const twice = { ...sprites, 'extra:hit_front': { ...sprites[`${KIT}:chars/human_hit_front`]!, frame_ms: 777 } } as typeof sprites;
+    for (const r of [0, 0.5, 0.99]) expect(clipFor(twice, 'hit', HUMAN, 'down', r)!.key).toBe('extra:hit_front');
+  });
+
   test('the player hands back the take that began, so what reads its numbers later reads the same take', () => {
     const player = new ClipPlayer();
     expect(player.current).toBeUndefined();
