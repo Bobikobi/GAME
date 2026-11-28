@@ -324,7 +324,7 @@ describe('the packed kit', () => {
       expect(own.length, race).toBeGreaterThanOrEqual(23);
       all += own.length;
     }
-    expect(all).toBe(116);
+    expect(all).toBe(125);
     expect(raceClips(real, 'core/dragon')).toEqual([]);
   });
 

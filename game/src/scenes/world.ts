@@ -2616,23 +2616,28 @@ export class WorldScene extends Phaser.Scene {
   /**
    * A run drawn as its own clip (the figure's moves, public #929): the frame is the one for the distance walked, over a cycle as long as the
    * walk's own times `RUN_CYCLE_OVER_WALK` (clips.ts). False, and the walk sheet shows as before, when the kit has no run clip for the race and
-   * the way it faces, its sheet is not here yet, or the figure wears a clothing set (the clip is the bare figure and would strip it mid-run).
+   * the way it faces, its sheet is not here yet, or the figure is not the one the clips are drawn on (`figureIsClipFigure`).
    */
   private runClipFrame(s: GameSession, walk: (typeof this.b.sprites)[string] | undefined): boolean {
     const race = s.state.player.race;
     const found = clipFor(this.b.sprites as ClipSprites, 'run', race, s.facing);
-    if (!found || !this.textures.exists(found.key) || this.wearsSet(s)) return false;
+    if (!found || !this.textures.exists(found.key) || !this.figureIsClipFigure(s)) return false;
     const cycle = walk?.stride ? (walk.stride.travel_mpx / 1000) * (walk.frames - 1) * RUN_CYCLE_OVER_WALK : RUN_CYCLE_FALLBACK_PX;
     this.showPlayer(found.key, runFrame(this.body.walked, cycle, found.frames), found.flip);
     return true;
   }
 
-  /** Whether a complete clothing set is drawn whole on the figure (its walk sheet is not the bare race's own). */
-  private wearsSet(s: GameSession): boolean {
+  /**
+   * Whether the figure on the screen is the one the race's clips are drawn on, so that a clip that lasts (a run, a death) does not change
+   * who the player is looking at: false for the other look of a race (`sprite_alt`, drawn on its own sheets) and while a complete clothing
+   * set is drawn whole (its walk sheet is not the race's own).
+   */
+  private figureIsClipFigure(s: GameSession): boolean {
     const p = s.state.player;
     const race = this.b.races[p.race];
-    const bare = (p.look === 1 && race?.sprite_alt) || race?.sprite || Object.values(this.b.races)[0]?.sprite || '';
-    return wornSetSheet(this.b, s.state, bare, (k) => k in this.b.sprites, window.location.search) !== bare;
+    if (p.look === 1 && race?.sprite_alt) return false;
+    const bare = race?.sprite || Object.values(this.b.races)[0]?.sprite || '';
+    return wornSetSheet(this.b, s.state, bare, (k) => k in this.b.sprites, window.location.search) === bare;
   }
 
   /**
@@ -4093,7 +4098,7 @@ export class WorldScene extends Phaser.Scene {
     this.placePlayer(from[0], from[1]);
     // the figure's own death clip, when the kit has one: it falls and lies, then the same fade to town; the sinking below is the fallback
     const dying = clipFor(this.b.sprites as ClipSprites, 'die', s.state.player.race, s.facing, Math.random());
-    if (dying && this.textures.exists(dying.key)) {
+    if (dying && this.textures.exists(dying.key) && this.figureIsClipFigure(s)) {
       const shown = (at: number) => this.showPlayer(dying.key, Math.min(dying.frames - 1, Math.floor(at * dying.frames)), dying.flip);
       shown(0);
       this.tweens.addCounter({
