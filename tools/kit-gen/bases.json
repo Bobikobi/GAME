@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "decision": "DECISIONS.md 2026-11-28: each race has ONE base body, B, the newer figure the clothes go on (the owner's final pick, docs/design/frames/2026-11-28-figure-final-*.png). The 30.10 walk sheets are retired as a base.",
+  "bases": {
+    "human": { "left": "chars/human_hit_left", "front": "chars/human_hit_front", "back": "chars/human_hit_back" },
+    "elf": { "left": "chars/elf_hit_left", "front": "chars/elf_hit_front", "back": "chars/elf_hit_back" },
+    "skeleton": { "left": "chars/skeleton_hit_left", "front": "chars/skeleton_hit_front", "back": "chars/skeleton_hit_back" }
+  },
+  "base_frame": 0,
+  "retired": [
+    "chars/human_down", "chars/human_left", "chars/human_up",
+    "chars/elf_down", "chars/elf_left", "chars/elf_up",
+    "chars/skeleton_down", "chars/skeleton_left", "chars/skeleton_up"
+  ],
+  "legacy_verbs": ["strike", "guard", "dodge", "hit", "fell", "quarry", "fish", "pickup", "carry", "throw", "push", "lift"],
+  "waiting": [
+    "chars/human_die_left", "chars/human_die_front", "chars/human_die_back",
+    "chars/human_run_left", "chars/human_run_front", "chars/human_run_back",
+    "chars/human_hit_heavy_left", "chars/human_hit_heavy_front", "chars/human_hit_heavy_back"
+  ],
+  "clips": {
+    "chars/human_jump_left": "chars/human_hit_left",
+    "chars/human_jump_front": "chars/human_hit_front",
+    "chars/human_jump_back": "chars/human_hit_back",
+    "chars/human_land_left": "chars/human_hit_left",
+    "chars/human_land_front": "chars/human_hit_front",
+    "chars/human_land_back": "chars/human_hit_back",
+    "chars/human_land_hard_left": "chars/human_hit_left",
+    "chars/human_land_hard_front": "chars/human_hit_front",
+    "chars/human_land_hard_back": "chars/human_hit_back"
+  }
+}
