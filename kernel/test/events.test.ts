@@ -28,7 +28,7 @@ import {
   step,
   tendHolds,
 } from '@game/kernel';
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 type Prop = Bundle['map']['props'][number];
 
@@ -58,7 +58,7 @@ const SOUTH_BANK = 'core/the-south-bank';
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 /** A wolf that notices by reach, beside the town (the outrun test of hazards.test.ts). */

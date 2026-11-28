@@ -4,7 +4,7 @@ import type { Bundle } from '@game/kernel';
 import { SAVE_KEY } from '../src/config';
 import { STALL_SLOT } from '../src/places';
 import { Session } from '../src/session';
-import { loadBundle } from '../../tools/test/helpers/world';
+import { loadPixelBundle } from '../../tools/test/helpers/world';
 
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>();
@@ -37,7 +37,7 @@ class MemoryStorage implements Storage {
 let bundle: Bundle;
 
 beforeAll(() => {
-  bundle = loadBundle();
+  bundle = loadPixelBundle();
 });
 
 beforeEach(() => {
