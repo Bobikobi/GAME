@@ -17,7 +17,9 @@ holds on every clip, tried as several different families, measured on clips the 
   That is a weak economy, and it is stated as one.
 - Seconds a clip (45 frames, this laptop, no GPU): pose 10 s, map 0.7 s (pose map), carry 29 s a piece (145 s for five), so about 2.6 minutes for a whole outfit.
   Family 1's gate costs 82 s more, family 3b's 11 s.
-- Not done: the left view and F6b (waits for Gemini's reset, tomorrow). Gemini and PixelLab were not used today: 0 and 0.
+- Not done, and not scheduled (the manager's ruling: round 2 ends with this PR): the left view and F6b. Gemini and PixelLab were not used: 0 and 0.
+- **Status (manager's ruling):** the recommendation is a finding, not a build: f2c behind the f1 gate is the starting route for #754; nothing is built further now.
+  **Named next step for #754: the cap measured against its own head's area** (not the body's), proven on its own held-out set. The cap bar is not changed in this round.
 
 ## L4 changed (the manager's ruling of 28.11)
 
@@ -120,8 +122,7 @@ specks there; the pose map moves whole parts and degrades more gently, which is 
 6. **F6 priced only.** (a) A 3D proxy body that gives an exact map: a rigged proxy per race with B's proportions, about 1-3 builder days (unchecked), 0 generations;
    it gives an exact map only if its silhouette matches the drawn B to a pixel, which a hand-drawn body will not, so it would meet the pose map's limit; not built.
    (b) A mask-edit image model: one request edits a grid of 15 frames inside the wear-place masks, 3 requests a clip and outfit, on a daily quota of 7 requests per account;
-   it is F6b below. **F6b (Gemini frame grids, GPT animated GIFs) was not run today** (no Gemini today: account 1 at its limit, account 2 restricted); 5 requests wait
-   for the reset, one at a time, 3 minutes apart, stop at the first limit page.
+   it is F6b below. **F6b (Gemini frame grids, GPT animated GIFs) was not run** (no Gemini on the day: account 1 at its limit, account 2 restricted) and is not scheduled.
 
 ## What it costs: 9 outfits x 6 pieces x the clips a player sees
 
@@ -131,7 +132,7 @@ specks there; the pose map moves whole parts and degrades more gently, which is 
 - **Whole outfits on the clips the gate rejects:** route b at 12 generations a clip and outfit: 108 for 9 outfits, per clip and view. With the gate, 73% of the jobs
   remain on the nine measured clips: about 79 generations a clip and view (instead of 108). For the three views multiply by three (left and back are not measured yet).
 - A clip the gate rejects mostly (run, sneak, dig, down, die: 5 of the 9 verbs, 58% of the frames) gets no separate pieces from either route today. That is the open
-  problem; the left-view and F6b measurements tomorrow are the only free candidates for it.
+  problem; F6b and a second stand frame per pose family are the free candidates for it (neither measured).
 
 ## What differs most to the eye (at the game's zoom, against the stand-frame dressed figure)
 
