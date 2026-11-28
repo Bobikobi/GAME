@@ -5,7 +5,7 @@
  */
 import { idiv } from '../num';
 import { avoids, followTarget, regroupTarget, regroups } from './groups';
-import { type Field, fleeMap, homeMap, nextTile, NEIGHBOURS, ringTiles, stepToward, valueAt, homeStep } from './paths';
+import { type Field, boltPath, fleeMap, homeMap, nextTile, NEIGHBOURS, ringTiles, stepToward, valueAt, homeStep } from './paths';
 import { type Notice, d2, hearsNoise, notices, threshold } from './senses';
 import {
   type Creature,
@@ -69,6 +69,8 @@ function enter(c: Creature, s: WildState, view: WildView): void {
   delete c.up;
   delete c.beats;
   delete c.back;
+  delete c.runLeft;
+  delete c.bolt;
 }
 
 function enterQuiet(kind: WildKind, c: Creature, s: WildState, view: WildView, regroup = false): void {
@@ -117,6 +119,8 @@ function enterFlee(kind: WildKind, c: Creature, src: Tile, view: WildView, out: 
   enter(c, 'FLEE', view);
   c.count = 0;
   c.left = WILD.fleeLost;
+  c.runLeft = WILD.fleeMax;
+  delete c.fleeEnd;
   c.src = [src[0], src[1]];
   c.from = [c.at[0], c.at[1]];
   delete c.target;
@@ -212,24 +216,43 @@ function awayStep(c: Creature, src: Tile, view: WildView): Tile | undefined {
  * map while the threat is not between, else down the flee map. `home`: it stands at its den; `homing`:
  * it ran toward the den this step, so the distance end does not cut the run home short.
  */
-function run(kind: WildKind, c: Creature, view: WildView): { home: boolean; homing: boolean } {
+function run(kind: WildKind, c: Creature, view: WildView): { home: boolean; homing: boolean; blocked: boolean } {
   const src = c.src ?? view.anchorAt;
   const map: Field = fleeMap(view.open, src, c.at, kind.sight + 6);
   const home = kind.flight === 'burrow' ? homeMap(view.open, view.anchorAt, c.at, kind.roam + 4) : undefined;
   let went = false;
   const n = stepsToMove(c, view.pace.run);
-  for (let i = 0; i < n; i++) {
+  // At the cap also check the next tile in case the last stride landed at a dead end.
+  const checks = n + (c.runLeft === 0 ? 1 : 0);
+  for (let i = 0; i < checks; i++) {
     if (home && same(c.at, view.anchorAt)) break;
-    let t = home ? homeStep(home, c.at, src, view.open) : undefined;
-    if (t) went = true;
-    else t = valueAt(map, src[0], src[1]) === map.none ? awayStep(c, src, view) : nextTile(map, c.at, view.open);
-    if (!t) break;
+    const denStep = home ? homeStep(home, c.at, src, view.open) : undefined;
+    const t = denStep ?? (valueAt(map, src[0], src[1]) === map.none ? awayStep(c, src, view) : nextTile(map, c.at, view.open));
+    if (!t) return { home: false, homing: went, blocked: true };
+    if (i === n) break;
+    if (denStep) went = true;
     moveTo(c, t);
   }
-  return { home: !!home && same(c.at, view.anchorAt), homing: went };
+  return { home: !!home && same(c.at, view.anchorAt), homing: went, blocked: false };
+}
+
+function boltOpen(view: WildView, src: Tile, t: Tile): boolean {
+  return d2(t, src) >= WILD.boltClearance * WILD.boltClearance && view.open(t[0], t[1]);
+}
+
+function runBolt(kind: WildKind, c: Creature, view: WildView, path: Tile[]): void {
+  const src = c.src ?? view.anchorAt;
+  const n = stepsToMove(c, view.pace.run);
+  for (let i = 0; i < n && path.length; i++) {
+    const t = path.pop()!;
+    if (!boltOpen(view, src, t)) return endFlee(kind, c, view, true);
+    moveTo(c, t);
+  }
+  if (!path.length) endFlee(kind, c, view, true);
 }
 
 function flee(kind: WildKind, c: Creature, view: WildView, out: ThinkOut): void {
+  if (c.bolt) return runBolt(kind, c, view, c.bolt);
   const went = run(kind, c, view);
   if (went.home) {
     rest(kind, c, view);
@@ -238,14 +261,18 @@ function flee(kind: WildKind, c: Creature, view: WildView, out: ThinkOut): void 
     out.events.push({ e: 'home', id: c.id });
     return;
   }
-  if (went.homing) return;
   const src = c.src ?? view.anchorAt;
   const reach = kind.sight + WILD.fleeExtra;
-  if (d2(c.at, src) >= reach * reach || c.left <= 0) endFlee(kind, c, view);
+  if (!went.homing && (d2(c.at, src) >= reach * reach || c.left <= 0)) return endFlee(kind, c, view);
+  if (c.runLeft !== 0) return;
+  const path = went.blocked && c.src && boltPath((x, y) => boltOpen(view, src, [x, y]), c.at, src, reach);
+  if (path) c.bolt = path;
+  else endFlee(kind, c, view, true);
 }
 
-function endFlee(kind: WildKind, c: Creature, view: WildView): void {
+function endFlee(kind: WildKind, c: Creature, view: WildView, capped = false): void {
   c.avoidUntil = view.tick + WILD.avoidSteps * THINK_MS;
+  if (capped && c.src) c.fleeEnd = { at: c.at, dd: d2(c.at, c.src) };
   c.count = 0;
   if (kind.looksBack) {
     enter(c, 'ALERT', view);
@@ -255,6 +282,11 @@ function endFlee(kind: WildKind, c: Creature, view: WildView): void {
     return;
   }
   enterQuiet(kind, c, 'WANDER', view, regroups(kind));
+}
+
+/** Measure an approach from where the capped flight stopped. */
+function canFlee(c: Creature, src: Tile): boolean {
+  return !c.fleeEnd || d2(c.fleeEnd.at, src) < c.fleeEnd.dd;
 }
 
 /** The loudest sound besides the player's gait that the animal hears this step. */
@@ -308,6 +340,8 @@ export function think(kind: WildKind, c: Creature, view: WildView): ThinkOut {
   }
   const isAwake = awake(kind, view.hour);
   const n: Notice | undefined = notices(kind, c, view);
+  // A threat that is still here must approach even after the avoided ring expires.
+  if (c.fleeEnd && !n && view.tick >= (c.avoidUntil ?? 0)) delete c.fleeEnd;
   c.count = n ? c.count + 1 : 0;
   const p = view.player;
   const sound = heardNoise(kind, c, view);
@@ -326,13 +360,13 @@ export function think(kind: WildKind, c: Creature, view: WildView): ThinkOut {
       return out;
     }
     case 'ALERT': {
-      const fleeing = kind.tier === 'flee' ? kinIn(kind, c, view, 'FLEE') : undefined;
       if (loud && loudAt) {
         goTier(kind, c, loudAt, view, out);
         return out;
       }
-      if (fleeing) {
-        enterFlee(kind, c, fleeing.src ?? fleeing.at, view, out);
+      const fleeFrom = kinThreat(kind, c, view);
+      if (fleeFrom) {
+        enterFlee(kind, c, fleeFrom, view, out);
         return out;
       }
       if (n) c.src = [n.at[0], n.at[1]];
@@ -344,7 +378,7 @@ export function think(kind: WildKind, c: Creature, view: WildView): ThinkOut {
       }
       if (n) {
         c.left = WILD.alertQuiet;
-        if (c.count >= WILD.alertMore) goTier(kind, c, n.at, view, out);
+        if (c.count >= WILD.alertMore && canFlee(c, n.at)) goTier(kind, c, n.at, view, out);
         return out;
       }
       c.left -= 1;
@@ -356,6 +390,7 @@ export function think(kind: WildKind, c: Creature, view: WildView): ThinkOut {
       return out;
     }
     case 'FLEE': {
+      c.runLeft = Math.max(0, (c.runLeft ?? WILD.fleeMax) - 1);
       if (n) {
         c.src = [n.at[0], n.at[1]];
         c.left = WILD.fleeLost;
@@ -375,6 +410,13 @@ export function think(kind: WildKind, c: Creature, view: WildView): ThinkOut {
   }
 }
 
+function kinThreat(kind: WildKind, c: Creature, view: WildView): Tile | undefined {
+  if (kind.tier !== 'flee') return undefined;
+  const fleeing = kinIn(kind, c, view, 'FLEE');
+  const src = fleeing?.src ?? fleeing?.at;
+  return src && canFlee(c, src) ? src : undefined;
+}
+
 /**
  * What moves a quiet animal, most pressing first: a hit or a loud noise to the tier's state, a group
  * member fleeing within 8 to FLEE, the noticing count to ALERT (asleep, any sense at once), another
@@ -389,10 +431,10 @@ function react(
   sound: { at: Tile } | undefined,
   loudAt: Tile | undefined,
 ): boolean {
-  const fleeing = kinIn(kind, c, view, 'FLEE');
+  const fleeFrom = kinThreat(kind, c, view);
   const alerted = kinIn(kind, c, view, 'ALERT');
   if (loudAt) goTier(kind, c, loudAt, view, out);
-  else if (fleeing && kind.tier === 'flee') enterFlee(kind, c, fleeing.src ?? fleeing.at, view, out);
+  else if (fleeFrom) enterFlee(kind, c, fleeFrom, view, out);
   else if (n && (c.state === 'SLEEP' || c.count >= threshold(n.dd, n.r))) enterAlert(kind, c, n.at, view, out);
   else if (sound) enterAlert(kind, c, sound.at, view, out);
   else if (alerted?.src) enterAlert(kind, c, alerted.src, view, out);

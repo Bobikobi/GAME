@@ -2,7 +2,8 @@
 import { describe, expect, test } from 'vitest';
 
 import { settle, stepsToMove, think, threshold, tierState } from '../src/wild/brain';
-import { type Creature, type WildView, THINK_MS, awake } from '../src/wild/types';
+import { d2 } from '../src/wild/senses';
+import { type Creature, type Tile, type WildView, THINK_MS, WILD, awake } from '../src/wild/types';
 import { BOAR, HARE, NOISE, NOON, ROE, WOLF, creature, field, grid, lcg, player, view } from './wild-fixtures';
 
 const OPEN = grid(field(41));
@@ -220,7 +221,12 @@ describe('the states', () => {
     const threat = player([18, 20], NOISE.run);
     think(ROE, roe, at({ player: threat }));
     expect(roe.state).toBe('FLEE');
-    for (let i = 0; i < 10 && roe.state === 'FLEE'; i++) think(ROE, roe, at({ tick: (i + 1) * THINK_MS, player: player([18, 20], NOISE.still) }));
+    let steps = 0;
+    while (steps < WILD.fleeMax && roe.state === 'FLEE') {
+      steps += 1;
+      think(ROE, roe, at({ tick: steps * THINK_MS, player: player([18, 20], NOISE.still) }));
+    }
+    expect(steps).toBeLessThan(WILD.fleeMax);
     expect(roe.state).toBe('ALERT');
     expect(roe.back).toBe(true);
     expect((roe.at[0] - 18) ** 2 + (roe.at[1] - 20) ** 2).toBeGreaterThanOrEqual(12 * 12);
@@ -228,6 +234,66 @@ describe('the states', () => {
     think(ROE, roe, at({ tick: 20 * THINK_MS }));
     think(ROE, roe, at({ tick: 21 * THINK_MS }));
     expect(['WANDER', 'IDLE']).toContain(roe.state);
+  });
+
+  test('a cornered roe ends FLEE at the cap with a stationary player', () => {
+    const bank = '~~~~~~~~~~~~~~~~';
+    const map = grid([...Array<string>(9).fill(bank), '~~.............~', bank]);
+    const start = [2, 9] as const;
+    const roe = creature({ at: [...start], anchor: 'core/roe@2,9' });
+    const watched = (steps: number, threat: Tile = [5, 9]) =>
+      view(map, { anchorAt: start, tick: steps * THINK_MS, player: player(threat, NOISE.still) });
+    let tick = 0;
+    while (tick < 6 && roe.state !== 'FLEE') think(ROE, roe, watched(tick++));
+    expect(roe.state).toBe('FLEE');
+
+    const began = tick - 1;
+    let steps = 0;
+    while (steps <= WILD.fleeMax && roe.state === 'FLEE') {
+      think(ROE, roe, watched(tick++));
+      steps += 1;
+    }
+    expect(steps).toBe(WILD.fleeMax);
+    expect(roe).toMatchObject({ at: start, state: 'ALERT', back: true, face: [1, 0], since: (began + steps) * THINK_MS });
+    expect(roe.avoidUntil).toBe((began + steps + WILD.avoidSteps) * THINK_MS);
+
+    const kin = [creature({ id: 2, at: [3, 9], state: 'FLEE', src: [5, 9] })];
+    const next = watched(tick++);
+    expect(think(ROE, roe, { ...next, kin }).events).toEqual([]);
+    expect(roe.state).toBe('ALERT');
+    const renewed = structuredClone(roe);
+    expect(think(ROE, renewed, { ...next, hit: true }).events).toEqual([{ e: 'flee', id: roe.id }]);
+    for (let i = 0; i < WILD.avoidSteps + WILD.alertMore; i++) {
+      think(ROE, roe, watched(tick++));
+      expect(roe.state).not.toBe('FLEE');
+    }
+    think(ROE, roe, watched(tick, [4, 9]));
+    expect(roe.state).toBe('FLEE');
+  });
+
+  test('a cornered roe bolts past the player on a route with two tiles of clearance', () => {
+    const bank = '~~~~~~~~~~~~~~~~~~';
+    const map = grid([bank, bank, '~~~~.~~~~~~~~~~~~~', bank, '~~...............~', bank]);
+    const start = [2, 4] as const;
+    const threat = [4, 2] as const;
+    const roe = creature({ at: [...start], anchor: 'core/roe@2,4' });
+    const watched = (steps: number, noise: number = NOISE.still) =>
+      view(map, { anchorAt: start, tick: steps * THINK_MS, player: player(threat, noise) });
+    think(ROE, roe, watched(0, NOISE.run));
+    for (let steps = 1; steps <= WILD.fleeMax; steps++) think(ROE, roe, watched(steps));
+    expect(roe).toMatchObject({ at: start, state: 'FLEE' });
+
+    think(ROE, roe, watched(WILD.fleeMax + 1));
+    const trail = roe.trail ?? [];
+    expect(roe.state).toBe('FLEE');
+    expect(trail).toContainEqual([4, 4]);
+    think(ROE, roe, watched(WILD.fleeMax + 2));
+    expect(roe).toMatchObject({ state: 'ALERT', back: true });
+    expect(d2(roe.at, threat)).toBeGreaterThanOrEqual((ROE.sight + WILD.fleeExtra) ** 2);
+    for (const t of [...trail, ...(roe.trail ?? [])]) {
+      expect(map.open(...t)).toBe(true);
+      expect(d2(t, threat)).toBeGreaterThanOrEqual(4);
+    }
   });
 
   test('behind the fight: a hunter stalks, chases at the walk and goes home past its leash', () => {
