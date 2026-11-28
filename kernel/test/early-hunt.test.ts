@@ -14,14 +14,14 @@ import {
   walkableFor,
 } from '@game/kernel';
 
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 const STONE = 'core/stone';
 const SNARE = 'core/snare';
 const MEAT = 'core/hare-meat';
 const HIDE = 'core/hare-hide';
-let bundle: ReturnType<typeof loadBundle>;
-beforeAll(() => { bundle = loadBundle(); });
+let bundle: ReturnType<typeof loadPixelBundle>;
+beforeAll(() => { bundle = loadPixelBundle(); });
 
 function trial() {
   const b = structuredClone(bundle);

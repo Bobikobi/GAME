@@ -15,11 +15,11 @@ import { assemble } from '../../tools/src/assemble.js';
 import { readBoard } from '../../tools/src/board.js';
 import { checkFrame } from '../../tools/src/check.js';
 import { loadAll } from '../../tools/src/load.js';
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 const PAINTED = new URL('../../tools/test/fixtures/painted-valley/', import.meta.url);
 
-const classic: Bundle = loadBundle();
+const classic: Bundle = loadPixelBundle();
 const REMAP = { slots: classic.map.slots.map(({ id, x, y, w, h }) => ({ id, x, y, w, h })) };
 
 /** The content of today on the painted valley's map and wake tiles, its map one frame on and carrying the classic slots. */

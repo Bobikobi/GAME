@@ -196,6 +196,23 @@ window.__e2e = (() => {
       const me = walker();
       return search(rect, me.pos, (x, y, from) => me.open(x, y, from));
     },
+    /** Whether a walk from here can stand on a tile of rect (plan's walk only reaches a tile facing it, which open ground beside a shut place has). */
+    reaches(rect) {
+      const me = walker();
+      const seen = new Set([me.pos[0] + ',' + me.pos[1]]);
+      const queue = [[me.pos[0], me.pos[1]]];
+      for (let i = 0; i < queue.length; i++) {
+        const [x, y] = queue[i];
+        if (inRect(x, y, rect)) return true;
+        for (const [dx, dy] of Object.values(DIRS)) {
+          const nx = x + dx, ny = y + dy;
+          if (seen.has(nx + ',' + ny) || !me.open(nx, ny, [x, y])) continue;
+          seen.add(nx + ',' + ny);
+          queue.push([nx, ny]);
+        }
+      }
+      return false;
+    },
     /**
      * What shuts the way to rect when plan finds none: a plant, stone or log that is ready stands in the way as a wall does, and its tile opens
      * once it is taken. The shortest walk that may pass ready nodes, and the first node on it ({ id, source, x, y }); null when no walk of
@@ -1428,7 +1445,8 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       // A slow machine can meet 20:00 before the arch: the lantern warning was then read on the road (pastDusk)
       await me.walkPastDusk(mouth, 'the broken arch');
       let lantern = me.lantern;
-      if (await page.eval<boolean>(`!!__e2e.plan(${JSON.stringify(threshold)})`)) throw new Error('the night ruins are open before the arch');
+      // no foot stands on the threshold before the arch opens (on the painted valley open ground runs up beside it, so a walk can face it)
+      if (await page.eval<boolean>(`__e2e.reaches(${JSON.stringify(threshold)})`)) throw new Error('the night ruins are open before the arch');
       // dark comes at 20:00; the player waits for it at the arch, and the wait counts (criterion 8)
       await page.waitFor('__e2e.hour() >= 20 || __e2e.hour() < 5', 'dark at 20:00', 300_000);
       // dark finds the player outside a safe place: the lantern is lit, with its one box a night (G31)
