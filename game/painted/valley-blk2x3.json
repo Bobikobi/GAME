@@ -1,6 +1,7 @@
 {
   "format": 1,
   "scene": "valley-blk2x3",
+  "store": "https://github.com/Bobikobi/loomvale/releases/download/painted-store-1",
   "files": [
     {
       "path": "figures/lynx-idle-down.png",
