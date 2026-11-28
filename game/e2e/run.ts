@@ -25,7 +25,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Every script, in the order `pnpm e2e` plays them. A new script goes here and into one group below. */
-const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea', 'clips', 'jump', 'stones', 'effects', 'wildlife'];
+const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin', 'load', 'tree', 'landscape', 'controls', 'sea', 'clips', 'jump', 'stones', 'effects', 'wildlife', 'handskill'];
 
 interface Entry {
   name: string;
@@ -56,7 +56,7 @@ const GROUPS: Record<string, Group> = {
   // the jump and the fall on a phone on its side, and the valley's animals that move away from the figure (#916): two short scripts
   'jump-phone': { entries: ['jump', 'wildlife'].map(plain), minutes: 11 },
   // the loose stones on a phone on its side: lift, throw, bounce, pile, carry
-  'stones-phone': { entries: ['stones'].map(plain), minutes: 8 },
+  'stones-phone': { entries: ['stones', 'handskill'].map(plain), minutes: 20 },
   // the first effects on a phone on its side: a spark, a starburst, dust on a landing, the camp fire's loop
   'effects-phone': { entries: ['effects'].map(plain), minutes: 8 },
   'map-and-shop': { entries: ['map', 'shop', 'fishing'].map(plain), minutes: 10 },

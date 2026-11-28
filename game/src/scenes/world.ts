@@ -57,7 +57,7 @@ import {
   settled,
 } from '@game/kernel';
 import { app } from '../app';
-import { aimLine, chargeAt, trembleAt } from '../throw-charge';
+import { aimLine, assistAim, chargeAt, preyOf, trembleAt } from '../throw-charge';
 import { Piles, pileAt } from './piles';
 import { StoneLayer } from './stones';
 import { ARMS_STONE_KIND, HAND_STONE_KIND } from '../stone-art';
@@ -104,7 +104,7 @@ import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '.
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
-import { huntingAt, huntingNearby, questTargets } from '../targets';
+import { huntingAt, questTargets } from '../targets';
 import { WildLife } from './wildlife';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
@@ -118,7 +118,7 @@ import { ClipPlayer, VERB_OF_AUTO, WalkWatch, clipFor, clipFrame, creatureClipFo
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { reportedGait, SpeedRamp } from '../walkfeel';
-import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
+import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, throwDir, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK, idleSlice } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -4482,7 +4482,7 @@ export class WorldScene extends Phaser.Scene {
   private grip?: { found: Found; start: number };
 
   /** A throw being charged (DECISIONS 2026-11-22): when the press began (the scene clock), the aim tile, the stone's size, and which hand holds it. */
-  private charge?: { start: number; aim: KernelTile; kind: string; source: 'key' | 'mouse' };
+  private charge?: { start: number; aim: KernelTile; kind: string; source: 'key' | 'mouse'; assist?: number };
   /** The aim line on the ground, drawn while a throw is charged. */
   private aimLineGfx?: Phaser.GameObjects.Graphics;
 
@@ -4567,9 +4567,16 @@ export class WorldScene extends Phaser.Scene {
       app.ui.toast('You have no stone to throw.', 'info');
       return;
     }
-    const aim = throwAim(this.b, s, this.lookOf(s));
+    // a hare a stone could take in the half the figure faces: the line points at it, and the player's part is the charge (#923)
+    const game = assistAim(this.b, s.state, s.tick, kind, this.gameStanding(), throwDir(this.lookOf(s)));
+    const aim = game?.aim ?? throwAim(this.b, s, this.lookOf(s));
     if (!aim) return;
-    this.charge = { start: this.time.now, aim, kind, source: 'key' };
+    this.charge = { start: this.time.now, aim, kind, source: 'key', ...(game ? { assist: game.spot } : {}) };
+  }
+
+  /** The animals the world shows, by spot and the tile each stands on now: what a thrown stone may strike. */
+  private gameStanding(): { spot: number; tile: KernelTile }[] {
+    return (this.wild?.shown() ?? []).map(({ spot, tile }) => ({ spot, tile }));
   }
 
   /** The mouse button held (desktop): the same charge, aimed at the pointer's tile. */
@@ -4588,6 +4595,7 @@ export class WorldScene extends Phaser.Scene {
     const s = this.session;
     if (!s || (tile[0] === s.pos[0] && tile[1] === s.pos[1])) return;
     this.charge.aim = [tile[0], tile[1]];
+    this.charge.assist = undefined;
   }
 
   /** The map tile under a pointer, or undefined off the map. */
@@ -4620,7 +4628,7 @@ export class WorldScene extends Phaser.Scene {
     const c = this.charge;
     this.charge = undefined;
     this.aimLineGfx?.setVisible(false);
-    this.throwNow(c.aim, c.kind, chargeAt(this.b, Math.floor(this.time.now - c.start)).power);
+    this.throwNow(c.aim, c.kind, chargeAt(this.b, Math.floor(this.time.now - c.start)).power, c.assist);
   }
 
   /** One frame of a held throw: draw the aim line at the power reached, and let a charge held past full go on its own. */
@@ -4658,10 +4666,13 @@ export class WorldScene extends Phaser.Scene {
    * The throw itself (DECISIONS 2026-11-22, #831): the kernel flies it by `throwFlight` for `power` (a thousandth part).
    * This plays the flight as an arc with bounces and a slide, the landing hidden until it lands.
    */
-  private throwNow(aim: KernelTile, kind: string, power: number): void {
+  private throwNow(aim: KernelTile, kind: string, power: number, aimedAt?: number): void {
     const s = this.session;
     if (!s) return;
-    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim, kind, power })).then((r) => {
+    // the animal the flight at this power would strike, by the kernel's own flight and width; the action names it, the kernel decides (#923)
+    const strike = preyOf(this.b, s.state, s.tick, kind, aim, power, this.gameStanding());
+    const standsAt = strike?.stands ?? this.gameStanding().find((a) => a.spot === aimedAt)?.tile;
+    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim, kind, power, ...(strike ?? {}) })).then((r) => {
       if (!r.ok) {
         app.ui.toast(r.error, 'bad');
         return;
@@ -4671,6 +4682,7 @@ export class WorldScene extends Phaser.Scene {
       const layer = (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig));
       // the figure throws overhand (a small stone) or pushes with both hands (a large one); the stone leaves the hand at the clip's release
       const size = thrown.kind === ARMS_STONE_KIND ? 'large' : 'small';
+      const struck = r.events.some((e) => e.e === 'take_prey') ? strike?.stands : undefined;
       const verb = size === 'large' ? 'push' : 'throw';
       const played = this.playClip(verb, undefined);
       // the stone is in the hand from the first frame of the clip, and follows the drawn hand to the release (the clip's `hand` points)
@@ -4697,6 +4709,10 @@ export class WorldScene extends Phaser.Scene {
           sound.sfx('step');
           if (sank) this.splashAt(tile);
           else if (RICH.motion) this.dustAt(tile[0], tile[1]);
+          // the crack of a stone coming down is heard by the animals near it (a hare goes to ground); a hit and a miss each have a moment
+          this.wild?.noise(tile, s.tick);
+          if (struck) this.playMoment({ id: 'game-hit', at: { on: 'tile', tile: struck } });
+          else if (standsAt) this.playMoment({ id: 'game-miss', at: { on: 'tile', tile: standsAt } });
         });
       };
       // by the scene's own clock, the one the clip is laid by: a timer's delta runs behind it when frames come slowly
@@ -4803,8 +4819,7 @@ export class WorldScene extends Phaser.Scene {
     // on the jetty a passage leaves from, once the opening has reached it, the boat is offered (SEA_CROSSING.md); its hours and fare are the kernel's to refuse
     const passage = passageAt(this.b, s.state, s.pos);
     if (passage) return { label: `Board: ${this.b.passages[passage]!.title}`, run: () => void app.ui.board(passage), tile: [s.pos[0], s.pos[1]], top: T };
-    const prey = huntingNearby(this.b, s.state, s.tick, s.pos, this.wild?.shown());
-    if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: T / 2 };
+    // no button takes a hare here (#923): a held B throws a stone at it, and where the stone comes down decides
     // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
     // It comes after every other target, so a fire never hides a thing the player already faces.
     return this.kindleTarget(s);
