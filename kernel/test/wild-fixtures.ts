@@ -75,13 +75,14 @@ export const NOISE = { still: 2, sneak: 3, walk: 5, run: 8 };
 export const NOON = 12;
 
 /**
- * A map from rows: `#` a wall (not open, blocks sight), `g` tall grass (open, cover), anything else
- * open. Off the rows is a wall. `find` gives the tiles of a letter, in order of y, then x.
+ * A map from rows: `#` a wall (not open, blocks sight), `~` water (not open, clear sight),
+ * `g` tall grass (open, cover), anything else open. Off the rows is a wall.
+ * `find` gives the tiles of a letter, in order of y, then x.
  */
 export function grid(rows: readonly string[]) {
   const at = (x: number, y: number) => (y >= 0 && y < rows.length && x >= 0 && x < rows[y]!.length ? rows[y]![x]! : '#');
   return {
-    open: (x: number, y: number) => at(x, y) !== '#',
+    open: (x: number, y: number) => !'#~'.includes(at(x, y)),
     blocks: (x: number, y: number) => at(x, y) === '#',
     cover: (x: number, y: number) => at(x, y) === 'g',
     find(ch: string): Tile[] {
