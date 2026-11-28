@@ -20,6 +20,9 @@
   },
   "base_frame": 0,
   "retired": [
+    "chars/human_down",
+    "chars/human_left",
+    "chars/human_up",
     "chars/elf_down",
     "chars/elf_left",
     "chars/elf_up",

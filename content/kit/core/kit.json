@@ -1581,7 +1581,7 @@
         "file": "chars/human_down.png",
         "w": 128,
         "h": 128,
-        "frames": 10,
+        "frames": 11,
         "density": 4,
         "ramps": [
           "wood",
@@ -1589,12 +1589,11 @@
           "skin"
         ],
         "stride": {
-          "travel_mpx": 16031,
+          "travel_mpx": 14428,
           "anchor": [
             64,
             90
-          ],
-          "bob": false
+          ]
         },
         "scale": 1.09
       },
@@ -1602,7 +1601,7 @@
         "file": "chars/human_up.png",
         "w": 128,
         "h": 128,
-        "frames": 9,
+        "frames": 11,
         "density": 4,
         "ramps": [
           "wood",
@@ -1610,12 +1609,11 @@
           "skin"
         ],
         "stride": {
-          "travel_mpx": 18162,
+          "travel_mpx": 14530,
           "anchor": [
             64,
             90
-          ],
-          "bob": false
+          ]
         },
         "scale": 1.25
       },
@@ -1623,7 +1621,7 @@
         "file": "chars/human_left.png",
         "w": 128,
         "h": 128,
-        "frames": 10,
+        "frames": 11,
         "density": 4,
         "ramps": [
           "wood",
@@ -1631,12 +1629,11 @@
           "skin"
         ],
         "stride": {
-          "travel_mpx": 21001,
+          "travel_mpx": 18901,
           "anchor": [
             64,
             90
-          ],
-          "bob": false
+          ]
         },
         "scale": 1.03
       },
@@ -5784,7 +5781,7 @@
           ],
           "fit_permille": 740
         },
-        "scale": 1.08
+        "scale": 1.06
       },
       "chars/human_run_left": {
         "file": "chars/human_run_left.png",
@@ -5808,7 +5805,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 1.09
+        "scale": 1.03
       },
       "chars/human_run_front": {
         "file": "chars/human_run_front.png",
@@ -5832,7 +5829,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 1.05
+        "scale": 1.01
       },
       "chars/human_run_back": {
         "file": "chars/human_run_back.png",
@@ -5880,7 +5877,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 1.06
+        "scale": 1.05
       },
       "chars/human_hit_heavy_front": {
         "file": "chars/human_hit_heavy_front.png",
@@ -5904,7 +5901,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 1.07
+        "scale": 1
       },
       "chars/human_hit_heavy_back": {
         "file": "chars/human_hit_heavy_back.png",

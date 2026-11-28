@@ -3368,7 +3368,7 @@
       "kind": "figure clip",
       "where": "-",
       "state": "drawn clip",
-      "frames": 5,
+      "frames": 11,
       "note": "core/base-kit:chars/human_up",
       "source": "content/core/races/human.json",
       "sheet": "content/kit/core/chars/human_up.png"
@@ -3378,7 +3378,7 @@
       "kind": "figure clip",
       "where": "-",
       "state": "drawn clip",
-      "frames": 5,
+      "frames": 11,
       "note": "core/base-kit:chars/human_down",
       "source": "content/core/races/human.json",
       "sheet": "content/kit/core/chars/human_down.png"
@@ -3388,7 +3388,7 @@
       "kind": "figure clip",
       "where": "-",
       "state": "drawn clip",
-      "frames": 5,
+      "frames": 11,
       "note": "core/base-kit:chars/human_left",
       "source": "content/core/races/human.json",
       "sheet": "content/kit/core/chars/human_left.png"
