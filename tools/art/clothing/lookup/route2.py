@@ -56,6 +56,10 @@ def load_frames(clip):
 class Stand:
     """The stand frame of a view with what every family and bar needs: keypoints, part labels, distances, face box, fitted pieces."""
 
+    def share(self, name):
+        """The piece's area as a share of the stand frame's body: the L4 reference."""
+        return float((self.pieces[name][..., 3] > 0).sum()) / max(1, int(self.body.sum()))
+
     def __init__(self, view):
         self.view = view
         self.frame = common.load_clip('human_hit_' + view)[0]
@@ -164,7 +168,7 @@ def run_clip(family, clip, stands, pieces=PIECES):
             r = bars2.frame_bars(f, layer, lsrc, maps[i], st.frame, st.lab, st.dist, kps[i], st.kp, st.face, n, st.an[n], pal, dropped)
             rows.append(r)
             layers.append(layer)
-        v = bars2.verdicts(rows, st.an[n]['misfit'])
+        v = bars2.verdicts(rows, st.an[n]['misfit'], st.share(n))
         for r, x in zip(rows, v):
             r.update(x)
         rep['pieces'][n] = rows
@@ -178,10 +182,12 @@ def summary(rep):
     out = dict(clip=rep['clip'], family=rep['family'], frames=rep['frames'], map_seconds=rep['map_seconds'],
                exact_mean=round(float(np.mean(rep['exact'])), 3))
     for n, rows in rep['pieces'].items():
-        out[n] = {b: round(float(np.mean([r[b] for r in rows])), 3) for b in ('L2a', 'L2b', 'L3', 'L4', 'all')}
+        out[n] = {b: round(float(np.mean([r[b] for r in rows])), 3) for b in ('L2a', 'L2b', 'L3', 'L4', 'L4_old', 'all', 'all_old')}
         out[n]['fail_frames'] = [i for i, r in enumerate(rows) if not r['all']]
     allp = [all(rep['pieces'][n][i]['all'] for n in rep['pieces']) for i in range(rep['frames'])]
     out['outfit_all'] = round(float(np.mean(allp)), 3)
+    allo = [all(rep['pieces'][n][i]['all_old'] for n in rep['pieces']) for i in range(rep['frames'])]
+    out['outfit_all_old'] = round(float(np.mean(allo)), 3)
     return out
 
 

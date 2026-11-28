@@ -102,6 +102,39 @@ class Carry(unittest.TestCase):
         self.assertFalse((layer[100:112, 49:51, 3] > 0).any())
 
 
+class L4Rule(unittest.TestCase):
+    """The manager's ruling of 28.11: a piece's area is read as a share of the frame's own body area, against the stand frame's share."""
+
+    @staticmethod
+    def row(px, body):
+        return dict(px=px, body_px=body, stray=0, part_agree=1.0, misfit=0, face_px=0, on_palette=1.0)
+
+    def test_a_clip_that_loses_area_everywhere_is_not_failed_by_its_own_median(self):
+        # the stand frame: piece 300 of body 3000 = 0.10. A squat: piece and body both shrink to 60%, the share holds.
+        rows = [self.row(300, 3000)] + [self.row(180, 1800)] * 9
+        v = bars2.verdicts(rows, 0, 0.10)
+        self.assertTrue(all(x['L4'] for x in v))
+        # most of the clip loses area, so the clip median is the squat's: the old form fails the standing frames, the new one none
+        rows = [self.row(300, 3000)] * 2 + [self.row(180, 1800)] * 8
+        v = bars2.verdicts(rows, 0, 0.10)
+        self.assertTrue(all(x['L4'] for x in v))
+        self.assertFalse(v[0]['L4_old'])
+
+    def test_a_piece_that_shrinks_against_its_body_fails(self):
+        rows = [self.row(300, 3000), self.row(180, 3000)]
+        v = bars2.verdicts(rows, 0, 0.10)
+        self.assertTrue(v[0]['L4'])
+        self.assertFalse(v[1]['L4'])
+        self.assertAlmostEqual(v[1]['area_ratio'], 0.6, places=3)
+        # a whole clip of shrunk pieces passes the old median form and fails the new one (the round's f2b cap)
+        v = bars2.verdicts([self.row(180, 3000)] * 5, 0, 0.10)
+        self.assertTrue(all(x['L4_old'] and not x['L4'] and not x['all'] and x['all_old'] for x in v))
+
+    def test_without_a_stand_share_it_falls_back_to_the_median(self):
+        v = bars2.verdicts([self.row(100, 1000)] * 3, 0)
+        self.assertTrue(all(x['L4'] == x['L4_old'] for x in v))
+
+
 class Agree(unittest.TestCase):
     def test_auc_and_line(self):
         import agree

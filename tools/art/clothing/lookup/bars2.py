@@ -13,7 +13,9 @@ The bars, per frame (each is True when the frame passes):
   L2b  overhang versus misfit: carried pixels outside the frame body beyond THICK_MAX + 1, or next to a part the piece is not worn
        on, are misfit; at most the stand frame's own misfit + MISFIT_SLACK.
   L3   the face rule: carried pixels in the face box (the stand face box carried to the frame by the keypoints) at most S3_MAX.
-  L4   the piece's area against the clip's median within [L4_LO, L4_HI].
+  L4   (manager's ruling 28.11) the piece's area as a share of the frame's own visible body area, against the same share on the B stand
+       frame, within [L4_LO, L4_HI]. The clip-median form (L4_old, kept in the rows to show beside it) failed correct frames when the
+       whole clip lost area (feet lifted, squats).
   L5   colours on the palette (all of them), L6 holes inside the piece (counted, never filled; reported).
   L7   per-frame confidence: the map rebuilds the BARE frame from the bare stand frame; `exact` is the share of body pixels given their
        own colour. It is a prediction, not a bar: the report says how well it foretells the frames a person sees as wrong.
@@ -174,12 +176,13 @@ def frame_bars(frame, layer, lsrc, src, stand, stand_lab, stand_dist, frame_kp, 
     r = recon(stand, frame, src)
     under = pm & fo
     foot = float(r['exact_mask'][under].mean()) if under.any() else 1.0
-    return dict(px=n, stray=stray, dropped=dropped, part_agree=round(part_agree, 3), misfit=misfit, face_px=face_n, on_palette=on_pal,
+    return dict(px=n, body_px=int(fo.sum()), stray=stray, dropped=dropped, part_agree=round(part_agree, 3), misfit=misfit, face_px=face_n, on_palette=on_pal,
                 holes_in_piece=holes_in, holes_body=holes_all, exact=round(r['exact'], 4), exact_under=round(foot, 4))
 
 
-def verdicts(rows, stand_misfit):
-    """Per-frame pass of L2a, L2b, L3, L4 (L4 against the clip's median area), and the frame's all-four pass."""
+def verdicts(rows, stand_misfit, stand_share=None):
+    """Per-frame pass of L2a, L2b, L3, L4 and the frame's all-four pass. L4 is the piece's share of the frame's body area against
+    `stand_share` (the same share on the stand frame); L4_old (the clip's median area) is kept beside it, not used for `all`."""
     px = [r['px'] for r in rows]
     med = float(np.median([p for p in px if p > 0])) if any(px) else 0.0
     out = []
@@ -187,8 +190,12 @@ def verdicts(rows, stand_misfit):
         l2a = r['stray'] <= max(STRAY_MAX, 0.02 * r['px']) and r['part_agree'] >= PART_AGREE
         l2b = r['misfit'] <= stand_misfit + MISFIT_SLACK
         l3 = r['face_px'] <= S3_MAX
-        ratio = r['px'] / med if med else 0.0
-        l4 = L4_LO <= ratio <= L4_HI
-        out.append(dict(L2a=bool(l2a), L2b=bool(l2b), L3=bool(l3), L4=bool(l4), area_ratio=round(ratio, 3),
-                        L5=r['on_palette'] >= 0.999, all=bool(l2a and l2b and l3 and l4)))
+        ratio_old = r['px'] / med if med else 0.0
+        l4_old = L4_LO <= ratio_old <= L4_HI
+        share = r['px'] / max(1, r['body_px'])
+        ratio = share / stand_share if stand_share else ratio_old
+        l4 = L4_LO <= ratio <= L4_HI if stand_share else l4_old
+        out.append(dict(L2a=bool(l2a), L2b=bool(l2b), L3=bool(l3), L4=bool(l4), L4_old=bool(l4_old), area_ratio=round(ratio, 3),
+                        area_ratio_old=round(ratio_old, 3), L5=r['on_palette'] >= 0.999, all=bool(l2a and l2b and l3 and l4),
+                        all_old=bool(l2a and l2b and l3 and l4_old)))
     return out
