@@ -9,7 +9,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type DenTile, anchorId, boltCandidates, boltHole, draw, ringOrder, staticSolid, tagAt, widenSeed } from '@game/kernel';
 
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 let b: Bundle;
 const HARE = 'core/hare';
@@ -17,7 +17,7 @@ const HARE = 'core/hare';
 const MOUTH: DenTile = [3, 9];
 
 beforeAll(() => {
-  b = loadBundle();
+  b = loadPixelBundle();
 });
 
 /** A copy of the bundle with some ground tiles and levels set; `set` gets the tile and returns its new ground and level. */

@@ -3,12 +3,12 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import type { Bundle } from '@game/kernel';
 import { STALL_SLOT, canPlaceStall, chunkKey, directionOf, mapPlaces, mapRegions } from '../src/places';
 import { mapSvg } from '../src/ui/map';
-import { loadBundle } from '../../tools/test/helpers/world';
+import { loadPixelBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
 
 beforeAll(() => {
-  bundle = loadBundle();
+  bundle = loadPixelBundle();
 });
 
 describe('the map reveals only what was walked', () => {

@@ -10,6 +10,8 @@
   "scripts": {
     "check": "tsx tools/src/cli.ts check",
     "sheet": "tsx tools/src/sheet.ts",
+    "painted:fetch": "tsx tools/src/painted-store-cli.ts fetch",
+    "painted:manifest": "tsx tools/src/painted-store-cli.ts manifest",
     "values": "tsx tools/src/cli.ts values",
     "world:lock": "tsx tools/src/cli.ts lock",
     "bundle": "tsx tools/src/cli.ts bundle",

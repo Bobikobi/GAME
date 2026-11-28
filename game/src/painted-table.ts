@@ -1,6 +1,6 @@
 /**
  * The light table, pure (no Phaser, no browser): the rows of a world's day (painted-light.json), the rows a land takes from its world, and the light at a minute between two rows.
- * Moved out of painted.ts (round 5, 21.11) so a test can run the rules of the figure's presence on a generated map without a renderer. The row types stay in painted.ts (tools/art/scene/format.py reads them from its text) and come in here as types only.
+ * Moved out of painted.ts (round 5, 21.11) so a test can run the rules of the figure's presence on a generated map without a renderer. The row types stay in painted.ts (the private exporter reads them from its text) and come in here as types only.
  */
 import lightTables from './painted-light.json';
 import { coverDeep } from './painted-cover';

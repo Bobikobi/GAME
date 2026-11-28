@@ -16,7 +16,7 @@ import { peekOnStep, route } from '../src/peek';
 import { firstStep } from '../src/predator';
 import type { GameSession } from '../src/session-surface';
 import { ART_PX, BODY_BOX, type Open, Walker, canEnter } from '../src/walking';
-import { loadBundle, mulberry32 } from '../../tools/test/helpers/world';
+import { loadPixelBundle, mulberry32 } from '../../tools/test/helpers/world';
 
 /** About sixty frames a second, as the scene runs. */
 const FRAME = 16;
@@ -38,7 +38,7 @@ interface Rig {
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 /** A started forager of the real content; the small worlds borrow it, as the kernel's height test does. */

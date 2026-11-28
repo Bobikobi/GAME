@@ -66,6 +66,8 @@ export interface Inventory {
   sixteen_px_left: { total: number; reached: number; not_reached: string[] };
   /** items nothing gives, makes or sells: not met in the valley, so not rows */
   unsourced_items: string[];
+  /** set when the inventory was taken under a painted base (`Reads.paintedBase`): the ground's tiles, edges and crowns are not rows */
+  painted_base?: true;
 }
 
 export interface Reads {
@@ -75,6 +77,12 @@ export interface Reads {
   sfxSource?: string;
   /** the repo's root, where the kits and sources are named from */
   root?: string;
+  /**
+   * The map is laid under a painted land in base mode (`?painted=<id>&base=1`, game/src/painted.ts `coversGround`): the painting covers
+   * every tile, so the world paints no tile ground, no ground edges and no forest crowns (game/src/scenes/world.ts), and none of them is
+   * met. Everything placed on the map (props, nodes, stones, creatures, the mist over empty slots) is drawn as before.
+   */
+  paintedBase?: boolean;
 }
 
 type Kits = Assembled['kits'];
@@ -227,17 +235,9 @@ function viewSheets(ref: string): [string, string][] {
   return m ? [['front', ref], ['back', `${m[1]}_up`], ['left', `${m[1]}_left`]] : [['front', ref]];
 }
 
-export function buildInventory(a: Assembled, reads: Reads = {}): Inventory {
-  const b = a.bundle;
-  if (!b) throw new Error('The content does not assemble; run "pnpm check" first.');
-  const kits = a.kits;
-  const art = (ref: string | undefined) => artOf(kits, ref, reads);
-  const mapFile = a.origin[b.map.id] ?? 'content/core/map.json';
-  const originOf = (id: string): string => a.origin[id] ?? mapFile;
-  const rows: Row[] = [];
+/** The ground's rows: one per sprite the legend lays, the edges the world lays over it, and the forest's crowns. */
+function groundRows(b: Bundle, rows: Row[], art: (ref: string | undefined) => ReturnType<typeof artOf>, mapFile: string): void {
   const m = b.map;
-
-  // --- the ground: one row per sprite the legend lays, and the edges and crowns the world lays over it
   const legendCount = new Map<string, { n: number; tags: Set<string> }>();
   for (const line of m.ground) {
     for (const ch of line) {
@@ -264,6 +264,20 @@ export function buildInventory(a: Assembled, reads: Reads = {}): Inventory {
       rows.push(rowOf(`${kitPrefix(forest.sprite)}props/canopy_${i + 1}`, 'canopy', `${n} crowns`, art(`${kitPrefix(forest.sprite)}props/canopy_${i + 1}`), mapFile, 'one over each block of four forest tiles'));
     }
   }
+}
+
+export function buildInventory(a: Assembled, reads: Reads = {}): Inventory {
+  const b = a.bundle;
+  if (!b) throw new Error('The content does not assemble; run "pnpm check" first.');
+  const kits = a.kits;
+  const art = (ref: string | undefined) => artOf(kits, ref, reads);
+  const mapFile = a.origin[b.map.id] ?? 'content/core/map.json';
+  const originOf = (id: string): string => a.origin[id] ?? mapFile;
+  const rows: Row[] = [];
+  const m = b.map;
+
+  // --- the ground: one row per sprite the legend lays, and the edges and crowns the world lays over it; none under a painted base
+  if (!reads.paintedBase) groundRows(b, rows, art, mapFile);
 
   // --- the mist over the slots nothing fills (world.ts buildFog): one baked sprite, drawn over each
   const fogSlots = emptySlots(b);
@@ -418,7 +432,7 @@ export function buildInventory(a: Assembled, reads: Reads = {}): Inventory {
 
   // a stable order: kind, then id
   rows.sort((p, q) => (p.kind === q.kind ? (p.id < q.id ? -1 : p.id > q.id ? 1 : 0) : p.kind < q.kind ? -1 : 1));
-  return { rows, ...count(rows), sixteen_px_left: sixteenCheck(rows), unsourced_items: unsourced.sort() };
+  return { rows, ...count(rows), sixteen_px_left: sixteenCheck(rows), unsourced_items: unsourced.sort(), ...(reads.paintedBase ? { painted_base: true as const } : {}) };
 }
 
 /** The summary line: counts per state over the counted rows. */
@@ -448,6 +462,10 @@ export function renderMarkdown(inv: Inventory): string {
   out.push('');
   out.push(`**${summaryLine(inv)}**`);
   out.push('');
+  if (inv.painted_base) {
+    out.push('Taken under a painted base: the painting covers every tile, so the ground\'s tiles, its edges and the forest\'s crowns are not drawn and have no rows.');
+    out.push('');
+  }
   out.push('| State | Meaning |');
   out.push('|---|---|');
   out.push('| `16px` | drawn at 16 px a tile; the core kit\'s own waiting list is `SIXTEEN_PX_LEFT` in `tools/src/kit/rich.ts` |');
@@ -487,5 +505,5 @@ export function renderMarkdown(inv: Inventory): string {
 }
 
 export function renderJson(inv: Inventory): string {
-  return `${JSON.stringify({ generated_by: 'pnpm valley:inventory', summary: summaryLine(inv), counts: inv.counts, by_kind: inv.byKind, sixteen_px_left: inv.sixteen_px_left, unsourced_items: inv.unsourced_items, rows: inv.rows }, null, 2)}\n`;
+  return `${JSON.stringify({ generated_by: 'pnpm valley:inventory', summary: summaryLine(inv), counts: inv.counts, by_kind: inv.byKind, sixteen_px_left: inv.sixteen_px_left, unsourced_items: inv.unsourced_items, ...(inv.painted_base ? { painted_base: true } : {}), rows: inv.rows }, null, 2)}\n`;
 }

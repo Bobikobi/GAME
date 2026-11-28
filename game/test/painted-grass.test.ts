@@ -5,7 +5,7 @@ import { GUST_WAVES, gust } from '../src/look.js';
 
 /**
  * Private #44, step A (the owner's word of 9.11: "all grass, always like this"): the meadow's pass moves the painted plate's grass in a filter, so the painting is kept. The picture bars are
- * measured on frames (tools/art/scene/grassbars.py); these hold what code can: the pass reads the same gust as the trees and the ground cover, and it can only ever take a colour from a pixel its
+ * measured on frames by the private meadow bars; these hold what code can: the pass reads the same gust as the trees and the ground cover, and it can only ever take a colour from a pixel its
  * mask names.
  */
 describe('the meadow pass', () => {

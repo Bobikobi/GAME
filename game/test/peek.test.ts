@@ -2,9 +2,9 @@ import { describe, expect, test } from 'vitest';
 
 import { type Bundle, findSlot, makeWalkable, newState } from '@game/kernel';
 import { MOMENT_MS, PEEK_MS, fitFrame, peekOnStep } from '../src/peek';
-import { loadBundle } from '../../tools/test/helpers/world';
+import { loadPixelBundle } from '../../tools/test/helpers/world';
 
-const base = loadBundle();
+const base = loadPixelBundle();
 const QUEST = 'core/the-tangle';
 const walkFor = (b: Bundle) => {
   const w = makeWalkable(b);

@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 import { DIAGONAL_PAIR_MILLI, STEP_MILLI, makeWalkable, newState, step, walkCharge, type Bundle, type State, type Tile } from '@game/kernel';
 
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 let bundle: Bundle;
 
 beforeAll(() => {
-  bundle = loadBundle();
+  bundle = loadPixelBundle();
 });
 
 function started(): State {

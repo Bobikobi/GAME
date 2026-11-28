@@ -1,6 +1,6 @@
 /**
  * The lean of a painted land's pieces, pure (no Phaser): which pieces lean, how far, and the sheared copies a leaning piece is drawn from. The mount (painted.ts) bakes them
- * at build from the whole sheet; a streamed land's exporter (tools/src/art/painted/stream-bake.ts) bakes the same frames into each unit's sheet with these same functions.
+ * at build from the whole sheet; a streamed land's exporter bakes the same frames into each unit's sheet with these same functions.
  */
 
 export const LEANS = new Set(['fir', 'tree', 'oak', 'pine', 'bush', 'plant', 'flower']);
@@ -9,7 +9,7 @@ export const LEANS = new Set(['fir', 'tree', 'oak', 'pine', 'bush', 'plant', 'fl
  * from the figure; there is no setting per land and no list of places. (Grass painted into the ground plate is not an object and stays still.)
  */
 export const GROUND_COVER = new Set(['grass', 'tuft', 'fern', 'plant', 'flower']);
-/** the kinds the split writes for one tree each (private #44 H, tools/art/scene/treesplit.py): most stand 80-110 art px, under the 120 of the old wood-mass pieces */
+/** the kinds the split writes for one tree each (private #44 H): most stand 80-110 art px, under the 120 of the old wood-mass pieces */
 export const ONE_TREE = new Set(['oak', 'pine']);
 /** stone and ground the land stands on: they stand in the morning fog, however tall (a cliff or a terrace was a 'rock' piece before the split) */
 export const STONE = new Set(['rock', 'cliff', 'terrace']);

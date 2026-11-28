@@ -1,10 +1,10 @@
 /**
- * The engine stations of the world line's end-to-end run (gate part `world-e2e`, tracker #22; the Python stations are tools/art/world_e2e/). Run by tools/art/world_e2e/engine.py, not by `pnpm e2e`
+ * The engine stations of the world line's end-to-end run (gate part `world-e2e`, tracker #22; its other stations live with the private land tools). Run by that gate part, not by `pnpm e2e`
  * (it is in no group of run.ts: it needs a scene folder the gate has just made).
  *
  *   tsx game/e2e/world.ts SCENE_DIR DIST_DIR OUT_DIR SEAM_X0,SEAM_X1
  *
- * The scene folder is the exporter's (tools/art/scene/export.py) of the joined strip. One headless Chrome, one real load of the game's own mount (`mountPainted`, `?debug&painted=<id>`):
+ * The scene folder is the private exporter's, of the joined strip. One headless Chrome, one real load of the game's own mount (`mountPainted`, `?debug&painted=<id>`):
  *
  *   5  the engine loads the folder: the mount is up, every file it asks for was served (none a 404), the scene's size and pieces are the folder's, the page threw nothing
  *   6  a figure walks across the seam: from the walkable start by the mount's own route to a cell east of the seam, a tile at a time on the held arrow key (the trunk's FreeWalk), every tile of

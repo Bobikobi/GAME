@@ -140,6 +140,17 @@ describe('buildInventory on a synthetic valley', () => {
     expect(byId(inv.rows, 'core/base-kit:tiles/bank_e')).toMatchObject({ kind: 'edge', where: '2 tile sides', state: 'rich' });
   });
 
+  it('under a painted base the ground has no rows: no tiles, no edges, no crowns; what is placed on it stays', () => {
+    const base = buildInventory(fixture(), { ...reads, paintedBase: true });
+    expect(base.rows.filter((r) => r.kind === 'tile' || r.kind === 'edge' || r.kind === 'canopy')).toEqual([]);
+    expect(base.rows.map((r) => r.id)).toEqual(inv.rows.filter((r) => r.kind !== 'tile' && r.kind !== 'edge' && r.kind !== 'canopy').map((r) => r.id));
+    expect(base.painted_base).toBe(true);
+    expect(renderMarkdown(base)).toContain('Taken under a painted base');
+    expect(JSON.parse(renderJson(base)).painted_base).toBe(true);
+    expect(inv.painted_base).toBeUndefined();
+    expect(JSON.parse(renderJson(inv))).not.toHaveProperty('painted_base');
+  });
+
   it('resolves a creature by its still, and says missing when it has none', () => {
     expect(byId(inv.rows, 'core/roe@0,1')).toMatchObject({ kind: 'creature', state: 'rich' });
     expect(byId(inv.rows, 'core/hare@1,1')).toMatchObject({ kind: 'creature', state: 'missing' });
