@@ -20,6 +20,7 @@ import {
   nightEnds,
   nightFalls,
   offeredTo,
+  questShut,
   powerCap,
   questSatisfied,
   recipeTier,
@@ -602,7 +603,7 @@ export function toolOpens(b: Bundle, s: PublicState, kind: string): string[] {
     .filter((q) => {
       const state = p.quests[q.id];
       if (state === 'done' || !offeredTo(q, s)) return false;
-      if (state !== 'active' && !(q.requires ?? []).every((r) => p.quests[r] === 'done')) return false;
+      if (state !== 'active' && (questShut(q) || !(q.requires ?? []).every((r) => p.quests[r] === 'done'))) return false;
       return q.steps.some(
         (st) =>
           (st.kind === 'find' && needs.has(st.item)) ||
