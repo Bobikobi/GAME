@@ -50,17 +50,24 @@ export interface Found {
 
 const lookup = (verb: string, race: string, view: string): string => `${verb}|${race}|${view}`;
 
-const indexes = new WeakMap<object, ReadonlyMap<string, string>>();
+const indexes = new WeakMap<object, ReadonlyMap<string, readonly string[]>>();
 
-/** The kit's clips by verb + race + view, built once for a sprites table. */
-function indexOf(sprites: ClipSprites): ReadonlyMap<string, string> {
+/** The kit's clips by verb + race + view, built once for a sprites table: each lookup holds its takes' sheet keys, the first take first (then take 2, 3 and so on). */
+function indexOf(sprites: ClipSprites): ReadonlyMap<string, readonly string[]> {
   let index = indexes.get(sprites);
   if (!index) {
-    const built = new Map<string, string>();
+    // one key per take: two sheets of the same take (a kit listing a clip twice, a test adding its own) keep the later one, as the lookup always did
+    const found = new Map<string, Map<number, string>>();
     for (const [key, info] of Object.entries(sprites)) {
       const c = info.clip;
-      if (c) built.set(lookup(c.verb, c.race, c.view), key);
+      if (!c) continue;
+      const at = lookup(c.verb, c.race, c.view);
+      const takes = found.get(at) ?? new Map<number, string>();
+      takes.set(c.take ?? 1, key);
+      found.set(at, takes);
     }
+    const built = new Map<string, readonly string[]>();
+    for (const [at, takes] of found) built.set(at, [...takes].sort((a, b) => a[0] - b[0]).map(([, key]) => key));
     indexes.set(sprites, (index = built));
   }
   return index;
@@ -80,12 +87,19 @@ export function raceClips(sprites: ClipSprites, race: string): [string, ClipSpri
   return Object.entries(sprites).filter(([, info]) => info.clip?.race === race);
 }
 
-/** The clip for a verb, a race and a facing, or nothing: then the figure keeps today's walk sheet or code-drawn motion. */
-export function clipFor(sprites: ClipSprites, verb: ClipVerb, race: string, dir: Dir): Found | undefined {
+/**
+ * The clip for a verb, a race and a facing, or nothing: then the figure keeps today's walk sheet or code-drawn motion. A clip may have
+ * several takes (near-identical drawings kept for variety, `take` on the kit's clip); `roll`, a number from 0 up to 1 (not 1), picks
+ * among them, so a caller that plays a clip once asks with `Math.random()` and a caller that draws a clip's frames every frame keeps the
+ * default 0, the first take, and never flickers between takes.
+ */
+export function clipFor(sprites: ClipSprites, verb: ClipVerb, race: string, dir: Dir, roll = 0): Found | undefined {
   const { view, flip } = viewOf(dir);
-  const key = indexOf(sprites).get(lookup(verb, race, view));
-  const info = key === undefined ? undefined : sprites[key];
-  if (key === undefined || !info?.clip) return undefined;
+  const keys = indexOf(sprites).get(lookup(verb, race, view));
+  if (!keys || keys.length === 0) return undefined;
+  const key = keys[Math.min(keys.length - 1, Math.max(0, Math.floor(roll * keys.length)))]!;
+  const info = sprites[key];
+  if (!info?.clip) return undefined;
   return { key, flip, frames: info.frames, frame_ms: info.clip.frame_ms, anchor: info.clip.anchor, fit: (info.clip.fit_permille ?? 1000) / 1000, ...(info.clip.hand ? { hand: info.clip.hand } : {}) };
 }
 
@@ -184,6 +198,11 @@ export class ClipPlayer {
   /** Whether a clip is under way (it may be over by now: `frameAt` says). */
   get active(): boolean {
     return this.run !== null;
+  }
+
+  /** The clip under way (the take that was picked), or nothing: what a caller that needs the clip's own numbers, the hand's points, reads, so it never asks the kit again and gets another take. */
+  get current(): Found | undefined {
+    return this.run?.found;
   }
 
   /** Begins a clip at `now`; one already playing is replaced, so a new blow restarts the swing. */
