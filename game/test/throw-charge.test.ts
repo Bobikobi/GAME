@@ -4,13 +4,13 @@
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type State, type Tile, FULL_POWER, newState, step, throwFlight } from '@game/kernel';
-import { aimLine, chargeAt, trembleAt } from '../src/throw-charge';
-import { loadBundle } from '../../tools/test/helpers/world';
+import { type Bundle, type State, type Tile, FULL_POWER, newState, step, throwFlight, walkableFor } from '@game/kernel';
+import { aimLine, assistAim, chargeAt, preyOf, trembleAt } from '../src/throw-charge';
+import { loadPixelBundle } from '../../tools/test/helpers/world';
 
 let base: Bundle;
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 const stones = () => base.params.stones;
 
@@ -77,5 +77,43 @@ describe('the tremble', () => {
     // it does move, at least somewhere in the cycle
     const moves = new Set(Array.from({ length: 120 }, (_, i) => trembleAt(i * 10, true)));
     expect(moves.size).toBeGreaterThan(1);
+  });
+});
+
+describe('the throw at small game (#923)', () => {
+  /** A hare of the map and a tile `d` tiles west of it on open ground, the figure standing there with a stone in the bag. */
+  function hareAt(d: number) {
+    const walk = walkableFor(base);
+    for (const [spot, sp] of base.map.creatures!.spots.entries()) {
+      if (sp.kind !== 'core/hare') continue;
+      const from: Tile = [sp.x - d, sp.y];
+      const state = standing(from);
+      if (![...Array(d + 1).keys()].every((i) => walk(sp.x - i, sp.y, state.player))) continue;
+      state.player.bag['core/stone'] = 2;
+      return { spot, state, from, tile: [sp.x, sp.y] as Tile };
+    }
+    throw new Error('no hare with open ground to its west');
+  }
+  const west: [number, number] = [1, 0];
+
+  test('B held with a hare in the half the figure faces points the line at it; one behind or a large stone does not', () => {
+    const { spot, state, tile } = hareAt(3);
+    const animals = [{ spot, tile }];
+    expect(assistAim(base, state, 0, 'core/stone', animals, west)).toEqual({ aim: tile, spot });
+    expect(assistAim(base, state, 0, 'core/stone', animals, [-1, 0])).toBeUndefined();
+    expect(assistAim(base, state, 0, 'core/large-stone', animals, west)).toBeUndefined();
+    expect(assistAim(base, state, 0, 'core/stone', [], west)).toBeUndefined();
+  });
+
+  test('the strike is named only where the flight at that power comes down within a tile of the hare', () => {
+    const tapPower = stones().throw_min_power;
+    // the bands the kernel's flight gives (hand-skill.test.ts): a tap strikes a hare 1 to 3 tiles off, a full charge 2 to 6
+    const near = hareAt(3);
+    expect(preyOf(base, near.state, 0, 'core/stone', near.tile, tapPower, [{ spot: near.spot, tile: near.tile }])).toEqual({ prey: near.spot, stands: near.tile });
+    const far = hareAt(5);
+    const animals = [{ spot: far.spot, tile: far.tile }];
+    expect(preyOf(base, far.state, 0, 'core/stone', far.tile, tapPower, animals)).toBeUndefined();
+    expect(preyOf(base, far.state, 0, 'core/stone', far.tile, FULL_POWER, animals)).toEqual({ prey: far.spot, stands: far.tile });
+    expect(preyOf(base, far.state, 0, 'core/large-stone', far.tile, FULL_POWER, animals)).toBeUndefined();
   });
 });

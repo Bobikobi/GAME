@@ -45,6 +45,7 @@ import {
   spotOpen,
   frameRect,
   gaitStepMs,
+  type Gait,
   sheetGrid,
   treasureKind,
   windowOpen,
@@ -56,8 +57,7 @@ import {
   settled,
 } from '@game/kernel';
 import { app } from '../app';
-import { aimLine, chargeAt, trembleAt } from '../throw-charge';
-import { RING_TOTAL_MS, ringPixels, ringsAt } from '../ring';
+import { aimLine, assistAim, chargeAt, preyOf, trembleAt } from '../throw-charge';
 import { Piles, pileAt } from './piles';
 import { StoneLayer } from './stones';
 import { ARMS_STONE_KIND, HAND_STONE_KIND } from '../stone-art';
@@ -67,17 +67,20 @@ import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { castsShadow, sunAt, sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
+import { PaintedPool, type PoolLight } from '../painted-pool';
+import { herSuns } from '../her-shadow';
+import type { PaintedLightKind } from '../light';
 import { HOLE, LIGHT_POOL, READ, SHAFT, bankAt, cloudAt, dappleAt, frameAlpha, frameAt, nightAt, shadeAt, shaftAt, tableOf } from '../light';
 import { LightLayer, litWindow, type Light } from '../light-layer';
 import { Flame, Sway, installMotion } from '../motion';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
-import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
+import { type Clear, mistChanged, mistClears, mistDensity, mistFill, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
 import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudRows, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { EffectLayer } from '../effect-layer';
-import { landingDust, spawnsOf } from '../effects';
+import { groundBits, landingDust, momentsOf, spawnsOf, type BurstTexture, type MomentAt, type MomentId, type MomentSpawn } from '../effects';
 import { FightWordLayer, type FightWordPoint } from '../fight-word-layer';
 import { FoeBarLayer, type FoeBarPoint } from '../foe-bar-layer';
 import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
@@ -87,6 +90,7 @@ import { groundBlender, isOpenWater, type TileBlend } from '../groundblend';
 import { deepTile } from '../waterbody';
 import { mirroredAt, plantLook, TUFTS } from '../plantlook';
 import { canopyGroups, hash, remapTone, swayOn, toneField, type Tone } from '../richground';
+import type { Wind } from '../wind';
 import { MASKED, MaskSway } from '../swaymask';
 import { gpuName } from '../device';
 import {LONGEST_FRAME_MS} from '../session';
@@ -94,13 +98,15 @@ import type { GameSession } from '../session-surface';
 import type { WeatherName } from '@game/schema';
 import { LANDING, LANDINGS, MARK_LIFE, RAIN_FALL, RAIN_LIFE, RAIN_MAX, RAIN_SLANT, type Landing, bankFog, dropsAlive, landingsPerSecond, markPixels, skyLook, streakPixels, washRgb } from '../rain';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
-import { SUCCESS_LIGHT, joltOf } from '../jolt';
+import { joltOf } from '../jolt';
 import { CHIMNEY_SMOKE, DRIFT_TEXTURE, Drifters, driftOn } from '../drift';
 import { FireFlicker, FlameClock, emberEvery, seedOf, seeded, sparkGap } from '../flicker';
 import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
-import { huntingAt, huntingNearby, questTargets } from '../targets';
+import { huntingAt, questTargets } from '../targets';
+import { CarcassLayer } from './carcasses';
+import { WildLife } from './wildlife';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
@@ -109,10 +115,11 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, VERB_OF_AUTO, clipFor, clipFrame, handAt, handWorld, raceClips, verbOfOutcome, type ClipSprite, type ClipSprites, type ClipVerb, type Found } from '../clips';
+import { ClipPlayer, RUN_CYCLE_FALLBACK_PX, RUN_CYCLE_OVER_WALK, SNEAK_CYCLE_OVER_WALK, VERB_OF_AUTO, WalkWatch, clipFor, clipFrame, creatureClipFor, creatureOf, creaturePoint, creatureSheets, creatureX, handAt, handWorld, raceClips, runFrame, verbOfOutcome, viewOfHeading, type ClipSprite, type ClipSprites, type ClipVerb, type CreatureSprites, type Found, type FoundCreature } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
-import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, wornSetSheet } from '../walking';
+import { reportedGait, SpeedRamp } from '../walkfeel';
+import { ART_PX, type Facing8, StandingReports, THROW_AIM_TILES, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, jumpTarget, landStep, throwAim, throwDir, wornSetSheet } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { ChunkStream, WORLD_CHUNK, idleSlice } from '../stream';
 import { adopt, baseOf, densityOf, drawnDensity, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -130,6 +137,8 @@ const NEIGHBOURS: readonly [number, number][] = [
 /** the wheel's glide between two zoom steps, and the pause that keeps a trackpad's burst of events to one step (CR-109) */
 const WHEEL_GLIDE_MS = 160;
 /** How long after a throw begins the stone leaves the hand when the clip names no hand (the arm winds back first; a two-hand push lets go early), ms. With a hand it is the clip's last hand point (`clip.hand`). */
+/** How long the figure lies on the ground after its death clip, before the screen fades (the clip's last frame held). */
+const DIE_HOLD_MS = 700;
 const THROW_RELEASE_MS = { throw: 312, push: 156 } as const;
 const WHEEL_GAP_MS = 180;
 /** Signatures show over signs this close to the player, in tiles. */
@@ -372,7 +381,7 @@ export class WorldScene extends Phaser.Scene {
   private walkable!: ReturnType<typeof makeWalkable>;
   private session: GameSession | undefined;
   private unbind: (() => void)[] = [];
-  private ground!: Phaser.GameObjects.Image;
+  private ground: Phaser.GameObjects.Image | undefined;
   /** the ground in chunks, once any ground sprite is at density 4 (groundchunks.ts); `ground` is then unused */
   private chunks: GroundChunks | undefined;
   /** the 3 by 3 world chunks around the player (stream.ts); the valley is one chunk, so it holds that one */
@@ -393,9 +402,11 @@ export class WorldScene extends Phaser.Scene {
   private marker!: Phaser.GameObjects.Image;
   /** B2's mist: the whole map as one image of dots, redrawn only when the places it leaves clear change */
   private mist!: Phaser.GameObjects.Image;
-  private mistKey = '';
+  /** the clear places the mist's texture holds, and the raster they were drawn into (kept, so a change makes again only the box it reaches) */
+  private mistDrawn: Clear[] | undefined;
+  private mistPx: ImageData | undefined;
   /** the radius each clear place is drawn at: it moves toward what the save says, 2 tiles a second */
-  private mistShown = new Map<string, number>();
+  private mistShown = new Map<number, number>();
   private mistReady = false;
   /** the town's chimney tops in world px, and the one column of single puffs that stands for the town's smoke (NEXT 16 d) */
   private chimneys: { x: number; y: number }[] = [];
@@ -414,8 +425,6 @@ export class WorldScene extends Phaser.Scene {
   private flies!: Emitter;
   private butterflies: Emitter | undefined;
   private leaves: Emitter | undefined;
-  private bursts = new Map<string, Emitter>();
-  private puffs = new Map<string, Emitter>();
   /** the pack's effects (effects.ts): a spark on a hit, a starburst on a bite, dust on a landing, the camp fire's flame */
   private effects!: EffectLayer;
   private fightWords!: FightWordLayer;
@@ -516,10 +525,17 @@ export class WorldScene extends Phaser.Scene {
   private pinned = new Set<Pinned>();
   /** the body walking freely between tiles (walking.ts); the session keeps the tile under its feet */
   readonly body = new Walker();
+  /** the standard walk's speed ramp (walkfeel.ts) */
+  private readonly ramp = new SpeedRamp();
   /** what the body is drawn facing: one of eight, leaning on the four-way facing the faced tile is read from */
   private look: Facing8 = 'down';
   /** The kernel's step time of the walk at the gait and load of the last frame (gaitStepMs), in ms a tile. */
   private paceMs: number | undefined;
+  /** the gait the player moves at this frame, still when the body stands: what the animals hear (HUNTING 4) */
+  private gaitNow: Gait | 'still' = 'still';
+  /** the valley's animals, stepped by the kernel and drawn from their sheets (public #916) */
+  private wild: WildLife | undefined;
+  private carcasses: CarcassLayer | undefined;
   private busyFrom = 0;
   private busyMs = 0;
   /** the line, float and fish shapes of fishing, drawn in code */
@@ -537,6 +553,8 @@ export class WorldScene extends Phaser.Scene {
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
+  /** When the standing figure next plays a drawn idle clip (0: not set yet); the figure's moves, public #929. */
+  private nextIdleClip = 0;
   private nextBlink = 0;
   private blinkUntil = 0;
   private prompt = '';
@@ -565,7 +583,13 @@ export class WorldScene extends Phaser.Scene {
     eyes?: Phaser.GameObjects.Image;
     halo?: Phaser.GameObjects.Image;
     flare?: Phaser.GameObjects.Image;
+    /** the drawn wolf's eye as a red point over the dark of night (#847): the sheet's own eye is a pixel or two, and the shade takes it */
+    gaze?: Phaser.GameObjects.Image;
     run?: Run;
+    /** the drawn creature this hazard shows when its sheets loaded (#847): its id, where its feet stand when it stands, and what it plays now */
+    creature?: string;
+    home?: { x: number; y: number };
+    art?: { watch: WalkWatch; dir: Dir; verb: 'walk' | 'idle'; start: number; key?: string; found?: FoundCreature; foot?: { x: number; y: number } };
     /** what stays of a predator by day: its den mouth and the prints along its round */
     marks?: Phaser.GameObjects.Image[];
   }[] = [];
@@ -578,7 +602,11 @@ export class WorldScene extends Phaser.Scene {
   private readonly stillReports = new StandingReports();
   /** the lantern's light around the player, and the night it was lit for (G31) */
   private lantern: Phaser.GameObjects.Image | undefined;
+  /** a painted land's lantern: the light map and its passes (painted-pool.ts); a dev query `testlight=cx,cy` adds one more light at a cell */
+  private pool: PaintedPool | undefined;
   private lanternFor: number | undefined;
+  /** a measuring lever: her shadow is not cast (what her shadows add to a frame is the difference with and without) */
+  herShadowOff = false;
   /** while the fall plays: no walking, and the player's sprite belongs to the animation */
   private falling = false;
   /**
@@ -586,7 +614,7 @@ export class WorldScene extends Phaser.Scene {
    * section 2, "the jump row"): the figure holds its standing frame and rises on an arc while its feet, and so the cast
    * shadow, travel the ground from the takeoff tile to the landing tile. `start` and `ms` are the scene clock's.
    */
-  private hop: { from: [number, number]; to: [number, number]; start: number; ms: number; peak: number } | null = null;
+  private hop: { from: [number, number]; to: [number, number]; start: number; ms: number; peak: number; harm: number } | null = null;
   /** a jump asked of the kernel and not answered yet (a server answers later): the hop's wait stands from now */
   private hopAsked = false;
   /** a fall that the hop in the air holds back until it lands: where the body fell, and where it wakes */
@@ -638,6 +666,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private *build(): Generator<void> {
+    performance.mark('boot:world');
     this.b = app.bundle;
     this.lightTable = tableOf(this.b.params.light?.keys ?? []);
     this.walkable = makeWalkable(this.b);
@@ -650,7 +679,7 @@ export class WorldScene extends Phaser.Scene {
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
     yield;
-    this.effects = new EffectLayer(this, DEPTH.fx, T);
+    this.effects = new EffectLayer(this, { fx: DEPTH.fx, water: DEPTH.fx - 1 }, T);
     yield;
     const read = this.b.params.light?.read;
     if (RICH.light) this.light = new LightLayer(this, this.lightTable, { floor: (read?.floor ?? READ.floor) / 100 }, { shade: DEPTH.shade, pools: DEPTH.shade + 0.2 });
@@ -677,7 +706,13 @@ export class WorldScene extends Phaser.Scene {
     yield;
     const firstKey = this.playerFrame('down').key;
     this.player = kitSprite(this, 0, 0, firstKey, standingFrame(this.b.sprites[firstKey], 1)).setOrigin(0.5, footOrigin(firstKey)).setVisible(false);
+    performance.mark('boot:painted');
+    app.painted?.build(this);
+    performance.mark('boot:painted-built');
     if (RICH.detail) this.buildCasters();
+    app.painted?.afterCasters();
+    // the animals' images are made as each one is first shown, and each casts as a walking thing
+    this.wild = new WildLife(this, this.b, (spr) => void this.cast?.add(spr, 'standing', 'moving'));
     yield;
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
@@ -714,10 +749,11 @@ export class WorldScene extends Phaser.Scene {
       if (this.foeBars.active) this.foeBars.update(performance.now(), this.session?.state.player.fight?.foe, reduced);
     });
     cam.setBounds(0, 0, this.b.map.width * T, this.b.map.height * T);
+    app.painted?.frame(cam);
     cam.setRoundPixels(true);
     // the sway goes on before the camera's grade, so it reads the palette's own colours
     // the sway goes where WebGL has a graphics chip (richground.ts swayOn): in software its pass costs a third of a frame
-    if (RICH.motion && swayOn(gpuName(), window.location.search) && this.motionReady()) {
+    if (RICH.motion && !app.painted && swayOn(gpuName(), window.location.search) && this.motionReady()) {
       this.gust = new Sway(cam);
       cam.filters.internal.add(this.gust);
       for (const f of this.fires.values()) this.lickFlame(f);
@@ -761,6 +797,7 @@ export class WorldScene extends Phaser.Scene {
     this.update(this.game.loop.time, 16);
     cam.setVisible(true);
     app.world = this;
+    performance.mark('boot:title');
     app.ui.worldReady();
   }
 
@@ -883,8 +920,14 @@ export class WorldScene extends Phaser.Scene {
       px(red, 0, 0, size, size);
       px(red, size + gap, 0, size, size);
     });
-    for (const [tex, rings] of [['fx-wolf-halo', WOLF_EYES.halo], ['fx-wolf-flare', WOLF_EYES.flare]] as const) {
-      const glow = glowPixels(rings);
+    // the drawn wolf (#847) has its own eye in the sheet: the same rings round one point, the pair's are the fallback still's
+    make('fx-wolf-eye1', size, size, () => px(red, 0, 0, size, size));
+    make('fx-wolf-eye2', 3, size, () => {
+      px(red, 0, 0, 1, size);
+      px(red, 2, 0, 1, size);
+    });
+    for (const [tex, rings, eyes] of [['fx-wolf-halo', WOLF_EYES.halo, 2], ['fx-wolf-flare', WOLF_EYES.flare, 2], ['fx-wolf-halo1', WOLF_EYES.halo, 1], ['fx-wolf-flare1', WOLF_EYES.flare, 1]] as const) {
+      const glow = glowPixels(rings, eyes);
       make(tex, glow.w, glow.h, () => {
         for (const p of glow.px) g.fillStyle(red, p.a).fillRect(p.x, p.y, 1, 1);
       });
@@ -1065,6 +1108,8 @@ export class WorldScene extends Phaser.Scene {
         for (let x = tx0; x < tx0 + tw; x++) {
           const tile = m.legend[row[x] ?? ''];
           if (!tile) continue;
+          // under a painted scene the painting hides the tile: nothing is painted there (its per-pixel edges were the walk's stutter)
+          if (app.painted?.coversTile(x, y)) continue;
           const picks = variants.get(tile.sprite);
           const h = hash(x, y);
           // about two tiles in five take a variant, always the same one for the same tile
@@ -1116,7 +1161,10 @@ export class WorldScene extends Phaser.Scene {
       return animated;
     };
     const makePainter = () => paint.bind(null, new Map<number, TileBlend>());
-    if (gd === 1) {
+    if (app.painted?.coversGround) {
+      // a painted land laid as the whole map (base mode, no way out): the painting covers every tile the camera can see, so the tiles are not painted (V5b: their per-pixel
+      // edges cost 44 s of a 4x slower phone's first minute, under a picture that hides them)
+    } else if (gd === 1) {
       const paintMap = makePainter();
       for (let frame = 0; frame < this.groundFrames; frame++) {
         const tex = this.textures.createCanvas(`ground-${frame}`, m.width * T, m.height * T);
@@ -1263,7 +1311,7 @@ export class WorldScene extends Phaser.Scene {
   private flipWater(): void {
     this.waterFrame = (this.waterFrame + 1) % this.groundFrames;
     if (this.chunks) this.chunks.setFrame(this.waterFrame);
-    else this.ground.setTexture(`ground-${this.waterFrame}`);
+    else this.ground?.setTexture(`ground-${this.waterFrame}`);
   }
 
   private buildProps(): void {
@@ -1280,9 +1328,12 @@ export class WorldScene extends Phaser.Scene {
         // a walking wolf shows only its eyes at night: the pair over its glow, and the flare as it sees the player
         const glow = (tex: string, depth: number) =>
           this.add.image(cx, bottom - unit.h / 2, tex).setOrigin(0.5).setDepth(depth).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
-        const eyes = rule?.round ? this.add.image(cx, bottom - unit.h / 2, 'fx-wolf-eyes').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
-        const halo = rule?.round ? glow('fx-wolf-halo', DEPTH.glow - 0.5) : undefined;
-        const flare = rule?.round ? glow('fx-wolf-flare', DEPTH.glow - 0.25) : undefined;
+        // a wolf with all its drawn sheets is drawn from them (#847) and keeps one glow point on its own eye; with any sheet missing it stays the 16 px still and its pair
+        const creature = p.hazard.kind === 'predator' ? this.drawnCreature(p.sprite) : undefined;
+        const eyes = rule?.round && !creature ? this.add.image(cx, bottom - unit.h / 2, 'fx-wolf-eyes').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
+        const gaze = rule?.round && creature ? this.add.image(cx, bottom - unit.h / 2, 'fx-wolf-eye1').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
+        const halo = rule?.round ? glow(creature ? 'fx-wolf-halo1' : 'fx-wolf-halo', DEPTH.glow - 0.5) : undefined;
+        const flare = rule?.round ? glow(creature ? 'fx-wolf-flare1' : 'fx-wolf-flare', DEPTH.glow - 0.25) : undefined;
         // its den and its tracks stay by day (denMarks): flat on the ground under everything that walks
         const marks: Phaser.GameObjects.Image[] = [];
         if (rule && p.hazard.kind === 'predator') {
@@ -1298,7 +1349,10 @@ export class WorldScene extends Phaser.Scene {
         }
         // a pit and a trap lie in the ground; only the wolf stands and casts
         if (p.hazard.kind !== 'predator') this.noCast.add(spr);
-        this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare, marks });
+        this.hazards.push({
+          spr, kind: p.hazard.kind, rule, eyes, gaze, halo, flare, marks,
+          ...(creature ? { creature, home: { x: cx, y: bottom }, art: { watch: new WalkWatch(), dir: 'left' as Dir, verb: 'idle' as const, start: 0 } } : {}),
+        });
         continue;
       }
       if (p.fire === true && p.id !== undefined) {
@@ -1678,11 +1732,11 @@ export class WorldScene extends Phaser.Scene {
    */
   private buildCasters(): void {
     // a density-4 prop casts at the size it is drawn: the layer reads each texture's density
-    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, drawnDensity);
+    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), app.painted ? 4 : 1, (key) => app.painted?.castDensity(key) ?? drawnDensity(key));
     // nothing that changes every frame is painted into a layer (cast-layer.ts): a thing that walks casts
     // through its own image, a thing on a beat (a sway, a flame, a blink) from its first frame
     const walks = new Set<Phaser.GameObjects.GameObject>(this.hazards.map((h) => h.spr));
-    const beats = new Set<Phaser.GameObjects.GameObject>([...this.cycles.map((c) => c.spr), ...this.blinks.map((b) => b.spr)]);
+    const beats = new Set<Phaser.GameObjects.GameObject>([...this.cycles.map((c) => c.spr), ...this.blinks.map((b) => b.spr), ...this.maskSway.sprites]);
     for (const obj of this.children.list) {
       if (!(obj instanceof Phaser.GameObjects.Image) && !(obj instanceof Phaser.GameObjects.Sprite)) continue;
       if (obj === this.player || obj === this.cutout) continue;
@@ -1699,7 +1753,12 @@ export class WorldScene extends Phaser.Scene {
       // the people carry STYLE 4's body light, as the player does
       this.cast.add(obj, depth === DEPTH.flat ? 'under' : 'standing', walks.has(obj) ? 'moving' : beats.has(obj) ? 'rest' : 'drawn', key.includes(':chars/'));
     }
-    this.cast.add(this.player, 'standing', 'moving', true);
+    const her = this.cast.add(this.player, 'standing', 'moving', !app.painted);
+    // on a painted land, by night, every standing light whose pool reaches her casts her shadow away from it (her-shadow.ts); the one she holds casts none
+    if (app.painted) {
+      her.suns = (x, y) => (this.pool ? herSuns(x, y, this.pool.lastLights, this.night) : []);
+      this.cast.nightTint = (add) => app.painted!.shadowTintOf(add);
+    }
     // by night a body in a light's pool casts from that light, and nothing casts outside every pool (STYLE 4)
     const light = this.light;
     const alpha = (this.b.params.light?.sun?.alpha ?? 30) / 100;
@@ -2296,8 +2355,10 @@ export class WorldScene extends Phaser.Scene {
   private addFilters(cam: Phaser.Cameras.Scene2D.Camera): void {
     if (this.renderer.type !== Phaser.WEBGL) return;
     try {
-      const cm = cam.filters.external.addColorMatrix();
-      cm.colorMatrix.saturate(-0.16).contrast(0.07, true);
+      if (!app.painted) {
+        const cm = cam.filters.external.addColorMatrix();
+        cm.colorMatrix.saturate(-0.16).contrast(0.07, true);
+      }
     } catch {
       // a renderer without filters still plays; it only looks newer
       return;
@@ -2389,11 +2450,14 @@ export class WorldScene extends Phaser.Scene {
     this.aimLineGfx?.setVisible(false);
     this.stones?.destroy();
     this.stones = undefined;
+    this.carcasses?.destroy();
+    this.carcasses = undefined;
     this.effects.clear();
     this.fightWords.clear();
     this.foeBars.clear();
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
+    this.wild?.reset();
     this.wolfGround = undefined;
     this.song = undefined;
     this.lanternFor = undefined;
@@ -2413,6 +2477,7 @@ export class WorldScene extends Phaser.Scene {
         this.biteDrawn(events);
         this.fightClips(events);
         this.fightEffects(events);
+        this.momentEffects(events);
         this.fightWords.play(events, performance.now());
         this.foeBars.play(events, performance.now());
         this.celebrate(events);
@@ -2421,6 +2486,7 @@ export class WorldScene extends Phaser.Scene {
       session.on('change', () => this.refresh()),
     ];
     this.player.setVisible(true);
+    app.painted?.bind(session);
     this.placePlayer(session.pos[0], session.pos[1]);
     this.faceFrame();
     this.idleSince = this.time.now;
@@ -2547,9 +2613,38 @@ export class WorldScene extends Phaser.Scene {
     if (this.carryFigure(true)) return;
     const k = this.playerFrame(s.facing, 'walk', this.look).key;
     const info = this.b.sprites[k];
+    if (this.gaitNow === 'run' && this.gaitClipFrame(s, info, 'run', RUN_CYCLE_OVER_WALK)) return;
+    if (this.gaitNow === 'sneak' && this.gaitClipFrame(s, info, 'sneak', SNEAK_CYCLE_OVER_WALK)) return;
     if (info?.stride) return this.faceFrame(undefined, poseFrame(this.body.walked, info.stride.travel_mpx / 1000, info.frames, this.paceMs));
     const walked = this.body.walked / ART_PX;
     this.faceFrame(strideFrame(walked % 1, Math.floor(walked), info?.frames ?? 1));
+  }
+
+  /**
+   * A run or a sneak drawn as its own clip (the figure's moves, public #929): the frame is the one for the distance walked, over a cycle as long
+   * as the walk's own times `RUN_CYCLE_OVER_WALK` or `SNEAK_CYCLE_OVER_WALK` (clips.ts). False, and the walk sheet shows as before, when the kit has no clip for the race and
+   * the way it faces, its sheet is not here yet, or the figure is not the one the clips are drawn on (`figureIsClipFigure`).
+   */
+  private gaitClipFrame(s: GameSession, walk: (typeof this.b.sprites)[string] | undefined, verb: 'run' | 'sneak', overWalk: number): boolean {
+    const race = s.state.player.race;
+    const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing);
+    if (!found || !this.textures.exists(found.key) || !this.figureIsClipFigure(s)) return false;
+    const cycle = walk?.stride ? (walk.stride.travel_mpx / 1000) * (walk.frames - 1) * overWalk : RUN_CYCLE_FALLBACK_PX * (overWalk / RUN_CYCLE_OVER_WALK);
+    this.showPlayer(found.key, runFrame(this.body.walked, cycle, found.frames), found.flip);
+    return true;
+  }
+
+  /**
+   * Whether the figure on the screen is the one the race's clips are drawn on, so that a clip that lasts (a run, a death) does not change
+   * who the player is looking at: false for the other look of a race (`sprite_alt`, drawn on its own sheets) and while a complete clothing
+   * set is drawn whole (its walk sheet is not the race's own).
+   */
+  private figureIsClipFigure(s: GameSession): boolean {
+    const p = s.state.player;
+    const race = this.b.races[p.race];
+    if (p.look === 1 && race?.sprite_alt) return false;
+    const bare = race?.sprite || Object.values(this.b.races)[0]?.sprite || '';
+    return wornSetSheet(this.b, s.state, bare, (k) => k in this.b.sprites, window.location.search) === bare;
   }
 
   /**
@@ -2577,7 +2672,8 @@ export class WorldScene extends Phaser.Scene {
     const s = this.session;
     const race = s?.state.player.race;
     if (!s || !race || this.falling) return false;
-    const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing);
+    // a clip with several takes plays one at random each time it begins
+    const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing, Math.random());
     if (found && !this.textures.exists(found.key)) {
       this.figure.stop(); // its sheet is still on the way (or never came): today's motion, as with no clip
       return false;
@@ -2662,6 +2758,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshFires(s);
     (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
     (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig)).refresh(s.state, s.tick);
+    (this.carcasses ??= new CarcassLayer(this, this.b)).refresh(s.state, s.tick);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -2774,10 +2871,12 @@ export class WorldScene extends Phaser.Scene {
     // view under software GL draws ~9 frames a second, so the world crawled at a sixth of its speed (DECISIONS.md, 2026-10-18)
     const real = Math.min(LONGEST_FRAME_MS, this.game.loop.rawDelta);
     s.advance(real);
+    app.painted?.afterAdvance(s.tick);
     const clears = this.drawMist(s, real);
     this.placeMote(s, clears, time);
     this.placeSmoke(s, clears, time);
     this.placePredators(s);
+    this.wild?.update(s.state, { face: DIRS[s.facing], gait: this.gaitNow, asleep: false }, s.tick, this.time.now);
     this.refreshIn -= real;
     if (this.refreshIn <= 0) {
       this.refreshIn = 250;
@@ -2785,6 +2884,8 @@ export class WorldScene extends Phaser.Scene {
       this.refreshFires(s);
       // a thrown stone that has been out its time goes home with no step to say so
       this.stones?.refresh(s.state, s.tick);
+      // a carcass the spoiling has made smaller goes with no step to say so
+      this.carcasses?.refresh(s.state, s.tick);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
@@ -2794,16 +2895,17 @@ export class WorldScene extends Phaser.Scene {
     this.releaseStones(this.time.now);
     this.stones?.frame(this.time.now);
     this.chargeFrame(s);
-    this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
+    if (app.painted?.hold.has('shadow')) this.cast?.hide();
+    else this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
     this.placeShaft(minuteOfDay(this.b, s.tick));
     const playerCaster = this.cast?.of(this.player);
-    if (playerCaster) playerCaster.enabled = !this.falling;
+    if (playerCaster) playerCaster.enabled = !this.falling && !this.herShadowOff;
     this.dimInCover(s);
     this.stillReports.frame(this.b, s, this.hazards, !this.body.moving && !this.falling, app.ui.blocking);
     this.playSong(s);
     this.placeLantern(s);
-    if (RICH.motion) this.idle(s, time);
+    if (RICH.motion && !app.painted) this.idle(s, time);
     this.workTick(s);
     this.drawFishing(s, time);
     this.drawBusy(s);
@@ -2818,12 +2920,18 @@ export class WorldScene extends Phaser.Scene {
    * frames stepping, blinks, glow flicker, the dapple drifting, the emit zones
    * following the camera, birds now and then. Empty lists cost nothing.
    */
+  /** the wind at the hour now: the painted door's own when it is mounted; none on the classic door, which sways by its own gust (richground.ts `GUST`) until the owner moves it to the table's wind */
+  private windNow(): Wind | undefined {
+    return app.painted?.windNow;
+  }
+
   private animate(time: number, delta: number): void {
     this.driftAir(time, delta);
+    app.painted?.update(time, delta);
     this.effects.update(time);
     for (const f of this.fires.values()) if (f.pv && f.pvOn && RICH.motion) this.effects.loop(f.pv, 'campfire', time, f.phase * 1000);
     for (const d of this.drifting) d.update(time);
-    if (RICH.motion) this.maskSway.update(time, this.cameras.main.worldView);
+    if (RICH.motion && !app.painted?.hold.has('wind')) this.maskSway.update(time, this.cameras.main.worldView, this.windNow());
     for (const c of this.cycles) {
       if (c.clock) {
         if (!c.active) continue;
@@ -2856,6 +2964,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.gust) {
       const cam = this.cameras.main;
       this.gust.time = time / 1000;
+      this.gust.wind = this.windNow();
       this.gust.artPx = cam.zoom / 4;
       this.gust.scroll = [cam.worldView.x * cam.zoom, cam.worldView.y * cam.zoom];
     }
@@ -3093,7 +3202,16 @@ export class WorldScene extends Phaser.Scene {
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
+      this.nextIdleClip = 0;
       return;
+    }
+    // Standing still for 5 s or more, the figure plays one of its idle clips (a stretch, a look about: two takes, one at random) every 5-10 s or so
+    if (time - this.idleSince >= 5000 && this.blinkUntil === 0 && this.figureIsClipFigure(s)) {
+      if (this.nextIdleClip === 0) this.nextIdleClip = time + Math.random() * 5000;
+      else if (time >= this.nextIdleClip) {
+        this.nextIdleClip = 0;
+        if (this.playClip('idle')) return;
+      }
     }
     if (this.blinkUntil > 0) {
       if (time >= this.blinkUntil) {
@@ -3137,18 +3255,46 @@ export class WorldScene extends Phaser.Scene {
     // the session may have put the player elsewhere: a load, a fall, the server's tile taken back
     const moved = this.body.follow(s.pos);
     const was = this.body.moving;
-    const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
+    // the way the body walks this frame in the standard walk: the last way pushed while it has speed (the frame or two a stop takes), nothing at rest
+    let drive: readonly [number, number] | undefined;
+    const control = this.canControl(s);
     // both hands hold a stone: no running (the kernel refuses it), the load slows the walk itself
-    const asked = app.controls.gait(performance.now());
-    const gait = asked === 'run' && carriedKind(this.b, s.state) !== undefined ? 'walk' : asked;
+    const carrying = carriedKind(this.b, s.state) !== undefined;
+    let input: [number, number];
+    let gait: Gait;
+    // the body's step time at the speed it walks at: the pace of the gait, or, in the standard walk, what the ramp has reached (walkfeel.ts)
+    let stepMs: number;
+    if (app.controls.mode === 'old') {
+      input = control ? app.controls.vector() : [0, 0];
+      const asked = app.controls.gait(performance.now());
+      gait = asked === 'run' && carrying ? 'walk' : asked;
+      this.paceMs = gaitStepMs(this.b, s.state, gait);
+      stepMs = this.paceMs;
+    } else {
+      const ask = control ? app.controls.ask() : { dir: [0, 0] as const, share: 0, gait: 'walk' as Gait };
+      const label: Gait = ask.gait === 'run' && carrying ? 'walk' : ask.gait;
+      // the ramp is counted in the walk's pace at this load; the thumb's share is of the pace of the gait it picked
+      const unit = (ART_PX * 1000) / gaitStepMs(this.b, s.state, 'walk');
+      if (!control || moved) this.ramp.reset();
+      const speed = this.ramp.step(ask.dir, ask.share * ((ART_PX * 1000) / gaitStepMs(this.b, s.state, label)), delta, unit);
+      gait = reportedGait(label, speed, unit);
+      this.paceMs = gaitStepMs(this.b, s.state, gait);
+      // the facing follows the thumb; a body still gliding to a stop walks on its last way without turning
+      input = [ask.dir[0], ask.dir[1]];
+      stepMs = speed > 0 ? (ART_PX * 1000) / speed : this.paceMs;
+      drive = speed > 0 ? this.ramp.dir : [0, 0];
+    }
+    // a streamed painted land holds the step into a unit not drawn yet, a moment at most (painted.ts holdsWalk): she never walks onto the clear colour
+    if (app.painted?.holdsWalk((drive ?? input)[0], (drive ?? input)[1], performance.now())) {
+      input = [0, 0];
+      if (drive) drive = [0, 0];
+    }
     const facing = facingFor(input, s.facing);
     const look = facing8For(input, this.lookOf(s));
     const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
     this.look = agrees(look, facing) ? look : facing;
-    // the kernel's step time at this gait and load: the walk's poses follow it (work.ts poseEvery)
-    this.paceMs = gaitStepMs(this.b, s.state, gait);
-    for (const tile of this.body.frame(input, delta, this.paceMs, (x, y, from) => this.canWalk(s, x, y, from))) {
+    for (const tile of this.body.frame(drive ?? input, delta, stepMs, (x, y, from) => this.canWalk(s, x, y, from), app.painted?.trunkDiscs)) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, tile, gait);
@@ -3162,6 +3308,7 @@ export class WorldScene extends Phaser.Scene {
       this.enter(door);
       return;
     }
+    this.gaitNow = this.body.moving ? gait : 'still';
     if (!this.body.moving && !was && !turned && !moved) return;
     this.drawBody();
     if (this.body.moving) this.walkFrame();
@@ -3172,6 +3319,37 @@ export class WorldScene extends Phaser.Scene {
   private fightEffects(events: readonly GameEvent[]): void {
     if (!RICH.motion || !this.session) return;
     for (const spawn of spawnsOf(events, this.session.pos)) this.effects.playSpawn(spawn, this.time.now);
+  }
+
+  /** The code-drawn moments a batch of the kernel's events starts (effects.ts `momentsOf`); the hurt of a landing waits for the feet. */
+  private momentEffects(events: readonly GameEvent[]): void {
+    if (!this.session) return;
+    for (const m of momentsOf(events)) {
+      const landsIn = m.landing ? this.hopLeft() : 0;
+      if (landsIn > 0) this.time.delayedCall(landsIn, () => this.playMoment(m));
+      else this.playMoment(m);
+    }
+  }
+
+  /** Lays one moment where it belongs: on the player's body, on a tile's ground, on a hearth, or on a foe's figure. */
+  playMoment(m: MomentSpawn | { id: MomentId; at: MomentAt }): void {
+    const s = this.session;
+    if (!s) return;
+    const at = m.at;
+    const groundAt = (x: number, y: number): BurstTexture | undefined => groundBits(this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag);
+    // a tile's spot is its feet line, where a body standing in it stands (`drawBody`): the ground's bits rise beside the feet, not off the thighs
+    const onTile = (t: readonly [number, number]) => ({ x: (t[0] + 0.5) * T, y: (t[1] + 1) * T, ground: groundAt(t[0], t[1]) });
+    let spot: { x: number; y: number; ground?: BurstTexture; body?: Phaser.GameObjects.Sprite } | undefined;
+    if (at.on === 'player') spot = { x: this.player.x, y: this.player.y, ground: groundAt(s.pos[0], s.pos[1]), body: this.player };
+    else if (at.on === 'tile') spot = onTile(at.tile);
+    else if (at.on === 'fire') {
+      const f = this.fires.get(at.id);
+      if (f) spot = { x: f.spr.x, y: f.spr.y };
+    } else {
+      const h = this.hazards.find((hz) => hz.rule?.id === at.id);
+      spot = h?.spr.visible ? { ...onTile(at.tile), x: h.spr.x, y: h.spr.y, body: h.spr } : onTile(at.tile);
+    }
+    if (spot) this.effects.moment(m.id, spot, this.time.now, RICH.motion);
   }
 
   private fightWordHead({ struck, at }: FightOutcome, point: FightWordPoint): boolean {
@@ -3217,24 +3395,9 @@ export class WorldScene extends Phaser.Scene {
 
   /** A little dust at the feet as a step starts, in the colour of the ground left behind. */
   private puffAt(x: number, y: number): void {
-    const tag = this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag;
-    const texture =
-      tag === 'path' || tag === 'riverbank' || tag === 'town' ? 'fx-puff' : tag === 'meadow' || tag === 'grove' ? 'fx-leaf' : tag === 'ruin' ? 'fx-grit' : undefined;
+    const texture = groundBits(this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag);
     if (!texture) return;
-    let emitter = this.puffs.get(texture);
-    if (!emitter) {
-      emitter = this.add
-        .particles(0, 0, texture, {
-          lifespan: { min: 240, max: 400 },
-          speed: { min: 5, max: 12 },
-          angle: { min: 230, max: 310 },
-          alpha: { start: 1, end: 0 },
-          emitting: false,
-        })
-        .setDepth(DEPTH.puff);
-      this.puffs.set(texture, emitter);
-    }
-    emitter.explode(texture === 'fx-leaf' ? 1 : 2 + Math.floor(Math.random() * 2), this.player.x, this.player.y - 1);
+    this.effects.burst(texture, this.player.x, this.player.y - 1, texture === 'fx-leaf' ? 1 : 2 + Math.floor(Math.random() * 2), 'step', DEPTH.puff);
   }
 
   /** The kernel's rule, a rock face's, and a plant or stone that is ready stands in the way (walking.ts); `from` is the tile left, the player's own when none is given. */
@@ -3355,22 +3518,28 @@ export class WorldScene extends Phaser.Scene {
     const first = !this.mistReady;
     this.mistReady = true;
     const clears = mistClears(this.b, s.state).map((c) => {
-      const at = `${c.x},${c.y}`;
+      const at = c.y * 65536 + c.x;
       // a place mended while the scene runs opens from nothing; one already in the save (a reload) is drawn open
       const r = mistRadius(this.mistShown.get(at) ?? (first || c.rate === undefined ? c.r : 0), c.r, delta, c.rate);
       this.mistShown.set(at, r);
       return { ...c, r: mistStep(r) };
     });
-    const key = JSON.stringify(clears);
-    if (key === this.mistKey) return clears;
-    this.mistKey = key;
+    const before = this.mistDrawn;
+    if (before && before.length === clears.length && clears.every((c, i) => c.x === before[i]!.x && c.y === before[i]!.y && c.r === before[i]!.r)) return clears;
+    this.mistDrawn = clears;
     const { width, height } = this.b.map;
     const name = 'fx-mist';
     const tex = this.textures.exists(name) ? (this.textures.get(name) as Phaser.Textures.CanvasTexture) : this.textures.createCanvas(name, width * T, height * T);
     if (!tex) return clears;
     tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
     const ctx = tex.getContext();
-    ctx.putImageData(new ImageData(mistPixels(clears, width, height, T), width * T, height * T), 0, 0);
+    // the first draw makes the whole raster; a change of the clear places makes again only the box its places reach (mist.ts mistChanged), over the raster kept from the draw before
+    const px = (this.mistPx ??= new ImageData(width * T, height * T));
+    const box = before ? mistChanged(before, clears, width, height, T) : undefined;
+    if (before && !box) return clears;
+    mistFill(px.data, clears, width, height, T, box);
+    if (box) ctx.putImageData(px, 0, 0, box.x0, box.y0, box.x1 - box.x0, box.y1 - box.y0);
+    else ctx.putImageData(px, 0, 0);
     tex.refresh();
     this.mist.setTexture(name).setVisible(true);
     return clears;
@@ -3645,23 +3814,9 @@ export class WorldScene extends Phaser.Scene {
     s.facing = dir;
   }
 
-  private burst(texture: string, x: number, y: number, n: number): void {
-    let emitter = this.bursts.get(texture);
-    if (!emitter) {
-      emitter = this.add
-        .particles(0, 0, texture, {
-          lifespan: { min: 300, max: 600 },
-          speed: { min: 14, max: 42 },
-          angle: { min: 200, max: 340 },
-          gravityY: texture === 'fx-spark' ? 0 : 70,
-          alpha: { start: 1, end: 0 },
-          scale: { start: 1, end: 0.6 },
-          emitting: false,
-        })
-        .setDepth(DEPTH.fx);
-      this.bursts.set(texture, emitter);
-    }
-    emitter.explode(n, x, y);
+  /** The work's bits, thrown up and out from a spot: one of the layer's bursts (effect-layer.ts). */
+  private burst(texture: BurstTexture, x: number, y: number, n: number): void {
+    this.effects.burst(texture, x, y, n);
   }
 
   private drawBusy(s: GameSession): void {
@@ -3695,8 +3850,9 @@ export class WorldScene extends Phaser.Scene {
     for (const h of this.hazards) {
       const { spr, kind, rule, eyes, halo } = h;
       if (kind === 'predator') {
+        // the still's two frames are asleep and awake; a drawn wolf's frames are its clip's, set as it is placed (`dressWolf`)
         const frame = night && spr.texture.frameTotal > 2 ? 1 : 0;
-        if (Number(spr.frame.name) !== frame) spr.setFrame(frame);
+        if (!h.art && Number(spr.frame.name) !== frame) spr.setFrame(frame);
         const awake = rule !== undefined && windowOpen(this.b, rule, s.tick);
         spr.setVisible(this.wolfShown(h, s));
         eyes?.setVisible(awake);
@@ -3723,13 +3879,18 @@ export class WorldScene extends Phaser.Scene {
   private placePredators(s: GameSession): void {
     const chase = s.state.player.chase;
     const since = chase ? s.tick - chase.since : -1;
-    let alarmed: Phaser.GameObjects.Sprite | undefined;
+    let alarmed: (typeof this.hazards)[number] | undefined;
     let flinch: [number, number] = [0, 0];
+    const now = this.time.now;
     for (const h of this.hazards) {
       const { spr, rule, eyes, halo, flare } = h;
       const hunting = chase !== null && chase.hazard === rule?.id;
-      if (hunting && bangAt(since)) alarmed = spr;
-      if (!rule?.round) continue;
+      if (hunting && bangAt(since)) alarmed = h;
+      if (!rule?.round) {
+        // a wolf that keeps its den stands where it was put, in its idle (it faces the way its still did: left)
+        if (h.art && h.home) this.dressWolf(h, now, [rule?.rect.x ?? 0, rule?.rect.y ?? 0], [0, 0], h.home.x, h.home.y);
+        continue;
+      }
       const awake = windowOpen(this.b, rule, s.tick);
       const drawn = wolfDrawn(this.b, rule, s.state, s.tick, h.run, this.huntWalk(s));
       h.run = drawn.run;
@@ -3742,7 +3903,27 @@ export class WorldScene extends Phaser.Scene {
       if (pose) flinch = [ux * pose.flinch, uy * pose.flinch];
       const lx = pose ? ux * pose.lunge : 0;
       const ly = pose ? uy * pose.lunge : 0;
-      spr.setPosition(Math.round((x + 0.5) * T + lx), Math.round(bottom + ly)).setDepth(Math.round(bottom)).setVisible(this.wolfShown(h, s));
+      const px = Math.round((x + 0.5) * T + lx);
+      const py = Math.round(bottom + ly);
+      if (h.art) {
+        // the drawn wolf (#847): the sheet of its heading, walk while it moves and idle while it stands; the glow sits on its own eye
+        const found = this.dressWolf(h, now, drawn.at, drawn.heading, px, py);
+        spr.setDepth(py).setVisible(this.wolfShown(h, s));
+        const head = found?.head && found.view !== 'back' && h.art.foot ? creaturePoint(h.art.foot.x, h.art.foot.y, found, found.head, baseOf(spr)) : undefined;
+        if (!head || !found) {
+          h.gaze?.setVisible(false);
+          halo?.setVisible(false);
+          flare?.setVisible(false);
+          continue;
+        }
+        // one red point on the side wolf's eye, two close ones between the front wolf's; none from behind
+        h.gaze?.setTexture(found.view === 'front' ? 'fx-wolf-eye2' : 'fx-wolf-eye1').setPosition(Math.round(head.x), Math.round(head.y)).setVisible(awake);
+        halo?.setPosition(Math.round(head.x), Math.round(head.y)).setAngle(0).setVisible(awake);
+        const flared = awake && hunting ? flareAt(since) : 0;
+        flare?.setPosition(Math.round(head.x), Math.round(head.y)).setAngle(0).setAlpha(flared).setVisible(flared > 0);
+        continue;
+      }
+      spr.setPosition(px, py).setDepth(py).setVisible(this.wolfShown(h, s));
       if (!eyes) continue;
       const faceY = spr.y - spr.displayHeight * 0.55;
       // steady at full strength while awake (the owner's pick): no pulse, no blink
@@ -3752,11 +3933,60 @@ export class WorldScene extends Phaser.Scene {
       flare?.setPosition(eyes.x, eyes.y).setAngle(eyes.angle).setAlpha(flared).setVisible(flared > 0);
     }
     this.bang.setVisible(alarmed !== undefined);
-    if (alarmed) this.bang.setPosition(Math.round(alarmed.x), Math.round(alarmed.y - alarmed.displayHeight - 2));
+    if (alarmed) {
+      const found = alarmed.art?.found;
+      const head = found?.head && alarmed.art?.foot ? creaturePoint(alarmed.art.foot.x, alarmed.art.foot.y, found, found.head, baseOf(alarmed.spr)) : undefined;
+      // over the drawn head, not over the frame's empty top
+      if (head) this.bang.setPosition(Math.round(head.x), Math.round(head.y - 5));
+      else this.bang.setPosition(Math.round(alarmed.spr.x), Math.round(alarmed.spr.y - alarmed.spr.displayHeight - 2));
+    }
     if (flinch[0] !== this.flinch[0] || flinch[1] !== this.flinch[1]) {
       this.flinch = flinch;
       if (!this.falling) this.standOnFeet();
     }
+  }
+
+  /**
+   * Puts the drawn wolf's image where its feet stand (`x`, `y`, world units): the sheet of the way it faces (a right-facing wolf is the
+   * left sheet flipped), the walk while its drawn place moves and the idle while it stands, the frame of the clock, and the origin and
+   * the shift that put the sheet's foot point on the feet and the middle of the frame under the shadow layer's reading. Display only.
+   */
+  private dressWolf(h: (typeof this.hazards)[number], now: number, at: readonly [number, number], heading: readonly [number, number], x: number, y: number): FoundCreature | undefined {
+    const art = h.art;
+    if (!art || !h.creature) return undefined;
+    const verb = art.watch.walking(now, at) ? 'walk' : 'idle';
+    const face = viewOfHeading(heading, art.dir);
+    if (face) art.dir = face.dir;
+    const found = creatureClipFor(this.b.sprites as CreatureSprites, h.creature, verb, art.dir);
+    if (!found) return undefined;
+    if (verb !== art.verb) {
+      art.verb = verb;
+      art.start = now;
+    }
+    if (art.key !== found.key) {
+      retex(h.spr, found.key, 0);
+      h.spr.setOrigin(0.5, found.anchor[1] / found.h);
+      art.key = found.key;
+    }
+    h.spr.setFrame(clipFrame(now - art.start, found.frames, found.frame_ms, Infinity) ?? 0).setFlipX(found.flip);
+    // a quarter of a world unit is one art pixel: the image is placed on that grid
+    const at4 = (v: number) => Math.round(v * 4) / 4;
+    h.spr.setPosition(at4(creatureX(x, found, baseOf(h.spr))), y);
+    art.found = found;
+    art.foot = { x, y };
+    return found;
+  }
+
+  /**
+   * The creature a fallback still stands for, when every sheet the kit has for it loaded: all or none, so a wolf is never the drawn
+   * one in one view and the 16 px still in another. With a sheet missing the still stays, as it was before the sheets (#847).
+   */
+  private drawnCreature(still: string): string | undefined {
+    const sprites = this.b.sprites as CreatureSprites;
+    const creature = creatureOf(sprites, still);
+    if (!creature) return undefined;
+    const keys = creatureSheets(sprites, creature);
+    return keys.length > 0 && keys.every((k) => this.textures.exists(k)) ? creature : undefined;
   }
 
   /** The unit step from a spot drawn at (x, y) in tiles toward the drawn player, or straight down when they meet. */
@@ -3807,22 +4037,56 @@ export class WorldScene extends Phaser.Scene {
     const s = this.session;
     if (!s) return;
     this.lanternFor = lanternNight(this.b, s.state, s.pos, s.tick);
-    this.lantern ??= this.add.image(0, 0, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.glow).setScale(2);
+    if (app.painted) this.pool ??= new PaintedPool(this, DEPTH.glow);
+    else this.lantern ??= this.add.image(0, 0, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.glow).setScale(2);
   }
 
   /** The lantern burns around the player while they are out in the night it was lit for; in town or by day it is out. */
   private placeLantern(s: GameSession): void {
-    if (!this.lantern) return;
+    const painted = app.painted;
+    if (!this.lantern && !this.pool) return;
     const lit = !this.falling && this.lanternFor !== undefined && lanternNight(this.b, s.state, s.pos, s.tick) === this.lanternFor;
-    this.lantern.setVisible(lit);
-    this.dark.setVisible(lit);
+    this.lantern?.setVisible(lit);
+    // a painted land's night is the table's own darkness: the pool lifts what is inside it and does not darken what is outside
+    this.dark.setVisible(lit && !painted);
+    // on a painted land she is lit like the ground: the night's light on her, lifted by the same pool (no tint of her own)
     if (this.cutout) {
-      // the lantern lights the one who holds it: no night, no dark and no glow wash over the player, only its warmth
-      this.uncut?.setVisible(!lit);
-      if (lit) this.player.setTint(LIGHT.tint);
+      // the lantern lights the one who holds it: no night, no dark and no glow wash over the player, only its warmth; on a painted land she is
+      // lit like the ground, so the stencil is cleared as on any other night (the pool's light must reach her pixels)
+      this.uncut?.setVisible(painted ? true : !lit);
+      if (lit && !painted) this.player.setTint(LIGHT.tint);
       else this.player.clearTint();
     }
-    if (lit) {
+    if (painted && this.pool) {
+      // the light map: whole art pixels, at the night's depth (1 in the dark) over the light on a flat patch of ground now
+      const gr = 4;
+      const lights: PoolLight[] = [];
+      const q = new URLSearchParams(window.location.search);
+      if (lit) {
+        // the one she holds is a torch when the dev query says so, no light with held=none, else the lantern (one table, PAINTED_LIGHTS); window.__clock pins the flames' clock for a measure
+        const held = q.get('held');
+        if (held !== 'none') lights.push({ x: Math.round(this.player.x * gr) / gr, y: Math.round((this.player.y - 10) * gr) / gr, kind: held === 'torch' ? 'torch' : 'lantern', seed: 0, held: true });
+        // dev lights standing on the ground: `testlight=cx,cy` (a tile), more of them with `;`, their kinds in `testkind` (a list, the last one repeats)
+        const t = q.get('testlight');
+        if (t) {
+          const kinds = (q.get('testkind') ?? '').split(',');
+          for (const [i, one] of t.split(';').entries()) {
+            const [cx, cy] = one.split(',').map(Number);
+            const want = kinds[Math.min(i, kinds.length - 1)] ?? '';
+            const kind = (['lantern', 'torch', 'lamp'].includes(want) ? want : 'lantern') as PaintedLightKind;
+            if (Number.isFinite(cx) && Number.isFinite(cy)) lights.push({ x: (painted.x0 + cx! + 0.5) * 16, y: (painted.y0 + cy! + 0.5) * 16, kind, seed: 1 + i });
+          }
+        }
+        // the same from the page, for a measure that changes the lights between frames: window.__testlights = [{ c, r, kind }]
+        for (const [i, d] of ((window as unknown as { __testlights?: { c: number; r: number; kind: string }[] }).__testlights ?? []).entries()) {
+          const kind = (['lantern', 'torch', 'lamp'].includes(d.kind) ? d.kind : 'lantern') as PaintedLightKind;
+          lights.push({ x: (painted.x0 + d.c + 0.5) * 16, y: (painted.y0 + d.r + 0.5) * 16, kind, seed: 11 + i });
+        }
+      }
+      this.pool.update(this.cameras.main.worldView, lights, { base: painted.groundLight(), night: this.night, clock: (window as unknown as { __clock?: number }).__clock ?? this.time.now, standing: painted.standing() });
+      return;
+    }
+    if (lit && this.lantern) {
       const flicker = 0.5 + 0.5 * Math.sin(this.time.now / 173) * Math.sin(this.time.now / 419);
       this.lantern.setPosition(this.player.x, this.player.y - 10).setAlpha(0.85 + 0.15 * flicker);
       // whole pixels, so the edge of the light stays one clean step
@@ -3851,6 +4115,20 @@ export class WorldScene extends Phaser.Scene {
     // the fall ends any work: nothing may put the standing frame back while the body sinks
     this.busyMs = 0;
     this.placePlayer(from[0], from[1]);
+    // the figure's own death clip, when the kit has one: it falls and lies, then the same fade to town; the sinking below is the fallback
+    const dying = clipFor(this.b.sprites as ClipSprites, 'die', s.state.player.race, s.facing, Math.random());
+    if (dying && this.textures.exists(dying.key) && this.figureIsClipFigure(s)) {
+      const shown = (at: number) => this.showPlayer(dying.key, Math.min(dying.frames - 1, Math.floor(at * dying.frames)), dying.flip);
+      shown(0);
+      this.tweens.addCounter({
+        from: 0,
+        to: 1,
+        duration: dying.frames * dying.frame_ms,
+        onUpdate: (tw) => shown(tw.getValue() ?? 0),
+        onComplete: () => this.time.delayedCall(DIE_HOLD_MS, () => this.wakeInTown(s, to)),
+      });
+      return;
+    }
     const { key: k, flip } = this.playerFrame('down');
     const frames = this.b.sprites[k]?.frames ?? 1;
     this.showPlayer(k, this.b.sprites[k]?.stride ? frames - 1 : frames >= 3 ? 1 : 0, flip);
@@ -3881,18 +4159,23 @@ export class WorldScene extends Phaser.Scene {
       },
       onComplete: () => {
         for (const eye of eyes) eye.destroy();
-        this.cameras.main.fadeOut(300, 27, 26, 46);
-        this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-          this.player.setCrop();
-          this.cutout?.setCrop();
-          s.facing = 'down';
-          this.placePlayer(to[0], to[1]);
-          this.faceFrame();
-          this.inside.clear();
-          this.falling = false;
-          this.cameras.main.fadeIn(700, 27, 26, 46);
-        });
+        this.wakeInTown(s, to);
       },
+    });
+  }
+
+  /** The end of a fall, whichever way the body went down: the screen fades out, the player stands in town, and the screen fades in. */
+  private wakeInTown(s: GameSession, to: readonly [number, number]): void {
+    this.cameras.main.fadeOut(300, 27, 26, 46);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.player.setCrop();
+      this.cutout?.setCrop();
+      s.facing = 'down';
+      this.placePlayer(to[0], to[1]);
+      this.faceFrame();
+      this.inside.clear();
+      this.falling = false;
+      this.cameras.main.fadeIn(700, 27, 26, 46);
     });
   }
 
@@ -3981,7 +4264,12 @@ export class WorldScene extends Phaser.Scene {
     const dir = app.controls.direction();
     const leaving = s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing));
     // a unit that ended with the thing out needs no answer; the fish comes up either way
-    if (w.kind === 'fish' && !leaving && this.ready(s, w.node)) sound.sfx('plop', { gain: 0.8 });
+    if (w.kind === 'fish' && !leaving && this.ready(s, w.node)) {
+      sound.sfx('plop', { gain: 0.8 });
+      // the fish comes out of the water where the line went in: a ring and a few drops
+      const spot = placedAt(this.b, w.node);
+      if (spot) this.playMoment({ id: 'fish-catch', at: { on: 'tile', tile: [spot.x, spot.y] } });
+    }
     w.pending = true;
     const next = await nextUnit({ ready: () => this.ready(s, w.node), act: (a) => s.act(a) }, w.action, leaving);
     w.pending = false;
@@ -4127,18 +4415,9 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** A soft light on the thing just made: it rises, holds and fades within `SUCCESS_LIGHT_MS`, then is gone. */
+  /** A soft light on the thing just made: it rises, holds and fades within `SUCCESS_LIGHT_MS`, then is gone (the layer's `light`). */
   private successLight(x: number, y: number): void {
-    const img = this.add.image(x, y, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.fx).setAlpha(0).setScale(2);
-    this.tweens.chain({
-      targets: img,
-      tweens: [
-        { alpha: SUCCESS_LIGHT.alpha, duration: SUCCESS_LIGHT.rise },
-        { alpha: SUCCESS_LIGHT.alpha, duration: SUCCESS_LIGHT.hold },
-        { alpha: 0, duration: SUCCESS_LIGHT.fade },
-      ],
-      onComplete: () => img.destroy(),
-    });
+    this.effects.light(x, y, 2);
   }
 
   /** A little lift of every new item over the player's head, and a cloud when something is built. */
@@ -4230,9 +4509,11 @@ export class WorldScene extends Phaser.Scene {
       const lands = r.events.find((e) => e.e === 'jump');
       if (lands?.e !== 'jump') return;
       sound.sfx('step');
-      // the figure holds its standing frame in the air; a longer way over a gap rises a little higher
-      this.faceFrame();
-      this.hop = { from, to: [to[0], to[1]], start: this.time.now, ms: this.b.params.jump.air_ms, peak: lands.across ? 26 : 18 };
+      // the figure's own jump clip, stretched over the time in the air; without one it holds its standing frame. A longer way over a gap rises a little higher
+      if (!this.playClip('jump', this.b.params.jump.air_ms, true)) this.faceFrame();
+      this.hop = { from, to: [to[0], to[1]], start: this.time.now, ms: this.b.params.jump.air_ms, peak: lands.across ? 26 : 18, harm: lands.harm };
+      // the feet leave the ground: a little of it kicked back where they stood
+      this.playMoment({ id: 'jump-off', at: { on: 'tile', tile: from } });
     });
   }
 
@@ -4270,7 +4551,7 @@ export class WorldScene extends Phaser.Scene {
   private grip?: { found: Found; start: number };
 
   /** A throw being charged (DECISIONS 2026-11-22): when the press began (the scene clock), the aim tile, the stone's size, and which hand holds it. */
-  private charge?: { start: number; aim: KernelTile; kind: string; source: 'key' | 'mouse' };
+  private charge?: { start: number; aim: KernelTile; kind: string; source: 'key' | 'mouse'; assist?: number };
   /** The aim line on the ground, drawn while a throw is charged. */
   private aimLineGfx?: Phaser.GameObjects.Graphics;
 
@@ -4355,9 +4636,16 @@ export class WorldScene extends Phaser.Scene {
       app.ui.toast('You have no stone to throw.', 'info');
       return;
     }
-    const aim = throwAim(this.b, s, this.lookOf(s));
+    // a hare a stone could take in the half the figure faces: the line points at it, and the player's part is the charge (#923)
+    const game = assistAim(this.b, s.state, s.tick, kind, this.gameStanding(), throwDir(this.lookOf(s)));
+    const aim = game?.aim ?? throwAim(this.b, s, this.lookOf(s));
     if (!aim) return;
-    this.charge = { start: this.time.now, aim, kind, source: 'key' };
+    this.charge = { start: this.time.now, aim, kind, source: 'key', ...(game ? { assist: game.spot } : {}) };
+  }
+
+  /** The animals the world shows, by spot and the tile each stands on now: what a thrown stone may strike. */
+  private gameStanding(): { spot: number; tile: KernelTile }[] {
+    return (this.wild?.shown() ?? []).map(({ spot, tile }) => ({ spot, tile }));
   }
 
   /** The mouse button held (desktop): the same charge, aimed at the pointer's tile. */
@@ -4376,6 +4664,7 @@ export class WorldScene extends Phaser.Scene {
     const s = this.session;
     if (!s || (tile[0] === s.pos[0] && tile[1] === s.pos[1])) return;
     this.charge.aim = [tile[0], tile[1]];
+    this.charge.assist = undefined;
   }
 
   /** The map tile under a pointer, or undefined off the map. */
@@ -4408,7 +4697,7 @@ export class WorldScene extends Phaser.Scene {
     const c = this.charge;
     this.charge = undefined;
     this.aimLineGfx?.setVisible(false);
-    this.throwNow(c.aim, c.kind, chargeAt(this.b, Math.floor(this.time.now - c.start)).power);
+    this.throwNow(c.aim, c.kind, chargeAt(this.b, Math.floor(this.time.now - c.start)).power, c.assist);
   }
 
   /** One frame of a held throw: draw the aim line at the power reached, and let a charge held past full go on its own. */
@@ -4446,10 +4735,13 @@ export class WorldScene extends Phaser.Scene {
    * The throw itself (DECISIONS 2026-11-22, #831): the kernel flies it by `throwFlight` for `power` (a thousandth part).
    * This plays the flight as an arc with bounces and a slide, the landing hidden until it lands.
    */
-  private throwNow(aim: KernelTile, kind: string, power: number): void {
+  private throwNow(aim: KernelTile, kind: string, power: number, aimedAt?: number): void {
     const s = this.session;
     if (!s) return;
-    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim, kind, power })).then((r) => {
+    // the animal the flight at this power would strike, by the kernel's own flight and width; the action names it, the kernel decides (#923)
+    const strike = preyOf(this.b, s.state, s.tick, kind, aim, power, this.gameStanding());
+    const standsAt = strike?.stands ?? this.gameStanding().find((a) => a.spot === aimedAt)?.tile;
+    void Promise.resolve(s.act({ t: 'throw', at: s.pos, aim, kind, power, ...(strike ?? {}) })).then((r) => {
       if (!r.ok) {
         app.ui.toast(r.error, 'bad');
         return;
@@ -4459,10 +4751,11 @@ export class WorldScene extends Phaser.Scene {
       const layer = (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig));
       // the figure throws overhand (a small stone) or pushes with both hands (a large one); the stone leaves the hand at the clip's release
       const size = thrown.kind === ARMS_STONE_KIND ? 'large' : 'small';
+      const struck = r.events.some((e) => e.e === 'take_prey') ? strike?.stands : undefined;
       const verb = size === 'large' ? 'push' : 'throw';
       const played = this.playClip(verb, undefined);
       // the stone is in the hand from the first frame of the clip, and follows the drawn hand to the release (the clip's `hand` points)
-      const found = played ? clipFor(this.b.sprites as ClipSprites, verb, s.state.player.race, s.facing) : undefined;
+      const found = played ? this.figure.current : undefined;
       // it leaves the hand at the clip's last hand point (the frame where the drawing opens the hand), else at the old fixed time
       const release = !played ? 0 : found?.hand ? (found.hand.length - 1) * found.frame_ms : THROW_RELEASE_MS[verb];
       this.grip = found?.hand ? { found, start: this.time.now } : undefined;
@@ -4485,6 +4778,10 @@ export class WorldScene extends Phaser.Scene {
           sound.sfx('step');
           if (sank) this.splashAt(tile);
           else if (RICH.motion) this.dustAt(tile[0], tile[1]);
+          // the crack of a stone coming down is heard by the animals near it (a hare goes to ground); a hit and a miss each have a moment
+          this.wild?.noise(tile, s.tick);
+          if (struck) this.playMoment({ id: 'game-hit', at: { on: 'tile', tile: struck } });
+          else if (standsAt) this.playMoment({ id: 'game-miss', at: { on: 'tile', tile: standsAt } });
         });
       };
       // by the scene's own clock, the one the clip is laid by: a timer's delta runs behind it when frames come slowly
@@ -4493,20 +4790,9 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** Rings spreading and fading on the water where a stone went under (the timeline is ring.ts's). */
+  /** Rings spreading and fading on the water where a stone went under (the timeline is ring.ts's, drawn by the layer). */
   private splashAt(tile: Tile): void {
-    const g = this.add.graphics().setPosition((tile[0] + 0.5) * T, (tile[1] + 0.6) * T).setDepth(DEPTH.fx - 1);
-    const start = this.time.now;
-    const draw = () => {
-      g.clear();
-      for (const r of ringsAt(this.time.now - start)) {
-        g.fillStyle(0xf5f4ef, r.alpha);
-        for (const [x, y] of ringPixels(r)) g.fillRect(x, y, 1, 1);
-      }
-    };
-    draw();
-    const tick = () => (this.time.now - start >= RING_TOTAL_MS ? (this.events.off('update', tick), g.destroy()) : draw());
-    this.events.on('update', tick);
+    this.effects.ring((tile[0] + 0.5) * T, (tile[1] + 0.6) * T, this.time.now);
   }
 
   /** One frame of the hop's stand-in: the feet go from tile to tile, the drawing rides the arc, and on landing the body stands on the tile. */
@@ -4531,9 +4817,13 @@ export class WorldScene extends Phaser.Scene {
     s.pos = [hop.to[0], hop.to[1]];
     this.body.place(hop.to);
     if (RICH.motion) this.dustAt(hop.to[0], hop.to[1]);
+    // a landing that hurt (a fall of two levels or more) throws more of the ground out under the dust
+    if (hop.harm > 0) this.playMoment({ id: 'hard-landing', at: { on: 'tile', tile: hop.to } });
     this.arrive(s);
     this.drawBody();
     this.faceFrame();
+    // the landing's own clip, once (a hard one for a landing that hurt); a walk or a new action ends it
+    if (!(hop.harm > 0 && this.playClip('land_hard'))) this.playClip('land');
   }
 
   /** The A button: act on what the player faces, stands on, or stands next to. */
@@ -4600,8 +4890,7 @@ export class WorldScene extends Phaser.Scene {
     // on the jetty a passage leaves from, once the opening has reached it, the boat is offered (SEA_CROSSING.md); its hours and fare are the kernel's to refuse
     const passage = passageAt(this.b, s.state, s.pos);
     if (passage) return { label: `Board: ${this.b.passages[passage]!.title}`, run: () => void app.ui.board(passage), tile: [s.pos[0], s.pos[1]], top: T };
-    const prey = huntingNearby(this.b, s.state, s.tick, s.pos);
-    if (prey) return { ...prey, run: () => void app.ui.hunt(prey.action), top: T / 2 };
+    // no button takes a hare here (#923): a held B throws a stone at it, and where the stone comes down decides
     // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
     // It comes after every other target, so a fire never hides a thing the player already faces.
     return this.kindleTarget(s);
@@ -4780,7 +5069,7 @@ export class WorldScene extends Phaser.Scene {
     this.baseZoom = zoom;
     // a hold on the stone keeps its own zoom through a resize
     this.wheelGlide?.stop();
-    this.cameras.main.setZoom(this.stoneHeld ? this.heldZoom() : wheelZoom(Math.min(w, h), this.wheel));
+    this.cameras.main.setZoom(app.painted ? app.painted.zoom({ cssHeight: h / pixelRatio(), canvasPerCss: pixelRatio() }) : this.stoneHeld ? this.heldZoom() : wheelZoom(Math.min(w, h), this.wheel));
     this.shade.setSize(w, h);
     this.frameKey = '';
     this.drawFrame();

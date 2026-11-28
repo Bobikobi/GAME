@@ -6,14 +6,8 @@ rule is not built quietly and the rule is not bent quietly. Section 6 says what
 happens instead. A rule changes only by the owner's word, written the same day
 in [DECISIONS.md](../../DECISIONS.md).
 
-Why it exists (2026-10-07): three things shipped that break the loop. The
-collection shelf is a menu built as a camp. The town quests are "repeat the
-gather verb N times". The statue inscriptions are reads that pay nothing.
-Developers bring ideas, and an AI given a free hand fills a quest with the
-easiest thing that validates. The fun of this product is the reward landing at
-the right step, and nothing in the repository guarded that. Now something does:
-this page, the review checklist in section 7, and the `play` rules in
-`pnpm check` (section 8).
+This page, the review checklist in section 7 and the `play` rules in
+`pnpm check` (section 8) guard how rewards land in play.
 
 What it is for, in the owner's words (2026-10-07): to reach an end product the
 game has to carry a community, so the foundations must be clear. This page
@@ -42,12 +36,12 @@ pillar higher on this list wins. A feature that serves none of them is cut.
 4. **The world is the interface.** World objects carry play: they change what
    the player can do or where they can go. Menus carry information and live in
    buttons. Nothing is built in the world in order to open a menu.
-5. **Effort is never wasted.** A miss turns up something, a wrong answer
+5. **Effort is never wasted.** A craft miss keeps something, a wrong answer
    teaches, a walk has a find on the way.
 
 ## 2. The loop and the hook ladder
 
-The core loop is: notice a cue, act with one timed verb, get a find that was
+The core loop is: notice a cue, act with one verb, get a find that was
 not fully expected, spend or build, which opens a new place or verb, which
 shows the next cue. Daniel Cook's loops build mastery; arcs (the mist, the
 bells, the statues) carry meaning. Both must be present in every session.
@@ -181,10 +175,10 @@ psychology.
   chain never share a type, and the first ten quests of the valley cover at
   least five types. The check counts (section 8).
 - **G18 Getting an item is not one motion.** Across a chain, the way an item
-  is obtained varies: the timed strike, a spot found with senses, a time of
-  day, a trade, a dig with a chance, a question asked right, a thing tended
-  over days. Three quests in a row whose items come by the same motion are a
-  counter in disguise.
+  is obtained varies: a work strike, a spot found with senses, a time of
+  day, a trade, a dig with a chance of a rare find, a question asked right, a
+  thing tended over days. Three quests in a row whose items come by the same
+  motion are a counter in disguise.
 
 The palette. "Feeling" is what the player says afterwards; "need" is the
 psychology behind it (the three needs of Ryan, Rigby and Przybylski; Lazzaro's
@@ -198,7 +192,7 @@ what it looks like in the valley.
 | `fetch_twist` | Brings a thing that is not where it should be, or that someone else wants too. | "So that is where it was." | Competence, surprise | Fallout's "simple" deliveries | The berries grow only where the bells rang (three-fruits after P-3). |
 | `dilemma` | Chooses between two answers with no right one; both lead on. | "That was my call." | Autonomy, meaning | The Witcher 3's choices; Fallout's water chip | Give the old coin to Maru, or trade it with Pell; the valley remembers either. |
 | `skill` | Beats a challenge of nerve and reading that the world sets, never a work: the right moment to cross is the player's to find. | "Nailed it." | Competence, hard fun | Skyrim's sneaking; Fallout's VATS | A moonreed crossing while the wolf's eyes are turned (G35). |
-| `collection` | Completes a set shown in one place. | "One more." | Completion, ownership | Skyrim's Stones of Barenziah; Fallout's bobbleheads | A set of treasures on a shelf that NPCs notice when it is full (the shelf's future, section 5 row 1). |
+| `collection` | Completes a set shown in one place. | "One more." | Completion, ownership | Skyrim's Stones of Barenziah; Fallout's bobbleheads | A set of treasures on a shelf that NPCs notice when it is full ([the shelf's future](../../DECISIONS.md#5-known-breaches-on-2026-10-07), row 1). |
 | `tending` | Keeps something alive or safe over time. | "They needed me." | Relatedness, care | Companions in Skyrim; animals in Stardew Valley | Keep the fire lit through one night; a sapling watered three mornings. |
 | `riddle` | Reads clues in the world and answers with an action. | "Aha." | Insight, hard fun | Skyrim's pillar puzzles; The Witcher 3's riddles | The three ruin stones and the dig under the hill-facing statue. |
 | `mastery` | Learns a technique and uses it on something harder. | "I am getting better." | Competence over time | Skyrim's smithing; The Witcher 3's alchemy | A stew that needs two techniques the player has levelled. |
@@ -271,8 +265,8 @@ already handles that and the e2e run checks it.
 - **G24 Every beat has a sound, every sound has a beat.** Each event the game
   shows as a toast (a pickup, a full bag, gold, a level, a journal entry, a
   recipe, a task opened or done, a place restored) has its own short effect,
-  and no effect plays without a visible cause on screen. Hit and miss in the
-  strike are two different sounds within a tenth of a second (G13).
+  and no effect plays without a visible cause on screen. A work strike sounds
+  within a tenth of a second (G13).
 - **G25 The rare find is heard.** The found jingle plays only for a find the
   player could not count on: a rare dig, a recipe scrap, a riddle solved. An
   ordinary pickup gets the ordinary click. A jingle used for everything says
@@ -365,20 +359,17 @@ The demo has no combat (G35); its danger is the hour, and what the player eats.
   once per night. A burning camp warns before its fire goes out.
   The lantern is the sign that the night has begun, not a shield: its light
   keeps nothing off, and only a safe place does (G30, G34).
-- **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
-  take health; food, a first-aid kit and a night's sleep in town, at one's own
-  burning camp or at another's as a guest with a deal give it back; low health
-  slows work the way the empty bar did. A hunt outrun to a safe place gives
-  back what its bites took, up to a share of the bar
+- **G32 Health is the one bar.** Hazards take health. Food, a first-aid kit
+  and a night's sleep in town, at one's own burning camp or at another's as a
+  guest with a deal give it back. Low health slows work. A hunt outrun to a
+  safe place gives back what its bites took, up to a share of the bar
   (`hazard.predator.refill_bp`, three quarters in the core); it never takes
   any, and health lost before the hunt is food's to give back. A hunt that
   ends at dawn, in a fall or at the last bell gives nothing back (DECISIONS.md,
   16.10).
   Nothing drains it by the clock (G28): there is no hunger timer, eating is how
-  the player heals, and cooking keeps its purpose. Since P-5c (11.10) the
-  core content set the hunger drain to 0, in the same change that brought
-  the first hazards; since kernel 0.19 the drain is gone and the bar is
-  `player.hp`, its top `hp_cap` (DECISIONS.md, 10.10, 11.10 and 26.10).
+  the player heals, and cooking keeps its purpose. The bar is `player.hp`,
+  its top `hp_cap` (DECISIONS.md, 26.10).
 - **G33 A death is clear, and it costs the outing.** At zero health the
   player dies: the body falls where it stood and lies in the grass a moment,
   and the card says "You died." and "Your pack lies where you died." (TONE.md
@@ -393,10 +384,15 @@ The demo has no combat (G35); its danger is the hour, and what the player eats.
   stood at when the outing began, a place found on it counts only once
   brought home, and nothing but the pack marks where the death was. The bag
   from before the outing, the camp, the gold, the levels and the quests
-  already done are untouched. The card and the pack land with the combat
-  frame's first step ([COMBAT.md](COMBAT.md) section 6); until then the
-  demo's fall stays as built (the owner, 19.10: DECISIONS.md 2026-10-23 "The
-  line is PEGI 16 and ESRB T" and "Open ends of the world plan", answer 2).
+  already done are untouched. The pack came forward into the valley, ahead of
+  the combat frame (the owner's yes of 27.11 to ruling 2 of the plan review:
+  DECISIONS.md 2026-11-28 "A fall leaves its outing's finds as a pack"): the
+  kernel lays it at every fall, one pack of its own for each, and a second
+  fall before the first pack is taken leaves a second beside it, each gone a
+  game day after its own fall. What is taken from a pack is a find of the walk
+  the player is on, so a fall on the way home lays it down again. The fight,
+  and another player taking a pack, still come with the combat frame
+  ([COMBAT.md](COMBAT.md) section 6), as do the zone and its hunters' board.
   The cost is the lesson:
   a bad fruit eaten on the way means the basket is gone and the walk is made
   again.
@@ -442,9 +438,8 @@ The demo has no combat (G35); its danger is the hour, and what the player eats.
   weather's phase B: fog is drawn, so the shorter cone is still read by the
   eyes. Noise turns its head: a noisy act within that act's radius turns its
   heading toward the sound for a while, drawn so the eyes still read it,
-  while its place stays on the clock (G84; the owner, 20.10, round 4,
-  superseding his "never" of 19.10 in [REACTIONS.md](REACTIONS.md) section
-  9). It lands with the combat wave; in the demo the head stays on the clock
+  while its place stays on the clock (G84; the owner, 20.10, round 4).
+  It lands with the combat wave; in the demo the head stays on the clock
   alone unless the owner pulls it forward.
 - **G48 A fire is kept by hand.** A fire holds a few logs and burns them on
   the game hour, only while the player is in the valley; feeding it by hand
@@ -456,10 +451,7 @@ The demo has no combat (G35); its danger is the hour, and what the player eats.
   kept only once it is over: a `tend` step is met at that night's dawn, by a
   fire lit by its dusk that burned without a gap to dawn, never earlier
   however much wood it holds, and it stays met until the next dusk, even if
-  the fire is lit again by day. Added
-  2026-10-13 (the same entry); a log goes in whole since 2026-10-14
-  (DECISIONS.md, the entry on the full fire); the vigil closes at dawn since
-  2026-10-16 (the entry on the vigil at dawn). Weather never touches a fire:
+  the fire is lit again by day. Weather never touches a fire:
   rain neither puts one out nor makes it burn longer (the owner, 19.10;
   [REACTIONS.md](REACTIONS.md) section 9).
 
@@ -546,10 +538,8 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
 
 ### Menace
 
-Added 2026-10-10 by the sweep for holes, and changed the same day on the
-owner's word (DECISIONS.md, the entry on menace with a limit); moved to the
-PEGI 16 line on his word of 19.10 (DECISIONS.md 2026-10-23, "The line is PEGI
-16 and ESRB T"; [TONE.md](TONE.md)).
+See DECISIONS.md 2026-10-23 ("The line is PEGI 16 and ESRB T") and
+[TONE.md](TONE.md).
 
 - **G46 Menace at the line.** The line is PEGI 16 and ESRB T, and the tighter
   one holds. Danger shows through shape, sound and the dark, and blood, a
@@ -647,33 +637,17 @@ Named so a review can point at one in two words.
 | Same again | Two quests in a row of one type, or three items in a row got by the same motion. | G17, G18 |
 | Silent night | A fall with no countdown and no warning box before it. | G31 |
 | Breadcrumb | A death that leaves more than its pack: a stash, a pin on the map, or a line beyond the death card's. | G33 |
-| Hunger clock | A bar that empties by the clock, awake or asleep (the drain is 0 since P-5c). | G32, G28 |
+| Hunger clock | A bar that empties by the clock, awake or asleep. | G32, G28 |
 | Gear answer | A thing bought or made as the answer to a hunting hazard (a predator, a pit, a trap, deep water at night): oil, a rope, an antidote. A torch or a garment against a place's condition (cold, snow, the dark) is allowed (amended 2026-11-12). | G34 |
 | Timed work | A work action with a window to hit, a grade, a strip or a miss draw. | G15 |
 | Quiz talk | A topic list with one right pick, or a line that exists to explain. | G19, G23 |
-
-## 5. Known breaches on 2026-10-07
-
-Found by the owner playing the preview. He ruled on five the same evening and
-on the sixth row on 8.10 (the "decision" column); the GRUNT items P-1 to P-4
-carry the work. Rows 1 to 6 are closed in the content since 8.10 (P-1 and P-3,
-one pull request); the "decision" column says how.
-
-| What | Rule | Proposed fix (recommended default) | Decision |
-|---|---|---|---|
-| `core/collection-shelf`: four branches and a shard build a shelf that opens the journal's items tab. | G10 | Remove the camp. The journal already has its Log button and the J key. The `shelf` slot stays empty with its sign until it has a real function (a trophy shelf whose placed finds change what NPCs say) or is dropped. | Yes (owner, 7.10). Remove the camp now; the slot's future is a separate question. Done 8.10 (P-1): the camp is gone, the slot stays empty. |
-| `core/three-fruits`: bring 3 redberries. `core/herbs-for-pell`: bring 4 herbs. Both are the gather verb repeated. | G1, G2 | Rewrite each around one thing to notice. Berries: Maru says they grew thickest where the bells rang; one bush near the bell ruin gives the three in one strike at the right time of day. Herbs: Pell says the best herbs stand where the mist is thin at noon; the herb that counts only yields at midday. Both need the `find` step (P-2). | Yes (owner, 7.10) to both rewrites, with the `find` step. Done 8.10 (P-3): "Where the bells rang" finds a bellberry in the garden behind the ruins (05:00 to 20:00), "Herbs for Pell" a sunleaf on the sun bank up the river (12:00 to 20:00 since 10.10, with a basket). Both are new timed plants with items of their own, since a find of what the stall sells or what grows in three places is a counter with a clue on it. |
-| `core/a-coin-for-maru`: dig in the ruins for an old coin. | G2 (borderline) | It is already a find with a hint. Add the catch: the coin is under the statue that faces the hills, and the first dig elsewhere gives a shard and a hint. | Yes (owner, 7.10). Keep, add the catch with P-3. Done 8.10 (P-3): "The coin under the lantern", a riddle over the marked stone and the two lantern statues, answered by a dig under the hill lantern; a dig elsewhere while it is open gives what that spot gives and "Not here. Read the stones again." |
-| The seven inscriptions (the carved marks, two lantern statues, the stone head, the scratched names, the cold arch, the totem with fresh grass). Reading any of them changes nothing. | G8, G9 | One riddle ties the three ruin stones: the marks name the order the town was restored in; at night the lantern of the statue facing the hills glows and lights the tile to dig. The other four are seeds of a later arc (someone was here recently): each stays only if P-3 names the arc it pays into, otherwise it is cut until that arc exists. Needs the `riddle` step and prop ids (P-2), then the content (P-3). | Yes (owner, 7.10). One riddle across the three ruin stones; the other four are cut until an arc names them. Done 8.10 (P-3): the three carry ids and clues of two lines; the four notes are cut, the props stay. |
-| `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | Yes (owner, 7.10). As proposed. Done 8.10 (P-3): herb stew for the herbs. The coin gives Maru's basket, the stand-in for a place: the schema has no place reward yet, and the quest needs a trowel, so the basket opens the grove to a player who chose the ruins first. Changed 23.10: now that a place can be a reward, the coin gives the herb tea recipe and the key to Maru's house, not gold (the place reward); the house's inside (a bed, a desk with an old map, a place to leave gear) follows after the sleep places land. |
-| Maru's first meeting is eight boxes, most over two phone lines; Pell's standing lines run to three boxes. | G14, G21 | Maru: three boxes at the first meeting (who he is, what he wants, where to go); the rest moves behind the three topics that already exist. Every box within two phone lines. Pell: two boxes per standing. | Yes (owner, 8.10). With P-3. Done 8.10: Maru three boxes, the rest behind his three topics; Pell two per standing; every box within 80 characters. |
 
 ## 6. When a request collides with a rule
 
 This is the part written for AI agents and for developers in a hurry. Before
 changing a quest, a camp, a map prop, an NPC line, a reward, a timing value or
 the order of the opening: read sections 1-4, then run `pnpm check` and read the
-error lines that cite this page (play rules are errors since P-3, 8.10).
+error lines that cite this page.
 
 When a request (from the lead, a creator, a reviewer, or your own idea) breaks
 a rule, moves a rung of the ladder, or sits in a grey zone:
@@ -727,8 +701,8 @@ names the rule and the pull request waits.
 7. Does every new action answer within a tenth of a second, land with a beat,
    and have both a visible and an audible twin? (G13, G24, G27)
 8. Is every text box two lines or fewer, and never during a timed action? (G14)
-9. Does a miss turn up something, and does the change hold with reduced motion
-   and without colour? (G15, G29)
+9. Does work run without timing, grades or misses, and does the change hold
+   with reduced motion and without colour? (G15, G29)
 10. Did the owner play the preview, or did the reviewer play it for him and say
     so in the pull request?
 11. Does any blood, wound or body stay small, brief, at the sprite's size and
@@ -742,10 +716,8 @@ names the rule and the pull request waits.
 ## 8. What the check enforces
 
 `pnpm check` runs the `play` rules (`tools/src/play.ts`) on every content
-file, core and extensions alike. They were warnings (`!` lines) on 2026-10-07,
-when the core content itself broke them; since P-3 (8.10) the core content
-passes and every line is an error that stops the check. What a rule cannot
-test stays with the checklist above.
+file, core and extensions alike. Each breach is an error that stops the check.
+What a rule cannot test stays with the checklist above.
 
 | Rule | What is tested | Today |
 |---|---|---|
@@ -769,8 +741,8 @@ test stays with the checklist above.
 | G40 | A craft chance that rises with the tier; a miss worth as much as a success. The kernel keeps part of the inputs on every miss and makes nothing else. | error |
 | G44 | A garment or jewelry piece that is not worn, or worn outside its places; the hand for anything but a tool; an effect over its tier's cap or named twice; a look with effects or a set; a set of one piece, of another creator, or that cannot be worn whole; a cap on worn effects that falls with the tier. | error |
 
-Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats, a `find` may name what
-only digging gives or what one timed plant gives (P-3), and G8 checks each
+G2 counts `find` and `riddle` steps as beats, a `find` may name what
+only digging gives or what one timed plant gives, and G8 checks each
 note prop with an id against the riddles that cite it. Sound (G24-G27), fairness (G28),
 access (G29), the warning and the fall (G31-G33, G35) and the rest of G37 live in code, not in
 content: the checklist covers them, and

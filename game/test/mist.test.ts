@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { type Bundle, type State, newState, step } from '@game/kernel';
 
 import { T } from '../src/config';
-import { MIST, MIST_MEND_PER_S, MIST_RGB, type Clear, firstTaskDone, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../src/mist';
+import { MIST, MIST_MEND_PER_S, MIST_RGB, type Clear, firstTaskDone, mistChanged, mistClears, mistDensity, mistFill, mistPixels, mistRadius, mistStep, moteAt } from '../src/mist';
 import { loadBundle, seedFor } from '../../tools/test/helpers/world';
 
 let b: Bundle;
@@ -246,5 +246,46 @@ describe('the bridge draws the mist back (criterion 4)', () => {
     const m = mended('core/west-bank');
     expect(mistClears(b, JSON.parse(JSON.stringify(m)) as State)).toEqual(mistClears(b, m));
     expect(mistClears(b, started('core/west-bank'))).toHaveLength(1);
+  });
+});
+
+describe('a change of the clear places makes again only the box it reaches', () => {
+  const W = 40;
+  const H = 36;
+  /** the steps of a game's mist: the pocket opening a quarter tile at a time, a mend opening beside it, then a mend that closes and a pocket that moves */
+  const steps: Clear[][] = [];
+  for (let r = 5; r <= 7; r += 0.25) steps.push([{ x: 12, y: 18, r }]);
+  for (let r = 0; r <= 9; r += 0.25) steps.push([{ x: 12, y: 18, r: 7 }, { x: 27, y: 20, r }]);
+  steps.push([{ x: 12, y: 18, r: 7 }], [{ x: 14, y: 17, r: 7 }, { x: 36, y: 33, r: 6 }], [{ x: 36, y: 33, r: 6 }, { x: 14, y: 17, r: 7 }]);
+
+  test('every step: the patched raster is the whole raster, byte for byte', () => {
+    const kept = new Uint8ClampedArray(new ArrayBuffer(W * T * H * T * 4));
+    let before: Clear[] | undefined;
+    let pixels = 0;
+    for (const clears of steps) {
+      const box = before ? mistChanged(before, clears, W, H, T) : undefined;
+      if (!before || box) mistFill(kept, clears, W, H, T, box);
+      if (box) pixels += (box.x1 - box.x0) * (box.y1 - box.y0);
+      before = clears;
+      expect(Buffer.from(kept.buffer).equals(Buffer.from(mistPixels(clears, W, H, T).buffer))).toBe(true);
+    }
+    // and it is the box that was made, not the map: on this small map the boxes still add up to under 0.6 of a map a step (on the game's 1024 x 1024 a pocket's box is about a sixth)
+    expect(pixels).toBeLessThan(0.6 * (steps.length - 1) * W * T * H * T);
+  });
+
+  test('a box smaller than the places reach differs from the whole raster', () => {
+    const was: Clear[] = [{ x: 20, y: 18, r: 5 }];
+    const now: Clear[] = [{ x: 20, y: 18, r: 6 }];
+    const kept = mistPixels(was, W, H, T);
+    const box = mistChanged(was, now, W, H, T)!;
+    mistFill(kept, now, W, H, T, { x0: box.x0 + 40, y0: box.y0 + 40, x1: box.x1 - 40, y1: box.y1 - 40 });
+    expect(Buffer.from(kept.buffer).equals(Buffer.from(mistPixels(now, W, H, T).buffer))).toBe(false);
+  });
+
+  test('nothing changed, no box; a place that stays is not in it', () => {
+    const a: Clear[] = [{ x: 12, y: 18, r: 7 }, { x: 27, y: 20, r: 3 }];
+    expect(mistChanged(a, [...a], W, H, T)).toBeUndefined();
+    const box = mistChanged(a, [a[0]!, { x: 27, y: 20, r: 4 }], W, H, T)!;
+    expect(box.x0).toBeGreaterThan(12 * T);
   });
 });

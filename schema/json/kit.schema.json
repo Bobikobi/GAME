@@ -844,7 +844,7 @@
           }
         },
         "ramps": {
-          "maxItems": 4,
+          "maxItems": 24,
           "description": "The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.",
           "type": "array",
           "items": {
@@ -1053,7 +1053,7 @@
                       ]
                     },
                     "verb": {
-                      "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands) or lift (a large stone from the ground to over the head).",
+                      "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands), lift (a large stone from the ground to over the head), jump (the hop: take-off and the air), land (a soft landing), land_hard (a landing that hurt), die (the fall that ends in the town), run, sneak, idle (standing still), hit_heavy (a heavy blow that pushes the figure back), hit_behind (struck from behind) or down (knocked down and getting up).",
                       "anyOf": [
                         {
                           "const": "strike",
@@ -1106,8 +1106,54 @@
                         {
                           "const": "lift",
                           "type": "string"
+                        },
+                        {
+                          "const": "jump",
+                          "type": "string"
+                        },
+                        {
+                          "const": "land",
+                          "type": "string"
+                        },
+                        {
+                          "const": "land_hard",
+                          "type": "string"
+                        },
+                        {
+                          "const": "die",
+                          "type": "string"
+                        },
+                        {
+                          "const": "run",
+                          "type": "string"
+                        },
+                        {
+                          "const": "sneak",
+                          "type": "string"
+                        },
+                        {
+                          "const": "idle",
+                          "type": "string"
+                        },
+                        {
+                          "const": "hit_heavy",
+                          "type": "string"
+                        },
+                        {
+                          "const": "hit_behind",
+                          "type": "string"
+                        },
+                        {
+                          "const": "down",
+                          "type": "string"
                         }
                       ]
+                    },
+                    "take": {
+                      "minimum": 2,
+                      "maximum": 9,
+                      "description": "Which take of the same clip this sheet is. A clip with no `take` is the first take; a second or third take of the same verb, race and view (a near-identical drawing, kept for variety) carries 2, 3 and so on, and the game picks among a clip's takes at random each time it plays. Left out, the first take.",
+                      "type": "integer"
                     },
                     "frame_ms": {
                       "minimum": 1,
@@ -1165,6 +1211,111 @@
                       }
                     }
                   }
+                },
+                "creature_clip": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "creature",
+                    "view",
+                    "verb",
+                    "frame_ms",
+                    "anchor"
+                  ],
+                  "properties": {
+                    "creature": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "The id of the creature kind the clip is drawn for, a key of `map.creatures.kinds`, for example \"core/wolf\".",
+                      "type": "string"
+                    },
+                    "view": {
+                      "description": "left, front or back; the right side is the left one flipped.",
+                      "anyOf": [
+                        {
+                          "const": "left",
+                          "type": "string"
+                        },
+                        {
+                          "const": "front",
+                          "type": "string"
+                        },
+                        {
+                          "const": "back",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "verb": {
+                      "description": "What the clip plays: walk (a loop while the creature moves) or idle (a loop while it stands).",
+                      "anyOf": [
+                        {
+                          "const": "walk",
+                          "type": "string"
+                        },
+                        {
+                          "const": "idle",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "frame_ms": {
+                      "minimum": 1,
+                      "maximum": 5000,
+                      "description": "How long each frame shows, in whole milliseconds: the clip's own speed.",
+                      "type": "integer"
+                    },
+                    "anchor": {
+                      "description": "The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the creature's feet.",
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "fit_permille": {
+                      "minimum": 100,
+                      "maximum": 4000,
+                      "description": "The factor the clip shows at on top of its density's base scale (1 / density), in thousandths. Left out, 1000. One value per sheet: the walk and the idle of a view share it, and the views of a creature are matched by it so it does not change size as it turns (a view drawn longer or wider than another takes a lower value). The feet stay on the anchor whatever the fit.",
+                      "type": "integer"
+                    },
+                    "head": {
+                      "description": "Where the face is, in pixels of the frame (the same grid as `anchor`): what the world lays on the head (the glint of the eyes, the mark that it has seen the player). Left out, the world uses the middle of the frame.",
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 384,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  }
+                },
+                "still_of": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                  "maxLength": 80,
+                  "description": "The id of the creature kind (a key of `map.creatures.kinds`) this still sprite stands for: while the creature's clips (`creature_clip`) are loaded the world draws them, and this picture is what shows when they are not.",
+                  "type": "string"
                 },
                 "scale": {
                   "minimum": 0.1,

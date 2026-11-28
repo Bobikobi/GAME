@@ -1,11 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { type Bundle, type FightWorld, fightCreature, fightPlayer, fightTick, hashOf, lastBellAt, newState, pulseDurations, visitNight } from '@game/kernel';
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 import golden from './fixtures/fight-golden.json';
 import { fightArena, fightScripts, playedState, scriptInputs, scriptWorld } from './fight-scripts.js';
 
 let b: Bundle;
-beforeAll(() => { b = fightArena(loadBundle()); });
+beforeAll(() => { b = fightArena(loadPixelBundle()); });
 
 function freeze(value: unknown, seen = new WeakSet<object>()): void {
   if (!value || typeof value !== 'object' || seen.has(value)) return;
@@ -17,6 +17,8 @@ function freeze(value: unknown, seen = new WeakSet<object>()): void {
 function developEvents(events: ReturnType<typeof fightTick>['events']): unknown[] {
   return events.flatMap((event): unknown[] => {
     if (event.e === 'fight_miss' || event.e === 'fight_guard' || event.e === 'fight_dodge') return [];
+    // the pack a fall leaves (kernel 0.43) did not exist when the hashes were recorded
+    if (event.e === 'pack') return [];
     if (event.e !== 'hit') return [event];
     const { kind: _kind, number: _number, move: _move, striker: _striker, struck: _struck, foe: _foe, ...old } = event;
     return [old];
@@ -51,6 +53,8 @@ function developWorld(world: FightWorld): FightWorld {
     player.state.player.recipes = player.state.player.recipes.filter((id) => !RECIPES_ADDED_SINCE.has(id));
     // the day's tally (#806) did not exist when the hashes were recorded
     delete player.state.player.day;
+    // nor did the pack a fall leaves (kernel 0.43); the bag it left is the recorded one
+    delete player.state.player.packs;
   }
   return old;
 }

@@ -33,6 +33,7 @@ import { readBoard } from './board';
 import { holeProblems } from './kit/holes';
 import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
+import { clipBaseProblems } from './kit/bases';
 import { CORE_KIT, richProblem, staleLeft } from './kit/rich';
 import { HELD_WAIVERS, heldProblems, heldRows } from './kit/held';
 import { scaleProblems } from './kit/scale';
@@ -54,6 +55,7 @@ import { checkRaces } from './races';
 import { checkFamilies } from './families';
 import { checkSchools } from './schools';
 import { checkHands } from './hands';
+import { checkShut } from './shut';
 import { checkRichness } from './richness';
 import { checkSearch } from './search';
 import { checkSea } from './sea';
@@ -87,6 +89,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkEquipment(b));
     issues.push(...checkHunt(b, assembled.origin));
     issues.push(...checkStones(b, assembled.origin));
+    issues.push(...checkFrame(b, assembled.origin));
     const chunks = files
       .filter((f) => (f.data as { type: string }).type === 'chunk')
       .map((f) => ({ chunk: (f.data as unknown as ChunkFile).chunk, file: toRepoPath(f.abs) }));
@@ -114,6 +117,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkSea(b, assembled.origin));
     issues.push(...checkMapPlan(b, assembled.origin));
     issues.push(...checkHands(b, assembled.origin));
+    issues.push(...checkShut(b, assembled.origin));
     issues.push(...checkBalance(b, paramsFile?.type === 'params' ? paramsFile.params : undefined));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
@@ -882,6 +886,28 @@ function checkStones(b: Bundle, origin: Record<string, string>): Issue[] {
  * of the five goods classes at or below its tier, with shares that sum to 100, under the spawn cap of its danger; a
  * protected kind is never dressed; a grade is a plain good's twin; and no good of the hunt is sold.
  */
+/**
+ * A map of a later frame says how a save of the frame before is carried (kernel/src/adapt.ts): by one shift (`moved`) or slot by
+ * slot (`remap`), never both, and a remap names each old slot once, by an id that is still a slot today (a slot that left the
+ * map carries nothing, so naming it is a mistake to catch here, not a tile lost quietly on the phone).
+ */
+export function checkFrame(b: Bundle, origin: Record<string, string>): Issue[] {
+  const issues: Issue[] = [];
+  const file = origin[b.map.id] ?? 'content';
+  const err = (where: string, message: string) => issues.push({ file, where, message, level: 'error' });
+  const { frame, moved, remap } = b.map;
+  if (moved && remap) err('map.remap', 'a map carries saves by `moved` or by `remap`, not both');
+  if ((moved || remap) && (frame ?? 1) <= 1) err(remap ? 'map.remap' : 'map.moved', 'only a map of frame 2 or more carries saves: raise `frame` with it');
+  const today = new Set(b.map.slots.map((s) => s.id));
+  const seen = new Set<string>();
+  (remap?.slots ?? []).forEach((s, i) => {
+    if (seen.has(s.id)) err(`map.remap.slots.${i}.id`, `"${s.id}" is listed twice`);
+    seen.add(s.id);
+    if (!today.has(s.id)) err(`map.remap.slots.${i}.id`, `"${s.id}" is no slot of today's map, so nothing saved in it can be carried`);
+  });
+  return issues;
+}
+
 function checkHunt(b: Bundle, origin: Record<string, string>): Issue[] {
   const issues: Issue[] = [];
   const mapFile = origin[b.map.id] ?? 'content';
@@ -1179,6 +1205,12 @@ export function checkKits(a: Assembled): Issue[] {
       issues.push({ file: kitFile, where: `art.held.${kitId}:${p.clip}`, message: p.message, level: 'error' });
     }
     if (kitId === CORE_KIT) {
+      // One base body for each race (DECISIONS 2026-11-28): a clip drawn from a retired walk sheet, or a new clip with no recorded base
+      for (const p of clipBaseProblems(kit.sprites)) {
+        issues.push(p.where === 'sprite'
+          ? { file: kitFile, where: `kit.sprites.${p.name}.clip`, message: p.message, level: 'error' }
+          : { file: 'tools/kit-gen/bases/bases.json', where: p.name, message: p.message, level: 'error' });
+      }
       for (const name of staleLeft(kit.sprites)) {
         issues.push({ file: 'tools/src/kit/rich.ts', where: 'SIXTEEN_PX_LEFT', message: `names "${name}", which the core kit does not hold: take it off the list`, level: 'error' });
       }

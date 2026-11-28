@@ -11,7 +11,7 @@
  * With no clip for a verb, race and view the figure keeps today's walk sheet or code-drawn motion.
  */
 import type { SpriteInfo, WorkKind } from '@game/kernel';
-import type { ClipInfo } from '@game/schema';
+import type { ClipInfo, CreatureClipInfo } from '@game/schema';
 import type { Dir } from './input';
 
 export type ClipVerb = ClipInfo['verb'];
@@ -20,6 +20,13 @@ export type ClipView = ClipInfo['view'];
 /** The kernel's sprite entry with the clip the assembler lets ride on it (tools/src/assemble.ts); the kernel's own type does not name it. */
 export type ClipSprite = SpriteInfo & { clip?: ClipInfo };
 export type ClipSprites = Readonly<Record<string, ClipSprite>>;
+
+/**
+ * A creature's drawn sheets (#847): the kit names a sheet per creature, verb and view in `creature_clip`, and the creature's fallback
+ * still names the creature in `still_of`. The assembler lets both ride on the sprite entry; the kernel's own type does not name them.
+ */
+export type CreatureSprite = SpriteInfo & { creature_clip?: CreatureClipInfo; still_of?: string };
+export type CreatureSprites = Readonly<Record<string, CreatureSprite>>;
 
 /** The view of a facing, and whether the sheet is drawn flipped: the right side is the left one flipped, as the walk's is. */
 export function viewOf(dir: Dir): { view: ClipView; flip: boolean } {
@@ -43,17 +50,24 @@ export interface Found {
 
 const lookup = (verb: string, race: string, view: string): string => `${verb}|${race}|${view}`;
 
-const indexes = new WeakMap<object, ReadonlyMap<string, string>>();
+const indexes = new WeakMap<object, ReadonlyMap<string, readonly string[]>>();
 
-/** The kit's clips by verb + race + view, built once for a sprites table. */
-function indexOf(sprites: ClipSprites): ReadonlyMap<string, string> {
+/** The kit's clips by verb + race + view, built once for a sprites table: each lookup holds its takes' sheet keys, the first take first (then take 2, 3 and so on). */
+function indexOf(sprites: ClipSprites): ReadonlyMap<string, readonly string[]> {
   let index = indexes.get(sprites);
   if (!index) {
-    const built = new Map<string, string>();
+    // one key per take: two sheets of the same take (a kit listing a clip twice, a test adding its own) keep the later one, as the lookup always did
+    const found = new Map<string, Map<number, string>>();
     for (const [key, info] of Object.entries(sprites)) {
       const c = info.clip;
-      if (c) built.set(lookup(c.verb, c.race, c.view), key);
+      if (!c) continue;
+      const at = lookup(c.verb, c.race, c.view);
+      const takes = found.get(at) ?? new Map<number, string>();
+      takes.set(c.take ?? 1, key);
+      found.set(at, takes);
     }
+    const built = new Map<string, readonly string[]>();
+    for (const [at, takes] of found) built.set(at, [...takes].sort((a, b) => a[0] - b[0]).map(([, key]) => key));
     indexes.set(sprites, (index = built));
   }
   return index;
@@ -73,12 +87,19 @@ export function raceClips(sprites: ClipSprites, race: string): [string, ClipSpri
   return Object.entries(sprites).filter(([, info]) => info.clip?.race === race);
 }
 
-/** The clip for a verb, a race and a facing, or nothing: then the figure keeps today's walk sheet or code-drawn motion. */
-export function clipFor(sprites: ClipSprites, verb: ClipVerb, race: string, dir: Dir): Found | undefined {
+/**
+ * The clip for a verb, a race and a facing, or nothing: then the figure keeps today's walk sheet or code-drawn motion. A clip may have
+ * several takes (near-identical drawings kept for variety, `take` on the kit's clip); `roll`, a number from 0 up to 1 (not 1), picks
+ * among them, so a caller that plays a clip once asks with `Math.random()` and a caller that draws a clip's frames every frame keeps the
+ * default 0, the first take, and never flickers between takes.
+ */
+export function clipFor(sprites: ClipSprites, verb: ClipVerb, race: string, dir: Dir, roll = 0): Found | undefined {
   const { view, flip } = viewOf(dir);
-  const key = indexOf(sprites).get(lookup(verb, race, view));
-  const info = key === undefined ? undefined : sprites[key];
-  if (key === undefined || !info?.clip) return undefined;
+  const keys = indexOf(sprites).get(lookup(verb, race, view));
+  if (!keys || keys.length === 0) return undefined;
+  const key = keys[Math.min(keys.length - 1, Math.max(0, Math.floor(roll * keys.length)))]!;
+  const info = sprites[key];
+  if (!info?.clip) return undefined;
   return { key, flip, frames: info.frames, frame_ms: info.clip.frame_ms, anchor: info.clip.anchor, fit: (info.clip.fit_permille ?? 1000) / 1000, ...(info.clip.hand ? { hand: info.clip.hand } : {}) };
 }
 
@@ -136,6 +157,21 @@ export function clipFrame(elapsed: number, frames: number, frameMs: number, last
   return elapsed < lasts ? n % frames : undefined;
 }
 
+/**
+ * The run clip is a loop of poses drawn for the distance of one cycle, not for a time: the frame shown is the nearest below the distance
+ * the feet have gone (`walked`, art pixels), so the legs never skate and a figure that slows or stops holds its pose. How far a run cycle
+ * reaches is a number read off the picture by eye (the stride is not measurable on a drawn run: no planted foot): the walk sheet's own cycle
+ * times `RUN_CYCLE_OVER_WALK`, or `RUN_CYCLE_FALLBACK_PX` for a walk with no stride; the owner judges it on the live site.
+ */
+export const RUN_CYCLE_OVER_WALK = 1.7;
+export const RUN_CYCLE_FALLBACK_PX = 320;
+/** The sneak clip is the same kind of loop (6 poses of a low creep): a cycle shorter than the walk's, read off the picture by eye. */
+export const SNEAK_CYCLE_OVER_WALK = 0.7;
+export function runFrame(walked: number, cycle: number, frames: number): number {
+  if (!(cycle > 0) || !(frames > 0)) return 0;
+  return Math.floor(Math.max(0, walked) / (cycle / frames)) % frames;
+}
+
 /** The verb a work kind plays (kernel/src/work.ts `WorkKind`): a tree is felled, a stone quarried, a spot dug, a river fished, the rest picked up. */
 export const VERB_OF_AUTO: Readonly<Record<WorkKind, ClipVerb>> = { fell: 'fell', mine: 'quarry', dig: 'dig', fish: 'fish', pick: 'pickup' };
 
@@ -179,6 +215,11 @@ export class ClipPlayer {
     return this.run !== null;
   }
 
+  /** The clip under way (the take that was picked), or nothing: what a caller that needs the clip's own numbers, the hand's points, reads, so it never asks the kit again and gets another take. */
+  get current(): Found | undefined {
+    return this.run?.found;
+  }
+
   /** Begins a clip at `now`; one already playing is replaced, so a new blow restarts the swing. */
   start(found: Found, now: number, lasts?: number, stretch = false): void {
     this.run = { found, start: now, ...(lasts === undefined ? {} : { lasts }), ...(stretch ? { stretch } : {}) };
@@ -205,4 +246,97 @@ export class ClipPlayer {
     this.shown = frame;
     return { found: r.found, frame };
   }
+}
+
+const creatureIndexes = new WeakMap<object, ReadonlyMap<string, string>>();
+
+/** The kit's creature sheets by creature + verb + view, built once for a sprites table. */
+function creatureIndexOf(sprites: CreatureSprites): ReadonlyMap<string, string> {
+  let index = creatureIndexes.get(sprites);
+  if (!index) {
+    const built = new Map<string, string>();
+    for (const [key, info] of Object.entries(sprites)) {
+      const c = info.creature_clip;
+      if (c) built.set(lookup(c.verb, c.creature, c.view), key);
+    }
+    creatureIndexes.set(sprites, (index = built));
+  }
+  return index;
+}
+
+/** The keys of every sheet a creature has in the kit. */
+export function creatureSheets(sprites: CreatureSprites, creature: string): string[] {
+  return Object.entries(sprites).filter(([, info]) => info.creature_clip?.creature === creature).map(([key]) => key);
+}
+
+/** The creature a fallback still stands for (kit `still_of`), or nothing for a picture that stands for none. */
+export function creatureOf(sprites: CreatureSprites, still: string): string | undefined {
+  return sprites[still]?.still_of;
+}
+
+/** What the screen shows of a creature's sheet: the sheet, whether it is flipped, and its own numbers. */
+export interface FoundCreature {
+  key: string;
+  view: ClipView;
+  flip: boolean;
+  frames: number;
+  frame_ms: number;
+  /** the sheet pixel the feet stand on, and the frame's size */
+  anchor: readonly [number, number];
+  w: number;
+  h: number;
+  /** the clip's fit as a share (`fit_permille` over 1000, 1 when it has none) */
+  fit: number;
+  /** the sheet pixel the eye (or the middle of the eyes) is at, where the view shows one; the middle top of the figure from behind */
+  head?: readonly [number, number];
+}
+
+/** The view a creature shows facing a way, and whether the sheet is drawn flipped: right is the left sheet flipped (`viewOf`). */
+export function viewOfHeading(heading: readonly [number, number], last?: Dir): { dir: Dir; view: ClipView; flip: boolean } | undefined {
+  const [hx, hy] = heading;
+  const dir: Dir | undefined = hx < 0 ? 'left' : hx > 0 ? 'right' : hy < 0 ? 'up' : hy > 0 ? 'down' : last;
+  return dir === undefined ? undefined : { dir, ...viewOf(dir) };
+}
+
+/** The creature's sheet for a verb and a facing, or nothing: then the world keeps the fallback still. */
+export function creatureClipFor(sprites: CreatureSprites, creature: string, verb: CreatureClipInfo['verb'], dir: Dir): FoundCreature | undefined {
+  const { view, flip } = viewOf(dir);
+  const key = creatureIndexOf(sprites).get(lookup(verb, creature, view));
+  const info = key === undefined ? undefined : sprites[key];
+  const c = info?.creature_clip;
+  if (key === undefined || !info || !c) return undefined;
+  return { key, view, flip, frames: info.frames, frame_ms: c.frame_ms, anchor: c.anchor, w: info.w, h: info.h, fit: (c.fit_permille ?? 1000) / 1000, ...(c.head ? { head: c.head } : {}) };
+}
+
+/**
+ * Whether a creature walks or stands, from where it is drawn: it walks while its drawn place moves and for `hold` ms after, so the
+ * hold of a step between two kernel tiles, or a pause at the "!" , does not flicker between the sheets. Display only.
+ */
+export class WalkWatch {
+  private last: readonly [number, number] | undefined;
+  private movedAt = -Infinity;
+
+  constructor(private readonly hold = 250) {}
+
+  /** Feeds the drawn place (tiles) at `now` (ms) and says whether the creature is walking. */
+  walking(now: number, at: readonly [number, number]): boolean {
+    if (this.last && (Math.abs(at[0] - this.last[0]) > 1e-6 || Math.abs(at[1] - this.last[1]) > 1e-6)) this.movedAt = now;
+    this.last = [at[0], at[1]];
+    return now - this.movedAt < this.hold;
+  }
+}
+
+/**
+ * Where a creature's image is placed so that its feet's column sits at `x`: the world puts the sprite's origin at the middle of its
+ * frame (the shadow layer reads it so) and shifts the image by the anchor's distance from the middle, mirrored when the sheet is flipped.
+ */
+export function creatureX(x: number, found: Pick<FoundCreature, 'anchor' | 'w' | 'flip'>, scale: number): number {
+  const d = (found.anchor[0] - found.w / 2) * scale;
+  return found.flip ? x + d : x - d;
+}
+
+/** Where a sheet pixel (the head) is in the world for an image placed so: the same mirror about the feet's column (`handWorld`'s rule). */
+export function creaturePoint(x: number, y: number, found: Pick<FoundCreature, 'anchor' | 'flip'>, point: readonly [number, number], scale: number): { x: number; y: number } {
+  const dx = (point[0] - found.anchor[0]) * scale;
+  return { x: x + (found.flip ? -dx : dx), y: y + (point[1] - found.anchor[1]) * scale };
 }

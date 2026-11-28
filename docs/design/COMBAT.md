@@ -229,6 +229,7 @@ A fall in a fight is the kernel's `fall` (G33): the outing's finds leave the bag
 pack: { at: Tile, items: { item: qty }, until: tick }   // a world object the server holds; the player's own in their own valley
 ```
 
+- **Built in the valley (kernel 0.43.0, DECISIONS 2026-11-28):** `player.packs` holds `{ id, at, items, until, batches? }`, laid by the kernel at every fall that lost something; the action is `{ t: 'takepack', pack: id, at }`, the events `{ e: 'pack', pack, at, until }` (after `fall`) and `{ e: 'unpack', pack, items }`. One player's own packs only; the server's world object, a second player taking one and the zone are this frame's.
 - Placed at `from` by the server at every fall (a boar's, a pit's or a player's alike), holding the `lost` list of the fall event, `until` = the fall's tick plus `day_length_ms`. Nothing else goes in: the pack holds no more than the outing found, so dying never pays (10.10, "a fall gains nothing").
 - A `take` action for a player standing next to it with room in the bag: `{ kind: 'take', pack: Id, at }`; what is taken joins the taker's outing as a find, so a fall on the way home loses it again. First come, the dead player included.
 - The pack is drawn as the body's pack lying in the grass, with no name on it; the death card says "Your pack lies where you died." (TONE section 4).

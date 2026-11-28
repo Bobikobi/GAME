@@ -6,9 +6,11 @@
  */
 import type { Bundle } from './bundle';
 import { preyKey, recordHuntBatches } from './hunt';
+import { mulDiv } from './num';
 import { appearSlots } from './reactions';
+import { anchorId } from './wild/den';
 import { relocationOf } from './relocate';
-import { placeName } from './world';
+import { inRect, placeName } from './world';
 import { KERNEL_VERSION, fitWorn, groundKey, mapFrame, migrateStoneState, type HuntStock, type State } from './state';
 import { startRecipes } from './step';
 
@@ -79,6 +81,15 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
     const spots = new Set((bundle.map.creatures?.spots ?? []).map(preyKey));
     p.preyReturns = Object.fromEntries(Object.entries(p.preyReturns).filter(([key]) => spots.has(key)));
   }
+  // a seat holds only while both its spots are spots of one kind today; else the animal goes home (public #930)
+  if (p.preySeats) {
+    const spots = new Set((bundle.map.creatures?.spots ?? []).map(preyKey));
+    const kept = Object.entries(p.preySeats).filter(
+      ([home, seat]) => home !== seat && spots.has(home) && spots.has(seat) && parsePreyKey(home)?.kind === parsePreyKey(seat)?.kind,
+    );
+    if (kept.length > 0) p.preySeats = Object.fromEntries(kept);
+    else delete p.preySeats;
+  }
   // a height layer may have walled the old tile off from every wake (G68): stand on the nearest tile a foot can reach, never a fall
   const stand = relocationOf(bundle, state);
   if (stand) p.at = stand;
@@ -104,12 +115,64 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
   return state;
 }
 
+/** A prey cooldown's key (`anchorId`: `<kind>@<x>,<y>`) read back, or undefined when it is not one. */
+function parsePreyKey(key: string): { kind: string; x: number; y: number } | undefined {
+  const m = /^(.+)@(\d+),(\d+)$/.exec(key);
+  return m ? { kind: m[1]!, x: Number(m[2]), y: Number(m[3]) } : undefined;
+}
+
 /**
- * A state of an earlier map frame has its tiles shifted by the map's `moved`, once: the player, the fire they
- * kindled, the carcasses and what lies dropped on the ground. A tile that falls outside the map is pulled to its
- * nearest edge (the reach check after it puts the character on the nearest foot-reachable tile). The state then
- * takes the map's frame, so a later change of content never shifts it again. A state of a later frame than the
- * map's (a server rolled back) is left as it is.
+ * Where a tile of the frame just before stands now, under a map that carries `remap`: the previous frame's slots, by
+ * id. A tile inside one of them (the smallest that holds it, ties by the list's order) lands on the same share of
+ * today's slot of that id, counted in whole tiles: (x - old.x) * new.w / old.w, rounded down, from new.x. A tile in
+ * none moves with the nearest of them (four-way distance to its edge, ties by the list's order): the same step from
+ * that slot's edge, from where the edge lies today. Integer-only, so every machine carries a save the same way.
+ */
+export function remapTile(bundle: Bundle, at: readonly [number, number]): [number, number] {
+  const map = bundle.map;
+  const today = new Map(map.slots.map((s) => [s.id, s]));
+  const pairs = (map.remap?.slots ?? []).flatMap((old) => {
+    const now = today.get(old.id);
+    return now ? [{ old, now }] : [];
+  });
+  const clamp = (x: number, y: number): [number, number] => [Math.min(map.width - 1, Math.max(0, x)), Math.min(map.height - 1, Math.max(0, y))];
+  if (pairs.length === 0) return clamp(at[0], at[1]);
+  const [x, y] = at;
+  let inside: (typeof pairs)[number] | undefined;
+  for (const pair of pairs) {
+    if (!inRect(x, y, pair.old)) continue;
+    if (!inside || pair.old.w * pair.old.h < inside.old.w * inside.old.h) inside = pair;
+  }
+  // v lies inside the old slot here (a tile in it, or the nearest point of its edge), so the factor is never negative
+  const share = (v: number, from: number, size: number, to: number, toSize: number): number => to + mulDiv(v - from, toSize, size);
+  if (inside) {
+    const { old, now } = inside;
+    return clamp(share(x, old.x, old.w, now.x, now.w), share(y, old.y, old.h, now.y, now.h));
+  }
+  let near = pairs[0]!;
+  let nearAt: [number, number] = [0, 0];
+  let best = Infinity;
+  for (const pair of pairs) {
+    const ex = Math.min(pair.old.x + pair.old.w - 1, Math.max(pair.old.x, x));
+    const ey = Math.min(pair.old.y + pair.old.h - 1, Math.max(pair.old.y, y));
+    const d = Math.abs(x - ex) + Math.abs(y - ey);
+    if (d < best) {
+      best = d;
+      near = pair;
+      nearAt = [ex, ey];
+    }
+  }
+  const { old, now } = near;
+  return clamp(share(nearAt[0], old.x, old.w, now.x, now.w) + (x - nearAt[0]), share(nearAt[1], old.y, old.h, now.y, now.h) + (y - nearAt[1]));
+}
+
+/**
+ * A state of an earlier map frame has its tiles carried into the map's frame, once: the player, the fire they
+ * kindled, the carcasses, the packs a fall left, the snares, the prey's cooldowns, the stones and what lies dropped on the ground. A map
+ * moved inside a larger one (`moved`) shifts every tile by one step, a tile that falls outside pulled to its nearest
+ * edge; a map redrawn (`remap`) carries each tile slot by slot (`remapTile`). The reach check after it puts the
+ * character on the nearest foot-reachable tile. The state then takes the map's frame, so a later change of content
+ * never carries it again. A state of a later frame than the map's (a server rolled back) is left as it is.
  */
 function moveTiles(bundle: Bundle, state: State): void {
   const frame = mapFrame(bundle);
@@ -117,25 +180,57 @@ function moveTiles(bundle: Bundle, state: State): void {
   const from = state.frame ?? 1;
   if (from >= frame) return;
   const moved = bundle.map.moved;
+  const remap = bundle.map.remap;
   state.frame = frame;
-  if (!moved) return;
+  if (!moved && !remap) return;
   const { width, height } = bundle.map;
-  const shift = (at: [number, number]): [number, number] => [
-    Math.min(width - 1, Math.max(0, at[0] + moved.dx)),
-    Math.min(height - 1, Math.max(0, at[1] + moved.dy)),
-  ];
+  const shift = remap
+    ? (at: [number, number]): [number, number] => remapTile(bundle, at)
+    : (at: [number, number]): [number, number] => [
+        Math.min(width - 1, Math.max(0, at[0] + moved!.dx)),
+        Math.min(height - 1, Math.max(0, at[1] + moved!.dy)),
+      ];
   const p = state.player;
   p.at = shift(p.at);
   if (p.own) p.own.at = shift(p.own.at);
   for (const carcass of p.carcasses ?? []) carcass.at = shift(carcass.at);
+  for (const pack of p.packs ?? []) pack.at = shift(pack.at);
   for (const snare of p.snares ?? []) snare.at = shift(snare.at);
-  if (p.preyReturns) {
+  if (p.preyReturns && moved && !remap) {
     const returns = p.preyReturns;
     p.preyReturns = {};
     // Use today's spots and their earlier coordinates to preserve their cooldowns.
     for (const spot of bundle.map.creatures?.spots ?? []) {
       const until = returns[preyKey({ ...spot, x: spot.x - moved.dx, y: spot.y - moved.dy })];
       if (until !== undefined) p.preyReturns[preyKey(spot)] = until;
+    }
+  } else if (p.preyReturns) {
+    // a redrawn map's spots are new: a cooldown follows its spot when the spot's carried tile is a spot of the same kind today, else it ends
+    const returns = p.preyReturns;
+    p.preyReturns = {};
+    const spots = new Set((bundle.map.creatures?.spots ?? []).map(preyKey));
+    for (const [key, until] of Object.entries(returns)) {
+      const old = parsePreyKey(key);
+      if (!old) continue;
+      const [x, y] = shift([old.x, old.y]);
+      const now = anchorId(old.kind, x, y);
+      if (spots.has(now)) p.preyReturns[now] = Math.max(p.preyReturns[now] ?? 0, until);
+    }
+  }
+  if (p.preySeats) {
+    // a seat is carried like a cooldown: both of its spots move with the frame, and the filter in `adaptState` drops it if either is no spot today
+    const seats = p.preySeats;
+    p.preySeats = {};
+    const carried = (key: string): string | undefined => {
+      const old = parsePreyKey(key);
+      if (!old) return undefined;
+      const [x, y] = shift([old.x, old.y]);
+      return anchorId(old.kind, x, y);
+    };
+    for (const [home, seat] of Object.entries(seats)) {
+      const h = carried(home);
+      const s = carried(seat);
+      if (h && s) p.preySeats[h] = s;
     }
   }
   if (p.stones) {
@@ -146,6 +241,8 @@ function moveTiles(bundle: Bundle, state: State): void {
       for (const [kind, count] of Object.entries(pile)) target[kind] = (target[kind] ?? 0) + count;
     }
     p.stones.placed = placed;
+    // a redrawn map's stone spots are a new list: an index emptied on the old one names some other spot now, so every spot lies full again
+    if (remap) p.stones.taken = {};
     for (const loan of p.stones.returns) {
       if (loan.key === '') continue;
       const [x, y] = loan.key.split(',').map(Number) as [number, number];

@@ -1,4 +1,5 @@
 import { SOFTWARE_GPU } from './device';
+import { frontArrival, type Wind } from './wind';
 
 /**
  * The ground's rich detail, worked out without Phaser so it can be tested: the
@@ -211,10 +212,16 @@ export function remapTone(data: Uint8ClampedArray, width: number, tone: Tone, fr
 export const MOVES = { meadow: [0x84c450, 0xc8e88a], water: [0x7cc4ec, 0xc4ecf8] } as const;
 
 /**
- * The gust the sway shader reads: how close a screen colour must be to a moving one (a share of a channel, so a
- * colour the camera's grade nudged still counts), how fast the gust runs, and how wide its bands are a pixel.
+ * The classic door's own gust, as it always was: how close a screen colour must be to a moving one (a share of a channel, so a colour the camera's grade nudged still counts), how fast the
+ * gust runs, and how wide its bands are a pixel. A page without a painted ground sways by this, unchanged (the painted door ships dark: nothing a player sees moves until it is switched on).
  */
 export const GUST = { tolerance: 0.035, speed: 1.3, scale: 0.035 } as const;
+
+/**
+ * The sway by the table's wind (wind.ts), read only where a wind is given (the painted door): the same tolerance, and the swing's own period (s) along the front. A period of 5.3 s is the
+ * painted gust's slow swell: a tile's lean changes four times a period, and three changes take a quarter of a period, 1.3 s, so no tile changes lean more than twice in any second (a test counts it).
+ */
+export const SWAY = { tolerance: GUST.tolerance, period: 5.3 } as const;
 
 /** 0 still, 1 a meadow green that leans, 2 a water dash that drifts: the mask the sway shader applies by colour. */
 export function movesAs(rgb: number): 0 | 1 | 2 {
@@ -237,14 +244,20 @@ export function groundMask(data: Uint8ClampedArray | Uint8Array, width: number, 
  * How far the gust leans a meadow pixel at art pixel (x, y) at `time` seconds, in whole art px: 2 at its heart, 1 at
  * its edge, 0 between gusts, and a row band every 6 px a step less. The shader runs the same sum.
  */
-export function leanAt(x: number, y: number, time: number): 0 | 1 | 2 {
-  const lean = gustAt(x, y, time);
+export function leanAt(x: number, y: number, time: number, wind?: Wind): 0 | 1 | 2 {
+  const lean = gustAt(x, y, time, wind);
   return (Math.floor(y / 6) % 2 === 1 ? Math.max(0, lean - 1) : lean) as 0 | 1 | 2;
 }
 
-/** The gust alone at art pixel (x, y), before the row band: 2 at its heart, 1 at its edge, 0 between gusts. A whole tree leans by this, at its top. */
-export function gustAt(x: number, y: number, time: number): 0 | 1 | 2 {
-  const g = Math.sin(x * GUST.scale + y * GUST.scale * 0.6 - time * GUST.speed);
+/** The swing at art pixel (x, y) at `time` s: a sine along the wind's front, one period `SWAY.period` long, as hard as the wind leans. The shader runs the same sum. */
+export function swing(x: number, y: number, time: number, wind: Wind): number {
+  const phase = frontArrival(wind, x, y) / SWAY.period - ((time / SWAY.period) % 1);
+  return Math.sin(2 * Math.PI * phase) * wind.k;
+}
+
+/** The gust alone at art pixel (x, y), before the row band: 2 at its heart, 1 at its edge, 0 between gusts. A whole tree leans by this, at its top. Without a wind: the classic door's own gust (`GUST`). */
+export function gustAt(x: number, y: number, time: number, wind?: Wind): 0 | 1 | 2 {
+  const g = wind ? swing(x, y, time, wind) : Math.sin(x * GUST.scale + y * GUST.scale * 0.6 - time * GUST.speed);
   return g > 0.85 ? 2 : g > 0.55 ? 1 : 0;
 }
 

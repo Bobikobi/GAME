@@ -58,6 +58,10 @@ export interface Creature {
   count: number;
   /** think steps left in the current beat: IDLE, GRAZE head-down, ALERT quiet, FLEE out of sight, the den stay */
   left: number;
+  /** FLEE: steps left since entry, independent of sightings */
+  runLeft?: number;
+  /** A capped flight's one route past the threat, in reverse order for stepping */
+  bolt?: Tile[];
   /** GRAZE: head-up steps left (0 while the head is down) */
   up?: number;
   /** GRAZE: head cycles left before the next quiet state */
@@ -72,6 +76,8 @@ export interface Creature {
   from?: [number, number];
   /** game ms until `from` is avoided */
   avoidUntil?: number;
+  /** Where a capped flight stopped and how close the threat was there */
+  fleeEnd?: { at: Tile; dd: number };
   /** ms of movement not yet spent, so pace stays integer */
   credit: number;
   /** gone to ground: in its den or out of hours; not drawn and not sensed */
@@ -82,6 +88,8 @@ export interface Creature {
   grade: 1 | 2 | 3;
   /** the behaviour draw counter (rule R4) */
   draws: number;
+  /** the tiles it entered in its last think step, in order: what a view walks it along, and the fresh prints later (HUNT_FAMILIES 3a) */
+  trail?: [number, number][];
 }
 
 /** A sound in the world other than the player's own: another kind's alarm, a strike. */
@@ -163,6 +171,10 @@ export const WILD = {
   fleeExtra: 4,
   /** FLEE ends after this many steps out of sense */
   fleeLost: 8,
+  /** Eight thinks (6400 ms) give a flight a few seconds without cutting short the out-of-sense beat. */
+  fleeMax: 8,
+  /** Minimum tile clearance on a bolt past the threat */
+  boltClearance: 2,
   /** think steps the put-up tile is avoided (HUNTING 2, FLEE) */
   avoidSteps: 60,
   /** tiles round the put-up tile that WANDER and the regroup keep out of (proposed) */

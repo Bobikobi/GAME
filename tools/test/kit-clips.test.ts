@@ -139,3 +139,30 @@ describe('the assembler carries the clips and refuses two for one lookup', () =>
     expect(errors.map((e) => e.where)).toEqual([`kit.sprites.${STRIKE}.clip.race`]);
   });
 });
+
+describe('takes: a near-identical drawing of a clip is kept as a later take', () => {
+  const build = (edit: (sprites: Record<string, { clip: Record<string, unknown> }>) => void) => {
+    const data = fixture();
+    edit(data.kit.sprites);
+    return assemble([...withoutClips(loadAll().files), { rel: 'kit/core/clip-fixture.json', abs: FIXTURE, data }], readBoard()).issues.filter((i) => i.level === 'error');
+  };
+
+  test('the fixture\'s takes 2 and 3 of the human hit reach the bundle with their take, and the first take has none', () => {
+    const data = fixture();
+    const a = assemble([...withoutClips(loadAll().files), { rel: 'kit/core/clip-fixture.json', abs: FIXTURE, data }], readBoard());
+    const clip = (name: string) => (a.bundle!.sprites[`core/clip-fixture:${name}`] as unknown as { clip: { take?: number } }).clip;
+    expect(clip('chars/human_hit_left').take).toBeUndefined();
+    expect(clip('chars/human_hit_left_v2').take).toBe(2);
+    expect(clip('chars/human_hit_left_v3').take).toBe(3);
+  });
+
+  test('two sheets with the same take of one clip are refused; a take with a gap before it is refused', () => {
+    expect(build((s) => { s['chars/human_hit_left_v3']!.clip.take = 2; }).some((e) => /already plays hit core\/human left take 2/.test(e.message))).toBe(true);
+    expect(build((s) => { delete s['chars/human_hit_left_v2']; }).some((e) => /has no take 2/.test(e.message))).toBe(true);
+  });
+
+  test('a take outside 2 to 9 is refused by the schema', () => {
+    for (const bad of [1, 0, 10, 2.5, '2']) expect(refuse('take', bad).some((i) => i.path.endsWith('/clip/take')), JSON.stringify(bad)).toBe(true);
+    expect(refuse('take', 2)).toEqual([]);
+  });
+});

@@ -11,13 +11,17 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    performance.mark('boot:loader');
     // the pictures are the first 60 percent of the bar; the world's build fills the rest (world.ts `drive`)
     this.load.on('progress', (v: number) => app.ui.loading(0.6 * v));
     this.load.on('loaderror', (file: { key: string }) => console.warn(`could not load sprite ${file.key}`));
+    const early = app.painted?.early;
+    const atlas = app.kitAtlas;
     // the clips' sheets wait: the world loads the ones of the player's race (clips.ts `raceClips`)
     for (const [ref, info] of bootSprites(app.bundle.sprites as ClipSprites)) {
-      if (info.frames > 1) this.load.spritesheet(ref, info.url, { frameWidth: info.w, frameHeight: info.h });
-      else this.load.image(ref, info.url);
+      // a painted land's pictures and the kit's atlas sheets are already on their way (early-fetch.ts, kit-atlas.ts): they are added in create
+      if (early?.has(ref) || atlas?.holds(info.url)) continue;
+      this.loose(ref, info);
     }
     // the effects' sheets (effects.ts): one-shots and the camp fire's loop; a sheet that does not load plays nothing and the old look stays
     for (const id of EFFECT_IDS) this.load.spritesheet(EFFECTS[id].texture, EFFECTS[id].url, { frameWidth: EFFECTS[id].frame[0], frameHeight: EFFECTS[id].frame[1] });
@@ -25,7 +29,75 @@ export class BootScene extends Phaser.Scene {
     if (driftOn(window.location.search)) this.load.spritesheet(DRIFT_TEXTURE, CHIMNEY_SMOKE.sheet.url, { frameWidth: CHIMNEY_SMOKE.sheet.cell[0], frameHeight: CHIMNEY_SMOKE.sheet.cell[1] });
   }
 
+  /** One sprite from its own file, as the loader makes it: an image, or a sheet cut into frames when it has more than one. */
+  private loose(ref: string, info: { url: string; w: number; h: number; frames: number }): void {
+    if (info.frames > 1) this.load.spritesheet(ref, info.url, { frameWidth: info.w, frameHeight: info.h });
+    else this.load.image(ref, info.url);
+  }
+
   create(): void {
-    this.scene.start('world');
+    performance.mark('boot:loaded');
+    const early = app.painted?.early;
+    const atlas = app.kitAtlas;
+    // a normal page with no atlas and no painted land: the world starts at once
+    if (!early && !atlas) {
+      this.scene.start('world');
+      return;
+    }
+    const steps: (() => Promise<void>)[] = [];
+    if (atlas) {
+      // the kit's sprites cut from their sheets into textures of their own, under their own keys, so nothing that reads a sprite changes: one sheet a frame. A sprite
+      // whose sheet did not come is loaded from its own file before the world starts.
+      const kit = bootSprites(app.bundle.sprites as ClipSprites).filter(([ref, info]) => atlas.holds(info.url) && !early?.has(ref));
+      const missed: typeof kit = [];
+      for (let sheet = 0; sheet < atlas.file.sheets.length; sheet++) {
+        steps.push(async () => {
+          for (const [ref, info] of kit) {
+            if (atlas.sheetOf(info.url) !== sheet || this.textures.exists(ref)) continue;
+            try {
+              const canvas = await atlas.cut(info.url);
+              if (info.frames > 1) this.textures.addSpriteSheet(ref, canvas as unknown as HTMLImageElement, { frameWidth: info.w, frameHeight: info.h });
+              else this.textures.addImage(ref, canvas as unknown as HTMLImageElement);
+            } catch {
+              missed.push([ref, info]);
+            }
+          }
+        });
+      }
+      steps.push(async () => {
+        if (missed.length > 0) {
+          console.warn(`kit atlas: ${missed.length} sprites loaded from their own files`);
+          for (const [ref, info] of missed) this.loose(ref, info);
+          await new Promise<void>((resolve) => {
+            this.load.once('complete', () => resolve());
+            this.load.start();
+          });
+        }
+        performance.mark('boot:atlas');
+      });
+    }
+    // the painted land's pictures are textures before the world starts, one a frame (no frame carries two big uploads); a streamed land's units (keys `painted:<layer>@ux,uy`)
+    // are not waited for: the world starts and its stream takes them as they land
+    for (const key of (early?.keys() ?? []).filter((k) => !k.includes('@'))) {
+      steps.push(async () => {
+        const img = await early!.get(key)!;
+        if (!this.textures.exists(key)) this.textures.addImage(key, img);
+      });
+    }
+    const next = (i: number): void => {
+      if (i >= steps.length) {
+        performance.mark('boot:textures');
+        this.scene.start('world');
+        return;
+      }
+      steps[i]!().then(
+        () => this.time.delayedCall(0, () => next(i + 1)),
+        (e: unknown) => {
+          console.warn(`could not load sprites: ${String(e)}`);
+          next(i + 1);
+        },
+      );
+    };
+    next(0);
   }
 }

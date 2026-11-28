@@ -10,6 +10,8 @@ coverage/
 game/src/generated/
 # copied from content/kit by pnpm bundle
 game/public/kit/
+# the painted lands' pictures, placed by pnpm bundle from the store (tools/src/painted-store.ts); never in git
+game/public/painted/
 # the site: Astro's generated types, the hub-data document (pnpm hub:data), the scene drawn from the kit
 web/.astro/
 web/public/api/

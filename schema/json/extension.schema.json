@@ -6518,6 +6518,12 @@
                 "type": "string"
               }
             },
+            "shut_until": {
+              "minLength": 1,
+              "maxLength": 240,
+              "type": "string",
+              "description": "Shut until what is named here exists (a place drawn, a track done): nobody offers the quest and nothing starts it, and `pnpm check` names it. A save that already took it keeps it and can finish it. Left out: open."
+            },
             "talk": {
               "additionalProperties": false,
               "description": "What the giver says, in the giver's voice. \"{name}\" in a line is the player's name.",
@@ -20743,6 +20749,7 @@
               "type": "object",
               "required": [
                 "throw_item",
+                "hit_tiles",
                 "dress_step_ms",
                 "meat_spoil_d",
                 "hide_spoil_d",
@@ -20754,8 +20761,35 @@
                 "throw_item": {
                   "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                   "maxLength": 80,
-                  "description": "Hand liftable used to take small game. Its throw range is also the hunting reach.",
+                  "description": "Hand liftable thrown at small game; the charged throw (#870) takes it.",
                   "type": "string"
+                },
+                "hit_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How many tiles from the animal the thrown stone may touch or come to rest and still take it (#923): 0 is the tile it stands on, 1 the ring around. Wider is easier; a node of the proposed Hunting school widens it (PROGRESSION 4)."
                 },
                 "dress_step_ms": {
                   "additionalProperties": false,
@@ -24564,7 +24598,7 @@
               }
             },
             "ramps": {
-              "maxItems": 4,
+              "maxItems": 24,
               "description": "The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.",
               "type": "array",
               "items": {
@@ -24773,7 +24807,7 @@
                           ]
                         },
                         "verb": {
-                          "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands) or lift (a large stone from the ground to over the head).",
+                          "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands), lift (a large stone from the ground to over the head), jump (the hop: take-off and the air), land (a soft landing), land_hard (a landing that hurt), die (the fall that ends in the town), run, sneak, idle (standing still), hit_heavy (a heavy blow that pushes the figure back), hit_behind (struck from behind) or down (knocked down and getting up).",
                           "anyOf": [
                             {
                               "const": "strike",
@@ -24826,8 +24860,54 @@
                             {
                               "const": "lift",
                               "type": "string"
+                            },
+                            {
+                              "const": "jump",
+                              "type": "string"
+                            },
+                            {
+                              "const": "land",
+                              "type": "string"
+                            },
+                            {
+                              "const": "land_hard",
+                              "type": "string"
+                            },
+                            {
+                              "const": "die",
+                              "type": "string"
+                            },
+                            {
+                              "const": "run",
+                              "type": "string"
+                            },
+                            {
+                              "const": "sneak",
+                              "type": "string"
+                            },
+                            {
+                              "const": "idle",
+                              "type": "string"
+                            },
+                            {
+                              "const": "hit_heavy",
+                              "type": "string"
+                            },
+                            {
+                              "const": "hit_behind",
+                              "type": "string"
+                            },
+                            {
+                              "const": "down",
+                              "type": "string"
                             }
                           ]
+                        },
+                        "take": {
+                          "minimum": 2,
+                          "maximum": 9,
+                          "description": "Which take of the same clip this sheet is. A clip with no `take` is the first take; a second or third take of the same verb, race and view (a near-identical drawing, kept for variety) carries 2, 3 and so on, and the game picks among a clip's takes at random each time it plays. Left out, the first take.",
+                          "type": "integer"
                         },
                         "frame_ms": {
                           "minimum": 1,
@@ -24885,6 +24965,111 @@
                           }
                         }
                       }
+                    },
+                    "creature_clip": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "creature",
+                        "view",
+                        "verb",
+                        "frame_ms",
+                        "anchor"
+                      ],
+                      "properties": {
+                        "creature": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "The id of the creature kind the clip is drawn for, a key of `map.creatures.kinds`, for example \"core/wolf\".",
+                          "type": "string"
+                        },
+                        "view": {
+                          "description": "left, front or back; the right side is the left one flipped.",
+                          "anyOf": [
+                            {
+                              "const": "left",
+                              "type": "string"
+                            },
+                            {
+                              "const": "front",
+                              "type": "string"
+                            },
+                            {
+                              "const": "back",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "verb": {
+                          "description": "What the clip plays: walk (a loop while the creature moves) or idle (a loop while it stands).",
+                          "anyOf": [
+                            {
+                              "const": "walk",
+                              "type": "string"
+                            },
+                            {
+                              "const": "idle",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "frame_ms": {
+                          "minimum": 1,
+                          "maximum": 5000,
+                          "description": "How long each frame shows, in whole milliseconds: the clip's own speed.",
+                          "type": "integer"
+                        },
+                        "anchor": {
+                          "description": "The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the creature's feet.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        },
+                        "fit_permille": {
+                          "minimum": 100,
+                          "maximum": 4000,
+                          "description": "The factor the clip shows at on top of its density's base scale (1 / density), in thousandths. Left out, 1000. One value per sheet: the walk and the idle of a view share it, and the views of a creature are matched by it so it does not change size as it turns (a view drawn longer or wider than another takes a lower value). The feet stay on the anchor whatever the fit.",
+                          "type": "integer"
+                        },
+                        "head": {
+                          "description": "Where the face is, in pixels of the frame (the same grid as `anchor`): what the world lays on the head (the glint of the eyes, the mark that it has seen the player). Left out, the world uses the middle of the frame.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      }
+                    },
+                    "still_of": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "The id of the creature kind (a key of `map.creatures.kinds`) this still sprite stands for: while the creature's clips (`creature_clip`) are loaded the world draws them, and this picture is what shows when they are not.",
+                      "type": "string"
                     },
                     "scale": {
                       "minimum": 0.1,
@@ -27555,7 +27740,7 @@
             "frame": {
               "minimum": 1,
               "maximum": 99,
-              "description": "The frame of the map's tiles: 1 until a change moves the authored ground inside a larger map (docs/design/EXPERIENCE_AUDIT.md, gap M5). A save made in an earlier frame is shifted by `moved` when it is adapted. Left out: 1.",
+              "description": "The frame of the map's tiles: 1 until a change moves the authored ground inside a larger map (docs/design/EXPERIENCE_AUDIT.md, gap M5). A save made in an earlier frame is shifted by `moved`, or carried slot by slot by `remap`, when it is adapted. Left out: 1.",
               "type": "integer"
             },
             "moved": {
@@ -27576,6 +27761,60 @@
                   "minimum": -1023,
                   "maximum": 1023,
                   "type": "integer"
+                }
+              }
+            },
+            "remap": {
+              "additionalProperties": false,
+              "description": "A map redrawn rather than moved (a new frame whose ground is not the old one shifted): a save of the frame just before is carried slot by slot. Takes the place of `moved` when `frame` is above 1; a map carries one or the other.",
+              "type": "object",
+              "required": [
+                "slots"
+              ],
+              "properties": {
+                "slots": {
+                  "minItems": 1,
+                  "description": "Where the previous frame's slots lay, by id. A slot of today with the same id is where its ground went: a saved tile inside one of these lands on the same share of that slot today (the smallest slot holding it wins, ties by order here), and a tile in none moves with the nearest of them.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "x",
+                      "y",
+                      "w",
+                      "h"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "x": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      "y": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      "w": {
+                        "minimum": 1,
+                        "maximum": 1024,
+                        "type": "integer"
+                      },
+                      "h": {
+                        "minimum": 1,
+                        "maximum": 1024,
+                        "type": "integer"
+                      }
+                    }
+                  }
                 }
               }
             },

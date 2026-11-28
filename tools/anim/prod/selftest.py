@@ -101,6 +101,10 @@ def main():
         check("e: a jump from the last frame to the first fails", m["gate_e"] == "FAIL")
         _, m = gates.run([figure(), figure(arm=4), figure(arm=8), figure(arm=4)], ref, loop=True, loop_from=1)
         check("e: a hold that loops on its own frames passes (loop_from)", m["gate_e"] == "PASS")
+        _, m = gates.run([figure(), figure(arm=4), figure(arm=8), figure(arm=4)], ref, loop=True)
+        check("g: a clip with no gait is n/a", m["gate_g"] == "n/a")
+        _, m = gates.run([figure(), figure(arm=4), figure(arm=8), figure(arm=4)], ref, loop=True, gait="walk")
+        check("g: feet that bounce in place fail the walk gate", m["gate_g"] == "FAIL" and m["g_foot"]["needs"] == {"337": 11.2})
         _, m = gates.run([figure(), figure(blob=(20, 100)), figure()], ref)
         check("f: a detached blob is flagged for the eye", [f["frame"] for f in m["f_flags"]] == [1])
         _, m = gates.run([figure(), figure(blob=(20, 100)), figure()], ref, effect=[1])
@@ -162,6 +166,20 @@ def main():
         ref192 = gates.Reference(k, "t", "left", 192)
         _, m192 = gates.run([gates.embed_stance(figure(), 192), gates.embed_stance(figure(arm=8), 192), gates.embed_stance(figure(), 192)], ref192)
         check("gates read a 192 px clip against the stance stood on it: the ground row is 64 lower, the stance height is the same", ref192.ground == GROUND + 64 and ref192.stand_h == STAND and m192["gate_a"] == m192["gate_c"] == "PASS")
+    import packclips
+    ring = np.zeros((40, 40, 4), np.uint8)
+    ring[...] = (120, 80, 60, 255)
+    ring[10:13, 10:13, 3] = 0      # a 9 px pocket: a speck
+    ring[20:32, 15:30, 3] = 0      # a 180 px pocket: the gap between a deer's legs and its belly
+    filled = packclips.fill_specks(ring)
+    check("a see-through pocket of at most 24 px is filled and a bigger one (a gap between legs) stays open",
+          filled[11, 11, 3] == 255 and filled[25, 20, 3] == 0 and int((filled[..., 3] == 0).sum()) == 180)
+    import packmoves
+    bs = {"retired": ["chars/human_left"], "waiting": ["chars/human_die_left"], "bases": {"human": {"left": "chars/human_hit_left"}}, "clips": {"chars/human_jump_left": "chars/human_hit_left", "chars/human_run_left": "chars/human_left"}}
+    bp = lambda race, base: packmoves.base_problem(bs, race, base)
+    check("packmoves takes the race's base and a clip drawn from it, and refuses a missing base, a retired sheet, a waiting clip, a clip drawn from a retired sheet and another race's picture",
+          bp("human", "chars/human_hit_left") is None and bp("human", "chars/human_jump_left") is None and bp("human", None) is not None and bp("human", "chars/human_left") is not None
+          and bp("human", "chars/human_die_left") is not None and bp("human", "chars/human_run_left") is not None and bp("human", "chars/elf_hit_left") is not None)
     print("selftest:", "FAILED %d" % check.bad if check.bad else "all passed")
     return 1 if check.bad else 0
 

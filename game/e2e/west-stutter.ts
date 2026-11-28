@@ -8,71 +8,20 @@
  * Prints one JSON line: {cpu, secs, n, mean, p95, over50, over20, max, longtasks, worst:[{ms, at_s, tile}]}. WALK_PROFILE=1 writes a
  * CPU profile of the window beside it (west-stutter-cpuN.cpuprofile), WALK_FIRST="x,y" walks to that tile first.
  */
-import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
-import { createServer, type Server } from 'node:http';
-import { dirname, extname, join, normalize, resolve } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { serve, START, wake } from './frame-probe';
 import { PHONE } from './viewports';
-import { carveIn, seedQuery } from './wakes';
 import { FreeWalk } from './walk';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(process.env.WALK_DIST ?? join(GAME_DIR, 'dist'));
 const OUT = resolve(process.argv[2] ?? join(GAME_DIR, '..', '.scratch', 'west-stutter'));
-const TYPES: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.woff2': 'font/woff2',
-  '.json': 'application/json',
-};
 
 /** The lap: down the west bank beside the river, across the meadow and back up, by turning points (a route between two is found by the engine's own rule; the river keeps the east side out of reach). */
 const LAP: [number, number][] = [[11, 8], [11, 26], [5, 26], [5, 8]];
-
-function serve(): Promise<{ server: Server; url: string }> {
-  return new Promise((ok) => {
-    const server = createServer((req, res) => {
-      const path = normalize(decodeURIComponent((req.url ?? '/').split('?')[0] ?? '/')).replace(/^(\.\.[/\\])+/, '');
-      let file = join(DIST, path);
-      if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
-      if (!file.startsWith(DIST) || !existsSync(file)) {
-        res.writeHead(404).end('not found');
-        return;
-      }
-      res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' });
-      createReadStream(file).pipe(res);
-    });
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      ok({ server, url: `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}/` });
-    });
-  });
-}
-
-async function wake(page: Page, url: string): Promise<void> {
-  await page.goto(`${url}?debug${seedQuery('core/west-bank')}`);
-  await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 60_000);
-  await page.tap('.title-screen button', 'New game');
-  const choice = await page.waitFor<string>(
-    `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
-    'the race cards',
-  );
-  if (choice === 'ask') await page.tap('.title-screen button', 'Start a new game');
-  await page.tap('.card.race', 'Human');
-  await page.tap('.title-screen button', 'Wake up');
-  await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 20_000);
-  await page.eval(carveIn('Tess'));
-  for (let i = 0; i < 30; i++) {
-    const open = await page.eval<boolean>(`!!document.querySelector('.dialog')`);
-    if (!open) break;
-    await page.press('Enter');
-    await sleep(80);
-  }
-}
 
 /** The route from the feet's tile to `goal` over open tiles (four ways, the engine's own rule), as the tiles where it turns. */
 const ROUTE = (goal: [number, number]): string => `(() => {
@@ -100,27 +49,6 @@ const ROUTE = (goal: [number, number]): string => `(() => {
   return stops;
 })()`;
 
-const START = `(() => {
-  const S = window.__stutter = { t: [], at: [], tile: [], long: [], t0: performance.now() };
-  let last = performance.now();
-  const f = (now) => {
-    if (window.__stutterStop) return;
-    S.t.push(now - last); S.at.push(now - S.t0);
-    const b = window.__game.world.body; S.tile.push([Math.floor(b.x / 64), Math.floor(b.y / 64)]);
-    last = now; requestAnimationFrame(f);
-  };
-  requestAnimationFrame(f);
-  // the strip job and the page upload are timed where they stand, so a slow frame can be matched to them (and a noisy machine cannot hide them)
-  S.bake = [];
-  const chunks = window.__game.world.chunks;
-  if (chunks) for (const name of ['bakeUnit', 'upload']) {
-    const orig = chunks[name].bind(chunks);
-    chunks[name] = (...args) => { const t = performance.now(); const r = orig(...args); S.bake.push([name, Math.round(t - S.t0), +(performance.now() - t).toFixed(1)]); return r; };
-  }
-  try { new PerformanceObserver((l) => { for (const e of l.getEntries()) S.long.push([Math.round(e.startTime - S.t0), Math.round(e.duration)]); }).observe({ entryTypes: ['longtask'] }); } catch (e) {}
-  return 1;
-})()`;
-
 /** Walks to `tile` over the engine's own route, stop by stop; false when the route is not found or a stop times out. */
 async function go(page: Page, walk: FreeWalk, tile: [number, number]): Promise<boolean> {
   const stops = await page.eval<[number, number][] | null>(ROUTE(tile));
@@ -146,7 +74,7 @@ async function main(): Promise<void> {
   const secs = Number(process.env.WALK_SECS ?? 60);
   const cpu = Number(process.env.WALK_CPU ?? 4);
   const profile = process.env.WALK_PROFILE === '1';
-  const local = await serve();
+  const local = await serve(DIST);
   const browser = await Browser.launch();
   try {
     const page = await browser.newPage(PHONE);

@@ -808,6 +808,11 @@ export const QuestBody = Type.Object(
     summary: Text,
     steps: Type.Array(QuestStep, { minItems: 1, maxItems: 6 }),
     requires: Type.Optional(Type.Array(Id, { maxItems: 4 })),
+    shut_until: Type.Optional({
+      ...Text,
+      description:
+        'Shut until what is named here exists (a place drawn, a track done): nobody offers the quest and nothing starts it, and `pnpm check` names it. A save that already took it keeps it and can finish it. Left out: open.',
+    }),
     talk: Type.Optional(
       Type.Object(
         {
@@ -1893,7 +1898,8 @@ export const ParamsBody = Type.Object(
     ),
     hunt: Type.Object(
       {
-        throw_item: { ...Id, description: 'Hand liftable used to take small game. Its throw range is also the hunting reach.' },
+        throw_item: { ...Id, description: 'Hand liftable thrown at small game; the charged throw (#870) takes it.' },
+        hit_tiles: { ...Bounded, description: 'How many tiles from the animal the thrown stone may touch or come to rest and still take it (#923): 0 is the tile it stands on, 1 the ring around. Wider is easier; a node of the proposed Hunting school widens it (PROGRESSION 4).' },
         dress_step_ms: { ...Bounded, description: 'Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check).' },
         meat_spoil_d: { ...Bounded, description: 'Game days a carcass keeps its meat (its goods of kind "food"): dressed later, the meat is gone and the rest remains.' },
         hide_spoil_d: { ...Bounded, description: 'Game days a carcass keeps anything: dressed later, nothing is left of it.' },
@@ -2043,7 +2049,7 @@ export const RampBody = Type.Object(
 /** The views of a character clip: the right side is the left one flipped, as the walk's is (the front faces the viewer, the back faces away). */
 export const CLIP_VIEWS = ['left', 'front', 'back'] as const;
 /** The verbs a character clip plays: the fight's outcome kinds (kernel/src/events.ts, #726) and the work actions. Display only. */
-export const CLIP_VERBS = ['strike', 'guard', 'dodge', 'hit', 'fell', 'quarry', 'fish', 'pickup', 'dig', 'carry', 'throw', 'push', 'lift'] as const;
+export const CLIP_VERBS = ['strike', 'guard', 'dodge', 'hit', 'fell', 'quarry', 'fish', 'pickup', 'dig', 'carry', 'throw', 'push', 'lift', 'jump', 'land', 'land_hard', 'die', 'run', 'sneak', 'idle', 'hit_heavy', 'hit_behind', 'down'] as const;
 
 /**
  * A named character clip (#742): one sheet that plays one verb for one race in one view. The sheet's `frames` is the clip's
@@ -2055,7 +2061,14 @@ export const ClipBody = Type.Object(
   {
     race: Type.String({ pattern: ID_PATTERN, maxLength: 80, description: 'The race id the clip is drawn for, for example "core/human".' }),
     view: Type.Union(CLIP_VIEWS.map((v) => Type.Literal(v)), { description: 'left, front or back; the right side is the left one flipped.' }),
-    verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands) or lift (a large stone from the ground to over the head).' }),
+    verb: Type.Union(CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands), lift (a large stone from the ground to over the head), jump (the hop: take-off and the air), land (a soft landing), land_hard (a landing that hurt), die (the fall that ends in the town), run, sneak, idle (standing still), hit_heavy (a heavy blow that pushes the figure back), hit_behind (struck from behind) or down (knocked down and getting up).' }),
+    take: Type.Optional(
+      Int(
+        2,
+        9,
+        'Which take of the same clip this sheet is. A clip with no `take` is the first take; a second or third take of the same verb, race and view (a near-identical drawing, kept for variety) carries 2, 3 and so on, and the game picks among a clip\'s takes at random each time it plays. Left out, the first take.',
+      ),
+    ),
     frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
     anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
     fit_permille: Type.Optional(
@@ -2077,6 +2090,35 @@ export const ClipBody = Type.Object(
   { additionalProperties: false },
 );
 
+/** The verbs a creature clip plays: a creature is seen moving or standing. Display only; a bite, a flight and the like join the list when their sheets are drawn. */
+export const CREATURE_CLIP_VERBS = ['walk', 'idle'] as const;
+
+/**
+ * A creature's drawn clip (#847): one sheet that plays one verb of one creature in one view. A character clip is keyed by race
+ * (`ClipBody`); a creature is not a race, so its clips are keyed by the id of a kind in `map.creatures.kinds` and carry their
+ * own block. The sheet's `frames` is the clip's frame count and `frame_ms` its own speed. The world finds it by creature +
+ * verb + view (the right side is the left one flipped); with none it keeps the creature's still sprite (`still_of`). A clip is
+ * display only: the kernel decides where a creature is, when it moves and what it does.
+ */
+export const CreatureClipBody = Type.Object(
+  {
+    creature: Type.String({ pattern: ID_PATTERN, maxLength: 80, description: 'The id of the creature kind the clip is drawn for, a key of `map.creatures.kinds`, for example "core/wolf".' }),
+    view: Type.Union(CLIP_VIEWS.map((v) => Type.Literal(v)), { description: 'left, front or back; the right side is the left one flipped.' }),
+    verb: Type.Union(CREATURE_CLIP_VERBS.map((v) => Type.Literal(v)), { description: 'What the clip plays: walk (a loop while the creature moves) or idle (a loop while it stands).' }),
+    frame_ms: Int(1, 5000, 'How long each frame shows, in whole milliseconds: the clip\'s own speed.'),
+    anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the creature\'s feet.' }),
+    fit_permille: Type.Optional(
+      Int(100, 4000, 'The factor the clip shows at on top of its density\'s base scale (1 / density), in thousandths. Left out, 1000. One value per sheet: the walk and the idle of a view share it, and the views of a creature are matched by it so it does not change size as it turns (a view drawn longer or wider than another takes a lower value). The feet stay on the anchor whatever the fit.'),
+    ),
+    head: Type.Optional(
+      Type.Tuple([Int(0, 384), Int(0, 384)], {
+        description: 'Where the face is, in pixels of the frame (the same grid as `anchor`): what the world lays on the head (the glint of the eyes, the mark that it has seen the player). Left out, the world uses the middle of the frame.',
+      }),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 export const KitBody = Type.Object(
   {
     palette: Type.Optional(
@@ -2088,7 +2130,7 @@ export const KitBody = Type.Object(
     ),
     ramps: Type.Optional(
       Type.Array(RampBody, {
-        maxItems: 4,
+        maxItems: 24,
         description:
           'The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.',
       }),
@@ -2144,6 +2186,15 @@ export const KitBody = Type.Object(
             ),
           ),
           clip: Type.Optional(ClipBody),
+          creature_clip: Type.Optional(CreatureClipBody),
+          still_of: Type.Optional(
+            Type.String({
+              pattern: ID_PATTERN,
+              maxLength: 80,
+              description:
+                'The id of the creature kind (a key of `map.creatures.kinds`) this still sprite stands for: while the creature\'s clips (`creature_clip`) are loaded the world draws them, and this picture is what shows when they are not.',
+            }),
+          ),
           scale: Type.Optional(
             Type.Number({
               minimum: 0.1,
@@ -2805,7 +2856,7 @@ export const MapBody = Type.Object(
       Type.Integer({
         minimum: 1,
         maximum: 99,
-        description: 'The frame of the map\'s tiles: 1 until a change moves the authored ground inside a larger map (docs/design/EXPERIENCE_AUDIT.md, gap M5). A save made in an earlier frame is shifted by `moved` when it is adapted. Left out: 1.',
+        description: 'The frame of the map\'s tiles: 1 until a change moves the authored ground inside a larger map (docs/design/EXPERIENCE_AUDIT.md, gap M5). A save made in an earlier frame is shifted by `moved`, or carried slot by slot by `remap`, when it is adapted. Left out: 1.',
       }),
     ),
     moved: Type.Optional(
@@ -2817,6 +2868,34 @@ export const MapBody = Type.Object(
         {
           additionalProperties: false,
           description: 'How far the previous frame\'s tiles moved to reach this frame\'s, in tiles: a saved tile (x, y) of the frame before is (x + dx, y + dy) now. Owed when `frame` is above 1, and holds the whole step from the frame just before it.',
+        },
+      ),
+    ),
+    remap: Type.Optional(
+      Type.Object(
+        {
+          slots: Type.Array(
+            Type.Object(
+              {
+                id: Id,
+                x: Int(0, 1023),
+                y: Int(0, 1023),
+                w: Int(1, 1024),
+                h: Int(1, 1024),
+              },
+              { additionalProperties: false },
+            ),
+            {
+              minItems: 1,
+              description:
+                'Where the previous frame\'s slots lay, by id. A slot of today with the same id is where its ground went: a saved tile inside one of these lands on the same share of that slot today (the smallest slot holding it wins, ties by order here), and a tile in none moves with the nearest of them.',
+            },
+          ),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'A map redrawn rather than moved (a new frame whose ground is not the old one shifted): a save of the frame just before is carried slot by slot. Takes the place of `moved` when `frame` is above 1; a map carries one or the other.',
         },
       ),
     ),
@@ -3106,6 +3185,7 @@ export const ExtensionFile = Type.Union([
 ]);
 
 export type ClipInfo = Static<typeof ClipBody>;
+export type CreatureClipInfo = Static<typeof CreatureClipBody>;
 export type ItemDef = Static<typeof ItemDef>;
 export type ClassDef = Static<typeof ClassDef>;
 export type WearSetDef = Static<typeof WearSet>;

@@ -22,7 +22,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
-import { PHONE } from './viewports';
+import { DESKTOP, PHONE } from './viewports';
 import { FreeWalk, OPPOSITE, VEC, type Dir } from './walk';
 import { LUCKY_BOWL, type WakePocket, seedQuery } from './wakes';
 
@@ -64,7 +64,7 @@ function serve(): Promise<{ server: Server; url: string }> {
 }
 
 /** Helpers that live in the page, next to the game they read. */
-const IN_PAGE = `
+export const IN_PAGE = `
 window.__e2eLog = [];
 for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchend', 'click']) {
   window.addEventListener(type, (e) => {
@@ -1396,7 +1396,9 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       await me.walkPastDusk({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       const unpaid = await page.eval<number>('__e2e.player().gold');
       await me.a();
-      await me.talkThrough('The coin under the lantern');
+      // on a late stew the player has waited through the dawn, so Maru's day-2 remark is already due and opens this talk:
+      // it is heard here, once, and the check at step 13 counts it
+      const coinOpening = await me.talkThrough('The coin under the lantern');
       const coin = await me.talkThrough();
       await me.idle('handing in the coin');
       if ((await me.quest('core/a-coin-for-maru')) !== 'done') throw new Error('a-coin-for-maru is not done');
@@ -1489,7 +1491,8 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const second = await me.talkThrough();
       await me.talkThrough('Goodbye');
       await me.idle('Maru on day 2');
-      if (!second.some((l) => l.includes('The bell rang again in the night'))) throw new Error(`Maru has no day-2 line: ${second.join(' / ')}`);
+      const day2Heard = lateStew ? [...coinOpening, ...coin, ...second] : second;
+      if (!day2Heard.some((l) => l.includes('The bell rang again in the night'))) throw new Error(`Maru has no day-2 line: ${day2Heard.join(' / ')}`);
       // Pell's shop says what each tool opens (content, read from the bundle)
       const tools = await page.eval<string[]>(`(__game.bundle.npcs['core/trader'].topics ?? []).filter((t) => t.ask === 'What each tool opens').flatMap((t) => t.lines)`);
       for (const tool of ['Basket', 'Trowel', 'Axe', 'Staff']) if (!tools.some((l) => l.startsWith(tool))) throw new Error(`Pell's tool line has no ${tool}`);
@@ -1542,8 +1545,8 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
 
 const RUNS: Run[] = [
   { name: 'phone', viewport: PHONE, race: 'Elf', pocket: 'core/west-bank' },
-  { name: 'desktop', viewport: { width: 1280, height: 800, mobile: false }, race: 'Human', pocket: 'core/north-meadow' },
-  { name: 'slid-bank', viewport: { width: 1280, height: 800, mobile: false }, race: 'Skeleton', pocket: 'core/slid-bank', toBridge: true },
+  { name: 'desktop', viewport: DESKTOP, race: 'Human', pocket: 'core/north-meadow' },
+  { name: 'slid-bank', viewport: DESKTOP, race: 'Skeleton', pocket: 'core/slid-bank', toBridge: true },
   // E2E_ONLY=phone-lucky: the phone run on the lucky-bowl seed, to the stew
   { name: 'phone-lucky', viewport: PHONE, race: 'Elf', pocket: LUCKY_BOWL.pocket, lucky: true },
 ];
@@ -1571,7 +1574,10 @@ async function main(): Promise<void> {
   console.log(`screenshots in ${OUT}`);
 }
 
-main().catch((err: unknown) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+// valley-walk.ts imports IN_PAGE for the planner and sets E2E_NO_MAIN first; every other caller plays the opening, as it always did
+if (!process.env.E2E_NO_MAIN) {
+  main().catch((err: unknown) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+}

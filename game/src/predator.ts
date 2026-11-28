@@ -49,16 +49,18 @@ export const WOLF_EYES = {
  * A glow around the two eyes as a texture: its size, and each pixel it lights with the strength
  * of its ring, by the distance from the pixel's middle to the nearer eye. The eyes are left clear.
  */
-export function glowPixels(rings: readonly number[]): { w: number; h: number; px: { x: number; y: number; a: number }[] } {
+export function glowPixels(rings: readonly number[], eyes: 1 | 2 = 2): { w: number; h: number; px: { x: number; y: number; a: number }[] } {
   const { size, gap } = WOLF_EYES;
   const r = rings.length;
-  const w = 2 * size + gap + 2 * r;
+  // the drawn wolf (#847) shows one eye from the side, and its two eyes sit closer than the old pair: one glow point, `eyes` 1
+  const starts = eyes === 2 ? [r, r + size + gap] : [r];
+  const w = (eyes === 2 ? 2 * size + gap : size) + 2 * r;
   const h = size + 2 * r;
   const out = (v: number, lo: number) => Math.max(lo - v, 0, v - (lo + size));
   const px: { x: number; y: number; a: number }[] = [];
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const d = Math.min(...[r, r + size + gap].map((ex) => Math.hypot(out(x + 0.5, ex), out(y + 0.5, r))));
+      const d = Math.min(...starts.map((ex) => Math.hypot(out(x + 0.5, ex), out(y + 0.5, r))));
       const ring = Math.ceil(d) - 1;
       if (d > 0 && ring < r) px.push({ x, y, a: rings[ring]! });
     }

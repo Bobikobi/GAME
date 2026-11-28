@@ -1,0 +1,116 @@
+{
+  "name": "valley-last-16px-plants",
+  "out": ".scratch/pixellab/valley-last-16px/plants",
+  "label": "pixellab-valley-last-16px-plants",
+  "provenance": "PixelLab Pro grids on the paid account (trial1), group B of lane valley-last-16px (public #917): our own 16 px sprites x4 as shape references, the kit's rich sapling, stump and bush_berry as level and camera references, and crops of the picked painted still (docs/design/frames/2026-11-22-valley-look-B-picked.png) as colour and finish references. DECISIONS 2026-11-02 PixelLab draws the world's pieces.",
+  "jobs": [
+    {
+      "id": "tree_oak",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a big mature oak tree, a thick gnarled brown trunk with rough bark and spreading roots, a very wide rounded crown of layered clumps of muted olive moss-green leaves, sunlit on the upper left and deep shadow green below, a few dark gaps in the foliage, healthy and old. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, painterly pixel art with many shades, no thick black outline, the whole object alone on a transparent background.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/tree_oak-x4.png",
+            "usage_description": "The object to redraw: the same oak, same pose, same proportions and silhouette (round crown, short trunk), drawn far richer with fine pixels. Do not copy its coarse pixels or its bright green."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/painted-trees.png",
+            "usage_description": "The colour and the finish to match: the valley's painted trees, dark muted olive moss-green leaves (not bright lime or pure green), soft light, fine pixels. Only the colours, the leaf clumping and the finish; do not copy the picture."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/stump.png",
+            "usage_description": "Only the level of finish, the camera and the light of the game's kit: three-quarter top-down view from high above at fifty degrees, painterly pixel art with many shades. Do not copy this stump."
+          }
+        ]
+      },
+      "note": "oak, one Pro grid at its final canvas; the valley's painted trees (crop of the picked still B) set the colour, our 16 px oak the shape."
+    },
+    {
+      "id": "dead_tree",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a dead leafless gnarled tree, a thick twisted trunk of dark grey-purple weathered wood with bare crooked branches spreading wide and a few broken stubs, deep cracks and hollows in the bark, roots gripping the ground, spooky and old. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, painterly pixel art with many shades, no thick black outline, the whole object alone on a transparent background.",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/dead_tree-x4.png",
+            "usage_description": "The object to redraw: the same dead tree, same pose, same proportions and silhouette, drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/stump.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly pixel art with many shades, no thick black outline. Do not copy this stump."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/painted-trees.png",
+            "usage_description": "Only the finish and the muted, soft-lit mood of the valley's painting (fine pixels, soft light); the dead tree itself stays bare, grey-brown and leafless. Do not copy the picture."
+          }
+        ]
+      },
+      "note": "plants, one Pro grid per piece at its final canvas (dead_tree); our own 16 px sprite x4 is the shape reference, rich neighbours the level (DECISIONS 2026-11-02)."
+    },
+    {
+      "id": "young_tree",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a young slender tree, a thin brown trunk with a few short branches and a rounded crown of muted olive moss-green leaves in clumps, a small tuft of grass at the foot, growing. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, painterly pixel art with many shades, no thick black outline, the whole object alone on a transparent background.",
+        "size": {
+          "width": 64,
+          "height": 96
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/young_tree-x4.png",
+            "usage_description": "The object to redraw: the same young tree, same proportions and silhouette, drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/sapling.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly pixel art with many shades, no thick black outline. Do not copy this sapling."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/painted-trees.png",
+            "usage_description": "The colour and the finish to match: the valley's painted trees, dark muted olive moss-green leaves (not bright lime or pure green), soft light, fine pixels. Only the colours, the leaf clumping and the finish; do not copy the picture."
+          }
+        ]
+      },
+      "note": "plants, one Pro grid per piece at its final canvas (young_tree); our own 16 px sprite x4 is the shape reference, rich neighbours the level (DECISIONS 2026-11-02)."
+    },
+    {
+      "id": "bush_empty",
+      "recipe": "grid",
+      "account": 1,
+      "inputs": {
+        "description": "a round low leafy green bush with no berries, no flowers and no fruit, dense clumps of leaves in several muted olive moss-greens, a few dark gaps between the clumps, small stems at its foot. Seen from high above at fifty degrees, the game's three-quarter top-down view, soft light from the upper left, painterly pixel art with many shades, no thick black outline, the whole object alone on a transparent background.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "reference_images": [
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/bush_empty-x4.png",
+            "usage_description": "The object to redraw: the same bare round bush, same proportions and silhouette, drawn far richer with fine pixels. Do not copy its coarse pixels."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/bush_berry.png",
+            "usage_description": "Only the level of finish, the camera and the light: the game's three-quarter top-down view from high above at fifty degrees, soft light from the upper left, painterly pixel art with many shades, no thick black outline. Do not copy this bush."
+          },
+          {
+            "image": "../../../.scratch/valley-last-16px/refs/painted-bush.png",
+            "usage_description": "The colour and the finish to match: a bush of the valley's painting, dark muted olive moss-green leaves (not bright lime), fine pixels. Only the colours and finish; do not copy it."
+          }
+        ]
+      },
+      "note": "plants, one Pro grid per piece at its final canvas (bush_empty); our own 16 px sprite x4 is the shape reference, rich neighbours the level (DECISIONS 2026-11-02)."
+    }
+  ]
+}

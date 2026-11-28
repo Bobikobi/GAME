@@ -1,0 +1,150 @@
+{
+  "about": "The drawn wolf (#847): the side, front and back views the owner liked (DECISIONS 2026-11-22 'The wolf at the game's angle', 2026-11-23 'The wolf's front and back views are drawn and liked'), as eight frames of walk and idle each. Frames are drafts of the store Bobikobi/GAME-art-drafts, named by id; packcreature.py reads them from .scratch/art-drafts (pnpm art:drafts fetch <ids>) and checks each against its id.",
+  "creature": "core/wolf",
+  "name": "wolf",
+  "fit_permille": 1000,
+  "which": {
+    "left": "the final side wolf with the owner's red eye E4b: walk and idle of the 22.11 angle trial (#820)",
+    "front": "the second tries of the walk and idle (seed 302), #832",
+    "back": "version A, the first back still turned grey, second tries with last_frame (seed 303), #832 and #834"
+  },
+  "ramps": [
+    {
+      "id": "wolf-fur-1",
+      "steps": [
+        "#1d141c",
+        "#251a1a",
+        "#28272d",
+        "#393632",
+        "#454541",
+        "#63554a"
+      ]
+    },
+    {
+      "id": "wolf-fur-2",
+      "steps": [
+        "#211519",
+        "#3e3a3a",
+        "#66625e",
+        "#756d69",
+        "#807873",
+        "#877d7a"
+      ]
+    },
+    {
+      "id": "wolf-fur-3",
+      "steps": [
+        "#1b1112",
+        "#211615",
+        "#221e2b",
+        "#332c2d",
+        "#45413e",
+        "#504c4a"
+      ]
+    },
+    {
+      "id": "wolf-fur-4",
+      "steps": [
+        "#231515",
+        "#595954",
+        "#625e5a",
+        "#6b6662",
+        "#8c827e",
+        "#9b8f8c"
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "view": "left",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "698b61fbb3b7533e",
+        "e35801cabe527361",
+        "ccab2c676fbe1182",
+        "0160003ed6d4435e",
+        "5a8bc8258f41878d",
+        "302cff3860f2a81e",
+        "3033a5433274070f",
+        "273ef1be76995f59"
+      ]
+    },
+    {
+      "view": "left",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "98ebe92310928568",
+        "35b113bb3768e3b9",
+        "9c6853365e854b2c",
+        "320a06a526f5723f",
+        "c8461b22fb3c7960",
+        "42f8ffb84297c0a7",
+        "d3fcf6c4907b1123",
+        "c0aefea9d5a8d6bd"
+      ]
+    },
+    {
+      "view": "front",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "439b33ba9f7ff2bc",
+        "ca9f161098d7ccb6",
+        "931548b3b34c8240",
+        "55ab8f09863fa2eb",
+        "bc253ed40b8f0004",
+        "43c5e52aa11fa95b",
+        "d772d93985699511",
+        "27c7bee35b754534"
+      ]
+    },
+    {
+      "view": "front",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "1bc314ad502f07e1",
+        "b7aaaa2de3de0067",
+        "e54bb537105f2da7",
+        "3bb3fc957b7e89f7",
+        "39329256a8a812d2",
+        "9de42413c7713866",
+        "28288143ded476de",
+        "b91c3e92994e63e4"
+      ]
+    },
+    {
+      "view": "back",
+      "verb": "walk",
+      "frame_ms": 90,
+      "frames": [
+        "bfb7bd81e7327417",
+        "e8505c0e48e166bd",
+        "e133fc5998d553e3",
+        "be39d2849b89f63b",
+        "6df65dc677848952",
+        "7384df5d8fb1d543",
+        "e9fd42e6936e0dd6",
+        "78bdd5d4ab5009fb"
+      ]
+    },
+    {
+      "view": "back",
+      "verb": "idle",
+      "frame_ms": 150,
+      "frames": [
+        "67c43cedc3f16a6f",
+        "f6f96089e0df7aed",
+        "e230cf62998bafca",
+        "802dd2eeb9ba07c1",
+        "91d67c05b02be8e6",
+        "71cf3bf797fcf2cf",
+        "93883c5a4569b1ef",
+        "0a7f873d040d6b76"
+      ]
+    }
+  ],
+  "still": "props/hazard_wolf"
+}

@@ -8,6 +8,8 @@ import { RemoteSession, WireRefusal, fetchWire } from './remote';
 import type { SignInfo } from './scenes/world';
 import type { GameSession } from './session-surface';
 import type { UI } from './ui/ui';
+import type { PaintedMount } from './painted';
+import type { KitAtlas } from './kit-atlas';
 
 /** What the page UI asks of whichever world is on screen: the Phaser scene of /play/ or the three.js world of /play3d/. */
 export interface WorldView {
@@ -47,6 +49,10 @@ export interface App {
   game?: Pick<Phaser.Game, 'loop'>;
   world?: WorldView;
   session?: GameSession;
+  /** a trial mount of a painted ground, only behind `?debug&painted=` (painted.ts) */
+  painted?: PaintedMount;
+  /** the kit's sprites in a few sheets, on their way from behind the title (kit-atlas.ts); absent when the build has none or `?loose` */
+  kitAtlas?: KitAtlas;
 }
 
 export const app = {} as App;

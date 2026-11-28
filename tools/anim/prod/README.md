@@ -21,6 +21,7 @@ job and the measure of identity, size and ground row. Run `python3 tools/anim/pr
    the frames, `preview.gif` and `clip.json` (the gate numbers). Declare by eye what is the motion: `--bend` (a crouch, a recoil, a reach, a bend),
    `--air` (airborne: exempt from the feet gate), `--effect` (a drawn flash: left out of gate c, written to the manifest), `--loop`, `--loop-from`,
    `--pingpong N` (a hold that loops: frames N.. then back). The first and last frame are always held to the stance height.
+   `--gait walk|run|sneak` (side view) adds gate (g), `footspeed.py`: the planted foot must travel at least pace / 30 art px a pose (walk 11.2, run 22.5, sneak 5.6; aim 19 for the walk). A drawn in-place cycle (PixelLab, 28.11) steps 4.5-4.7 and fails it. `python3 tools/anim/prod/test_footspeed.py` tests the gate.
 5. **Eye.** `sheet.py` makes a numbered contact sheet beside the kept stance. Three yes or no per clip: the planted foot stays on its spot until it lifts;
    the weight moves with the planted foot; identity holds. `verdict.py` writes them and refuses "PASS (eye)" unless all are yes and no gate failed.
    Snapping to the palette hides a swoosh (white turns bone-coloured), so `clip.json` flags detached components and area spikes: look at those frames.

@@ -4,8 +4,11 @@
 import type { Bundle, Params } from './bundle';
 import { idiv } from './num';
 import { hourOf, type Carcass, type HuntBatch, type HuntStock, type PublicState, type Snare } from './state';
+import type { Flight } from './stones';
 import { walkableFor, type Tile } from './step';
 import { anchorId } from './wild/den';
+import { wildKindOf, wildReach } from './wild/valley';
+import { seatOf } from './wild/seat';
 import { d2, lineClear } from './wild/senses';
 import { tagAt } from './world';
 
@@ -30,6 +33,25 @@ export const SNARE_ITEM = 'core/snare';
 /** The original stone reach (#819), still the roam fallback of a snare. */
 export const STONE_RANGE = 3;
 
+/**
+ * How far a stone thrown at full power can strike small game (#923): its range, its roll and the width of a hit. A tap or a
+ * short charge strikes nearer; the charge the distance wants is the player's to feel (`flightHits`).
+ */
+export function huntReach(bundle: Bundle): number {
+  const thrown = bundle.params.liftables[bundle.params.hunt.throw_item];
+  return thrown ? thrown.throw_range + thrown.roll + bundle.params.hunt.hit_tiles : 0;
+}
+
+/**
+ * Whether a flown stone strikes the animal standing at `target`: the tile where it first touches the ground, or the tile it
+ * comes to rest on, lies within `hunt.hit_tiles` of it (the king's-move distance). A stone that sank strikes nothing.
+ */
+export function flightHits(bundle: Bundle, flight: Flight, target: Tile): boolean {
+  if (flight.sank) return false;
+  const width = bundle.params.hunt.hit_tiles;
+  return [flight.touch, flight.rest].some((t) => t !== undefined && Math.max(Math.abs(t[0] - target[0]), Math.abs(t[1] - target[1])) <= width);
+}
+
 function smallPrey(bundle: Bundle, id: string): HuntKind | undefined {
   const kind = bundle.map.creatures?.kinds[id];
   if (kind?.hunt?.size === "small" && kind.hunt.danger === 0 && !kind.protected) return kind;
@@ -39,16 +61,29 @@ export function preyKey(spot: CreatureSpot): string {
   return anchorId(spot.kind, spot.x, spot.y);
 }
 
-/** Spot indices are authoritative; the client supplies neither the species nor the place it fell. */
-export function stonePrey(bundle: Bundle, state: PublicState, tick: number, index: number, at: Tile): CreatureSpot | undefined {
+/**
+ * Spot indices are authoritative; the client supplies neither the species nor where it stands beyond the kind's reach. An animal
+ * the wild step moved (`wildStep`) is named by its spot and the tile it stands on (`stands`), held to `wildReach` of its anchor:
+ * the world of stepped animals is the caller's until a server holds it. With no tile the animal stands at its seat: the spot it
+ * lives at now, which is its own unless it was taken and returned elsewhere (`preySeats`, `wild/seat.ts`). The spot returned is the
+ * animal's own (its index is its name); its anchor is `seatOf`.
+ */
+export function stonePrey(bundle: Bundle, state: PublicState, tick: number, index: number, at: Tile, stands?: Tile): CreatureSpot | undefined {
   if (!Number.isSafeInteger(index) || index < 0) return undefined;
   const spot = bundle.map.creatures?.spots[index];
   const kind = spot && smallPrey(bundle, spot.kind);
   if (!spot || !kind || (state.player.preyReturns?.[preyKey(spot)] ?? 0) > tick) return undefined;
-  const target: Tile = [spot.x, spot.y];
+  const seat = seatOf(bundle, state, index) ?? spot;
+  const target: Tile = stands ?? [seat.x, seat.y];
+  if (stands) {
+    if (!Array.isArray(stands) || stands.length !== 2 || !stands.every(Number.isSafeInteger)) return undefined;
+    const wild = wildKindOf(bundle, spot.kind);
+    const reach = wild ? wildReach(wild) : 0;
+    if (d2(stands, [seat.x, seat.y]) > reach * reach) return undefined;
+  }
   const thrown = bundle.params.liftables[bundle.params.hunt.throw_item];
   if (thrown?.class !== 'hand') return undefined;
-  const reach = thrown.throw_range;
+  const reach = huntReach(bundle);
   if (d2(at, target) > reach * reach) return undefined;
   if (kind.hours) {
     const hour = hourOf(bundle, tick);
@@ -56,7 +91,7 @@ export function stonePrey(bundle: Bundle, state: PublicState, tick: number, inde
     if (!(from < to ? hour >= from && hour < to : hour >= from || hour < to)) return undefined;
   }
   const walk = walkableFor(bundle);
-  if (!walk(at[0], at[1], state.player) || !walk(spot.x, spot.y, state.player)) return undefined;
+  if (!walk(at[0], at[1], state.player) || !walk(target[0], target[1], state.player)) return undefined;
   if (!lineClear({ blocks: (x, y) => !walk(x, y, state.player) }, at, target)) return undefined;
   return spot;
 }
@@ -126,6 +161,17 @@ export function gradeItem(bundle: Bundle, itemId: string, grade: number): string
 /** Whole days of awake, online game time since the carcass was laid. */
 function daysLain(bundle: Bundle, carcass: Carcass, awakeTick: number): number {
   return idiv(Math.max(0, awakeTick - (carcass.awakeSince ?? carcass.since)), bundle.params.day_length_ms);
+}
+
+/**
+ * How a carcass has aged: fresh (meat, hide and bone), bare (the meat is gone after `meat_spoil_d` game days, hide and bone
+ * remain) or gone (`hide_spoil_d`). What the screen draws it by; the goods follow the same days (`carcassGoods`).
+ */
+export type CarcassStage = 'fresh' | 'bare' | 'gone';
+export function carcassStage(bundle: Bundle, carcass: Carcass, awakeTick: number): CarcassStage {
+  const days = daysLain(bundle, carcass, awakeTick);
+  const { hide_spoil_d, meat_spoil_d } = bundle.params.hunt;
+  return days >= hide_spoil_d ? 'gone' : days >= meat_spoil_d ? 'bare' : 'fresh';
 }
 
 /** Whether nothing is left of a carcass: it has lain `hide_spoil_d` game days or more. */

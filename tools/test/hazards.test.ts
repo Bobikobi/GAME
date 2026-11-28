@@ -2,9 +2,9 @@
  * The hazard rules in the content check (GAME_RULES G30, G34): the shipped valley has none, and each
  * mistake a creator can make with a hazard prop gets an error that names the rule.
  */
+import { loadPixelBundle } from './helpers/world';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Bundle } from '@game/kernel';
-import { runCheck } from '../src/check';
 import { checkHazards } from '../src/hazards';
 
 type Prop = Bundle['map']['props'][number];
@@ -12,7 +12,7 @@ type Prop = Bundle['map']['props'][number];
 let base: Bundle;
 
 beforeAll(() => {
-  const found = runCheck().assembled.bundle;
+  const found = loadPixelBundle();
   if (!found) throw new Error('Content did not assemble into a bundle.');
   base = found;
 });

@@ -10,6 +10,8 @@ Gates, as the brief of 14.11 words them:
  (c) size:     height within 3 px of the kept stance on every upright frame, first and last at least. Frames the eye
                declares a bend, crouch, recoil or reach (`bend`) are the motion; the lowest height is written.
  (e) loop:     mean absolute difference last -> first <= the largest mean absolute difference between neighbours.
+ (g) foot speed: a walk, run or sneak clip (`gait`, side view) holds its planted foot: the foot's median step per pose, in art px, is at least
+               the game's pace / 30 poses a second (walk 11.2, run 22.5, sneak 5.6). `footspeed.py`; "n/a" for any other clip.
  (f) aid:      components and area per frame, so a detached swoosh or line, or an area spike, is flagged for the eye.
 Gate (d), the eye, is a human reading and lives in the manifest, not here."""
 from __future__ import annotations
@@ -166,7 +168,7 @@ def mad(a, b):
     return float(np.abs(a.astype(float) - b.astype(float)).mean())
 
 
-def run(frames, ref, *, air=(), bend=(), loop=False, loop_from=0, no_resnap=False, key_range=None, effect=(), anchor_x=False):
+def run(frames, ref, *, air=(), bend=(), loop=False, loop_from=0, no_resnap=False, key_range=None, effect=(), anchor_x=False, gait=None, fit=None):
     """frames: list of RGBA arrays. Returns (delivered frames, measures dict)."""
     air, effect = set(air), set(effect)
     bend = set(bend) - {0, len(frames) - 1}   # the first and last frame are always held to the stance
@@ -228,4 +230,9 @@ def run(frames, ref, *, air=(), bend=(), loop=False, loop_from=0, no_resnap=Fals
     m["e_step_max"] = round(max(steps), 3) if steps else 0.0
     m["e_close"] = round(mad(lp[-1], lp[0]), 3)
     m["gate_e"] = ("PASS" if m["e_close"] <= m["e_step_max"] else "FAIL") if loop else "n/a"
+    if gait:   # (g) a walking clip's planted foot must travel pace / 30 art px a pose; side view only (footspeed.py)
+        import footspeed
+        m["gate_g"], m["g_foot"] = footspeed.gate_g(fr, fit or footspeed.FIT, (footspeed.PACES[gait],))
+    else:
+        m["gate_g"] = "n/a"
     return fr, m

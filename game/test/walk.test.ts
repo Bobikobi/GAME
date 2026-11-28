@@ -11,7 +11,7 @@ import { Controls, DIRS, type Dir, STICK_DEAD, STICK_FULL, stickFrom } from '../
 import { s1Use } from '../src/net/s1';
 import { Session } from '../src/session';
 import { ART_PX, BODY_BOX, type Facing8, SECTOR_LEAD_DEG, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../src/walking';
-import { loadBundle, seedFor } from '../../tools/test/helpers/world';
+import { loadPixelBundle, seedFor } from '../../tools/test/helpers/world';
 
 /** About sixty frames a second, as the scene runs. */
 const FRAME = 16;
@@ -240,7 +240,7 @@ describe('after a diagonal walk an action hits the tile in front of the feet (me
   let b: Bundle;
 
   beforeAll(() => {
-    b = loadBundle();
+    b = loadPixelBundle();
   });
 
   beforeEach(() => {

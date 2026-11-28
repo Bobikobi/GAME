@@ -18,8 +18,14 @@ const ARROW: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'Ar
 /** Art pixels per tile, and the middle of one (`walking.ts` ART_PX). */
 export const ART_PX = 64;
 const MIDDLE = ART_PX / 2;
-/** How far the thumb is pushed from where it landed, in CSS px: past the full-speed share of the floating ring (`stick.ts`, the ring is at least 96 px); landscape.ts pushes 60. */
-const STICK_OUT = 60;
+/**
+ * How far the thumb is pushed from where it landed, in CSS px. The standard walk (walkfeel.ts, #641) runs at a firm push (0.8 of the stick,
+ * 34.4 px on the ring of 101 px) and walks below it at the share `length / 0.8` of the walk pace; the page lets go on the frame the feet are
+ * on the tile. A walk is pushed at the top of the walk band, just under the run: 32 px (the stick reads 0.70) and 34 px (the 2 px flip, 0.77),
+ * a walk at 0.88 to 0.97 of the walk's pace, with a stop of a few px. 30 px (0.63, 0.79 of the pace) put the opening's stew on the edge of
+ * the dusk (#905). landscape.ts pushes 60 to prove the stick itself reads full speed.
+ */
+const STICK_OUT = 32;
 /** How often the feet are read while a direction is held, in ms. */
 const POLL = 25;
 

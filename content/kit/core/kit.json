@@ -56,139 +56,55 @@
         "file": "chars/elder.png",
         "w": 16,
         "h": 24,
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/elder_blink": {
         "file": "chars/elder_blink.png",
         "w": 16,
         "h": 24,
         "frames": 2,
-        "scale": 1.15
-      },
-      "chars/player_down": {
-        "file": "chars/player_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
+        "scale": 1.25
       },
       "chars/player_idle_down": {
         "file": "chars/player_idle_down.png",
         "w": 16,
         "h": 24,
         "frames": 2,
-        "scale": 1.26
-      },
-      "chars/player_idle_left": {
-        "file": "chars/player_idle_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.32
-      },
-      "chars/player_idle_up": {
-        "file": "chars/player_idle_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.26
+        "scale": 1.37
       },
       "chars/player_left": {
         "file": "chars/player_left.png",
         "w": 16,
         "h": 24,
         "frames": 3,
-        "scale": 1.32
-      },
-      "chars/player_up": {
-        "file": "chars/player_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/player_work_down": {
-        "file": "chars/player_work_down.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
+        "scale": 1.43
       },
       "chars/player_work_left": {
         "file": "chars/player_work_left.png",
         "w": 32,
         "h": 32,
         "frames": 2,
-        "scale": 1.75
-      },
-      "chars/player_work_up": {
-        "file": "chars/player_work_up.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
+        "scale": 1.91
       },
       "chars/trader": {
         "file": "chars/trader.png",
         "w": 16,
         "h": 24,
-        "scale": 1.26
+        "scale": 1.37
       },
       "chars/trader_blink": {
         "file": "chars/trader_blink.png",
         "w": 16,
         "h": 24,
         "frames": 2,
-        "scale": 1.26
-      },
-      "chars/woman_down": {
-        "file": "chars/woman_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.26
+        "scale": 1.37
       },
       "chars/woman_idle_down": {
         "file": "chars/woman_idle_down.png",
         "w": 16,
         "h": 24,
         "frames": 2,
-        "scale": 1.26
-      },
-      "chars/woman_idle_left": {
-        "file": "chars/woman_idle_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.32
-      },
-      "chars/woman_idle_up": {
-        "file": "chars/woman_idle_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.32
-      },
-      "chars/woman_left": {
-        "file": "chars/woman_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/woman_up": {
-        "file": "chars/woman_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/woman_work_down": {
-        "file": "chars/woman_work_down.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
+        "scale": 1.37
       },
       "items/basket": {
         "file": "items/basket.png",
@@ -452,7 +368,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:151"
         },
-        "scale": 2.1
+        "scale": 2.28
       },
       "props/bush_berry": {
         "file": "props/bush_berry.png",
@@ -468,14 +384,22 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:147"
         },
-        "scale": 0.86
+        "scale": 0.94
       },
       "props/bush_empty": {
         "file": "props/bush_empty.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2,
-        "scale": 0.77
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-bush.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:177"
+        },
+        "scale": 0.63
       },
       "props/campfire_lit": {
         "file": "props/campfire_lit.png",
@@ -491,7 +415,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:144"
         },
-        "scale": 0.79
+        "scale": 0.87
       },
       "props/campfire_unlit": {
         "file": "props/campfire_unlit.png",
@@ -506,25 +430,25 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:7"
         },
-        "scale": 0.7
+        "scale": 0.76
       },
       "props/canopy_1": {
         "file": "props/canopy_1.png",
         "w": 32,
         "h": 32,
-        "scale": 1.75
+        "scale": 1.91
       },
       "props/canopy_2": {
         "file": "props/canopy_2.png",
         "w": 32,
         "h": 32,
-        "scale": 1.75
+        "scale": 1.91
       },
       "props/canopy_3": {
         "file": "props/canopy_3.png",
         "w": 32,
         "h": 32,
-        "scale": 1.75
+        "scale": 1.91
       },
       "props/chest": {
         "file": "props/chest.png",
@@ -539,7 +463,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:8"
         },
-        "scale": 0.44
+        "scale": 0.48
       },
       "props/sapling": {
         "file": "props/sapling.png",
@@ -554,20 +478,39 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:28"
         },
-        "scale": 0.82
+        "scale": 0.9
       },
       "props/young_tree": {
         "file": "props/young_tree.png",
-        "w": 16,
-        "h": 24,
-        "scale": 1.26
+        "w": 64,
+        "h": 96,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "green",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-plants.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:176"
+        },
+        "scale": 1.09
       },
       "props/dead_tree": {
         "file": "props/dead_tree.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "grey",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-plants.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:175"
+        },
+        "scale": 1.57
       },
       "props/dig_spot": {
         "file": "props/dig_spot.png",
@@ -582,7 +525,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:9"
         },
-        "scale": 0.47
+        "scale": 0.51
       },
       "props/fallen_branches": {
         "file": "props/fallen_branches.png",
@@ -597,7 +540,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:10"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/fence": {
         "file": "props/fence.png",
@@ -612,7 +555,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:135"
         },
-        "scale": 0.66
+        "scale": 0.72
       },
       "props/fence_post": {
         "file": "props/fence_post.png",
@@ -627,7 +570,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:136"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/flowers": {
         "file": "props/flowers.png",
@@ -643,14 +586,23 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:129"
         },
-        "scale": 0.3
+        "scale": 0.33
       },
       "props/flowers_blue": {
         "file": "props/flowers_blue.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2,
-        "scale": 0.55
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "water",
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:184"
+        },
+        "scale": 0.79
       },
       "props/flowers_white": {
         "file": "props/flowers_white.png",
@@ -666,13 +618,13 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:130"
         },
-        "scale": 0.3
+        "scale": 0.33
       },
       "props/fog": {
         "file": "props/fog.png",
         "w": 32,
         "h": 32,
-        "scale": 1.37
+        "scale": 1.49
       },
       "props/glow_mushrooms": {
         "file": "props/glow_mushrooms.png",
@@ -688,7 +640,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:137"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/grass_tall": {
         "file": "props/grass_tall.png",
@@ -703,7 +655,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:138"
         },
-        "scale": 0.42
+        "scale": 0.46
       },
       "props/hazard_pit": {
         "file": "props/hazard_pit.png",
@@ -718,7 +670,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:12"
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "props/hazard_trap": {
         "file": "props/hazard_trap.png",
@@ -733,14 +685,15 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:13"
         },
-        "scale": 0.77
+        "scale": 0.84
       },
       "props/hazard_wolf": {
         "file": "props/hazard_wolf.png",
         "w": 16,
         "h": 16,
         "frames": 2,
-        "scale": 0.66
+        "scale": 0.72,
+        "still_of": "core/wolf"
       },
       "props/herb_plant": {
         "file": "props/herb_plant.png",
@@ -756,7 +709,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:141"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/house_small": {
         "file": "props/house_small.png",
@@ -772,7 +725,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:153"
         },
-        "scale": 2.86
+        "scale": 3.12
       },
       "props/lantern_post": {
         "file": "props/lantern_post.png",
@@ -788,7 +741,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:150"
         },
-        "scale": 2.63
+        "scale": 2.87
       },
       "props/log_fallen": {
         "file": "props/log_fallen.png",
@@ -803,7 +756,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:18"
         },
-        "scale": 0.56
+        "scale": 0.61
       },
       "props/log_mossy": {
         "file": "props/log_mossy.png",
@@ -818,7 +771,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:19"
         },
-        "scale": 0.48
+        "scale": 0.52
       },
       "props/market_stall": {
         "file": "props/market_stall.png",
@@ -834,7 +787,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:152"
         },
-        "scale": 2.4
+        "scale": 2.61
       },
       "props/mushroom_patch": {
         "file": "props/mushroom_patch.png",
@@ -849,7 +802,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:21"
         },
-        "scale": 0.59
+        "scale": 0.64
       },
       "props/mushrooms_small": {
         "file": "props/mushrooms_small.png",
@@ -864,7 +817,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:23"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/pebbles": {
         "file": "props/pebbles.png",
@@ -879,7 +832,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:37"
         },
-        "scale": 0.73
+        "scale": 0.79
       },
       "props/reeds": {
         "file": "props/reeds.png",
@@ -895,7 +848,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:131"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/rock_mossy": {
         "file": "props/rock_mossy.png",
@@ -910,7 +863,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:26"
         },
-        "scale": 0.73
+        "scale": 0.79
       },
       "props/rock_small": {
         "file": "props/rock_small.png",
@@ -925,7 +878,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:36"
         },
-        "scale": 0.51
+        "scale": 0.55
       },
       "props/rock_stones": {
         "file": "props/rock_stones.png",
@@ -940,31 +893,72 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:27"
         },
-        "scale": 0.67
+        "scale": 0.73
       },
       "props/rubble": {
         "file": "props/rubble.png",
-        "w": 32,
-        "h": 16,
-        "scale": 0.88
+        "w": 128,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:178"
+        },
+        "scale": 0.81
       },
       "props/ruin_arch": {
         "file": "props/ruin_arch.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.75
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "green"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:181"
+        },
+        "scale": 1.64
       },
       "props/ruin_pillar": {
         "file": "props/ruin_pillar.png",
-        "w": 16,
-        "h": 32,
-        "scale": 1.7
+        "w": 64,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:179"
+        },
+        "scale": 1.72
       },
       "props/ruin_wall": {
         "file": "props/ruin_wall.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.21
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:180"
+        },
+        "scale": 1.31
       },
       "props/shelf": {
         "file": "props/shelf.png",
@@ -980,7 +974,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:29"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/sign": {
         "file": "props/sign.png",
@@ -995,7 +989,7 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:30"
         },
-        "scale": 0.66
+        "scale": 0.72
       },
       "props/standing_stone": {
         "file": "props/standing_stone.png",
@@ -1011,13 +1005,23 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:132"
         },
-        "scale": 1.36
+        "scale": 1.48
       },
       "props/statue_head": {
         "file": "props/statue_head.png",
-        "w": 32,
-        "h": 32,
-        "scale": 1.7
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "green"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:182"
+        },
+        "scale": 1.64
       },
       "props/stump": {
         "file": "props/stump.png",
@@ -1032,20 +1036,40 @@
           "spec": "tools/kit-gen/rich-props-small.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:34"
         },
-        "scale": 0.6
+        "scale": 0.66
       },
       "props/totem": {
         "file": "props/totem.png",
-        "w": 16,
-        "h": 32,
-        "scale": 1.75
+        "w": 64,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "teal",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-ruins.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:183"
+        },
+        "scale": 1.73
       },
       "props/tree_oak": {
         "file": "props/tree_oak.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "green",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pixellab/valley-last-16px-plants.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:174"
+        },
+        "scale": 1.55
       },
       "props/well_old": {
         "file": "props/well_old.png",
@@ -1062,7 +1086,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:133"
         },
-        "scale": 1.64
+        "scale": 1.79
       },
       "tiles/bank_e": {
         "file": "tiles/bank_e.png",
@@ -1553,384 +1577,6 @@
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:11"
         }
       },
-      "chars/explorer_down": {
-        "file": "chars/explorer_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/explorer_idle_down": {
-        "file": "chars/explorer_idle_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.32
-      },
-      "chars/explorer_work_down": {
-        "file": "chars/explorer_work_down.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
-      },
-      "chars/explorer_left": {
-        "file": "chars/explorer_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/explorer_idle_left": {
-        "file": "chars/explorer_idle_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.32
-      },
-      "chars/explorer_work_left": {
-        "file": "chars/explorer_work_left.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
-      },
-      "chars/explorer_up": {
-        "file": "chars/explorer_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/explorer_idle_up": {
-        "file": "chars/explorer_idle_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.32
-      },
-      "chars/explorer_work_up": {
-        "file": "chars/explorer_work_up.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
-      },
-      "chars/explorer_w_down": {
-        "file": "chars/explorer_w_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/explorer_w_idle_down": {
-        "file": "chars/explorer_w_idle_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.26
-      },
-      "chars/explorer_w_work_down": {
-        "file": "chars/explorer_w_work_down.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
-      },
-      "chars/explorer_w_left": {
-        "file": "chars/explorer_w_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/explorer_w_idle_left": {
-        "file": "chars/explorer_w_idle_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.32
-      },
-      "chars/explorer_w_work_left": {
-        "file": "chars/explorer_w_work_left.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
-      },
-      "chars/explorer_w_up": {
-        "file": "chars/explorer_w_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.32
-      },
-      "chars/explorer_w_idle_up": {
-        "file": "chars/explorer_w_idle_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.32
-      },
-      "chars/explorer_w_work_up": {
-        "file": "chars/explorer_w_work_up.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.75
-      },
-      "chars/forager_down": {
-        "file": "chars/forager_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.15
-      },
-      "chars/forager_idle_down": {
-        "file": "chars/forager_idle_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.15
-      },
-      "chars/forager_work_down": {
-        "file": "chars/forager_work_down.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.53
-      },
-      "chars/forager_left": {
-        "file": "chars/forager_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.1
-      },
-      "chars/forager_idle_left": {
-        "file": "chars/forager_idle_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.1
-      },
-      "chars/forager_work_left": {
-        "file": "chars/forager_work_left.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.53
-      },
-      "chars/forager_up": {
-        "file": "chars/forager_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.1
-      },
-      "chars/forager_idle_up": {
-        "file": "chars/forager_idle_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.04
-      },
-      "chars/forager_work_up": {
-        "file": "chars/forager_work_up.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.53
-      },
-      "chars/forager_w_down": {
-        "file": "chars/forager_w_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.15
-      },
-      "chars/forager_w_idle_down": {
-        "file": "chars/forager_w_idle_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.15
-      },
-      "chars/forager_w_work_down": {
-        "file": "chars/forager_w_work_down.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.53
-      },
-      "chars/forager_w_left": {
-        "file": "chars/forager_w_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.1
-      },
-      "chars/forager_w_idle_left": {
-        "file": "chars/forager_w_idle_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.1
-      },
-      "chars/forager_w_work_left": {
-        "file": "chars/forager_w_work_left.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.53
-      },
-      "chars/forager_w_up": {
-        "file": "chars/forager_w_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.1
-      },
-      "chars/forager_w_idle_up": {
-        "file": "chars/forager_w_idle_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.1
-      },
-      "chars/forager_w_work_up": {
-        "file": "chars/forager_w_work_up.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.53
-      },
-      "chars/digger_down": {
-        "file": "chars/digger_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.26
-      },
-      "chars/digger_idle_down": {
-        "file": "chars/digger_idle_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.21
-      },
-      "chars/digger_work_down": {
-        "file": "chars/digger_work_down.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.7
-      },
-      "chars/digger_left": {
-        "file": "chars/digger_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.26
-      },
-      "chars/digger_idle_left": {
-        "file": "chars/digger_idle_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.26
-      },
-      "chars/digger_work_left": {
-        "file": "chars/digger_work_left.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.7
-      },
-      "chars/digger_up": {
-        "file": "chars/digger_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.26
-      },
-      "chars/digger_idle_up": {
-        "file": "chars/digger_idle_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.21
-      },
-      "chars/digger_work_up": {
-        "file": "chars/digger_work_up.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.7
-      },
-      "chars/digger_w_down": {
-        "file": "chars/digger_w_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.21
-      },
-      "chars/digger_w_idle_down": {
-        "file": "chars/digger_w_idle_down.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.21
-      },
-      "chars/digger_w_work_down": {
-        "file": "chars/digger_w_work_down.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.7
-      },
-      "chars/digger_w_left": {
-        "file": "chars/digger_w_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.26
-      },
-      "chars/digger_w_idle_left": {
-        "file": "chars/digger_w_idle_left.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.26
-      },
-      "chars/digger_w_work_left": {
-        "file": "chars/digger_w_work_left.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.7
-      },
-      "chars/digger_w_up": {
-        "file": "chars/digger_w_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 3,
-        "scale": 1.26
-      },
-      "chars/digger_w_idle_up": {
-        "file": "chars/digger_w_idle_up.png",
-        "w": 16,
-        "h": 24,
-        "frames": 2,
-        "scale": 1.26
-      },
-      "chars/digger_w_work_up": {
-        "file": "chars/digger_w_work_up.png",
-        "w": 32,
-        "h": 32,
-        "frames": 2,
-        "scale": 1.7
-      },
       "chars/human_down": {
         "file": "chars/human_down.png",
         "w": 128,
@@ -1949,7 +1595,7 @@
             90
           ]
         },
-        "scale": 1
+        "scale": 1.09
       },
       "chars/human_up": {
         "file": "chars/human_up.png",
@@ -1969,7 +1615,7 @@
             90
           ]
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/human_left": {
         "file": "chars/human_left.png",
@@ -1989,7 +1635,7 @@
             90
           ]
         },
-        "scale": 0.95
+        "scale": 1.03
       },
       "chars/human_w_down": {
         "file": "chars/human_w_down.png",
@@ -2009,7 +1655,7 @@
             90
           ]
         },
-        "scale": 0.96
+        "scale": 1.04
       },
       "chars/human_w_up": {
         "file": "chars/human_w_up.png",
@@ -2029,7 +1675,7 @@
             90
           ]
         },
-        "scale": 1.07
+        "scale": 1.16
       },
       "chars/human_w_left": {
         "file": "chars/human_w_left.png",
@@ -2049,7 +1695,7 @@
             90
           ]
         },
-        "scale": 0.9
+        "scale": 0.99
       },
       "chars/elf_down": {
         "file": "chars/elf_down.png",
@@ -2070,7 +1716,7 @@
           ],
           "bob": false
         },
-        "scale": 1.08
+        "scale": 1.18
       },
       "chars/elf_up": {
         "file": "chars/elf_up.png",
@@ -2091,7 +1737,7 @@
           ],
           "bob": false
         },
-        "scale": 1.37
+        "scale": 1.49
       },
       "chars/elf_left": {
         "file": "chars/elf_left.png",
@@ -2112,7 +1758,7 @@
           ],
           "bob": false
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/elf_w_down": {
         "file": "chars/elf_w_down.png",
@@ -2133,7 +1779,7 @@
           ],
           "bob": false
         },
-        "scale": 1.08
+        "scale": 1.18
       },
       "chars/elf_w_up": {
         "file": "chars/elf_w_up.png",
@@ -2154,7 +1800,7 @@
           ],
           "bob": false
         },
-        "scale": 1.36
+        "scale": 1.48
       },
       "chars/elf_w_left": {
         "file": "chars/elf_w_left.png",
@@ -2175,7 +1821,7 @@
           ],
           "bob": false
         },
-        "scale": 1.11
+        "scale": 1.21
       },
       "chars/skeleton_down": {
         "file": "chars/skeleton_down.png",
@@ -2195,7 +1841,7 @@
           ],
           "bob": false
         },
-        "scale": 0.77
+        "scale": 0.84
       },
       "chars/skeleton_up": {
         "file": "chars/skeleton_up.png",
@@ -2215,7 +1861,7 @@
           ],
           "bob": false
         },
-        "scale": 0.93
+        "scale": 1.01
       },
       "chars/skeleton_left": {
         "file": "chars/skeleton_left.png",
@@ -2235,7 +1881,7 @@
           ],
           "bob": false
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/human_dodge_back": {
         "file": "chars/human_dodge_back.png",
@@ -2260,7 +1906,7 @@
           ],
           "fit_permille": 740
         },
-        "scale": 0.97
+        "scale": 1.06
       },
       "chars/human_dodge_front": {
         "file": "chars/human_dodge_front.png",
@@ -2285,7 +1931,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 0.92
+        "scale": 1
       },
       "chars/human_dodge_left": {
         "file": "chars/human_dodge_left.png",
@@ -2310,7 +1956,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 0.95
+        "scale": 1.03
       },
       "chars/human_fell_back": {
         "file": "chars/human_fell_back.png",
@@ -2335,7 +1981,7 @@
           ],
           "fit_permille": 740
         },
-        "scale": 1
+        "scale": 1.09
       },
       "chars/human_fell_front": {
         "file": "chars/human_fell_front.png",
@@ -2360,7 +2006,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 1.05
+        "scale": 1.15
       },
       "chars/human_fell_left": {
         "file": "chars/human_fell_left.png",
@@ -2385,7 +2031,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 1.12
+        "scale": 1.22
       },
       "chars/human_fish_front": {
         "file": "chars/human_fish_front.png",
@@ -2410,7 +2056,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 0.92
+        "scale": 1
       },
       "chars/human_fish_left": {
         "file": "chars/human_fish_left.png",
@@ -2434,7 +2080,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 1.06
+        "scale": 1.16
       },
       "chars/human_guard_back": {
         "file": "chars/human_guard_back.png",
@@ -2459,7 +2105,7 @@
           ],
           "fit_permille": 740
         },
-        "scale": 0.97
+        "scale": 1.06
       },
       "chars/human_guard_front": {
         "file": "chars/human_guard_front.png",
@@ -2483,7 +2129,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 0.95
+        "scale": 1.03
       },
       "chars/human_guard_left": {
         "file": "chars/human_guard_left.png",
@@ -2508,7 +2154,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 0.95
+        "scale": 1.03
       },
       "chars/human_hit_back": {
         "file": "chars/human_hit_back.png",
@@ -2533,7 +2179,7 @@
           ],
           "fit_permille": 740
         },
-        "scale": 0.98
+        "scale": 1.07
       },
       "chars/human_hit_front": {
         "file": "chars/human_hit_front.png",
@@ -2558,7 +2204,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 0.97
+        "scale": 1.05
       },
       "chars/human_hit_left": {
         "file": "chars/human_hit_left.png",
@@ -2583,7 +2229,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 0.98
+        "scale": 1.07
       },
       "chars/human_pickup_back": {
         "file": "chars/human_pickup_back.png",
@@ -2608,7 +2254,7 @@
           ],
           "fit_permille": 740
         },
-        "scale": 0.97
+        "scale": 1.06
       },
       "chars/human_pickup_front": {
         "file": "chars/human_pickup_front.png",
@@ -2632,7 +2278,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 0.92
+        "scale": 1
       },
       "chars/human_pickup_left": {
         "file": "chars/human_pickup_left.png",
@@ -2657,7 +2303,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 0.95
+        "scale": 1.03
       },
       "chars/human_quarry_back": {
         "file": "chars/human_quarry_back.png",
@@ -2682,7 +2328,7 @@
           ],
           "fit_permille": 740
         },
-        "scale": 0.98
+        "scale": 1.07
       },
       "chars/human_quarry_front": {
         "file": "chars/human_quarry_front.png",
@@ -2707,7 +2353,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 0.92
+        "scale": 1
       },
       "chars/human_quarry_left": {
         "file": "chars/human_quarry_left.png",
@@ -2731,7 +2377,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 1.12
+        "scale": 1.22
       },
       "chars/human_strike_back": {
         "file": "chars/human_strike_back.png",
@@ -2756,7 +2402,7 @@
           ],
           "fit_permille": 740
         },
-        "scale": 0.97
+        "scale": 1.06
       },
       "chars/human_strike_front": {
         "file": "chars/human_strike_front.png",
@@ -2781,7 +2427,7 @@
           ],
           "fit_permille": 698
         },
-        "scale": 0.96
+        "scale": 1.04
       },
       "chars/human_strike_left": {
         "file": "chars/human_strike_left.png",
@@ -2806,7 +2452,7 @@
           ],
           "fit_permille": 719
         },
-        "scale": 0.96
+        "scale": 1.04
       },
       "chars/elf_dodge_back": {
         "file": "chars/elf_dodge_back.png",
@@ -2831,7 +2477,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.16
+        "scale": 1.27
       },
       "chars/elf_dodge_front": {
         "file": "chars/elf_dodge_front.png",
@@ -2855,7 +2501,7 @@
           ],
           "fit_permille": 790
         },
-        "scale": 1.08
+        "scale": 1.18
       },
       "chars/elf_dodge_left": {
         "file": "chars/elf_dodge_left.png",
@@ -2880,7 +2526,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/elf_fell_back": {
         "file": "chars/elf_fell_back.png",
@@ -2905,7 +2551,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.19
+        "scale": 1.29
       },
       "chars/elf_fell_front": {
         "file": "chars/elf_fell_front.png",
@@ -2930,7 +2576,7 @@
           ],
           "fit_permille": 790
         },
-        "scale": 1.14
+        "scale": 1.24
       },
       "chars/elf_fell_left": {
         "file": "chars/elf_fell_left.png",
@@ -2955,7 +2601,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.31
+        "scale": 1.43
       },
       "chars/elf_fish_back": {
         "file": "chars/elf_fish_back.png",
@@ -2980,7 +2626,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.16
+        "scale": 1.27
       },
       "chars/elf_fish_front": {
         "file": "chars/elf_fish_front.png",
@@ -3005,7 +2651,7 @@
           ],
           "fit_permille": 790
         },
-        "scale": 1.09
+        "scale": 1.19
       },
       "chars/elf_fish_left": {
         "file": "chars/elf_fish_left.png",
@@ -3029,7 +2675,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.25
+        "scale": 1.37
       },
       "chars/elf_guard_back": {
         "file": "chars/elf_guard_back.png",
@@ -3053,7 +2699,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.17
+        "scale": 1.28
       },
       "chars/elf_guard_front": {
         "file": "chars/elf_guard_front.png",
@@ -3078,7 +2724,7 @@
           ],
           "fit_permille": 790
         },
-        "scale": 1.09
+        "scale": 1.19
       },
       "chars/elf_guard_left": {
         "file": "chars/elf_guard_left.png",
@@ -3102,7 +2748,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/elf_hit_back": {
         "file": "chars/elf_hit_back.png",
@@ -3127,7 +2773,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.23
+        "scale": 1.34
       },
       "chars/elf_hit_front": {
         "file": "chars/elf_hit_front.png",
@@ -3152,7 +2798,7 @@
           ],
           "fit_permille": 790
         },
-        "scale": 1.13
+        "scale": 1.23
       },
       "chars/elf_hit_left": {
         "file": "chars/elf_hit_left.png",
@@ -3176,7 +2822,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/elf_pickup_back": {
         "file": "chars/elf_pickup_back.png",
@@ -3201,7 +2847,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.16
+        "scale": 1.27
       },
       "chars/elf_pickup_front": {
         "file": "chars/elf_pickup_front.png",
@@ -3225,7 +2871,7 @@
           ],
           "fit_permille": 790
         },
-        "scale": 1.08
+        "scale": 1.18
       },
       "chars/elf_pickup_left": {
         "file": "chars/elf_pickup_left.png",
@@ -3249,7 +2895,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/elf_quarry_back": {
         "file": "chars/elf_quarry_back.png",
@@ -3274,7 +2920,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.19
+        "scale": 1.29
       },
       "chars/elf_quarry_front": {
         "file": "chars/elf_quarry_front.png",
@@ -3299,7 +2945,7 @@
           ],
           "fit_permille": 790
         },
-        "scale": 1.08
+        "scale": 1.18
       },
       "chars/elf_quarry_left": {
         "file": "chars/elf_quarry_left.png",
@@ -3323,7 +2969,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.25
+        "scale": 1.37
       },
       "chars/elf_strike_back": {
         "file": "chars/elf_strike_back.png",
@@ -3348,7 +2994,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/elf_strike_front": {
         "file": "chars/elf_strike_front.png",
@@ -3373,7 +3019,7 @@
           ],
           "fit_permille": 790
         },
-        "scale": 1.14
+        "scale": 1.24
       },
       "chars/elf_strike_left": {
         "file": "chars/elf_strike_left.png",
@@ -3397,7 +3043,7 @@
           ],
           "fit_permille": 840
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/skeleton_dodge_back": {
         "file": "chars/skeleton_dodge_back.png",
@@ -3421,7 +3067,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.75
+        "scale": 0.81
       },
       "chars/skeleton_dodge_front": {
         "file": "chars/skeleton_dodge_front.png",
@@ -3445,7 +3091,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_dodge_left": {
         "file": "chars/skeleton_dodge_left.png",
@@ -3469,7 +3115,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_fell_back": {
         "file": "chars/skeleton_fell_back.png",
@@ -3493,7 +3139,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.79
+        "scale": 0.86
       },
       "chars/skeleton_fell_front": {
         "file": "chars/skeleton_fell_front.png",
@@ -3516,7 +3162,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.82
+        "scale": 0.9
       },
       "chars/skeleton_fell_left": {
         "file": "chars/skeleton_fell_left.png",
@@ -3540,7 +3186,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.85
+        "scale": 0.93
       },
       "chars/skeleton_fish_back": {
         "file": "chars/skeleton_fish_back.png",
@@ -3564,7 +3210,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.75
+        "scale": 0.81
       },
       "chars/skeleton_fish_front": {
         "file": "chars/skeleton_fish_front.png",
@@ -3588,7 +3234,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_fish_left": {
         "file": "chars/skeleton_fish_left.png",
@@ -3612,7 +3258,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.85
+        "scale": 0.93
       },
       "chars/skeleton_guard_back": {
         "file": "chars/skeleton_guard_back.png",
@@ -3636,7 +3282,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.75
+        "scale": 0.82
       },
       "chars/skeleton_guard_front": {
         "file": "chars/skeleton_guard_front.png",
@@ -3660,7 +3306,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_guard_left": {
         "file": "chars/skeleton_guard_left.png",
@@ -3684,7 +3330,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_hit_back": {
         "file": "chars/skeleton_hit_back.png",
@@ -3708,7 +3354,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.78
+        "scale": 0.85
       },
       "chars/skeleton_hit_front": {
         "file": "chars/skeleton_hit_front.png",
@@ -3732,7 +3378,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.81
+        "scale": 0.88
       },
       "chars/skeleton_hit_left": {
         "file": "chars/skeleton_hit_left.png",
@@ -3756,7 +3402,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.76
+        "scale": 0.83
       },
       "chars/skeleton_pickup_back": {
         "file": "chars/skeleton_pickup_back.png",
@@ -3780,7 +3426,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_pickup_front": {
         "file": "chars/skeleton_pickup_front.png",
@@ -3803,7 +3449,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_pickup_left": {
         "file": "chars/skeleton_pickup_left.png",
@@ -3827,7 +3473,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_quarry_back": {
         "file": "chars/skeleton_quarry_back.png",
@@ -3851,7 +3497,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.81
+        "scale": 0.88
       },
       "chars/skeleton_quarry_front": {
         "file": "chars/skeleton_quarry_front.png",
@@ -3875,7 +3521,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_quarry_left": {
         "file": "chars/skeleton_quarry_left.png",
@@ -3899,7 +3545,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.86
+        "scale": 0.94
       },
       "chars/skeleton_strike_back": {
         "file": "chars/skeleton_strike_back.png",
@@ -3923,7 +3569,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.75
+        "scale": 0.81
       },
       "chars/skeleton_strike_front": {
         "file": "chars/skeleton_strike_front.png",
@@ -3947,7 +3593,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.76
+        "scale": 0.83
       },
       "chars/skeleton_strike_left": {
         "file": "chars/skeleton_strike_left.png",
@@ -3971,7 +3617,7 @@
           ],
           "fit_permille": 562
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/human_carry_back": {
         "file": "chars/human_carry_back.png",
@@ -4033,7 +3679,7 @@
             ]
           ]
         },
-        "scale": 1.45
+        "scale": 1.58
       },
       "chars/human_carry_front": {
         "file": "chars/human_carry_front.png",
@@ -4095,7 +3741,7 @@
             ]
           ]
         },
-        "scale": 1.39
+        "scale": 1.51
       },
       "chars/human_carry_left": {
         "file": "chars/human_carry_left.png",
@@ -4157,7 +3803,7 @@
             ]
           ]
         },
-        "scale": 1.32
+        "scale": 1.44
       },
       "chars/human_push_back": {
         "file": "chars/human_push_back.png",
@@ -4195,7 +3841,7 @@
             ]
           ]
         },
-        "scale": 0.98
+        "scale": 1.07
       },
       "chars/human_push_front": {
         "file": "chars/human_push_front.png",
@@ -4233,7 +3879,7 @@
             ]
           ]
         },
-        "scale": 0.92
+        "scale": 1
       },
       "chars/human_push_left": {
         "file": "chars/human_push_left.png",
@@ -4271,7 +3917,7 @@
             ]
           ]
         },
-        "scale": 0.95
+        "scale": 1.03
       },
       "chars/human_throw_back": {
         "file": "chars/human_throw_back.png",
@@ -4317,7 +3963,7 @@
             ]
           ]
         },
-        "scale": 0.98
+        "scale": 1.07
       },
       "chars/human_throw_front": {
         "file": "chars/human_throw_front.png",
@@ -4363,7 +4009,7 @@
             ]
           ]
         },
-        "scale": 1.04
+        "scale": 1.14
       },
       "chars/human_throw_left": {
         "file": "chars/human_throw_left.png",
@@ -4413,7 +4059,7 @@
             ]
           ]
         },
-        "scale": 0.95
+        "scale": 1.03
       },
       "chars/elf_carry_back": {
         "file": "chars/elf_carry_back.png",
@@ -4475,7 +4121,7 @@
             ]
           ]
         },
-        "scale": 1.55
+        "scale": 1.69
       },
       "chars/elf_carry_front": {
         "file": "chars/elf_carry_front.png",
@@ -4537,7 +4183,7 @@
             ]
           ]
         },
-        "scale": 1.49
+        "scale": 1.63
       },
       "chars/elf_carry_left": {
         "file": "chars/elf_carry_left.png",
@@ -4599,7 +4245,7 @@
             ]
           ]
         },
-        "scale": 1.52
+        "scale": 1.65
       },
       "chars/elf_push_back": {
         "file": "chars/elf_push_back.png",
@@ -4637,7 +4283,7 @@
             ]
           ]
         },
-        "scale": 1.17
+        "scale": 1.28
       },
       "chars/elf_push_front": {
         "file": "chars/elf_push_front.png",
@@ -4675,7 +4321,7 @@
             ]
           ]
         },
-        "scale": 1.08
+        "scale": 1.18
       },
       "chars/elf_push_left": {
         "file": "chars/elf_push_left.png",
@@ -4713,7 +4359,7 @@
             ]
           ]
         },
-        "scale": 1.15
+        "scale": 1.25
       },
       "chars/elf_throw_back": {
         "file": "chars/elf_throw_back.png",
@@ -4763,7 +4409,7 @@
             ]
           ]
         },
-        "scale": 1.16
+        "scale": 1.27
       },
       "chars/elf_throw_front": {
         "file": "chars/elf_throw_front.png",
@@ -4809,7 +4455,7 @@
             ]
           ]
         },
-        "scale": 1.18
+        "scale": 1.29
       },
       "chars/elf_throw_left": {
         "file": "chars/elf_throw_left.png",
@@ -4855,7 +4501,7 @@
             ]
           ]
         },
-        "scale": 1.17
+        "scale": 1.28
       },
       "chars/skeleton_carry_back": {
         "file": "chars/skeleton_carry_back.png",
@@ -4916,7 +4562,7 @@
             ]
           ]
         },
-        "scale": 1.04
+        "scale": 1.13
       },
       "chars/skeleton_carry_front": {
         "file": "chars/skeleton_carry_front.png",
@@ -4977,7 +4623,7 @@
             ]
           ]
         },
-        "scale": 1
+        "scale": 1.09
       },
       "chars/skeleton_carry_left": {
         "file": "chars/skeleton_carry_left.png",
@@ -5038,7 +4684,7 @@
             ]
           ]
         },
-        "scale": 0.99
+        "scale": 1.07
       },
       "chars/skeleton_push_back": {
         "file": "chars/skeleton_push_back.png",
@@ -5075,7 +4721,7 @@
             ]
           ]
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_push_front": {
         "file": "chars/skeleton_push_front.png",
@@ -5112,7 +4758,7 @@
             ]
           ]
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_push_left": {
         "file": "chars/skeleton_push_left.png",
@@ -5149,7 +4795,7 @@
             ]
           ]
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_throw_back": {
         "file": "chars/skeleton_throw_back.png",
@@ -5198,7 +4844,7 @@
             ]
           ]
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/skeleton_throw_front": {
         "file": "chars/skeleton_throw_front.png",
@@ -5243,7 +4889,7 @@
             ]
           ]
         },
-        "scale": 0.75
+        "scale": 0.82
       },
       "chars/skeleton_throw_left": {
         "file": "chars/skeleton_throw_left.png",
@@ -5292,7 +4938,7 @@
             ]
           ]
         },
-        "scale": 0.74
+        "scale": 0.81
       },
       "chars/human_lift_back": {
         "file": "chars/human_lift_back.png",
@@ -5354,7 +5000,7 @@
             ]
           ]
         },
-        "scale": 1.41
+        "scale": 1.54
       },
       "chars/human_lift_front": {
         "file": "chars/human_lift_front.png",
@@ -5416,7 +5062,7 @@
             ]
           ]
         },
-        "scale": 1.36
+        "scale": 1.48
       },
       "chars/human_lift_left": {
         "file": "chars/human_lift_left.png",
@@ -5478,7 +5124,7 @@
             ]
           ]
         },
-        "scale": 1.32
+        "scale": 1.44
       },
       "chars/elf_lift_back": {
         "file": "chars/elf_lift_back.png",
@@ -5540,7 +5186,7 @@
             ]
           ]
         },
-        "scale": 1.55
+        "scale": 1.69
       },
       "chars/elf_lift_front": {
         "file": "chars/elf_lift_front.png",
@@ -5602,7 +5248,7 @@
             ]
           ]
         },
-        "scale": 1.45
+        "scale": 1.58
       },
       "chars/elf_lift_left": {
         "file": "chars/elf_lift_left.png",
@@ -5664,7 +5310,7 @@
             ]
           ]
         },
-        "scale": 1.5
+        "scale": 1.63
       },
       "chars/skeleton_lift_back": {
         "file": "chars/skeleton_lift_back.png",
@@ -5725,7 +5371,7 @@
             ]
           ]
         },
-        "scale": 1.02
+        "scale": 1.12
       },
       "chars/skeleton_lift_front": {
         "file": "chars/skeleton_lift_front.png",
@@ -5786,7 +5432,7 @@
             ]
           ]
         },
-        "scale": 1
+        "scale": 1.09
       },
       "chars/skeleton_lift_left": {
         "file": "chars/skeleton_lift_left.png",
@@ -5847,7 +5493,874 @@
             ]
           ]
         },
-        "scale": 0.98
+        "scale": 1.07
+      },
+      "chars/human_jump_left": {
+        "file": "chars/human_jump_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 12,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "jump",
+          "frame_ms": 33,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.03
+      },
+      "chars/human_jump_front": {
+        "file": "chars/human_jump_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "jump",
+          "frame_ms": 33,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1
+      },
+      "chars/human_jump_back": {
+        "file": "chars/human_jump_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "jump",
+          "frame_ms": 33,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.08
+      },
+      "chars/human_land_left": {
+        "file": "chars/human_land_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 10,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "land",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.05
+      },
+      "chars/human_land_front": {
+        "file": "chars/human_land_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 10,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "land",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1
+      },
+      "chars/human_land_back": {
+        "file": "chars/human_land_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 10,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "land",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.06
+      },
+      "chars/human_land_hard_left": {
+        "file": "chars/human_land_hard_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 14,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "land_hard",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.05
+      },
+      "chars/human_land_hard_front": {
+        "file": "chars/human_land_hard_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 14,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "land_hard",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1.02
+      },
+      "chars/human_land_hard_back": {
+        "file": "chars/human_land_hard_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "land_hard",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.09
+      },
+      "chars/human_die_left": {
+        "file": "chars/human_die_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 15,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "die",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.03
+      },
+      "chars/human_die_front": {
+        "file": "chars/human_die_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 19,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "die",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1
+      },
+      "chars/human_die_back": {
+        "file": "chars/human_die_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 15,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "die",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.06
+      },
+      "chars/human_run_left": {
+        "file": "chars/human_run_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "run",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.03
+      },
+      "chars/human_run_front": {
+        "file": "chars/human_run_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "run",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1.01
+      },
+      "chars/human_run_back": {
+        "file": "chars/human_run_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "run",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.17
+      },
+      "chars/human_hit_heavy_left": {
+        "file": "chars/human_hit_heavy_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "hit_heavy",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.05
+      },
+      "chars/human_hit_heavy_front": {
+        "file": "chars/human_hit_heavy_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "hit_heavy",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1
+      },
+      "chars/human_hit_heavy_back": {
+        "file": "chars/human_hit_heavy_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "hit_heavy",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.06
+      },
+      "chars/human_down_left": {
+        "file": "chars/human_down_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 25,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "down",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.04
+      },
+      "chars/human_down_front": {
+        "file": "chars/human_down_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 23,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "down",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1.04
+      },
+      "chars/human_down_back": {
+        "file": "chars/human_down_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 25,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "down",
+          "frame_ms": 60,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.13
+      },
+      "chars/human_hit_behind_left": {
+        "file": "chars/human_hit_behind_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 12,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "hit_behind",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.05
+      },
+      "chars/human_hit_behind_front": {
+        "file": "chars/human_hit_behind_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 12,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "hit_behind",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1.1
+      },
+      "chars/human_hit_behind_back": {
+        "file": "chars/human_hit_behind_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 12,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "hit_behind",
+          "frame_ms": 50,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.06
+      },
+      "chars/human_sneak_left": {
+        "file": "chars/human_sneak_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 6,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "sneak",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 0.88
+      },
+      "chars/human_sneak_front": {
+        "file": "chars/human_sneak_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 12,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "sneak",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 0.74
+      },
+      "chars/human_sneak_back": {
+        "file": "chars/human_sneak_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 6,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "sneak",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 0.77
+      },
+      "chars/human_idle_left": {
+        "file": "chars/human_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 120,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.03
+      },
+      "chars/human_idle_left_v2": {
+        "file": "chars/human_idle_left_v2.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "idle",
+          "take": 2,
+          "frame_ms": 120,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.04
+      },
+      "chars/human_idle_front": {
+        "file": "chars/human_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 120,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1.02
+      },
+      "chars/human_idle_front_v2": {
+        "file": "chars/human_idle_front_v2.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "idle",
+          "take": 2,
+          "frame_ms": 120,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1.08
+      },
+      "chars/human_idle_back": {
+        "file": "chars/human_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 120,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.06
+      },
+      "chars/human_idle_back_v2": {
+        "file": "chars/human_idle_back_v2.png",
+        "w": 128,
+        "h": 128,
+        "frames": 17,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "idle",
+          "take": 2,
+          "frame_ms": 120,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.06
+      },
+      "chars/human_dig_left": {
+        "file": "chars/human_dig_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 25,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "left",
+          "verb": "dig",
+          "frame_ms": 70,
+          "anchor": [
+            64,
+            100
+          ],
+          "fit_permille": 719
+        },
+        "scale": 1.03
+      },
+      "chars/human_dig_front": {
+        "file": "chars/human_dig_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 25,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "front",
+          "verb": "dig",
+          "frame_ms": 70,
+          "anchor": [
+            64,
+            99
+          ],
+          "fit_permille": 698
+        },
+        "scale": 1.05
+      },
+      "chars/human_dig_back": {
+        "file": "chars/human_dig_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 25,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "clip": {
+          "race": "core/human",
+          "view": "back",
+          "verb": "dig",
+          "frame_ms": 70,
+          "anchor": [
+            64,
+            101
+          ],
+          "fit_permille": 740
+        },
+        "scale": 1.19
       },
       "tiles/planks": {
         "file": "tiles/planks.png",
@@ -5890,7 +6403,7 @@
           "red"
         ],
         "frames": 3,
-        "scale": 2.36
+        "scale": 2.57
       },
       "props/shop_window": {
         "file": "props/shop_window.png",
@@ -5902,7 +6415,7 @@
           "water"
         ],
         "frames": 2,
-        "scale": 1.01
+        "scale": 1.1
       },
       "props/jar_shelf": {
         "file": "props/jar_shelf.png",
@@ -5914,7 +6427,7 @@
           "plum",
           "fire"
         ],
-        "scale": 1.38
+        "scale": 1.51
       },
       "props/counter": {
         "file": "props/counter.png",
@@ -5925,7 +6438,7 @@
           "wood",
           "bark"
         ],
-        "scale": 0.9
+        "scale": 0.99
       },
       "props/scale": {
         "file": "props/scale.png",
@@ -5936,7 +6449,7 @@
           "fire",
           "grey"
         ],
-        "scale": 0.47
+        "scale": 0.51
       },
       "props/shop_cat": {
         "file": "props/shop_cat.png",
@@ -5948,7 +6461,7 @@
           "wood"
         ],
         "frames": 3,
-        "scale": 0.41
+        "scale": 0.45
       },
       "props/runner": {
         "file": "props/runner.png",
@@ -5959,7 +6472,7 @@
           "red",
           "water"
         ],
-        "scale": 3.51
+        "scale": 3.82
       },
       "props/door_mat": {
         "file": "props/door_mat.png",
@@ -5970,7 +6483,7 @@
           "red",
           "fire"
         ],
-        "scale": 0.36
+        "scale": 0.39
       },
       "props/pear_barrel": {
         "file": "props/pear_barrel.png",
@@ -5981,7 +6494,7 @@
           "wood",
           "green"
         ],
-        "scale": 0.89
+        "scale": 0.97
       },
       "props/mushroom_crate": {
         "file": "props/mushroom_crate.png",
@@ -5992,7 +6505,7 @@
           "wood",
           "bark"
         ],
-        "scale": 0.79
+        "scale": 0.87
       },
       "props/flour_sack": {
         "file": "props/flour_sack.png",
@@ -6003,7 +6516,7 @@
           "wood",
           "bark"
         ],
-        "scale": 0.74
+        "scale": 0.81
       },
       "props/potted_herb": {
         "file": "props/potted_herb.png",
@@ -6014,7 +6527,7 @@
           "green",
           "red"
         ],
-        "scale": 0.63
+        "scale": 0.69
       },
       "props/shop_sign_food": {
         "file": "props/shop_sign_food.png",
@@ -6025,7 +6538,7 @@
           "wood",
           "red"
         ],
-        "scale": 0.84
+        "scale": 0.91
       },
       "props/room_wall_left": {
         "file": "props/room_wall_left.png",
@@ -6036,7 +6549,7 @@
           "wood",
           "bark"
         ],
-        "scale": 2.59
+        "scale": 2.82
       },
       "props/room_wall_right": {
         "file": "props/room_wall_right.png",
@@ -6047,7 +6560,7 @@
           "wood",
           "bark"
         ],
-        "scale": 2.59
+        "scale": 2.82
       },
       "tiles/worn_n": {
         "file": "tiles/worn_n.png",
@@ -6120,7 +6633,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:134"
         },
-        "scale": 1.75
+        "scale": 1.91
       },
       "props/grass_tall_b": {
         "file": "props/grass_tall_b.png",
@@ -6135,7 +6648,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:139"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/grass_tall_c": {
         "file": "props/grass_tall_c.png",
@@ -6150,7 +6663,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:140"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/herb_plant_b": {
         "file": "props/herb_plant_b.png",
@@ -6166,7 +6679,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:142"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/herb_plant_c": {
         "file": "props/herb_plant_c.png",
@@ -6182,7 +6695,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:143"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "props/campfire_lit_b": {
         "file": "props/campfire_lit_b.png",
@@ -6198,7 +6711,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:145"
         },
-        "scale": 0.75
+        "scale": 0.82
       },
       "props/campfire_lit_c": {
         "file": "props/campfire_lit_c.png",
@@ -6214,7 +6727,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:146"
         },
-        "scale": 0.84
+        "scale": 0.91
       },
       "props/bush_berry_b": {
         "file": "props/bush_berry_b.png",
@@ -6230,7 +6743,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:148"
         },
-        "scale": 0.86
+        "scale": 0.94
       },
       "props/bush_berry_c": {
         "file": "props/bush_berry_c.png",
@@ -6246,7 +6759,7 @@
           "spec": "tools/kit-gen/pools/props.json",
           "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
         },
-        "scale": 0.88
+        "scale": 0.96
       },
       "tiles/water_1": {
         "file": "tiles/water_1.png",
@@ -6442,7 +6955,1051 @@
           "skin",
           "grey"
         ],
-        "scale": 0.9
+        "scale": 0.99
+      },
+      "creatures/roe_walk_left": {
+        "file": "creatures/roe_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            104
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            50
+          ]
+        },
+        "scale": 0.96
+      },
+      "creatures/roe_idle_left": {
+        "file": "creatures/roe_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            104
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            50
+          ]
+        },
+        "scale": 0.96
+      },
+      "creatures/roe_walk_front": {
+        "file": "creatures/roe_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            74,
+            122
+          ],
+          "fit_permille": 1123,
+          "head": [
+            74,
+            63
+          ]
+        },
+        "scale": 1.14
+      },
+      "creatures/roe_idle_front": {
+        "file": "creatures/roe_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            74,
+            122
+          ],
+          "fit_permille": 1123,
+          "head": [
+            74,
+            63
+          ]
+        },
+        "scale": 1.19
+      },
+      "creatures/roe_walk_back": {
+        "file": "creatures/roe_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            59,
+            109
+          ],
+          "fit_permille": 1045,
+          "head": [
+            59,
+            34
+          ]
+        },
+        "scale": 1.33
+      },
+      "creatures/roe_idle_back": {
+        "file": "creatures/roe_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "roe-fur-1",
+          "roe-fur-2",
+          "roe-fur-3",
+          "roe-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/roe",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            59,
+            109
+          ],
+          "fit_permille": 1045,
+          "head": [
+            59,
+            34
+          ]
+        },
+        "scale": 1.37
+      },
+      "creatures/trout_walk_left": {
+        "file": "creatures/trout_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            63,
+            101
+          ],
+          "fit_permille": 1000,
+          "head": [
+            63,
+            97
+          ]
+        },
+        "scale": 0.19
+      },
+      "creatures/trout_idle_left": {
+        "file": "creatures/trout_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            63,
+            101
+          ],
+          "fit_permille": 1000,
+          "head": [
+            63,
+            97
+          ]
+        },
+        "scale": 0.19
+      },
+      "creatures/trout_walk_front": {
+        "file": "creatures/trout_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            66,
+            110
+          ],
+          "fit_permille": 975,
+          "head": [
+            66,
+            89
+          ]
+        },
+        "scale": 0.44
+      },
+      "creatures/trout_idle_front": {
+        "file": "creatures/trout_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            66,
+            110
+          ],
+          "fit_permille": 975,
+          "head": [
+            66,
+            89
+          ]
+        },
+        "scale": 0.44
+      },
+      "creatures/trout_walk_back": {
+        "file": "creatures/trout_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            65,
+            110
+          ],
+          "fit_permille": 961,
+          "head": [
+            65,
+            89
+          ]
+        },
+        "scale": 0.43
+      },
+      "creatures/trout_idle_back": {
+        "file": "creatures/trout_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "trout-fur-1",
+          "trout-fur-2",
+          "trout-fur-3",
+          "trout-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/trout",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            65,
+            110
+          ],
+          "fit_permille": 961,
+          "head": [
+            65,
+            89
+          ]
+        },
+        "scale": 0.43
+      },
+      "creatures/hare_walk_left": {
+        "file": "creatures/hare_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            68,
+            103
+          ],
+          "fit_permille": 616,
+          "head": [
+            68,
+            85
+          ]
+        },
+        "scale": 0.25
+      },
+      "creatures/hare_idle_left": {
+        "file": "creatures/hare_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            68,
+            103
+          ],
+          "fit_permille": 616,
+          "head": [
+            68,
+            85
+          ]
+        },
+        "scale": 0.26
+      },
+      "creatures/hare_walk_front": {
+        "file": "creatures/hare_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            105
+          ],
+          "fit_permille": 773,
+          "head": [
+            64,
+            91
+          ]
+        },
+        "scale": 0.29
+      },
+      "creatures/hare_idle_front": {
+        "file": "creatures/hare_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            105
+          ],
+          "fit_permille": 773,
+          "head": [
+            64,
+            91
+          ]
+        },
+        "scale": 0.27
+      },
+      "creatures/hare_walk_back": {
+        "file": "creatures/hare_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            106
+          ],
+          "fit_permille": 616,
+          "head": [
+            64,
+            84
+          ]
+        },
+        "scale": 0.3
+      },
+      "creatures/hare_idle_back": {
+        "file": "creatures/hare_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "hare-fur-1",
+          "hare-fur-2",
+          "hare-fur-3",
+          "hare-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/hare",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            106
+          ],
+          "fit_permille": 616,
+          "head": [
+            64,
+            84
+          ]
+        },
+        "scale": 0.29
+      },
+      "creatures/crow_walk_left": {
+        "file": "creatures/crow_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            66,
+            110
+          ],
+          "fit_permille": 470,
+          "head": [
+            66,
+            97
+          ]
+        },
+        "scale": 0.18
+      },
+      "creatures/crow_idle_left": {
+        "file": "creatures/crow_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            66,
+            110
+          ],
+          "fit_permille": 470,
+          "head": [
+            66,
+            97
+          ]
+        },
+        "scale": 0.15
+      },
+      "creatures/crow_walk_front": {
+        "file": "creatures/crow_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            91
+          ],
+          "fit_permille": 573,
+          "head": [
+            64,
+            77
+          ]
+        },
+        "scale": 0.21
+      },
+      "creatures/crow_idle_front": {
+        "file": "creatures/crow_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            91
+          ],
+          "fit_permille": 573,
+          "head": [
+            64,
+            77
+          ]
+        },
+        "scale": 0.21
+      },
+      "creatures/crow_walk_back": {
+        "file": "creatures/crow_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            64,
+            106
+          ],
+          "fit_permille": 494,
+          "head": [
+            64,
+            84
+          ]
+        },
+        "scale": 0.21
+      },
+      "creatures/crow_idle_back": {
+        "file": "creatures/crow_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "crow-fur-1",
+          "crow-fur-2",
+          "crow-fur-3",
+          "crow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/crow",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            64,
+            106
+          ],
+          "fit_permille": 494,
+          "head": [
+            64,
+            84
+          ]
+        },
+        "scale": 0.23
+      },
+      "creatures/sparrow_walk_left": {
+        "file": "creatures/sparrow_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            63,
+            107
+          ],
+          "fit_permille": 404,
+          "head": [
+            63,
+            95
+          ]
+        },
+        "scale": 0.14
+      },
+      "creatures/sparrow_idle_left": {
+        "file": "creatures/sparrow_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            63,
+            107
+          ],
+          "fit_permille": 404,
+          "head": [
+            63,
+            95
+          ]
+        },
+        "scale": 0.13
+      },
+      "creatures/sparrow_walk_front": {
+        "file": "creatures/sparrow_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            62,
+            106
+          ],
+          "fit_permille": 429,
+          "head": [
+            62,
+            94
+          ]
+        },
+        "scale": 0.14
+      },
+      "creatures/sparrow_idle_front": {
+        "file": "creatures/sparrow_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            62,
+            106
+          ],
+          "fit_permille": 429,
+          "head": [
+            62,
+            94
+          ]
+        },
+        "scale": 0.13
+      },
+      "creatures/sparrow_walk_back": {
+        "file": "creatures/sparrow_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            62,
+            108
+          ],
+          "fit_permille": 455,
+          "head": [
+            62,
+            91
+          ]
+        },
+        "scale": 0.18
+      },
+      "creatures/sparrow_idle_back": {
+        "file": "creatures/sparrow_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "sparrow-fur-1",
+          "sparrow-fur-2",
+          "sparrow-fur-3",
+          "sparrow-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/sparrow",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            62,
+            108
+          ],
+          "fit_permille": 455,
+          "head": [
+            62,
+            91
+          ]
+        },
+        "scale": 0.18
+      },
+      "creatures/wolf_walk_left": {
+        "file": "creatures/wolf_walk_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "left",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            54,
+            91
+          ],
+          "fit_permille": 1000,
+          "head": [
+            21,
+            59
+          ]
+        },
+        "scale": 0.69
+      },
+      "creatures/wolf_idle_left": {
+        "file": "creatures/wolf_idle_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "left",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            54,
+            91
+          ],
+          "fit_permille": 1000,
+          "head": [
+            21,
+            59
+          ]
+        },
+        "scale": 0.7
+      },
+      "creatures/wolf_walk_front": {
+        "file": "creatures/wolf_walk_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "front",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            66,
+            99
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            79
+          ]
+        },
+        "scale": 0.88
+      },
+      "creatures/wolf_idle_front": {
+        "file": "creatures/wolf_idle_front.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "front",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            66,
+            99
+          ],
+          "fit_permille": 1000,
+          "head": [
+            64,
+            79
+          ]
+        },
+        "scale": 0.88
+      },
+      "creatures/wolf_walk_back": {
+        "file": "creatures/wolf_walk_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "back",
+          "verb": "walk",
+          "frame_ms": 90,
+          "anchor": [
+            59,
+            109
+          ],
+          "fit_permille": 1000,
+          "head": [
+            59,
+            34
+          ]
+        },
+        "scale": 1.25
+      },
+      "creatures/wolf_idle_back": {
+        "file": "creatures/wolf_idle_back.png",
+        "w": 128,
+        "h": 128,
+        "frames": 8,
+        "density": 4,
+        "ramps": [
+          "wolf-fur-1",
+          "wolf-fur-2",
+          "wolf-fur-3",
+          "wolf-fur-4"
+        ],
+        "creature_clip": {
+          "creature": "core/wolf",
+          "view": "back",
+          "verb": "idle",
+          "frame_ms": 150,
+          "anchor": [
+            59,
+            109
+          ],
+          "fit_permille": 1000,
+          "head": [
+            59,
+            34
+          ]
+        },
+        "scale": 1.28
       },
       "chars/human_hardened-leathers_down": {
         "file": "chars/human_hardened-leathers_down.png",
@@ -6464,7 +8021,7 @@
           ],
           "bob": false
         },
-        "scale": 0.92
+        "scale": 1
       },
       "chars/human_hardened-leathers_up": {
         "file": "chars/human_hardened-leathers_up.png",
@@ -6486,7 +8043,7 @@
           ],
           "bob": false
         },
-        "scale": 0.99
+        "scale": 1.07
       },
       "chars/human_hardened-leathers_left": {
         "file": "chars/human_hardened-leathers_left.png",
@@ -6508,7 +8065,7 @@
           ],
           "bob": false
         },
-        "scale": 0.95
+        "scale": 1.03
       },
       "chars/human_reed-walker_down": {
         "file": "chars/human_reed-walker_down.png",
@@ -6529,7 +8086,7 @@
           ],
           "bob": false
         },
-        "scale": 0.93
+        "scale": 1.01
       },
       "chars/human_reed-walker_up": {
         "file": "chars/human_reed-walker_up.png",
@@ -6550,7 +8107,7 @@
           ],
           "bob": false
         },
-        "scale": 0.99
+        "scale": 1.07
       },
       "chars/human_reed-walker_left": {
         "file": "chars/human_reed-walker_left.png",
@@ -6571,7 +8128,7 @@
           ],
           "bob": false
         },
-        "scale": 0.97
+        "scale": 1.06
       },
       "chars/elf_reed-walker_down": {
         "file": "chars/elf_reed-walker_down.png",
@@ -6593,7 +8150,7 @@
           ],
           "bob": false
         },
-        "scale": 1.1
+        "scale": 1.19
       },
       "chars/elf_reed-walker_up": {
         "file": "chars/elf_reed-walker_up.png",
@@ -6615,7 +8172,7 @@
           ],
           "bob": false
         },
-        "scale": 1.16
+        "scale": 1.27
       },
       "chars/elf_reed-walker_left": {
         "file": "chars/elf_reed-walker_left.png",
@@ -6637,7 +8194,7 @@
           ],
           "bob": false
         },
-        "scale": 1.16
+        "scale": 1.27
       },
       "chars/human_digger-leathers_down": {
         "file": "chars/human_digger-leathers_down.png",
@@ -6659,7 +8216,7 @@
           ],
           "bob": false
         },
-        "scale": 0.92
+        "scale": 1
       },
       "chars/human_digger-leathers_up": {
         "file": "chars/human_digger-leathers_up.png",
@@ -6681,7 +8238,7 @@
           ],
           "bob": false
         },
-        "scale": 0.99
+        "scale": 1.07
       },
       "chars/human_digger-leathers_left": {
         "file": "chars/human_digger-leathers_left.png",
@@ -6703,7 +8260,7 @@
           ],
           "bob": false
         },
-        "scale": 0.93
+        "scale": 1.01
       },
       "chars/skeleton_reed-walker_down": {
         "file": "chars/skeleton_reed-walker_down.png",
@@ -6724,7 +8281,7 @@
           ],
           "bob": false
         },
-        "scale": 0.75
+        "scale": 0.82
       },
       "chars/skeleton_reed-walker_up": {
         "file": "chars/skeleton_reed-walker_up.png",
@@ -6745,7 +8302,7 @@
           ],
           "bob": false
         },
-        "scale": 0.75
+        "scale": 0.82
       },
       "chars/skeleton_reed-walker_left": {
         "file": "chars/skeleton_reed-walker_left.png",
@@ -6766,8 +8323,274 @@
           ],
           "bob": false
         },
-        "scale": 0.75
+        "scale": 0.82
       }
-    }
+    },
+    "ramps": [
+      {
+        "id": "wolf-fur-1",
+        "steps": [
+          "#1d141c",
+          "#251a1a",
+          "#28272d",
+          "#393632",
+          "#454541",
+          "#63554a"
+        ]
+      },
+      {
+        "id": "wolf-fur-2",
+        "steps": [
+          "#211519",
+          "#3e3a3a",
+          "#66625e",
+          "#756d69",
+          "#807873",
+          "#877d7a"
+        ]
+      },
+      {
+        "id": "wolf-fur-3",
+        "steps": [
+          "#1b1112",
+          "#211615",
+          "#221e2b",
+          "#332c2d",
+          "#45413e",
+          "#504c4a"
+        ]
+      },
+      {
+        "id": "wolf-fur-4",
+        "steps": [
+          "#231515",
+          "#595954",
+          "#625e5a",
+          "#6b6662",
+          "#8c827e",
+          "#9b8f8c"
+        ]
+      },
+      {
+        "id": "sparrow-fur-1",
+        "steps": [
+          "#050302",
+          "#362623",
+          "#5c3c28",
+          "#6e4f38",
+          "#7d5b3d",
+          "#816c56"
+        ]
+      },
+      {
+        "id": "sparrow-fur-2",
+        "steps": [
+          "#2a1f1e",
+          "#302d31",
+          "#463126",
+          "#644632",
+          "#826142",
+          "#87684a"
+        ]
+      },
+      {
+        "id": "sparrow-fur-3",
+        "steps": [
+          "#2f272a",
+          "#4d3224",
+          "#573b38",
+          "#cf988c",
+          "#d0c3a2",
+          "#dacfac"
+        ]
+      },
+      {
+        "id": "sparrow-fur-4",
+        "steps": [
+          "#29282f",
+          "#7e5e42",
+          "#65696a",
+          "#9a886b",
+          "#a29276",
+          "#ab9b7e"
+        ]
+      },
+      {
+        "id": "crow-fur-1",
+        "steps": [
+          "#070709",
+          "#0d101c",
+          "#212532",
+          "#282d3d",
+          "#484244",
+          "#464952"
+        ]
+      },
+      {
+        "id": "crow-fur-2",
+        "steps": [
+          "#0c0e13",
+          "#171722",
+          "#1c1d28",
+          "#242531",
+          "#2b2e38",
+          "#343741"
+        ]
+      },
+      {
+        "id": "crow-fur-3",
+        "steps": [
+          "#090a0e",
+          "#121219",
+          "#21222e",
+          "#3a4454",
+          "#637283",
+          "#8b776c"
+        ]
+      },
+      {
+        "id": "crow-fur-4",
+        "steps": [
+          "#090b12",
+          "#2e3646",
+          "#3c3f48",
+          "#41454e",
+          "#485564",
+          "#565863"
+        ]
+      },
+      {
+        "id": "hare-fur-1",
+        "steps": [
+          "#0c0e13",
+          "#171722",
+          "#372c2f",
+          "#8b5e45",
+          "#9b6954",
+          "#a17152"
+        ]
+      },
+      {
+        "id": "hare-fur-2",
+        "steps": [
+          "#4d3430",
+          "#484244",
+          "#956548",
+          "#c7966c",
+          "#ecbab5",
+          "#f4d8cc"
+        ]
+      },
+      {
+        "id": "hare-fur-3",
+        "steps": [
+          "#0d101c",
+          "#14151f",
+          "#805646",
+          "#b68262",
+          "#c6936f",
+          "#d7a678"
+        ]
+      },
+      {
+        "id": "hare-fur-4",
+        "steps": [
+          "#121219",
+          "#ab7659",
+          "#bb8d6a",
+          "#d9ab80",
+          "#d5bc9c",
+          "#ddd0b6"
+        ]
+      },
+      {
+        "id": "trout-fur-1",
+        "steps": [
+          "#27261c",
+          "#3d3e2a",
+          "#5e6048",
+          "#736947",
+          "#99a189",
+          "#a3a991"
+        ]
+      },
+      {
+        "id": "trout-fur-2",
+        "steps": [
+          "#0e0f08",
+          "#585536",
+          "#686b4b",
+          "#82816a",
+          "#99a092",
+          "#ccc69c"
+        ]
+      },
+      {
+        "id": "trout-fur-3",
+        "steps": [
+          "#14150b",
+          "#615c39",
+          "#8f8f7a",
+          "#a99f71",
+          "#b8ae8b",
+          "#b5baab"
+        ]
+      },
+      {
+        "id": "trout-fur-4",
+        "steps": [
+          "#040402",
+          "#484735",
+          "#626042",
+          "#727360",
+          "#858763",
+          "#969370"
+        ]
+      },
+      {
+        "id": "roe-fur-1",
+        "steps": [
+          "#1d1212",
+          "#2c1a17",
+          "#2a2120",
+          "#562e1f",
+          "#643624",
+          "#955c3b"
+        ]
+      },
+      {
+        "id": "roe-fur-2",
+        "steps": [
+          "#201921",
+          "#40261d",
+          "#592e1e",
+          "#763f26",
+          "#7b4529",
+          "#ce9a65"
+        ]
+      },
+      {
+        "id": "roe-fur-3",
+        "steps": [
+          "#19151c",
+          "#231e28",
+          "#522a1e",
+          "#5d3120",
+          "#ac6f42",
+          "#ac774f"
+        ]
+      },
+      {
+        "id": "roe-fur-4",
+        "steps": [
+          "#211615",
+          "#6b3a25",
+          "#7a4228",
+          "#b57544",
+          "#d7a873",
+          "#e3b47c"
+        ]
+      }
+    ]
   }
 }

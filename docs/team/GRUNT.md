@@ -658,15 +658,16 @@ pnpm build && pnpm --filter web test && ls web/dist/hub/creators/
 
 Decision: PLATFORM.md section 6 (the last row).
 
-## P - the rules of play (after the owner's rulings in GAME_RULES.md section 5)
+## P - the rules of play
 
-Read [docs/design/GAME_RULES.md](../design/GAME_RULES.md) first. Each item
-below closes one row of its section 5. The order is fixed: P-1 needs no schema
+Read [docs/design/GAME_RULES.md](../design/GAME_RULES.md) first. The original
+breaches and the owner's rulings are in [DECISIONS.md](../../DECISIONS.md#5-known-breaches-on-2026-10-07).
+The order is fixed: P-1 needs no schema
 change, P-2 is the schema, P-3 is the content and flips the warnings to errors,
 P-4 is the session rung of the ladder; P-5 (health and danger) follows P-2 and
 P-6 (the expedition) follows P-3 and P-5, both added 8.10. A collision with a
 rule stops the item
-and goes to the owner (section 6 there); it is never resolved in the branch.
+and goes to the owner (GAME_RULES.md section 6); it is never resolved in the branch.
 
 ### P-1. The collection shelf stops being a build
 
@@ -696,7 +697,7 @@ pnpm check | grep -c "G10," ; pnpm verify && pnpm e2e
 ```
 The grep prints 0; verify and e2e are green.
 
-Decision: GAME_RULES.md section 5, row 1, after the owner's word.
+Decision: [the breach table](../../DECISIONS.md#5-known-breaches-on-2026-10-07), row 1, after the owner's word.
 
 ### P-2. The `find` and `riddle` steps, and ids on map props
 
@@ -745,7 +746,7 @@ pnpm schemas && pnpm check && pnpm verify
 ```
 Green, and `pnpm check` prints one G8 line per note prop that no riddle cites.
 
-Decision: GAME_RULES.md section 5, rows 2 and 4; a DECISIONS.md entry "two
+Decision: [the breach table](../../DECISIONS.md#5-known-breaches-on-2026-10-07), rows 2 and 4; a DECISIONS.md entry "two
 step kinds, no format bump".
 
 ### P-3. The town quests and the ruins riddle; warnings become errors
@@ -761,7 +762,7 @@ place the owner named until the schema has a place reward. The opening recut B
 (10.10) added the place reward (`reward.opens`): the coin now gives gold and the
 herb tea recipe, and the quest after it, the arch at night, opens a place.
 
-Goal: the five rows of GAME_RULES.md section 5 are closed in the content, and
+Goal: the five rows of [the breach table](../../DECISIONS.md#5-known-breaches-on-2026-10-07) are closed in the content, and
 `pnpm check` prints "0 errors, 0 warnings" on the core content.
 
 Files:
@@ -797,7 +798,7 @@ pnpm check && pnpm verify && pnpm e2e
 ```
 `pnpm check` ends with "0 errors, 0 warnings. Everything passes."
 
-Decision: GAME_RULES.md section 5, rows 2-5, after the owner's word; closes
+Decision: [the breach table](../../DECISIONS.md#5-known-breaches-on-2026-10-07), rows 2-5, after the owner's word; closes
 the DECISIONS.md entry "The play rules warn until the core content is
 rewritten".
 

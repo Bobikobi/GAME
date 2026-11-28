@@ -556,7 +556,7 @@ describe('a fall lets go', () => {
     expect(lyingAt(b, settled(b, r.state, r.state.tick + S.return_ms), [1, 1])).toMatchObject({ spot: ARMS_STONE, count: 1 });
   });
 
-  test('the stones an outing gave are lost with it, and go back to their spots', () => {
+  test('the stones an outing gave lie in the pack, and go back to their spots when the pack is gone', () => {
     const b = pitWorld([{ x: 1, y: 1, kind: STONE_ITEM }]);
     const start = standing(b, [1, 1]);
     // out on the ground that is not safe, so the outing keeps an account of what it gave
@@ -566,7 +566,15 @@ describe('a fall lets go', () => {
     if (!r.ok) throw new Error(r.error);
     expect(r.events.some((e) => e.e === 'fall')).toBe(true);
     expect(bagStones(r.state)).toBe(0);
-    expect(lyingAt(b, settled(b, r.state, r.state.tick + S.return_ms), [1, 1]).count).toBe(1);
+    // the stone lies in the pack where the body fell (G81), so its spot stays empty while the pack lies
+    expect(r.state.player.packs).toMatchObject([{ items: { [STONE_ITEM]: 1 }, at: [2, 1] }]);
+    const until = r.state.player.packs![0]!.until;
+    expect(lyingAt(b, settled(b, r.state, until - 1), [1, 1]).count).toBe(0);
+    // the day over, the next step sends it home from that tick, to the spot it was lifted from
+    const later = step(b, r.state, { t: 'move', at: [0, 1] }, until + 10);
+    if (!later.ok) throw new Error(later.error);
+    expect(later.state.player.packs).toBeUndefined();
+    expect(lyingAt(b, settled(b, later.state, until + S.return_ms), [1, 1]).count).toBe(1);
   });
 });
 

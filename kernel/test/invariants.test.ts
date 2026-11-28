@@ -26,6 +26,7 @@ import {
   bfsInside,
   bfsNear,
   loadBundle,
+  loadPixelBundle,
   mulberry32,
 } from '../../tools/test/helpers/world.js';
 
@@ -90,6 +91,8 @@ describe('determinism', () => {
 
 describe('work has no grade', () => {
   test('the same unit comes home whatever grade an old log claims', () => {
+    // a rule of the engine, proven on the pixel valley: the painted valley's reed bank lies across the river from the start
+    const bundle = loadPixelBundle();
     const node = Object.entries(bundle.instances).find(([, instance]) => instance.source === 'core/reed-bank');
     expect(node).toBeDefined();
     const [nodeId, instance] = node!;

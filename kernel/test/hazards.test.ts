@@ -29,7 +29,7 @@ import {
   windowOpen,
 } from '@game/kernel';
 
-import { loadBundle, mulberry32 } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle, mulberry32 } from '../../tools/test/helpers/world.js';
 
 type Tile = [number, number];
 type Prop = Bundle['map']['props'][number];
@@ -43,7 +43,7 @@ const DUSK = 400_000;
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 function prop(id: string, x: number, y: number, hazard: Prop['hazard'], solid = false): Prop {
@@ -394,7 +394,7 @@ describe('a fall', () => {
     expect(s.player.bag['core/stone']).toBe(1);
     expect(s.player.outing?.gained).toEqual({ 'core/stone': 1 });
     const r = move(b, place(s, [6, 22], NIGHT), [7, 22], NIGHT + 190);
-    expect(kinds(r.events)).toEqual(['hurt', 'fall']);
+    expect(kinds(r.events)).toEqual(['hurt', 'fall', 'pack']);
     expect(r.events[1]).toEqual({ e: 'fall', from: [7, 22], at: [6, 17], lost: [{ item: 'core/stone', qty: 1 }] });
     const after = r.state.player;
     expect(after.bag['core/stone']).toBeUndefined();
@@ -535,7 +535,7 @@ describe('food that hurts', () => {
     s.player.bag['core/berry'] = 3;
     s.player.hp = 30_000;
     const r = ok(b, s, { t: 'eat', item: 'test/bad-fruit' }, NOON);
-    expect(kinds(r.events)).toEqual(['spend', 'eat', 'hurt', 'fall']);
+    expect(kinds(r.events)).toEqual(['spend', 'eat', 'hurt', 'fall', 'pack']);
     expect(r.events[3]).toMatchObject({ e: 'fall', lost: [{ item: 'core/berry', qty: 3 }] });
     expect(r.state.player.bag['core/berry']).toBeUndefined();
     expect(r.state.player.hp).toBe(hpCap(b, r.state));

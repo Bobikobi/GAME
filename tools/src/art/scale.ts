@@ -2,19 +2,19 @@
  * The scale audit (owner, 31.10: "check that the size of every item in the game is in a sensible proportion to
  * the character"): every sprite a player sees in the world, measured against the adult.
  *
- * `pnpm art:scale [--json] [--write] [--declare]`
+ * `pnpm art:scale [--json] [--write] [--declare | --redeclare]`
  *
  * For each sprite of the kits outside the ground (`tiles/`) and the inventory icons (`items/`) it reads:
  * - the drawn height: the opaque rows of the frame (alpha 128 and up, the box and not the canvas), the tallest
  *   frame of a sheet, divided by the sprite's density so a 16 px and a 64 px sprite share one unit (the world
  *   keeps 16 units to a tile, game/src/kitart.ts);
- * - the height in characters: that, divided by the adult's, measured the same way on the adult human's standing frames;
+ * - the height in characters: that, divided by the adult's, measured on the human's base body (`ADULT_SPRITE`, `tools/kit-gen/bases/bases.json`);
  * - the range NATURE section 1 and STYLE 1b give its kind (tools/src/kit/scale.ts), and the verdict: under, over,
  *   in range, or no rule where no page speaks for the kind.
  * The rows are sorted by how far out they are. `--write` puts the table into
  * docs/design/frames/scale-audit-2026-10-31/scale.md. `--declare` writes the drawn height as `scale` (characters, two
  * decimals: STYLE 1b's floors carry two) into every world sprite of the kits that declares none, so a sprite that
- * arrives without one gets its honest number; it never touches one already declared. It changes nothing else.
+ * arrives without one gets its honest number; it never touches one already declared. `--redeclare` writes the measure over every declared one, for the day the adult's reference moves (2026-11-28: the base body replaced the walk's tallest frame). It changes nothing else.
  *
  * Pure where it can be: `verdictOf`, `distanceOf` and `renderScale` take numbers, so the words are tested without disks.
  */
@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 
 import { PNG } from 'pngjs';
 
+import { loadBases } from '../kit/bases.js';
 import { ADULT, NOT_WORLD, passes, scaleKindOf, type ScaleKind } from '../kit/scale.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -43,8 +44,14 @@ export function isAdvisory(i: { where: string; level?: string }): boolean {
 
 export const REPORT = join(ROOT, 'docs', 'design', 'frames', 'scale-audit-2026-10-31', 'scale.md');
 
-/** The sprite the adult is measured on: the human's standing frames facing the camera, the base of the three races. */
-export const ADULT_SPRITE = 'chars/human_down';
+/**
+ * The sprite the adult is measured on: the human's base body facing the camera, the picture `tools/kit-gen/bases/bases.json` names
+ * (DECISIONS 2026-11-28, one base body for each race). The adult is its frame `base_frame`, as the game shows it (at the clip's fit), so
+ * one source serves every check and a walk that bobs or swings an arm changes no sprite's declared height.
+ */
+const BASES = loadBases();
+export const ADULT_SPRITE = BASES.bases.human!.front!;
+export const ADULT_FRAME = BASES.base_frame;
 
 /** Solid pixels: the kit uses hard alpha (the ink check reads 128 the same way). */
 const SOLID = 128;
@@ -129,6 +136,8 @@ interface SpriteEntry {
   density?: number;
   /** A clip sheet (#742) is shown at its fit: the height in characters is the height as shown. */
   clip?: { fit_permille?: number };
+  /** A creature's sheet names its fit here (game/src/kitart.ts `fitOf`). */
+  creature_clip?: { fit_permille?: number };
 }
 
 /** The kits on disk: id, directory and sprites. Reads kit.json of every folder of content/kit. */
@@ -154,7 +163,9 @@ export function measureKits(root = KITS_DIR): { adultUnits: number; adultPx: num
   const core = kits.find((k) => k.id === 'core');
   const adultSprite = core?.sprites[ADULT_SPRITE];
   if (!core || !adultSprite) throw new Error(`the adult sprite ${ADULT_SPRITE} is not in the core kit`);
-  const adultPx = read(core.dir, adultSprite);
+  const adultPng = PNG.sync.read(readFileSync(join(core.dir, adultSprite.file)));
+  const adultFit = (adultSprite.clip?.fit_permille ?? 1000) / 1000;
+  const adultPx = Math.round(opaqueHeight(adultPng, adultSprite.w, ADULT_FRAME, adultSprite.h, adultSprite.cols ?? adultSprite.frames ?? 1) * adultFit * 10) / 10;
   const adultUnits = adultPx / (adultSprite.density ?? 1);
   const rows: Row[] = [];
   for (const kit of kits) {
@@ -162,7 +173,7 @@ export function measureKits(root = KITS_DIR): { adultUnits: number; adultPx: num
       if (NOT_WORLD.includes(name.split('/')[0] ?? '')) continue;
       const density = s.density ?? 1;
       const px = read(kit.dir, s);
-      const units = (px * (s.clip?.fit_permille ?? 1000)) / 1000 / density;
+      const units = (px * (s.clip?.fit_permille ?? s.creature_clip?.fit_permille ?? 1000)) / 1000 / density;
       const chars = Math.round((units / adultUnits) * 100) / 100;
       const kind = scaleKindOf(name);
       const range = rangeOf(kind);
@@ -178,7 +189,7 @@ export function measureKits(root = KITS_DIR): { adultUnits: number; adultPx: num
 }
 
 /** Write the measured height as `scale` on every world sprite of a kit that has none. Returns the names it declared. */
-export function declareScales(root = KITS_DIR): string[] {
+export function declareScales(root = KITS_DIR, overwrite = false): string[] {
   const { rows } = measureKits(root);
   const declared: string[] = [];
   for (const id of ['core', 'ceosisrael']) {
@@ -188,7 +199,8 @@ export function declareScales(root = KITS_DIR): string[] {
     let changed = false;
     for (const r of rows.filter((x) => x.kit === id)) {
       const s = kit.kit.sprites[r.name];
-      if (!s || s.scale !== undefined || r.chars < 0.1) continue;
+      if (!s || (s.scale !== undefined && !overwrite) || r.chars < 0.1) continue;
+      if (s.scale === r.chars) continue;
       s.scale = r.chars;
       declared.push(`${id}:${r.name}`);
       changed = true;
@@ -216,7 +228,7 @@ export function renderScale(rows: readonly Row[], adultPx: number, adultUnits: n
     '',
     'Every sprite a player sees in the world (props, characters, creatures; not ground tiles and not inventory icons), measured against the adult. Made by `pnpm art:scale --write`; the rule is NATURE section 1 and STYLE 1b (`tools/src/kit/scale.ts`).',
     '',
-    `The adult: \`${ADULT_SPRITE}\`, ${adultPx} art px of opaque height at density 4, ${adultUnits} world units. One character is that height. A sprite's drawn height is its opaque box (not the canvas), its tallest frame, divided by its density and by the adult's.`,
+    `The adult: frame ${ADULT_FRAME} of \`${ADULT_SPRITE}\`, the human's base body, ${adultPx} art px of opaque height at density 4 (at its fit), ${adultUnits} world units. One character is that height. A sprite's drawn height is its opaque box (not the canvas), its tallest frame, divided by its density and by the adult's.`,
     '',
     `Verdicts: ${VERDICTS.map((v) => `${v} ${c[v]}`).join(' · ')} (${rows.length} sprites).`,
     '',
@@ -231,8 +243,8 @@ export function renderScale(rows: readonly Row[], adultPx: number, adultUnits: n
 }
 
 export function scaleCli(args: readonly string[]): string {
-  if (args.includes('--declare')) {
-    const names = declareScales();
+  if (args.includes('--declare') || args.includes('--redeclare')) {
+    const names = declareScales(KITS_DIR, args.includes('--redeclare'));
     process.stdout.write(`declared scale on ${names.length} sprites\n`);
   }
   const { adultPx, adultUnits, rows } = measureKits();
@@ -244,7 +256,7 @@ export function scaleCli(args: readonly string[]): string {
   const c = counts(rows);
   const worst = rows.filter((r) => r.out > 0).slice(0, 15);
   return [
-    `adult ${ADULT_SPRITE}: ${adultPx} px opaque, ${adultUnits} world units`,
+    `adult frame ${ADULT_FRAME} of ${ADULT_SPRITE}: ${adultPx} px opaque, ${adultUnits} world units`,
     `${rows.length} sprites: ${VERDICTS.map((v) => `${v} ${c[v]}`).join(', ')}`,
     'worst 15:',
     ...worst.map((r) => `  ${r.name} (${r.kind}): ${r.chars} characters, range ${rangeText(r)}, ${r.verdict} by ${r.out}`),

@@ -78,7 +78,7 @@ export type OpenDoor =
 
 /**
  * The open door of a day summary (G16), picked from the quest state alone: first a task a character has for the
- * player and has not been taken (its requirements done, offered to this wake pocket), then a task begun and not done,
+ * player and has not been taken (its requirements done, offered to this wake pocket, not shut), then a task begun and not done,
  * then a named place not yet entered. Each in id order, so the same state names the same door. None when nothing
  * waits (every task done and every place seen).
  */
@@ -88,7 +88,7 @@ export function openDoor(b: Bundle, s: PublicState): OpenDoor | undefined {
   const offered = (q: { pocket?: string }) => q.pocket === undefined || q.pocket === p.pocket;
   for (const id of ids) {
     const q = b.quests[id]!;
-    if (q.giver === undefined || p.quests[id] !== undefined || !offered(q)) continue;
+    if (q.giver === undefined || p.quests[id] !== undefined || !offered(q) || q.shut_until !== undefined) continue;
     if ((q.requires ?? []).every((r) => p.quests[r] === 'done')) return { kind: 'quest', quest: id, giver: q.giver, begun: false };
   }
   for (const id of ids) {
