@@ -169,7 +169,7 @@ export function* fogNoiseSteps(size: number, seed: number, out: Uint8ClampedArra
   for (let i = 3; i < out.length; i += 4) out[i] = 255;
 }
 
-/** The fog's thickness in a frame of height `h` at a row `y` (0 top): the land's own gradient, thick at the top where the far land lies (6-place.py's rule). */
+/** The fog's thickness in a frame of height `h` at a row `y` (0 top): the land's own gradient, thick at the top where the far land lies (the placer's rule). */
 export function fogBase(data: FogData, y: number, h: number): number {
   return data.bottom + (data.top - data.bottom) * (1 - y / h);
 }
