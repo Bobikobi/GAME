@@ -439,7 +439,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
               ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
-              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number], ...(s.clip.fit_permille === undefined ? {} : { fit_permille: s.clip.fit_permille }), ...(s.clip.hand === undefined ? {} : { hand: s.clip.hand.map((h) => [h[0], h[1]] as [number, number]) }) } } : {}),
+              ...(s.clip ? { clip: { race: s.clip.race, view: s.clip.view, verb: s.clip.verb, frame_ms: s.clip.frame_ms, anchor: [s.clip.anchor[0], s.clip.anchor[1]] as [number, number], ...(s.clip.take === undefined ? {} : { take: s.clip.take }), ...(s.clip.fit_permille === undefined ? {} : { fit_permille: s.clip.fit_permille }), ...(s.clip.hand === undefined ? {} : { hand: s.clip.hand.map((h) => [h[0], h[1]] as [number, number]) }) } } : {}),
               ...(s.creature_clip ? { creature_clip: { creature: s.creature_clip.creature, view: s.creature_clip.view, verb: s.creature_clip.verb, frame_ms: s.creature_clip.frame_ms, anchor: [s.creature_clip.anchor[0], s.creature_clip.anchor[1]] as [number, number], ...(s.creature_clip.fit_permille === undefined ? {} : { fit_permille: s.creature_clip.fit_permille }), ...(s.creature_clip.head === undefined ? {} : { head: [s.creature_clip.head[0], s.creature_clip.head[1]] as [number, number] }) } } : {}),
               ...(s.still_of === undefined ? {} : { still_of: s.still_of }),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
@@ -479,10 +479,19 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
       if (s.clip.hand && s.clip.hand.length > s.frames) {
         issues.push({ file, where: `${where}.hand`, message: `${s.clip.hand.length} hand points for ${s.frames} frames: a hand is at most one point a frame`, level: 'error' });
       }
-      const lookup = `${s.clip.verb} ${s.clip.race} ${s.clip.view}`;
+      const lookup = `${s.clip.verb} ${s.clip.race} ${s.clip.view} take ${s.clip.take ?? 1}`;
       const other = clipAt.get(lookup);
-      if (other) issues.push({ file, where, message: `${other} already plays ${lookup}: a clip is one sheet for one verb, race and view`, level: 'error' });
+      if (other) issues.push({ file, where, message: `${other} already plays ${lookup}: a clip take is one sheet for one verb, race and view`, level: 'error' });
       else clipAt.set(lookup, `${kitId}:${name}`);
+    }
+  }
+  // a later take is a variant of a first one: a take with no first take would play on its own, and a gap (take 3 with no take 2) is a sheet that went missing
+  for (const lookup of clipAt.keys()) {
+    const m = / take (\d+)$/.exec(lookup);
+    const n = Number(m![1]);
+    if (n > 1 && !clipAt.has(lookup.replace(/ take \d+$/, ` take ${n - 1}`))) {
+      const [kitId, name] = clipAt.get(lookup)!.split(':') as [string, string];
+      issues.push({ file: kitFiles[kitId]!, where: `kit.sprites.${name}.clip.take`, message: `${lookup} has no take ${n - 1}: takes run from the first with no gap`, level: 'error' });
     }
   }
 

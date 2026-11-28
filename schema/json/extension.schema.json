@@ -24773,7 +24773,7 @@
                           ]
                         },
                         "verb": {
-                          "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands) or lift (a large stone from the ground to over the head).",
+                          "description": "What the clip plays: strike, guard, dodge, hit, fell, quarry, fish, pickup, dig, carry (a stone over the head, walking), throw (overhand), push (two hands), lift (a large stone from the ground to over the head), jump (the hop: take-off and the air), land (a soft landing), land_hard (a landing that hurt), die (the fall that ends in the town), run, sneak, idle (standing still), hit_heavy (a heavy blow that pushes the figure back), hit_behind (struck from behind) or down (knocked down and getting up).",
                           "anyOf": [
                             {
                               "const": "strike",
@@ -24826,8 +24826,54 @@
                             {
                               "const": "lift",
                               "type": "string"
+                            },
+                            {
+                              "const": "jump",
+                              "type": "string"
+                            },
+                            {
+                              "const": "land",
+                              "type": "string"
+                            },
+                            {
+                              "const": "land_hard",
+                              "type": "string"
+                            },
+                            {
+                              "const": "die",
+                              "type": "string"
+                            },
+                            {
+                              "const": "run",
+                              "type": "string"
+                            },
+                            {
+                              "const": "sneak",
+                              "type": "string"
+                            },
+                            {
+                              "const": "idle",
+                              "type": "string"
+                            },
+                            {
+                              "const": "hit_heavy",
+                              "type": "string"
+                            },
+                            {
+                              "const": "hit_behind",
+                              "type": "string"
+                            },
+                            {
+                              "const": "down",
+                              "type": "string"
                             }
                           ]
+                        },
+                        "take": {
+                          "minimum": 2,
+                          "maximum": 9,
+                          "description": "Which take of the same clip this sheet is. A clip with no `take` is the first take; a second or third take of the same verb, race and view (a near-identical drawing, kept for variety) carries 2, 3 and so on, and the game picks among a clip's takes at random each time it plays. Left out, the first take.",
+                          "type": "integer"
                         },
                         "frame_ms": {
                           "minimum": 1,
