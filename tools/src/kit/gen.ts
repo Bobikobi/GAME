@@ -70,6 +70,7 @@ import {
   type Motif, type ScatterEntry, motifPrompt, motifWarnings, parseMotif, renderMotif, scatterProblem, scatterTile, tileWarnings, variantsOf,
 } from './scatter.js';
 import { noteDraft } from '../art/drafts.js';
+import { refProblem } from './bases.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -161,6 +162,9 @@ export function parseSpec(text: string): GenEntry[] {
     if (seen.has(entry.name)) throw new Error(`${where}.name "${entry.name}" appears twice`);
     seen.add(entry.name);
     if (typeof entry.ref !== 'string' || entry.ref === '') throw new Error(`${where}.ref must name a kit sprite or a PNG`);
+    // One base body for each race (DECISIONS 2026-11-28): no key or reference from a retired walk sheet or a clip drawn from one
+    const baseProblem = refProblem(entry.ref);
+    if (baseProblem !== undefined) throw new Error(`${where}: ${baseProblem}`);
     if (typeof entry.what !== 'string' || entry.what.trim() === '') throw new Error(`${where}.what must say what it is`);
     for (const side of ['width', 'height'] as const) {
       const value = entry[side];

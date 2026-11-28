@@ -170,6 +170,12 @@ def main():
     filled = packclips.fill_specks(ring)
     check("a see-through pocket of at most 24 px is filled and a bigger one (a gap between legs) stays open",
           filled[11, 11, 3] == 255 and filled[25, 20, 3] == 0 and int((filled[..., 3] == 0).sum()) == 180)
+    import packmoves
+    bs = {"retired": ["chars/human_left"], "waiting": ["chars/human_die_left"], "bases": {"human": {"left": "chars/human_hit_left"}}, "clips": {"chars/human_jump_left": "chars/human_hit_left", "chars/human_run_left": "chars/human_left"}}
+    bp = lambda race, base: packmoves.base_problem(bs, race, base)
+    check("packmoves takes the race's base and a clip drawn from it, and refuses a missing base, a retired sheet, a waiting clip, a clip drawn from a retired sheet and another race's picture",
+          bp("human", "chars/human_hit_left") is None and bp("human", "chars/human_jump_left") is None and bp("human", None) is not None and bp("human", "chars/human_left") is not None
+          and bp("human", "chars/human_die_left") is not None and bp("human", "chars/human_run_left") is not None and bp("human", "chars/elf_hit_left") is not None)
     print("selftest:", "FAILED %d" % check.bad if check.bad else "all passed")
     return 1 if check.bad else 0
 

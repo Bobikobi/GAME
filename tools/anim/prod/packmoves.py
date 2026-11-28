@@ -4,7 +4,7 @@
   packmoves.py --set SET --manifest moves.json --kit content/kit/core --palette tools/src/kit/palette.ts [--like hit] [--write] [--write-kit]
 
 `packclips.py` rewrites every clip row of the kit from one table; this adds or replaces only the rows it is given, so the clips already
-shipped stay as they are. The manifest is a list of `{"race", "verb", "view", "take", "ms", "from"}`: `from` is the take folder under SET
+shipped stay as they are. The manifest is a list of `{"race", "verb", "view", "take", "ms", "from", "base"}`: `base` is the kit sprite the take was drawn from (the race's base, `chars/human_hit_left`; refused when it is a retired walk sheet, tools/kit-gen/bases/bases.json) and is recorded there for `pnpm check`; `from` is the take folder under SET
 (`<race>/<from>/f00.png.. + clip.json`, the production route's `process.py` output with its `verdict.py` read: it must say PASS), `take` is 1
 for the first drawing of a clip and 2, 3 for a near-identical one kept as a variant (the game plays one of a clip's takes at random).
 
@@ -24,6 +24,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import packclips as pc  # noqa: E402
 
 
+BASES = Path(__file__).resolve().parents[3] / "tools" / "kit-gen" / "bases" / "bases.json"
+
+
+def base_problem(bases, race, base):
+    """Why `base` (a kit sprite id) may not be what a clip of `race` was drawn from, or None. The same rules as tools/src/kit/bases.ts."""
+    if not base:
+        return "has no \"base\": name the base picture the take was drawn from (DECISIONS 2026-11-28, tools/kit-gen/bases/bases.json)"
+    if not base.startswith(f"chars/{race}_"):
+        return f"{base} is not a picture of the {race}"
+    seen = set()
+    while base is not None and base not in seen:
+        seen.add(base)
+        if base in bases["retired"]:
+            return f"{base} is a retired walk sheet: draw from the base of the {race}, {', '.join(bases['bases'][race].values())}"
+        if base in bases["waiting"]:
+            return f"{base} was drawn from a retired walk sheet and waits for its redraw"
+        base = bases["clips"].get(base)
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", required=True)
@@ -38,8 +58,13 @@ def main():
     data = json.loads(kit_path.read_text())
     sprites = data["kit"]["sprites"]
     rows = {}
+    bases = json.loads(BASES.read_text())
+    recorded = {}
     for m in json.loads(Path(a.manifest).read_text()):
         race, verb, view, take = m["race"], m["verb"], m["view"], int(m.get("take", 1))
+        why = base_problem(bases, race, m.get("base"))
+        if why:
+            raise SystemExit(f"{race} {verb} {view}: {why}")
         like = sprites.get(f"chars/{race}_{a.like}_{view}")
         if not like or "clip" not in like:
             raise SystemExit(f"no shipped {a.like} clip for {race} {view} to take the anchor and fit from")
@@ -61,6 +86,7 @@ def main():
             row["ramps"] = like["ramps"]
         row["clip"] = clip
         rows[name] = row
+        recorded[name] = m["base"]
         if a.write:
             pc.save(pc.strip(frames), Path(a.kit) / f"{name}.png")
         print(f"{name}: {len(frames)} frames at {m['ms']} ms ({len(frames) * int(m['ms'])} ms), anchor {clip['anchor']}, fit {clip['fit_permille']}")
@@ -72,6 +98,11 @@ def main():
         data["kit"]["sprites"] = {**{k: keep[k] for k in keys[: last + 1]}, **rows, **{k: keep[k] for k in keys[last + 1:]}}
         kit_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
         print(f"{len(rows)} rows put in {kit_path}")
+        # the base each clip was drawn from is kept beside the kit, where `pnpm check` reads it
+        bases["waiting"] = [w for w in bases["waiting"] if w not in recorded]  # a redraw that lands takes its names off
+        bases["clips"] = dict(sorted({**bases["clips"], **recorded}.items()))
+        BASES.write_text(json.dumps(bases, indent=2, ensure_ascii=False) + "\n")
+        print(f"{len(recorded)} bases recorded in {BASES}")
 
 
 if __name__ == "__main__":
