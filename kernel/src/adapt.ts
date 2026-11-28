@@ -168,7 +168,7 @@ export function remapTile(bundle: Bundle, at: readonly [number, number]): [numbe
 
 /**
  * A state of an earlier map frame has its tiles carried into the map's frame, once: the player, the fire they
- * kindled, the carcasses, the snares, the prey's cooldowns, the stones and what lies dropped on the ground. A map
+ * kindled, the carcasses, the packs a fall left, the snares, the prey's cooldowns, the stones and what lies dropped on the ground. A map
  * moved inside a larger one (`moved`) shifts every tile by one step, a tile that falls outside pulled to its nearest
  * edge; a map redrawn (`remap`) carries each tile slot by slot (`remapTile`). The reach check after it puts the
  * character on the nearest foot-reachable tile. The state then takes the map's frame, so a later change of content
@@ -194,6 +194,7 @@ function moveTiles(bundle: Bundle, state: State): void {
   p.at = shift(p.at);
   if (p.own) p.own.at = shift(p.own.at);
   for (const carcass of p.carcasses ?? []) carcass.at = shift(carcass.at);
+  for (const pack of p.packs ?? []) pack.at = shift(pack.at);
   for (const snare of p.snares ?? []) snare.at = shift(snare.at);
   if (p.preyReturns && moved && !remap) {
     const returns = p.preyReturns;

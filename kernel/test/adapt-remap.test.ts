@@ -135,6 +135,7 @@ describe('a classic save on the painted valley', () => {
       p.own = { at: [at[0], at[1]], lit: 0, until: 1, log: 1 };
       p.carcasses = [{ id: 1, kind: 'core/roe', at: [at[0], at[1]], grade: 1, since: 0 }];
       p.ground = { [`${at[0]},${at[1]}`]: { 'core/berry': 2, 'core/stick': 1 } };
+      p.packs = [{ id: 1, at: [at[0], at[1]], items: { 'core/berry': 2 }, until: 9_999_999 }];
       p.stones = { taken: {}, placed: { [`${at[0]},${at[1]}`]: { 'core/stone': 3 } }, returns: [] };
       const a = adaptState(painted, saved)!.player;
       // the player stands on the nearest tile a foot reaches before the bridge is mended
@@ -144,6 +145,10 @@ describe('a classic save on the painted valley', () => {
       for (const [item, qty] of Object.entries(p.bag)) expect(a.bag[item]).toBe(qty);
       expect(a.own).not.toBeNull();
       expect(a.carcasses).toHaveLength(1);
+      // a pack a fall left lies on the same place of the redrawn valley, whole
+      expect(a.packs).toHaveLength(1);
+      expect(a.packs![0]).toMatchObject({ id: 1, items: { 'core/berry': 2 }, until: 9_999_999 });
+      expect(a.packs![0]!.at).toEqual(remapTile(painted, [at[0], at[1]]));
       expect(Object.values(a.ground ?? {})).toEqual([{ 'core/berry': 2, 'core/stick': 1 }]);
       expect(Object.values(a.stones!.placed)).toEqual([{ 'core/stone': 3 }]);
     }

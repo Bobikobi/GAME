@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.42.0';
+export const KERNEL_VERSION = '0.43.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -79,7 +79,7 @@ export interface NodeState {
 
 /**
  * What one outing has brought in so far (G33): the player's account of a walk
- * from the last safe place. A fall takes back exactly this and nothing else.
+ * from the last safe place. A fall takes this out of the bag and lays it where the body fell, as a `Pack`, and nothing else.
  */
 export interface Outing {
   /** items the world gave on this outing and the bag still holds, by item; spending uses these first */
@@ -92,6 +92,23 @@ export interface Outing {
   bitten?: string[];
   /** places first found on this outing and not yet counted (G63): they join `Player.explored` when it ends safe, and a fall drops them */
   found?: string[];
+}
+
+/**
+ * What a fall left where the body fell (G33, G81; kernel 0.43, DECISIONS.md 2026-11-28): what the outing gathered, whole, for a
+ * game day. A pack in reach can be taken (`takepack`); one past `until` is gone. Every fall lays a pack of its own.
+ */
+export interface Pack {
+  /** the fall's number (`player.falls` after it), so two packs on one tile stay apart */
+  id: number;
+  /** the tile the body fell on */
+  at: [number, number];
+  /** what lies in it, by item: no more than the outing found */
+  items: Record<string, number>;
+  /** the tick it is gone from: the fall's tick plus a game day (`day_length_ms`) */
+  until: number;
+  /** the spoilage clocks of its hunt goods, as they were in the bag (the awake clock): they run on while it lies and come back with the goods */
+  batches?: HuntStock;
 }
 
 /** A hunt in progress: the predator that has the player's scent. It bites by the clock until a safe place or dawn. */
@@ -234,6 +251,8 @@ export interface Player {
   chase: Chase | null;
   /** Live combat marker; old saves have none. The chunk owns the fight itself. */
   fight: { foe?: string; since: number } | null;
+  /** packs lying where bodies fell, oldest first (kernel 0.43, G33); absent in a save from before it: none lying */
+  packs?: Pack[];
   /** quests that were open when a predator bit the player on an outing that came home (not in a fall), sorted: the giver's line at the hand-in may say so */
   bitten: string[];
   /** tended fires by map prop id */
@@ -620,6 +639,11 @@ export function placeRoom(bundle: Bundle, state: PublicState, itemId: string): n
 /** The frame of the bundle's map: 1 unless a change moved the authored ground (`map.frame`). */
 export function mapFrame(bundle: Bundle): number {
   return bundle.map.frame ?? 1;
+}
+
+/** The packs that lie at this tick: the ones whose day is not over. What the card and the drawing read between steps. */
+export function packsAt(state: PublicState, tick: number): Pack[] {
+  return (state.player.packs ?? []).filter((pack) => pack.until > tick);
 }
 
 /** The key of a tile in `player.ground`. */
