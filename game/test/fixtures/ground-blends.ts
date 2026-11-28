@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { frameRect } from '@game/kernel';
-import { assemble } from '../../../tools/src/assemble';
-import { CONTENT_DIR, loadAll } from '../../../tools/src/load';
+import { CONTENT_DIR } from '../../../tools/src/load';
+import { loadPixelBundle } from '../../../tools/test/helpers/world';
 import { readPng } from '../../../tools/src/pngcache';
 import { hash, remapTone, toneField } from '../../src/richground';
 import { deepTile } from '../../src/waterbody';
@@ -15,9 +15,9 @@ const pairs = [
 ] as const;
 const base = (ref: string) => ref.split('/').pop();
 
+/** The tile ground's edges sampled on the frozen pixel valley: an engine rule's bytes, not the shipped map's (the painted valley draws its own ground). */
 export function openingGround() {
-  const bundle = assemble(loadAll().files).bundle;
-  if (!bundle) throw new Error('Could not assemble the opening map');
+  const bundle = loadPixelBundle();
   const { map, sprites } = bundle;
   const at = (x: number, y: number) => map.legend[map.ground[y]?.[x] ?? ''];
   const kindOf = (tile: ReturnType<typeof at>) => tile && (base(tile.sprite) === 'sand' ? 'sand' : tile.tag);
