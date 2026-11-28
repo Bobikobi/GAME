@@ -9,6 +9,7 @@ import { STEP_MS } from '../src/config';
 import { ART_PX, BODY_BOX, type Disc, FOOT_DRAWN, Walker, pushOutOfDiscs, trunkDiscsOf } from '../src/walking';
 
 const FRAME = 16;
+const REACH = (ART_PX * FRAME) / STEP_MS;
 const open = () => true;
 const R = 9;
 
@@ -39,12 +40,12 @@ describe('trunk discs', () => {
   test("a land's feet become discs at the body's point: the drawn feet, half a tile under it, meet the painted trunk's foot", () => {
     expect(FOOT_DRAWN).toBe(ART_PX / 2);
     expect(trunkDiscsOf([[100, 300, 9]], 2, 3)).toEqual([{ x: 2 * ART_PX + 100, y: 3 * ART_PX + 300 - FOOT_DRAWN, r: 9 }]);
-    // a walk north at a trunk: the body stops under its disc, and the drawn feet stand a body box's half and the radius south of the painted trunk's foot, not half a tile short of it
+    // On first contact from the south, the drawn feet are a body box's half and the radius from the painted trunk's foot.
     const [d] = trunkDiscsOf([[700, 700, R]], 0, 0) as [Disc];
     const w = new Walker();
     w.x = 700;
-    w.y = 700 + 90;
-    walk(w, [0, -1], 2500, [d]);
+    w.y = d.y + R + BODY_BOX.h / 2 + REACH / 2;
+    walk(w, [0, -1], FRAME, [d]);
     const drawnFoot = w.y + FOOT_DRAWN;
     expect(drawnFoot - 700).toBeGreaterThanOrEqual(R);
     expect(drawnFoot - 700).toBeLessThanOrEqual(R + BODY_BOX.h / 2 + 1);
@@ -62,7 +63,7 @@ describe('trunk discs', () => {
     expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
   });
 
-  test('a walk that aims straight at each of 20 random trunks stops at the disc and never overlaps it', () => {
+  test('a walk that aims straight at each of 20 random trunks reaches the disc without overlapping it', () => {
     const next = rng(7);
     for (let n = 0; n < 20; n++) {
       const d: Disc = { x: 640 + Math.floor(next() * 400), y: 640 + Math.floor(next() * 400), r: R };
@@ -71,12 +72,14 @@ describe('trunk discs', () => {
       w.x = d.x - 60;
       w.y = d.y + Math.floor(next() * 9) - 4;
       let worst = Infinity;
+      let contactX: number | undefined;
       walk(w, [1, 0], 1500, [d], () => {
-        worst = Math.min(worst, gap(w, d));
+        const distance = gap(w, d);
+        worst = Math.min(worst, distance);
+        if (distance <= R + 1e-6) contactX ??= w.x;
       });
       expect(worst, `trunk ${n}`).toBeGreaterThanOrEqual(R - 1e-6);
-      expect(w.x, `trunk ${n}`).toBeLessThan(d.x - R + 1);
-      expect(w.x, `trunk ${n}`).toBeGreaterThan(d.x - R - BODY_BOX.w / 2 - 2); // it came right up to the disc
+      expect(contactX, `trunk ${n}`).toBeCloseTo(d.x - R - BODY_BOX.w / 2, 6);
     }
   });
 
@@ -87,6 +90,97 @@ describe('trunk discs', () => {
     w.y = 700 + 10;
     walk(w, [1, 0], 2500, [d]);
     expect(w.x).toBeGreaterThan(d.x + R + BODY_BOX.w / 2 - 1);
+  });
+
+  // Start at contact. The collision diameter along the input includes the length of the body box.
+  test.each([
+    { direction: 'up', dx: 0, dy: -1 },
+    { direction: 'down', dx: 0, dy: 1 },
+    { direction: 'left', dx: -1, dy: 0 },
+    { direction: 'right', dx: 1, dy: 0 },
+  ])('B1: a head-on walk $direction clears the trunk on the clockwise side', ({ dx, dy }) => {
+    const d: Disc = { x: 640, y: 640, r: R };
+    const half = dx ? BODY_BOX.w / 2 : BODY_BOX.h / 2;
+    const frames = Math.ceil((1.5 * 2 * (R + half)) / REACH);
+    const w = new Walker();
+    w.x = d.x - dx * (R + half);
+    w.y = d.y - dy * (R + half);
+    let last = w.tile();
+    for (let i = 0; i < frames; i++) {
+      const { x, y } = w;
+      for (const tile of w.frame([dx, dy], FRAME, STEP_MS, open, [d])) {
+        expect(Math.abs(tile[0] - last[0]) + Math.abs(tile[1] - last[1])).toBe(1);
+        last = tile;
+      }
+      expect(last).toEqual(w.tile());
+      expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
+      // The new sideways step at the flat face spends at most one frame's reach.
+      if (i === 0) expect(Math.hypot(w.x - x, w.y - y)).toBeLessThanOrEqual(REACH + 1e-6);
+    }
+    expect(dx * (w.x - d.x) + dy * (w.y - d.y), `forward after ${frames} frames`).toBeGreaterThan(R);
+    expect(-dy * (w.x - d.x) + dx * (w.y - d.y)).toBeGreaterThan(0);
+  });
+
+  test.each([{ side: 'right', offset: 2 }, { side: 'left', offset: -2 }])('B2: a 2 px offset sends the body around the $side side', ({ offset }) => {
+    const d: Disc = { x: 640, y: 640, r: R };
+    const w = new Walker();
+    w.x = d.x + offset;
+    w.y = d.y + R + BODY_BOX.h / 2;
+    walk(w, [0, -1], 10 * FRAME, [d], () => {
+      expect(Math.sign(w.x - d.x)).toBe(Math.sign(offset));
+      expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
+    });
+    expect(w.y).toBeLessThan(d.y - R);
+  });
+
+  test('B3: a refused tile blocks the clockwise slide without the box entering it', () => {
+    const wallX = 10;
+    const d: Disc = { x: wallX * ART_PX - BODY_BOX.w / 2, y: 10 * ART_PX + 32, r: R };
+    const wall = (x: number, y: number) => x !== wallX || y !== 10;
+    const startY = d.y + R + BODY_BOX.h / 2;
+    const w = new Walker();
+    w.x = d.x;
+    w.y = startY;
+    for (let i = 0; i < 20; i++) {
+      expect(w.frame([0, -1], FRAME, STEP_MS, wall, [d])).toEqual([]);
+      expect(w.x + BODY_BOX.w / 2).toBeLessThanOrEqual(wallX * ART_PX);
+      expect(w.y).toBeCloseTo(startY, 6);
+      expect(w.moving).toBe(false);
+      expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
+    }
+    // The same first step on open ground would put the box across the refused tile's edge.
+    w.frame([0, -1], FRAME, STEP_MS, open, [d]);
+    expect(w.x + BODY_BOX.w / 2).toBeGreaterThan(wallX * ART_PX);
+  });
+
+  test('a diagonal sideways step reports both tile entries in order', () => {
+    const w = new Walker();
+    w.x = 10 * ART_PX + 1;
+    w.y = 10 * ART_PX - 1;
+    const corner = R * Math.SQRT1_2;
+    const d: Disc = { x: w.x + BODY_BOX.w / 2 + corner, y: w.y + BODY_BOX.h / 2 + corner, r: R };
+    expect(w.frame([1, 1], FRAME, STEP_MS, open, [d])).toEqual([[9, 9], [9, 10]]);
+    expect(w.tile()).toEqual([9, 10]);
+    expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
+  });
+
+  test.each([
+    { d: { x: 656, y: 688, r: R }, dx: 1, dy: 0 },
+    { d: { x: 658, y: 656, r: R }, dx: 0, dy: 1 },
+  ])('a walk around a trunk near a tile corner reports only adjacent entries', ({ d, dx, dy }) => {
+    const w = new Walker();
+    w.x = d.x - dx * (R + BODY_BOX.w / 2);
+    w.y = d.y - dy * (R + BODY_BOX.h / 2);
+    let last = w.tile();
+    for (let i = 0; i < 13; i++) {
+      for (const tile of w.frame([dx, dy], FRAME, STEP_MS, open, [d])) {
+        expect(Math.abs(tile[0] - last[0]) + Math.abs(tile[1] - last[1])).toBe(1);
+        last = tile;
+      }
+      expect(last).toEqual(w.tile());
+      expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
+    }
+    expect(dx * (w.x - d.x) + dy * (w.y - d.y)).toBeGreaterThan(R);
   });
 
   test('the body passes between two trunks a figure apart and a wood stays crossable', () => {

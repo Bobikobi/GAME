@@ -159,14 +159,20 @@ export function trunkDiscsOf(feet: readonly (readonly [number, number, number])[
 }
 
 /**
- * Push the body's box (centre `x`, `y`, `BODY_BOX`) out of every disc it overlaps, along the line from the disc's centre to the box's nearest point, so a body walking at a trunk slides round it. Returns the new centre
- * (the same object when nothing overlaps). Pure: the walker and its test both use it.
+ * Push the body's box (centre `x`, `y`, `BODY_BOX`) out of every disc it overlaps, along the line from the disc's centre to the box's nearest point. Returns the new centre. Pure: the walker and its test both use it.
  */
 export function pushOutOfDiscs(x: number, y: number, discs: readonly Disc[]): [number, number] {
+  const [px, py] = resolveDiscs(x, y, discs);
+  return [px, py];
+}
+
+/** The push-out and the first disc that caused it. */
+function resolveDiscs(x: number, y: number, discs: readonly Disc[]): [number, number, Disc?] {
   const hw = BODY_BOX.w / 2;
   const hh = BODY_BOX.h / 2;
   let px = x;
   let py = y;
+  let hit: Disc | undefined;
   for (const d of discs) {
     if (Math.abs(d.x - px) > hw + d.r || Math.abs(d.y - py) > hh + d.r) continue;
     const nx = Math.min(px + hw, Math.max(px - hw, d.x));
@@ -175,6 +181,7 @@ export function pushOutOfDiscs(x: number, y: number, discs: readonly Disc[]): [n
     let vy = ny - d.y;
     const dist = Math.hypot(vx, vy);
     if (dist >= d.r) continue;
+    hit ??= d;
     if (dist === 0) {
       // the disc's centre lies inside the box: leave by the nearer face
       const left = d.x - (px - hw);
@@ -191,7 +198,7 @@ export function pushOutOfDiscs(x: number, y: number, discs: readonly Disc[]): [n
     px += (vx / dist) * (d.r - dist);
     py += (vy / dist) * (d.r - dist);
   }
-  return [px, py];
+  return [px, py, hit];
 }
 
 /**
@@ -248,20 +255,37 @@ export class Walker {
       const dy = (input[1] / length) * reach;
       const pieces = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / PIECE));
       let at = this.tile();
-      const note = () => {
-        const now = this.tile();
-        if (now[0] === at[0] && now[1] === at[1]) return;
-        at = now;
-        entered.push(now);
+      const note = (now = this.tile()) => {
+        while (now[0] !== at[0] || now[1] !== at[1]) {
+          const across = Math.sign(now[0] - at[0]);
+          at = across ? [at[0] + across, at[1]] : [at[0], at[1] + Math.sign(now[1] - at[1])];
+          entered.push(at);
+        }
       };
       for (let i = 0; i < pieces; i++) {
         const mx = dx / pieces;
         const my = dy / pieces;
+        const before = discs.length ? ([this.x, this.y] as const) : undefined;
         const gotX = this.slide(0, mx, open);
-        note();
+        const afterX = this.tile();
         const gotY = this.slide(1, my, open);
-        if (discs.length) this.shove(discs, open);
+        const afterY = before ? ([this.x, this.y] as const) : undefined;
+        // Report the path taken. A sideways step around a trunk replaces the piece's forward attempt.
+        const rounded = before && this.shove(discs, open, before, [mx, my], note);
+        if (!rounded) {
+          note(afterX);
+          const [tx, ty] = this.tile();
+          if (afterY && Math.abs(tx - afterX[0]) + Math.abs(ty - afterX[1]) > 1) {
+            // The push-out crossed a tile corner. Report the Y step and the checked axes of the correction.
+            const { x, y } = this;
+            [this.x, this.y] = afterY;
+            note();
+            const across = this.slideTo(x, y, open, 0) ?? this.slideTo(x, y, open, 1);
+            if (across) note(across);
+          }
+        }
         note();
+        if (rounded) continue;
         // a straight walk that meets a corner is eased onto its lane, when the lane goes on
         if (my === 0 && gotX !== mx) this.toLane(1, Math.abs(mx - gotX), Math.sign(mx), open);
         if (mx === 0 && gotY !== my) this.toLane(0, Math.abs(my - gotY), Math.sign(my), open);
@@ -273,19 +297,66 @@ export class Walker {
     return entered;
   }
 
-  /** Round the body off a trunk: out of any disc it overlaps, unless that would put its box into a refused tile (then it stays where the tiles left it). */
-  private shove(discs: readonly Disc[], open: Open): void {
-    const [nx, ny] = pushOutOfDiscs(this.x, this.y, discs);
-    if (nx === this.x && ny === this.y) return;
+  /** Push out of a trunk if the tiles allow it. True if a sideways step replaced the stalled piece. */
+  private shove(
+    discs: readonly Disc[],
+    open: Open,
+    before: readonly [number, number],
+    [mx, my]: readonly [number, number],
+    note: (tile: [number, number]) => void,
+  ): boolean {
+    const [nx, ny, hit] = resolveDiscs(this.x, this.y, discs);
+    if (!hit || (nx === this.x && ny === this.y)) return false;
     const hw = BODY_BOX.w / 2;
     const hh = BODY_BOX.h / 2;
     const x0 = Math.floor((nx - hw) / ART_PX);
     const x1 = Math.floor((nx + hw - 1e-6) / ART_PX);
     const y0 = Math.floor((ny - hh) / ART_PX);
     const y1 = Math.floor((ny + hh - 1e-6) / ART_PX);
-    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (!open(tx, ty, [Math.floor(this.x / ART_PX), Math.floor(this.y / ART_PX)])) return;
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (!open(tx, ty, [Math.floor(this.x / ART_PX), Math.floor(this.y / ART_PX)])) return false;
     this.x = nx;
     this.y = ny;
+
+    const reach = Math.hypot(mx, my);
+    const moved = Math.hypot(nx - before[0], ny - before[1]);
+    // Keep the natural push-out when it already gives the body useful motion, including an oblique slide.
+    if (moved >= reach / 4) return false;
+    // The perpendicular points clockwise in screen space from the input. On dead centre, take that side.
+    const sideX = -my;
+    const sideY = mx;
+    const offset = (before[0] - hit.x) * sideX + (before[1] - hit.y) * sideY;
+    const side = offset < -1e-6 * reach ? -1 : 1;
+    const dx = side * sideX;
+    const dy = side * sideY;
+
+    // Spend at most the piece's reach from where it began, checking both axes before reporting either.
+    const [x, y] = before;
+    this.x = x;
+    this.y = y;
+    const across = this.slideTo(x + dx, y + dy, open, 0);
+    const [sx, sy] = resolveDiscs(this.x, this.y, discs);
+    if (!across || Math.hypot(sx - this.x, sy - this.y) > 1e-6) {
+      this.x = nx;
+      this.y = ny;
+      return false;
+    }
+    note(across);
+    return true;
+  }
+
+  /** An all-or-nothing move over checked tile edges. Return the tile reached between the two axes. */
+  private slideTo(x: number, y: number, open: Open, first: 0 | 1): [number, number] | undefined {
+    const startX = this.x;
+    const startY = this.y;
+    const step = [x - startX, y - startY] as const;
+    const second = first === 0 ? 1 : 0;
+    this.slide(first, step[first], open);
+    const across = this.tile();
+    this.slide(second, step[second], open);
+    if (this.x === x && this.y === y) return across;
+    this.x = startX;
+    this.y = startY;
+    return undefined;
   }
 
   /** Move along one axis (0 is x) as far as the box may go, up to `d` art pixels. Returns how far it went. */
