@@ -5,7 +5,7 @@
  * - from each of the three wake pockets (north meadow, west bank, slid bank) the figure stands where it woke (the north meadow's wake
  *   stands among trees, so one step up, as the kernel's own test of the moment finds), a hare that nothing has startled stands within reach, and B is held a little past the
  *   charge time: the stone takes the hare (a carcass lies where it stood, one stone left the bag, the hit's moment played);
- * - on the west bank again, a tap on B throws the stone short: it lies on the ground where it came to rest, takes nothing, the miss's
+ * - on the west bank again, four to six tiles off the hare, a tap on B throws the stone short: it lies on the ground where it came to rest, takes nothing, the miss's
  *   moment plays, the hare hears it come down and goes to ground; the figure lifts the stone again (it is in the bag once more) and
  *   the hare comes out again by its own hours.
  *
@@ -183,7 +183,27 @@ async function main(): Promise<void> {
 
     // the miss, on the west bank: a tap throws short, the stone lies, the hare hears it and goes to ground, the stone is lifted again
     await woken(page, base, 'core/west-bank');
-    const { spot, from } = await setUp(page, 'core/west-bank');
+    const { spot } = await setUp(page, 'core/west-bank');
+    // a tap comes down two tiles out (the kernel's throw at `throw_min_power`) and takes what stands within `hunt.hit_tiles` of it, so
+    // the figure steps back to a tile four to six tiles from the hare, the nearest open one: out of a tap's reach, in a full charge's
+    // (on the painted valley the west bank's hare stands two tiles from the wake, where a tap takes it)
+    const hareAt = (await page.eval<HareRead>(readHare(spot))).at;
+    const from = await page.eval<[number, number]>(`(() => {
+      const g = window.__game, s = g.session, w = g.world, h = [${hareAt[0]}, ${hareAt[1]}], o = [...s.pos];
+      const tiles = [];
+      // on a straight line to it (its row, column or a diagonal), with the two tiles toward it open: the stone flies its two tiles and
+      // does not drop at the feet against a trunk; up to the full charge's reach (6), since only a tap is thrown from here
+      for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) for (const k of [4, 5, 6]) {
+        const x = h[0] + ux * k, y = h[1] + uy * k;
+        if (w.canWalk(s, x, y) && w.canWalk(s, x - ux, y - uy) && w.canWalk(s, x - 2 * ux, y - 2 * uy)) tiles.push([x, y]);
+      }
+      tiles.sort((p, q) => Math.hypot(p[0] - o[0], p[1] - o[1]) - Math.hypot(q[0] - o[0], q[1] - o[1]));
+      if (tiles.length === 0) throw new Error('no open tile four to six tiles from the hare on a straight line to it');
+      return tiles[0];
+    })()`);
+    await page.eval(place(from, facingTo(from, hareAt)));
+    await page.eval(`${wild}.reset()`);
+    await page.waitFor(`${hare(spot)}.stepped && !${hare(spot)}.c.under`, 'the hare to stand in the world', 10_000);
     const stones = await page.eval<number>(bag);
     const mark = await page.eval<number>(`window.__game.world.effects.played.length`);
     await page.holdTap('.tbtn.b', 40);

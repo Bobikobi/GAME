@@ -29,8 +29,6 @@ const TYPES: Record<string, string> = {
 };
 
 const BAY = 'core/bay-crossing';
-/** The ferry exit of the map plan (`core/ferry`, 3,27 on the painted valley): the boat puts in here. */
-const JETTY = [3, 27];
 /**
  * Where the player boards: beside the jetty (a passage is offered on or beside it), on 2,28, since on the jetty itself the reed bank's
  * nodes on two diagonals (2,26 and 4,26) take the A button before the boat does.
@@ -176,7 +174,8 @@ async function run(page: Page, url: string): Promise<void> {
   if (!signSeen) throw new Error('the sign never showed on the card');
   if (!held) throw new Error('the tend could not be answered');
   const at = await page.eval<number[]>(`[...window.__game.session.state.player.at]`);
-  if (at[0] !== JETTY[0] || at[1] !== JETTY[1]) throw new Error(`the boat put in at ${at.join(',')}, not the jetty`);
+  // the bay crossing has no far exit, so the boat puts in where it took the player on (kernel step.ts, land)
+  if (at[0] !== BOARD[0] || at[1] !== BOARD[1]) throw new Error(`the boat put in at ${at.join(',')}, not where the player boarded (${BOARD.join(',')})`);
   const fish = await page.eval<number>(`window.__game.session.state.player.bag['core/river-fish'] ?? 0`);
   if (fish !== (bagBefore['core/river-fish'] ?? 0) + 2) throw new Error(`the tend paid ${fish} fish`);
   if (await card(page)) throw new Error('the card stayed after the landing');

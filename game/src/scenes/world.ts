@@ -4005,12 +4005,13 @@ export class WorldScene extends Phaser.Scene {
     this.player.setAlpha(!this.falling && coverAt(this.b, at) ? 0.72 : 1);
   }
 
-  /** Deterministic predator state for the browser proof harness. */
-  predator(id: string, at?: [number, number]): { at: [number, number]; heading: [number, number]; seesPlayer: boolean } | undefined {
+  /** Deterministic predator state for the browser proof harness, now or at a later `tick` (the round is a pure function of the clock). */
+  predator(id: string, at?: [number, number], tick?: number): { at: [number, number]; heading: [number, number]; seesPlayer: boolean } | undefined {
     const s = this.session;
     const rule = this.hazards.find((h) => h.rule?.id === id)?.rule;
     if (!s || !rule?.round) return undefined;
-    return { at: predatorAt(this.b, rule, s.tick), heading: headingOf(this.b, rule, s.tick), seesPlayer: sees(this.b, rule, s.tick, at ?? s.pos) };
+    const t = tick ?? s.tick;
+    return { at: predatorAt(this.b, rule, t), heading: headingOf(this.b, rule, t), seesPlayer: sees(this.b, rule, t, at ?? s.pos) };
   }
 
   /** Light the lantern for this night (G31): the UI calls it with the warning box. */

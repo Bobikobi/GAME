@@ -32,14 +32,17 @@ const TYPES: Record<string, string> = {
 };
 
 /**
- * The roe on the sun bank (map spot 16, at 2,9 on the painted valley); the figure wakes in the north meadow (6.7 tiles off, past its alert
- * range of 5), waits 8.5 tiles off across the river, out of its sight (8) but near enough that the roe is among the `wild.awake_max`
- * nearest animals (19th from there; from 12,10 it is 26th and is never stepped), then is set down 5 tiles east of it on the bank, where
- * open ground runs between them, and walks west at it.
+ * The roe in the west bank's south strip (map spot 23, at 4,16 on the painted valley). The figure wakes in the north meadow, is set down
+ * 8.1 tiles off (FROM, east of the strip's wall), out of the roe's sight (8) and alert range (5) but near enough that it is among the
+ * `wild.awake_max` nearest animals (11th from there), then is set down south of it in the strip (APPROACH) and walks up at it: the roe's
+ * way away from the figure is north, into the open sun bank, ten tiles of run.
+ * The west bank is one pocket until the bridge is mended: the sun bank's roe (2,9) was cornered by every approach the bank allows (from
+ * the east or the north-east it ran into the bank's north-west nook, a low point of the kernel's flee map, and stayed in flight while
+ * the figure stood near: GPU runs of 28.11).
  */
-const ROE_SPOT = 16;
-const FROM: [number, number] = [10, 6];
-const EAST: [number, number] = [7, 9];
+const ROE_SPOT = 23;
+const FROM: [number, number] = [12, 17];
+const APPROACH: [number, number] = [2, 20];
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -125,19 +128,21 @@ async function main(): Promise<void> {
     console.log(`wildlife: ${counts.stepped} animals stepped (cap ${counts.cap}), ${counts.shown} shown; the roe ${calm.state} at ${calm.at.join(',')}, the figure at ${calm.player.join(',')}`);
     await page.screenshot(join(OUT, 'wildlife-calm.png'));
 
-    // set down east of it and walked west at it until the roe takes flight or the figure stands three tiles from it
-    await page.eval(place(EAST, 'left'));
-    await page.key('ArrowLeft', 'keyDown');
+    // set down south of it and walked up at it until the roe takes flight or the figure stands three tiles from it
+    await page.eval(place(APPROACH, 'up'));
+    await page.key('ArrowUp', 'keyDown');
     await page
       .waitFor(`(() => { const r = ${READ}; return r.state === 'FLEE' || Math.hypot(r.at[0] - r.player[0], r.at[1] - r.player[1]) <= 3; })()`, 'the figure to come up to the roe', 15_000)
       .catch(async (err: unknown) => {
         throw new Error(`${err instanceof Error ? err.message : String(err)}: ${JSON.stringify(await page.eval<Read>(READ))}`);
       });
-    await page.key('ArrowLeft', 'keyUp');
+    await page.key('ArrowUp', 'keyUp');
     await page.waitFor(`${roe}.c.state === 'FLEE'`, 'the roe to take flight', 15_000);
     const fled = await page.eval<Read>(READ);
     await page.screenshot(join(OUT, 'wildlife-flight.png'));
-    await page.waitFor(`${roe}.c.state !== 'FLEE'`, 'the flight to end', 20_000);
+    await page.waitFor(`${roe}.c.state !== 'FLEE'`, 'the flight to end', 20_000).catch(async (err: unknown) => {
+      throw new Error(`${err instanceof Error ? err.message : String(err)}: it fled at ${JSON.stringify(fled)}, now ${JSON.stringify(await page.eval<Read>(READ))}, left ${await page.eval<number>(`${roe}.c.left`)}`);
+    });
     const after = await page.eval<Read>(READ);
     const near = d(fled.at, fled.player);
     const far = d(after.at, after.player);

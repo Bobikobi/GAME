@@ -312,8 +312,9 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
       }
       const beside = (i) => [[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => reach.has((i.x + dx) + ',' + (i.y + dy)));
       const nodes = Object.entries(b.instances)
-        // a node open to anyone at any hour: no tool, no quest it waits on (the keystone), no hours (the moon reeds)
-        .filter(([id, i]) => { const r = b.resources[i.source]; return i.kind === 'resource' && !r.tool && r.work === undefined && !r.opens_after && !r.hours && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick && beside(i); })
+        // a node open to anyone at any hour: no tool (a mined node takes bare hands: the river stones are the only such work the
+        // north meadow holds before its ford's stones are taken), no quest it waits on (the keystone), no hours (the moon reeds)
+        .filter(([id, i]) => { const r = b.resources[i.source]; return i.kind === 'resource' && !r.tool && (r.work === undefined || r.work === 'mine') && !r.opens_after && !r.hours && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick && beside(i); })
         .sort((x, y) => near(x[1]) - near(y[1]));
       return nodes.slice(0, 6).map((n) => ({ id: n[0], x: n[1].x, y: n[1].y, source: n[1].source, item: b.resources[n[1].source].output }));
     })()`);
@@ -332,7 +333,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     const had = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(target.item)}] ?? 0`);
     const bagBefore = await page.eval<number>(`Object.values(window.__game.session.state.player.bag).reduce((a, n) => a + n, 0)`);
     const st = await page.waitFor<{ prompt: string }>(`(() => { const p = document.querySelector('.prompt'); return p && !p.hidden && p.textContent.trim().length > 1 ? { prompt: p.textContent.slice(1).trim() } : null; })()`, 'a prompt at the node', 4000);
-    check(/^(Gather|Pick|Fell|Dig|Strike|Snap)/i.test(st.prompt), `the prompt names the work: "${st.prompt}"`);
+    check(/^(Gather|Pick|Fell|Dig|Strike|Snap|Mine)/i.test(st.prompt), `the prompt names the work: "${st.prompt}"`);
     await me.snap('node3d');
     await me.a();
     await me.watchWork();
@@ -356,9 +357,15 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     if (tree) {
       const wood = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(tree.item)}] ?? 0`);
       await me.walkTo({ x: tree.x, y: tree.y, w: 1, h: 1 }, tree.id);
-      await page.waitFor(`(() => { const p = document.querySelector('.prompt'); return p && !p.hidden && p.textContent.trim().length > 1; })()`, 'a prompt at the tree', 4000);
+      // the button must name the felling: beside the tree another thing within a step can take A first
+      const felling = await page
+        .waitFor<string>(`(() => { const p = document.querySelector('.prompt'); return p && !p.hidden && /^Fell/i.test(p.textContent.slice(1).trim()) ? p.textContent.slice(1).trim() : ''; })()`, 'a prompt at the tree', 4000)
+        .catch(async () => {
+          throw new Error(`beside ${tree.id} at ${tree.x},${tree.y} the button reads "${await page.eval<string>(`(() => { const p = document.querySelector('.prompt'); return p && !p.hidden ? p.textContent.slice(1).trim() : ''; })()`)}", standing on ${(await page.eval<number[]>('[...window.__game.session.pos]')).join(',')}`);
+        });
+      check(true, `the prompt names the felling: "${felling}"`);
       await me.a();
-      await page.waitFor('window.__game.session.busy', 'the felling to begin', 8000);
+      await page.waitFor('window.__game.session.busy && window.__world3d.working', 'the felling to begin', 8000);
       check(true, 'one press starts the felling and the player is busy');
       await page.waitFor('!window.__world3d.working', 'the felling to run out', 60_000);
       const wood2 = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(tree.item)}] ?? 0`);

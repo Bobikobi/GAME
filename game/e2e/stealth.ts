@@ -91,6 +91,18 @@ window.__stealth = (() => {
       const cap = (params.hp_cap + params.per_point.stamina * s.state.player.attrs.stamina) * 1000;
       s.state.player.hp = 10 * cap;
       s.met.add('core/trader');
+      // Foraging 2 reached and its point placed, so the moonreed's 2.5 s of gathering brings no level-up window: the window holds the
+      // player on the open tile while the wolf's round runs on, and on the painted bank the round leaves no time for it (GPU run of
+      // 28.11, told to the manager as a finding of the game)
+      const p = s.state.player;
+      p.xp['core/foraging'] = Math.max(p.xp['core/foraging'] ?? 0, g().bundle.professions['core/foraging'].xp_levels[0] * 1000);
+      let level = 1;
+      for (const [id, prof] of Object.entries(g().bundle.professions)) {
+        let l = 1;
+        for (const sec of prof.xp_levels) if ((p.xp[id] ?? 0) >= sec * 1000) l++;
+        level += l - 1;
+      }
+      p.spent = level - 1;
       // beside Pell's stall, read from the map's slot: a task is taken from its giver's side (the kernel's accept)
       const stall = g().bundle.map.slots.find((sl) => sl.id === 'core/trader-stall');
       const ways = [[0, 1, 'up'], [-1, 0, 'right'], [1, 0, 'left'], [0, -1, 'down']];
@@ -111,7 +123,13 @@ window.__stealth = (() => {
       s.state.player.at = [x, y];
       g().world.bind(s);
     },
-    predator(at) { return g().world.predator('core/bank-wolf', at); },
+    predator(at, tick) { return g().world.predator('core/bank-wolf', at, tick); },
+    /** Whether the wolf leaves a tile unseen from \`from\` to \`to\` ms ahead of the clock, read frame by frame (its round is the clock's). */
+    clear(x, y, from, to) {
+      const t = g().session.tick;
+      for (let k = from; k <= to; k += 16) if (g().world.predator('core/bank-wolf', [x, y], t + k).seesPlayer) return false;
+      return true;
+    },
     cover(x, y) {
       return g().bundle.map.props.some((p) => p.cover === true && x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h);
     },
@@ -227,15 +245,6 @@ class StealthPlayer {
     await this.page.waitFor('!__game.world.working && !__stealth.state().busy && !__stealth.state().blocking', 'the moonreed gather to finish', 20_000);
   }
 
-  async handleLevelUp(): Promise<void> {
-    await sleep(800);
-    for (let i = 0; i < 12 && (await this.page.eval<boolean>('!!document.querySelector(".levelup-layer")')); i++) {
-      await this.page.press('Enter');
-      await sleep(150);
-    }
-    if (await this.page.eval<boolean>('!!document.querySelector(".levelup-layer")')) throw new Error('the level-up window did not close');
-    await this.page.waitFor('!__stealth.state().blocking', 'the world after the level-up', 3000);
-  }
 }
 
 async function start(page: Page): Promise<void> {
@@ -277,6 +286,9 @@ async function run(page: Page, url: string): Promise<void> {
   await me.walkTo(10, 27, 'the deep reeds');
   if (!(await page.eval<boolean>('__stealth.cover(10, 27)'))) throw new Error('the deep reeds at 10,27 are not cover');
   await page.eval('__stealth.setHour(21)');
+  // dark out in the wild opens the night's one warning box (ui.ts warnAtNight), and an open box holds the world: tapped away
+  await page.waitFor(`!!document.querySelector('.dialog')`, "the night's warning", 5000);
+  await me.clearPlainDialog();
   await page.waitFor(`(() => { const p = __stealth.predator(); return !!p && !!p.heading && (p.heading[0] !== 0 || p.heading[1] !== 0); })()`, 'the wolf on its round', 20_000);
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the wolf began a chase on the approach');
 
@@ -289,34 +301,40 @@ async function run(page: Page, url: string): Promise<void> {
   console.log(`telegraph: prowl asked at ${prowl.toFixed(3)} beside the moon bank, muted output ${level}`);
   if (level !== 0) throw new Error(`muted, the output is ${level}, not 0`);
 
-  // Up one more into the reeds' cover once the wolf has passed the bank's corner going north (11,24: the tile 10,26 is beside it
-  // only a moment before), then wait for it at the ring's north-west corner looking east: its back is to the one open tile
-  // beside the moonreed (10,25) for five of its ten steps, the time the reeds take.
-  await page.waitFor<Predator>(`(() => {
-    const p = __stealth.predator();
-    return p && p.at[0] === 11 && p.at[1] === 24 && p.heading[1] === -1 ? p : null;
-  })()`, 'the wolf to pass the bank corner going north', 20_000);
+  // The open tile beside the moonreed (10,25) is out of the wolf's eyes for about 3 s of each 6 s round, and the gather takes 2.5 s
+  // (`active_ms`): the kernel starts a chase on an act (a step, a gather begun or ended) that it sees. So, as the kernel flow reads the
+  // wolf ahead (game/test/stealth-flow.test.ts), the steps start from what its round will see: up into the reeds' cover (10,26) once that
+  // tile stays unseen until the player leaves it again, then up onto 10,25 when it stays unseen from the arrival (a step is 190 ms) to past
+  // the gather's end, with a margin of about 300 ms for the page's own latency. The wolf passes 11,25, beside the reeds' tile, once a round,
+  // and a player standing there is seen even in cover: so the step into the reeds comes once it has passed, within a second of the window.
+  await page.waitFor<boolean>(`__stealth.clear(10, 26, 0, 1800) && __stealth.clear(10, 25, 1000, 2950)`, 'the wolf to pass the reeds going north', 20_000);
   await me.step('up');
-  await page.waitFor<Predator>(`(() => {
-    const p = __stealth.predator();
-    return p && p.at[0] === 11 && p.at[1] === 23 && p.heading[0] === 1 ? p : null;
-  })()`, 'the wolf eyes to face away', 20_000);
-  await me.snap('eyes-away');
-
+  await page.waitFor<boolean>(`__stealth.clear(10, 25, 150, 2950) && __stealth.clear(10, 26, 0, 400)`, 'the wolf eyes to face away', 20_000);
+  const ticks: Record<string, unknown> = { window: await page.eval<number>('__game.session.tick'), chaseBefore: await page.eval('__game.session.state.player.chase') };
   await me.step('up');
+  ticks.arrived = await page.eval<number>('__game.session.tick');
   const node = await page.eval<{ id: string; x: number; y: number }>('__stealth.node()');
   const at = (await me.state()).pos;
   if (Math.max(Math.abs(node.x - at[0]), Math.abs(node.y - at[1])) !== 1) throw new Error(`moonreed ${node.x},${node.y} is not beside the crossing at ${at.join(',')}`);
   await page.press('Enter');
+  ticks.pressed = await page.eval<number>('__game.session.tick');
+  ticks.chaseAtPress = await page.eval('__game.session.state.player.chase');
+  // the shot is taken once the gather has begun, so it costs the crossing none of its margin
+  await me.snap('eyes-away');
   await me.watchWork();
-  await me.handleLevelUp();
-  if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the moonreed crossing started a chase');
+  // back into the reeds the moment the gather ends: the window closes about 400 ms later
+  await me.step('down');
+  ticks.back = await page.eval<number>('__game.session.tick');
+  if (await page.eval<boolean>('!!__game.session.state.player.chase')) {
+    const chase = await page.eval<{ since: number }>('__game.session.state.player.chase');
+    const wolf = await page.eval(`__stealth.predator([10, 25], ${chase.since})`);
+    throw new Error(`the moonreed crossing started a chase: ${JSON.stringify({ ...ticks, chase, wolfThen: wolf, now: await page.eval<number>('__game.session.tick') })}`);
+  }
   if ((await page.eval<number>(`__game.session.state.player.bag['core/moonreed'] ?? 0`)) < 1) throw new Error('the moonreed is not in the bag');
   await me.snap('moonreed');
 
-  // Return to cover. As soon as the same open tile enters the real sight
+  // From cover, as soon as the same open tile enters the real sight
   // predicate, step into it and let the ordinary move report start the chase.
-  await me.step('down');
   await page.waitFor<Predator>(`(() => {
     const p = __stealth.predator([10, 25]);
     return p && p.seesPlayer ? p : null;

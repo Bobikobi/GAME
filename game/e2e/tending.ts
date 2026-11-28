@@ -33,11 +33,19 @@ const LOG = 'core/log';
 const BUILD = [32, 9];
 const STAND = [33, 9];
 /**
- * Facing a tile inside the bank wolf's watch (16,18 on the painted valley, the first such tile the kernel flow finds that holds a
- * fire: open, wild, in no slot, no node on it, game/test/tending-flow.test.ts), on the open tile west of it with no node underfoot
- * (on a node, the node's own prompt takes A).
+ * Tiles to stand on, each facing a tile inside the bank wolf's watch that holds a fire (open, wild, in no slot, no node on it: the
+ * kernel flow's own test, game/test/tending-flow.test.ts, finds the first, 16,18). Build a fire comes after every other thing within
+ * a step (world.ts target), and a slot's nodes grow where they like inside it, so the first stand whose button reads Build a fire is
+ * taken (GPU run of 28.11: from 15,18 a wild herb took A, from 16,17 a fallen log did).
  */
-const WOLF_STAND = [15, 18];
+const WOLF_STANDS: { at: [number, number]; facing: string }[] = [
+  { at: [16, 17], facing: 'down' },
+  { at: [14, 26], facing: 'up' },
+  { at: [15, 27], facing: 'up' },
+  { at: [16, 27], facing: 'up' },
+  { at: [7, 27], facing: 'right' },
+  { at: [13, 23], facing: 'right' },
+];
 /** Out of the fire's light, east along the same row. */
 const OUTSIDE = [35, 9];
 const WARNING = 'is burning low';
@@ -483,8 +491,19 @@ async function run(page: Page, url: string): Promise<void> {
   await me.snap('hearth-night-unmet');
 
   // a build inside the bank wolf's round is refused and keeps the logs
-  await me.place(WOLF_STAND, 'right');
   await me.setHour(17);
+  await me.idle('the world before the watch build');
+  let stand: (typeof WOLF_STANDS)[number] | undefined;
+  for (const w of WOLF_STANDS) {
+    await me.place(w.at, w.facing);
+    const offered = await page.waitFor(`__tend.prompt().includes('Build a fire')`, 'Build a fire at a stand', 1500).then(() => true, () => false);
+    if (offered) {
+      stand = w;
+      break;
+    }
+  }
+  if (!stand) throw new Error(`no stand in the bank wolf's watch offers Build a fire: ${WOLF_STANDS.map((w) => w.at.join(',')).join(' ')}`);
+  console.log(`tending: the watch build stands on ${stand.at.join(',')} facing ${stand.facing}`);
   const watchLogs = await me.logs();
   const watch = await me.build();
   if (watch.built) throw new Error('a fire was built inside the wolf\'s round');
