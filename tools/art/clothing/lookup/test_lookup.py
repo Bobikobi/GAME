@@ -162,9 +162,10 @@ class CostTests(unittest.TestCase):
     def test_no_tool_of_the_trial_can_call_a_model(self):
         """L1: zero generations per piece. The lookup tools import nothing that reaches a network (nor the clothing drawers pl.py / run.py)."""
         banned = {'requests', 'urllib', 'http', 'socket', 'httpx', 'aiohttp', 'subprocess', 'pl', 'run', 'draw'}
+        judges = {'eyejudge.py'}       # round 2: the judge puts finished frames to an eye (ask-claude); it carries and draws nothing
         here = os.path.dirname(os.path.abspath(__file__))
         for name in sorted(os.listdir(here)):
-            if not name.endswith('.py') or name.startswith('test_'):
+            if not name.endswith('.py') or name.startswith('test_') or name in judges:
                 continue
             tree = ast.parse(open(os.path.join(here, name)).read())
             mods = set()

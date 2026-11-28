@@ -28,8 +28,10 @@ def box(a, k):
     return (c[k:, k:] - c[:-k, k:] - c[k:, :-k] + c[:-k, :-k]) / (k * k)
 
 
-def fit(stand, frame, patch=PATCH, radius=R, lam=LAMBDA, smooth=SMOOTH, glob=None):
-    """Dense shifts d(p) for the frame's body pixels: returns the map src (F, F, 2) of the stand pixel each body pixel comes from."""
+def fit(stand, frame, patch=PATCH, radius=R, lam=LAMBDA, smooth=SMOOTH, glob=None, labels=None, part_w=0.5):
+    """Dense shifts d(p) for the frame's body pixels: returns the map src (F, F, 2) of the stand pixel each body pixel comes from.
+    `labels` = (stand part labels, frame part labels, allowed (parts x parts) bool): a candidate whose two parts are not allowed
+    together costs `part_w` more (round 2, family 1 tuning: a hand matches a hand)."""
     st_op = stand[..., 3] > 0
     fr_op = frame[..., 3] > 0
     st_lab = partmap.lab_frame(stand)
@@ -41,6 +43,11 @@ def fit(stand, frame, patch=PATCH, radius=R, lam=LAMBDA, smooth=SMOOTH, glob=Non
     pad = 2 * radius + 40
     st_lab_p = np.pad(st_lab, ((pad, pad), (pad, pad), (0, 0)))
     st_op_p = np.pad(st_op, pad)
+    if labels is not None:
+        sl_lab, fl_lab, allowed = labels
+        sl_p = np.pad(sl_lab, pad, constant_values=-1)
+        allowed_x = np.ones((allowed.shape[0] + 1, allowed.shape[1] + 1), bool)
+        allowed_x[:-1, :-1] = allowed                               # label -1 (off the body) is allowed with anything
     best = np.full((F, F), 1e9)
     bdy = np.zeros((F, F), int)
     bdx = np.zeros((F, F), int)
@@ -53,6 +60,8 @@ def fit(stand, frame, patch=PATCH, radius=R, lam=LAMBDA, smooth=SMOOTH, glob=Non
             q_op = st_op_p[sl]
             diff = np.where(fr_op & q_op, np.minimum(((fr_lab - q_lab) ** 2).sum(-1) / 400.0, 1.0), (fr_op != q_op).astype(float))
             c = box(diff, patch)
+            if labels is not None:
+                c = c + part_w * ~allowed_x[fl_lab, sl_p[sl]]
             c = c + lam * ((dy - gdy) ** 2 + (dx - gdx) ** 2) / (radius ** 2) * 0.02 * patch * 0 + lam * (np.hypot(dy - gdy, dx - gdx) / radius) * 0.1
             upd = c < best
             best[upd] = c[upd]
@@ -174,10 +183,14 @@ def compose(prev_map, pair):
     return cur
 
 
-def chain_bi(stand, frames, direct_radius=10, pair_radius=12, anchor_exact=0.85, rradius=2, report=None, cache=None):
+def chain_bi(stand, frames, direct_radius=10, pair_radius=12, anchor_exact=0.85, rradius=2, report=None, cache=None, fitfn=None, anchor=True):
     """Tracking from the nearest anchor. A direct map (stand -> frame, window round the figure's global shift) is made for every frame;
     frames it rebuilds at `anchor_exact` or better (their pose is the stand pose) are anchors and keep it. Every other frame takes the
-    maps of its neighbours composed from the nearer anchor, forward or backward in time, and is then anchored by `refine`."""
+    maps of its neighbours composed from the nearer anchor, forward or backward in time, and is then anchored by `refine` (`anchor=False`:
+    not). `fitfn(a, b, radius)` replaces the patch match as the matcher of a pair (round 2, family 3: optical flow)."""
+    if fitfn is None:
+        fitfn = lambda a, b, radius: fit(a, b, radius=radius)
+    refine_ = refine if anchor else (lambda st, fr, m, radius=2: m)
     n = len(frames)
     def cached(key, make):
         if cache is None:
@@ -188,7 +201,7 @@ def chain_bi(stand, frames, direct_radius=10, pair_radius=12, anchor_exact=0.85,
         v = make()
         np.save(path, v)
         return v
-    direct = [cached(f'd{k}', lambda f=f: fit(stand, f, radius=direct_radius)) for k, f in enumerate(frames)]
+    direct = [cached(f'd{k}', lambda f=f: fitfn(stand, f, direct_radius)) for k, f in enumerate(frames)]
     ex = [exact_share(stand, f, m) for f, m in zip(frames, direct)]
     anchors = [k for k in range(n) if ex[k] >= anchor_exact]
     if not anchors:
@@ -200,11 +213,11 @@ def chain_bi(stand, frames, direct_radius=10, pair_radius=12, anchor_exact=0.85,
     pair_next = {}
     def pp(k):
         if k not in pair_prev:
-            pair_prev[k] = cached(f'p{k}', lambda: fit(frames[k - 1], frames[k], radius=pair_radius))
+            pair_prev[k] = cached(f'p{k}', lambda: fitfn(frames[k - 1], frames[k], pair_radius))
         return pair_prev[k]
     def pn(k):
         if k not in pair_next:
-            pair_next[k] = cached(f'n{k}', lambda: fit(frames[k + 1], frames[k], radius=pair_radius))
+            pair_next[k] = cached(f'n{k}', lambda: fitfn(frames[k + 1], frames[k], pair_radius))
         return pair_next[k]
     how = {}
     for k in range(n):
@@ -217,14 +230,14 @@ def chain_bi(stand, frames, direct_radius=10, pair_radius=12, anchor_exact=0.85,
         for k in range(a + 1, n):
             if k in anchors:
                 break
-            cur = refine(stand, frames[k], compose(cur, pp(k)), radius=rradius)
+            cur = refine_(stand, frames[k], compose(cur, pp(k)), radius=rradius)
             fwd[k] = (k - a, cur)
     for a in reversed(anchors):
         cur = direct[a]
         for k in range(a - 1, -1, -1):
             if k in anchors:
                 break
-            cur = refine(stand, frames[k], compose(cur, pn(k)), radius=rradius)
+            cur = refine_(stand, frames[k], compose(cur, pn(k)), radius=rradius)
             bwd[k] = (a - k, cur)
     for k in range(n):
         if maps[k] is not None:
