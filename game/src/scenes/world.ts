@@ -105,6 +105,7 @@ import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
 import { huntingAt, questTargets } from '../targets';
+import { CarcassLayer } from './carcasses';
 import { WildLife } from './wildlife';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
@@ -114,7 +115,7 @@ import { MazePeek } from './peek';
 import { FishingView } from './fishing-view';
 import { FISH_CAST_MS, FISH_REEL_MS } from '../fishing';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
-import { ClipPlayer, RUN_CYCLE_FALLBACK_PX, RUN_CYCLE_OVER_WALK, VERB_OF_AUTO, WalkWatch, clipFor, clipFrame, creatureClipFor, creatureOf, creaturePoint, creatureSheets, creatureX, handAt, handWorld, raceClips, runFrame, verbOfOutcome, viewOfHeading, type ClipSprite, type ClipSprites, type ClipVerb, type CreatureSprites, type Found, type FoundCreature } from '../clips';
+import { ClipPlayer, RUN_CYCLE_FALLBACK_PX, RUN_CYCLE_OVER_WALK, SNEAK_CYCLE_OVER_WALK, VERB_OF_AUTO, WalkWatch, clipFor, clipFrame, creatureClipFor, creatureOf, creaturePoint, creatureSheets, creatureX, handAt, handWorld, raceClips, runFrame, verbOfOutcome, viewOfHeading, type ClipSprite, type ClipSprites, type ClipVerb, type CreatureSprites, type Found, type FoundCreature } from '../clips';
 import { STRIDE, POSES, beatAt, blowsDue, nextUnit, poseFrame, standingFrame, strideFrame } from '../work';
 import { blinking, bob, breath, walkBob } from '../feel';
 import { reportedGait, SpeedRamp } from '../walkfeel';
@@ -534,6 +535,7 @@ export class WorldScene extends Phaser.Scene {
   private gaitNow: Gait | 'still' = 'still';
   /** the valley's animals, stepped by the kernel and drawn from their sheets (public #916) */
   private wild: WildLife | undefined;
+  private carcasses: CarcassLayer | undefined;
   private busyFrom = 0;
   private busyMs = 0;
   /** the line, float and fish shapes of fishing, drawn in code */
@@ -551,6 +553,8 @@ export class WorldScene extends Phaser.Scene {
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
+  /** When the standing figure next plays a drawn idle clip (0: not set yet); the figure's moves, public #929. */
+  private nextIdleClip = 0;
   private nextBlink = 0;
   private blinkUntil = 0;
   private prompt = '';
@@ -2446,6 +2450,8 @@ export class WorldScene extends Phaser.Scene {
     this.aimLineGfx?.setVisible(false);
     this.stones?.destroy();
     this.stones = undefined;
+    this.carcasses?.destroy();
+    this.carcasses = undefined;
     this.effects.clear();
     this.fightWords.clear();
     this.foeBars.clear();
@@ -2607,22 +2613,23 @@ export class WorldScene extends Phaser.Scene {
     if (this.carryFigure(true)) return;
     const k = this.playerFrame(s.facing, 'walk', this.look).key;
     const info = this.b.sprites[k];
-    if (this.gaitNow === 'run' && this.runClipFrame(s, info)) return;
+    if (this.gaitNow === 'run' && this.gaitClipFrame(s, info, 'run', RUN_CYCLE_OVER_WALK)) return;
+    if (this.gaitNow === 'sneak' && this.gaitClipFrame(s, info, 'sneak', SNEAK_CYCLE_OVER_WALK)) return;
     if (info?.stride) return this.faceFrame(undefined, poseFrame(this.body.walked, info.stride.travel_mpx / 1000, info.frames, this.paceMs));
     const walked = this.body.walked / ART_PX;
     this.faceFrame(strideFrame(walked % 1, Math.floor(walked), info?.frames ?? 1));
   }
 
   /**
-   * A run drawn as its own clip (the figure's moves, public #929): the frame is the one for the distance walked, over a cycle as long as the
-   * walk's own times `RUN_CYCLE_OVER_WALK` (clips.ts). False, and the walk sheet shows as before, when the kit has no run clip for the race and
+   * A run or a sneak drawn as its own clip (the figure's moves, public #929): the frame is the one for the distance walked, over a cycle as long
+   * as the walk's own times `RUN_CYCLE_OVER_WALK` or `SNEAK_CYCLE_OVER_WALK` (clips.ts). False, and the walk sheet shows as before, when the kit has no clip for the race and
    * the way it faces, its sheet is not here yet, or the figure is not the one the clips are drawn on (`figureIsClipFigure`).
    */
-  private runClipFrame(s: GameSession, walk: (typeof this.b.sprites)[string] | undefined): boolean {
+  private gaitClipFrame(s: GameSession, walk: (typeof this.b.sprites)[string] | undefined, verb: 'run' | 'sneak', overWalk: number): boolean {
     const race = s.state.player.race;
-    const found = clipFor(this.b.sprites as ClipSprites, 'run', race, s.facing);
+    const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing);
     if (!found || !this.textures.exists(found.key) || !this.figureIsClipFigure(s)) return false;
-    const cycle = walk?.stride ? (walk.stride.travel_mpx / 1000) * (walk.frames - 1) * RUN_CYCLE_OVER_WALK : RUN_CYCLE_FALLBACK_PX;
+    const cycle = walk?.stride ? (walk.stride.travel_mpx / 1000) * (walk.frames - 1) * overWalk : RUN_CYCLE_FALLBACK_PX * (overWalk / RUN_CYCLE_OVER_WALK);
     this.showPlayer(found.key, runFrame(this.body.walked, cycle, found.frames), found.flip);
     return true;
   }
@@ -2751,6 +2758,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshFires(s);
     (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
     (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig)).refresh(s.state, s.tick);
+    (this.carcasses ??= new CarcassLayer(this, this.b)).refresh(s.state, s.tick);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -2876,6 +2884,8 @@ export class WorldScene extends Phaser.Scene {
       this.refreshFires(s);
       // a thrown stone that has been out its time goes home with no step to say so
       this.stones?.refresh(s.state, s.tick);
+      // a carcass the spoiling has made smaller goes with no step to say so
+      this.carcasses?.refresh(s.state, s.tick);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
@@ -3192,7 +3202,16 @@ export class WorldScene extends Phaser.Scene {
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
+      this.nextIdleClip = 0;
       return;
+    }
+    // Standing still for 5 s or more, the figure plays one of its idle clips (a stretch, a look about: two takes, one at random) every 5-10 s or so
+    if (time - this.idleSince >= 5000 && this.blinkUntil === 0 && this.figureIsClipFigure(s)) {
+      if (this.nextIdleClip === 0) this.nextIdleClip = time + Math.random() * 5000;
+      else if (time >= this.nextIdleClip) {
+        this.nextIdleClip = 0;
+        if (this.playClip('idle')) return;
+      }
     }
     if (this.blinkUntil > 0) {
       if (time >= this.blinkUntil) {

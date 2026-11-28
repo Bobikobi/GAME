@@ -54,6 +54,7 @@ def main(argv=None):
     ap.add_argument("--ms", type=int, default=120); ap.add_argument("--air", default=""); ap.add_argument("--bend", default=""); ap.add_argument("--effect", default="", help="frames that carry a drawn effect (a hit flash): left out of gate c, written to the manifest")
     ap.add_argument("--drop", default="", help="indexes (of the listed sources) to leave out"); ap.add_argument("--loop", action="store_true"); ap.add_argument("--loop-from", type=int, default=0, help="first frame of the looping part (guard: the hold)")
     ap.add_argument("--pingpong", type=int, default=-1, help="hold build: from this frame on, play forward then back (frames N..last, then last-1..N+1), so the hold loops; sets --loop-from"); ap.add_argument("--anchor-x", action="store_true", help="pin the feet band midpoint to frame 0 by whole pixels (kept key frames translate the whole figure)"); ap.add_argument("--no-resnap", action="store_true"); ap.add_argument("--keys", default="", help="kept motion folder (e.g. chop-left) whose height range replaces the stance height in gate c")
+    ap.add_argument("--gait", choices=("walk", "run", "sneak"), default=None, help="gate (g): hold the side-view clip to the game's pace for this gait (footspeed.py)"); ap.add_argument("--fit", type=float, default=None, help="the clip's fit_permille / 1000 for gate (g); default 0.719")
     ap.add_argument("--meta", default="{}", help="json: job ids, seeds, generations, effects, notes"); ap.add_argument("--tile", default="")
     a = ap.parse_args(argv)
     ref = gates.Reference(a.kept, a.race, a.view, a.size)
@@ -64,7 +65,7 @@ def main(argv=None):
         frames = frames + frames[-2:a.pingpong:-1]
         a.loop, a.loop_from = True, a.pingpong
     kr = key_range(a.kept, a.race, a.keys) if a.keys else (tuple(ints(a.keyrange)) if a.keyrange else None)
-    fr, m = gates.run(frames, ref, air=ints(a.air), bend=ints(a.bend), effect=ints(a.effect), loop=a.loop, loop_from=a.loop_from, no_resnap=a.no_resnap, anchor_x=a.anchor_x, key_range=kr)
+    fr, m = gates.run(frames, ref, air=ints(a.air), bend=ints(a.bend), effect=ints(a.effect), loop=a.loop, loop_from=a.loop_from, no_resnap=a.no_resnap, anchor_x=a.anchor_x, key_range=kr, gait=a.gait, fit=a.fit)
     name = f"{a.motion}-{a.view}" + (f"-{a.variant}" if a.variant else "")
     d = Path(a.out) / a.race / name
     d.mkdir(parents=True, exist_ok=True)
@@ -82,7 +83,7 @@ def main(argv=None):
                 m[k] = prev[k]
     old.write_text(json.dumps(m, indent=1))
     preview(fr, d / "preview.gif", a.ms, a.tile or None)
-    brief = {k: m[k] for k in ("frames", "a_raw_spread", "a_spread_after", "a_bob_px", "gate_a", "b_identity_max", "gate_b", "c_heights", "c_upright_dev_max", "c_lowest_height", "gate_c", "e_close", "e_step_max", "gate_e", "f_flags")}
+    brief = {k: m[k] for k in ("frames", "a_raw_spread", "a_spread_after", "a_bob_px", "gate_a", "b_identity_max", "gate_b", "c_heights", "c_upright_dev_max", "c_lowest_height", "gate_c", "e_close", "e_step_max", "gate_e", "gate_g", "f_flags")}
     print(name, json.dumps(brief))
     return m
 

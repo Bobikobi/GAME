@@ -110,13 +110,13 @@ The tier follows the region's danger `d` (FIRST_MAP.md: `d` is the steps from to
 | Defend | DEFEND (a bluff until the fight, question 1) | d1 | Wild boar, dust adder | Boar 4 / 0 / 8; adder 2 / 0 / 0 | After the fire |
 | Hunt | STALK, then CHASE | d2 | Forest wolf pack, wildcat, white bear | Wolf 8 / +2 / 9 | With the fight, or the pit trap |
 
-Spawning, from memo D: a table per region of species, weight, cluster size and a cap per 1000 habitat tiles (d0 12, d1 8, d2 5); never within 14 tiles of a player or in view, never within 12 tiles of the town square, never on a path leg of the opening; a herd lost a member gets it back from its anchor after a game day, only while no player is within 20 tiles, so the first players never empty the valley.
+Spawning, from memo D: a table per region of species, weight, cluster size and a cap per 1000 habitat tiles (d0 12, d1 8, d2 5); never within 14 tiles of a player or in view, never within 12 tiles of the town square, never on a path leg of the opening; a herd lost a member gets it back from its anchor after a game day, only while no player is within 20 tiles, so the first players never empty the valley. **A small animal a stone took (28.11.2026, the owner: "not from the same place") comes back at ANOTHER spot of its kind, never the one it was taken from.** The spots are the kind's `map.creatures.spots` (content); the spot is drawn when it is taken, from the world's secret key, among the kind's other spots with the fewest animals living at them; a kind with one spot keeps it. The return time is `refill_d`, as before. Kernel 0.42.0, `wild/seat.ts`, `player.preySeats`.
 
 ## 9. What a hunt pays, and its cap
 
 No animal and no good carries a price. A hunted good's value comes from the value solver (`kernel/src/values.ts`), which knows four sources today: gather, dig, craft and a node a reaction makes appear. A hunt needs a fifth, `hunt`, which does not exist yet: it prices a drop by the time its whole loop takes (the find, the approach, the dressing), on the solver's effort tiers, so the value follows the work and never a number written on an animal (AGENTS.md: no hardcoded price).
 
-The cap: what one hunt leaves is worth at most `combat.pay_per_s_mg` for each second of that loop at the trader's price, the same cap a fight has (COMBAT.md 4.9, G85 proposed), inside the area's rarity budget (`rarity_budget_permille`). Behind it: one carcass per animal; the herd anchor refills a game day later; goods join the outing, and a fall loses them (G33); the trader's day cap turns hours into gold whatever the source.
+The cap: what one hunt leaves is worth at most `combat.pay_per_s_mg` for each second of that loop at the trader's price, the same cap a fight has (COMBAT.md 4.9, G85 proposed), inside the area's rarity budget (`rarity_budget_permille`). Behind it: one carcass per animal; the herd anchor refills a game day later, a taken small animal at another spot of its kind (section 8); goods join the outing, and a fall loses them (G33); the trader's day cap turns hours into gold whatever the source.
 
 ## 10. The rating's rules
 

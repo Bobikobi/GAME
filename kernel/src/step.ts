@@ -32,6 +32,7 @@ import {
   huntGoods, huntGoodsExpiry, huntOf, placeCarcass, preyKey, recordHuntBatches, snareAt, snareGround, snareKind, snarePrey,
   flightHits, stonePrey, takeHuntBatches,
 } from './hunt';
+import { drawSeat, seatOf } from './wild/seat';
 import { breathLeft, fallHarm, jumpRule } from './jump';
 import { FULL_POWER, carriedKind, lendStone, lyingAt, placeLoose, removeLoose, settleStones, standingAt, stoneBook, throwFlight, throwKind, unloan, whyNoRoom } from './stones';
 import { drawBasisPoints, type Seed } from './rng';
@@ -2290,11 +2291,14 @@ function throwLoose(ctx: Ctx, aim: Tile, requested?: string, power: number = FUL
   if (prey !== undefined && !game) refuse('No small game in reach.');
   if (game && b.params.liftables[kind]?.class !== 'hand') refuse('That is too heavy to take small game.');
   // a stone that strikes the animal is spent on it; one that does not lands where the flight ends, and the animal is left alone
-  if (game && flightHits(b, flight, stands ?? [game.x, game.y])) {
+  const seat = game && prey !== undefined ? seatOf(b, s, prey) ?? game : undefined;
+  if (game && seat && flightHits(b, flight, stands ?? [seat.x, seat.y])) {
     removeItem(ctx, kind, 1, true);
     const refill = huntOf(b, game.kind)?.spawn?.refill_d ?? 1;
     (p.preyReturns ??= {})[preyKey(game)] = tick + refill * b.params.day_length_ms;
-    placeCarcass(b, s, game.kind, stands ? [stands[0], stands[1]] : [game.x, game.y], 1, tick);
+    const carcass = placeCarcass(b, s, game.kind, stands ? [stands[0], stands[1]] : [seat.x, seat.y], 1, tick);
+    // it comes back at another spot of its kind, drawn now from the world's key (public #930); the time is `refill_d`, unchanged
+    drawSeat(b, s, s.seed, prey!, carcass.id);
     ctx.events.push({ e: 'stone_thrown', kind, from: flight.from, touch: flight.touch, at: null, ms: b.params.stones.throw_ms });
     ctx.events.push({ e: 'take_prey' });
     busy(ctx, 'throw', b.params.stones.throw_ms);

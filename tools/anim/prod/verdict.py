@@ -17,9 +17,9 @@ def main(argv=None):
     m = json.loads(p.read_text())
     eye = [x.strip() == "yes" for x in a.eye.split(",")]
     assert len(eye) == 3, "--eye takes three answers"
-    gates_ok = all(m.get(k) in ("PASS", "n/a") for k in ("gate_a", "gate_b", "gate_c", "gate_e"))
+    gates_ok = all(m.get(k) in ("PASS", "n/a") for k in ("gate_a", "gate_b", "gate_c", "gate_e", "gate_g"))
     if a.verdict.startswith("PASS (eye)") and not (all(eye) and gates_ok):
-        raise SystemExit(f"refused: PASS (eye) needs three yes and gates a, b, c, e not FAIL (eye={eye}, gates ok={gates_ok})")
+        raise SystemExit(f"refused: PASS (eye) needs three yes and gates a, b, c, e, g not FAIL (eye={eye}, gates ok={gates_ok})")
     m["eye"] = {"planted_foot": eye[0], "weight_with_foot": eye[1], "identity": eye[2]}
     m["verdict"] = a.verdict
     for k, v in (("tries", a.tries), ("effects", a.effects), ("note", a.note), ("parked", a.parked), ("gens", a.gens)):
