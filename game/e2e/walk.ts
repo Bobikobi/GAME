@@ -227,7 +227,7 @@ export class FreeWalk {
     await this.install();
     await this.page.eval(`window.__walk.until([${tile[0]}, ${tile[1]}], ${this.touch})`);
     const [tx, ty] = middleOf(tile);
-    const end = Date.now() + timeoutMs;
+    let end = Date.now() + timeoutMs;
     // where the feet last moved, and since when they stand still short of the tile
     let last: [number, number] | undefined;
     let stillSince = Date.now();
@@ -241,6 +241,17 @@ export class FreeWalk {
         if (there && (await this.page.eval<boolean>('window.__walk.done()'))) return;
         // a box opening under the walk ends it where it stands (the word in town stops the walk); the caller
         // sees that the tile was not reached and may close a box that opened by itself and walk again
+        // a maze's peek (a step into its frame from outside) is no box: it hands the camera back by itself, so the
+        // walk lets go, waits it out and goes on, its time not counted against the walk (the painted valley's
+        // collapsed hall borders the tangle's frame, so a turn by the hall can step into it)
+        if (now.stop && now.why.peek === true && now.why.blocking !== true) {
+          const t0 = Date.now();
+          await this.release();
+          await this.page.waitFor('!(window.__game.world.peek && window.__game.world.peek.active)', 'the maze peek to end', 10_000);
+          end += Date.now() - t0;
+          last = undefined;
+          continue;
+        }
         if (now.stop) return;
         if (!last || Math.abs(fx - last[0]) > 0.5 || Math.abs(fy - last[1]) > 0.5) {
           last = [fx, fy];
