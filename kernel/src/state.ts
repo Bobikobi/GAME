@@ -9,7 +9,7 @@ import { clamp, idiv, idivUp, mulDiv } from './num';
 import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.41.0';
+export const KERNEL_VERSION = '0.42.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -248,6 +248,11 @@ export interface Player {
   huntPausedMs?: number;
   /** When each creature spot can be taken again, by species and tile. */
   preyReturns?: Record<string, number>;
+  /**
+   * Where a taken animal lives now (kernel 0.42, public #930): its own spot's key to the key of the spot of its kind it returns
+   * at, drawn at the take, never the one it was taken from. No entry: it lives at its own spot, as in every save before 0.42.
+   */
+  preySeats?: Record<string, string>;
   snares?: Snare[];
   /** Expiry batches alongside the existing bag and dropped stacks. */
   huntStock?: { bag: HuntStock; ground: Record<string, HuntStock> };

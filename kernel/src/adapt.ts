@@ -81,6 +81,15 @@ export function adaptState(bundle: Bundle, saved: State): State | undefined {
     const spots = new Set((bundle.map.creatures?.spots ?? []).map(preyKey));
     p.preyReturns = Object.fromEntries(Object.entries(p.preyReturns).filter(([key]) => spots.has(key)));
   }
+  // a seat holds only while both its spots are spots of one kind today; else the animal goes home (public #930)
+  if (p.preySeats) {
+    const spots = new Set((bundle.map.creatures?.spots ?? []).map(preyKey));
+    const kept = Object.entries(p.preySeats).filter(
+      ([home, seat]) => home !== seat && spots.has(home) && spots.has(seat) && parsePreyKey(home)?.kind === parsePreyKey(seat)?.kind,
+    );
+    if (kept.length > 0) p.preySeats = Object.fromEntries(kept);
+    else delete p.preySeats;
+  }
   // a height layer may have walled the old tile off from every wake (G68): stand on the nearest tile a foot can reach, never a fall
   const stand = relocationOf(bundle, state);
   if (stand) p.at = stand;
@@ -205,6 +214,22 @@ function moveTiles(bundle: Bundle, state: State): void {
       const [x, y] = shift([old.x, old.y]);
       const now = anchorId(old.kind, x, y);
       if (spots.has(now)) p.preyReturns[now] = Math.max(p.preyReturns[now] ?? 0, until);
+    }
+  }
+  if (p.preySeats) {
+    // a seat is carried like a cooldown: both of its spots move with the frame, and the filter in `adaptState` drops it if either is no spot today
+    const seats = p.preySeats;
+    p.preySeats = {};
+    const carried = (key: string): string | undefined => {
+      const old = parsePreyKey(key);
+      if (!old) return undefined;
+      const [x, y] = shift([old.x, old.y]);
+      return anchorId(old.kind, x, y);
+    };
+    for (const [home, seat] of Object.entries(seats)) {
+      const h = carried(home);
+      const s = carried(seat);
+      if (h && s) p.preySeats[h] = s;
     }
   }
   if (p.stones) {

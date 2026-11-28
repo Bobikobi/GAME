@@ -168,6 +168,8 @@ describe('a classic save on the painted valley', () => {
     p.snares = [{ at: [bridge.x, bridge.y + 1], readyDay: 2 }];
     p.ground = { [`${bridge.x},${bridge.y}`]: { 'core/berry': 2 }, [`${bridge.x + 1},${bridge.y}`]: { 'core/berry': 3, 'core/stick': 1 } };
     p.preyReturns = { [`${spot.kind}@${spot.x},${spot.y}`]: 900 };
+    const kin = classic.map.creatures!.spots.filter((s) => s.kind === spot.kind);
+    p.preySeats = { [`${kin[0]!.kind}@${kin[0]!.x},${kin[0]!.y}`]: `${kin[1]!.kind}@${kin[1]!.x},${kin[1]!.y}` };
     p.stones = { taken: { '0': true }, placed: { [`${bridge.x},${bridge.y}`]: { 'core/stone': 2 } }, returns: [{ key: `${bridge.x + 1},${bridge.y}`, kind: 'core/stone', at: 5 }] };
     const a = adaptState(painted, saved)!.player;
     const now = painted.map.slots.find((s) => s.id === 'core/old-bridge')!;
@@ -193,6 +195,11 @@ describe('a classic save on the painted valley', () => {
     // a cooldown follows its spot only when the carried tile is a spot of the same kind on the painted map
     const spots = new Set(painted.map.creatures!.spots.map((s) => `${s.kind}@${s.x},${s.y}`));
     for (const key of Object.keys(a.preyReturns ?? {})) expect(spots.has(key)).toBe(true);
+    // a seat is kept only when both its spots are spots of one kind on the painted map, else the animal goes home
+    for (const [home, seat] of Object.entries(a.preySeats ?? {})) {
+      expect(spots.has(home) && spots.has(seat)).toBe(true);
+      expect(home.split('@')[0]).toBe(seat.split('@')[0]);
+    }
   });
 
   test('the carry is made once, and is pure', () => {
