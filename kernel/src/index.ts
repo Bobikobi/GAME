@@ -23,6 +23,7 @@ export * from './values';
 export * from './work';
 export * from './world';
 export * from './wild/den';
+export * from './wild/seat';
 export * from './wild/valley';
 export { THINK_MS, awake, type Creature, type WildEvent, type WildKind, type WildState } from './wild/types';
 export * from './fight';

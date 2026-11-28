@@ -20,6 +20,7 @@ import { walkableFor } from '../step';
 import { tagAt } from '../world';
 import { settle, think } from './brain';
 import { anchorId } from './den';
+import { seatOf } from './seat';
 import { d2 } from './senses';
 import { type Creature, type Flight, type GroupClass, type Tier, type Tile, type WildEvent, type WildKind, type WildView, THINK_MS, WILD } from './types';
 
@@ -159,7 +160,6 @@ export function wildStep(bundle: Bundle, world: WildWorld, state: PublicState, s
   const events: WildEvent[] = [];
   const player = state.player.at;
   const noise = noiseRadius(bundle, sense.gait);
-  const spots = bundle.map.creatures?.spots ?? [];
   const wake = w.wake_tiles * w.wake_tiles;
   const forget = w.catchup_max_steps * THINK_MS;
   for (let p = world.pulse + 1; p <= target; p++) {
@@ -172,7 +172,7 @@ export function wildStep(bundle: Bundle, world: WildWorld, state: PublicState, s
     for (const a of world.animals) {
       if (!a.stepped || a.c.id % round !== phase) continue;
       const kind = wildKindOf(bundle, a.kind)!;
-      const spot = spots[a.spot]!;
+      const spot = seatOfAnimal(bundle, state, a);
       const anchorAt: Tile = [spot.x, spot.y];
       const view: WildView = {
         tick: now,
@@ -209,12 +209,27 @@ export function wildStep(bundle: Bundle, world: WildWorld, state: PublicState, s
   return events;
 }
 
+/**
+ * The spot an animal lives at now, its seat (`seat.ts`). One that was taken and has a new seat is put there: it stands at the new
+ * anchor, fresh and forgotten (`last` -1, no path), so it is drawn there at once and never walks across the valley from the old one.
+ */
+function seatOfAnimal(bundle: Bundle, state: PublicState, a: WildAnimal): { kind: string; x: number; y: number } {
+  const s = seatOf(bundle, state, a.spot) ?? bundle.map.creatures!.spots[a.spot]!;
+  const anchor = anchorId(s.kind, s.x, s.y);
+  if (a.c.anchor !== anchor) {
+    a.c = { id: a.c.id, anchor, at: [s.x, s.y], face: [0, 1], state: 'IDLE', since: 0, count: 0, left: 2, credit: 0, grade: a.c.grade, draws: a.c.draws };
+    a.from = [s.x, s.y];
+    a.path = [];
+    a.last = -1;
+  }
+  return s;
+}
+
 /** Marks the stepped animals at a pulse; one that drops out is forgotten (`last` -1), so it settles when it is stepped again. */
 function chooseStepped(bundle: Bundle, world: WildWorld, state: PublicState, now: number, player: Tile, wake: number, max: number): void {
-  const spots = bundle.map.creatures!.spots;
   const near: { a: WildAnimal; d: number }[] = [];
   for (const a of world.animals) {
-    const s = spots[a.spot]!;
+    const s = seatOfAnimal(bundle, state, a);
     const d = d2(player, [s.x, s.y]);
     if (d <= wake && !taken(bundle, state, a, now)) near.push({ a, d });
   }

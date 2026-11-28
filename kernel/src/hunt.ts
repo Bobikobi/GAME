@@ -8,6 +8,7 @@ import type { Flight } from './stones';
 import { walkableFor, type Tile } from './step';
 import { anchorId } from './wild/den';
 import { wildKindOf, wildReach } from './wild/valley';
+import { seatOf } from './wild/seat';
 import { d2, lineClear } from './wild/senses';
 import { tagAt } from './world';
 
@@ -63,19 +64,22 @@ export function preyKey(spot: CreatureSpot): string {
 /**
  * Spot indices are authoritative; the client supplies neither the species nor where it stands beyond the kind's reach. An animal
  * the wild step moved (`wildStep`) is named by its spot and the tile it stands on (`stands`), held to `wildReach` of its anchor:
- * the world of stepped animals is the caller's until a server holds it. With no tile the animal stands at its spot.
+ * the world of stepped animals is the caller's until a server holds it. With no tile the animal stands at its seat: the spot it
+ * lives at now, which is its own unless it was taken and returned elsewhere (`preySeats`, `wild/seat.ts`). The spot returned is the
+ * animal's own (its index is its name); its anchor is `seatOf`.
  */
 export function stonePrey(bundle: Bundle, state: PublicState, tick: number, index: number, at: Tile, stands?: Tile): CreatureSpot | undefined {
   if (!Number.isSafeInteger(index) || index < 0) return undefined;
   const spot = bundle.map.creatures?.spots[index];
   const kind = spot && smallPrey(bundle, spot.kind);
   if (!spot || !kind || (state.player.preyReturns?.[preyKey(spot)] ?? 0) > tick) return undefined;
-  const target: Tile = stands ?? [spot.x, spot.y];
+  const seat = seatOf(bundle, state, index) ?? spot;
+  const target: Tile = stands ?? [seat.x, seat.y];
   if (stands) {
     if (!Array.isArray(stands) || stands.length !== 2 || !stands.every(Number.isSafeInteger)) return undefined;
     const wild = wildKindOf(bundle, spot.kind);
     const reach = wild ? wildReach(wild) : 0;
-    if (d2(stands, [spot.x, spot.y]) > reach * reach) return undefined;
+    if (d2(stands, [seat.x, seat.y]) > reach * reach) return undefined;
   }
   const thrown = bundle.params.liftables[bundle.params.hunt.throw_item];
   if (thrown?.class !== 'hand') return undefined;

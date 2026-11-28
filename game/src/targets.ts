@@ -6,7 +6,7 @@
 import {
   type Action, type Bundle, type PublicState, type Rect, type Tile,
   awakeHuntTick, campTile, carcassGone, findSlot, hourOf, isNight, npcTile,
-  FULL_POWER, snareAt, spotOpen, stonePrey, valleyDay,
+  FULL_POWER, seatOf, snareAt, spotOpen, stonePrey, valleyDay,
 } from '@game/kernel';
 
 import { activeQuests, questSteps, readyToHandIn } from './text';
@@ -51,13 +51,16 @@ export interface StandingAnimal {
 
 /**
  * The nearest small game a stone reaches. With the stepped animals (`animals`, public #916) it points at an animal where it stands
- * now and the take names that tile; without them (the 3D door) at the spots, as before.
+ * now and the take names that tile; without them (the 3D door) at the spots the animals live at (`seatOf`).
  */
 export function huntingNearby(b: Bundle, s: PublicState, tick: number, at: Tile, animals?: readonly StandingAnimal[]): HuntTarget | undefined {
   if ((s.player.bag[b.params.hunt.throw_item] ?? 0) === 0) return undefined;
   let target: HuntTarget | undefined;
   let nearest = Infinity;
-  const standing: readonly StandingAnimal[] = animals ?? (b.map.creatures?.spots ?? []).map((spot, i) => ({ spot: i, tile: [spot.x, spot.y] }));
+  const standing: readonly StandingAnimal[] = animals ?? (b.map.creatures?.spots ?? []).map((spot, i) => {
+    const seat = seatOf(b, s, i) ?? spot;
+    return { spot: i, tile: [seat.x, seat.y] };
+  });
   for (const { spot: index, tile } of standing) {
     const distance = (at[0] - tile[0]) ** 2 + (at[1] - tile[1]) ** 2;
     if (distance >= nearest || !stonePrey(b, s, tick, index, at, animals ? tile : undefined)) continue;
