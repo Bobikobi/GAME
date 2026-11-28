@@ -8,7 +8,10 @@ import { describe, expect, test } from 'vitest';
 import { adaptState, newState, step, type Bundle, type State, type Tile } from '../src';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
-const base: Bundle = loadBundle();
+// the real content's rules on a frame 1 map: the shipped map's own frame and remap (the painted valley is frame 2) are not this test's
+const shipped: Bundle = loadBundle();
+const { frame: _frame, remap: _remap, ...plainMap } = shipped.map;
+const base: Bundle = { ...shipped, map: plainMap, tag: 'frame-1-rules' } as Bundle;
 
 const SIZE = 40;
 const MOVED = { dx: 6, dy: 8 };

@@ -15,7 +15,7 @@ import { assemble } from '../../tools/src/assemble.js';
 import { readBoard } from '../../tools/src/board.js';
 import { checkFrame } from '../../tools/src/check.js';
 import { loadAll } from '../../tools/src/load.js';
-import { loadPixelBundle } from '../../tools/test/helpers/world.js';
+import { loadBundle, loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 const PAINTED = new URL('../../tools/test/fixtures/painted-valley/', import.meta.url);
 
@@ -95,6 +95,13 @@ describe('a classic save on the painted valley', () => {
     expect([painted.map.width, painted.map.height]).toEqual([41, 30]);
     expect(painted.map.slots.map((s) => s.id).sort()).toEqual(classic.map.slots.map((s) => s.id).sort());
     expect(checkFrame(painted, {})).toEqual([]);
+  });
+
+  test('the shipped map is that frame: frame 2, its remap the pixel valley\'s slots, so a save of today\'s valley is carried', () => {
+    const shipped = loadBundle();
+    expect(shipped.map.frame).toBe(2);
+    expect(shipped.map.remap).toEqual(REMAP);
+    expect(checkFrame(shipped, {})).toEqual([]);
   });
 
   test('a late save standing in any reachable classic slot wakes on a reachable tile of the same slot', () => {
