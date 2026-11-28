@@ -1294,6 +1294,7 @@ function accept(ctx: Ctx, questId: string, at: Tile): void {
   const q = b.quests[questId];
   if (!q?.giver || !offeredTo(q, s)) refuse('Nobody offers that task.');
   if (s.player.quests[questId]) refuse('You already took that task.');
+  if (questShut(q)) refuse('Nobody offers that task.');
   if (!(q.requires ?? []).every((r) => s.player.quests[r] === 'done')) refuse('Not yet.');
   const tile = npcTile(b, q.giver);
   if (!tile) refuse('Nobody offers that task.');
@@ -1395,6 +1396,14 @@ export function offeredTo(q: { pocket?: string }, s: PublicState): boolean {
 }
 
 /**
+ * Whether a quest is shut by its content (`shut_until`): nobody offers it and nothing starts it. A save that already
+ * holds it keeps it, so every reader of a quest already taken (its steps, the hand-in) ignores this.
+ */
+export function questShut(q: { shut_until?: string }): boolean {
+  return q.shut_until !== undefined;
+}
+
+/**
  * A node with `opens_after` waits for the quest offered to this character, one per wake pocket: another
  * start strikes it as ever.
  */
@@ -1437,7 +1446,7 @@ function autoQuests(ctx: Ctx): void {
       const chains = Object.values(b.expeditions).filter((x) => x.chain.includes(id));
       const chainOpen =
         chains.length === 0 || chains.some((x) => insideExpedition(b, s, x) && expeditionWindowOpen(b, x, ctx.tick));
-      if (!state && chainOpen && (q.requires ?? []).every((r) => s.player.quests[r] === 'done')) {
+      if (!state && chainOpen && !questShut(q) && (q.requires ?? []).every((r) => s.player.quests[r] === 'done')) {
         s.player.quests[id] = 'active';
         ctx.events.push({ e: 'quest', quest: id, state: 'active' });
         moved = true;

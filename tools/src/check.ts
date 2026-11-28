@@ -33,6 +33,7 @@ import { readBoard } from './board';
 import { holeProblems } from './kit/holes';
 import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
+import { clipBaseProblems } from './kit/bases';
 import { CORE_KIT, richProblem, staleLeft } from './kit/rich';
 import { HELD_WAIVERS, heldProblems, heldRows } from './kit/held';
 import { scaleProblems } from './kit/scale';
@@ -54,6 +55,7 @@ import { checkRaces } from './races';
 import { checkFamilies } from './families';
 import { checkSchools } from './schools';
 import { checkHands } from './hands';
+import { checkShut } from './shut';
 import { checkRichness } from './richness';
 import { checkSearch } from './search';
 import { checkSea } from './sea';
@@ -115,6 +117,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkSea(b, assembled.origin));
     issues.push(...checkMapPlan(b, assembled.origin));
     issues.push(...checkHands(b, assembled.origin));
+    issues.push(...checkShut(b, assembled.origin));
     issues.push(...checkBalance(b, paramsFile?.type === 'params' ? paramsFile.params : undefined));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
@@ -1202,6 +1205,12 @@ export function checkKits(a: Assembled): Issue[] {
       issues.push({ file: kitFile, where: `art.held.${kitId}:${p.clip}`, message: p.message, level: 'error' });
     }
     if (kitId === CORE_KIT) {
+      // One base body for each race (DECISIONS 2026-11-28): a clip drawn from a retired walk sheet, or a new clip with no recorded base
+      for (const p of clipBaseProblems(kit.sprites)) {
+        issues.push(p.where === 'sprite'
+          ? { file: kitFile, where: `kit.sprites.${p.name}.clip`, message: p.message, level: 'error' }
+          : { file: 'tools/kit-gen/bases/bases.json', where: p.name, message: p.message, level: 'error' });
+      }
       for (const name of staleLeft(kit.sprites)) {
         issues.push({ file: 'tools/src/kit/rich.ts', where: 'SIXTEEN_PX_LEFT', message: `names "${name}", which the core kit does not hold: take it off the list`, level: 'error' });
       }

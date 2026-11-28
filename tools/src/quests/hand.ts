@@ -72,9 +72,12 @@ function ancestry(b: Bundle): Map<string, Set<string>> {
   return memo;
 }
 
-/** The quests a character who woke in this pocket is offered and can open: offered to it, and every requirement reachable too. */
+/**
+ * The quests a character who woke in this pocket is offered and can open: offered to it, not shut by its content
+ * (`shut_until`), and every requirement reachable too, so a quest after a shut one is out of the hand as well.
+ */
 function reachable(b: Bundle, pocket: string, anc: Map<string, Set<string>>): string[] {
-  const ok = (id: string) => b.quests[id] !== undefined && offered(b.quests[id]!, pocket);
+  const ok = (id: string) => b.quests[id] !== undefined && offered(b.quests[id]!, pocket) && b.quests[id]!.shut_until === undefined;
   return Object.keys(b.quests)
     .filter((id) => ok(id) && !anc.get(id)!.has(id) && [...anc.get(id)!].every(ok))
     .sort();
