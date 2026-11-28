@@ -163,6 +163,17 @@ function daysLain(bundle: Bundle, carcass: Carcass, awakeTick: number): number {
   return idiv(Math.max(0, awakeTick - (carcass.awakeSince ?? carcass.since)), bundle.params.day_length_ms);
 }
 
+/**
+ * How a carcass has aged: fresh (meat, hide and bone), bare (the meat is gone after `meat_spoil_d` game days, hide and bone
+ * remain) or gone (`hide_spoil_d`). What the screen draws it by; the goods follow the same days (`carcassGoods`).
+ */
+export type CarcassStage = 'fresh' | 'bare' | 'gone';
+export function carcassStage(bundle: Bundle, carcass: Carcass, awakeTick: number): CarcassStage {
+  const days = daysLain(bundle, carcass, awakeTick);
+  const { hide_spoil_d, meat_spoil_d } = bundle.params.hunt;
+  return days >= hide_spoil_d ? 'gone' : days >= meat_spoil_d ? 'bare' : 'fresh';
+}
+
 /** Whether nothing is left of a carcass: it has lain `hide_spoil_d` game days or more. */
 export function carcassGone(bundle: Bundle, carcass: Carcass, awakeTick: number): boolean {
   return daysLain(bundle, carcass, awakeTick) >= bundle.params.hunt.hide_spoil_d;
