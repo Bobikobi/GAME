@@ -3,49 +3,49 @@
   "note": "The world lock (G59): the opening's legs in steps and its pays. Re-anchored only with the owner's yes, by \"pnpm world:lock\".",
   "legs": {
     "core/north-meadow": {
-      "from": "core/north-meadow wake [7, 6]",
+      "from": "core/north-meadow wake [5, 2]",
       "to": "core/old-bridge",
-      "steps": 18
+      "steps": 16
     },
     "core/slid-bank": {
-      "from": "core/slid-bank wake [9, 23]",
+      "from": "core/slid-bank wake [5, 13]",
       "to": "core/old-bridge",
-      "steps": 11
+      "steps": 7
     },
     "core/west-bank": {
-      "from": "core/west-bank wake [6, 17]",
+      "from": "core/west-bank wake [6, 7]",
       "to": "core/old-bridge",
-      "steps": 10
+      "steps": 3
     },
     "core/first-fire": {
       "from": "core/old-bridge",
       "to": "core/campfire at the camp's fire",
-      "steps": 4
+      "steps": 10
     },
     "core/into-town": {
       "from": "core/campfire at the camp's fire",
       "to": "core/town-square",
-      "steps": 16
+      "steps": 12
     },
     "core/three-fruits": {
       "from": "core/elder-house",
       "to": "core/bell-bushes",
-      "steps": 24
+      "steps": 37
     },
     "core/herbs-for-pell": {
       "from": "core/trader-stall",
       "to": "core/sun-herbs",
-      "steps": 43
+      "steps": 22
     },
     "core/a-coin-for-maru": {
       "from": "core/elder-house",
       "to": "core/lantern-foot",
-      "steps": 91
+      "steps": 81
     },
     "core/the-night-arch": {
       "from": "core/lantern-foot",
       "to": "core/arch-mouth",
-      "steps": 11
+      "steps": 15
     }
   },
   "pays": {
