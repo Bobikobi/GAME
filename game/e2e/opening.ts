@@ -516,6 +516,9 @@ class Player {
     if (!(await this.state()).inside) {
       // the step in front of the door is the one tile from which the door is the tile ahead
       await this.walkTo({ x: door[0], y: door[1], w: 1, h: 1 }, 'the shop door');
+      // a door whose sides are open ground (the painted town) can be reached from beside it: a player then steps
+      // onto the step in front and faces the door
+      if ((await this.state()).pos.join(',') !== step.join(',')) await this.walk.turnTo('up', step, 'the shop door');
       const at = (await this.state()).pos;
       if (at.join(',') !== step.join(',')) throw new Error(`the shop step is ${step.join(',')}, but the walk ended at ${at.join(',')}`);
       if (how === 'a') {

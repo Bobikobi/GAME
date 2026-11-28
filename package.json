@@ -50,6 +50,7 @@
     "anim": "tsx tools/src/anim/cli.ts",
     "e2e": "tsx game/e2e/run.ts all",
     "e2e:group": "tsx game/e2e/run.ts",
+    "e2e:local": "tsx tools/src/e2e-local.ts",
     "e2e:shop": "tsx game/e2e/shop.ts",
     "e2e:load": "tsx game/e2e/load.ts",
     "perf:valley": "tsx game/e2e/valley-walk.ts",
