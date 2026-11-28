@@ -165,26 +165,47 @@ describe('a hit and a miss', () => {
 });
 
 describe('the moment can happen from every wake pocket', () => {
-  const pockets: [string, Tile][] = [['north meadow', [7, 6]], ['west bank', [6, 17]], ['slid bank', [9, 23]]];
+  // each wake tile as the shipped content places it, so the moment follows the valley when its map is redrawn
+  const pockets: [string, string][] = [['north meadow', 'core/north-meadow'], ['west bank', 'core/west-bank'], ['slid bank', 'core/slid-bank']];
   const STILL = (): WildSense => ({ face: [0, 1], gait: 'still', asleep: false });
   const calm = new Set(['IDLE', 'GRAZE', 'WANDER']);
 
-  test.each(pockets)('%s: a full charge started at the wake tile (or one step on) takes the hare before it has noticed the figure', (_name, wake) => {
+  test.each(pockets)('%s: a full charge started at the wake tile (or one step on) takes the hare before it has noticed the figure', (_name, pocket) => {
     const b = bundle;
+    const wake: Tile = [b.pockets[pocket]!.wake.x, b.pockets[pocket]!.wake.y];
     const spots = b.map.creatures!.spots;
-    const { i } = hareSpots(b).map(({ sp, i }) => ({ i, d: (sp.x - wake[0]) ** 2 + (sp.y - wake[1]) ** 2 })).sort((x, y) => x.d - y.d)[0]!;
-    const sp = spots[i]!;
     const s = started();
+    const walk = walkableFor(b);
+    // the figure stands where it woke, or one step on (a step toward its nearest hare, or out from among the trees): the first of
+    // those tiles from which a full charge at a hare standing on its spot takes it (within the reach, nothing between, and not so
+    // near that the stone flies past)
+    const reach = huntReach(b);
+    const takes = (at: Tile, i: number): boolean => {
+      const here = { ...s, player: { ...s.player, at } };
+      const r = step(b, here, throwAt(here, i, [spots[i]!.x, spots[i]!.y], FULL_POWER), 0);
+      return r.ok && (r.state.player.carcasses ?? []).length === 1;
+    };
+    const from = ([[0, 0], [0, -1], [1, 0], [-1, 0], [0, 1]] as const)
+      .map(([dx, dy]) => [wake[0] + dx, wake[1] + dy] as Tile)
+      .filter(([x, y]) => walk(x, y, s.player))
+      .map((at) => {
+        const near = hareSpots(b)
+          .map(({ sp, i }) => ({ i, d: Math.hypot(sp.x - at[0], sp.y - at[1]) }))
+          .filter(({ i, d }) => d <= reach && takes(at, i))
+          .sort((x, y) => x.d - y.d)[0];
+        return near && { at, i: near.i };
+      })
+      .find(Boolean);
+    expect(from, `no hare a full charge takes from ${wake.join(',')} or one step on`).toBeDefined();
+    const { i } = from!;
     s.player.at = [wake[0], wake[1]];
     const w = wildWorld(b);
     expect(hourOf(b, 0)).toBe(12);
     const charge = b.params.stones.throw_charge_ms;
-    // the figure stands where it woke, then (the slid bank, whose hare is 6.1 tiles off) takes the one step west the reach asks
-    const out = Math.hypot(sp.x - wake[0], sp.y - wake[1]) > huntReach(b);
     let ms = 0;
     for (; ms < 400; ms += 100) wildStep(b, w, s, STILL(), ms);
-    if (out) {
-      s.player.at = [wake[0] + Math.sign(sp.x - wake[0]), wake[1]];
+    if (from!.at[0] !== wake[0] || from!.at[1] !== wake[1]) {
+      s.player.at = [from!.at[0], from!.at[1]];
       ms += b.params.walk_step_ms;
     }
     const readyAt = ms + charge;
