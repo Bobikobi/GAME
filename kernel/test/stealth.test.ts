@@ -17,7 +17,7 @@ import {
   serialize,
   step,
 } from '@game/kernel';
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 type Prop = Bundle['map']['props'][number];
 
@@ -33,7 +33,7 @@ const ROUND: Tile[] = [
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 function wolf(round = true): Prop {

@@ -27,12 +27,12 @@ import {
 } from '@game/kernel';
 import type { WeatherName } from '@game/schema';
 
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 const SEED = widenSeed(5);
