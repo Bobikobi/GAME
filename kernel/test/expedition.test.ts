@@ -20,7 +20,7 @@ import {
   visitNight,
   windowOpen,
 } from '@game/kernel';
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 type Prop = Bundle['map']['props'][number];
 
@@ -44,7 +44,7 @@ const WOLF = 'core/ruins-wolf';
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 function world(): Bundle {

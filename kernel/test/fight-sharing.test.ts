@@ -1,11 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { type Bundle, type FightWorld, fightCreature, fightPlayer, fightTick, hashOf, lastBellAt, newState, pulseDurations, visitNight } from '@game/kernel';
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 import golden from './fixtures/fight-golden.json';
 import { fightArena, fightScripts, playedState, scriptInputs, scriptWorld } from './fight-scripts.js';
 
 let b: Bundle;
-beforeAll(() => { b = fightArena(loadBundle()); });
+beforeAll(() => { b = fightArena(loadPixelBundle()); });
 
 function freeze(value: unknown, seen = new WeakSet<object>()): void {
   if (!value || typeof value !== 'object' || seen.has(value)) return;

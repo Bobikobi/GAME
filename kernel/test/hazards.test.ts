@@ -29,7 +29,7 @@ import {
   windowOpen,
 } from '@game/kernel';
 
-import { loadBundle, mulberry32 } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle, mulberry32 } from '../../tools/test/helpers/world.js';
 
 type Tile = [number, number];
 type Prop = Bundle['map']['props'][number];
@@ -43,7 +43,7 @@ const DUSK = 400_000;
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 function prop(id: string, x: number, y: number, hazard: Prop['hazard'], solid = false): Prop {

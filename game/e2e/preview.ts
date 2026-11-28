@@ -6,7 +6,7 @@
  * PREVIEW_EXTRA="seethrough=0" adds a query to the page (the page's own query wins over the preview's, which has see-through on), for a still that tries one option.
  * PREVIEW_SCALE=N sets the device's pixel ratio (default 1 at 844 x 390; a phone has 3). PREVIEW_MEASURE=1 stops after the valley start and prints the camera's numbers (zoom, canvas, her silhouette and share of the frame height).
  * PREVIEW_TWIN=1 saves beside each still its see-through-off twin (still-*-off.png) and checks that nothing outside 3 figure heights around her differs (bar S3).
- * BASE_URL is the cloud site (the emulator in tools/art/scene/preview.py `check`, with the real policy headers), PASSWORD the site's. One headless Chrome at 844 x 390 (landscape, touch, the phone's frame):
+ * BASE_URL is the cloud site (the private preview's emulator, with the real policy headers), PASSWORD the site's. One headless Chrome at 844 x 390 (landscape, touch, the phone's frame):
  *
  *   1  sign in through the login page, open /preview/?preview: every file answered 200, no refused request, 0 console or page errors so far
  *   2  the game starts in the valley (not in the scene), the painted mount is up with its way out, and the light is the world's at the device clock's hour

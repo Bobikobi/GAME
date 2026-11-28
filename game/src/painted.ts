@@ -86,7 +86,7 @@ export interface PaintedHour {
   elev: number;
   amb: [number, number, number];
   sun: [number, number, number];
-  /** the shadow's lean and length (place.py's sl and sq) */
+  /** the shadow's lean and length (the placer's sl and sq) */
   sl: number;
   sq: number;
   /** how much of the sun a shadow takes */
@@ -182,7 +182,7 @@ export interface PaintedScene {
   fogland?: { bottom: number; top: number };
   /** order v11, optional: the land's own word on how deep its water runs, a factor on the geometry's depth (waterfield.ts RAMP): below 1 shallower, above 1 deeper; absent = 1 */
   water?: { slope?: number };
-  /** the land's units when it streams (written by tools/src/art/scene-bake.ts); absent for a land laid whole */
+  /** the land's units when it streams (written by the exporter); absent for a land laid whole */
   tiles?: PaintedTiles;
 }
 
@@ -716,7 +716,7 @@ interface Leaner {
   cover?: { gate: number; shade: number; push: number };
 }
 
-/** A painted land cut into units (tools/art/scene/tiles.py): tiles/index.json beside scene.json, and the same index in scene.json's `tiles` (tools/src/art/scene-bake.ts). */
+/** A painted land cut into units by the exporter: tiles/index.json beside scene.json, and the same index in scene.json's `tiles`. */
 export interface PaintedTiles {
   format: 1;
   unit: { w: number; h: number };
@@ -724,13 +724,13 @@ export interface PaintedTiles {
   units: (StreamUnitMeta & { pieces: number })[];
   /** per piece (the scene's objects by index): its unit's index in `units` and where it lies in that unit's sheet; null for a piece in no unit */
   pieces: ([number, number, number] | null)[];
-  /** the still water the exporter baked (tools/src/art/scene-bake.ts); null for a land with no water, absent for a cut made before it */
+  /** the still water the exporter baked; null for a land with no water, absent for a cut made before it */
   still?: { grid: { w: number; h: number }; seam: number; field: string; base: string; ramp: string; tone: string[] | null } | null;
   /** the canopy's cover masks the exporter baked (red the gate, green the rays' stop); null for a land with no canopy */
   cover?: { file: string; w: number; h: number } | null;
   /** the lit fog's inputs the exporter baked: the walls' distance and the low ground per art pixel, and the tall pieces' mask per unit */
   fog?: { wall: string; aw: number; ah: number; mask: string[]; /** the noise tile baked by the exporter; absent on a scene baked before it */ noise?: string };
-  /** the meadow's mask per unit (tools/art/scene/grass.py, 255 on the plate pixels that move); absent on a scene baked before it: the meadow then holds still */
+  /** the meadow's mask per unit (255 on the plate pixels that move); absent on a scene baked before it: the meadow then holds still */
   grass?: { mask: string[] };
 }
 
@@ -2383,7 +2383,7 @@ export class PaintedMount {
   }
 
   /**
-   * A unit's wind from the exporter (tools/src/art/scene-wind.ts): the frames' places and the two sheets of each kind, fetched and decoded off the main thread, then each laid as an image
+   * A unit's wind from the exporter: the frames' places and the two sheets of each kind, fetched and decoded off the main thread, then each laid as an image
    * texture (2 to 3 ms, as the unit's own layers are) in place of the two full-layer readbacks and the canvas uploads of computeUnitWind. Returns false when a file did not load (the
    * scene's own computation then runs); a unit evicted while it loads leaves true with nothing laid.
    */
@@ -2763,7 +2763,7 @@ export class PaintedMount {
     let alpha: Uint8Array | undefined;
     let sheetW = 0;
     if (unit.alpha && sheet) {
-      // the exporter's alpha (tiles.py): fetched and inflated off the main thread, a frame or more of waiting; a file that is not the sheet's size falls back to the picture's own
+      // the exporter's alpha: fetched and inflated off the main thread, a frame or more of waiting; a file that is not the sheet's size falls back to the picture's own
       let got: Uint8Array | null | undefined;
       BROWSER_EARLY.fetch(`${this.base}/${unit.alpha}`).then(inflateBlob).then((v) => { got = v; }, () => { got = null; });
       while (got === undefined) yield;
@@ -4179,7 +4179,7 @@ export async function mountPainted(raw: Bundle, search: string): Promise<Painted
   };
   // the three small files at once: each is a round trip, 170 ms on a phone's 4G
   const [scene, lynx, means] = await Promise.all([read<PaintedScene>('scene.json'), read<Record<string, LynxStrip>>('figures/lynx.json'), read<[number, number, number]>('water.json')]);
-  // a land cut into units streams (scene.json's `tiles`: tools/art/scene/tiles.py, scene-bake.ts); `?whole` lays it whole
+  // a land cut into units streams (scene.json's `tiles`); `?whole` lays it whole
   const tiles = !q.has('whole') && scene.tiles?.format === 1 ? scene.tiles : undefined;
   const mount = new PaintedMount(raw, scene, base, lynx, new Set((q.get('hold') ?? '').split(',').filter(Boolean)), means, Number(q.get('waterstage') ?? 6), presenceOf(search), tiles);
   if (tiles && !q.has('late')) mount.early.want(earlyUnits(mount, tiles, base));

@@ -7,6 +7,7 @@ import { RICH } from './config';
 import { startPerf } from './perf';
 import { applyDisplay } from './settings-apply';
 import { Controls } from './input';
+import { kitAtlasOf } from './kit-atlas';
 import { paintedWanted } from './trial';
 import { UI } from './ui/ui';
 import './style.css';
@@ -49,7 +50,22 @@ applyDisplay(document.documentElement, perf.settings);
 // the title first: it draws from the bundle alone, so it goes up before the engine is fetched; the engine and the world follow
 // behind it (game.ts), and a start pressed before the world is ready waits on a "preparing the valley" bar (ui.ts `begin`)
 app.ui.openTitle();
-requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => void mountTrial().then(() => import('./game')).then((m) => m.startGame(perf, query)), 0)));
+// the kit's atlas sheets start behind the title, beside the engine's download (kit-atlas.ts); the boot cuts them into the sprites' own textures
+const atlas = kitAtlasOf(query);
+requestAnimationFrame(() =>
+  requestAnimationFrame(() =>
+    setTimeout(
+      () =>
+        void mountTrial()
+          .then(async () => {
+            app.kitAtlas = await atlas;
+          })
+          .then(() => import('./game'))
+          .then((m) => m.startGame(perf, query)),
+      0,
+    ),
+  ),
+);
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) app.session?.save();

@@ -22,7 +22,7 @@ import {
   serialize,
   step,
 } from '@game/kernel';
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { loadPixelBundle } from '../../tools/test/helpers/world.js';
 
 type Prop = Bundle['map']['props'][number];
 
@@ -38,7 +38,7 @@ const TOWN: Tile = [22, 7];
 let base: Bundle;
 
 beforeAll(() => {
-  base = loadBundle();
+  base = loadPixelBundle();
 });
 
 /** The bundle with the meadow, no hazards but these, and no hunger drain. */

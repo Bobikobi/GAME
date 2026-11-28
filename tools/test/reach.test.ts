@@ -3,15 +3,15 @@
  * the core content passes with no line, and a tree planted in front of the
  * bridge gets an error that names the tree and the places it cuts off.
  */
+import { loadPixelBundle } from './helpers/world';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { type Bundle, makeWalkable } from '@game/kernel';
-import { runCheck } from '../src/check';
 import { checkReach } from '../src/reach';
 
 let bundle: Bundle;
 
 beforeAll(() => {
-  const found = runCheck().assembled.bundle;
+  const found = loadPixelBundle();
   if (!found) throw new Error('Content did not assemble into a bundle.');
   bundle = found;
 });

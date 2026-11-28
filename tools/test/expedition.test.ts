@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { type Bundle, findSlot, inRect, makeWalkable } from '@game/kernel';
 import { runCheck } from '../src/check';
+import { loadPixelBundle, pinPixelValley } from './helpers/world';
 import { CONTENT_DIR } from '../src/load';
 import { RULES_PAGE, checkPlay } from '../src/play';
 
@@ -73,7 +74,7 @@ function walls(b: Bundle): Prop[] {
 }
 
 beforeAll(() => {
-  const found = runCheck().assembled.bundle;
+  const found = loadPixelBundle();
   if (!found) throw new Error('Content did not assemble into a bundle.');
   base = found;
 });
@@ -369,6 +370,7 @@ describe('what an expedition gives, in the content check', () => {
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+  pinPixelValley(root);
 
   // the place, its climax and an inscription its riddles read, on a copy of the core map
   const mapPath = join(root, 'core', 'map.json');
@@ -383,7 +385,7 @@ describe('what an expedition gives, in the content check', () => {
     return !(q.sprite.endsWith('/ruin_pillar') && q.x === 32 && q.y >= 21 && q.y <= 30);
   });
   map.map.slots.push({ id: 'core/test-hall', kind: 'area', x: 35, y: 21, w: 4, h: 5 }, { id: 'core/test-altar', kind: 'ruin', x: 37, y: 24, w: 1, h: 1 });
-  map.map.props.push(...walls(runCheck().assembled.bundle!), {
+  map.map.props.push(...walls(loadPixelBundle()), {
     id: 'core/test-hall-stone',
     sprite: 'core/base-kit:props/standing_stone',
     x: 38,

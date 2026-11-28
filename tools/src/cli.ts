@@ -17,6 +17,7 @@ import { boardIsCurrent, computeBoard, readCommits, readPoints, squashedCommits,
 import { formatIssues, runCheck, runRepoCheck } from './check';
 import { LOCK_FILE, REPO_ROOT } from './load';
 import { writeLock } from './lock';
+import { writeAtlas } from './kit/atlas';
 import { formatMaking, makingReport } from './making';
 import { buildInventory, checkLine } from './valley-inventory';
 
@@ -92,7 +93,10 @@ switch (command) {
     for (const [kitId, kit] of Object.entries(result.assembled.kits)) {
       cpSync(kit.dir, join(kitOut, kitId), { recursive: true, filter: (src) => !src.endsWith('.json') });
     }
+    // the boot's sprites in a few sheets beside the loose files (tools/src/kit/atlas.ts)
+    const atlas = writeAtlas(b.sprites, join(REPO_ROOT, 'game', 'public'));
     console.log(`bundle ${b.tag}: ${Object.keys(b.items).length} items, ${Object.keys(b.instances).length} placed nodes, ${Object.keys(b.sprites).length} sprites`);
+    console.log(`kit atlas: ${atlas.files} files in ${atlas.sheets} sheets${atlas.left ? `, ${atlas.left} too big for a sheet (loaded loose)` : ''}`);
     break;
   }
   case 'board': {
