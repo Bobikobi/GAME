@@ -1,5 +1,5 @@
 /**
- * Streaming a painted land by units (V5b, private #44): the scene is cut by the exporter (tools/art/scene/export.py --tiles) into units on the 64 px grid, each layer of a unit one
+ * Streaming a painted land by units (V5b, private #44): the scene is cut by the private exporter into units on the 64 px grid, each layer of a unit one
  * picture, and only the units near the player are held as textures. This file is the pure state machine behind a port (fetch, decode, upload, drop, the clock): no browser, no
  * Phaser, so a unit test drives it with a fake port and a fake clock (game/test/painted-stream.test.ts). The mount (painted.ts) is the port.
  *
@@ -27,7 +27,7 @@ export interface StreamLayerMeta {
   bytes: number;
 }
 
-/** a unit's baked wind (tiles/wind-<ux>-<uy>.json, tools/src/art/scene-wind.ts): per sheet (the tall pieces' or the low growth's) its two pictures and where each frame lies, [object, lean, k, x, y] */
+/** a unit's baked wind (tiles/wind-<ux>-<uy>.json, baked by the exporter): per sheet (the tall pieces' or the low growth's) its two pictures and where each frame lies, [object, lean, k, x, y] */
 export interface WindSheets {
   sheets: { low: boolean; w: number; h: number; c: string; n: string; place: [number, number, number, number, number][] }[];
 }
