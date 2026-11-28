@@ -135,8 +135,13 @@ const WALK_FRAME_MS = 25;
  * tile, from the second tile to the sixth, to within a frame over four tiles. The line starts where the player stands, or,
  * when no such line runs from there (the painted valley's wakes stand among trees and banks), on the nearest tile the player
  * can walk to that has one: the player is set down there, since the test times the pace and not the way to it.
+ * The game's loop sleeps from before the key goes down until the key is up again, so the body moves only in the frames
+ * stepped here: with the loop awake, a slow runner's own clock walked the body three or four tiles between the key and
+ * the first stepped frame, and the line ran out (CI run 46121996363: 4 tiles, then 3, against the standing stone at its end).
  */
 async function walkMs(page: Page): Promise<number> {
+  // the player free first, so the line starts where the walk will
+  await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking && !window.__game.world.move', 'the player to be free to walk');
   const dir = await page.eval<{ key: string; run: number; from: [number, number] }>(`(() => {
     const s = window.__game.session, w = window.__game.world;
     const dirs = [['ArrowRight', 1, 0], ['ArrowLeft', -1, 0], ['ArrowDown', 0, 1], ['ArrowUp', 0, -1]];
@@ -174,19 +179,21 @@ async function walkMs(page: Page): Promise<number> {
     window.__game.world.bind(s);
   })()`);
   await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking && !window.__game.world.move', 'the player to be free to walk');
-  await page.key(dir.key, 'keyDown');
-  let times: number[];
+  const from = dir.from.join(',');
+  await page.eval(`window.__game.world.game.loop.sleep()`);
+  let walk: { times: number[]; moved?: string };
   try {
-    await page.waitFor('window.__game.controls.vector().some((v) => v !== 0)', 'the held arrow to reach the controls');
-    // the game's own loop, stepped by hand at a frame of WALK_FRAME_MS: the wall clock cannot time the pace, since
-    // a frame walks one tile at most (walking.ts), and a runner drawing a frame slower than the light 170 ms walks
-    // every load at its frame rate (CI run 40279090004: 228 ms light against 229 ms heavy)
-    times = await page.eval<number[]>(`(async () => {
-      const loop = window.__game.world.game.loop, s = window.__game.session;
-      const times = [];
-      let t = loop.lastTime, last = s.pos.join(',');
-      loop.sleep();
-      try {
+    await page.key(dir.key, 'keyDown');
+    try {
+      await page.waitFor('window.__game.controls.vector().some((v) => v !== 0)', 'the held arrow to reach the controls');
+      // the game's own loop, stepped by hand at a frame of WALK_FRAME_MS: the wall clock cannot time the pace, since
+      // a frame walks one tile at most (walking.ts), and a runner drawing a frame slower than the light 170 ms walks
+      // every load at its frame rate (CI run 40279090004: 228 ms light against 229 ms heavy)
+      walk = await page.eval<{ times: number[]; moved?: string }>(`(async () => {
+        const loop = window.__game.world.game.loop, s = window.__game.session;
+        const times = [];
+        let t = loop.lastTime, last = s.pos.join(',');
+        if (last !== ${JSON.stringify(from)}) return { times, moved: last };
         for (let n = 1; n <= 400 && times.length < 6; n++) {
           t += ${WALK_FRAME_MS};
           loop.step(t);
@@ -195,16 +202,21 @@ async function walkMs(page: Page): Promise<number> {
           // the page's events and the test's calls go on between frames
           await new Promise((ok) => setTimeout(ok, 0));
         }
-      } finally {
-        loop.lastTime = performance.now();
-        loop.wake();
-      }
-      return times;
-    })()`);
+        return { times };
+      })()`);
+    } finally {
+      await page.key(dir.key, 'keyUp');
+    }
   } finally {
-    await page.key(dir.key, 'keyUp');
+    await page.eval(`(() => {
+      const loop = window.__game.world.game.loop;
+      loop.lastTime = performance.now();
+      loop.wake();
+    })()`);
   }
-  if (times.length < 6) throw new Error(`${times.length} tiles walked in 400 frames`);
+  if (walk.moved) throw new Error(`the player moved from ${from} to ${walk.moved} before the first stepped frame`);
+  const times = walk.times;
+  if (times.length < 6) throw new Error(`${times.length} tiles walked in 400 frames from ${from} (${dir.key}, a line of ${dir.run})`);
   await page.waitFor('!window.__game.world.move', 'the walk to stop');
   return (times[5]! - times[1]!) / 4;
 }

@@ -149,6 +149,26 @@ export function nextTile(field: Field, at: Tile, open: Open): Tile | undefined {
   return best;
 }
 
+/** Shortest run to flight distance past the threat. The caller supplies the walkable tiles with clearance. */
+export function boltPath(open: Open, start: Tile, threat: Tile, reach: number): Tile[] | undefined {
+  const box = boxAround(start, reach + 2);
+  const dx = threat[0] - start[0];
+  const dy = threat[1] - start[1];
+  const exits: Tile[] = [];
+  for (let y = box.y0; y < box.y0 + box.h; y++) {
+    for (let x = box.x0; x < box.x0 + box.w; x++) {
+      if ((x - threat[0]) * dx + (y - threat[1]) * dy <= 0) continue;
+      if (d2([x, y], threat) >= reach * reach && open(x, y)) exits.push([x, y]);
+    }
+  }
+  if (!exits.length) return undefined;
+  const field: Field = { box, v: bfs(open, exits, box, box.w * box.h), none: -1 };
+  if (valueAt(field, start[0], start[1]) === field.none) return undefined;
+  const path: Tile[] = [];
+  for (let at = nextTile(field, start, open); at; at = nextTile(field, at, open)) path.push(at);
+  return path.length ? path.reverse() : undefined;
+}
+
 /**
  * One step of a burrower's run home (BEHAVIOUR 1, flight B). When the threat stands between it and
  * home (the threat is nearer the den by the home map), undefined: the caller flees in the open on the

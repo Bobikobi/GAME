@@ -326,22 +326,24 @@ export class Walker {
     const sideY = mx;
     const offset = (before[0] - hit.x) * sideX + (before[1] - hit.y) * sideY;
     const side = offset < -1e-6 * reach ? -1 : 1;
-    const dx = side * sideX;
-    const dy = side * sideY;
 
-    // Spend at most the piece's reach from where it began, checking both axes before reporting either.
+    // Spend at most the piece's reach from where it began, checking both axes before reporting either. The offset's
+    // side first; when a refused tile or another trunk stands there, the other side (a body pressed between two
+    // trunks in a grove still has a way round the one ahead: public #919, the load walk at 3,14)
     const [x, y] = before;
-    this.x = x;
-    this.y = y;
-    const across = this.slideTo(x + dx, y + dy, open, 0);
-    const [sx, sy] = resolveDiscs(this.x, this.y, discs);
-    if (!across || Math.hypot(sx - this.x, sy - this.y) > 1e-6) {
-      this.x = nx;
-      this.y = ny;
-      return false;
+    for (const s of [side, -side]) {
+      this.x = x;
+      this.y = y;
+      const across = this.slideTo(x + s * sideX, y + s * sideY, open, 0);
+      const [sx, sy] = resolveDiscs(this.x, this.y, discs);
+      if (across && Math.hypot(sx - this.x, sy - this.y) <= 1e-6) {
+        note(across);
+        return true;
+      }
     }
-    note(across);
-    return true;
+    this.x = nx;
+    this.y = ny;
+    return false;
   }
 
   /** An all-or-nothing move over checked tile edges. Return the tile reached between the two axes. */
