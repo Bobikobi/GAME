@@ -4,7 +4,7 @@
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type State, newState, step } from '@game/kernel';
+import { type Bundle, type State, findSlot, newState, step } from '@game/kernel';
 
 import { T } from '../src/config';
 import { MIST, MIST_MEND_PER_S, MIST_RGB, type Clear, firstTaskDone, mistChanged, mistClears, mistDensity, mistFill, mistPixels, mistRadius, mistStep, moteAt } from '../src/mist';
@@ -218,9 +218,12 @@ describe('the bridge draws the mist back (criterion 4)', () => {
     return { ...fresh, player: { ...fresh.player, restored: ['core/old-bridge'] } };
   };
 
-  test.each(POCKETS)('%s: a mended bridge clears at least 13 tiles around (14,18), the middle of its two rows, all three wake tiles inside', (id) => {
+  test.each(POCKETS)('%s: a mended bridge clears at least 13 tiles around the middle of its slot, all three wake tiles inside', (id) => {
     const clears = mistClears(b, mended(id));
-    const bridge = clears.find((c) => c.x === 14 && c.y === 18)!;
+    // the bridge's slot read from the map (the painted valley moved it, public #919): its middle tile, as mistClears takes it
+    const slot = findSlot(b.map, b.restores['core/old-bridge']!.place.slot)!;
+    const bridge = clears.find((c) => c.x === slot.x + Math.floor(slot.w / 2) && c.y === slot.y + Math.floor(slot.h / 2))!;
+    expect(bridge, 'no clear place at the bridge').toBeDefined();
     expect(bridge.r).toBeGreaterThanOrEqual(13);
     const { width, height } = b.map;
     for (const w of POCKETS) {

@@ -3,9 +3,9 @@
   "note": "The world lock (G59): the opening's legs in steps and its pays. Re-anchored only with the owner's yes, by \"pnpm world:lock\".",
   "legs": {
     "core/north-meadow": {
-      "from": "core/north-meadow wake [5, 2]",
+      "from": "core/north-meadow wake [5, 3]",
       "to": "core/old-bridge",
-      "steps": 16
+      "steps": 17
     },
     "core/slid-bank": {
       "from": "core/slid-bank wake [5, 13]",
