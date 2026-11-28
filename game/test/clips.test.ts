@@ -35,8 +35,8 @@ beforeAll(() => {
 });
 
 describe('B2: a clip is found by verb, race and view', () => {
-  test('all 13 verbs x 3 views are 39 lookups, each returning that sheet and its own frame time', () => {
-    expect(CLIP_VERBS).toHaveLength(13);
+  test('all 23 verbs x 3 views are 69 lookups, each returning that sheet and its own frame time', () => {
+    expect(CLIP_VERBS).toHaveLength(23);
     expect(CLIP_VIEWS).toHaveLength(3);
     let looked = 0;
     const times = new Set<number>();
@@ -54,9 +54,9 @@ describe('B2: a clip is found by verb, race and view', () => {
         looked += 1;
       }
     }
-    expect(looked).toBe(39);
+    expect(looked).toBe(69);
     // every sheet is told apart by its own time: a lookup that ignored the verb or the view would show up as a repeat
-    expect(times.size).toBe(39);
+    expect(times.size).toBe(69);
   });
 
   test('the clip\'s display fit (permille) rides through the schema and the assembler to the bundle, and a clip with none has none', () => {
@@ -94,6 +94,44 @@ describe('B2: a clip is found by verb, race and view', () => {
     for (const race of ['core/human', 'core/elf', 'core/skeleton']) {
       for (const verb of CLIP_VERBS) for (const dir of ['left', 'right', 'up', 'down'] as const) expect(clipFor(plain, verb, race, dir)).toBeUndefined();
     }
+  });
+});
+
+describe('takes: a clip drawn more than once is played at random among its takes', () => {
+  test('a roll picks among the takes of a verb, race and view; the default is the first take', () => {
+    const first = `${KIT}:chars/human_hit_left`;
+    const second = `${KIT}:chars/human_hit_left_v2`;
+    const third = `${KIT}:chars/human_hit_left_v3`;
+    expect(clipFor(sprites, 'hit', HUMAN, 'left')!.key).toBe(first);
+    expect(clipFor(sprites, 'hit', HUMAN, 'left', 0)!.key).toBe(first);
+    expect(clipFor(sprites, 'hit', HUMAN, 'left', 0.34)!.key).toBe(second);
+    expect(clipFor(sprites, 'hit', HUMAN, 'left', 0.99)!.key).toBe(third);
+    // a roll of exactly 1 (out of its range) still names a take, never one past the end
+    expect(clipFor(sprites, 'hit', HUMAN, 'left', 1)!.key).toBe(third);
+    // each take is its own sheet with its own frame time
+    expect(new Set([0, 0.4, 0.9].map((r) => clipFor(sprites, 'hit', HUMAN, 'left', r)!.frame_ms)).size).toBe(3);
+  });
+
+  test('a clip with one take is the same whatever the roll, and the other views keep their one take', () => {
+    for (const r of [0, 0.5, 0.99]) {
+      expect(clipFor(sprites, 'hit', HUMAN, 'down', r)!.key).toBe(`${KIT}:chars/human_hit_front`);
+      expect(clipFor(sprites, 'hit', HUMAN, 'right', r)!.flip).toBe(true);
+    }
+  });
+
+  test('two sheets of the same take keep the later one, never a coin toss between them', () => {
+    const twice = { ...sprites, 'extra:hit_front': { ...sprites[`${KIT}:chars/human_hit_front`]!, frame_ms: 777 } } as typeof sprites;
+    for (const r of [0, 0.5, 0.99]) expect(clipFor(twice, 'hit', HUMAN, 'down', r)!.key).toBe('extra:hit_front');
+  });
+
+  test('the player hands back the take that began, so what reads its numbers later reads the same take', () => {
+    const player = new ClipPlayer();
+    expect(player.current).toBeUndefined();
+    const found = clipFor(sprites, 'hit', HUMAN, 'left', 0.5)!;
+    player.start(found, 0);
+    expect(player.current).toBe(found);
+    player.stop();
+    expect(player.current).toBeUndefined();
   });
 });
 

@@ -2635,7 +2635,8 @@ export class WorldScene extends Phaser.Scene {
     const s = this.session;
     const race = s?.state.player.race;
     if (!s || !race || this.falling) return false;
-    const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing);
+    // a clip with several takes plays one at random each time it begins
+    const found = clipFor(this.b.sprites as ClipSprites, verb, race, s.facing, Math.random());
     if (found && !this.textures.exists(found.key)) {
       this.figure.stop(); // its sheet is still on the way (or never came): today's motion, as with no clip
       return false;
@@ -4686,7 +4687,7 @@ export class WorldScene extends Phaser.Scene {
       const verb = size === 'large' ? 'push' : 'throw';
       const played = this.playClip(verb, undefined);
       // the stone is in the hand from the first frame of the clip, and follows the drawn hand to the release (the clip's `hand` points)
-      const found = played ? clipFor(this.b.sprites as ClipSprites, verb, s.state.player.race, s.facing) : undefined;
+      const found = played ? this.figure.current : undefined;
       // it leaves the hand at the clip's last hand point (the frame where the drawing opens the hand), else at the old fixed time
       const release = !played ? 0 : found?.hand ? (found.hand.length - 1) * found.frame_ms : THROW_RELEASE_MS[verb];
       this.grip = found?.hand ? { found, start: this.time.now } : undefined;

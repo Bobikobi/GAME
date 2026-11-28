@@ -372,7 +372,7 @@ export function buildInventory(a: Assembled, reads: Reads = {}): Inventory {
   const creatureClips = new Map<string, string>();
   for (const [kitId, k] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(k.sprites)) {
-      if (s.clip) clipSheets.set(`${s.clip.verb}|${s.clip.race}|${s.clip.view}`, `${kitId}:${name}`);
+      if (s.clip && (s.clip.take ?? 1) === 1) clipSheets.set(`${s.clip.verb}|${s.clip.race}|${s.clip.view}`, `${kitId}:${name}`);
       if (s.creature_clip) creatureClips.set(`${s.creature_clip.creature}|${s.creature_clip.verb}|${s.creature_clip.view}`, `${kitId}:${name}`);
     }
   }
