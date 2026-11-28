@@ -5732,7 +5732,8 @@
             100
           ],
           "fit_permille": 719
-        }
+        },
+        "scale": 0.95
       },
       "chars/human_die_front": {
         "file": "chars/human_die_front.png",
@@ -5755,7 +5756,8 @@
             99
           ],
           "fit_permille": 698
-        }
+        },
+        "scale": 0.92
       },
       "chars/human_die_back": {
         "file": "chars/human_die_back.png",
@@ -5778,7 +5780,8 @@
             101
           ],
           "fit_permille": 740
-        }
+        },
+        "scale": 0.99
       },
       "chars/human_run_left": {
         "file": "chars/human_run_left.png",
@@ -5801,7 +5804,8 @@
             100
           ],
           "fit_permille": 719
-        }
+        },
+        "scale": 1
       },
       "chars/human_run_front": {
         "file": "chars/human_run_front.png",
@@ -5824,7 +5828,8 @@
             99
           ],
           "fit_permille": 698
-        }
+        },
+        "scale": 0.97
       },
       "chars/human_run_back": {
         "file": "chars/human_run_back.png",
@@ -5847,7 +5852,8 @@
             101
           ],
           "fit_permille": 740
-        }
+        },
+        "scale": 1.07
       },
       "chars/human_hit_heavy_left": {
         "file": "chars/human_hit_heavy_left.png",
@@ -5870,7 +5876,8 @@
             100
           ],
           "fit_permille": 719
-        }
+        },
+        "scale": 0.98
       },
       "chars/human_hit_heavy_front": {
         "file": "chars/human_hit_heavy_front.png",
@@ -5893,7 +5900,8 @@
             99
           ],
           "fit_permille": 698
-        }
+        },
+        "scale": 0.98
       },
       "chars/human_hit_heavy_back": {
         "file": "chars/human_hit_heavy_back.png",
@@ -5916,7 +5924,8 @@
             101
           ],
           "fit_permille": 740
-        }
+        },
+        "scale": 0.99
       },
       "tiles/planks": {
         "file": "tiles/planks.png",
