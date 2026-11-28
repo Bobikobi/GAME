@@ -133,7 +133,7 @@ describe('trunk discs', () => {
     expect(w.y).toBeLessThan(d.y - R);
   });
 
-  test('B3: a refused tile blocks the clockwise slide without the box entering it', () => {
+  test('B3: a refused tile blocks the clockwise slide without the box entering it, and the body goes round by the other side', () => {
     const wallX = 10;
     const d: Disc = { x: wallX * ART_PX - BODY_BOX.w / 2, y: 10 * ART_PX + 32, r: R };
     const wall = (x: number, y: number) => x !== wallX || y !== 10;
@@ -141,16 +141,38 @@ describe('trunk discs', () => {
     const w = new Walker();
     w.x = d.x;
     w.y = startY;
+    for (let i = 0; i < 40; i++) {
+      w.frame([0, -1], FRAME, STEP_MS, wall, [d]);
+      expect(w.x + BODY_BOX.w / 2).toBeLessThanOrEqual(wallX * ART_PX);
+      expect(w.x).toBeLessThanOrEqual(d.x);
+      expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
+    }
+    expect(w.y).toBeLessThan(d.y - R);
+    // The same first step on open ground would put the box across the refused tile's edge.
+    const free = new Walker();
+    free.x = d.x;
+    free.y = startY;
+    free.frame([0, -1], FRAME, STEP_MS, open, [d]);
+    expect(free.x + BODY_BOX.w / 2).toBeGreaterThan(wallX * ART_PX);
+  });
+
+  test('B3b: a refused tile on the clockwise side and a trunk on the other: the body stops, inside neither', () => {
+    const wallX = 10;
+    const d: Disc = { x: wallX * ART_PX - BODY_BOX.w / 2, y: 10 * ART_PX + 32, r: R };
+    const beside: Disc = { x: d.x - BODY_BOX.w / 2 - R - 1, y: d.y + R + BODY_BOX.h / 2, r: R };
+    const wall = (x: number, y: number) => x !== wallX || y !== 10;
+    const startY = d.y + R + BODY_BOX.h / 2;
+    const w = new Walker();
+    w.x = d.x;
+    w.y = startY;
     for (let i = 0; i < 20; i++) {
-      expect(w.frame([0, -1], FRAME, STEP_MS, wall, [d])).toEqual([]);
+      expect(w.frame([0, -1], FRAME, STEP_MS, wall, [d, beside])).toEqual([]);
       expect(w.x + BODY_BOX.w / 2).toBeLessThanOrEqual(wallX * ART_PX);
       expect(w.y).toBeCloseTo(startY, 6);
       expect(w.moving).toBe(false);
       expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
+      expect(gap(w, beside)).toBeGreaterThanOrEqual(R - 1e-6);
     }
-    // The same first step on open ground would put the box across the refused tile's edge.
-    w.frame([0, -1], FRAME, STEP_MS, open, [d]);
-    expect(w.x + BODY_BOX.w / 2).toBeGreaterThan(wallX * ART_PX);
   });
 
   test('a diagonal sideways step reports both tile entries in order', () => {
@@ -193,6 +215,24 @@ describe('trunk discs', () => {
     walk(w, [0, 1], 4000, discs);
     expect(w.y).toBeGreaterThan(640 + 5 * 50 + R);
     for (const d of discs) expect(gap(w, d)).toBeGreaterThanOrEqual(R - 1e-6);
+  });
+
+  test('a head-on trunk with a second trunk on the offset side: the body goes round by the other side (the painted grove at 3,14, public #919)', () => {
+    // the load walk on the painted valley (GPU run of 28.11): left along row 14, the body 1 px above the trunk ahead's centre, so the
+    // offset side is up, where a second trunk stands; the walk stopped there for 400 frames while the side below was clear
+    const ahead: Disc = { x: 225, y: 934, r: R };
+    const above: Disc = { x: 250, y: 916, r: R };
+    const w = new Walker();
+    w.x = 248;
+    w.y = 933;
+    for (let i = 0; i < 200; i++) {
+      // the frame and the tile time of that run: 25 ms a frame, a tile in 175 ms
+      w.frame([-1, 0], 25, 175, open, [ahead, above]);
+      expect(gap(w, ahead)).toBeGreaterThanOrEqual(R - 1e-6);
+      expect(gap(w, above)).toBeGreaterThanOrEqual(R - 1e-6);
+    }
+    expect(w.x).toBeLessThan(ahead.x - R - BODY_BOX.w / 2);
+    expect(w.y).toBeGreaterThan(ahead.y - BODY_BOX.h / 2);
   });
 
   test('a refused tile still wins over a disc: the body is not pushed into a wall', () => {
