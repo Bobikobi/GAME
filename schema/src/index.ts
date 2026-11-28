@@ -808,6 +808,11 @@ export const QuestBody = Type.Object(
     summary: Text,
     steps: Type.Array(QuestStep, { minItems: 1, maxItems: 6 }),
     requires: Type.Optional(Type.Array(Id, { maxItems: 4 })),
+    shut_until: Type.Optional({
+      ...Text,
+      description:
+        'Shut until what is named here exists (a place drawn, a track done): nobody offers the quest and nothing starts it, and `pnpm check` names it. A save that already took it keeps it and can finish it. Left out: open.',
+    }),
     talk: Type.Optional(
       Type.Object(
         {

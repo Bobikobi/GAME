@@ -6518,6 +6518,12 @@
                 "type": "string"
               }
             },
+            "shut_until": {
+              "minLength": 1,
+              "maxLength": 240,
+              "type": "string",
+              "description": "Shut until what is named here exists (a place drawn, a track done): nobody offers the quest and nothing starts it, and `pnpm check` names it. A save that already took it keeps it and can finish it. Left out: open."
+            },
             "talk": {
               "additionalProperties": false,
               "description": "What the giver says, in the giver's voice. \"{name}\" in a line is the player's name.",
