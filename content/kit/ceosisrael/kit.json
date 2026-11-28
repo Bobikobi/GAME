@@ -20,7 +20,7 @@
           "plum",
           "bark"
         ],
-        "scale": 0.79
+        "scale": 0.87
       },
       "props/fig_bush_empty": {
         "file": "props/fig_bush_empty.png",
@@ -31,7 +31,7 @@
           "green",
           "bark"
         ],
-        "scale": 0.79
+        "scale": 0.87
       },
       "items/fig": {
         "file": "items/fig.png",

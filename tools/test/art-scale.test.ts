@@ -5,7 +5,8 @@ import { PNG } from 'pngjs';
 import { describe, expect, test } from 'vitest';
 
 import { runCheck } from '../src/check.js';
-import { ADULT_SPRITE, counts, declareScales, distanceOf, drawnHeight, isAdvisory, knownShort, measureKits, opaqueHeight, rangeOf, renderScale, verdictOf } from '../src/art/scale.js';
+import { ADULT_FRAME, ADULT_SPRITE, counts, declareScales, distanceOf, drawnHeight, isAdvisory, knownShort, measureKits, opaqueHeight, rangeOf, renderScale, verdictOf } from '../src/art/scale.js';
+import { loadBases } from '../src/kit/bases.js';
 import { scaleKindOf } from '../src/kit/scale.js';
 import { CONTENT_DIR } from '../src/load.js';
 
@@ -64,11 +65,18 @@ describe('the verdict', () => {
 describe('the shipped kits', () => {
   const { adultPx, rows } = measureKits();
 
-  test('the adult is measured on the human, not assumed', () => {
-    expect(ADULT_SPRITE).toBe('chars/human_down');
+  test('the adult is measured on the human base body, not assumed', () => {
+    expect(ADULT_SPRITE).toBe(loadBases().bases.human!.front);
+    expect(ADULT_FRAME).toBe(loadBases().base_frame);
     expect(adultPx).toBeGreaterThan(60);
     expect(adultPx).toBeLessThan(96);
-    expect(rows.find((r) => r.name === ADULT_SPRITE)?.chars).toBe(1);
+  });
+
+  test('the adult is that base frame as the game shows it, so a walk changes no declared height', () => {
+    const kit = JSON.parse(readFileSync(join(CONTENT_DIR, 'kit', 'core', 'kit.json'), 'utf8')) as { kit: { sprites: Record<string, { file: string; w: number; h: number; frames: number; cols?: number; clip: { fit_permille: number } }> } };
+    const s = kit.kit.sprites[ADULT_SPRITE]!;
+    const png = PNG.sync.read(readFileSync(join(CONTENT_DIR, 'kit', 'core', s.file)));
+    expect(adultPx).toBeCloseTo((opaqueHeight(png, s.w, ADULT_FRAME, s.h, s.cols ?? s.frames) * s.clip.fit_permille) / 1000, 1);
   });
 
   test('every world sprite declares its scale, and the declaration is the measure', () => {
@@ -127,6 +135,19 @@ describe('declaring', () => {
     const after = JSON.parse(readFileSync(path, 'utf8')) as typeof kit;
     expect(after.kit.sprites['props/chest']!.scale).toBe(measureKits(root).rows.find((r) => r.name === 'props/chest')!.chars);
     expect(after.kit.sprites['props/fence']!.scale).toBe(9);
+  });
+
+  test('redeclare writes the measure over a declared one, and only where it differs', () => {
+    const root = mkdtempSync(join(tmpdir(), 'scale-'));
+    cpSync(join(CONTENT_DIR, 'kit'), root, { recursive: true });
+    const path = join(root, 'core', 'kit.json');
+    const kit = JSON.parse(readFileSync(path, 'utf8')) as { kit: { sprites: Record<string, { scale?: number }> } };
+    kit.kit.sprites['props/fence']!.scale = 9;
+    writeFileSync(path, `${JSON.stringify(kit, null, 2)}\n`);
+    expect(declareScales(root, true)).toEqual(['core:props/fence']);
+    const after = JSON.parse(readFileSync(path, 'utf8')) as typeof kit;
+    expect(after.kit.sprites['props/fence']!.scale).toBe(measureKits(root).rows.find((r) => r.name === 'props/fence')!.chars);
+    expect(declareScales(root, true)).toEqual([]);
   });
 });
 
