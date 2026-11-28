@@ -8,7 +8,7 @@ import { readBoard } from '../../tools/src/board';
 import { withoutClips } from '../../tools/test/fixtures/clips/without-clips';
 import { REPO_ROOT, loadAll } from '../../tools/src/load';
 import { MAX_SHEET_PX, sheetGrid } from '@game/kernel';
-import { ClipPlayer, VERB_OF_AUTO, bootSprites, clipFor, raceClips, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
+import { ClipPlayer, VERB_OF_AUTO, bootSprites, clipFor, raceClips, runFrame, clipFrame, verbOfOutcome, viewOf, type ClipSprites } from '../src/clips';
 import type { Dir } from '../src/input';
 import { spriteStyle } from '../src/ui/dom';
 
@@ -324,7 +324,7 @@ describe('the packed kit', () => {
       expect(own.length, race).toBeGreaterThanOrEqual(23);
       all += own.length;
     }
-    expect(all).toBe(107);
+    expect(all).toBe(125);
     expect(raceClips(real, 'core/dragon')).toEqual([]);
   });
 
@@ -346,5 +346,19 @@ describe('a wrapped sheet in the interface: the sprite element shows the cell th
   test('a one-row sheet reads as it always did', () => {
     const one = { url: 'y.png', w: 16, h: 16, frames: 4, density: 1 };
     expect(spriteStyle(one, 2, 3)).toBe('width:32px;height:32px;background-image:url("y.png");background-size:128px 32px;background-position:-96px 0px');
+  });
+});
+
+describe('the run clip is drawn for the distance walked', () => {
+  test('the frame follows the distance round the cycle, holds when the body stops, and never leaves the clip', () => {
+    expect(runFrame(0, 240, 8)).toBe(0);
+    expect(runFrame(29, 240, 8)).toBe(0);
+    expect(runFrame(30, 240, 8)).toBe(1);
+    expect(runFrame(239, 240, 8)).toBe(7);
+    expect(runFrame(240, 240, 8)).toBe(0);
+    expect(runFrame(3 * 240 + 95, 240, 8)).toBe(3);
+    expect(runFrame(-5, 240, 8)).toBe(0);
+    expect(runFrame(100, 0, 8)).toBe(0);
+    expect(runFrame(100, 240, 0)).toBe(0);
   });
 });

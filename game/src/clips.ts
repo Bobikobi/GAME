@@ -157,6 +157,19 @@ export function clipFrame(elapsed: number, frames: number, frameMs: number, last
   return elapsed < lasts ? n % frames : undefined;
 }
 
+/**
+ * The run clip is a loop of poses drawn for the distance of one cycle, not for a time: the frame shown is the nearest below the distance
+ * the feet have gone (`walked`, art pixels), so the legs never skate and a figure that slows or stops holds its pose. How far a run cycle
+ * reaches is a number read off the picture by eye (the stride is not measurable on a drawn run: no planted foot): the walk sheet's own cycle
+ * times `RUN_CYCLE_OVER_WALK`, or `RUN_CYCLE_FALLBACK_PX` for a walk with no stride; the owner judges it on the live site.
+ */
+export const RUN_CYCLE_OVER_WALK = 1.7;
+export const RUN_CYCLE_FALLBACK_PX = 320;
+export function runFrame(walked: number, cycle: number, frames: number): number {
+  if (!(cycle > 0) || !(frames > 0)) return 0;
+  return Math.floor(Math.max(0, walked) / (cycle / frames)) % frames;
+}
+
 /** The verb a work kind plays (kernel/src/work.ts `WorkKind`): a tree is felled, a stone quarried, a spot dug, a river fished, the rest picked up. */
 export const VERB_OF_AUTO: Readonly<Record<WorkKind, ClipVerb>> = { fell: 'fell', mine: 'quarry', dig: 'dig', fish: 'fish', pick: 'pickup' };
 
