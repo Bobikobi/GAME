@@ -183,4 +183,35 @@ describe('the fetch', () => {
     // no manifests folder: nothing to do
     expect(await fetchAll({ manifestDir: join(root, 'none'), cache, out })).toEqual([]);
   });
+
+  it('a manifest that names its store fails the run on any picture the store does not give whole, with no PAINTED_REQUIRED', async () => {
+    const { root, m, store, cache, out } = setup();
+    const manifests = join(root, 'manifests');
+    const unit = m.files.find((f) => f.path === 'tiles/ground-0-0.webp')!;
+    const blob = readFileSync(join(store, unit.sha256));
+    const run = () => fetchAll({ manifestDir: manifests, cache, out });
+    put(join(manifests, 'test-vale.json'), JSON.stringify({ ...m, store }));
+    // one blob missing from the store
+    rmSync(join(store, unit.sha256));
+    await expect(run()).rejects.toThrow(`the store has no ${unit.sha256}`);
+    // one byte changed in it
+    const spoiled = Uint8Array.from(blob);
+    spoiled[7] = (spoiled[7]! + 1) % 256;
+    writeFileSync(join(store, unit.sha256), spoiled);
+    await expect(run()).rejects.toThrow(/^tiles\/ground-0-0\.webp: the store gave 3000 bytes/);
+    expect(existsSync(join(out, 'test-vale', unit.path))).toBe(false);
+    // an address that does not answer (a closed port), as a build with no way to the store meets it
+    const server = createServer();
+    await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
+    const port = (server.address() as { port: number }).port;
+    await new Promise<void>((ok) => server.close(() => ok()));
+    put(join(manifests, 'test-vale.json'), JSON.stringify({ ...m, store: `http://127.0.0.1:${port}/store` }));
+    rmSync(cache, { recursive: true, force: true });
+    rmSync(out, { recursive: true, force: true });
+    await expect(run()).rejects.toThrow(`the store http://127.0.0.1:${port}/store could not be reached`);
+    // whole again, the same run passes
+    writeFileSync(join(store, unit.sha256), blob);
+    put(join(manifests, 'test-vale.json'), JSON.stringify({ ...m, store }));
+    expect(await run()).toEqual(['painted test-vale: 6 files, 0.0 MB (0 in place, 0 from the cache, 6 from the store)']);
+  });
 });

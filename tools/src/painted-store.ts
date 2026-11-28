@@ -108,7 +108,12 @@ export function storeSource(store: string): BlobSource {
   if (/^https?:\/\//.test(store)) {
     const base = store.replace(/\/+$/, '');
     return async (sum) => {
-      const res = await fetch(`${base}/${sum}`, { redirect: 'follow' });
+      let res: Response;
+      try {
+        res = await fetch(`${base}/${sum}`, { redirect: 'follow' });
+      } catch (e) {
+        throw new Error(`the store ${base} could not be reached for ${sum}: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+      }
       if (!res.ok) throw new Error(`the store answered ${res.status} for ${sum}`);
       return new Uint8Array(await res.arrayBuffer());
     };
@@ -223,7 +228,9 @@ export function reportLine(r: FetchReport): string {
 
 /**
  * The run `pnpm bundle` and `pnpm painted:fetch` make: every manifest in `manifestDir`, each from `PAINTED_STORE` or its own `store`. A manifest
- * with no store is reported and skipped, or fails the run with `required` (`PAINTED_REQUIRED=1`). Returns the lines to print.
+ * with no store is reported and skipped, or fails the run with `required` (`PAINTED_REQUIRED=1`). A manifest that names a store always fails the
+ * run on a picture the store does not give whole (missing, a changed byte, an address that does not answer), `required` or not: a build that
+ * cannot reach the store (CI, Vercel, a laptop) stops instead of shipping a valley with no pictures. Returns the lines to print.
  */
 export async function fetchAll(opts: { manifestDir: string; cache: string; out: string; store?: string; required?: boolean }): Promise<string[]> {
   const lines: string[] = [];
