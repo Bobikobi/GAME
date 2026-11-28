@@ -1581,7 +1581,7 @@
         "file": "chars/human_down.png",
         "w": 128,
         "h": 128,
-        "frames": 5,
+        "frames": 10,
         "density": 4,
         "ramps": [
           "wood",
@@ -1589,7 +1589,7 @@
           "skin"
         ],
         "stride": {
-          "travel_mpx": 36070,
+          "travel_mpx": 16031,
           "anchor": [
             64,
             90
@@ -1602,7 +1602,7 @@
         "file": "chars/human_up.png",
         "w": 128,
         "h": 128,
-        "frames": 5,
+        "frames": 9,
         "density": 4,
         "ramps": [
           "wood",
@@ -1610,7 +1610,7 @@
           "skin"
         ],
         "stride": {
-          "travel_mpx": 36325,
+          "travel_mpx": 18162,
           "anchor": [
             64,
             90
@@ -1623,7 +1623,7 @@
         "file": "chars/human_left.png",
         "w": 128,
         "h": 128,
-        "frames": 5,
+        "frames": 10,
         "density": 4,
         "ramps": [
           "wood",
@@ -1631,7 +1631,7 @@
           "skin"
         ],
         "stride": {
-          "travel_mpx": 47252,
+          "travel_mpx": 21001,
           "anchor": [
             64,
             90
