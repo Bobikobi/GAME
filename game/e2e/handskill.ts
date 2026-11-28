@@ -5,6 +5,7 @@
  * - from each of the three wake pockets (north meadow, west bank, slid bank) the figure stands where it woke (the slid bank's hare is
  *   6.1 tiles off, so one step toward it), a hare that nothing has startled stands within reach, and B is held a little past the
  *   charge time: the stone takes the hare (a carcass lies where it stood, one stone left the bag, the hit's moment played);
+ * - after a take the carcass is drawn on its tile (scenes/carcasses.ts);
  * - on the west bank again, a tap on B throws the stone short: it lies on the ground where it came to rest, takes nothing, the miss's
  *   moment plays, the hare hears it come down and goes to ground; the figure lifts the stone again (it is in the bag once more) and
  *   the hare comes out again by its own hours.
@@ -168,8 +169,14 @@ async function main(): Promise<void> {
       if (Math.hypot(carcass.at[0] - at.at[0], carcass.at[1] - at.at[1]) > 1.5) throw new Error(`${pocket}: the carcass lies at ${carcass.at.join(',')}, the hare stood at ${at.at.join(',')}`);
       if ((await page.eval<number>(bag)) !== stones - 1) throw new Error(`${pocket}: the hit spent ${stones - (await page.eval<number>(bag))} stones, not one`);
       await page.waitFor(`window.__game.world.effects.played.slice(${mark}).some((m) => m.id === 'game-hit')`, 'the hit\'s moment', 5000);
+      // the carcass is drawn on its tile (public #930, a stand-in: the hare's own still on its side)
+      await page.waitFor(`window.__game.world.carcasses?.shown.size === 1`, 'the carcass to be drawn on its tile', 5000);
       console.log(`handskill: ${pocket}: from ${from.join(',')} a full charge took the hare ${dist.toFixed(1)} tiles off (it stood at ${at.at.join(',')}, ${at.state}); the carcass lies at ${carcass.at.join(',')}`);
       await page.screenshot(join(OUT, `handskill-hit-${pocket.split('/')[1]}.png`));
+      // the figure steps up to the carcass, so a still shows it beside the figure at the game's zoom
+      await page.eval(place([carcass.at[0] + 1, carcass.at[1]], 'left'));
+      await page.waitFor(`window.__game.world.carcasses?.shown.size === 1`, 'the carcass to stay drawn beside the figure', 5000);
+      await page.screenshot(join(OUT, `handskill-carcass-${pocket.split('/')[1]}.png`));
     }
 
     // the miss, on the west bank: a tap throws short, the stone lies, the hare hears it and goes to ground, the stone is lifted again

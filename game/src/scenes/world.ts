@@ -105,6 +105,7 @@ import { soundscape } from '../soundscape';
 import { Bites, HOWL_LINE, Telegraph, type Threat } from '../telegraph';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
 import { huntingAt, questTargets } from '../targets';
+import { CarcassLayer } from './carcasses';
 import { WildLife } from './wildlife';
 import { passageAt } from '../sea';
 import { BIRDS, CUE_LOOK, cueGain } from '../cues';
@@ -534,6 +535,7 @@ export class WorldScene extends Phaser.Scene {
   private gaitNow: Gait | 'still' = 'still';
   /** the valley's animals, stepped by the kernel and drawn from their sheets (public #916) */
   private wild: WildLife | undefined;
+  private carcasses: CarcassLayer | undefined;
   private busyFrom = 0;
   private busyMs = 0;
   /** the line, float and fish shapes of fishing, drawn in code */
@@ -2448,6 +2450,8 @@ export class WorldScene extends Phaser.Scene {
     this.aimLineGfx?.setVisible(false);
     this.stones?.destroy();
     this.stones = undefined;
+    this.carcasses?.destroy();
+    this.carcasses = undefined;
     this.effects.clear();
     this.fightWords.clear();
     this.foeBars.clear();
@@ -2754,6 +2758,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshFires(s);
     (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
     (this.stones ??= new StoneLayer(this, this.b, DEPTH.dig)).refresh(s.state, s.tick);
+    (this.carcasses ??= new CarcassLayer(this, this.b)).refresh(s.state, s.tick);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -2879,6 +2884,8 @@ export class WorldScene extends Phaser.Scene {
       this.refreshFires(s);
       // a thrown stone that has been out its time goes home with no step to say so
       this.stones?.refresh(s.state, s.tick);
+      // a carcass the spoiling has made smaller goes with no step to say so
+      this.carcasses?.refresh(s.state, s.tick);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
