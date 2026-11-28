@@ -1081,9 +1081,10 @@ export class PaintedMount {
       sprites[`${FIGURE.idle}_${v}`] = { url: `${base}/figures/slim_idle_${v}.png`, w: 128, h: 128, frames: IDLE_POSES, density: 4, stride: { travel_mpx: 1000, anchor: FIGURE_ANCHOR, bob: false } };
     }
     for (const [name, s] of Object.entries(lynx)) sprites[`painted:lynx-${name}`] = { url: `${base}/figures/${s.file}`, w: ANIMAL_SIZE, h: ANIMAL_SIZE, frames: s.frames, density: 4 };
-    // every race wears the current figure; a race keeps its second look only when it has one (the skeleton is one figure: the title
-    // offers it no look to pick, as on the pixel valley)
-    const races = Object.fromEntries(Object.entries(raw.races).map(([id, r]) => [id, { ...r, sprite: `${FIGURE.walk}_down`, ...(r.sprite_alt ? { sprite_alt: `${FIGURE.walk}_down` } : {}) }]));
+    // each race walks in its own approved sheet (the manager's ruling of 28.11 on DECISIONS 2026-11-15 and 2026-11-21): the race sheets are baked
+    // to the adult's 73 art px, the height the painted figure stands at (73 to 74 rows), so they are drawn at their own scale, and every clip of
+    // a race keeps its size against that race's walk. The painted figure's sheets stay loaded for a land whose races wear it.
+    const races = raw.races;
     // one sun for the picture and the shadows: the standard's two hours as the shadow's shear, its wash taken off (the light is the sun's now)
     const shear = (h: Pick<PaintedHour, 'sq' | 'sl'>) => ({ right: Math.round(h.sq * h.sl * 1.9 * 100), down: Math.round(-h.sq * 100) });
     const light = raw.params.light;
@@ -3217,6 +3218,9 @@ export class PaintedMount {
   bind(session: unknown): void {
     const s = session as SessionShape;
     this.session = s;
+    // the figure's size and silhouette are the race's: read again for the session's race
+    this.figK = 0;
+    this.figPts.length = 0;
     if (!this.link && !this.baseMode) {
       const start = this.firstFree();
       const at: [number, number] = [this.x0 + start[0], this.y0 + start[1]];
@@ -3502,6 +3506,8 @@ export class PaintedMount {
     const w = this.world;
     const s = this.session;
     if (!s || w.body.moving) return;
+    // only a race that wears the painted figure breathes on its idle sheet; a race's own sheet rests on its standing frame
+    if (!this.bundle.races[s.state.player.race ?? '']?.sprite.startsWith(FIGURE.walk)) return;
     const face = s.facing === 'right' ? 'left' : s.facing;
     const key = `${FIGURE.idle}_${face}`;
     if (!w.textures.exists(key)) return;
@@ -3587,12 +3593,13 @@ export class PaintedMount {
   }
 
   /**
-   * The scale of the figure as this scene draws it against FIG_REF_ROWS: the median over the idle sheet's frames of the rows from the highest to the lowest
-   * opaque pixel, in art pixels, read once from the facing-down sheet (not the current texture, so a turn or a step never resizes the window).
+   * The scale of the figure as this scene draws it against FIG_REF_ROWS: the median over the race's facing-down walk sheet's frames of the rows from the
+   * highest to the lowest opaque pixel, in art pixels, read once a session (not the current texture, so a turn or a step never resizes the window).
    */
   private figScale(p: Phaser.GameObjects.Sprite): number {
     if (this.figK > 0) return this.figK;
-    const tex = this.world.textures.exists(`${FIGURE.idle}_down`) ? this.world.textures.get(`${FIGURE.idle}_down`) : p.texture;
+    const own = this.bundle.races[this.session?.state.player.race ?? '']?.sprite ?? '';
+    const tex = this.world.textures.exists(own) ? this.world.textures.get(own) : p.texture;
     const names = tex.getFrameNames().filter((n) => n !== '__BASE');
     const img = tex.getSourceImage() as CanvasImageSource & { width: number; height: number };
     const c = document.createElement('canvas');
