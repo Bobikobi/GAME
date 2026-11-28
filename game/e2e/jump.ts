@@ -199,7 +199,7 @@ async function main(): Promise<void> {
     const woke = await page.eval<number[]>(where);
     if (Math.abs(woke[0]! - DEEP[0]) + Math.abs(woke[1]! - DEEP[1]) < 4) throw new Error(`a drop of four levels left the player at ${woke.join(',')}, not woken in town`);
     await page.screenshot(join(OUT, 'jump-death.png'));
-    // the wake's own line ("Everything went dark.") is read to its end with A, as the stone's lines are
+    // the wake's own lines ("You died.") are read to their end with A, as the stone's lines are
     for (let i = 0; i < 8 && (await page.eval<boolean>(`!!document.querySelector('.dialog')`)); i++) {
       await page.tap('.tbtn.a');
       await page.waitFor(`true`, 'a frame');
