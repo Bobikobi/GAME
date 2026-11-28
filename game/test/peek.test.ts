@@ -4,7 +4,9 @@ import { type Bundle, findSlot, makeWalkable, newState } from '@game/kernel';
 import { MOMENT_MS, PEEK_MS, fitFrame, peekOnStep } from '../src/peek';
 import { loadPixelBundle } from '../../tools/test/helpers/world';
 
+// the maze as drawn on the pixel valley, open: the tangle ships shut on the painted valley (public #944)
 const base = loadPixelBundle();
+for (const q of Object.values(base.quests)) delete q.shut_until;
 const QUEST = 'core/the-tangle';
 const walkFor = (b: Bundle) => {
   const w = makeWalkable(b);
@@ -20,12 +22,15 @@ const withTier = (tier: number): Bundle => {
 const never = () => false;
 
 describe('the maze peek', () => {
-  test('opens on a step into the frame from outside, once, and never when the quest is done', () => {
+  test('opens on a step into the frame from outside, once, and never when the quest is done or shut', () => {
     const walk = walkFor(base);
     expect(peekOnStep(base, never, walk, [39, 33], [39, 34])?.quest).toBe(QUEST);
     expect(peekOnStep(base, never, walk, [39, 34], [39, 35])).toBeUndefined();
     expect(peekOnStep(base, never, walk, [38, 33], [39, 33])).toBeUndefined();
     expect(peekOnStep(base, (q) => q === QUEST, walk, [39, 33], [39, 34])).toBeUndefined();
+    const shut = structuredClone(base);
+    shut.quests[QUEST]!.shut_until = 'a painted tangle (public #944)';
+    expect(peekOnStep(shut, never, walk, [39, 33], [39, 34])).toBeUndefined();
   });
 
   test('the line shows at tier 1 only, the landmarks at tiers 1 and 2, tier 4 has no peek', () => {

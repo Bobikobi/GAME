@@ -7,7 +7,7 @@
  * landmarks lit a moment, 3 the shape alone, 4 no peek. Pure, so the tests
  * read it without a browser; scenes/peek.ts shows it.
  */
-import { findSlot, inRect, stepRuleFor, type Bundle } from '@game/kernel';
+import { findSlot, inRect, questShut, stepRuleFor, type Bundle } from '@game/kernel';
 
 /** How long the peek holds the screen, from the step in to the player again. */
 export const PEEK_MS = 3000;
@@ -44,7 +44,8 @@ const STEPS: readonly Tile[] = [
 
 /**
  * The peek a step from `from` to `to` opens: it crosses into a maze's frame
- * from outside, the maze's quest is not done and its tier gives a peek.
+ * from outside, the maze's quest is not done, not shut by its content (`shut_until`: its maze is not drawn on
+ * this map, public #944) and its tier gives a peek.
  * `walk` is the player's own walkable test, so the route goes where they can, and each of its steps
  * is asked of the kernel's height rule (G68), so the line never runs over a rock face.
  */
@@ -57,7 +58,7 @@ export function peekOnStep(
 ): Peek | undefined {
   for (const q of Object.values(b.quests)) {
     const m = q.maze;
-    if (!m || m.tier >= 4 || done(q.id)) continue;
+    if (!m || m.tier >= 4 || done(q.id) || questShut(q)) continue;
     const frame = findSlot(b.map, m.area);
     if (!frame || !inRect(to[0], to[1], frame) || inRect(from[0], from[1], frame)) continue;
     const hearts = q.steps.flatMap((st) => (st.kind === 'visit' ? [findSlot(b.map, st.slot)] : [])).filter((h): h is NonNullable<typeof h> => !!h);
