@@ -15,6 +15,7 @@ const data: BasesData = {
   retired: ['chars/human_down', 'chars/human_left', 'chars/human_up'],
   legacy_verbs: ['hit', 'strike'],
   waiting: ['chars/human_die_left'],
+  deferred: ['chars/elf_down_left'],
   clips: { 'chars/human_jump_left': 'chars/human_hit_left' },
 };
 const clip = (race: string, verb: string) => ({ clip: { race, verb } });
@@ -64,6 +65,10 @@ describe('pnpm check holds the clips to the bases', () => {
   test('a redraw that lands must come off the waiting list', () => {
     const out = clipBaseProblems(sprites, { ...data, clips: { ...data.clips, 'chars/human_die_left': 'chars/human_hit_left' } });
     expect(out.map((p) => p.message).join()).toMatch(/take it off "waiting"/);
+  });
+  test('a deferred clip that landed must come off the deferred list', () => {
+    const out = clipBaseProblems({ ...sprites, 'chars/elf_down_left': {} }, data);
+    expect(out.map((p) => p.message).join()).toMatch(/take it off "deferred"/);
   });
   test('a name the kit no longer holds is stale, on either list', () => {
     const out = clipBaseProblems({ 'chars/human_hit_left': clip('core/human', 'hit') }, data);

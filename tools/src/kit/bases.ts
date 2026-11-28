@@ -28,6 +28,8 @@ export interface BasesData {
   legacy_verbs: string[];
   /** Clips drawn from a retired sheet, waiting for their redraw from B. */
   waiting: string[];
+  /** Clips not drawn yet, held back on purpose (the fight is off): the elf's and the skeleton's hit_heavy, hit_behind and down. They are drawn from B when the fight stage opens. */
+  deferred: string[];
   /** Clip sheet → the base picture (a kit sprite) it was drawn from, written by packmoves.py. */
   clips: Record<string, string>;
 }
@@ -98,6 +100,9 @@ export function clipBaseProblems(sprites: Readonly<Record<string, { clip?: { rac
   }
   for (const name of data.waiting) {
     if (!(name in sprites)) out.push({ name, where: 'list', message: `is on the waiting list but the kit does not hold it: take it off "waiting"` });
+  }
+  for (const name of data.deferred) {
+    if (name in sprites) out.push({ name, where: 'list', message: `is on the deferred list but the kit holds it now: take it off "deferred"` });
   }
   for (const name of Object.keys(data.clips)) {
     if (!(name in sprites)) out.push({ name, where: 'list', message: `has a recorded base but the kit does not hold it: take it off "clips"` });
