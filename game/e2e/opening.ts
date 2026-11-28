@@ -21,7 +21,7 @@ import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { Browser, byText, sleep, type Page, type Viewport } from './cdp';
 import { DESKTOP, PHONE } from './viewports';
 import { FreeWalk, OPPOSITE, VEC, type Dir } from './walk';
 import { LUCKY_BOWL, type WakePocket, seedQuery } from './wakes';
@@ -609,6 +609,9 @@ class Player {
     // A slow runner draws a 190 ms step in one or two frames, and the one it draws can be the landing (frame 1):
     // too few samples say nothing about the legs. Step back and try again before calling it a failure.
     for (let attempt = 1; ; attempt++) {
+      // the step before may still be drawing its last moving frames (its own facing): record from rest, so every
+      // moving frame written down is this step's
+      await this.page.waitFor('!__game.world.body.moving', `the body at rest before stepping ${dir}`, 5000, false);
       await this.page.eval('__e2e.watchLook(true)');
       const moved = await this.step(dir);
       const looks = await this.page.eval<{ key: string; frame: number; flip: boolean; moving: boolean }[]>('__e2e.watchLook(false)');
@@ -661,7 +664,10 @@ class Player {
       if (!(await this.page.eval<boolean>('!!document.querySelector(".levelup-layer")'))) return true;
       if (this.touch) {
         const choice = await this.page.eval<boolean>('!!document.querySelector(".levelup button.choice:not(:disabled)")');
-        await this.page.tap(choice ? '.levelup button.choice:not(:disabled)' : '.levelup-actions button');
+        const button = choice ? '.levelup button.choice:not(:disabled)' : '.levelup-actions button';
+        // the window closes by itself a moment after the last point is spent (ui/levelup.ts): gone is done, not a miss
+        const tapped = await this.page.tapWhere(byText(button), button, 15_000, '!document.querySelector(".levelup-layer")');
+        if (!tapped) return true;
       } else {
         await this.page.press('Enter');
       }

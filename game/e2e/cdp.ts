@@ -412,10 +412,13 @@ export class Page {
    * view, its centre is measured over two frames, and one that moved between them (a smooth scroll, a panel
    * sliding in) is measured again. A tap never lands where a button was: on a slow runner the shop's strip
    * scrolled the Buy button 17 px on between the measure and the tap (CI run 40278768589).
+   * With `gone` (an in-page expression), the wait also ends when it is true, without a tap, and gives false: for a window
+   * that closes by itself, whose button can vanish between the two frames on a slow runner.
    */
-  async tapWhere(find: string, what: string, timeoutMs = 15_000): Promise<void> {
-    const at = await this.waitFor<{ x: number; y: number }>(
+  async tapWhere(find: string, what: string, timeoutMs = 15_000, gone?: string): Promise<boolean> {
+    const at = await this.waitFor<{ x: number; y: number } | 'gone'>(
       `(async () => {
+        ${gone ? `if (${gone}) return 'gone';` : ''}
         const el = ${find};
         if (!el) return null;
         el.scrollIntoView({ block: 'nearest' });
@@ -423,12 +426,15 @@ export class Page {
         const a = centre();
         await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
         const b = centre();
+        ${gone ? `if (${gone}) return 'gone';` : ''}
         return b.shown && Math.abs(b.x - a.x) < 1 && Math.abs(b.y - a.y) < 1 ? b : null;
       })()`,
       what,
       timeoutMs,
     );
+    if (at === 'gone') return false;
     await this.tapAt(at.x, at.y);
+    return true;
   }
 
   /** Presses the first visible element matching `selector` and holds it for `holdMs` before releasing (a charged press). */
